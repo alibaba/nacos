@@ -14,35 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.mcp;
+package com.alibaba.nacos.ai.utils;
+
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
- * AI service credential.
- * 
+ * Nacos Mcp server request utils.
+ *
  * @author xiweng.yy
  */
-public class AiCredential {
+public class McpRequestUtils {
     
     /**
-     * Credential type, such as OAuth2.0, Jwt token or others, default is `custom`.
+     * If request contains valid namespaceId, do nothing. If not, fill default namespaceId.
+     *
+     * @param request mcp request
      */
-    private String type = "custom";
-    
-    private String ref;
-    
-    public String getType() {
-        return type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    public String getRef() {
-        return ref;
-    }
-    
-    public void setRef(String ref) {
-        this.ref = ref;
+    public static void fillNamespaceId(AbstractMcpRequest request) {
+        if (StringUtils.isEmpty(request.getNamespaceId())) {
+            request.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        }
     }
 }

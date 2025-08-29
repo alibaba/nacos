@@ -31,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -96,11 +97,12 @@ public class McpProxyTest {
     @Test
     public void createMcpServer() throws NacosException {
         McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
+        String mcpId = UUID.randomUUID().toString();
+        serverSpecification.setId(mcpId);
         McpToolSpecification toolSpecification = new McpToolSpecification();
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
-        doNothing().when(mcpHandler)
-                .createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification, endpointSpecification);
+        when(mcpHandler.createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification, endpointSpecification)).thenReturn(mcpId);
         
         assertDoesNotThrow(() -> {
             mcpProxy.createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification,

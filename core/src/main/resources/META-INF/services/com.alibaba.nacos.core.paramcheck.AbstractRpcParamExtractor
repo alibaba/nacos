@@ -22,3 +22,4 @@ com.alibaba.nacos.core.paramcheck.impl.PersistentInstanceRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.ConfigBatchListenRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.BatchInstanceRequestParamExtractor
+com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor

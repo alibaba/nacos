@@ -615,6 +615,11 @@ public class ClientWorker implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
+        if (configFuzzyWatchGroupKeyHolder != null) {
+            configFuzzyWatchGroupKeyHolder.shutdown();
+            // help gc
+            configFuzzyWatchGroupKeyHolder = null;
+        }
         if (agent != null) {
             agent.shutdown();
         }
@@ -687,6 +692,13 @@ public class ClientWorker implements Closeable {
                 if (subscriber != null) {
                     NotifyCenter.deregisterSubscriber(subscriber);
                 }
+
+                multiTaskExecutor.values().forEach((executor) -> {
+                    if (executor != null && !executor.isShutdown()) {
+                        LOGGER.info("Shutdown multi task executor {}", executor);
+                        executor.shutdown();
+                    }
+                });
             }
             
         }

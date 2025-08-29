@@ -183,14 +183,19 @@ class McpAdminControllerTest {
     
     @Test
     void createMcpServerWithSpec() throws Exception {
+        String mcpId = UUID.randomUUID().toString();
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.MCP_ADMIN_PATH)
                 .param("serverSpecification", MCP_SERVER_SPEC);
+        when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerBasicInfo.class), any(), any())).thenReturn(mcpId);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
+
         Result<String> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
         });
+
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals("ok", result.getData());
+        assertEquals(mcpId, result.getData());
         verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 any(McpServerBasicInfo.class), isNull(), isNull());
     }

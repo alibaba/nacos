@@ -172,7 +172,7 @@ public class NacosMcpRegistryService {
         if (CollectionUtils.isNotEmpty(backendEndpoints)) {
             List<Remote> remotes = backendEndpoints.stream().map((item) -> {
                 Remote remote = new Remote();
-                remote.setTransport_type(frontProtocol.replace("mcp-", ""));
+                remote.setTransportType(frontProtocol.replace("mcp-", ""));
                 remote.setUrl(
                         String.format("%s://%s:%d%s", Constants.PROTOCOL_TYPE_HTTP, item.getAddress(), item.getPort(),
                                 item.getPath()));

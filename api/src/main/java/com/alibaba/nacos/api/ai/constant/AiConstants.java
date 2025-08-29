@@ -40,5 +40,13 @@ public class AiConstants {
         public static final String MCP_ENDPOINT_TYPE_REF = "REF";
         
         public static final String MCP_ENDPOINT_TYPE_DIRECT = "DIRECT";
+        
+        public static final String MCP_FRONT_ENDPOINT_TYPE_TO_BACK = "BACKEND";
     }
+    
+    public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
+    
+    public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL = "nacosAiMcpServerCacheUpdateInterval";
+    
+    public static final long DEFAULT_AI_MCP_SERVER_CACHE_UPDATE_INTERVAL = 10000L;
 }

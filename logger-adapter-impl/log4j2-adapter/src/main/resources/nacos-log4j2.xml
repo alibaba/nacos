@@ -90,6 +90,30 @@
         <Async name="ASYNC_NAMING" bufferSize="1024" blocking="false">
             <AppenderRef ref="NAMING_LOG_FILE"/>
         </Async>
+        
+        <RollingFile name="AI_LOG_FILE" fileName="${logPath}/nacos/naming.log"
+            filePattern="${logPath}/nacos/ai.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${nacosClientProperty:JM.LOG.FILE.SIZE:-10MB}"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="${nacosClientProperty:JM.LOG.RETAIN.COUNT:-7}">
+                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-false}">
+                    <IfFileName glob="ai.log.*.*" />
+                    <IfLastModified age="${nacosClientProperty:JM.LOG.RETAIN.DURATION:-P180D}" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        
+        <Async name="ASYNC_AI" bufferSize="1024" blocking="false">
+            <AppenderRef ref="AI_LOG_FILE"/>
+        </Async>
     </Appenders>
     
     <Loggers>
@@ -121,6 +145,11 @@
         <Logger name="com.alibaba.nacos.client.naming" level="${nacosClientProperty:com.alibaba.nacos.naming.log.level:-info}"
             additivity="false">
             <AppenderRef ref="ASYNC_NAMING"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.client.ai" level="${nacosClientProperty:com.alibaba.nacos.ai.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="ASYNC_AI"/>
         </Logger>
     </Loggers>
 </Configuration>

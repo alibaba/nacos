@@ -30,6 +30,11 @@ module.exports = {
         link: 'https://https://nacos.io/en/',
       },
       {
+        key: 'mcp',
+        text: 'MCP Marketplace',
+        link: 'https://mcp.nacos.io/',
+      },
+      {
         key: 'docs',
         text: 'DOCS',
         link: 'https://nacos.io/en/docs/latest/overview/',
@@ -93,6 +98,11 @@ module.exports = {
         key: 'home',
         text: '首页',
         link: 'https://nacos.io/',
+      },
+      {
+        key: 'mcp',
+        text: 'MCP市场',
+        link: 'https://mcp.nacos.io/',
       },
       {
         key: 'docs',

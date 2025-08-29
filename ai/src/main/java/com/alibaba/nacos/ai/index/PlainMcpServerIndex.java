@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.ai.index;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
@@ -31,12 +36,6 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
-import org.springframework.stereotype.Service;
-
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Plain Mcp server index implementation. This is empty index implementation so the performance is not well. this should
@@ -44,7 +43,6 @@ import java.util.Objects;
  *
  * @author xinluo
  */
-@Service
 public class PlainMcpServerIndex implements McpServerIndex {
     
     private final ConfigDetailService configDetailService;
@@ -179,5 +177,27 @@ public class PlainMcpServerIndex implements McpServerIndex {
     private List<String> fetchOrderedNamespaceList() {
         return namespaceOperationService.getNamespaceList().stream()
                 .sorted(Comparator.comparing(Namespace::getNamespace)).map(Namespace::getNamespace).toList();
+    }
+    
+    /**
+     * Remove cache entry by namespace ID and MCP server name. This is a no-op implementation since PlainMcpServerIndex
+     * doesn't use cache.
+     *
+     * @param namespaceId namespace ID
+     * @param mcpName     MCP server name
+     */
+    @Override
+    public void removeMcpServerByName(String namespaceId, String mcpName) {
+        // No-op implementation since PlainMcpServerIndex doesn't use cache
+    }
+    
+    /**
+     * Remove cache entry by MCP server ID. This is a no-op implementation since PlainMcpServerIndex doesn't use cache.
+     *
+     * @param mcpId MCP server ID
+     */
+    @Override
+    public void removeMcpServerById(String mcpId) {
+        // No-op implementation since PlainMcpServerIndex doesn't use cache
     }
 }

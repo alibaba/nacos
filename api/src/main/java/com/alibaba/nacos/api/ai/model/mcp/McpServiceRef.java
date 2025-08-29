@@ -28,6 +28,8 @@ public class McpServiceRef {
     private String groupName;
     
     private String serviceName;
+
+    private String transportProtocol;
     
     public String getNamespaceId() {
         return namespaceId;
@@ -51,5 +53,13 @@ public class McpServiceRef {
     
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    public void setTransportProtocol(String transportProtocol) {
+        this.transportProtocol = transportProtocol;
+    }
+
+    public String getTransportProtocol() {
+        return transportProtocol;
     }
 }

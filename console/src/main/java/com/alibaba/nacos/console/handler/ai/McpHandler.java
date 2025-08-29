@@ -65,9 +65,10 @@ public interface McpHandler {
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
+     * @return mcp server id of the new mcp server
      * @throws NacosException any exception during handling
      */
-    void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
+    String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**

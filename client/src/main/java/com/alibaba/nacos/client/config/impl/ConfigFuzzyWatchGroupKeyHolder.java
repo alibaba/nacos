@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -68,7 +69,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_
  *
  * @author shiyiyue
  */
-public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber {
+public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
@@ -125,6 +126,15 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber {
                 }
             }
         });
+    }
+
+    /**
+     * Deregistering it from the NotifyCenter.
+     */
+    @Override
+    public void shutdown() {
+        // deregister subscriber which registered in constructor
+        NotifyCenter.deregisterSubscriber(this);
     }
     
     /**

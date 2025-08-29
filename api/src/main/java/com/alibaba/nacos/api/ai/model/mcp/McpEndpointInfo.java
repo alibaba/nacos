@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import java.util.List;
+
+import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
+
 /**
  * AI MCP backend endpoint info.
  *
@@ -23,11 +27,18 @@ package com.alibaba.nacos.api.ai.model.mcp;
  */
 public class McpEndpointInfo {
     
+    /**
+     * Indicate the protocol of the endpoint (http / https).
+     */
+    private String protocol;
+
     private String address;
     
     private int port;
     
     private String path;
+
+    private List<KeyValueInput> headers;
     
     public String getAddress() {
         return address;
@@ -51,5 +62,21 @@ public class McpEndpointInfo {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public List<KeyValueInput> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(List<KeyValueInput> headers) {
+        this.headers = headers;
     }
 }

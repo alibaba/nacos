@@ -71,7 +71,7 @@ public class McpEndpointOperationService {
      * @return {@link Service}
      * @throws NacosException any exception during handling
      */
-    public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName,
+    public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName, String version,
             McpEndpointSpec endpointSpecification) throws NacosException {
         if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equalsIgnoreCase(endpointSpecification.getType())) {
             Map<String, String> endpointServiceData = endpointSpecification.getData();
@@ -84,7 +84,8 @@ public class McpEndpointOperationService {
             String refServiceName = endpointSpecification.getData().get(CommonParams.SERVICE_NAME);
             return Service.newService(namespaceId, refGroupName, refServiceName);
         }
-        Service service = Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
+        String versionMcpName = mcpName + "::" + version;
+        Service service = generateService(namespaceId, versionMcpName);
         if (isNotExist(service)) {
             doCreateNewService(service);
             doUpdateInstanceInfo(service, endpointSpecification);
@@ -92,6 +93,10 @@ public class McpEndpointOperationService {
         }
         doUpdateInstanceInfo(service, endpointSpecification);
         return service;
+    }
+    
+    public Service generateService(String namespaceId, String mcpName) {
+        return Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
     }
     
     public List<Instance> getMcpServerEndpointInstances(McpServiceRef serviceRef) throws NacosException {

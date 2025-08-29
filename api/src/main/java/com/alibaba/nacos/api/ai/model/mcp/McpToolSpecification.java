@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +33,8 @@ public class McpToolSpecification {
     
     private Map<String, McpToolMeta> toolsMeta = new HashMap<>(1);
     
+    private List<SecurityScheme> securitySchemes = new ArrayList<>();
+    
     public List<McpTool> getTools() {
         return tools;
     }
@@ -46,5 +49,13 @@ public class McpToolSpecification {
     
     public void setToolsMeta(Map<String, McpToolMeta> toolsMeta) {
         this.toolsMeta = toolsMeta;
+    }
+
+    public List<SecurityScheme> getSecuritySchemes() {
+        return securitySchemes;
+    }
+
+    public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
+        this.securitySchemes = securitySchemes;
     }
 }

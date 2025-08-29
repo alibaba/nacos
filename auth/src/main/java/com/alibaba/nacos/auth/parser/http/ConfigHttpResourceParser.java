@@ -17,10 +17,12 @@
 package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -37,6 +39,14 @@ public class ConfigHttpResourceParser extends AbstractHttpResourceParser {
             namespaceId = request.getParameter(Constants.TENANT);
         }
         return NamespaceUtil.processNamespaceParameter(namespaceId);
+    }
+    
+    @Override
+    protected String getNamespaceId(HttpServletRequest request, Secured secured) {
+        return Arrays.stream(secured.tags()).filter(tag -> tag.startsWith(Constants.NAMESPACE_ID))
+                .map(tag -> tag.split(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.SPLITTER))
+                .filter(splitTags -> splitTags.length >= 2).map(splitTags -> request.getParameter(splitTags[1]))
+                .filter(StringUtils::isNotBlank).findFirst().orElseGet(() -> getNamespaceId(request));
     }
     
     @Override

@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * Naming client gprc redo service.
  *
  * <p>When connection reconnect to server, redo the register and subscribe.
+ * TODO refactor to extends from {@link com.alibaba.nacos.client.redo.service.AbstractRedoService}
  *
  * @author xiweng.yy
  */

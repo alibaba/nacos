@@ -21,7 +21,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
  *
  * @author xiweng.yy
  */
-public class SubscriberRedoData extends RedoData<String> {
+public class SubscriberRedoData extends NamingRedoData<String> {
     
     private SubscriberRedoData(String serviceName, String groupName) {
         super(serviceName, groupName);

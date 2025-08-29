@@ -24,8 +24,6 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +38,6 @@ import org.springframework.security.config.annotation.authentication.configurati
  * @author onewe
  */
 @Configuration(proxyBeanMethods = false)
-@EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
 @Conditional(ConditionOnLdapAuth.class)
 public class LdapAuthPluginConfig {
     

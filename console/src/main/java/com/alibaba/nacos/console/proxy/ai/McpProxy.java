@@ -74,11 +74,12 @@ public class McpProxy {
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
+     * @return mcp server id of the new mcp server
      * @throws NacosException any exception during handling
      */
-    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
+    public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpHandler.createMcpServer(namespaceId, serverSpecification, toolSpecification, endpointSpecification);
+        return mcpHandler.createMcpServer(namespaceId, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     /**

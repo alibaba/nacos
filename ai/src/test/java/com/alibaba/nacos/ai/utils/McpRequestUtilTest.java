@@ -20,9 +20,13 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -162,5 +166,29 @@ class McpRequestUtilTest {
         assertEquals(2, actual.getData().size());
         assertEquals("127.0.0.1", actual.getData().get("address"));
         assertEquals("8848", actual.getData().get("port"));
+    }
+    
+    @Test
+    void transferToMcpServiceRefForMcpServiceRef() {
+        McpServiceRef mcpServiceRef = new McpServiceRef();
+        McpServiceRef actual = McpRequestUtil.transferToMcpServiceRef(mcpServiceRef);
+        assertEquals(mcpServiceRef, actual);
+    }
+    
+    @Test
+    void transferToMcpServiceRefForMap() {
+        Map<String, String> input = new HashMap<>();
+        input.put("namespaceId", "test");
+        input.put("groupName", "testGroup");
+        input.put("serviceName", "testService");
+        McpServiceRef actual = McpRequestUtil.transferToMcpServiceRef(input);
+        assertEquals("test", actual.getNamespaceId());
+        assertEquals("testGroup", actual.getGroupName());
+        assertEquals("testService", actual.getServiceName());
+    }
+    
+    @Test
+    void transferToMcpServiceRefForOther() {
+        assertThrows(IllegalArgumentException.class, () -> McpRequestUtil.transferToMcpServiceRef(new Object()));
     }
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnNacosAuth;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
@@ -67,7 +68,7 @@ public class NacosAuthPluginCoreConfig {
     
     @Bean
     @ConditionalOnMissingBean
-    @Conditional(value = ConditionOnInnerDatasource.class)
+    @Conditional(value = {ConditionOnInnerDatasource.class, ConditionOnNacosAuth.class})
     public GlobalAuthenticationConfigurerAdapter authenticationConfigurer() {
         return new GlobalAuthenticationConfigurerAdapter() {
             @Override
@@ -88,6 +89,7 @@ public class NacosAuthPluginCoreConfig {
     
     @Bean
     @ConditionalOnMissingBean
+    @Conditional(value = ConditionOnNacosAuth.class)
     public IAuthenticationManager defaultAuthenticationManager(NacosUserService userDetailsService,
             TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
         return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);

@@ -125,6 +125,8 @@ class McpManagement extends React.Component {
       selectedRows: [],
       isPageEnter: false,
       defaultFuzzySearch: true,
+      // ensure mcpName is controlled and initialized from query params
+      mcpName: this.mcpName || '',
     };
     const obj = {
       dataId: this.dataId || '',
@@ -228,13 +230,16 @@ class McpManagement extends React.Component {
     if (needclean) {
       this.dataId = '';
       this.group = '';
+      this.mcpName = '';
       this.setState({
         group: '',
         dataId: '',
+        mcpName: '',
       });
       setParams({
         group: '',
         dataId: '',
+        mcpName: '',
       });
     }
     this.getData();
@@ -265,7 +270,8 @@ class McpManagement extends React.Component {
     }
     const prePageNo = getParams('pageNo');
     const prePageSize = getParams('pageSize');
-    const mcpName = getParams('mcpName') || this.mcpName || '';
+    // always use state to avoid stale values from previous searches
+    const mcpName = this.state.mcpName || '';
     this.pageNo = prePageNo ? prePageNo : pageNo;
     this.pageSize = prePageSize ? prePageSize : this.state.pageSize;
     const data = {
@@ -576,6 +582,7 @@ class McpManagement extends React.Component {
                   <Input
                     htmlType="text"
                     style={{ width: 200 }}
+                    value={this.state.mcpName}
                     onChange={mcpName => {
                       this.mcpName = mcpName;
                       this.setState({ mcpName });

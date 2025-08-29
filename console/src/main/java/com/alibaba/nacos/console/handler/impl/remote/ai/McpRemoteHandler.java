@@ -62,9 +62,9 @@ public class McpRemoteHandler implements McpHandler {
     }
     
     @Override
-    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
+    public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        clientHolder.getAiMaintainerService()
+        return clientHolder.getAiMaintainerService()
                 .createMcpServer(serverSpecification.getName(), serverSpecification, toolSpecification, endpointSpecification);
     }
     

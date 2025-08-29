@@ -55,7 +55,7 @@ public class McpNoopHandler implements McpHandler {
     }
     
     @Override
-    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
+    public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 MCP_NOT_ENABLED_MESSAGE);

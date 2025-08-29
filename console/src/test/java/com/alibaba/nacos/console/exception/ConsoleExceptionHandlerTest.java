@@ -26,12 +26,14 @@ import com.alibaba.nacos.console.controller.v2.HealthControllerV2;
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -65,6 +67,7 @@ class ConsoleExceptionHandlerTest {
     @BeforeAll
     static void beforeAll() {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @BeforeEach

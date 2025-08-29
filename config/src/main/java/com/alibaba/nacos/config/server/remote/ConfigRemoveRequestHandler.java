@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -59,6 +60,7 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
     }
     
     @Override
+    @NamespaceValidation
     @TpsControl(pointName = "ConfigRemove")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)

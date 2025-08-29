@@ -48,7 +48,6 @@ class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
     @Test
     public void testSerialize() throws JsonProcessingException {
         String json = mapper.writeValueAsString(configChangeClusterSyncRequest);
-        System.out.println(json);
         assertTrue(json.contains("\"module\":\"" + Constants.Config.CONFIG_MODULE));
         assertTrue(json.contains("\"dataId\":\"" + DATA_ID));
         assertTrue(json.contains("\"group\":\"" + GROUP));

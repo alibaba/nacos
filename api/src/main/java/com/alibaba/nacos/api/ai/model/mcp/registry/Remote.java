@@ -16,20 +16,25 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", 
-        "PMD.ClassMustHaveAuthorRule", "PMD.LowerCamelCaseVariableNamingRule"})
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * Mcp Remote Endpoint info.
+ * @author xinluo
+ */
 public class Remote {
     
-    private String transport_type;
-    
+    @JsonProperty("transport_type")
+    private String transportType;
+
     private String url;
 
-    public String getTransport_type() {
-        return transport_type;
+    public String getTransportType() {
+        return transportType;
     }
 
-    public void setTransport_type(String transport_type) {
-        this.transport_type = transport_type;
+    public void setTransportType(String transportType) {
+        this.transportType = transportType;
     }
 
     public String getUrl() {

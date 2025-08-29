@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
+package com.alibaba.nacos.client.redo.data;
 
 import java.util.Objects;
 
@@ -25,10 +25,6 @@ import java.util.Objects;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RedoData<T> {
-    
-    private final String serviceName;
-    
-    private final String groupName;
     
     /**
      * Expected states for finally.
@@ -52,18 +48,8 @@ public abstract class RedoData<T> {
     
     private T data;
     
-    protected RedoData(String serviceName, String groupName) {
-        this.serviceName = serviceName;
-        this.groupName = groupName;
+    protected RedoData() {
         this.expectedRegistered = true;
-    }
-    
-    public String getServiceName() {
-        return serviceName;
-    }
-    
-    public String getGroupName() {
-        return groupName;
     }
     
     public void setExpectedRegistered(boolean registered) {
@@ -168,13 +154,12 @@ public abstract class RedoData<T> {
             return false;
         }
         RedoData<?> redoData = (RedoData<?>) o;
-        return registered == redoData.registered && unregistering == redoData.unregistering && serviceName
-                .equals(redoData.serviceName) && groupName.equals(redoData.groupName) && Objects
-                .equals(data, redoData.data);
+        return registered == redoData.registered && unregistering == redoData.unregistering && Objects.equals(data,
+                redoData.data);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(serviceName, groupName, registered, unregistering, data);
+        return Objects.hash(registered, unregistering, data);
     }
 }

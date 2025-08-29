@@ -48,7 +48,7 @@ public class DefaultRequestFuture implements RequestFuture {
     
     private ScheduledFuture timeoutFuture;
     
-    TimeoutInnerTrigger timeoutInnerTrigger;
+    FutureTrigger futureTrigger;
     
     /**
      * Getter method for property <tt>requestCallBack</tt>.
@@ -73,16 +73,16 @@ public class DefaultRequestFuture implements RequestFuture {
     }
     
     public DefaultRequestFuture(String connectionId, String requestId, RequestCallBack requestCallBack,
-            TimeoutInnerTrigger timeoutInnerTrigger) {
+            FutureTrigger futureTrigger) {
         this.timeStamp = System.currentTimeMillis();
         this.requestCallBack = requestCallBack;
         this.requestId = requestId;
         this.connectionId = connectionId;
         if (requestCallBack != null) {
-            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SCHEDULER
-                    .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
+            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SCHEDULER.schedule(new TimeoutHandler(),
+                    requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
         }
-        this.timeoutInnerTrigger = timeoutInnerTrigger;
+        this.futureTrigger = futureTrigger;
     }
     
     public void setResponse(final Response response) {
@@ -161,8 +161,8 @@ public class DefaultRequestFuture implements RequestFuture {
         if (isDone) {
             return response;
         } else {
-            if (timeoutInnerTrigger != null) {
-                timeoutInnerTrigger.triggerOnTimeout();
+            if (timeoutFuture == null && futureTrigger != null) {
+                futureTrigger.triggerOnTimeout();
             }
             throw new TimeoutException(
                     "request timeout after " + timeout + " milliseconds, requestId=" + requestId + ", connectionId="
@@ -192,18 +192,35 @@ public class DefaultRequestFuture implements RequestFuture {
             setFailResult(new TimeoutException(
                     "Timeout After " + requestCallBack.getTimeout() + " milliseconds, requestId=" + requestId
                             + ", connectionId=" + connectionId));
-            if (timeoutInnerTrigger != null) {
-                timeoutInnerTrigger.triggerOnTimeout();
+            if (futureTrigger != null) {
+                futureTrigger.triggerOnTimeout();
             }
         }
     }
     
-    public interface TimeoutInnerTrigger {
+    /**
+     * Cleaning something while request has been failed, canceled, timeout.
+     */
+    public interface FutureTrigger {
+        
+        /**
+         * default trigger for {@link #triggerOnTimeout()} and {@link #triggerOnCancel()}.
+         */
+        void defaultTrigger();
         
         /**
          * triggered on timeout .
          */
-        void triggerOnTimeout();
+        default void triggerOnTimeout() {
+            defaultTrigger();
+        }
+        
+        /**
+         * triggered on cancel.
+         */
+        default void triggerOnCancel() {
+            defaultTrigger();
+        }
         
     }
     
@@ -214,5 +231,26 @@ public class DefaultRequestFuture implements RequestFuture {
      */
     public String getConnectionId() {
         return connectionId;
+    }
+    
+    /**
+     * Cancel the request. It should be called in
+     * {@link com.alibaba.nacos.core.remote.grpc.GrpcConnection#sendRequestInner}
+     * NOTE: For sync requests(which without requestCallBack), the cancel operation is always invalid.
+     *
+     * @param mayInterruptIfRunning whether to interrupt the thread
+     */
+    public void cancel(boolean mayInterruptIfRunning) {
+        synchronized (this) {
+            notifyAll();
+        }
+        // cancel timeout task.
+        if (timeoutFuture != null && !timeoutFuture.isDone()) {
+            boolean cancel = timeoutFuture.cancel(mayInterruptIfRunning);
+            if (cancel && futureTrigger != null) {
+                futureTrigger.triggerOnCancel();
+            }
+        }
+        
     }
 }

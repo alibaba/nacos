@@ -90,4 +90,6 @@ public interface Constants {
     String NACOS_DEPLOYMENT_TYPE_SERVER_WITH_MCP = "serverWithMcp";
     
     String NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED = "nacos.sys.duplicate.bean.enhancement.enabled";
+
+    String NACOS_REMOTE_GRPC_LISTEN_IP = "nacos.remote.grpc.listen.ip";
 }

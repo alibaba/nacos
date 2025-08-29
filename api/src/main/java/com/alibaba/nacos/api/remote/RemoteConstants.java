@@ -42,4 +42,6 @@ public class RemoteConstants {
     public static final String MONITOR_LABEL_NONE = "none";
     
     public static final String LABEL_MODULE_LOCK = "lock";
+    
+    public static final String LABEL_MODULE_AI = "ai";
 }
