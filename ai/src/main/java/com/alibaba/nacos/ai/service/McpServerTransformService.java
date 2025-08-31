@@ -483,15 +483,16 @@ public class McpServerTransformService {
     
     /**
      * Parse URL data to MCP servers.
+     * 
+     * TODO: Implement proper URL fetching functionality to retrieve data from remote URLs
      *
      * @param urlData URL data string
      * @return list of MCP server detail info
-     * @throws Exception if parsing fails
+     * @throws UnsupportedOperationException URL fetching is not implemented yet
      */
     private List<McpServerDetailInfo> parseUrlData(String urlData) throws Exception {
-        // For URL import, we would typically fetch the data from the URL
-        // For now, we'll treat it as JSON data
-        return parseJsonData(urlData);
+        // URL fetching functionality is not implemented yet
+        throw new UnsupportedOperationException("URL fetching not implemented yet. Please use JSON import instead.");
     }
     
     /**
