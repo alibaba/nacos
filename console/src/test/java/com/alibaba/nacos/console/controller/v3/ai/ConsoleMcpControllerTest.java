@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -44,7 +46,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -137,6 +139,22 @@ class ConsoleMcpControllerTest {
     void deleteMcpServer() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/ai/mcp")
                 .param("namespaceId", "nacos-default-mcp").param("mcpName", "test");
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        Result<String> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+    }
+
+    @Test
+    void statusMcpServer() throws Exception {
+        McpServerDetailInfo mock = new McpServerDetailInfo();
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put("/v3/console/ai/mcp/status")
+                .param("namespaceId", "nacos-default-mcp").param("mcpName", "test")
+                .param("mcpId", "id")
+                .param("enabled", "true");
+        when(mcpProxy.getMcpServer("nacos-default-mcp", "test", "id", null)).thenReturn(mock);
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         Result<String> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {

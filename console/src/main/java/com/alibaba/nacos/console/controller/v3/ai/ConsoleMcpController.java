@@ -17,10 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
-import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
+import com.alibaba.nacos.ai.form.mcp.admin.*;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -131,7 +128,7 @@ public class ConsoleMcpController {
             throw new NacosException(NacosException.SERVER_ERROR, "Failed to import tools from MCP server", e);
         }
     }
-    
+
     /**
      * Get specified mcp server detail info.
      *
@@ -197,6 +194,26 @@ public class ConsoleMcpController {
         mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion());
         return Result.success("ok");
     }
-    
+
+    /**
+     * Change status of mcp server.
+     *
+     * @param mcpForm mcp server request form
+     * @return ok with {@link String}
+     * @throws NacosException any exception during handling
+     */
+    @PutMapping("/status")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> status(McpStatusForm mcpForm) throws NacosException {
+        Result<McpServerDetailInfo> mcpServer = getMcpServer(mcpForm);
+        if (!mcpServer.getCode().equals(ErrorCode.SUCCESS.getCode()) || mcpServer.getData() == null) {
+            throw new NacosException(mcpServer.getCode(), mcpServer.getMessage());
+        }
+        McpServerDetailInfo data = mcpServer.getData();
+        data.setEnabled(mcpForm.isEnabled());
+        // sync to the newest version, set isPublish to true
+        mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), true, data, data.getToolSpec(), null);
+        return Result.success("ok");
+    }
 }
 
