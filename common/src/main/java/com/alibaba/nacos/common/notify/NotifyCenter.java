@@ -150,9 +150,6 @@ public class NotifyCenter {
         }
         
         LOGGER.info("[NotifyCenter] Completed destruction of Publisher");
-
-        // help gc
-        INSTANCE = null;
     }
     
     /**
