@@ -319,6 +319,29 @@ class McpManagement extends React.Component {
     }
   }
 
+  updateState = record => {
+    // 浅拷贝 record 对象
+    const newRecord = { ...record };
+    this.setState({ loading: true });
+    request({
+      url: `v3/console/ai/mcp/status`,
+      type: 'put',
+      data: {
+        mcpId: newRecord.id,
+        mcpName: newRecord.name,
+        enabled: !newRecord.enabled,
+      },
+      success: res => {
+        Message.success('Success');
+        this.setState({ loading: false }, this.getData);
+      },
+      error: res => {
+        Message.error(res.responseText || res.statusText);
+        this.setState({ loading: false });
+      },
+    });
+  };
+
   removeConfig = record => {
     const { locale = {} } = this.props;
     const self = this;
@@ -379,6 +402,10 @@ class McpManagement extends React.Component {
         <span style={{ marginRight: 5 }}>|</span>
         <a style={{ marginRight: 5 }} onClick={() => this.removeConfig(record)}>
           {locale.delete}
+        </a>
+        <span style={{ marginRight: 5 }}>|</span>
+        <a style={{ marginRight: 5 }} onClick={() => this.updateState(record)}>
+          {record.enabled ? locale.offline : locale.online}
         </a>
       </div>
     );

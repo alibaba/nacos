@@ -479,6 +479,7 @@ public class McpServerOperationService {
                 }
             }
             mcpServerVersionInfo.setVersions(versionDetails);
+            mcpServerVersionInfo.setEnabled(newSpecification.isEnabled());
         }
         
         ConfigFormV3 mcpServerVersionForm = buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);

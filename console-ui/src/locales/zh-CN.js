@@ -717,6 +717,8 @@ const I18N_CONF = {
     operation: '操作',
     delete: '删除',
     details: '详情',
+    online: '启用',
+    offline: '禁用',
     sampleConfig: '配置示例',
     edit: '编辑',
     mcpServerType: '类型',
