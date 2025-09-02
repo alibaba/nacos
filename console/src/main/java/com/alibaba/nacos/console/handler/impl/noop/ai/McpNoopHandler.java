@@ -19,6 +19,9 @@ package com.alibaba.nacos.console.handler.impl.noop.ai;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -71,6 +74,18 @@ public class McpNoopHandler implements McpHandler {
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
             throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 MCP_NOT_ENABLED_MESSAGE);
     }

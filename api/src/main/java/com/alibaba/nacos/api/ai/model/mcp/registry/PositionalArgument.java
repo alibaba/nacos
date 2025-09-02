@@ -32,10 +32,14 @@ public class PositionalArgument implements Argument {
     
     private String valueHint;
     
+    private String description;
+    
     @JsonProperty("is_repeated")
     private boolean isRepeated;
     
     private String value;
+    
+    private String format;
     
     private Map<String, Input> variables;
     
@@ -55,6 +59,14 @@ public class PositionalArgument implements Argument {
         this.valueHint = valueHint;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public boolean isRepeated() {
         return isRepeated;
     }
@@ -69,6 +81,14 @@ public class PositionalArgument implements Argument {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public Map<String, Input> getVariables() {
