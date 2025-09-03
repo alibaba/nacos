@@ -28,7 +28,6 @@ import com.alibaba.nacos.config.server.configuration.ConfigCompatibleConfig;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
@@ -41,7 +40,6 @@ import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
@@ -77,72 +75,64 @@ import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FL
  */
 @Service
 public class ConfigMigrateService {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigMigrateService.class);
-    
+
     private static final String NAMESPACE_MIGRATE_SRC_USER = "nacos_namespace_migrate";
-    
+
     private final String namespacePublic = "public";
-    
-    /**
-     * The Config info beta persist service.
-     */
-    ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
+
     /**
      * The Config info tag persist service.
      */
     ConfigInfoTagPersistService configInfoTagPersistService;
-    
+
     /**
      * The Config info gray persist service.
      */
     ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
+
     /**
      * The Config info persist service.
      */
     ConfigInfoPersistService configInfoPersistService;
-    
+
     /**
      * The Config migrate persist service.
      */
     ConfigMigratePersistService configMigratePersistService;
-    
+
     /**
      * The Namespace persist service.
      */
     NamespacePersistService namespacePersistService;
-    
-    
+
+
     /**
      * The Old table version.
      */
     boolean oldTableVersion = false;
-    
+
     /**
      * Instantiates a new Config migrate service.
      *
-     * @param configInfoBetaPersistService the config info beta persist service
      * @param configInfoTagPersistService  the config info tag persist service
      * @param configInfoGrayPersistService the config info gray persist service
      * @param configMigratePersistService  the config migrate persist service
      * @param namespacePersistService      the namespace persist service
      * @param configInfoPersistService     the config info persist service
      */
-    public ConfigMigrateService(ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService,
+    public ConfigMigrateService(ConfigInfoTagPersistService configInfoTagPersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
             ConfigMigratePersistService configMigratePersistService, NamespacePersistService namespacePersistService,
              ConfigInfoPersistService configInfoPersistService) {
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
         this.configMigratePersistService = configMigratePersistService;
         this.namespacePersistService = namespacePersistService;
         this.configInfoPersistService = configInfoPersistService;
     }
-    
+
     /**
      * migrate beta&tag to gray .
      *
@@ -158,7 +148,7 @@ public class ConfigMigrateService {
             doCheckNamespaceMigrate();
         }
     }
-    
+
     /**
      * handler tag v1 config.
      *
@@ -172,7 +162,7 @@ public class ConfigMigrateService {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
             return;
         }
-        
+
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
             ConfigOperateResult configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo,
                     configForm.getTag(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
@@ -188,7 +178,7 @@ public class ConfigMigrateService {
                     configForm.getSrcUser());
         }
     }
-    
+
     /**
      * handle old beta.
      *
@@ -205,8 +195,11 @@ public class ConfigMigrateService {
         ConfigOperateResult configOperateResult = null;
         // beta publish
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-            configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
-                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+            ConfigGrayPersistInfo grayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
+                    BetaGrayRule.VERSION, configRequestInfo.getBetaIps(), BetaGrayRule.PRIORITY);
+            configOperateResult = configInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
+                    BetaGrayRule.TYPE_BETA, GrayRuleManager.serializeConfigGrayPersistInfo(grayPersistInfo),
+                    configRequestInfo.getSrcIp(), configForm.getSrcUser());
             if (!configOperateResult.isSuccess()) {
                 LOGGER.warn(
                         "[cas-publish-beta-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
@@ -215,11 +208,14 @@ public class ConfigMigrateService {
                         "Cas publish beta config fail, server md5 may have changed.");
             }
         } else {
-            configInfoBetaPersistService.insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(),
+            ConfigGrayPersistInfo grayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
+                    BetaGrayRule.VERSION, configRequestInfo.getBetaIps(), BetaGrayRule.PRIORITY);
+            configInfoGrayPersistService.insertOrUpdateGray(configInfo, BetaGrayRule.TYPE_BETA,
+                    GrayRuleManager.serializeConfigGrayPersistInfo(grayPersistInfo),
                     configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
     }
-    
+
     /**
      * delete beta and tag.
      *
@@ -236,14 +232,14 @@ public class ConfigMigrateService {
             return;
         }
         if (BetaGrayRule.TYPE_BETA.equals(grayName)) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA, clientIp, srcUser);
         } else if (grayName.startsWith(TagGrayRule.TYPE_TAG + SPLIT)) {
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, grayName.substring(4), clientIp,
                     srcUser);
         }
-        
+
     }
-    
+
     /**
      * migrate single config beta.
      *
@@ -252,8 +248,8 @@ public class ConfigMigrateService {
      * @param tenant tenant.
      */
     public void checkMigrateBeta(String dataId, String group, String tenant) {
-        ConfigInfoBetaWrapper configInfo4Beta = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
-        if (configInfo4Beta == null) {
+        ConfigInfoGrayWrapper oldBetaConfig = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant, BetaGrayRule.TYPE_BETA);
+        if (oldBetaConfig == null) {
             ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(dataId,
                     group, tenant, BetaGrayRule.TYPE_BETA);
             if (configInfoGrayWrapper == null) {
@@ -265,19 +261,33 @@ public class ConfigMigrateService {
         }
         ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
                 BetaGrayRule.TYPE_BETA);
-        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < configInfo4Beta.getLastModified()) {
+        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < oldBetaConfig.getLastModified()) {
             DEFAULT_LOG.info("[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
-                    configInfo4Beta.getDataId(), configInfo4Beta.getGroup(), configInfo4Beta.getTenant(),
-                    configInfo4Beta.getMd5());
+                    oldBetaConfig.getDataId(), oldBetaConfig.getGroup(), oldBetaConfig.getTenant(),
+                    oldBetaConfig.getMd5());
+
+            // 从GrayRule中获取betaIps
+            String grayRule = oldBetaConfig.getGrayRule();
+            String betaIps = "";
+            try {
+                ConfigGrayPersistInfo persistInfo = GrayRuleManager.deserializeConfigGrayPersistInfo(grayRule);
+                if (persistInfo != null) {
+                    betaIps = persistInfo.getExpr();
+                }
+            } catch (Exception e) {
+                // 如果解析失败，使用空字符串
+                LOGGER.warn("Failed to parse gray rule for beta IPs: {}", grayRule, e);
+            }
+
             ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
-                    BetaGrayRule.VERSION, configInfo4Beta.getBetaIps(), BetaGrayRule.PRIORITY);
-            configInfoGrayPersistService.insertOrUpdateGray(configInfo4Beta, BetaGrayRule.TYPE_BETA,
+                    BetaGrayRule.VERSION, betaIps, BetaGrayRule.PRIORITY);
+            configInfoGrayPersistService.insertOrUpdateGray(oldBetaConfig, BetaGrayRule.TYPE_BETA,
                     GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIp(),
                     "nacos_auto_migrate");
         }
-        
+
     }
-    
+
     /**
      * migrate single config tag.
      *
@@ -312,7 +322,7 @@ public class ConfigMigrateService {
                     "nacos_auto_migrate");
         }
     }
-    
+
     /**
      * Check changed config gray migrate state.
      *
@@ -380,7 +390,7 @@ public class ConfigMigrateService {
             GRAY_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Check changed config migrate state.
      *
@@ -437,9 +447,9 @@ public class ConfigMigrateService {
         } finally {
             CONFIG_MIGRATE_FLAG.set(false);
         }
-        
+
     }
-    
+
     /**
      * Check deleted config gray migrate state.
      *
@@ -463,7 +473,7 @@ public class ConfigMigrateService {
         if (targetConfigInfoGrayStateWrapper == null) {
             return;
         }
-        
+
         try {
             GRAY_MIGRATE_FLAG.set(true);
             if (targetConfigInfoGrayStateWrapper.getLastModified()
@@ -476,7 +486,7 @@ public class ConfigMigrateService {
             GRAY_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Check deleted config migrate state.
      *
@@ -508,9 +518,9 @@ public class ConfigMigrateService {
         } finally {
             CONFIG_MIGRATE_FLAG.set(false);
         }
-        
+
     }
-    
+
     @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckNamespaceMigrate() throws Exception {
         final long startTime = System.currentTimeMillis();
@@ -549,7 +559,7 @@ public class ConfigMigrateService {
             }
             LOGGER.info("[migrate] migrating config namespace from empty to public, finished:" + totalInsertNums);
         } while (batchIds.size() == batchSize);
-        
+
         long startEmptyId = -1;
         int totalUpdateFromEmptyNums = 0;
         List<ConfigInfo> batchConfigInfosFromEmpty = new ArrayList<>();
@@ -587,7 +597,7 @@ public class ConfigMigrateService {
             }
             LOGGER.info("[migrate] syncing config namespace from empty to public, finished:" + totalUpdateFromEmptyNums);
         } while (batchConfigInfosFromEmpty.size() == batchSize);
-        
+
         long startPublicId = -1;
         int totalUpdateFromPublicNums = 0;
         List<ConfigInfo> batchConfigInfosFromPublic = new ArrayList<>();
@@ -626,7 +636,7 @@ public class ConfigMigrateService {
             }
             LOGGER.info("[migrate] syncing config namespace from public to empty, finished:" + totalUpdateFromPublicNums);
         } while (batchConfigInfosFromPublic.size() == batchSize);
-        
+
         long startGrayId = -1;
         int totalInsertGrayNum = 0;
         do {
@@ -656,7 +666,7 @@ public class ConfigMigrateService {
             }
             LOGGER.info("[migrate] migrating config gray namespace from empty to public, finished:" + totalInsertGrayNum);
         } while (batchIds.size() == batchSize);
-        
+
         long startGrayEmptyId = -1;
         int totalUpdateGrayFromEmptyNum = 0;
         List<ConfigInfoGrayWrapper> batchConfigInfoGraysFromEmpty = new ArrayList<>();
@@ -697,7 +707,7 @@ public class ConfigMigrateService {
             }
             LOGGER.info("[migrate] syncing config gray namespace from empty to public, finished:" + totalUpdateGrayFromEmptyNum);
         } while (batchConfigInfoGraysFromEmpty.size() == batchSize);
-        
+
         long startGrayPublicId = -1;
         int totalUpdateGrayFromPublicNum = 0;
         List<ConfigInfoGrayWrapper> batchConfigInfoGraysFromPublic = new ArrayList<>();
@@ -741,7 +751,7 @@ public class ConfigMigrateService {
         LOGGER.info("[migrate] finish migrate config namespace" + "total time taken: "
                 + (System.currentTimeMillis() - startTime) + " ms");
     }
-    
+
     private void namespaceMigratePreCheck(int maxRetryTimes) throws Exception {
         int retryTimes = 0;
         boolean checkSuccess = false;
@@ -764,7 +774,7 @@ public class ConfigMigrateService {
         if (!checkSuccess) {
             throw new Exception("[migrate] config_info namespace migrate pre check failed");
         }
-        
+
         retryTimes = 0;
         checkSuccess = false;
         while (retryTimes <= maxRetryTimes) {
@@ -787,7 +797,7 @@ public class ConfigMigrateService {
             throw new Exception("[migrate] config_gray namespace migrate pre check failed");
         }
     }
-    
+
     /**
      * Namespace migrate gray.
      *
@@ -812,7 +822,7 @@ public class ConfigMigrateService {
             GRAY_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Namespace migrate.
      *
@@ -834,7 +844,7 @@ public class ConfigMigrateService {
             CONFIG_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Publish config migrate.
      *
@@ -865,9 +875,9 @@ public class ConfigMigrateService {
         }
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
-        
+
         ConfigOperateResult configOperateResult;
-        
+
         try {
             CONFIG_MIGRATE_FLAG.set(true);
             if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
@@ -902,7 +912,7 @@ public class ConfigMigrateService {
             CONFIG_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Publish config gray migrate.
      *
@@ -925,7 +935,7 @@ public class ConfigMigrateService {
         configForm.setSrcUser(NAMESPACE_MIGRATE_SRC_USER);
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
-        
+
         ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(grayType,
                 configForm.getGrayVersion(), configForm.getGrayRuleExp(), configForm.getGrayPriority());
         GrayRule grayRuleStruct = GrayRuleManager.constructGrayRule(localConfigGrayPersistInfo);
@@ -933,25 +943,25 @@ public class ConfigMigrateService {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.CONFIG_GRAY_VERSION_INVALID,
                     ErrorCode.CONFIG_GRAY_VERSION_INVALID.getMsg());
         }
-        
+
         if (!grayRuleStruct.isValid()) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.CONFIG_GRAY_RULE_FORMAT_INVALID,
                     ErrorCode.CONFIG_GRAY_RULE_FORMAT_INVALID.getMsg());
         }
-        
+
         ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(configForm.getEncryptedDataKey());
-        
+
         if (StringUtils.equals(grayType, TagGrayRule.TYPE_TAG)) {
             persistTagv1(configForm, configInfo, configRequestInfo);
         } else if (StringUtils.equals(grayType, BetaGrayRule.TYPE_BETA)) {
             persistBeta(configForm, configInfo, configRequestInfo);
         }
-        
+
         ConfigOperateResult configOperateResult;
-        
+
         try {
             GRAY_MIGRATE_FLAG.set(true);
             if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
@@ -976,7 +986,7 @@ public class ConfigMigrateService {
             GRAY_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Remove config info migrate.
      *
@@ -998,7 +1008,7 @@ public class ConfigMigrateService {
             CONFIG_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     /**
      * Remove config info gray migrate.
      *
@@ -1024,7 +1034,7 @@ public class ConfigMigrateService {
             GRAY_MIGRATE_FLAG.set(false);
         }
     }
-    
+
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {
         Map<String, Object> configAdvanceInfo = new HashMap<>(10);
         MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configForm.getConfigTags());
@@ -1035,61 +1045,74 @@ public class ConfigMigrateService {
         MapUtil.putIfValNoNull(configAdvanceInfo, "schema", configForm.getSchema());
         return configAdvanceInfo;
     }
-    
+
     @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckMigrate() throws Exception {
-        
+
         int migrateMulti = EnvUtil.getProperty("nacos.gray.migrate.executor.multi", Integer.class, Integer.valueOf(4));
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(ThreadUtils.getSuitableThreadCount(migrateMulti),
                 ThreadUtils.getSuitableThreadCount(migrateMulti), 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * migrateMulti),
                 r -> new Thread(r, "gray-migrate-worker"), new ThreadPoolExecutor.CallerRunsPolicy());
         int pageSize = 100;
-        int rowCount = configInfoBetaPersistService.configInfoBetaCount();
+        int rowCount = configInfoGrayPersistService.configInfoGrayCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / pageSize);
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoBetaWrapper> page = configInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(pageNo,
+            Page<ConfigInfoGrayWrapper> page = configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo,
                     pageSize);
             if (page != null) {
-                for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
-                    
+                for (ConfigInfoGrayWrapper cf : page.getPageItems()) {
                     executorService.execute(() -> {
-                        GRAY_MIGRATE_FLAG.set(true);
-                        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(
-                                cf.getDataId(), cf.getGroup(), cf.getTenant(), BetaGrayRule.TYPE_BETA);
-                        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < cf.getLastModified()) {
-                            DEFAULT_LOG.info("[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
-                                    cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getMd5());
-                            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
-                                    BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION, cf.getBetaIps(),
-                                    BetaGrayRule.PRIORITY);
-                            configInfoGrayPersistService.insertOrUpdateGray(cf, BetaGrayRule.TYPE_BETA,
-                                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
-                                    NetUtils.localIp(), "nacos_auto_migrate");
-                            GRAY_MIGRATE_FLAG.set(false);
+                        try {
+                            // beta type gray config
+                            if (BetaGrayRule.TYPE_BETA.equals(cf.getGrayName())) {
+                                String betaIps = "";
+                                try {
+                                    ConfigGrayPersistInfo persistInfo = GrayRuleManager.deserializeConfigGrayPersistInfo(cf.getGrayRule());
+                                    if (persistInfo != null) {
+                                        betaIps = persistInfo.getExpr();
+                                    }
+                                } catch (Exception e) {
+                                    LOGGER.warn("Failed to parse gray rule for beta IPs: {}", cf.getGrayRule(), e);
+                                }
+                                
+                                // migration logic
+                                ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
+                                        BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION, betaIps, BetaGrayRule.PRIORITY);
+                                
+                                ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(
+                                        cf.getDataId(), cf.getGroup(), cf.getTenant(), BetaGrayRule.TYPE_BETA);
+                                if (configInfo4Gray == null) {
+                                    configInfoGrayPersistService.insertOrUpdateGray(cf, BetaGrayRule.TYPE_BETA,
+                                            GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
+                                            NetUtils.localIp(), "nacos_auto_migrate");
+                                }
+                            }
+                        } catch (Exception e) {
+                            DEFAULT_LOG.error("[migrate-error] dataId={}, group={}, tenant={}, msg={}",
+                                    cf.getDataId(), cf.getGroup(), cf.getTenant(), e.toString());
                         }
                     });
-                    
                 }
                 actualRowCount += page.getPageItems().size();
                 DEFAULT_LOG.info("[gray-migrate-beta] submit gray task {} / {}", actualRowCount, rowCount);
-                
+
             }
         }
-        
+
         try {
             int unfinishedTaskCount = 0;
             while ((unfinishedTaskCount = executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
                 DEFAULT_LOG.info("[gray-migrate-beta] wait {} migrate tasks to be finished", unfinishedTaskCount);
                 Thread.sleep(1000L);
             }
-            
+
         } catch (Exception e) {
             DEFAULT_LOG.error("[gray-migrate-beta] wait  dump tasks to be finished error", e);
             throw e;
         }
-        
+
         rowCount = configInfoTagPersistService.configInfoTagCount();
         pageCount = (int) Math.ceil(rowCount * 1.0 / pageSize);
         actualRowCount = 0;
@@ -1098,7 +1121,7 @@ public class ConfigMigrateService {
                     pageSize);
             if (page != null) {
                 for (ConfigInfoTagWrapper cf : page.getPageItems()) {
-                    
+
                     executorService.execute(() -> {
                         GRAY_MIGRATE_FLAG.set(true);
                         ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(
@@ -1116,28 +1139,28 @@ public class ConfigMigrateService {
                             GRAY_MIGRATE_FLAG.set(false);
                         }
                     });
-                    
+
                 }
-                
+
                 actualRowCount += page.getPageItems().size();
                 DEFAULT_LOG.info("[gray-migrate-tag]  submit gray task  {} / {}", actualRowCount, rowCount);
             }
         }
-        
+
         try {
             int unfinishedTaskCount = 0;
             while ((unfinishedTaskCount = executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
                 DEFAULT_LOG.info("[gray-migrate-tag] wait {} migrate tasks to be finished", unfinishedTaskCount);
                 Thread.sleep(1000L);
             }
-            
+
         } catch (Exception e) {
             DEFAULT_LOG.error("[gray-migrate-tag] wait migrate tasks to be finished error", e);
             throw e;
         }
         //shut down migrate executor
         executorService.shutdown();
-        
+
     }
-    
+
 }

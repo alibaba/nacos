@@ -277,6 +277,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("check db health.");
             }
+            // Fix for issue #13538: config_info_beta table has been completely removed
+            // Using config_info_gray table for health check
             String sql = "SELECT * FROM config_info_gray WHERE id = 1";
             
             for (int i = 0; i < testJtList.size(); i++) {
