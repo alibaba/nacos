@@ -43,7 +43,9 @@ public class DistroConfig extends AbstractDynamicConfig {
     private long loadDataRetryDelayMillis = DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
     
     private long loadDataTimeoutMillis = DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS;
-    
+
+    private int verifyBatchSize = DistroConstants.DEFAULT_DATA_VERIFY_BATCH_SIZE;
+
     private DistroConfig() {
         super(DISTRO);
         resetConfig();
@@ -65,6 +67,8 @@ public class DistroConfig extends AbstractDynamicConfig {
                 DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
         loadDataTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS, Long.class,
                 DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
+        verifyBatchSize = EnvUtil.getProperty(DistroConstants.DATA_VERIFY_BATCH_SIZE, Integer.class,
+                DistroConstants.DEFAULT_DATA_VERIFY_BATCH_SIZE);
     }
     
     public static DistroConfig getInstance() {
@@ -126,12 +130,20 @@ public class DistroConfig extends AbstractDynamicConfig {
     public void setLoadDataTimeoutMillis(long loadDataTimeoutMillis) {
         this.loadDataTimeoutMillis = loadDataTimeoutMillis;
     }
-    
+
+    public int getVerifyBatchSize() {
+        return verifyBatchSize;
+    }
+
+    public void setVerifyBatchSize(int verifyBatchSize) {
+        this.verifyBatchSize = verifyBatchSize;
+    }
+
     @Override
     protected String printConfig() {
         return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis=" + syncTimeoutMillis
                 + ", syncRetryDelayMillis=" + syncRetryDelayMillis + ", verifyIntervalMillis=" + verifyIntervalMillis
                 + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis
-                + ", loadDataTimeoutMillis=" + loadDataTimeoutMillis + '}';
+                + ", loadDataTimeoutMillis=" + loadDataTimeoutMillis + ", verifyBatchSize=" + verifyBatchSize + '}';
     }
 }
