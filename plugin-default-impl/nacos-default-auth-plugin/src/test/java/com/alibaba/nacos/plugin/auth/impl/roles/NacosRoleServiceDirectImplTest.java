@@ -40,10 +40,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -139,11 +141,17 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void deleteRole() {
-        try {
-            nacosRoleService.deleteRole("role-admin");
-        } catch (Exception e) {
-            assertNull(e);
-        }
+        assertDoesNotThrow(() -> nacosRoleService.deleteRole("role-admin"));
+        assertDoesNotThrow(() -> nacosRoleService.deleteRole("mockRole", "mockUser"));
+    }
+    
+    @Test
+    void deleteAdminRole() {
+        assertThrows(IllegalArgumentException.class, () -> nacosRoleService.deleteRole(AuthConstants.GLOBAL_ADMIN_ROLE),
+                "role 'ROLE_ADMIN' is not permitted to delete!");
+        assertThrows(IllegalArgumentException.class,
+                () -> nacosRoleService.deleteRole(AuthConstants.GLOBAL_ADMIN_ROLE, "mockUser"),
+                "role 'ROLE_ADMIN' is not permitted to delete!");
     }
     
     @Test

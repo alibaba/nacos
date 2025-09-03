@@ -122,6 +122,8 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
                     if (duration > 1000L) {
                         log.warn("task {} takes {}ms", task, duration);
                     }
+                } catch (InterruptedException e) {
+                    // [issue #13752] ignore stack log
                 } catch (Throwable e) {
                     log.error("[TASK-FAILED] " + e, e);
                 }
