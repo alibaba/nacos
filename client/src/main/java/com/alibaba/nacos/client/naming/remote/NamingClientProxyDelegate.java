@@ -172,7 +172,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         if (null == result || !isSubscribed(serviceName, groupName, clusters)) {
             result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
-        serviceInfoHolder.processServiceInfo(result);
+        serviceInfoHolder.processServiceInfo(result, true);
         return result;
     }
     

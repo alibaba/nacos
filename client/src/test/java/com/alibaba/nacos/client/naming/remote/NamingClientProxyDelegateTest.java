@@ -298,7 +298,7 @@ class NamingClientProxyDelegateTest {
         ServiceInfo actual = delegate.subscribe(serviceName, groupName, clusters);
         assertEquals(info, actual);
         verify(mockGrpcClient, times(1)).subscribe(serviceName, groupName, clusters);
-        verify(holder, times(1)).processServiceInfo(info);
+        verify(holder, times(1)).processServiceInfo(info, false);
         
     }
     
