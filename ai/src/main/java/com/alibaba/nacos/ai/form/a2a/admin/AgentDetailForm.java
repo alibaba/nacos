@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.alibaba.nacos.api.ai.constant.AiConstants.A2a.A2A_ENDPOINT_TYPE_URL;
+
 /**
  * AgentDetailForm.
  *
@@ -71,6 +73,8 @@ public class AgentDetailForm extends AgentForm {
     private List<AgentSkill> skills;
     
     private Boolean supportsAuthenticatedExtendedCard;
+    
+    private String registrationType = A2A_ENDPOINT_TYPE_URL;
     
     @Override
     public void validate() throws NacosApiException {
@@ -202,6 +206,14 @@ public class AgentDetailForm extends AgentForm {
         this.description = description;
     }
     
+    public String getRegistrationType() {
+        return registrationType;
+    }
+    
+    public void setRegistrationType(String registrationType) {
+        this.registrationType = registrationType;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -219,13 +231,15 @@ public class AgentDetailForm extends AgentForm {
                 securitySchemes, that.securitySchemes) && Objects.equals(security, that.security) && Objects.equals(
                 defaultInputModes, that.defaultInputModes) && Objects.equals(defaultOutputModes,
                 that.defaultOutputModes) && Objects.equals(skills, that.skills) && Objects.equals(
-                supportsAuthenticatedExtendedCard, that.supportsAuthenticatedExtendedCard);
+                supportsAuthenticatedExtendedCard, that.supportsAuthenticatedExtendedCard) && Objects.equals(
+                registrationType, that.registrationType);
     }
     
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), description, protocolVersion, url, preferredTransport,
                 additionalInterfaces, iconUrl, provider, documentationUrl, capabilities, securitySchemes, security,
-                defaultInputModes, defaultOutputModes, skills, supportsAuthenticatedExtendedCard);
+                defaultInputModes, defaultOutputModes, skills, supportsAuthenticatedExtendedCard,
+                registrationType);
     }
 }

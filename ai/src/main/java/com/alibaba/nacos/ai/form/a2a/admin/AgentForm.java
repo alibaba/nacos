@@ -24,6 +24,7 @@ import java.io.Serial;
 import java.util.Objects;
 
 import static com.alibaba.nacos.api.ai.constant.AiConstants.A2a.A2A_DEFAULT_NAMESPACE;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.A2a.A2A_ENDPOINT_TYPE_URL;
 
 /**
  * Agent form.
@@ -40,6 +41,8 @@ public class AgentForm implements NacosForm {
     private String name;
     
     private String version;
+    
+    private String registrationType = A2A_ENDPOINT_TYPE_URL;
     
     @Override
     public void validate() throws NacosApiException {
@@ -76,6 +79,14 @@ public class AgentForm implements NacosForm {
         this.version = version;
     }
     
+    public String getRegistrationType() {
+        return registrationType;
+    }
+    
+    public void setRegistrationType(String registrationType) {
+        this.registrationType = registrationType;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -83,11 +94,12 @@ public class AgentForm implements NacosForm {
         }
         AgentForm agentForm = (AgentForm) o;
         return Objects.equals(namespaceId, agentForm.namespaceId) && Objects.equals(name, agentForm.name)
-                && Objects.equals(version, agentForm.version);
+                && Objects.equals(version, agentForm.version) && Objects.equals(registrationType,
+                agentForm.registrationType);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, name, version);
+        return Objects.hash(namespaceId, name, version, registrationType);
     }
 }

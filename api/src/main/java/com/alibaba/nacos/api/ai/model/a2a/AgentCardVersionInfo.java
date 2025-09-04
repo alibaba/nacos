@@ -31,6 +31,8 @@ public class AgentCardVersionInfo extends AgentCard {
     
     private List<AgentVersionDetail> versionDetails;
     
+    private String registrationType;
+    
     public String getLatestPublishedVersion() {
         return latestPublishedVersion;
     }
@@ -47,6 +49,14 @@ public class AgentCardVersionInfo extends AgentCard {
         this.versionDetails = versionDetails;
     }
     
+    public String getRegistrationType() {
+        return registrationType;
+    }
+    
+    public void setRegistrationType(String registrationType) {
+        this.registrationType = registrationType;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -57,11 +67,11 @@ public class AgentCardVersionInfo extends AgentCard {
         }
         AgentCardVersionInfo that = (AgentCardVersionInfo) o;
         return Objects.equals(latestPublishedVersion, that.latestPublishedVersion) && Objects.equals(versionDetails,
-                that.versionDetails);
+                that.versionDetails) && Objects.equals(registrationType, that.registrationType);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), latestPublishedVersion, versionDetails);
+        return Objects.hash(super.hashCode(), latestPublishedVersion, versionDetails, registrationType);
     }
 }

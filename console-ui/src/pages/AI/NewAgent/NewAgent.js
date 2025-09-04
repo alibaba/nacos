@@ -265,30 +265,32 @@ class NewAgent extends React.Component {
               data.data === 'ok' ||
               data.message === 'success')
           ) {
+            const agentLocale = locale.AgentManagement || locale;
             Message.success(
               isEdit
-                ? locale.updateSuccess || 'Updated successfully'
-                : locale.createSuccess || 'Created successfully'
+                ? agentLocale.updateSuccess || '更新成功'
+                : agentLocale.createSuccess || '创建成功'
             );
+
             setTimeout(() => {
               this.handleGoBack();
             }, 1000);
           } else {
+            const agentLocale = locale.AgentManagement || locale;
             Message.error(
               data?.message ||
                 (isEdit
-                  ? locale.updateFailed || 'Update failed'
-                  : locale.createFailed || 'Creation failed')
+                  ? agentLocale.updateFailed || '更新失败'
+                  : agentLocale.createFailed || '创建失败')
             );
           }
         })
         .catch(error => {
           console.error('Request failed:', error);
           this.setState({ loading: false });
+          const agentLocale = locale.AgentManagement || locale;
           Message.error(
-            isEdit
-              ? locale.updateFailed || 'Update failed'
-              : locale.createFailed || 'Creation failed'
+            isEdit ? agentLocale.updateFailed || '更新失败' : agentLocale.createFailed || '创建失败'
           );
         });
     });

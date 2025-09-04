@@ -53,5 +53,9 @@ public class AiConstants {
     public static class A2a {
         
         public static final String A2A_DEFAULT_NAMESPACE = "public";
+        
+        public static final String A2A_ENDPOINT_TYPE_URL = "URL";
+        
+        public static final String A2A_ENDPOINT_TYPE_SERVICE = "SERVICE";
     }
 }

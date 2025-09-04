@@ -216,11 +216,12 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId) throws NacosException {
+    public AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType) throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
         Map<String, String> params = new HashMap<>(1);
         params.put("name", agentName);
+        params.put("registrationType", registrationType);
         
         HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
                 .setParamValue(params)
