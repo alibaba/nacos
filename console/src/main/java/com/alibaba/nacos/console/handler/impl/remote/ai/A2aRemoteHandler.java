@@ -56,7 +56,8 @@ public class A2aRemoteHandler implements A2aHandler {
     
     @Override
     public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().getAgentCardWithVersions(form.getName(), form.getNamespaceId());
+        return clientHolder.getAiMaintainerService().getAgentCardWithVersions(form.getName(), form.getNamespaceId(),
+                form.getRegistrationType());
     }
     
     @Override

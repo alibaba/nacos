@@ -67,9 +67,14 @@ class AgentManagement extends React.Component {
   }
 
   componentDidMount() {
-    const namespace = getParams('namespace') || '';
+    let namespace = getParams('namespace') || '';
     const namespaceShowName = getParams('namespaceShowName') || '';
     const searchName = getParams('searchName') || '';
+
+    // 如果没有指定命名空间，默认设置为public
+    if (!namespace) {
+      namespace = 'public';
+    }
 
     setParams({
       namespace,
@@ -102,7 +107,6 @@ class AgentManagement extends React.Component {
         selectedRowKeys: [],
         selectedRows: [],
       });
-      // 清除所有参数，只保留Agent管理相关的参数
       const namespace = getParams('namespace') || '';
       const namespaceShowName = getParams('namespaceShowName') || '';
       setParams({

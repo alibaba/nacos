@@ -41,7 +41,6 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainReque
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -57,7 +56,7 @@ import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_VERSION_GROUP;
  *
  * @author KiteSoar
  */
-@Service
+@org.springframework.stereotype.Service
 public class A2aServerOperationService {
     
     private final ConfigQueryChainService configQueryChainService;
@@ -66,8 +65,8 @@ public class A2aServerOperationService {
     
     private final ConfigDetailService configDetailService;
     
-    public A2aServerOperationService(ConfigQueryChainService configQueryChainService,
-            ConfigOperationService configOperationService, ConfigDetailService configDetailService) {
+    public A2aServerOperationService(ConfigQueryChainService configQueryChainService, ConfigOperationService configOperationService,
+            ConfigDetailService configDetailService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
@@ -113,6 +112,7 @@ public class A2aServerOperationService {
         agentCardVersionInfo.setSkills(form.getSkills());
         agentCardVersionInfo.setSupportsAuthenticatedExtendedCard(form.getSupportsAuthenticatedExtendedCard());
         agentCardVersionInfo.setDocumentationUrl(form.getDocumentationUrl());
+        agentCardVersionInfo.setRegistrationType(form.getRegistrationType());
         
         agentCardVersionInfo.setLatestPublishedVersion(form.getVersion());
         AgentVersionDetail agentVersionDetail = new AgentVersionDetail();

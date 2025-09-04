@@ -55,10 +55,23 @@ public interface A2aMaintainerService {
      *
      * @param agentName   the agent name
      * @param namespaceId the namespace id
+     * @param registrationType the registration type
      * @return agent card with versions
      * @throws NacosException if the agent get fails due to invalid input or internal error
      */
-    AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId) throws NacosException;
+    AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType) throws NacosException;
+    
+    /**
+     * Get agent card with versions.
+     *
+     * @param agentName   the agent name
+     * @param namespaceId the namespace id
+     * @return agent card with versions
+     * @throws NacosException if the agent get fails due to invalid input or internal error
+     */
+    default AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId) throws NacosException {
+        return getAgentCardWithVersions(agentName, namespaceId, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
+    }
     
     /**
      * Get agent card.
