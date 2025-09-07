@@ -358,12 +358,14 @@ class McpManagement extends React.Component {
         const protocol = data.backendEndpoints[0].protocol;
         const address = data.backendEndpoints[0].address;
         const port = data.backendEndpoints[0].port;
+        const exportPath = data.backendEndpoints[0].path;
         getEndpointSpecification = JSON.stringify({
           type: 'DIRECT',
           data: {
             protocol: protocol,
             address: address,
             port: port,
+            exportPath: exportPath,
           },
         });
       }
