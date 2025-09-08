@@ -81,7 +81,7 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
                         continue;
                     }
 
-                    boolean exist = isNamespaceExist(namespaceId);
+                    boolean exist = namespaceOperationService.namespaceExists(namespaceId);
                     if (!exist) {
                         Response response = super.getDefaultResponseInstance(handlerClazz);
                         response.setErrorInfo(ErrorCode.NAMESPACE_NOT_EXIST.getCode(),
@@ -110,18 +110,4 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
         AbstractRpcParamExtractor paramExtractor = ExtractorManager.getRpcExtractor(extractor);
         return paramExtractor.extractParam(request);
     }
-
-    private boolean isNamespaceExist(String namespace) {
-        boolean namespaceExist;
-        try {
-            namespaceExist = namespaceOperationService.namespaceExists(namespace);
-        } catch (Exception e) {
-            Loggers.CORE.warn("Namespace validation query db error for namespace: {}, exception: {}", namespace, e);
-            // throw exception will make the request fail
-            namespaceExist = false;
-        }
-
-        return namespaceExist;
-    }
-
 }

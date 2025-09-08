@@ -42,33 +42,33 @@ import java.util.List;
 
 @Service
 public class NamespaceOperationService {
-    
+
     private final NamespacePersistService namespacePersistService;
-    
+
     private static final String DEFAULT_NAMESPACE_SHOW_NAME = "public";
-    
+
     private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Default Namespace";
-    
+
     private static final int DEFAULT_QUOTA = 200;
-    
+
     private static final String DEFAULT_CREATE_SOURCE = "nacos";
-    
+
     private static final String DEFAULT_KP = "1";
-    
+
     public NamespaceOperationService(NamespacePersistService namespacePersistService) {
         this.namespacePersistService = namespacePersistService;
     }
-    
+
     public List<Namespace> getNamespaceList() {
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = namespacePersistService.findTenantByKp(DEFAULT_KP);
-        
+
         Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE_SHOW_NAME,
                 DEFAULT_NAMESPACE_DESCRIPTION, DEFAULT_QUOTA, 0, NamespaceTypeEnum.GLOBAL.getType());
         NamespaceDetailInjectorHolder.getInstance().injectDetail(namespace0);
         List<Namespace> namespaceList = new ArrayList<>();
         namespaceList.add(namespace0);
-        
+
         for (TenantInfo tenantInfo : tenantInfos) {
             Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(), tenantInfo.getTenantName(),
                     tenantInfo.getTenantDesc(), DEFAULT_QUOTA, 0, NamespaceTypeEnum.CUSTOM.getType());
@@ -77,7 +77,7 @@ public class NamespaceOperationService {
         }
         return namespaceList;
     }
-    
+
     /**
      * query namespace by namespace id.
      *
@@ -87,7 +87,7 @@ public class NamespaceOperationService {
     public Namespace getNamespace(String namespaceId) throws NacosException {
         return getNamespace(namespaceId, NamespaceTypeEnum.CUSTOM);
     }
-    
+
     /**
      * query namespace by namespace id and type.
      *
@@ -100,7 +100,7 @@ public class NamespaceOperationService {
         if (StringUtils.isBlank(namespaceId) || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {
             result = new Namespace(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION,
                     DEFAULT_QUOTA, 0, NamespaceTypeEnum.GLOBAL.getType());
-            
+
         } else {
             String typeString = String.valueOf(type.getType());
             TenantInfo tenantInfo = namespacePersistService.findTenantByKp(typeString, namespaceId);
@@ -114,7 +114,7 @@ public class NamespaceOperationService {
         NamespaceDetailInjectorHolder.getInstance().injectDetail(result);
         return result;
     }
-    
+
     /**
      * create namespace.
      *
@@ -127,7 +127,7 @@ public class NamespaceOperationService {
             throws NacosException {
         return createNamespace(namespaceId, namespaceName, namespaceDesc, NamespaceTypeEnum.CUSTOM);
     }
-    
+
     /**
      * create namespace.
      *
@@ -138,14 +138,14 @@ public class NamespaceOperationService {
      * @return whether create ok
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc,
-            NamespaceTypeEnum type) throws NacosException {
+                                   NamespaceTypeEnum type) throws NacosException {
         validateNamespaceNotExists(namespaceId);
         String typeString = String.valueOf(type.getType());
         namespacePersistService.insertTenantInfoAtomic(typeString, namespaceId, namespaceName, namespaceDesc,
                 DEFAULT_CREATE_SOURCE, System.currentTimeMillis());
         return true;
     }
-    
+
     /**
      * edit namespace.
      */
@@ -153,7 +153,7 @@ public class NamespaceOperationService {
         namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
         return true;
     }
-    
+
     /**
      * remove namespace.
      */
@@ -172,7 +172,7 @@ public class NamespaceOperationService {
         try {
             return namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0;
         } catch (Exception e) {
-            Loggers.CORE.error("Failed to query namespace existence for: {}", namespaceId, e);
+            Loggers.CORE.error("Namespace validation query db error for namespace: {}, exception: {}", namespaceId, e);
             return false;
         }
     }
