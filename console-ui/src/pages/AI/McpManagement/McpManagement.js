@@ -319,6 +319,83 @@ class McpManagement extends React.Component {
     }
   }
 
+  updateState = async record => {
+    this.setState({ loading: true });
+    const result = await request({
+      url: 'v3/console/ai/mcp',
+      method: 'get',
+      data: {
+        mcpId: record.id,
+        mcpName: record.name,
+      },
+      error: () => {
+        this.setState({ loading: false }, this.getData);
+      },
+    });
+
+    const data = result.data;
+    console.log(data);
+    let getEndpointSpecification = '';
+    if (data && data.protocol && data.protocol !== 'stdio') {
+      // 使用已有服务
+      if (
+        data.remoteServerConfig &&
+        data.remoteServerConfig.serviceRef &&
+        data.remoteServerConfig.serviceRef.serviceName
+      ) {
+        getEndpointSpecification = JSON.stringify({
+          type: 'REF',
+          data: {
+            groupName: data.remoteServerConfig.serviceRef.groupName,
+            namespaceId: data.remoteServerConfig.serviceRef.namespaceId,
+            serviceName: data.remoteServerConfig.serviceRef.serviceName,
+          },
+        });
+      }
+      // 外部直连
+      else if (data && data.backendEndpoints && data.backendEndpoints.length > 0) {
+        // 解析address
+        const protocol = data.backendEndpoints[0].protocol;
+        const address = data.backendEndpoints[0].address;
+        const port = data.backendEndpoints[0].port;
+        const exportPath = data.backendEndpoints[0].path;
+        getEndpointSpecification = JSON.stringify({
+          type: 'DIRECT',
+          data: {
+            protocol: protocol,
+            address: address,
+            port: port,
+            exportPath: exportPath,
+          },
+        });
+      }
+    }
+
+    let toolSpec = '';
+    if (data.toolSpec) {
+      toolSpec = JSON.stringify(data.toolSpec);
+    }
+
+    data.enabled = !data.enabled;
+    request({
+      url: `v3/console/ai/mcp`,
+      type: 'put',
+      data: {
+        serverSpecification: JSON.stringify(data),
+        toolSpecification: toolSpec,
+        endpointSpecification: getEndpointSpecification,
+      },
+      success: res => {
+        Message.success('Success');
+        this.setState({ loading: false }, this.getData);
+      },
+      error: res => {
+        Message.error(res.responseText || res.statusText);
+        this.setState({ loading: false });
+      },
+    });
+  };
+
   removeConfig = record => {
     const { locale = {} } = this.props;
     const self = this;
@@ -379,6 +456,10 @@ class McpManagement extends React.Component {
         <span style={{ marginRight: 5 }}>|</span>
         <a style={{ marginRight: 5 }} onClick={() => this.removeConfig(record)}>
           {locale.delete}
+        </a>
+        <span style={{ marginRight: 5 }}>|</span>
+        <a style={{ marginRight: 5 }} onClick={() => this.updateState(record)}>
+          {record.enabled ? locale.offline : locale.online}
         </a>
       </div>
     );
