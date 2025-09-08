@@ -130,7 +130,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         boolean requestValid = connectionManager.checkValid(connectionId);
         if (!requestValid) {
             Loggers.REMOTE_DIGEST
-                    .warn("[{}] Invalid connection Id ,connection [{}] is un registered ,", "grpc", connectionId);
+                    .warn("[{}] Invalid connection Id ,connection [{}] is unregistered ,", "grpc", connectionId);
             Payload payloadResponse = GrpcUtils
                     .convert(ErrorResponse.build(NacosException.UN_REGISTER, "Connection is unregistered."));
             traceIfNecessary(payloadResponse, false);
