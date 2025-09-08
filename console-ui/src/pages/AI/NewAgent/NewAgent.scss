@@ -1,0 +1,12 @@
+// 使用与MCP页面相同的全宽度布局
+.new-config-form {
+  .next-form-item {
+    margin-bottom: 16px;
+  }
+
+  .next-textarea {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}

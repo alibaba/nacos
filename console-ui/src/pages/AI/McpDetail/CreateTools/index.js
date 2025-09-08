@@ -1090,22 +1090,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             </div>
           }
           footer={
-            onlyEditRuntimeInfo ? (
-              <div
-                style={{
-                  padding: '12px 20px',
-                  backgroundColor: '#fff2f0',
-                  border: '1px solid #ffccc7',
-                  borderRadius: '6px',
-                  color: '#cf1322',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                {locale.editExistVersionMessage}
-              </div>
-            ) : isPreview ? (
+            isPreview ? (
               <Button
                 type="primary"
                 size="large"

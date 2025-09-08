@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.ai;
+import NewAgent from './NewAgent';
 
-/**
- * Nacos AI module maintainer service.
- *
- * @author xiweng.yy
- */
-public interface AiMaintainerService extends McpMaintainerService, A2aMaintainerService {
-
-}
+export default NewAgent;

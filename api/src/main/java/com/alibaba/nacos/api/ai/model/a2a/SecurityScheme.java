@@ -12,15 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.alibaba.nacos.maintainer.client.ai;
+package com.alibaba.nacos.api.ai.model.a2a;
 
 /**
- * Nacos AI module maintainer service.
+ * SecurityScheme.
  *
- * @author xiweng.yy
+ * @author KiteSoar
  */
-public interface AiMaintainerService extends McpMaintainerService, A2aMaintainerService {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class SecurityScheme {
 
 }

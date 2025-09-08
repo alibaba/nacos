@@ -285,7 +285,8 @@ function createRequestTemplate(path, method, operation, servers) {
       serverURL = serverURL.replace(/\/+$/, '');
     }
     // Ensure path starts with a single slash and collapse duplicates
-    const normalizedPath = typeof path === 'string' ? ('/' + path).replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
+    const normalizedPath =
+      typeof path === 'string' ? ('/' + path).replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
     fullUrl = serverURL + normalizedPath;
   }
 

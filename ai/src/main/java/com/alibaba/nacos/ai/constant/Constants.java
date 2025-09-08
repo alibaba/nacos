@@ -82,4 +82,19 @@ public class Constants {
     public static final String SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_SPEC_DATA_ID_SUFFIX;
     
     public static final String SERVER_TOOLS_SPEC_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_TOOL_DATA_ID_SUFFIX;
+    
+    public static class A2A {
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/a2a";
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/a2a";
+        
+        public static final String AGENT_GROUP = "agent";
+        
+        public static final String AGENT_VERSION_GROUP = "agent-version";
+        
+        public static final String SEARCH_BLUR = "blur";
+        
+        public static final String SEARCH_ACCURATE = "accurate";
+    }
 }

@@ -17,6 +17,9 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardWrapper;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -186,15 +189,78 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
-    private RequestResource buildRequestResource(String namespaceId, String mcpName) {
+    private RequestResource buildRequestResource(String namespaceId, String resourceName) {
         RequestResource.Builder builder = RequestResource.aiBuilder();
         builder.setNamespace(namespaceId);
         builder.setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP);
-        builder.setResource(null == mcpName ? StringUtils.EMPTY : mcpName);
+        builder.setResource(null == resourceName ? StringUtils.EMPTY : resourceName);
         return builder.build();
     }
     
     private HttpRequest.Builder buildHttpRequestBuilder(RequestResource resource) {
         return new HttpRequest.Builder().setResource(resource);
+    }
+    
+    @Override
+    public boolean registerAgent(AgentCard agentCard, String namespaceId) throws NacosException {
+        AgentCardWrapper agentCardWrapper = new AgentCardWrapper(agentCard, namespaceId);
+        String agentCardJson = JacksonUtils.toJson(agentCardWrapper);
+        RequestResource resource = buildRequestResource(namespaceId, agentCard.getName());
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST).setBody(agentCardJson)
+                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
+    public AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType) throws NacosException {
+        RequestResource resource = buildRequestResource(namespaceId, agentName);
+        
+        Map<String, String> params = new HashMap<>(1);
+        params.put("name", agentName);
+        params.put("registrationType", registrationType);
+        
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setParamValue(params)
+                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
+        Result<AgentCardVersionInfo> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<AgentCardVersionInfo>>() {
+        });
+        
+        return  result.getData();
+    }
+    
+    @Override
+    public boolean updateAgentCard(AgentCard agentCard, String namespaceId) throws NacosException {
+        AgentCardWrapper agentCardWrapper = new AgentCardWrapper(agentCard, namespaceId);
+        String agentCardJson = JacksonUtils.toJson(agentCardWrapper);
+        RequestResource resource = buildRequestResource(namespaceId, agentCard.getName());
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT).setBody(agentCardJson)
+                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
+    public boolean deleteAgent(String agentName, String namespaceId) throws NacosException {
+        RequestResource resource = buildRequestResource(namespaceId, agentName);
+        
+        Map<String, String> params = new HashMap<>(1);
+        params.put("name", agentName);
+        
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
+                .setParamValue(params)
+                .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
+        Result<AgentCard> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<AgentCard>>() {
+        });
+        
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
 }
