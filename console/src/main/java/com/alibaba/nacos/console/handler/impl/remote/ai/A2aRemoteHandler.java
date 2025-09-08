@@ -22,7 +22,9 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.A2aHandler;
@@ -32,6 +34,8 @@ import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * A2aRemoteHandler.
@@ -55,7 +59,7 @@ public class A2aRemoteHandler implements A2aHandler {
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
+    public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
         return clientHolder.getAiMaintainerService().getAgentCardWithVersions(form.getName(), form.getNamespaceId(),
                 form.getRegistrationType());
     }
@@ -73,6 +77,12 @@ public class A2aRemoteHandler implements A2aHandler {
     @Override
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) {
         return null;
+    }
+    
+    @Override
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
+        // TODO
+        return List.of();
     }
     
     private AgentCard transferAgentCard(AgentDetailForm form) {

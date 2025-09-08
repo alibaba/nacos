@@ -18,7 +18,7 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardWrapper;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -171,7 +171,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
+    public boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
+            throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
@@ -216,21 +217,22 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType) throws NacosException {
+    public AgentCardDetailInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType)
+            throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
         Map<String, String> params = new HashMap<>(1);
         params.put("name", agentName);
         params.put("registrationType", registrationType);
         
-        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
-                .setParamValue(params)
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
-        Result<AgentCardVersionInfo> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<AgentCardVersionInfo>>() {
-        });
+        Result<AgentCardDetailInfo> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<AgentCardDetailInfo>>() {
+                });
         
-        return  result.getData();
+        return result.getData();
     }
     
     @Override
@@ -254,8 +256,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         Map<String, String> params = new HashMap<>(1);
         params.put("name", agentName);
         
-        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
-                .setParamValue(params)
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
         Result<AgentCard> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<AgentCard>>() {

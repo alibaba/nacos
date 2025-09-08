@@ -21,12 +21,16 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.A2aHandler;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * A2a proxy.
@@ -46,7 +50,7 @@ public class A2aProxy {
         a2aHandler.registerAgent(form);
     }
     
-    public AgentCardVersionInfo getAgentCard(AgentForm form) throws NacosException {
+    public AgentCardDetailInfo getAgentCard(AgentForm form) throws NacosException {
         return a2aHandler.getAgentCardWithVersions(form);
     }
     
@@ -57,8 +61,12 @@ public class A2aProxy {
     public void updateAgentCard(AgentUpdateForm form) throws NacosException {
         a2aHandler.updateAgentCard(form);
     }
-
+    
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) {
         return a2aHandler.listAgents(agentListForm, pageForm);
+    }
+    
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
+        return a2aHandler.listAgentVersions(namespaceId, name);
     }
 }

@@ -30,13 +30,13 @@ public class AgentUpdateForm extends AgentDetailForm {
     @Serial
     private static final long serialVersionUID = -3213676112969078560L;
     
-    private Boolean setAsLatest;
+    private boolean setAsLatest;
     
-    public Boolean getSetAsLatest() {
+    public boolean getSetAsLatest() {
         return setAsLatest;
     }
     
-    public void setSetAsLatest(Boolean setAsLatest) {
+    public void setSetAsLatest(boolean setAsLatest) {
         this.setAsLatest = setAsLatest;
     }
     

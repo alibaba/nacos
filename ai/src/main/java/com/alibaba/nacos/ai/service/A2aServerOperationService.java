@@ -22,30 +22,28 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.ai.utils.AgentCardUtil;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.exception.NacosConfigException;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.beans.BeanUtils;
 
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
 
 import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_GROUP;
@@ -65,8 +63,8 @@ public class A2aServerOperationService {
     
     private final ConfigDetailService configDetailService;
     
-    public A2aServerOperationService(ConfigQueryChainService configQueryChainService, ConfigOperationService configOperationService,
-            ConfigDetailService configDetailService) {
+    public A2aServerOperationService(ConfigQueryChainService configQueryChainService,
+            ConfigOperationService configOperationService, ConfigDetailService configDetailService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
@@ -80,101 +78,18 @@ public class A2aServerOperationService {
      */
     public void registerAgent(AgentDetailForm form) throws NacosException {
         // 1. register agent's info
-        AgentCardVersionInfo agentCardVersionInfo = buildAgentCardVersionInfo(form);
-        ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, form);
-        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setUpdateForExist(Boolean.FALSE);
-        configOperationService.publishConfig(configForm, configRequestInfo, null);
+        AgentCardVersionInfo agentCardVersionInfo = AgentCardUtil.buildAgentCardVersionInfo(form, true);
+        ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, form.getNamespaceId());
+        ConfigRequestInfo versionConfigRequest = new ConfigRequestInfo();
+        versionConfigRequest.setUpdateForExist(Boolean.FALSE);
+        configOperationService.publishConfig(configForm, versionConfigRequest, null);
         
         // 2. register agent's version info
-        ConfigForm configFormVersion = transferAgentInfoToConfigForm(form);
-        ConfigRequestInfo configRequestInfo0 = new ConfigRequestInfo();
-        configRequestInfo0.setUpdateForExist(Boolean.FALSE);
-        configOperationService.publishConfig(configFormVersion, configRequestInfo0, null);
-    }
-    
-    private AgentCardVersionInfo buildAgentCardVersionInfo(AgentDetailForm form) {
-        AgentCardVersionInfo agentCardVersionInfo = new AgentCardVersionInfo();
-        agentCardVersionInfo.setProtocolVersion(form.getProtocolVersion());
-        agentCardVersionInfo.setName(form.getName());
-        agentCardVersionInfo.setDescription(form.getDescription());
-        agentCardVersionInfo.setUrl(form.getUrl());
-        agentCardVersionInfo.setVersion(form.getVersion());
-        agentCardVersionInfo.setPreferredTransport(form.getPreferredTransport());
-        agentCardVersionInfo.setAdditionalInterfaces(form.getAdditionalInterfaces());
-        agentCardVersionInfo.setIconUrl(form.getIconUrl());
-        agentCardVersionInfo.setProvider(form.getProvider());
-        agentCardVersionInfo.setCapabilities(form.getCapabilities());
-        agentCardVersionInfo.setSecuritySchemes(form.getSecuritySchemes());
-        agentCardVersionInfo.setSecurity(form.getSecurity());
-        agentCardVersionInfo.setDefaultInputModes(form.getDefaultInputModes());
-        agentCardVersionInfo.setDefaultOutputModes(form.getDefaultOutputModes());
-        agentCardVersionInfo.setSkills(form.getSkills());
-        agentCardVersionInfo.setSupportsAuthenticatedExtendedCard(form.getSupportsAuthenticatedExtendedCard());
-        agentCardVersionInfo.setDocumentationUrl(form.getDocumentationUrl());
-        agentCardVersionInfo.setRegistrationType(form.getRegistrationType());
-        
-        agentCardVersionInfo.setLatestPublishedVersion(form.getVersion());
-        AgentVersionDetail agentVersionDetail = new AgentVersionDetail();
-        agentVersionDetail.setCreatedAt(getCurrentTime());
-        agentVersionDetail.setUpdatedAt(getCurrentTime());
-        agentVersionDetail.setVersion(form.getVersion());
-        agentVersionDetail.setLatest(true);
-        agentCardVersionInfo.setVersionDetails(Collections.singletonList(agentVersionDetail));
-        
-        return agentCardVersionInfo;
-    }
-    
-    private String getCurrentTime() {
-        ZonedDateTime currentTime = ZonedDateTime.now(ZoneOffset.UTC);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.RELEASE_DATE_FORMAT);
-        return currentTime.format(formatter);
-    }
-    
-    private ConfigForm transferVersionInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, AgentDetailForm form) {
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(form.getName());
-        configForm.setGroup(AGENT_GROUP);
-        configForm.setNamespaceId(form.getNamespaceId());
-        configForm.setContent(JacksonUtils.toJson(agentCardVersionInfo));
-        configForm.setConfigTags("nacos.internal.config=agent");
-        configForm.setAppName(form.getName());
-        configForm.setSrcUser("nacos");
-        configForm.setType(ConfigType.JSON.getType());
-        
-        return configForm;
-    }
-    
-    private ConfigForm transferAgentInfoToConfigForm(AgentDetailForm form) {
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(form.getName() + "-" + form.getVersion());
-        configForm.setGroup(AGENT_VERSION_GROUP);
-        configForm.setNamespaceId(form.getNamespaceId());
-        configForm.setContent(JacksonUtils.toJson(form));
-        configForm.setConfigTags("nacos.internal.config=agent-version");
-        configForm.setAppName(form.getName());
-        configForm.setSrcUser("nacos");
-        configForm.setType(ConfigType.JSON.getType());
-        
-        return configForm;
-    }
-    
-    public AgentCardVersionInfo getAgentCard(AgentForm form) {
-        ConfigQueryChainRequest request = new ConfigQueryChainRequest();
-        request.setDataId(form.getName());
-        request.setGroup(AGENT_GROUP);
-        request.setTenant(form.getNamespaceId());
-        ConfigQueryChainResponse response = configQueryChainService.handle(request);
-        
-        if (ResponseCode.FAIL.getCode() == response.getResultCode()) {
-            throw new NacosConfigException(response.getMessage());
-        }
-        
-        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-            return null;
-        }
-        
-        return JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
+        AgentCardDetailInfo agentCardDetailInfo = AgentCardUtil.buildAgentCardDetailInfo(form);
+        ConfigForm configFormVersion = transferAgentInfoToConfigForm(agentCardDetailInfo, form.getNamespaceId());
+        ConfigRequestInfo agentCardConfigRequest = new ConfigRequestInfo();
+        agentCardConfigRequest.setUpdateForExist(Boolean.FALSE);
+        configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
     }
     
     /**
@@ -186,15 +101,18 @@ public class A2aServerOperationService {
         String dataId = form.getName();
         String namespaceId = form.getNamespaceId();
         
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, AGENT_GROUP, namespaceId);
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, AGENT_GROUP,
+                namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
             return;
         }
         
-        AgentCardVersionInfo agentCardVersionInfo = JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
-        List<String> allVersions = agentCardVersionInfo.getVersionDetails().stream().map(AgentVersionDetail::getVersion).toList();
+        AgentCardVersionInfo agentCardVersionInfo = JacksonUtils.toObj(response.getContent(),
+                AgentCardVersionInfo.class);
+        List<String> allVersions = agentCardVersionInfo.getVersionDetails().stream().map(AgentVersionDetail::getVersion)
+                .toList();
         
         // 1. If version is specified, only delete the corresponding version of the agent
         if (form.getVersion() != null) {
@@ -209,22 +127,15 @@ public class A2aServerOperationService {
             if (versionDetails.size() == 1 && versionDetails.get(0).getVersion().equals(form.getVersion())) {
                 configOperationService.deleteConfig(dataId, AGENT_GROUP, namespaceId, null, null, "nacos", null);
             } else {
-                agentCardVersionInfo.getVersionDetails().removeIf(versionDetail -> versionDetail.getVersion().equals(form.getVersion()));
+                agentCardVersionInfo.getVersionDetails()
+                        .removeIf(versionDetail -> versionDetail.getVersion().equals(form.getVersion()));
                 
                 if (isLatestVersion) {
                     agentCardVersionInfo.setLatestPublishedVersion(null);
                     agentCardVersionInfo.setVersion(null);
                 }
                 
-                ConfigForm updateForm = new ConfigForm();
-                updateForm.setDataId(dataId);
-                updateForm.setGroup(AGENT_GROUP);
-                updateForm.setNamespaceId(namespaceId);
-                updateForm.setContent(JacksonUtils.toJson(agentCardVersionInfo));
-                updateForm.setConfigTags("nacos.internal.config=agent");
-                updateForm.setAppName(form.getName());
-                updateForm.setSrcUser("nacos");
-                
+                ConfigForm updateForm = transferVersionInfoToConfigForm(agentCardVersionInfo, namespaceId);
                 ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
                 configRequestInfo.setUpdateForExist(Boolean.TRUE);
                 configOperationService.publishConfig(updateForm, configRequestInfo, null);
@@ -248,43 +159,28 @@ public class A2aServerOperationService {
      * @throws NacosException nacos exception
      */
     public void updateAgentCard(AgentUpdateForm form) throws NacosException {
-        String dataId = form.getName();
-        String groupName = AGENT_GROUP;
-        String namespaceId = form.getNamespaceId();
+        final AgentCardVersionInfo existingAgentInfo = queryAgentCardVersionInfo(form);
         
-        // 1. Check if the agent exists
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, groupName, namespaceId);
-        ConfigQueryChainResponse response = configQueryChainService.handle(request);
-        
-        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-            throw new NacosConfigException("Cannot update agent: Agent not found: " + form.getName());
+        // 2. Check if the version exists, if not exist, add new version into version info
+        boolean versionExisted = existingAgentInfo.getVersionDetails().stream()
+                .anyMatch(agentVersionDetail -> StringUtils.equals(agentVersionDetail.getVersion(), form.getVersion()));
+        if (!versionExisted) {
+            existingAgentInfo.getVersionDetails()
+                    .add(AgentCardUtil.buildAgentVersionDetail(form, form.getSetAsLatest()));
         }
         
-        final AgentCardVersionInfo existingAgentInfo = JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
+        AgentCardDetailInfo agentCardDetailInfo = AgentCardUtil.buildAgentCardDetailInfo(form);
+        BeanUtils.copyProperties(agentCardDetailInfo, existingAgentInfo, "versionDetails", "latestPublishedVersion");
         
-        // 2. Check if the version exists
-        String versionDataId = form.getName() + "-" + form.getVersion();
-        ConfigQueryChainRequest versionRequest = new ConfigQueryChainRequest();
-        versionRequest.setDataId(versionDataId);
-        versionRequest.setGroup(AGENT_VERSION_GROUP);
-        versionRequest.setTenant(namespaceId);
-        ConfigQueryChainResponse versionResponse = configQueryChainService.handle(versionRequest);
-        
-        if (versionResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-            throw new NacosConfigException("Cannot update agent: Version not found: " + form.getVersion());
-        }
-        
-        BeanUtils.copyProperties(form, existingAgentInfo, "versionDetails", "latestPublishedVersion");
-        
-        if (form.getSetAsLatest() != null && form.getSetAsLatest()) {
+        if (form.getSetAsLatest()) {
             existingAgentInfo.setLatestPublishedVersion(form.getVersion());
             
             List<AgentVersionDetail> updatedVersionDetails = existingAgentInfo.getVersionDetails().stream()
                     .peek(detail -> {
-                        if (detail.getVersion().equals(form.getVersion())) {
+                        if (StringUtils.equals(detail.getVersion(), form.getVersion())) {
                             // Only update the corresponding version
                             detail.setLatest(true);
-                            detail.setUpdatedAt(getCurrentTime());
+                            AgentCardUtil.updateUpdateTime(detail);
                         } else {
                             detail.setLatest(false);
                         }
@@ -293,21 +189,14 @@ public class A2aServerOperationService {
         }
         
         // 3. Update agent version info
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(dataId);
-        configForm.setGroup(groupName);
-        configForm.setNamespaceId(namespaceId);
-        configForm.setContent(JacksonUtils.toJson(existingAgentInfo));
-        configForm.setConfigTags("nacos.internal.config=agent");
-        configForm.setAppName(form.getName());
-        configForm.setSrcUser("nacos");
-        
+        String namespaceId = form.getNamespaceId();
+        ConfigForm configForm = transferVersionInfoToConfigForm(existingAgentInfo, namespaceId);
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setUpdateForExist(Boolean.TRUE);
         configOperationService.publishConfig(configForm, configRequestInfo, null);
         
         // 4. Update agent info
-        ConfigForm versionConfigForm = transferAgentInfoToConfigForm(form);
+        ConfigForm versionConfigForm = transferAgentInfoToConfigForm(agentCardDetailInfo, namespaceId);
         ConfigRequestInfo versionConfigRequestInfo = new ConfigRequestInfo();
         versionConfigRequestInfo.setUpdateForExist(Boolean.TRUE);
         configOperationService.publishConfig(versionConfigForm, versionConfigRequestInfo, null);
@@ -341,8 +230,7 @@ public class A2aServerOperationService {
                 AGENT_GROUP, namespaceId, null);
         
         List<AgentCardVersionInfo> versionInfos = configInfoPage.getPageItems().stream()
-                .map(configInfo -> JacksonUtils.toObj(configInfo.getContent(), AgentCardVersionInfo.class))
-                .toList();
+                .map(configInfo -> JacksonUtils.toObj(configInfo.getContent(), AgentCardVersionInfo.class)).toList();
         
         Page<AgentCardVersionInfo> result = new Page<>();
         result.setPageItems(versionInfos);
@@ -351,5 +239,97 @@ public class A2aServerOperationService {
         result.setPageNumber(pageNo);
         
         return result;
+    }
+    
+    /**
+     * List agent versions.
+     * @param namespaceId namespace id of target agent
+     * @param name        name of target agent
+     * @return agent version detail list
+     */
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosApiException {
+        AgentCardVersionInfo agentCardVersionInfo = queryAgentCardVersionInfo(namespaceId, name);
+        return agentCardVersionInfo.getVersionDetails();
+    }
+    
+    /**
+     * Query Agent Card. If not specified version, query the latest version.
+     *
+     * @param form agent form
+     * @return agent card detail info
+     * @throws NacosApiException nacos api exception
+     */
+    public AgentCardDetailInfo getAgentCard(AgentForm form) throws NacosApiException {
+        String namespaceId = form.getNamespaceId();
+        AgentCardVersionInfo agentCardVersionInfo = queryAgentCardVersionInfo(form);
+        return StringUtils.isEmpty(form.getVersion()) ? queryLatestVersion(agentCardVersionInfo, namespaceId)
+                : queryTargetVersion(agentCardVersionInfo, form.getVersion(), namespaceId);
+    }
+    
+    private AgentCardDetailInfo queryLatestVersion(AgentCardVersionInfo agentCardVersionInfo, String namespaceId)
+            throws NacosApiException {
+        String latestVersion = agentCardVersionInfo.getVersionDetails().stream().filter(AgentVersionDetail::isLatest)
+                .findFirst().orElseThrow(
+                        () -> new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND,
+                                String.format("Agent %s latest version not found", agentCardVersionInfo.getName())))
+                .getVersion();
+        return queryTargetVersion(agentCardVersionInfo, latestVersion, namespaceId);
+    }
+    
+    private AgentCardDetailInfo queryTargetVersion(AgentCardVersionInfo agentCardVersionInfo, String version,
+            String namespaceId) throws NacosApiException {
+        String versionDataId = agentCardVersionInfo.getName() + "-" + version;
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(versionDataId,
+                AGENT_VERSION_GROUP, namespaceId);
+        ConfigQueryChainResponse response = configQueryChainService.handle(request);
+        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND,
+                    String.format("Agent %s version %s not found.", agentCardVersionInfo.getName(), version));
+        }
+        return JacksonUtils.toObj(response.getContent(), AgentCardDetailInfo.class);
+    }
+    
+    private ConfigForm transferVersionInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, String namespaceId) {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(agentCardVersionInfo.getName());
+        configForm.setGroup(AGENT_GROUP);
+        configForm.setNamespaceId(namespaceId);
+        configForm.setContent(JacksonUtils.toJson(agentCardVersionInfo));
+        configForm.setConfigTags("nacos.internal.config=agent");
+        configForm.setAppName(agentCardVersionInfo.getName());
+        configForm.setSrcUser("nacos");
+        configForm.setType(ConfigType.JSON.getType());
+        
+        return configForm;
+    }
+    
+    private ConfigForm transferAgentInfoToConfigForm(AgentCardDetailInfo storageInfo, String namespaceId) {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(storageInfo.getName() + "-" + storageInfo.getVersion());
+        configForm.setGroup(AGENT_VERSION_GROUP);
+        configForm.setNamespaceId(namespaceId);
+        configForm.setContent(JacksonUtils.toJson(storageInfo));
+        configForm.setConfigTags("nacos.internal.config=agent-version");
+        configForm.setAppName(storageInfo.getName());
+        configForm.setSrcUser("nacos");
+        configForm.setType(ConfigType.JSON.getType());
+        
+        return configForm;
+    }
+    
+    private AgentCardVersionInfo queryAgentCardVersionInfo(AgentForm form) throws NacosApiException {
+        return queryAgentCardVersionInfo(form.getNamespaceId(), form.getName());
+    }
+    
+    private AgentCardVersionInfo queryAgentCardVersionInfo(String namespaceId, String name) throws NacosApiException {
+        // Check if the agent exists
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(name, AGENT_GROUP,
+                namespaceId);
+        ConfigQueryChainResponse response = configQueryChainService.handle(request);
+        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_NOT_FOUND,
+                    "Cannot update agent: Agent not found: " + name);
+        }
+        return JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
     }
 }

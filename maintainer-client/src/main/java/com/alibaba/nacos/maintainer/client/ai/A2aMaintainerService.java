@@ -19,7 +19,7 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -59,7 +59,7 @@ public interface A2aMaintainerService {
      * @return agent card with versions
      * @throws NacosException if the agent get fails due to invalid input or internal error
      */
-    AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType) throws NacosException;
+    AgentCardDetailInfo getAgentCardWithVersions(String agentName, String namespaceId, String registrationType) throws NacosException;
     
     /**
      * Get agent card with versions.
@@ -69,7 +69,7 @@ public interface A2aMaintainerService {
      * @return agent card with versions
      * @throws NacosException if the agent get fails due to invalid input or internal error
      */
-    default AgentCardVersionInfo getAgentCardWithVersions(String agentName, String namespaceId) throws NacosException {
+    default AgentCardDetailInfo getAgentCardWithVersions(String agentName, String namespaceId) throws NacosException {
         return getAgentCardWithVersions(agentName, namespaceId, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
     }
     

@@ -249,6 +249,12 @@ public enum ErrorCode {
     
     MCP_SERVER_REF_ENDPOINT_SERVICE_NOT_FOUND(50003, "MCP server ref endpoint service not found"),
     
+    AGENT_NOT_FOUND(50100, "Agent not found"),
+    
+    AGENT_VERSION_NOT_FOUND(50101, "Agent version not found"),
+    
+    AGENT_VERSION_EXIST(50102, "Agent version already existed"),
+    
     /**
      * Config use 100001 ~ 100999.
      **/

@@ -32,7 +32,7 @@ public class AgentVersionDetail {
     
     private String updatedAt;
     
-    private Boolean isLatest;
+    private boolean isLatest;
     
     public String getVersion() {
         return version;
@@ -58,11 +58,11 @@ public class AgentVersionDetail {
         this.updatedAt = updatedAt;
     }
     
-    public Boolean getLatest() {
+    public boolean isLatest() {
         return isLatest;
     }
     
-    public void setLatest(Boolean latest) {
+    public void setLatest(boolean latest) {
         isLatest = latest;
     }
     
