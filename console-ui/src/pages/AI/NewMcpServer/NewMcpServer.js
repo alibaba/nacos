@@ -1327,7 +1327,7 @@ class NewMcpServer extends React.Component {
               {/*{!isEdit && (*/}
 
               {/* 只有在 HTTP 转 MCP 服务开启时才显示后端服务选项 */}
-              {this.state.restToMcpSwitch && (
+              {
                 <FormItem label={locale.backendService}>
                   <RadioGroup
                     disabled={currentVersionExist}
@@ -1355,10 +1355,10 @@ class NewMcpServer extends React.Component {
                     </Radio>
                   </RadioGroup>
                 </FormItem>
-              )}
+              }
 
               {/* HTTP 转 MCP 服务关闭时显示 MCP Server endpoint */}
-              {!this.state.restToMcpSwitch && (
+              {!this.state.useExistService && !this.state.restToMcpSwitch && (
                 <FormItem
                   label={locale.mcpServerEndpoint || 'MCP Server Endpoint'}
                   required
@@ -1421,7 +1421,7 @@ class NewMcpServer extends React.Component {
               )}
 
               {/* 只有在 HTTP 转 MCP 服务开启时才显示服务配置 */}
-              {this.state.restToMcpSwitch && this.state.useExistService && (
+              {this.state.useExistService && (
                 <>
                   <FormItem label={locale.serviceRef} required>
                     <Row gutter={8}>
@@ -1430,7 +1430,7 @@ class NewMcpServer extends React.Component {
                           <p>{currentNamespace}</p>
                         </FormItem>
                       </Col>
-                      <Col span={12}>
+                      <Col span={8}>
                         <FormItem label="service">
                           <Select
                             isPreview={currentVersionExist}
@@ -1453,7 +1453,7 @@ class NewMcpServer extends React.Component {
                           />
                         </FormItem>
                       </Col>
-                      <Col span={8}>
+                      <Col span={6}>
                         <FormItem label={locale.transportProtocol || '传输协议'} required>
                           <Select
                             {...init('serviceTransportProtocol', {
@@ -1489,6 +1489,32 @@ class NewMcpServer extends React.Component {
                           />
                         </FormItem>
                       </Col>
+                      {!this.state.restToMcpSwitch && (
+                        <Col span={6}>
+                          <FormItem label="exportPath">
+                            <Input
+                              isPreview={currentVersionExist}
+                              {...init('exportPath', {
+                                rules: [{ required: true, message: locale.pleaseSelect }],
+                                props: {
+                                  onChange: value => {
+                                    this.setState({
+                                      serverConfig: {
+                                        ...this.state.serverConfig,
+                                        remoteServerConfig: {
+                                          ...this.state.serverConfig?.remoteServerConfig,
+                                          exportPath: value,
+                                        },
+                                      },
+                                    });
+                                  },
+                                },
+                              })}
+                              placeholder={this.field.getValue('exportPath') || '/mcp'}
+                            />
+                          </FormItem>
+                        </Col>
+                      )}
                     </Row>
                   </FormItem>
                 </>
