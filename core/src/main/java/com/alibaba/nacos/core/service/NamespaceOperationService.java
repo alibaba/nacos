@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.namespace.injector.NamespaceDetailInjectorHolder;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -138,7 +139,7 @@ public class NamespaceOperationService {
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc,
             NamespaceTypeEnum type) throws NacosException {
-        isNamespaceExist(namespaceId);
+        validateNamespaceNotExists(namespaceId);
         String typeString = String.valueOf(type.getType());
         namespacePersistService.insertTenantInfoAtomic(typeString, namespaceId, namespaceName, namespaceDesc,
                 DEFAULT_CREATE_SOURCE, System.currentTimeMillis());
@@ -160,19 +161,29 @@ public class NamespaceOperationService {
         namespacePersistService.removeTenantInfoAtomic(DEFAULT_KP, namespaceId);
         return true;
     }
-    
+
     /**
      * check namespace exist.
      */
-    public boolean isNamespaceExist(String namespaceId) throws NacosApiException {
+    public boolean namespaceExists(String namespaceId) {
         if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                    "namespaceId [" + namespaceId + "] is default namespace id and already exist.");
+            return true;
         }
-        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
+        try {
+            return namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0;
+        } catch (Exception e) {
+            Loggers.CORE.error("Failed to query namespace existence for: {}", namespaceId, e);
+            return false;
+        }
+    }
+
+    /**
+     * validate namespace not exists.
+     */
+    public void validateNamespaceNotExists(String namespaceId) throws NacosApiException {
+        if (namespaceExists(namespaceId)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
                     "namespaceId [" + namespaceId + "] already exist.");
         }
-        return false;
     }
 }

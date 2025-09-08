@@ -195,7 +195,7 @@ class NamespaceValidationRequestFilterTest {
         paramInfo.setNamespaceId("existing-namespace");
         List<ParamInfo> paramInfoList = Collections.singletonList(paramInfo);
 
-        when(namespaceOperationService.isNamespaceExist("existing-namespace")).thenReturn(true);
+        when(namespaceOperationService.namespaceExists("existing-namespace")).thenReturn(true);
 
         try (
                 MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
@@ -222,7 +222,7 @@ class NamespaceValidationRequestFilterTest {
         paramInfo.setNamespaceId("non-existing-namespace");
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
 
-        when(namespaceOperationService.isNamespaceExist("non-existing-namespace")).thenReturn(false);
+        when(namespaceOperationService.namespaceExists("non-existing-namespace")).thenReturn(false);
 
         try (
                 MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
@@ -254,8 +254,8 @@ class NamespaceValidationRequestFilterTest {
         paramInfo2.setNamespaceId("non-existing-namespace");
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo1, paramInfo2);
 
-        when(namespaceOperationService.isNamespaceExist("existing-namespace")).thenReturn(true);
-        when(namespaceOperationService.isNamespaceExist("non-existing-namespace")).thenReturn(false);
+        when(namespaceOperationService.namespaceExists("existing-namespace")).thenReturn(true);
+        when(namespaceOperationService.namespaceExists("non-existing-namespace")).thenReturn(false);
 
         try (
                 MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
@@ -285,7 +285,7 @@ class NamespaceValidationRequestFilterTest {
         paramInfo.setNamespaceId("public");
         List<ParamInfo> paramInfoList = Collections.singletonList(paramInfo);
 
-        when(namespaceOperationService.isNamespaceExist("public"))
+        when(namespaceOperationService.namespaceExists("public"))
                 .thenThrow(new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
                         "namespaceId [public] is default namespace id and already exist."));
 
@@ -314,7 +314,7 @@ class NamespaceValidationRequestFilterTest {
         paramInfo.setNamespaceId("test-namespace");
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
 
-        when(namespaceOperationService.isNamespaceExist("test-namespace"))
+        when(namespaceOperationService.namespaceExists("test-namespace"))
                 .thenThrow(new RuntimeException("Database error"));
 
         try (

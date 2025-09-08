@@ -97,14 +97,14 @@ class NamespaceInnerHandlerTest {
     }
     
     @Test
-    void checkNamespaceIdExist() throws NacosException {
-        when(namespaceOperationService.isNamespaceExist(NAMESPACE_ID)).thenReturn(true);
+    void checkNamespaceIdExist() {
+        when(namespaceOperationService.namespaceExists(NAMESPACE_ID)).thenReturn(true);
         assertTrue(namespaceInnerHandler.checkNamespaceIdExist(NAMESPACE_ID));
     }
     
     @Test
-    void checkNamespaceIdExistWithException() throws NacosException {
-        when(namespaceOperationService.isNamespaceExist(NAMESPACE_ID)).thenThrow(new NacosApiException());
+    void checkNamespaceIdExistWithException() {
+        when(namespaceOperationService.namespaceExists(NAMESPACE_ID)).thenThrow(new NacosApiException());
         assertTrue(namespaceInnerHandler.checkNamespaceIdExist(NAMESPACE_ID));
     }
 }

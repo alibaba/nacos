@@ -17,7 +17,6 @@
 package com.alibaba.nacos.console.handler.impl.inner.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
@@ -71,11 +70,7 @@ public class NamespaceInnerHandler implements NamespaceHandler {
     
     @Override
     public Boolean checkNamespaceIdExist(String namespaceId) {
-        try {
-            return namespaceOperationService.isNamespaceExist(namespaceId);
-        } catch (NacosApiException e) {
-            return true;
-        }
+        return namespaceOperationService.namespaceExists(namespaceId);
     }
 }
 
