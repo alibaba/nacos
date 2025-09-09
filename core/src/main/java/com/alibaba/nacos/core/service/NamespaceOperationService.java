@@ -150,7 +150,7 @@ public class NamespaceOperationService {
      * edit namespace.
      */
     public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc) {
-        namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);                                                                                                          
+        namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
         return true;
     }
     
