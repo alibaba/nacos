@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -24,8 +26,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.api.config.model.SameConfigPolicy;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.sql.Timestamp;
@@ -73,6 +73,21 @@ public interface ConfigInfoPersistService {
      */
     ConfigOperateResult addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Map<String, Object> configAdvanceInfo);
+    
+    
+    /**
+     * Update config info metadata config operate result.
+     *
+     * @param dataId      the data id
+     * @param group       the group
+     * @param tenant      the tenant
+     * @param configTags  the config tags
+     * @param description the description
+     * @return the config operate result
+     * @throws NacosException the nacos exception
+     */
+    ConfigOperateResult updateConfigInfoMetadata(final String dataId, final String group, final String tenant,
+            final String configTags, final String description) throws NacosException;
     
     /**
      * insert or update.

@@ -77,6 +77,25 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
+    public boolean updateConfigMetadata(String dataId, String groupName, String namespaceId, String description,
+            String configTags) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("desc", description);
+        params.put("configTags", configTags);
+        RequestResource resource = buildRequestResource(namespaceId, groupName, dataId);
+        HttpRequest.Builder builder = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/metadata").setParamValue(params);
+        HttpRequest httpRequest = builder.build();
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
+        return result.getData();
+    }
+    
+    @Override
     public boolean publishBetaConfig(String dataId, String groupName, String namespaceId, String content,
             String appName, String srcUser, String configTags, String desc, String type, String betaIps)
             throws NacosException {

@@ -904,6 +904,33 @@ public class ConfigMigrateService {
     }
     
     /**
+     * Update config metadata migrate.
+     *
+     * @param dataId      the data id
+     * @param group       the group
+     * @param namespaceId the namespace id
+     * @param configTags  the config tags
+     * @param description the description
+     * @throws NacosException the nacos exception
+     */
+    public void updateConfigMetadataMigrate(final String dataId,
+            final String group, final String namespaceId, final String configTags, final String description)
+            throws NacosException {
+        if (!StringUtils.equals(namespaceId, namespacePublic) || !ConfigCompatibleConfig.getInstance()
+                .isNamespaceCompatibleMode()) {
+            return;
+        }
+        ConfigOperateResult configOperateResult;
+        configOperateResult = configInfoPersistService.updateConfigInfoMetadata(dataId, group, StringUtils.EMPTY, configTags, description);
+        if (!configOperateResult.isSuccess()) {
+            LOGGER.warn("[update-config-metadata-fail] dataId: {}, group: {}, namespaceId: {}",
+                    dataId, group, namespaceId);
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                    "update metadata fail.");
+        }
+    }
+    
+    /**
      * Publish config gray migrate.
      *
      * @param grayType          the gray type

@@ -231,6 +231,29 @@ public class ConfigControllerV3 {
     }
     
     /**
+     * Publish config metadata result.
+     *
+     * @param request    the request
+     * @param configForm the config form
+     * @return the result
+     * @throws NacosException the nacos exception
+     */
+    @PostMapping("/metadata")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> publishConfigMetadata(HttpServletRequest request, ConfigFormV3 configForm)
+            throws NacosException {
+        configForm.validate();
+        String configTags = configForm.getConfigTags();
+        String description = configForm.getDesc();
+        String dataId = configForm.getDataId();
+        String group = configForm.getGroup();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags, description);
+        configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags, description);
+        return Result.success(true);
+    }
+    
+    /**
      * Delete configuration.
      */
     @DeleteMapping
