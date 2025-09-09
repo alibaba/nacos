@@ -17,11 +17,13 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.service.A2aServerOperationService;
+import com.alibaba.nacos.ai.utils.AgentRequestUtil;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -39,7 +41,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,9 +71,10 @@ public class A2aAdminController {
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> registerAgent(@RequestBody AgentDetailForm form) throws NacosException {
+    public Result<String> registerAgent(AgentCardForm form) throws NacosException {
         form.validate();
-        a2aServerOperationService.registerAgent(form);
+        AgentCard agentCard = AgentRequestUtil.parseAgentCard(form);
+        a2aServerOperationService.registerAgent(agentCard, form.getNamespaceId(), form.getRegistrationType());
         return Result.success("ok");
     }
     
@@ -87,7 +89,8 @@ public class A2aAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<AgentCardDetailInfo> getAgentCard(AgentForm form) throws NacosApiException {
         form.validate();
-        return Result.success(a2aServerOperationService.getAgentCard(form));
+        return Result.success(
+                a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion()));
     }
     
     /**
@@ -99,9 +102,11 @@ public class A2aAdminController {
      */
     @PutMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> updateAgentCard(@RequestBody AgentUpdateForm form) throws NacosException {
+    public Result<String> updateAgentCard(AgentCardUpdateForm form) throws NacosException {
         form.validate();
-        a2aServerOperationService.updateAgentCard(form);
+        AgentCard agentCard = AgentRequestUtil.parseAgentCard(form);
+        a2aServerOperationService.updateAgentCard(agentCard, form.getNamespaceId(), form.getRegistrationType(),
+                form.getSetAsLatest());
         return Result.success("ok");
     }
     
@@ -116,7 +121,7 @@ public class A2aAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteAgent(AgentForm form) throws NacosException {
         form.validate();
-        a2aServerOperationService.deleteAgent(form);
+        a2aServerOperationService.deleteAgent(form.getNamespaceId(), form.getName(), form.getVersion());
         return Result.success("ok");
     }
     
@@ -134,7 +139,9 @@ public class A2aAdminController {
             throws NacosException {
         agentListForm.validate();
         pageForm.validate();
-        return Result.success(a2aServerOperationService.listAgents(agentListForm, pageForm));
+        return Result.success(
+                a2aServerOperationService.listAgents(agentListForm.getNamespaceId(), agentListForm.getName(),
+                        agentListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
     /**

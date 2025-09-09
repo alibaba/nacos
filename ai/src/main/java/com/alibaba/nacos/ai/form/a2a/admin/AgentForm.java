@@ -17,14 +17,16 @@
 
 package com.alibaba.nacos.ai.form.a2a.admin;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.Serial;
 import java.util.Objects;
 
 import static com.alibaba.nacos.api.ai.constant.AiConstants.A2a.A2A_DEFAULT_NAMESPACE;
-import static com.alibaba.nacos.api.ai.constant.AiConstants.A2a.A2A_ENDPOINT_TYPE_URL;
 
 /**
  * Agent form.
@@ -42,15 +44,19 @@ public class AgentForm implements NacosForm {
     
     private String version;
     
-    private String registrationType = A2A_ENDPOINT_TYPE_URL;
+    private String registrationType;
     
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
+        if (StringUtils.isEmpty(name)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'name' type String is not present");
+        }
     }
     
     protected void fillDefaultNamespaceId() {
-        if (namespaceId == null) {
+        if (StringUtils.isEmpty(namespaceId)) {
             namespaceId = A2A_DEFAULT_NAMESPACE;
         }
     }

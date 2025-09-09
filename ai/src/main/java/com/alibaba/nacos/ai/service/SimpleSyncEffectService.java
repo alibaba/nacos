@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The simple implementation of {@link McpServerSyncEffectService}. Implemented by direct waiting time.
+ * The simple implementation of {@link SyncEffectService}. Implemented by direct waiting time.
  *
  * <p>
  *     This implementation is a very simple one. The best expected one is listen
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Service
-public class SimpleMcpServerSyncEffectService implements McpServerSyncEffectService {
+public class SimpleSyncEffectService implements SyncEffectService {
     
     @Override
     public void toSync(ConfigForm configForm, long startTimeStamp, long timeout, TimeUnit timeUnit) {

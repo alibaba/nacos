@@ -54,7 +54,20 @@ public interface A2aMaintainerService {
      * @return true if the agent is registered successfully, false otherwise
      * @throws NacosException if the agent registration fails due to invalid input or internal error
      */
-    boolean registerAgent(AgentCard agentCard, String namespaceId) throws NacosException;
+    default boolean registerAgent(AgentCard agentCard, String namespaceId) throws NacosException {
+        return registerAgent(agentCard, namespaceId, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
+    }
+    
+    /**
+     * Register agent.
+     *
+     * @param agentCard the agent card detail to register
+     * @param namespaceId the namespace id
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @return true if the agent is registered successfully, false otherwise
+     * @throws NacosException if the agent registration fails due to invalid input or internal error
+     */
+    boolean registerAgent(AgentCard agentCard, String namespaceId, String registrationType) throws NacosException;
     
     /**
      * Get agent card from default namespace.
@@ -76,7 +89,7 @@ public interface A2aMaintainerService {
      * @throws NacosException if the agent get fails due to invalid input or internal error
      */
     default AgentCardDetailInfo getAgentCard(String agentName, String namespaceId) throws NacosException {
-        return getAgentCard(agentName, namespaceId, AiConstants.A2a.A2A_ENDPOINT_TYPE_URL);
+        return getAgentCard(agentName, namespaceId, StringUtils.EMPTY);
     }
     
     /**
@@ -84,7 +97,7 @@ public interface A2aMaintainerService {
      *
      * @param agentName   the agent name
      * @param namespaceId the namespace id
-     * @param registrationType the registration type
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
      * @return agent card
      * @throws NacosException if the agent get fails due to invalid input or internal error
      */
@@ -103,14 +116,43 @@ public interface A2aMaintainerService {
     }
     
     /**
-     * Update agent card.
+     * Update agent card and set as latest version.
      *
      * @param agentCard the agent card detail to update
      * @param namespaceId the namespace id
      * @return true if the agent is updated successfully, false otherwise
      * @throws NacosException if the agent update fails due to invalid input or internal error
      */
-    boolean updateAgentCard(AgentCard agentCard, String namespaceId) throws NacosException;
+    default boolean updateAgentCard(AgentCard agentCard, String namespaceId) throws NacosException {
+        return updateAgentCard(agentCard, namespaceId, true);
+    }
+    
+    /**
+     * Update agent card.
+     *
+     * @param agentCard the agent card detail to update
+     * @param namespaceId the namespace id
+     * @param setAsLatest whether set as latest version
+     * @return true if the agent is updated successfully, false otherwise
+     * @throws NacosException if the agent update fails due to invalid input or internal error
+     */
+    default boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest)
+            throws NacosException {
+        return updateAgentCard(agentCard, namespaceId, setAsLatest, StringUtils.EMPTY);
+    }
+    
+    /**
+     * Update agent card.
+     *
+     * @param agentCard         the agent card detail to update
+     * @param namespaceId       the namespace id
+     * @param setAsLatest       whether set as latest version
+     * @param registrationType  {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @return true if the agent is updated successfully, false otherwise
+     * @throws NacosException if the agent update fails due to invalid input or internal error
+     */
+    boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest, String registrationType)
+            throws NacosException;
     
     /**
      * Delete agent from default namespace.
@@ -236,7 +278,8 @@ public interface A2aMaintainerService {
      * @return page of agent cards
      * @throws NacosException if the agent list fails due to invalid input or internal error
      */
-    default Page<AgentCardVersionInfo> listAgentCards(String namespaceId, int pageNo, int pageSize) throws NacosException {
+    default Page<AgentCardVersionInfo> listAgentCards(String namespaceId, int pageNo, int pageSize)
+            throws NacosException {
         return listAgentCards(namespaceId, StringUtils.EMPTY, pageNo, pageSize);
     }
     

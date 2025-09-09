@@ -24,13 +24,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SimpleMcpServerSyncEffectServiceTest {
+class SimpleSyncEffectServiceTest {
     
-    SimpleMcpServerSyncEffectService syncEffectService;
+    SimpleSyncEffectService syncEffectService;
     
     @BeforeEach
     void setUp() {
-        syncEffectService = new SimpleMcpServerSyncEffectService();
+        syncEffectService = new SimpleSyncEffectService();
     }
     
     @Test

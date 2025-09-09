@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardWrapper;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -210,11 +209,15 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean registerAgent(AgentCard agentCard, String namespaceId) throws NacosException {
-        AgentCardWrapper agentCardWrapper = new AgentCardWrapper(agentCard, namespaceId);
-        String agentCardJson = JacksonUtils.toJson(agentCardWrapper);
+    public boolean registerAgent(AgentCard agentCard, String namespaceId, String registrationType)
+            throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentCard.getName());
-        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST).setBody(agentCardJson)
+        Map<String, String> params = new HashMap<>(4);
+        params.put("agentCard", JacksonUtils.toJson(agentCard));
+        params.put("namespaceId", namespaceId);
+        params.put("name", agentCard.getName());
+        params.put("registrationType", registrationType);
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
         Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
@@ -244,11 +247,15 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean updateAgentCard(AgentCard agentCard, String namespaceId) throws NacosException {
-        AgentCardWrapper agentCardWrapper = new AgentCardWrapper(agentCard, namespaceId);
-        String agentCardJson = JacksonUtils.toJson(agentCardWrapper);
+    public boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest, String registrationType) throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentCard.getName());
-        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT).setBody(agentCardJson)
+        Map<String, String> params = new HashMap<>(5);
+        params.put("agentCard", JacksonUtils.toJson(agentCard));
+        params.put("namespaceId", namespaceId);
+        params.put("name", agentCard.getName());
+        params.put("setAsLatest", String.valueOf(setAsLatest));
+        params.put("registrationType", registrationType);
+        HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
         Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
@@ -269,7 +276,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(request);
-        Result<AgentCard> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<AgentCard>>() {
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
         });
         
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());

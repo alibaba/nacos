@@ -73,7 +73,7 @@ public class A2aInnerHandler implements A2aHandler {
     }
 
     @Override
-    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) {
+    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
         return a2aServerOperationService.listAgents(agentListForm, pageForm);
     }
     

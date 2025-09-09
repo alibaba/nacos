@@ -25,16 +25,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class McpServerSyncEffectServiceTest {
+class SyncEffectServiceTest {
     
     private AtomicBoolean invokeMark;
     
-    private McpServerSyncEffectService syncEffectService;
+    private SyncEffectService syncEffectService;
     
     @BeforeEach
     void setUp() {
         invokeMark = new AtomicBoolean();
-        syncEffectService = new MockMcpServerSyncEffectService();
+        syncEffectService = new MockSyncEffectService();
     }
     
     @Test
@@ -43,7 +43,7 @@ class McpServerSyncEffectServiceTest {
         assertTrue(invokeMark.get());
     }
     
-    private class MockMcpServerSyncEffectService implements McpServerSyncEffectService {
+    private class MockSyncEffectService implements SyncEffectService {
         
         @Override
         public void toSync(ConfigForm configForm, long startTimeStamp, long timeout, TimeUnit timeUnit) {
