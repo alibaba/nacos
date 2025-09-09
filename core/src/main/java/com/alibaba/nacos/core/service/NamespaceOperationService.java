@@ -166,10 +166,10 @@ public class NamespaceOperationService {
      * check namespace exist.
      */
     public boolean namespaceExists(String namespaceId) {
-        if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
-            return true;
-        }
         try {
+            if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
+                return true;
+            }
             return namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0;
         } catch (Exception e) {
             Loggers.CORE.error("Namespace validation query db error for namespace: {}, exception: {}", namespaceId, e);

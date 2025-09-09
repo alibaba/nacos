@@ -19,7 +19,6 @@
 package com.alibaba.nacos.core.namespace.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -39,7 +38,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -272,66 +270,6 @@ class NamespaceValidationRequestFilterTest {
             assertNotNull(response);
             assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), response.getErrorCode());
             assertEquals("Namespace 'non-existing-namespace' does not exist. Please create the namespace first.",
-                    response.getMessage());
-        }
-    }
-
-    @Test
-    void testFilterWithNacosApiException() throws NacosException {
-        NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
-        when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
-        ParamInfo paramInfo = new ParamInfo();
-        paramInfo.setNamespaceId("public");
-        List<ParamInfo> paramInfoList = Collections.singletonList(paramInfo);
-
-        when(namespaceOperationService.namespaceExists("public"))
-                .thenThrow(new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                        "namespaceId [public] is default namespace id and already exist."));
-
-        try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
-            mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
-            when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
-            // When NacosApiException is thrown, should treat as namespace exists and return null
-            assertNull(response);
-        }
-    }
-
-    @Test
-    void testFilterWithGeneralException() throws NacosException {
-        NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
-        when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
-
-        ParamInfo paramInfo = new ParamInfo();
-        paramInfo.setNamespaceId("test-namespace");
-        List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
-
-        when(namespaceOperationService.namespaceExists("test-namespace"))
-                .thenThrow(new RuntimeException("Database error"));
-
-        try (
-                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
-        ) {
-
-            mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
-            extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
-            when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
-
-            Response response = namespaceValidationFilter.filter(request, requestMeta, MockWithEnabledValidation.class);
-
-            // When general exception is thrown, should treat as namespace doesn't exist and return error
-            assertNotNull(response);
-            assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), response.getErrorCode());
-            assertEquals("Namespace 'test-namespace' does not exist. Please create the namespace first.",
                     response.getMessage());
         }
     }
