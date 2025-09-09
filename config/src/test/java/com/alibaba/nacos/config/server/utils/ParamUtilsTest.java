@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -302,4 +303,116 @@ class ParamUtilsTest {
         assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", UUID.randomUUID().toString()));
     }
     
+    // Does not encode when name is already valid
+    @Test
+    void testUsageDoesNotEncodeValidNames() {
+        String input = "abc123";
+        assertTrue(ParamUtils.isValid(input));
+        String processed = input;
+        if (!ParamUtils.isValid(processed)) {
+            processed = ParamUtils.encodeName(processed);
+        }
+        assertEquals(input, processed);
+    }
+    
+    // Round-trip encode/decode when input contains a space
+    @Test
+    void testEncodeAndDecodeWhenNameContainsSpace() {
+        String input = "hello world";
+        assertFalse(ParamUtils.isValid(input));
+        String encoded = ParamUtils.encodeName(input);
+        assertTrue(ParamUtils.isEncoded(encoded));
+        assertTrue(encoded.contains("_0020"));
+        assertEquals(input, ParamUtils.decodeName(encoded));
+    }
+    
+    // Valid special characters (._:-) should be preserved without encoding
+    @Test
+    void testValidSpecialCharsAreKept() {
+        String input = "name_ok.1:2";
+        assertTrue(ParamUtils.isValid(input));
+        String processed = input;
+        if (!ParamUtils.isValid(processed)) {
+            processed = ParamUtils.encodeName(processed);
+        }
+        assertEquals(input, processed);
+    }
+    
+    // Round-trip encode/decode for mixed unicode letters and ASCII
+    @Test
+    void testRoundTripUnicodeChars() {
+        String input = " Ω test";
+        assertFalse(ParamUtils.isValid(input));
+        String encoded = ParamUtils.encodeName(input);
+        String decoded = ParamUtils.decodeName(encoded);
+        assertEquals(input, decoded);
+    }
+    
+    // Input starts with underscore followed by hex-like sequence; verify behavior policy
+    @Test
+    void testUnderscoreFollowedByHexAmbiguityHandledByPolicy() {
+        String original = "1 _abcd";
+        if (!ParamUtils.isValid(original)) {
+            String processed = ParamUtils.encodeName(original);
+            assertEquals(original, ParamUtils.decodeName(processed));
+        }
+    }
+    
+    // Round-trip for extreme boundary code points (NUL and U+FFFF)
+    @Test
+    void testBoundaryCharacters() {
+        String input = "\u0000\uFFFF";
+        String encoded = ParamUtils.encodeName(input);
+        String decoded = ParamUtils.decodeName(encoded);
+        assertEquals(input, decoded);
+    }
+    
+    // Encoding keeps empty string as-is and preserves a single underscore
+    @Test
+    void testEncodeKeepsEmptyAndUnderscore() {
+        String empty = "";
+        String encodedEmpty = ParamUtils.encodeName(empty);
+        assertEquals("", encodedEmpty);
+        assertFalse(ParamUtils.isEncoded(encodedEmpty));
+        
+        String underscoreOnly = "_";
+        assertTrue(ParamUtils.isValid(underscoreOnly));
+        String encodedUnderscore = ParamUtils.encodeName(underscoreOnly);
+        assertEquals(underscoreOnly, encodedUnderscore);
+        assertFalse(ParamUtils.isEncoded(encodedUnderscore));
+    }
+    
+    // Encoding is idempotent for already-encoded output; decode restores original
+    @Test
+    void testAlreadyEncodedStringIsIdempotentOnEncode() {
+        String original = "with space and Ω and tab\t";
+        String first = ParamUtils.encodeName(original);
+        assertTrue(ParamUtils.isEncoded(first));
+        String second = ParamUtils.encodeName(first);
+        // encodeName should not double-encode an already valid string
+        assertEquals(first, second);
+        // decode should restore original
+        assertEquals(original, ParamUtils.decodeName(first));
+    }
+    
+    // Round-trip for mixture of ASCII, control (tab), and underscore suffix
+    @Test
+    void testMixedUnicodeAndControlCharactersRoundTrip() {
+        String original = "A B\tC_";
+        String encoded = ParamUtils.encodeName(original);
+        assertTrue(ParamUtils.isEncoded(encoded));
+        String decoded = ParamUtils.decodeName(encoded);
+        assertEquals(original, decoded);
+    }
+    
+    // Decoding a string with encoded prefix returns body; encoding leaves valid input unchanged
+    @Test
+    void testDecodeNameWithFakeEncodedPrefixBody() {
+        String fake = "_-.SYSENC:hello";
+        // This string is already valid; encodeName should return as-is
+        assertTrue(ParamUtils.isValid(fake));
+        assertEquals(fake, ParamUtils.encodeName(fake));
+        // decodeName should strip prefix and return body unchanged
+        assertEquals("hello", ParamUtils.decodeName(fake));
+    }
 }

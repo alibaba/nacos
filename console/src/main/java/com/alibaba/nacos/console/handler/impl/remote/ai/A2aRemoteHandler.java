@@ -17,12 +17,15 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.ai.utils.AgentCardUtil;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.A2aHandler;
@@ -30,8 +33,11 @@ import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * A2aRemoteHandler.
@@ -51,13 +57,13 @@ public class A2aRemoteHandler implements A2aHandler {
     
     @Override
     public void registerAgent(AgentDetailForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().registerAgent(transferAgentCard(form));
+        clientHolder.getAiMaintainerService().registerAgent(AgentCardUtil.buildAgentCard(form));
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().getAgentCardWithVersions(form.getName(), form.getNamespaceId(),
-                form.getRegistrationType());
+    public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
+        return clientHolder.getAiMaintainerService()
+                .getAgentCard(form.getName(), form.getNamespaceId(), form.getRegistrationType());
     }
     
     @Override
@@ -67,34 +73,22 @@ public class A2aRemoteHandler implements A2aHandler {
     
     @Override
     public void updateAgentCard(AgentUpdateForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().updateAgentCard(transferAgentCard(form), form.getNamespaceId());
+        clientHolder.getAiMaintainerService()
+                .updateAgentCard(AgentCardUtil.buildAgentCard(form), form.getNamespaceId());
     }
     
     @Override
-    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) {
-        return null;
+    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
+        AiMaintainerService aiMaintainerService = clientHolder.getAiMaintainerService();
+        return Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(agentListForm.getSearch())
+                ? aiMaintainerService.searchAgentCardsByName(agentListForm.getNamespaceId(), agentListForm.getName(),
+                pageForm.getPageNo(), pageForm.getPageSize())
+                : aiMaintainerService.listAgentCards(agentListForm.getNamespaceId(), agentListForm.getName(),
+                        pageForm.getPageNo(), pageForm.getPageSize());
     }
     
-    private AgentCard transferAgentCard(AgentDetailForm form) {
-        AgentCard agentCard = new AgentCard();
-        agentCard.setProtocolVersion(form.getProtocolVersion());
-        agentCard.setName(form.getName());
-        agentCard.setDescription(form.getDescription());
-        agentCard.setUrl(form.getUrl());
-        agentCard.setPreferredTransport(form.getPreferredTransport());
-        agentCard.setAdditionalInterfaces(form.getAdditionalInterfaces());
-        agentCard.setIconUrl(form.getIconUrl());
-        agentCard.setProvider(form.getProvider());
-        agentCard.setVersion(form.getVersion());
-        agentCard.setDocumentationUrl(form.getDocumentationUrl());
-        agentCard.setCapabilities(form.getCapabilities());
-        agentCard.setSecuritySchemes(form.getSecuritySchemes());
-        agentCard.setSecurity(form.getSecurity());
-        agentCard.setDefaultInputModes(form.getDefaultInputModes());
-        agentCard.setDefaultOutputModes(form.getDefaultOutputModes());
-        agentCard.setSkills(form.getSkills());
-        agentCard.setSupportsAuthenticatedExtendedCard(form.getSupportsAuthenticatedExtendedCard());
-        
-        return agentCard;
+    @Override
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
+        return clientHolder.getAiMaintainerService().listAllVersionOfAgent(name, namespaceId);
     }
 }

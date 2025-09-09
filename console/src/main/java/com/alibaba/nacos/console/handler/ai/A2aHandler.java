@@ -21,10 +21,14 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
+
+import java.util.List;
 
 /**
  * A2a handler.
@@ -48,7 +52,7 @@ public interface A2aHandler {
      * @return agent card
      * @throws NacosException nacos exception
      */
-    AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) throws NacosException;
+    AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException;
     
     /**
      * Delete agent.
@@ -74,5 +78,14 @@ public interface A2aHandler {
      * @return agent card list
      * @throws NacosException nacos exception
      */
-    Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm);
+    Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException;
+    
+    /**
+     * List agent versions.
+     * @param namespaceId namespace id of target agent
+     * @param name        name of target agent
+     * @return agent version detail list
+     * @throws NacosException nacos exception
+     */
+    List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException;
 }

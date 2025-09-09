@@ -21,7 +21,9 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -41,6 +43,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * Console A2a Controller.
  *
@@ -50,13 +54,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(Constants.A2A.CONSOLE_PATH)
 public class ConsoleA2aController {
-
+    
     private final A2aProxy a2aProxy;
-
+    
     public ConsoleA2aController(A2aProxy a2aProxy) {
         this.a2aProxy = a2aProxy;
     }
-
+    
     /**
      * register agent.
      *
@@ -71,7 +75,7 @@ public class ConsoleA2aController {
         a2aProxy.registerAgent(form);
         return Result.success("ok");
     }
-
+    
     /**
      * get agent card.
      *
@@ -81,11 +85,11 @@ public class ConsoleA2aController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<AgentCardVersionInfo> getAgentCard(AgentForm form) throws NacosException {
+    public Result<AgentCardDetailInfo> getAgentCard(AgentForm form) throws NacosException {
         form.validate();
         return Result.success(a2aProxy.getAgentCard(form));
     }
-
+    
     /**
      * update agent.
      *
@@ -100,7 +104,7 @@ public class ConsoleA2aController {
         a2aProxy.updateAgentCard(form);
         return Result.success("ok");
     }
-
+    
     /**
      * delete agent.
      *
@@ -115,7 +119,7 @@ public class ConsoleA2aController {
         a2aProxy.deleteAgent(form);
         return Result.success("ok");
     }
-
+    
     /**
      * list agents.
      *
@@ -126,10 +130,25 @@ public class ConsoleA2aController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<AgentCardVersionInfo>> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
+    public Result<Page<AgentCardVersionInfo>> listAgents(AgentListForm agentListForm, PageForm pageForm)
+            throws NacosException {
         agentListForm.validate();
         pageForm.validate();
         return Result.success(a2aProxy.listAgents(agentListForm, pageForm));
+    }
+    
+    /**
+     * List all versions for target Agent.
+     *
+     * @param agentForm agent form
+     * @return all version for target agent.
+     * @throws NacosException nacos exception
+     */
+    @GetMapping("/version/list")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm) throws NacosException {
+        agentForm.validate();
+        return Result.success(a2aProxy.listAgentVersions(agentForm.getNamespaceId(), agentForm.getName()));
     }
 }
 

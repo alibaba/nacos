@@ -41,6 +41,7 @@ class AgentDetail extends React.Component {
 
   componentDidMount() {
     this.loadAgentDetail();
+    this.loadVersionList();
   }
 
   loadAgentDetail = () => {
@@ -68,7 +69,6 @@ class AgentDetail extends React.Component {
           this.setState(
             {
               agentData,
-              versionList: agentData.versionDetails || [],
             },
             () => {
               console.log('State updated, agentData:', this.state.agentData);
@@ -82,6 +82,36 @@ class AgentDetail extends React.Component {
       error: () => {
         this.setState({ loading: false });
         Message.error('获取Agent详情失败');
+      },
+    });
+  };
+
+  loadVersionList = () => {
+    const agentName = getParams('name');
+    const namespaceId = getParams('namespace') || 'public';
+
+    if (!agentName) {
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('name', agentName);
+    params.append('namespaceId', namespaceId);
+
+    request({
+      url: `/v3/console/ai/a2a/version/list?${params.toString()}`,
+      success: data => {
+        if (data && (data.code === 0 || data.code === 200) && data.data) {
+          this.setState({
+            versionList: data.data,
+          });
+        } else {
+          console.log('Failed to load version list:', data);
+          Message.error(data?.message || '获取版本列表失败');
+        }
+      },
+      error: () => {
+        Message.error('获取版本列表失败');
       },
     });
   };

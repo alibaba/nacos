@@ -22,12 +22,19 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.service.A2aServerOperationService;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.A2aHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.model.form.PageForm;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * A2a inner handler.
@@ -35,6 +42,8 @@ import org.springframework.stereotype.Component;
  * @author KiteSoar
  */
 @Component
+@EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class A2aInnerHandler implements A2aHandler {
     
     private final A2aServerOperationService a2aServerOperationService;
@@ -49,7 +58,7 @@ public class A2aInnerHandler implements A2aHandler {
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) {
+    public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
         return a2aServerOperationService.getAgentCard(form);
     }
     
@@ -66,5 +75,10 @@ public class A2aInnerHandler implements A2aHandler {
     @Override
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) {
         return a2aServerOperationService.listAgents(agentListForm, pageForm);
+    }
+    
+    @Override
+    public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
+        return a2aServerOperationService.listAgentVersions(namespaceId, name);
     }
 }

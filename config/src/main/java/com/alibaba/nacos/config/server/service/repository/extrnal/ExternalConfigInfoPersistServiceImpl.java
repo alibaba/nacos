@@ -171,6 +171,38 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         });
     }
     
+    @Override
+    public ConfigOperateResult updateConfigInfoMetadata(final String dataId, final String group, final String tenant,
+            String configTags, String description) throws NacosException {
+        ConfigInfoWrapper configInfoWrapper = findConfigInfo(dataId, group, tenant);
+        if (configInfoWrapper == null) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "config is not found for dataId=" + dataId + ", group=" + group);
+        }
+        return tjt.execute(status -> {
+            try {
+                Long configId = configInfoWrapper.getId();
+                if (description != null) {
+                    ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO);
+                    jt.update(
+                            configInfoMapper.update(Arrays.asList("gmt_modified@NOW()", "c_desc"), Arrays.asList("id")),
+                            description, configId);
+                }
+                if (configTags != null) {
+                    removeTagByIdAtomic(configId);
+                    addConfigTagsRelation(configId, configTags, dataId, group, tenant);
+                }
+                return new ConfigOperateResult(true);
+                
+            } catch (CannotGetJdbcConnectionException e) {
+                LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+                throw e;
+            }
+        });
+    }
+    
+    
     /**
      * insert or update config.
      *
@@ -1092,7 +1124,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 return configAllInfos;
             }
             for (ConfigAllInfo configAllInfo : configAllInfos) {
-                List<String> configTagList = selectTagByConfig(configAllInfo.getDataId(), configAllInfo.getGroup(), configAllInfo.getTenant());
+                List<String> configTagList = selectTagByConfig(configAllInfo.getDataId(), configAllInfo.getGroup(),
+                        configAllInfo.getTenant());
                 if (CollectionUtils.isNotEmpty(configTagList)) {
                     StringBuilder configTags = new StringBuilder();
                     for (String configTag : configTagList) {

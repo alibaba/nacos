@@ -51,6 +51,8 @@ public class ParamUtils {
     
     private static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
     
+    private static final String ENCODE_PREFIX = "_-.SYSENC:";
+    
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
      * cannot be empty.
@@ -237,4 +239,70 @@ public class ParamUtils {
         }
     }
     
+    /**
+     * encode name.
+     */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
+    public static String encodeName(String name) {
+        if (isValid(name)) {
+            return name;
+        }
+        
+        StringBuilder sb = new StringBuilder(ENCODE_PREFIX);
+        for (char ch : name.toCharArray()) {
+            if (Character.isLetterOrDigit(ch) || (isValidChar(ch) && ch != '_')) {
+                // Keep letters, numbers, valid characters and non-underscores
+                sb.append(ch);
+            } else {
+                sb.append("_").append(String.format("%04x", (int) ch));
+            }
+        }
+        return sb.toString();
+    }
+    
+    public static boolean isEncoded(String name) {
+        return name != null && name.startsWith(ENCODE_PREFIX);
+    }
+    
+    /**
+     * decode name.
+     */
+    public static String decodeName(String encoded) {
+        if (!isEncoded(encoded)) {
+            return encoded;
+        }
+        
+        String body = encoded.substring(ENCODE_PREFIX.length());
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < body.length();) {
+            char ch = body.charAt(i);
+            if (ch == '_' && i + 5 <= body.length()) {
+                String hexPart = body.substring(i + 1, i + 5);
+                if (isHex(hexPart)) {
+                    try {
+                        int codePoint = Integer.parseInt(hexPart, 16);
+                        sb.append((char) codePoint);
+                        i += 5;
+                        continue;
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("invalid encoded name");
+                    }
+                }
+            }
+            
+            sb.append(ch);
+            i++;
+        }
+        return sb.toString();
+    }
+    
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
+    private static boolean isHex(String s) {
+        for (char c : s.toCharArray()) {
+            if (!Character.isDigit(c) && (c < 'a' || c > 'f') && (c < 'A' || c > 'F')) {
+                return false;
+            }
+        }
+        return s.length() == 4;
+    }
 }
