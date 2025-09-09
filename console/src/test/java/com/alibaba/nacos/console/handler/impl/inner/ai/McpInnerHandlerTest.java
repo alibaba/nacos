@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.McpServerImportService;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -43,11 +44,14 @@ class McpInnerHandlerTest {
     @Mock
     McpServerOperationService mcpServerOperationService;
     
+    @Mock
+    McpServerImportService mcpServerImportService;
+    
     McpInnerHandler mcpInnerHandler;
     
     @BeforeEach
     void setUp() {
-        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService);
+        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService, mcpServerImportService);
     }
     
     @Test

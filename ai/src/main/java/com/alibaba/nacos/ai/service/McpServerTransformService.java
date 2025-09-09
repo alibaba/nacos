@@ -72,6 +72,12 @@ public class McpServerTransformService {
     
     private static final String HTTPS_PREFIX = "https://";
     
+    private static final String PROTOCOL_JAVASCRIPT = "javascript:";
+    
+    private static final String PROTOCOL_DATA = "data:";
+    
+    private static final String PROTOCOL_FILE = "file:";
+    
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
@@ -645,7 +651,7 @@ public class McpServerTransformService {
         
         // Basic security checks - prevent potential malicious URLs
         String lowerUrl = url.toLowerCase();
-        if (lowerUrl.contains("javascript:") || lowerUrl.contains("data:") || lowerUrl.contains("file:")) {
+        if (lowerUrl.contains(PROTOCOL_JAVASCRIPT) || lowerUrl.contains(PROTOCOL_DATA) || lowerUrl.contains(PROTOCOL_FILE)) {
             return false;
         }
         
@@ -661,7 +667,7 @@ public class McpServerTransformService {
                 return lowerUrl.startsWith("dubbo://") || lowerUrl.startsWith(HTTP_PREFIX) || lowerUrl.startsWith(HTTPS_PREFIX);
             default:
                 // For unknown protocols, apply basic validation
-                return !lowerUrl.contains("..") && !lowerUrl.contains("javascript:") && !lowerUrl.contains("data:");
+                return !lowerUrl.contains("..") && !lowerUrl.contains(PROTOCOL_JAVASCRIPT) && !lowerUrl.contains(PROTOCOL_DATA);
         }
     }
 }
