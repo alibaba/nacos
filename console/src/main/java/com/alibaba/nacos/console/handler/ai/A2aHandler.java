@@ -78,13 +78,14 @@ public interface A2aHandler {
      * @return agent card list
      * @throws NacosException nacos exception
      */
-    Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm);
+    Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException;
     
     /**
      * List agent versions.
      * @param namespaceId namespace id of target agent
      * @param name        name of target agent
      * @return agent version detail list
+     * @throws NacosException nacos exception
      */
     List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException;
 }
