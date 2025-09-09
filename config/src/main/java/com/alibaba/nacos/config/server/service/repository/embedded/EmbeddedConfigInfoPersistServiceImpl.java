@@ -206,6 +206,37 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo, null);
     }
     
+    private ConfigOperateResult addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+            final Map<String, Object> configAdvanceInfo, BiConsumer<Boolean, Throwable> consumer) {
+        
+        try {
+            final String tenantTmp =
+                    StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+            configInfo.setTenant(tenantTmp);
+            
+            long configId = idGeneratorManager.nextId(RESOURCE_CONFIG_INFO_ID);
+            long hisId = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_ID);
+            
+            addConfigInfoAtomic(configId, srcIp, srcUser, configInfo, configAdvanceInfo);
+            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+            
+            addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant());
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            if (!CONFIG_MIGRATE_FLAG.get()) {
+                historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I",
+                        Constants.FORMAL, null,
+                        ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
+            }
+            EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
+            databaseOperate.blockUpdate(consumer);
+            return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
+            
+        } finally {
+            EmbeddedStorageContextHolder.cleanAllContext();
+        }
+    }
+    
     @Override
     public ConfigOperateResult updateConfigInfoMetadata(String dataId, String group, String tenant, String configTags,
             String description) throws NacosException {
@@ -234,37 +265,6 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfoWrapper, null, now);
             databaseOperate.blockUpdate();
             return getConfigInfoOperateResult(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(), tenant);
-        } finally {
-            EmbeddedStorageContextHolder.cleanAllContext();
-        }
-    }
-    
-    private ConfigOperateResult addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
-            final Map<String, Object> configAdvanceInfo, BiConsumer<Boolean, Throwable> consumer) {
-        
-        try {
-            final String tenantTmp =
-                    StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-            configInfo.setTenant(tenantTmp);
-            
-            long configId = idGeneratorManager.nextId(RESOURCE_CONFIG_INFO_ID);
-            long hisId = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_ID);
-            
-            addConfigInfoAtomic(configId, srcIp, srcUser, configInfo, configAdvanceInfo);
-            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-            
-            addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant());
-            Timestamp now = new Timestamp(System.currentTimeMillis());
-            if (!CONFIG_MIGRATE_FLAG.get()) {
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I",
-                        Constants.FORMAL, null,
-                        ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
-            }
-            EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
-            databaseOperate.blockUpdate(consumer);
-            return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-            
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
