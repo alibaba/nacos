@@ -34,6 +34,7 @@ export function extractToolsFromOpenAPI(openapi) {
     for (const path in openapi.paths) {
       const pathItem = openapi.paths[path];
       const operations = getOperations(pathItem);
+      console.log(operations);
       for (const method in operations) {
         const operation = operations[method];
         const tool = convertOperation(path, method, operation, openapi.servers);
@@ -66,6 +67,7 @@ function getOperations(pathItem) {
 }
 
 function convertOperation(path, method, operation, servers) {
+  console.log(operation);
   // Generate a tool name
   let toolName = operation.operationId || '';
   if (!toolName) {
