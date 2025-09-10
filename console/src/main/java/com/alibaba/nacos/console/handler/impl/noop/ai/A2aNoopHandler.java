@@ -17,10 +17,11 @@
 
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -47,7 +48,7 @@ public class A2aNoopHandler implements A2aHandler {
     private static final String A2A_NOT_ENABLED_MESSAGE = "Nacos AI A2A module and API required both `naming` and `config` module.";
     
     @Override
-    public void registerAgent(AgentDetailForm form) throws NacosException {
+    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 A2A_NOT_ENABLED_MESSAGE);
     }
@@ -65,7 +66,7 @@ public class A2aNoopHandler implements A2aHandler {
     }
     
     @Override
-    public void updateAgentCard(AgentUpdateForm form) throws NacosException {
+    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 A2A_NOT_ENABLED_MESSAGE);
     }

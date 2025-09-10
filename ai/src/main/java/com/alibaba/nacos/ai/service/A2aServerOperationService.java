@@ -20,7 +20,6 @@ package com.alibaba.nacos.ai.service;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
@@ -43,7 +42,6 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.beans.BeanUtils;
 
 import java.util.List;
@@ -111,15 +109,6 @@ public class A2aServerOperationService {
         configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
         
         syncEffectService.toSync(configFormVersion, startOperationTime);
-    }
-    
-    /**
-     * Delete agent.
-     *
-     * @param form agent form
-     */
-    public void deleteAgent(AgentForm form) throws NacosException {
-        deleteAgent(form.getNamespaceId(), form.getName(), form.getVersion());
     }
     
     /**
@@ -257,18 +246,6 @@ public class A2aServerOperationService {
     /**
      * List agents.
      *
-     * @param agentListForm agent list form
-     * @param pageForm      page form
-     * @return agent card version info list
-     */
-    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
-        return listAgents(agentListForm.getNamespaceId(), agentListForm.getName(), agentListForm.getSearch(),
-                pageForm.getPageNo(), pageForm.getPageSize());
-    }
-    
-    /**
-     * List agents.
-     *
      * @param namespaceId   namespace id
      * @param agentName     agent name
      * @param search        search type, {@link Constants.A2A#SEARCH_BLUR} or {@link Constants.A2A#SEARCH_ACCURATE}
@@ -314,17 +291,6 @@ public class A2aServerOperationService {
     public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosApiException {
         AgentCardVersionInfo agentCardVersionInfo = queryAgentCardVersionInfo(namespaceId, name);
         return agentCardVersionInfo.getVersionDetails();
-    }
-    
-    /**
-     * Query Agent Card. If not specified version, query the latest version.
-     *
-     * @param form agent form
-     * @return agent card detail info
-     * @throws NacosApiException nacos api exception
-     */
-    public AgentCardDetailInfo getAgentCard(AgentForm form) throws NacosApiException {
-        return getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion());
     }
     
     /**

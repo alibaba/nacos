@@ -17,10 +17,12 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.ai.utils.AgentRequestUtil;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -39,7 +41,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -64,15 +65,16 @@ public class ConsoleA2aController {
     /**
      * register agent.
      *
-     * @param form the agent detail form to register
+     * @param form the agent card form to register
      * @return result of the registration operation
      * @throws NacosException if the agent registration fails due to invalid input or internal error
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> registerAgent(@RequestBody AgentDetailForm form) throws NacosException {
+    public Result<String> registerAgent(AgentCardForm form) throws NacosException {
         form.validate();
-        a2aProxy.registerAgent(form);
+        AgentCard agentCard = AgentRequestUtil.parseAgentCard(form);
+        a2aProxy.registerAgent(agentCard, form);
         return Result.success("ok");
     }
     
@@ -99,9 +101,10 @@ public class ConsoleA2aController {
      */
     @PutMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> updateAgentCard(@RequestBody AgentUpdateForm form) throws NacosException {
+    public Result<String> updateAgentCard(AgentCardUpdateForm form) throws NacosException {
         form.validate();
-        a2aProxy.updateAgentCard(form);
+        AgentCard agentCard = AgentRequestUtil.parseAgentCard(form);
+        a2aProxy.updateAgentCard(agentCard, form);
         return Result.success("ok");
     }
     

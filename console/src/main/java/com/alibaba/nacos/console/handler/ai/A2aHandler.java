@@ -17,10 +17,11 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -40,10 +41,11 @@ public interface A2aHandler {
     /**
      * Register agent.
      *
-     * @param form agent detail form
+     * @param agentCard     registered Agent Card
+     * @param agentCardForm agent card form
      * @throws NacosException nacos exception
      */
-    void registerAgent(AgentDetailForm form) throws NacosException;
+    void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException;
     
     /**
      * Get agent card with versions.
@@ -65,10 +67,11 @@ public interface A2aHandler {
     /**
      * Update agent card.
      *
-     * @param form agent update form
+     * @param agentCard agent card to updated
+     * @param form      agent update form
      * @throws NacosException nacos exception
      */
-    void updateAgentCard(AgentUpdateForm form) throws NacosException;
+    void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException;
 
     /**
      * List agents.
