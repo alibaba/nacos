@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -145,5 +146,16 @@ public class McpRequestUtil {
             return JacksonUtils.toObj(JacksonUtils.toJson(input), McpServiceRef.class);
         }
         throw new IllegalArgumentException("input must be instance of McpServiceRef or Map");
+    }
+    
+    /**
+     * If request contains valid namespaceId, do nothing. If not, fill default namespaceId.
+     *
+     * @param request mcp request
+     */
+    public static void fillNamespaceId(AbstractMcpRequest request) {
+        if (StringUtils.isEmpty(request.getNamespaceId())) {
+            request.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        }
     }
 }

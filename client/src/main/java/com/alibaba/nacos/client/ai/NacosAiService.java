@@ -18,8 +18,12 @@ package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -174,6 +178,73 @@ public class NacosAiService implements AiService {
         mcpServerNotifier.deregisterListener(mcpName, version, listenerInvoker);
         if (!mcpServerNotifier.isSubscribed(mcpName)) {
             grpcClient.unsubscribeMcpServer(mcpName, version);
+        }
+    }
+    
+    @Override
+    public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType) throws NacosException {
+        if (StringUtils.isBlank(agentName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentName` can't be empty or null");
+        }
+        return grpcClient.getAgentCard(agentName, version, registrationType);
+    }
+    
+    @Override
+    public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest) throws NacosException {
+        if (null == agentCard) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentCard` can't be null");
+        }
+        validateAgentCardField("name", agentCard.getName());
+        validateAgentCardField("version", agentCard.getVersion());
+        validateAgentCardField("protocolVersion", agentCard.getProtocolVersion());
+        if (StringUtils.isBlank(registrationType)) {
+            registrationType = AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE;
+        }
+        grpcClient.releaseAgentCard(agentCard, registrationType, setAsLatest);
+    }
+    
+    @Override
+    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+        if (StringUtils.isBlank(agentName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentName` can't be empty or null");
+        }
+        validateAgentEndpoint(endpoint);
+        grpcClient.registerAgentEndpoint(agentName, endpoint);
+    }
+    
+    @Override
+    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
+            throws NacosException {
+        if (StringUtils.isBlank(agentName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentName` can't be empty or null");
+        }
+        validateAgentEndpoint(endpoint);
+        grpcClient.deregisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    private void validateAgentEndpoint(AgentEndpoint endpoint) throws NacosApiException {
+        if (null == endpoint) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `endpoint` can't be null");
+        }
+        if (StringUtils.isBlank(endpoint.getVersion())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `endpoint.version` can't be empty or null");
+        }
+        Instance instance = new Instance();
+        instance.setIp(endpoint.getAddress());
+        instance.setPort(endpoint.getPort());
+        instance.validate();
+    }
+    
+    private static void validateAgentCardField(String fieldName, String fieldValue) throws NacosApiException {
+        if (StringUtils.isEmpty(fieldValue)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `agentCard." + fieldName + "` not present");
         }
     }
     

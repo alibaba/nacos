@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.utils;
+package com.alibaba.nacos.api.ai.remote.response;
 
-import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Nacos Mcp server request utils.
+ * Register or Deregister endpoint for agent to nacos AI module response.
  *
  * @author xiweng.yy
  */
-public class McpRequestUtils {
+public class AgentEndpointResponse extends Response {
     
     /**
-     * If request contains valid namespaceId, do nothing. If not, fill default namespaceId.
-     *
-     * @param request mcp request
+     * Should be {@link AiRemoteConstants#REGISTER_ENDPOINT} or {@link AiRemoteConstants#DE_REGISTER_ENDPOINT}.
      */
-    public static void fillNamespaceId(AbstractMcpRequest request) {
-        if (StringUtils.isEmpty(request.getNamespaceId())) {
-            request.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        }
+    private String type;
+    
+    public String getType() {
+        return type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
     }
 }

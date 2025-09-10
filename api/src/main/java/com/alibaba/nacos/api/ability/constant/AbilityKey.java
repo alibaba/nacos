@@ -54,6 +54,12 @@ public enum AbilityKey {
             AbilityMode.SERVER),
     
     /**
+     * For AI module Agent & Agent Card registry.
+     */
+    SERVER_AGENT_REGISTRY("agent", "Server whether support release agent server and register endpoint for agent server",
+            AbilityMode.SERVER),
+    
+    /**
      * For fuzzy watch naming or config.
      */
     SDK_CLIENT_FUZZY_WATCH("fuzzyWatch", "Client whether support fuzzy watch service or config",
@@ -68,6 +74,12 @@ public enum AbilityKey {
      * For AI module MCP registry.
      */
     SDK_MCP_REGISTRY("mcp", "Client whether support release mcp server and register endpoint for mcp server",
+            AbilityMode.SDK_CLIENT),
+    
+    /**
+     * For AI module Agent & Agent Card registry.
+     */
+    SDK_AGENT_REGISTRY("agent", "Client whether support release agent server and register endpoint for agent server",
             AbilityMode.SDK_CLIENT),
     
     /**

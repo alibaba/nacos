@@ -17,7 +17,9 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
@@ -48,16 +50,36 @@ public class AgentRequestUtil {
         try {
             AgentCard result = JacksonUtils.toObj(agentCardForm.getAgentCard(), new TypeReference<>() {
             });
-            validateAgentCardField("name", result.getName());
-            validateAgentCardField("description", result.getDescription());
-            validateAgentCardField("version", result.getVersion());
-            validateAgentCardField("protocolVersion", result.getProtocolVersion());
+            validateAgentCard(result);
             return result;
         } catch (NacosDeserializationException e) {
             LOGGER.error(String.format("Deserialize %s from %s failed, ", AgentCard.class.getSimpleName(),
                     agentCardForm.getAgentCard()), e);
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "agentCard is invalid. Can't be parsed.");
+        }
+    }
+    
+    /**
+     * Validate agent card is legal.
+     *
+     * @param agentCard agent card
+     * @throws NacosApiException if agent card is illegal.
+     */
+    public static void validateAgentCard(AgentCard agentCard) throws NacosApiException {
+        validateAgentCardField("name", agentCard.getName());
+        validateAgentCardField("version", agentCard.getVersion());
+        validateAgentCardField("protocolVersion", agentCard.getProtocolVersion());
+    }
+    
+    /**
+     * If request contains valid namespaceId, do nothing. If not, fill default namespaceId.
+     *
+     * @param request agent request
+     */
+    public static void fillNamespaceId(AbstractAgentRequest request) {
+        if (StringUtils.isEmpty(request.getNamespaceId())) {
+            request.setNamespaceId(AiConstants.A2a.A2A_DEFAULT_NAMESPACE);
         }
     }
     

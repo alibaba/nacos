@@ -96,5 +96,13 @@ public class Constants {
         public static final String SEARCH_BLUR = "blur";
         
         public static final String SEARCH_ACCURATE = "accurate";
+        
+        public static final String AGENT_ENDPOINT_GROUP = "agent-endpoints";
+        
+        public static final String AGENT_ENDPOINT_PATH_KEY = "__nacos.agent.endpoint.path__";
+        
+        public static final String AGENT_ENDPOINT_TRANSPORT_KEY = "__nacos.agent.endpoint.transport__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_SUPPORT_TLS = "__nacos.agent.endpoint.supportTls__";
     }
 }

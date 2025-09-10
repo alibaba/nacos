@@ -63,5 +63,7 @@ public class AiConstants {
          * Default endpoint type using `backend` service of agent when discovery a2a agent.
          */
         public static final String A2A_ENDPOINT_TYPE_SERVICE = "SERVICE";
+        
+        public static final String A2A_ENDPOINT_DEFAULT_TRANSPORT = "JSONRPC";
     }
 }

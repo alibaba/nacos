@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  *
  * @author xiweng.yy
  */
-public interface AiService {
+public interface AiService extends A2aService {
     
     /**
      * Get mcp server detail info for latest version.

@@ -18,9 +18,7 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -72,17 +70,6 @@ public class A2aServerOperationService {
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.syncEffectService = syncEffectService;
-    }
-    
-    /**
-     * Register agent.
-     *
-     * @param form agent detail form
-     * @throws NacosException nacos exception
-     */
-    public void registerAgent(AgentDetailForm form) throws NacosException {
-        AgentCard agentCard = AgentCardUtil.buildAgentCard(form);
-        registerAgent(agentCard, form.getNamespaceId(), form.getRegistrationType());
     }
     
     /**
@@ -171,17 +158,6 @@ public class A2aServerOperationService {
             
             configOperationService.deleteConfig(encodedName, AGENT_GROUP, namespaceId, null, null, "nacos", null);
         }
-    }
-    
-    /**
-     * Update agent card.
-     *
-     * @param form agent update form
-     * @throws NacosException nacos exception
-     */
-    public void updateAgentCard(AgentUpdateForm form) throws NacosException {
-        AgentCard agentCard = AgentCardUtil.buildAgentCard(form);
-        updateAgentCard(agentCard, form.getNamespaceId(), form.getRegistrationType(), form.getSetAsLatest());
     }
     
     /**

@@ -19,17 +19,27 @@ package com.alibaba.nacos.client.ai.remote;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
+import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
+import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
+import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
+import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
+import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -284,6 +294,130 @@ public class AiGrpcClient implements Closeable {
         mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName, version);
     }
     
+    /**
+     * Get agent card with nacos extension detail with target version.
+     *
+     * @param agentName        name of agent card
+     * @param version          target version, if null or empty, get latest version
+     * @param registrationType registration type
+     * @return agent card with nacos extension detail
+     * @throws NacosException if request parameter is invalid or agent card not found or handle error
+     */
+    public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
+            throws NacosException {
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        QueryAgentCardRequest request = new QueryAgentCardRequest();
+        request.setNamespaceId(this.namespaceId);
+        request.setAgentName(agentName);
+        request.setVersion(version);
+        request.setRegistrationType(registrationType);
+        QueryAgentCardResponse response = requestToServer(request, QueryAgentCardResponse.class);
+        return response.getAgentCardDetailInfo();
+    }
+    
+    /**
+     * Release new agent card or new version.
+     *
+     * <p>
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
+     * </p>
+     *
+     * @param agentCard        agent card need to release
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @param setAsLatest      whether set new version as latest, default is false. This parameter is only effect when new version is released.
+     *                         If current agent card not exist, whatever this parameter is, it will be set as latest.
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest)
+            throws NacosException {
+        LOGGER.info("[{}] Release Agent Card {}, version {}.", uuid, agentCard.getName(), agentCard.getVersion());
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        ReleaseAgentCardRequest request = new ReleaseAgentCardRequest();
+        request.setNamespaceId(this.namespaceId);
+        request.setAgentName(agentCard.getName());
+        request.setRegistrationType(registrationType);
+        request.setAgentCard(agentCard);
+        request.setSetAsLatest(setAsLatest);
+        requestToServer(request, ReleaseAgentCardResponse.class);
+    }
+    
+    /**
+     * Register agent endpoint into agent.
+     *
+     * @param agentName agent name
+     * @param endpoint  agent endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+        LOGGER.info("[{}] REGISTER Agent endpoint {} into agent {}", uuid, endpoint.toString(), agentName);
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        redoService.cachedAgentEndpointForRedo(agentName, endpoint);
+        doRegisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    /**
+     * Actual do register agent endpoint into agent.
+     *
+     * @param agentName agent name
+     * @param endpoint  agent endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void doRegisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+        AgentEndpointRequest request = new AgentEndpointRequest();
+        request.setNamespaceId(this.namespaceId);
+        request.setAgentName(agentName);
+        request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
+        request.setEndpoint(endpoint);
+        requestToServer(request, AgentEndpointResponse.class);
+        redoService.agentEndpointRegistered(agentName);
+    }
+    
+    /**
+     * Deregister agent endpoint from agent.
+     *
+     * @param agentName agent name
+     * @param endpoint  agent endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+        LOGGER.info("[{}] DE-REGISTER agent endpoint {} from agent {}", uuid, endpoint.toString(), agentName);
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        redoService.agentEndpointDeregister(agentName);
+        doDeregisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    /**
+     * Actual do deregister agent endpoint from agent.
+     *
+     * @param agentName agent name
+     * @param endpoint  agent endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void doDeregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+        AgentEndpointRequest request = new AgentEndpointRequest();
+        request.setNamespaceId(this.namespaceId);
+        request.setAgentName(agentName);
+        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        request.setEndpoint(endpoint);
+        requestToServer(request, AgentEndpointResponse.class);
+        redoService.agentEndpointDeregistered(agentName);
+    }
+    
     public boolean isEnable() {
         return rpcClient.isRunning();
     }
@@ -302,8 +436,11 @@ public class AiGrpcClient implements Closeable {
         Response response = null;
         try {
             if (request instanceof AbstractMcpRequest) {
-                request.putAllHeader(getSecurityHeaders(((AbstractMcpRequest) request).getNamespaceId(),
-                        ((AbstractMcpRequest) request).getMcpName()));
+                AbstractMcpRequest mcpRequest = (AbstractMcpRequest) request;
+                request.putAllHeader(getSecurityHeaders(mcpRequest.getNamespaceId(), mcpRequest.getMcpName()));
+            } else if (request instanceof AbstractAgentRequest) {
+                AbstractAgentRequest agentRequest = (AbstractAgentRequest) request;
+                request.putAllHeader(getSecurityHeaders(agentRequest.getNamespaceId(), agentRequest.getAgentName()));
             } else {
                 throw new NacosException(400,
                         String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));
