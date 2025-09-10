@@ -61,7 +61,8 @@ public class A2aInnerHandler implements A2aHandler {
     
     @Override
     public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion());
+        return a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion(),
+                form.getRegistrationType());
     }
     
     @Override

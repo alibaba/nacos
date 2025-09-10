@@ -90,7 +90,8 @@ public class A2aAdminController {
     public Result<AgentCardDetailInfo> getAgentCard(AgentForm form) throws NacosApiException {
         form.validate();
         return Result.success(
-                a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion()));
+                a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion(),
+                        form.getRegistrationType()));
     }
     
     /**

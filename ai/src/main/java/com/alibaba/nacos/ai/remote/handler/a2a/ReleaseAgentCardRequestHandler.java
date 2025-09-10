@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.AgentRequestParamExtractor;
@@ -88,7 +89,7 @@ public class ReleaseAgentCardRequestHandler extends RequestHandler<ReleaseAgentC
                 agentCard.getVersion(), namespaceId, meta.getConnectionId());
         try {
             AgentCardDetailInfo existAgentCard = a2aServerOperationService.getAgentCard(namespaceId,
-                    agentCard.getName(), agentCard.getVersion());
+                    agentCard.getName(), agentCard.getVersion(), StringUtils.EMPTY);
             LOGGER.info("AgentCard {} and target version {} already exist.", existAgentCard.getName(),
                     existAgentCard.getVersion());
         } catch (NacosApiException e) {

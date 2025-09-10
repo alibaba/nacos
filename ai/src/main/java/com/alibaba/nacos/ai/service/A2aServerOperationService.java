@@ -20,15 +20,18 @@ package com.alibaba.nacos.ai.service;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -40,9 +43,12 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.beans.BeanUtils;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_GROUP;
 import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_VERSION_GROUP;
@@ -63,13 +69,16 @@ public class A2aServerOperationService {
     
     private final SyncEffectService syncEffectService;
     
+    private final ServiceStorage serviceStorage;
+    
     public A2aServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, ConfigDetailService configDetailService,
-            SyncEffectService syncEffectService) {
+            SyncEffectService syncEffectService, ServiceStorage serviceStorage) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.syncEffectService = syncEffectService;
+        this.serviceStorage = serviceStorage;
     }
     
     /**
@@ -275,28 +284,29 @@ public class A2aServerOperationService {
      * @param namespaceId   namespaceId of agent
      * @param agentName     agent name
      * @param version       target version of want to query, if is null or empty, get latest version
+     * @param registrationType registration type
      * @return agent card detail info
      * @throws NacosApiException nacos api exception
      */
-    public AgentCardDetailInfo getAgentCard(String namespaceId, String agentName, String version)
-            throws NacosApiException {
+    public AgentCardDetailInfo getAgentCard(String namespaceId, String agentName, String version,
+            String registrationType) throws NacosApiException {
         AgentCardVersionInfo agentCardVersionInfo = queryAgentCardVersionInfo(namespaceId, agentName);
-        return StringUtils.isEmpty(version) ? queryLatestVersion(agentCardVersionInfo, namespaceId)
-                : queryTargetVersion(agentCardVersionInfo, version, namespaceId);
+        return StringUtils.isEmpty(version) ? queryLatestVersion(agentCardVersionInfo, namespaceId, registrationType)
+                : queryTargetVersion(agentCardVersionInfo, version, namespaceId, registrationType);
     }
     
-    private AgentCardDetailInfo queryLatestVersion(AgentCardVersionInfo agentCardVersionInfo, String namespaceId)
-            throws NacosApiException {
+    private AgentCardDetailInfo queryLatestVersion(AgentCardVersionInfo agentCardVersionInfo, String namespaceId,
+            String registrationType) throws NacosApiException {
         String latestVersion = agentCardVersionInfo.getVersionDetails().stream().filter(AgentVersionDetail::isLatest)
                 .findFirst().orElseThrow(
                         () -> new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND,
                                 String.format("Agent %s latest version not found", agentCardVersionInfo.getName())))
                 .getVersion();
-        return queryTargetVersion(agentCardVersionInfo, latestVersion, namespaceId);
+        return queryTargetVersion(agentCardVersionInfo, latestVersion, namespaceId, registrationType);
     }
     
     private AgentCardDetailInfo queryTargetVersion(AgentCardVersionInfo agentCardVersionInfo, String version,
-            String namespaceId) throws NacosApiException {
+            String namespaceId, String registrationType) throws NacosApiException {
         String versionDataId = ParamUtils.encodeName(agentCardVersionInfo.getName()) + "-" + version;
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(versionDataId,
                 AGENT_VERSION_GROUP, namespaceId);
@@ -305,7 +315,40 @@ public class A2aServerOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_VERSION_NOT_FOUND,
                     String.format("Agent %s version %s not found.", agentCardVersionInfo.getName(), version));
         }
-        return JacksonUtils.toObj(response.getContent(), AgentCardDetailInfo.class);
+        AgentCardDetailInfo result = JacksonUtils.toObj(response.getContent(), AgentCardDetailInfo.class);
+        if (StringUtils.isBlank(registrationType)) {
+            registrationType = result.getRegistrationType();
+        }
+        if (AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE.equalsIgnoreCase(registrationType)) {
+            injectEndpoint(result, namespaceId);
+        }
+        return result;
+    }
+    
+    private void injectEndpoint(AgentCardDetailInfo agentCard, String namespaceId) {
+        String serviceName = ParamUtils.encodeName(agentCard.getName()) + "::" + agentCard.getVersion();
+        Service service = Service.newService(namespaceId, Constants.A2A.AGENT_ENDPOINT_GROUP, serviceName);
+        ServiceInfo serviceInfo = serviceStorage.getData(service);
+        if (serviceInfo.getHosts().isEmpty()) {
+            return;
+        }
+        List<AgentInterface> allAgentEndpoints = serviceInfo.getHosts().stream().map(AgentCardUtil::buildAgentInterface)
+                .toList();
+        agentCard.setAdditionalInterfaces(allAgentEndpoints);
+        List<AgentInterface> matchTransportEndpoints = allAgentEndpoints.stream()
+                .filter(agentInterface -> agentInterface.getTransport()
+                        .equalsIgnoreCase(agentCard.getPreferredTransport())).toList();
+        AgentInterface randomPreferredTransportEndpoint = randomOne(
+                matchTransportEndpoints.isEmpty() ? allAgentEndpoints : matchTransportEndpoints);
+        agentCard.setUrl(randomPreferredTransportEndpoint.getUrl());
+        agentCard.setPreferredTransport(randomPreferredTransportEndpoint.getTransport());
+    }
+    
+    /**
+     * TODO abstract a choose policy.
+     */
+    private AgentInterface randomOne(List<AgentInterface> agentInterfaces) {
+        return agentInterfaces.get(ThreadLocalRandom.current().nextInt(agentInterfaces.size()));
     }
     
     private ConfigForm transferVersionInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, String namespaceId) {

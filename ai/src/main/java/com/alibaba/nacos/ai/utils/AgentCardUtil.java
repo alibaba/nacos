@@ -20,7 +20,10 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -33,6 +36,8 @@ import java.util.Collections;
  * @author xiweng.yy
  */
 public class AgentCardUtil {
+    
+    private static final String AGENT_INTERFACE_URL_PATTERN = "%s://%s:%s";
     
     /**
      * Build Agent Card Storage Info from Agent Detail form.
@@ -89,6 +94,27 @@ public class AgentCardUtil {
      */
     public static void updateUpdateTime(AgentVersionDetail versionDetail) {
         versionDetail.setUpdatedAt(getCurrentTime());
+    }
+    
+    /**
+     * Build {@link AgentInterface} from service {@link Instance}.
+     *
+     * @param instance service instance.
+     * @return agent interface (endpoint)
+     */
+    public static AgentInterface buildAgentInterface(Instance instance) {
+        AgentInterface agentInterface = new AgentInterface();
+        boolean isSupportTls = Boolean.parseBoolean(
+                instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
+        String protocol = isSupportTls ? Constants.PROTOCOL_TYPE_HTTPS : Constants.PROTOCOL_TYPE_HTTP;
+        String url = String.format(AGENT_INTERFACE_URL_PATTERN, protocol, instance.getIp(), instance.getPort());
+        String path = instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_PATH_KEY);
+        if (StringUtils.isNotBlank(path)) {
+            url += path.startsWith("/") ? path : "/" + path;
+        }
+        agentInterface.setUrl(url);
+        agentInterface.setTransport(instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
+        return agentInterface;
     }
     
     private static String getCurrentTime() {

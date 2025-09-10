@@ -68,9 +68,8 @@ public class QueryAgentCardRequestHandler extends RequestHandler<QueryAgentCardR
     private QueryAgentCardResponse doHandler(QueryAgentCardRequest request) {
         QueryAgentCardResponse response = new QueryAgentCardResponse();
         try {
-            // TODO query agent card with registrationType
             AgentCardDetailInfo result = a2aServerOperationService.getAgentCard(request.getNamespaceId(),
-                    request.getAgentName(), request.getVersion());
+                    request.getAgentName(), request.getVersion(), request.getRegistrationType());
             response.setAgentCardDetailInfo(result);
         } catch (NacosException e) {
             LOGGER.error("Query agent card for agent {} error: {}", request.getAgentName(), e.getErrMsg());
