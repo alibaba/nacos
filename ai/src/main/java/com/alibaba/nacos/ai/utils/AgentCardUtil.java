@@ -63,7 +63,21 @@ public class AgentCardUtil {
     /**
      * Build Agent Card Storage Info from Agent Detail form.
      *
+     * @param agentCard agent card
+     * @return Agent Card Storage Info
+     */
+    public static AgentCardDetailInfo buildAgentCardDetailInfo(AgentCard agentCard, String registrationType) {
+        AgentCardDetailInfo agentCardDetailInfo = new AgentCardDetailInfo();
+        copyAgentCardInfo(agentCardDetailInfo, agentCard);
+        agentCardDetailInfo.setRegistrationType(registrationType);
+        return agentCardDetailInfo;
+    }
+    
+    /**
+     * Build Agent Card Storage Info from Agent Detail form.
+     *
      * @param form agent detail form
+     * @param isLatest is latest version
      * @return Agent Card Version Info
      */
     public static AgentCardVersionInfo buildAgentCardVersionInfo(AgentDetailForm form, boolean isLatest) {
@@ -78,6 +92,26 @@ public class AgentCardUtil {
     }
     
     /**
+     * Build Agent Card Storage Info from AgentCard.
+     *
+     * @param agentCard agent detail form
+     * @param registrationType target registrationType
+     * @param isLatest is latest version
+     * @return Agent Card Version Info
+     */
+    public static AgentCardVersionInfo buildAgentCardVersionInfo(AgentCard agentCard, String registrationType,
+            boolean isLatest) {
+        AgentCardVersionInfo agentCardVersionInfo = new AgentCardVersionInfo();
+        copyAgentCardInfo(agentCardVersionInfo, agentCard);
+        agentCardVersionInfo.setRegistrationType(registrationType);
+        if (isLatest) {
+            agentCardVersionInfo.setLatestPublishedVersion(agentCard.getVersion());
+        }
+        agentCardVersionInfo.setVersionDetails(Collections.singletonList(buildAgentVersionDetail(agentCard, isLatest)));
+        return agentCardVersionInfo;
+    }
+    
+    /**
      * Build Agent version detail from Agent Detail form.
      *
      * @param form agent detail form
@@ -88,6 +122,21 @@ public class AgentCardUtil {
         agentVersionDetail.setCreatedAt(getCurrentTime());
         agentVersionDetail.setUpdatedAt(getCurrentTime());
         agentVersionDetail.setVersion(form.getVersion());
+        agentVersionDetail.setLatest(isLatest);
+        return agentVersionDetail;
+    }
+    
+    /**
+     * Build Agent version detail from Agent Detail form.
+     *
+     * @param agentCard agent detail form
+     * @return Agent Version Detail
+     */
+    public static AgentVersionDetail buildAgentVersionDetail(AgentCard agentCard, boolean isLatest) {
+        AgentVersionDetail agentVersionDetail = new AgentVersionDetail();
+        agentVersionDetail.setCreatedAt(getCurrentTime());
+        agentVersionDetail.setUpdatedAt(getCurrentTime());
+        agentVersionDetail.setVersion(agentCard.getVersion());
         agentVersionDetail.setLatest(isLatest);
         return agentVersionDetail;
     }
@@ -125,5 +174,25 @@ public class AgentCardUtil {
         agentCard.setSkills(form.getSkills());
         agentCard.setSupportsAuthenticatedExtendedCard(form.getSupportsAuthenticatedExtendedCard());
         agentCard.setDocumentationUrl(form.getDocumentationUrl());
+    }
+    
+    private static void copyAgentCardInfo(AgentCard target, AgentCard source) {
+        target.setProtocolVersion(source.getProtocolVersion());
+        target.setName(source.getName());
+        target.setDescription(source.getDescription());
+        target.setUrl(source.getUrl());
+        target.setVersion(source.getVersion());
+        target.setPreferredTransport(source.getPreferredTransport());
+        target.setAdditionalInterfaces(source.getAdditionalInterfaces());
+        target.setIconUrl(source.getIconUrl());
+        target.setProvider(source.getProvider());
+        target.setCapabilities(source.getCapabilities());
+        target.setSecuritySchemes(source.getSecuritySchemes());
+        target.setSecurity(source.getSecurity());
+        target.setDefaultInputModes(source.getDefaultInputModes());
+        target.setDefaultOutputModes(source.getDefaultOutputModes());
+        target.setSkills(source.getSkills());
+        target.setSupportsAuthenticatedExtendedCard(source.getSupportsAuthenticatedExtendedCard());
+        target.setDocumentationUrl(source.getDocumentationUrl());
     }
 }

@@ -61,7 +61,7 @@ public class Constants {
         
         public static final String AI_AGENT_LIST_VERSION_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "/version/list";
         
-        public static final String AI_AGENT_LIST_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "list";
+        public static final String AI_AGENT_LIST_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "/list";
     }
     
 }

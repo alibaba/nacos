@@ -17,11 +17,12 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
 import com.alibaba.nacos.ai.service.A2aServerOperationService;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -53,28 +54,31 @@ public class A2aInnerHandler implements A2aHandler {
     }
     
     @Override
-    public void registerAgent(AgentDetailForm form) throws NacosException {
-        a2aServerOperationService.registerAgent(form);
+    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
+        a2aServerOperationService.registerAgent(agentCard, agentCardForm.getNamespaceId(),
+                agentCardForm.getRegistrationType());
     }
     
     @Override
     public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return a2aServerOperationService.getAgentCard(form);
+        return a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion());
     }
     
     @Override
     public void deleteAgent(AgentForm form) throws NacosException {
-        a2aServerOperationService.deleteAgent(form);
+        a2aServerOperationService.deleteAgent(form.getNamespaceId(), form.getName(), form.getVersion());
     }
     
     @Override
-    public void updateAgentCard(AgentUpdateForm form) throws NacosException {
-        a2aServerOperationService.updateAgentCard(form);
+    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
+        a2aServerOperationService.updateAgentCard(agentCard, form.getNamespaceId(), form.getRegistrationType(),
+                form.getSetAsLatest());
     }
-
+    
     @Override
-    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) {
-        return a2aServerOperationService.listAgents(agentListForm, pageForm);
+    public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
+        return a2aServerOperationService.listAgents(agentListForm.getNamespaceId(), agentListForm.getName(),
+                agentListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override

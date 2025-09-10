@@ -17,10 +17,11 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -46,8 +47,15 @@ public class A2aProxy {
         this.a2aHandler = a2aHandler;
     }
     
-    public void registerAgent(AgentDetailForm form) throws NacosException {
-        a2aHandler.registerAgent(form);
+    /**
+     * Register agent card.
+     *
+     * @param agentCard     agent card to register
+     * @param agentCardForm agent card form
+     * @throws NacosException exception when register agent card
+     */
+    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
+        a2aHandler.registerAgent(agentCard, agentCardForm);
     }
     
     public AgentCardDetailInfo getAgentCard(AgentForm form) throws NacosException {
@@ -58,8 +66,8 @@ public class A2aProxy {
         a2aHandler.deleteAgent(form);
     }
     
-    public void updateAgentCard(AgentUpdateForm form) throws NacosException {
-        a2aHandler.updateAgentCard(form);
+    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
+        a2aHandler.updateAgentCard(agentCard, form);
     }
     
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {

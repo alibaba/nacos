@@ -95,12 +95,12 @@ public class McpServerOperationService {
     
     private final McpServerIndex mcpServerIndex;
     
-    private final McpServerSyncEffectService syncEffectService;
+    private final SyncEffectService syncEffectService;
     
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
             McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex,
-            McpServerSyncEffectService syncEffectService) {
+            SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.toolOperationService = toolOperationService;

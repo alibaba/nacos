@@ -90,7 +90,7 @@ class McpServerOperationServiceTest {
     private McpServerIndex mcpServerIndex;
     
     @Mock
-    private McpServerSyncEffectService syncEffectService;
+    private SyncEffectService syncEffectService;
     
     McpServerOperationService serverOperationService;
     

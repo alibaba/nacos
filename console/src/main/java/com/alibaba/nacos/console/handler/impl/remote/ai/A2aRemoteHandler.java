@@ -18,11 +18,11 @@
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
+import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
-import com.alibaba.nacos.ai.utils.AgentCardUtil;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
@@ -56,8 +56,9 @@ public class A2aRemoteHandler implements A2aHandler {
     }
     
     @Override
-    public void registerAgent(AgentDetailForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().registerAgent(AgentCardUtil.buildAgentCard(form));
+    public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
+        clientHolder.getAiMaintainerService()
+                .registerAgent(agentCard, agentCardForm.getNamespaceId(), agentCardForm.getRegistrationType());
     }
     
     @Override
@@ -72,9 +73,9 @@ public class A2aRemoteHandler implements A2aHandler {
     }
     
     @Override
-    public void updateAgentCard(AgentUpdateForm form) throws NacosException {
+    public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
         clientHolder.getAiMaintainerService()
-                .updateAgentCard(AgentCardUtil.buildAgentCard(form), form.getNamespaceId());
+                .updateAgentCard(agentCard, form.getNamespaceId(), form.getSetAsLatest(), form.getRegistrationType());
     }
     
     @Override

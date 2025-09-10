@@ -54,8 +54,14 @@ public class AiConstants {
         
         public static final String A2A_DEFAULT_NAMESPACE = "public";
         
+        /**
+         * Default endpoint type using `url` field of agent card directly when discovery a2a agent.
+         */
         public static final String A2A_ENDPOINT_TYPE_URL = "URL";
         
+        /**
+         * Default endpoint type using `backend` service of agent when discovery a2a agent.
+         */
         public static final String A2A_ENDPOINT_TYPE_SERVICE = "SERVICE";
     }
 }

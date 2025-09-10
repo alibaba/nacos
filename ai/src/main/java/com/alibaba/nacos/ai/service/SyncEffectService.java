@@ -24,13 +24,13 @@ import java.util.concurrent.TimeUnit;
  * Nacos Mcp server async effect service.
  *
  * <p>
- *     Nacos Mcp server will be written to Nacos configuration, and the configuration dump to local is async and need time.
+ *     Nacos Mcp server or Agent will be written to Nacos configuration, and the configuration dump to local is async and need time.
  *     This service is used to adapt and transfer async dump to sync dump.
  * </p>
  *
  * @author xiweng.yy
  */
-public interface McpServerSyncEffectService {
+public interface SyncEffectService {
     
     /**
      * Transfer Async mcp server operation to sync with 200 milliseconds timeout.

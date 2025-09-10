@@ -134,7 +134,8 @@ class NewAgent extends React.Component {
       const namespaceId = getParams('namespace') || '';
       const { isEdit } = this.state;
 
-      const formData = {
+      // 构建 agentCard 对象，包含所有需要放入 JSON 字符串的字段
+      const agentCard = {
         name: values.name,
         description: values.description,
         version: values.version,
@@ -143,16 +144,15 @@ class NewAgent extends React.Component {
         preferredTransport: values.preferredTransport,
         iconUrl: values.iconUrl,
         documentationUrl: values.documentationUrl,
-        namespaceId,
+        // Add provider info if provided
+        provider:
+          values.providerName || values.providerUrl
+            ? {
+                name: values.providerName || '',
+                url: values.providerUrl || '',
+              }
+            : undefined,
       };
-
-      // Add provider info if provided
-      if (values.providerName || values.providerUrl) {
-        formData.provider = {
-          name: values.providerName || '',
-          url: values.providerUrl || '',
-        };
-      }
 
       // Add advanced configurations if provided and not empty
       if (
@@ -163,7 +163,7 @@ class NewAgent extends React.Component {
         try {
           const parsed = JSON.parse(values.capabilities.trim());
           if (parsed !== null && parsed !== undefined) {
-            formData.capabilities = parsed;
+            agentCard.capabilities = parsed;
           }
         } catch (e) {
           Message.error('能力配置JSON格式错误: ' + e.message);
@@ -176,7 +176,7 @@ class NewAgent extends React.Component {
         try {
           const parsed = JSON.parse(values.skills.trim());
           if (parsed !== null && parsed !== undefined) {
-            formData.skills = parsed;
+            agentCard.skills = parsed;
           }
         } catch (e) {
           Message.error('技能列表JSON格式错误: ' + e.message);
@@ -189,7 +189,7 @@ class NewAgent extends React.Component {
         try {
           const parsed = JSON.parse(values.security.trim());
           if (parsed !== null && parsed !== undefined) {
-            formData.security = parsed;
+            agentCard.security = parsed;
           }
         } catch (e) {
           Message.error('安全配置JSON格式错误: ' + e.message);
@@ -206,7 +206,7 @@ class NewAgent extends React.Component {
         try {
           const parsed = JSON.parse(values.additionalInterfaces.trim());
           if (parsed !== null && parsed !== undefined) {
-            formData.additionalInterfaces = parsed;
+            agentCard.additionalInterfaces = parsed;
           }
         } catch (e) {
           Message.error('额外接口JSON格式错误: ' + e.message);
@@ -216,47 +216,46 @@ class NewAgent extends React.Component {
       }
 
       if (values.defaultInputModes && values.defaultInputModes.trim()) {
-        formData.defaultInputModes = values.defaultInputModes
+        agentCard.defaultInputModes = values.defaultInputModes
           .split(',')
           .map(s => s.trim())
           .filter(s => s);
       }
 
       if (values.defaultOutputModes && values.defaultOutputModes.trim()) {
-        formData.defaultOutputModes = values.defaultOutputModes
+        agentCard.defaultOutputModes = values.defaultOutputModes
           .split(',')
           .map(s => s.trim())
           .filter(s => s);
       }
 
       if (values.supportsAuthenticatedExtendedCard !== undefined) {
-        formData.supportsAuthenticatedExtendedCard = values.supportsAuthenticatedExtendedCard;
+        agentCard.supportsAuthenticatedExtendedCard = values.supportsAuthenticatedExtendedCard;
       }
 
+      // 准备请求数据
       const requestData = {
         namespaceId: namespaceId,
-        ...formData,
+        name: values.name,
+        version: values.version,
+        registrationType: isEdit ? '' : 'URL', // 默认使用 url 类型
+        agentCard: JSON.stringify(agentCard),
       };
 
-      const method = isEdit ? 'PUT' : 'POST';
+      // 更新模式下添加 setAsLatest 参数
+      if (isEdit) {
+        requestData.setAsLatest = values.setAsLatest;
+      }
+
       const url = '/v3/console/ai/a2a';
 
-      // Use the fetch API to send JSON format data, and use the backend @RequestBody annotation
-      fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
+      // 使用项目中已有的request方法发送请求，会自动处理认证信息
+      request({
+        url: url,
+        method: isEdit ? 'PUT' : 'POST',
+        data: requestData,
+        contentType: 'application/x-www-form-urlencoded',
+        success: data => {
           this.setState({ loading: false });
           if (
             data &&
@@ -284,15 +283,16 @@ class NewAgent extends React.Component {
                   : agentLocale.createFailed || '创建失败')
             );
           }
-        })
-        .catch(error => {
+        },
+        error: error => {
           console.error('Request failed:', error);
           this.setState({ loading: false });
           const agentLocale = locale.AgentManagement || locale;
           Message.error(
             isEdit ? agentLocale.updateFailed || '更新失败' : agentLocale.createFailed || '创建失败'
           );
-        });
+        },
+      });
     });
   };
 
@@ -476,9 +476,9 @@ class NewAgent extends React.Component {
               name="preferredTransport"
               placeholder="请选择传输协议"
               dataSource={[
-                { value: 'https', label: 'HTTPS (推荐)' },
-                { value: 'http', label: 'HTTP' },
-                { value: 'websocket', label: 'WebSocket' },
+                { value: 'JSONRPC', label: 'JSONRPC' },
+                { value: 'GRPC', label: 'GRPC' },
+                { value: 'HTTP+JSON', label: 'HTTP_JSON' },
               ]}
             />
           </Form.Item>
