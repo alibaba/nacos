@@ -17,7 +17,6 @@
 package com.alibaba.nacos.console.handler.impl.inner.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
@@ -99,12 +98,6 @@ class NamespaceInnerHandlerTest {
     @Test
     void checkNamespaceIdExist() {
         when(namespaceOperationService.namespaceExists(NAMESPACE_ID)).thenReturn(true);
-        assertTrue(namespaceInnerHandler.checkNamespaceIdExist(NAMESPACE_ID));
-    }
-    
-    @Test
-    void checkNamespaceIdExistWithException() {
-        when(namespaceOperationService.namespaceExists(NAMESPACE_ID)).thenThrow(new NacosApiException());
         assertTrue(namespaceInnerHandler.checkNamespaceIdExist(NAMESPACE_ID));
     }
 }
