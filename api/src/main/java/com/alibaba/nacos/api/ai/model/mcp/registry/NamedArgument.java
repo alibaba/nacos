@@ -37,6 +37,9 @@ public class NamedArgument implements Argument {
     @JsonProperty("is_repeated")
     private boolean isRepeated;
     
+    @JsonProperty("is_required")
+    private boolean isRequired;
+    
     private String value;
     
     private String format;
@@ -73,6 +76,14 @@ public class NamedArgument implements Argument {
 
     public void setRepeated(boolean repeated) {
         isRepeated = repeated;
+    }
+
+    public boolean isRequired() {
+        return isRequired;
+    }
+
+    public void setRequired(boolean required) {
+        isRequired = required;
     }
 
     public String getValue() {

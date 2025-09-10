@@ -61,7 +61,8 @@ class McpServerTransformServiceTest {
         McpServerDetailInfo server = servers.get(0);
         assertEquals("4e9cf4cf-71f6-4aca-bae8-2d10a29ca2e0", server.getId());
         assertEquals("io.github.21st-dev/magic-mcp", server.getName());
-        assertEquals("It's like v0 but in your Cursor/WindSurf/Cline. 21st dev Magic MCP server", server.getDescription());
+        assertEquals("It's like v0 but in your Cursor/WindSurf/Cline. 21st dev Magic MCP server",
+                server.getDescription());
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
         assertNotNull(server.getRepository());
         assertNotNull(server.getVersionDetail());
@@ -96,7 +97,8 @@ class McpServerTransformServiceTest {
         assertNotNull(server.getVersionDetail());
         assertEquals("0.0.1-seed", server.getVersionDetail().getVersion());
         assertNotNull(server.getRemoteServerConfig());
-        assertEquals("python -m adfinmcp --directory <absolute_path_to_adfin_mcp_folder>", server.getRemoteServerConfig().getExportPath());
+        assertEquals("python -m adfinmcp --directory <absolute_path_to_adfin_mcp_folder>",
+                server.getRemoteServerConfig().getExportPath());
     }
     
     @Test
