@@ -34,13 +34,15 @@ import java.util.List;
  */
 public class AgentHttpParamExtractor extends AbstractHttpParamExtractor {
     
+    private static final String AGENT_CARD_PARAM = "agentCard";
+    
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
         paramInfo.setAgentName(request.getParameter("agentName"));
-        if (request.getParameterMap().containsKey("agentCard")) {
-            paramInfo.setAgentName(deserializeAndGetAgentName(request.getParameter("agentCard")));
+        if (request.getParameterMap().containsKey(AGENT_CARD_PARAM)) {
+            paramInfo.setAgentName(deserializeAndGetAgentName(request.getParameter(AGENT_CARD_PARAM)));
         }
         return Collections.singletonList(paramInfo);
     }
