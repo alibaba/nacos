@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
-import com.alibaba.nacos.ai.service.A2aServerOperationService;
+import com.alibaba.nacos.ai.service.a2a.A2aServerOperationService;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;

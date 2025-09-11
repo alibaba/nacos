@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
@@ -29,7 +30,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.AgentRequestParamExtractor;
@@ -56,8 +56,12 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    public AgentEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
+    private final AgentIdCodecHolder agentIdCodecHolder;
+    
+    public AgentEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
+            AgentIdCodecHolder agentIdCodecHolder) {
         this.clientOperationService = clientOperationService;
+        this.agentIdCodecHolder = agentIdCodecHolder;
     }
     
     @Override
@@ -71,7 +75,7 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
             validateRequest(request);
             Instance instance = transferInstance(request);
             String serviceName =
-                    ParamUtils.encodeName(request.getAgentName()) + "::" + request.getEndpoint().getVersion();
+                    agentIdCodecHolder.encode(request.getAgentName()) + "::" + request.getEndpoint().getVersion();
             Service service = Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
                     serviceName);
             switch (request.getType()) {

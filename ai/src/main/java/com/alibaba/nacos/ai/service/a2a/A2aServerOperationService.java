@@ -12,13 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.ai.service;
+package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
+import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
@@ -42,7 +42,6 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.beans.BeanUtils;
@@ -71,14 +70,18 @@ public class A2aServerOperationService {
     
     private final ServiceStorage serviceStorage;
     
+    private final AgentIdCodecHolder agentIdCodecHolder;
+    
     public A2aServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, ConfigDetailService configDetailService,
-            SyncEffectService syncEffectService, ServiceStorage serviceStorage) {
+            SyncEffectService syncEffectService, ServiceStorage serviceStorage,
+            AgentIdCodecHolder agentIdCodecHolder) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.syncEffectService = syncEffectService;
         this.serviceStorage = serviceStorage;
+        this.agentIdCodecHolder = agentIdCodecHolder;
     }
     
     /**
@@ -116,7 +119,7 @@ public class A2aServerOperationService {
      * @throws NacosException nacos exception
      */
     public void deleteAgent(String namespaceId, String agentName, String version) throws NacosException {
-        String encodedName = ParamUtils.encodeName(agentName);
+        String encodedName = agentIdCodecHolder.encode(agentName);
         
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(encodedName, AGENT_GROUP,
                 namespaceId);
@@ -241,7 +244,7 @@ public class A2aServerOperationService {
      */
     public Page<AgentCardVersionInfo> listAgents(String namespaceId, String agentName, String search, int pageNo,
             int pageSize) throws NacosException {
-        String encodedName = ParamUtils.encodeName(agentName);
+        String encodedName = agentIdCodecHolder.encode(agentName);
         
         String dataId;
         if (StringUtils.isEmpty(encodedName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
@@ -307,7 +310,7 @@ public class A2aServerOperationService {
     
     private AgentCardDetailInfo queryTargetVersion(AgentCardVersionInfo agentCardVersionInfo, String version,
             String namespaceId, String registrationType) throws NacosApiException {
-        String versionDataId = ParamUtils.encodeName(agentCardVersionInfo.getName()) + "-" + version;
+        String versionDataId = agentIdCodecHolder.encode(agentCardVersionInfo.getName()) + "-" + version;
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(versionDataId,
                 AGENT_VERSION_GROUP, namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
@@ -326,7 +329,7 @@ public class A2aServerOperationService {
     }
     
     private void injectEndpoint(AgentCardDetailInfo agentCard, String namespaceId) {
-        String serviceName = ParamUtils.encodeName(agentCard.getName()) + "::" + agentCard.getVersion();
+        String serviceName = agentIdCodecHolder.encode(agentCard.getName()) + "::" + agentCard.getVersion();
         Service service = Service.newService(namespaceId, Constants.A2A.AGENT_ENDPOINT_GROUP, serviceName);
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         if (serviceInfo.getHosts().isEmpty()) {
@@ -353,7 +356,7 @@ public class A2aServerOperationService {
     
     private ConfigForm transferVersionInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, String namespaceId) {
         ConfigForm configForm = new ConfigForm();
-        String actualDataId = ParamUtils.encodeName(agentCardVersionInfo.getName());
+        String actualDataId = agentIdCodecHolder.encode(agentCardVersionInfo.getName());
         configForm.setDataId(actualDataId);
         configForm.setGroup(AGENT_GROUP);
         configForm.setNamespaceId(namespaceId);
@@ -368,7 +371,7 @@ public class A2aServerOperationService {
     
     private ConfigForm transferAgentInfoToConfigForm(AgentCardDetailInfo storageInfo, String namespaceId) {
         ConfigForm configForm = new ConfigForm();
-        String actualDataId = ParamUtils.encodeName(storageInfo.getName()) + "-" + storageInfo.getVersion();
+        String actualDataId = agentIdCodecHolder.encode(storageInfo.getName()) + "-" + storageInfo.getVersion();
         configForm.setDataId(actualDataId);
         configForm.setGroup(AGENT_VERSION_GROUP);
         configForm.setNamespaceId(namespaceId);
@@ -381,13 +384,9 @@ public class A2aServerOperationService {
         return configForm;
     }
     
-    private AgentCardVersionInfo queryAgentCardVersionInfo(AgentForm form) throws NacosApiException {
-        return queryAgentCardVersionInfo(form.getNamespaceId(), form.getName());
-    }
-    
     private AgentCardVersionInfo queryAgentCardVersionInfo(String namespaceId, String name) throws NacosApiException {
         // Check if the agent exists
-        String actualDataId = ParamUtils.encodeName(name);
+        String actualDataId = agentIdCodecHolder.encode(name);
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(actualDataId,
                 AGENT_GROUP, namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
