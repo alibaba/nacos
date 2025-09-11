@@ -64,12 +64,12 @@ public class A2aRemoteHandler implements A2aHandler {
     @Override
     public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
         return clientHolder.getAiMaintainerService()
-                .getAgentCard(form.getName(), form.getNamespaceId(), form.getRegistrationType());
+                .getAgentCard(form.getAgentName(), form.getNamespaceId(), form.getRegistrationType());
     }
     
     @Override
     public void deleteAgent(AgentForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().deleteAgent(form.getName(), form.getNamespaceId());
+        clientHolder.getAiMaintainerService().deleteAgent(form.getAgentName(), form.getNamespaceId());
     }
     
     @Override
@@ -82,9 +82,9 @@ public class A2aRemoteHandler implements A2aHandler {
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
         AiMaintainerService aiMaintainerService = clientHolder.getAiMaintainerService();
         return Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(agentListForm.getSearch())
-                ? aiMaintainerService.searchAgentCardsByName(agentListForm.getNamespaceId(), agentListForm.getName(),
+                ? aiMaintainerService.searchAgentCardsByName(agentListForm.getNamespaceId(), agentListForm.getAgentName(),
                 pageForm.getPageNo(), pageForm.getPageSize())
-                : aiMaintainerService.listAgentCards(agentListForm.getNamespaceId(), agentListForm.getName(),
+                : aiMaintainerService.listAgentCards(agentListForm.getNamespaceId(), agentListForm.getAgentName(),
                         pageForm.getPageNo(), pageForm.getPageSize());
     }
     

@@ -80,7 +80,7 @@ public class AgentDetailForm extends AgentForm {
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
         
-        if (StringUtils.isEmpty(super.getName())) {
+        if (StringUtils.isEmpty(super.getAgentName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'name' type String is not present");
         }

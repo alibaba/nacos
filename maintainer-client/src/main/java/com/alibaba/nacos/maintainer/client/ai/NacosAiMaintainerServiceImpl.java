@@ -215,7 +215,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         Map<String, String> params = new HashMap<>(4);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
-        params.put("name", agentCard.getName());
+        params.put("agentName", agentCard.getName());
         params.put("registrationType", registrationType);
         HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
@@ -232,7 +232,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
         Map<String, String> params = new HashMap<>(1);
-        params.put("name", agentName);
+        params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         params.put("registrationType", registrationType);
         
@@ -252,7 +252,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         Map<String, String> params = new HashMap<>(5);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
         params.put("namespaceId", namespaceId);
-        params.put("name", agentCard.getName());
+        params.put("agentName", agentCard.getName());
         params.put("setAsLatest", String.valueOf(setAsLatest));
         params.put("registrationType", registrationType);
         HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT).setParamValue(params)
@@ -269,7 +269,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
         Map<String, String> params = new HashMap<>(1);
-        params.put("name", agentName);
+        params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         params.put("version", version);
         
@@ -287,7 +287,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
         Map<String, String> params = new HashMap<>(1);
-        params.put("name", agentName);
+        params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         
         HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET).setParamValue(params)
@@ -315,7 +315,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
             int pageSize, boolean isBlur) throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, null);
         Map<String, String> params = new HashMap<>(1);
-        params.put("name", agentName);
+        params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         params.put("search", isBlur ? SEARCH_BLUR : SEARCH_ACCURATE);
         params.put("pageNo", String.valueOf(pageNo));

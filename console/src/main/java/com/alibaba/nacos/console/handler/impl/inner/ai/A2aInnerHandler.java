@@ -61,13 +61,13 @@ public class A2aInnerHandler implements A2aHandler {
     
     @Override
     public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion(),
+        return a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getAgentName(), form.getVersion(),
                 form.getRegistrationType());
     }
     
     @Override
     public void deleteAgent(AgentForm form) throws NacosException {
-        a2aServerOperationService.deleteAgent(form.getNamespaceId(), form.getName(), form.getVersion());
+        a2aServerOperationService.deleteAgent(form.getNamespaceId(), form.getAgentName(), form.getVersion());
     }
     
     @Override
@@ -78,7 +78,7 @@ public class A2aInnerHandler implements A2aHandler {
     
     @Override
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
-        return a2aServerOperationService.listAgents(agentListForm.getNamespaceId(), agentListForm.getName(),
+        return a2aServerOperationService.listAgents(agentListForm.getNamespaceId(), agentListForm.getAgentName(),
                 agentListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize());
     }
     

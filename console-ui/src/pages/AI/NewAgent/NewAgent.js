@@ -74,7 +74,7 @@ class NewAgent extends React.Component {
     this.setState({ loading: true });
 
     const params = new URLSearchParams();
-    params.append('name', agentName);
+    params.append('agentName', agentName);
     params.append('namespaceId', namespaceId);
 
     request({
@@ -236,7 +236,7 @@ class NewAgent extends React.Component {
       // 准备请求数据
       const requestData = {
         namespaceId: namespaceId,
-        name: values.name,
+        agentName: values.name,
         version: values.version,
         registrationType: isEdit ? '' : 'URL', // 默认使用 url 类型
         agentCard: JSON.stringify(agentCard),

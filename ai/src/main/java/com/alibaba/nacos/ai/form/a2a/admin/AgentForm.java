@@ -40,7 +40,7 @@ public class AgentForm implements NacosForm {
     
     private String namespaceId;
     
-    private String name;
+    private String agentName;
     
     private String version;
     
@@ -49,7 +49,7 @@ public class AgentForm implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
-        if (StringUtils.isEmpty(name)) {
+        if (StringUtils.isEmpty(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'name' type String is not present");
         }
@@ -69,12 +69,12 @@ public class AgentForm implements NacosForm {
         this.namespaceId = namespaceId;
     }
     
-    public String getName() {
-        return name;
+    public String getAgentName() {
+        return agentName;
     }
     
-    public void setName(String name) {
-        this.name = name;
+    public void setAgentName(String agentName) {
+        this.agentName = agentName;
     }
     
     public String getVersion() {
@@ -99,13 +99,13 @@ public class AgentForm implements NacosForm {
             return false;
         }
         AgentForm agentForm = (AgentForm) o;
-        return Objects.equals(namespaceId, agentForm.namespaceId) && Objects.equals(name, agentForm.name)
+        return Objects.equals(namespaceId, agentForm.namespaceId) && Objects.equals(agentName, agentForm.agentName)
                 && Objects.equals(version, agentForm.version) && Objects.equals(registrationType,
                 agentForm.registrationType);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, name, version, registrationType);
+        return Objects.hash(namespaceId, agentName, version, registrationType);
     }
 }

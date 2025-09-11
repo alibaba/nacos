@@ -56,7 +56,7 @@ class AgentDetail extends React.Component {
     this.setState({ loading: true });
 
     const params = new URLSearchParams();
-    params.append('name', agentName);
+    params.append('agentName', agentName);
     params.append('namespaceId', namespaceId);
 
     request({
@@ -95,7 +95,7 @@ class AgentDetail extends React.Component {
     }
 
     const params = new URLSearchParams();
-    params.append('name', agentName);
+    params.append('agentName', agentName);
     params.append('namespaceId', namespaceId);
 
     request({

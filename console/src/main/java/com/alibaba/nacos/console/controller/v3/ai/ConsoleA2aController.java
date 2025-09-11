@@ -151,7 +151,7 @@ public class ConsoleA2aController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm) throws NacosException {
         agentForm.validate();
-        return Result.success(a2aProxy.listAgentVersions(agentForm.getNamespaceId(), agentForm.getName()));
+        return Result.success(a2aProxy.listAgentVersions(agentForm.getNamespaceId(), agentForm.getAgentName()));
     }
 }
 

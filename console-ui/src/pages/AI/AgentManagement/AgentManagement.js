@@ -128,7 +128,7 @@ class AgentManagement extends React.Component {
     const data = {
       pageNo: pageNo,
       pageSize: pageSize,
-      name: searchName || '',
+      agentName: searchName || '',
       search: 'blur',
       namespaceId: namespaceId,
     };
@@ -217,7 +217,7 @@ class AgentManagement extends React.Component {
     const { locale = {} } = this.props;
     const namespaceId = getParams('namespace') || '';
     const params = new URLSearchParams();
-    params.append('name', record.name);
+    params.append('agentName', record.name);
     if (namespaceId) {
       params.append('namespaceId', namespaceId);
     }
@@ -281,7 +281,7 @@ class AgentManagement extends React.Component {
 
     const deletePromises = selectedRows.map(row => {
       const params = new URLSearchParams();
-      params.append('name', row.name);
+      params.append('agentName', row.name);
       if (namespaceId) {
         params.append('namespaceId', namespaceId);
       }

@@ -90,7 +90,7 @@ public class A2aAdminController {
     public Result<AgentCardDetailInfo> getAgentCard(AgentForm form) throws NacosApiException {
         form.validate();
         return Result.success(
-                a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getName(), form.getVersion(),
+                a2aServerOperationService.getAgentCard(form.getNamespaceId(), form.getAgentName(), form.getVersion(),
                         form.getRegistrationType()));
     }
     
@@ -122,7 +122,7 @@ public class A2aAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteAgent(AgentForm form) throws NacosException {
         form.validate();
-        a2aServerOperationService.deleteAgent(form.getNamespaceId(), form.getName(), form.getVersion());
+        a2aServerOperationService.deleteAgent(form.getNamespaceId(), form.getAgentName(), form.getVersion());
         return Result.success("ok");
     }
     
@@ -141,7 +141,7 @@ public class A2aAdminController {
         agentListForm.validate();
         pageForm.validate();
         return Result.success(
-                a2aServerOperationService.listAgents(agentListForm.getNamespaceId(), agentListForm.getName(),
+                a2aServerOperationService.listAgents(agentListForm.getNamespaceId(), agentListForm.getAgentName(),
                         agentListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
@@ -157,6 +157,6 @@ public class A2aAdminController {
     public Result<List<AgentVersionDetail>> listAgentVersions(AgentForm agentForm) throws NacosException {
         agentForm.validate();
         return Result.success(
-                a2aServerOperationService.listAgentVersions(agentForm.getNamespaceId(), agentForm.getName()));
+                a2aServerOperationService.listAgentVersions(agentForm.getNamespaceId(), agentForm.getAgentName()));
     }
 }
