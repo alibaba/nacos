@@ -392,7 +392,7 @@ public class A2aServerOperationService {
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.AGENT_NOT_FOUND,
-                    "Cannot update agent: Agent not found: " + name);
+                    "Agent not found: " + name);
         }
         return JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
     }

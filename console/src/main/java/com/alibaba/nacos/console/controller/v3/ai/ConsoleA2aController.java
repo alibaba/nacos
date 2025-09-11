@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardUpdateForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
+import com.alibaba.nacos.ai.param.AgentHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.ai.A2aProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -54,6 +56,7 @@ import java.util.List;
 @NacosApi
 @RestController
 @RequestMapping(Constants.A2A.CONSOLE_PATH)
+@ExtractorManager.Extractor(httpExtractor = AgentHttpParamExtractor.class)
 public class ConsoleA2aController {
     
     private final A2aProxy a2aProxy;
