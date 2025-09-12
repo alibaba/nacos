@@ -26,13 +26,7 @@ import java.util.Objects;
  *
  * @author KiteSoar
  */
-public class AgentCard {
-    
-    private String protocolVersion;
-    
-    private String name;
-    
-    private String description;
+public class AgentCard extends AgentCardBasicInfo {
     
     private String url;
     
@@ -40,15 +34,9 @@ public class AgentCard {
     
     private List<AgentInterface> additionalInterfaces;
     
-    private String iconUrl;
-    
     private AgentProvider provider;
     
-    private String version;
-    
     private String documentationUrl;
-    
-    private AgentCapabilities capabilities;
     
     private Map<String, SecurityScheme> securitySchemes;
     
@@ -58,33 +46,7 @@ public class AgentCard {
     
     private List<String> defaultOutputModes;
     
-    private List<AgentSkill> skills;
-    
     private Boolean supportsAuthenticatedExtendedCard;
-    
-    public String getProtocolVersion() {
-        return protocolVersion;
-    }
-    
-    public void setProtocolVersion(String protocolVersion) {
-        this.protocolVersion = protocolVersion;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
     
     public String getUrl() {
         return url;
@@ -110,14 +72,6 @@ public class AgentCard {
         this.additionalInterfaces = additionalInterfaces;
     }
     
-    public String getIconUrl() {
-        return iconUrl;
-    }
-    
-    public void setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
-    }
-    
     public AgentProvider getProvider() {
         return provider;
     }
@@ -126,28 +80,12 @@ public class AgentCard {
         this.provider = provider;
     }
     
-    public String getVersion() {
-        return version;
-    }
-    
-    public void setVersion(String version) {
-        this.version = version;
-    }
-    
     public String getDocumentationUrl() {
         return documentationUrl;
     }
     
     public void setDocumentationUrl(String documentationUrl) {
         this.documentationUrl = documentationUrl;
-    }
-    
-    public AgentCapabilities getCapabilities() {
-        return capabilities;
-    }
-    
-    public void setCapabilities(AgentCapabilities capabilities) {
-        this.capabilities = capabilities;
     }
     
     public Map<String, SecurityScheme> getSecuritySchemes() {
@@ -182,14 +120,6 @@ public class AgentCard {
         this.defaultOutputModes = defaultOutputModes;
     }
     
-    public List<AgentSkill> getSkills() {
-        return skills;
-    }
-    
-    public void setSkills(List<AgentSkill> skills) {
-        this.skills = skills;
-    }
-    
     public Boolean getSupportsAuthenticatedExtendedCard() {
         return supportsAuthenticatedExtendedCard;
     }
@@ -200,27 +130,28 @@ public class AgentCard {
     
     @Override
     public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
         AgentCard agentCard = (AgentCard) o;
-        return Objects.equals(protocolVersion, agentCard.protocolVersion) && Objects.equals(name, agentCard.name)
-                && Objects.equals(description, agentCard.description) && Objects.equals(url, agentCard.url)
-                && Objects.equals(preferredTransport, agentCard.preferredTransport) && Objects.equals(
-                additionalInterfaces, agentCard.additionalInterfaces) && Objects.equals(iconUrl, agentCard.iconUrl)
-                && Objects.equals(provider, agentCard.provider) && Objects.equals(version, agentCard.version)
-                && Objects.equals(documentationUrl, agentCard.documentationUrl) && Objects.equals(capabilities,
-                agentCard.capabilities) && Objects.equals(securitySchemes, agentCard.securitySchemes) && Objects.equals(
-                security, agentCard.security) && Objects.equals(defaultInputModes, agentCard.defaultInputModes)
-                && Objects.equals(defaultOutputModes, agentCard.defaultOutputModes) && Objects.equals(skills,
-                agentCard.skills) && Objects.equals(supportsAuthenticatedExtendedCard,
-                agentCard.supportsAuthenticatedExtendedCard);
+        return super.equals(agentCard) && Objects.equals(url, agentCard.url) && Objects.equals(preferredTransport,
+                agentCard.preferredTransport) && Objects.equals(additionalInterfaces, agentCard.additionalInterfaces)
+                && Objects.equals(provider, agentCard.provider) && Objects.equals(documentationUrl,
+                agentCard.documentationUrl) && Objects.equals(securitySchemes, agentCard.securitySchemes)
+                && Objects.equals(security, agentCard.security) && Objects.equals(defaultInputModes,
+                agentCard.defaultInputModes) && Objects.equals(defaultOutputModes, agentCard.defaultOutputModes)
+                && Objects.equals(supportsAuthenticatedExtendedCard, agentCard.supportsAuthenticatedExtendedCard);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(protocolVersion, name, description, url, preferredTransport, additionalInterfaces, iconUrl,
-                provider, version, documentationUrl, capabilities, securitySchemes, security, defaultInputModes,
-                defaultOutputModes, skills, supportsAuthenticatedExtendedCard);
+        return Objects.hash(super.hashCode(), url, preferredTransport, additionalInterfaces, provider, documentationUrl,
+                securitySchemes, security, defaultInputModes, defaultOutputModes, supportsAuthenticatedExtendedCard);
     }
 }
