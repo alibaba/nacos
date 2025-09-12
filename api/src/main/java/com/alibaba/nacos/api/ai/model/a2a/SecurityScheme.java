@@ -17,12 +17,19 @@
 
 package com.alibaba.nacos.api.ai.model.a2a;
 
+import java.util.HashMap;
+
 /**
  * SecurityScheme.
  *
  * @author KiteSoar
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class SecurityScheme {
-
+public class SecurityScheme extends HashMap<String, Object> {
+    
+    private static final long serialVersionUID = -708604225878249736L;
+    
+    public SecurityScheme() {
+        super(4);
+    }
 }
