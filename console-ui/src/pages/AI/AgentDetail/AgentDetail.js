@@ -16,9 +16,20 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Card, ConfigProvider, Loading, Message, Tag, Table, Grid } from '@alifd/next';
+import {
+  Button,
+  Card,
+  ConfigProvider,
+  Loading,
+  Message,
+  Tag,
+  Table,
+  Grid,
+  Switch,
+} from '@alifd/next';
 import PageTitle from 'components/PageTitle';
 import { getParams, request } from '@/globalLib';
+import '../NewAgent/NewAgent.scss';
 
 @ConfigProvider.config
 class AgentDetail extends React.Component {
@@ -44,9 +55,23 @@ class AgentDetail extends React.Component {
     this.loadVersionList();
   }
 
+  // 添加 componentDidUpdate 来监听路由参数变化
+  componentDidUpdate(prevProps) {
+    // 检查URL参数是否发生变化
+    const prevSearch = prevProps.location?.search || '';
+    const currentSearch = this.props.location?.search || '';
+
+    // 如果URL参数发生变化，重新加载数据
+    if (prevSearch !== currentSearch) {
+      this.loadAgentDetail();
+      // 版本列表不需要重复加载，因为同一个agent的不同版本都在一个列表中
+    }
+  }
+
   loadAgentDetail = () => {
     const agentName = getParams('name');
     const namespaceId = getParams('namespace') || 'public';
+    const version = getParams('version'); // 获取URL中的版本参数
 
     if (!agentName) {
       Message.error('Agent名称不能为空');
@@ -58,6 +83,11 @@ class AgentDetail extends React.Component {
     const params = new URLSearchParams();
     params.append('agentName', agentName);
     params.append('namespaceId', namespaceId);
+
+    // 如果有版本号参数，则添加到请求参数中
+    if (version) {
+      params.append('version', version);
+    }
 
     request({
       url: `/v3/console/ai/a2a?${params.toString()}`,
@@ -312,31 +342,58 @@ class AgentDetail extends React.Component {
     }
 
     if (typeof capabilities === 'object') {
+      // 解析三个核心能力的值，默认为false
+      const streaming = !!capabilities.streaming;
+      const pushNotifications = !!capabilities.pushNotifications;
+      const stateTransitionHistory = !!capabilities.stateTransitionHistory;
+
       return (
-        <div>
-          {Object.entries(capabilities).map(([key, value]) => (
-            <div
-              key={key}
-              style={{
-                marginBottom: '12px',
-                padding: '12px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '6px',
-                border: '1px solid #e8e8e8',
-              }}
-            >
-              <div style={{ fontWeight: 'bold', marginBottom: '4px', textTransform: 'capitalize' }}>
-                {key}
+        <div className="new-agent-container">
+          <div className="capabilities-container">
+            <div className="capability-item">
+              <div className="capability-label">流式传输</div>
+              <div className="capability-switch">
+                <Switch
+                  checked={streaming}
+                  disabled={true}
+                  checkedChildren="开启"
+                  unCheckedChildren="关闭"
+                />
               </div>
-              <div style={{ color: '#666', fontSize: '13px' }}>
-                {Array.isArray(value) ? value.join(', ') : value == null ? '--' : String(value)}
-              </div>
+              <div className="capability-description">是否支持流式数据传输</div>
             </div>
-          ))}
+
+            <div className="capability-item">
+              <div className="capability-label">推送通知</div>
+              <div className="capability-switch">
+                <Switch
+                  checked={pushNotifications}
+                  disabled={true}
+                  checkedChildren="开启"
+                  unCheckedChildren="关闭"
+                />
+              </div>
+              <div className="capability-description">是否支持推送通知功能</div>
+            </div>
+
+            <div className="capability-item">
+              <div className="capability-label">状态历史</div>
+              <div className="capability-switch">
+                <Switch
+                  checked={stateTransitionHistory}
+                  disabled={true}
+                  checkedChildren="开启"
+                  unCheckedChildren="关闭"
+                />
+              </div>
+              <div className="capability-description">是否支持记录状态转换历史</div>
+            </div>
+          </div>
         </div>
       );
     }
 
+    // 兜底：如果capabilities不是对象，则以JSON形式展示
     return (
       <pre
         style={{
@@ -350,7 +407,9 @@ class AgentDetail extends React.Component {
           fontSize: '13px',
         }}
       >
-        {capabilities.toString()}
+        {typeof capabilities === 'object'
+          ? JSON.stringify(capabilities, null, 2)
+          : String(capabilities)}
       </pre>
     );
   };
@@ -388,7 +447,8 @@ class AgentDetail extends React.Component {
   };
 
   renderVersionTable = () => {
-    const { versionList } = this.state;
+    const { versionList, agentData } = this.state;
+    const currentVersion = agentData?.version;
 
     if (!versionList || versionList.length === 0) {
       return <div>暂无版本信息</div>;
@@ -396,7 +456,21 @@ class AgentDetail extends React.Component {
 
     return (
       <Table dataSource={versionList} size="small">
-        <Table.Column title="版本号" dataIndex="version" cell={value => value || '--'} />
+        <Table.Column
+          title="版本号"
+          dataIndex="version"
+          cell={(value, index, record) => {
+            // 如果不是当前版本，则显示为可点击链接
+            if (value !== currentVersion) {
+              return (
+                <a onClick={() => this.handleVersionClick(record)} style={{ cursor: 'pointer' }}>
+                  {value || '--'}
+                </a>
+              );
+            }
+            return value || '--';
+          }}
+        />
         <Table.Column
           title="是否最新"
           dataIndex="latest"
@@ -420,6 +494,17 @@ class AgentDetail extends React.Component {
     );
   };
 
+  // 处理版本号点击事件
+  handleVersionClick = versionRecord => {
+    const agentName = getParams('name');
+    const namespaceId = getParams('namespace') || 'public';
+
+    // 跳转到对应版本的详情页面
+    this.props.history.push(
+      `/agentDetail?namespace=${namespaceId}&name=${agentName}&version=${versionRecord.version}`
+    );
+  };
+
   render() {
     const { locale = {} } = this.props;
     const { loading, agentData } = this.state;
@@ -440,9 +525,14 @@ class AgentDetail extends React.Component {
       );
     }
 
+    // 构造包含版本信息的标题
+    const pageTitle = getParams('version')
+      ? `Agent详情 - ${agentData.name} (版本: ${getParams('version')})`
+      : `Agent详情 - ${agentData.name}`;
+
     return (
       <div>
-        <PageTitle title={`Agent详情 - ${agentData.name}`} />
+        <PageTitle title={pageTitle} />
 
         <div style={{ marginBottom: 16 }}>
           <Button onClick={this.handleGoBack} style={{ marginRight: 8 }}>
@@ -467,7 +557,7 @@ class AgentDetail extends React.Component {
             <div style={{ flex: 1 }}>
               {this.renderDetailItem('输入模式', this.formatModes(agentData.defaultInputModes))}
               {this.renderDetailItem('输出模式', this.formatModes(agentData.defaultOutputModes))}
-              {this.renderDetailItem('提供商名称', agentData.provider?.name)}
+              {this.renderDetailItem('提供商名称', agentData.provider?.organization)}
               {this.renderDetailItem('提供商URL', agentData.provider?.url)}
               {this.renderDetailItem('传输协议', agentData.preferredTransport)}
               {this.renderDetailItem(
