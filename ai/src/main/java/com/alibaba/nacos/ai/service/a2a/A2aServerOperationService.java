@@ -325,6 +325,9 @@ public class A2aServerOperationService {
         if (AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE.equalsIgnoreCase(registrationType)) {
             injectEndpoint(result, namespaceId);
         }
+        if (agentCardVersionInfo.getLatestPublishedVersion().equals(result.getVersion())) {
+            result.setLatestVersion(true);
+        }
         return result;
     }
     

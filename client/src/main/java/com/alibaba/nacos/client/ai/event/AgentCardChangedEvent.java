@@ -16,45 +16,47 @@
 
 package com.alibaba.nacos.client.ai.event;
 
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
- * Nacos AI module mcp server changed event in nacos- client.
+ * Nacos AI module agent card changed event in nacos- client.
  *
  * @author xiweng.yy
  */
-public class McpServerChangedEvent extends Event {
+public class AgentCardChangedEvent extends Event {
     
     private static final long serialVersionUID = 2010793364377243018L;
     
-    private final String mcpName;
+    private final String agentName;
     
     private final String version;
     
-    private final McpServerDetailInfo mcpServer;
+    private final AgentCardDetailInfo agentCard;
     
-    public McpServerChangedEvent(McpServerDetailInfo mcpServer) {
-        this.mcpServer = mcpServer;
-        this.mcpName = mcpServer.getName();
-        this.version = buildVersion(mcpServer);
+    public AgentCardChangedEvent(AgentCardDetailInfo agentCard) {
+        this.agentCard = agentCard;
+        this.agentName = agentCard.getName();
+        this.version = buildVersion(agentCard);
     }
     
-    private String buildVersion(McpServerDetailInfo mcpServer) {
-        return mcpServer.getVersionDetail().getIs_latest() ? CacheKeyUtils.LATEST_VERSION
-                : mcpServer.getVersionDetail().getVersion();
+    private String buildVersion(AgentCardDetailInfo agentCard) {
+        if (null == agentCard.isLatestVersion() || agentCard.isLatestVersion()) {
+            return CacheKeyUtils.LATEST_VERSION;
+        }
+        return agentCard.getVersion();
     }
     
-    public String getMcpName() {
-        return mcpName;
+    public String getAgentName() {
+        return agentName;
     }
     
     public String getVersion() {
         return version;
     }
     
-    public McpServerDetailInfo getMcpServer() {
-        return mcpServer;
+    public AgentCardDetailInfo getAgentCard() {
+        return agentCard;
     }
 }

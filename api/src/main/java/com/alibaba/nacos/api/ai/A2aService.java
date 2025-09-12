@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -59,7 +60,7 @@ public interface A2aService {
      * @param agentName name of agent card
      * @param version   target version, if null or empty, get latest version
      * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
-*                              default is empty, means use agent card setting in nacos.
+     *                              default is empty, means use agent card setting in nacos.
      * @return agent card with nacos extension detail
      * @throws NacosException if request parameter is invalid or agent card not found or handle error
      */
@@ -207,7 +208,8 @@ public interface A2aService {
      * @param port      port of this endpoint
      * @throws NacosException if request parameter is invalid or handle error or agent not found
      */
-    default void deregisterAgentEndpoint(String agentName, String version, String address, int port) throws NacosException {
+    default void deregisterAgentEndpoint(String agentName, String version, String address, int port)
+            throws NacosException {
         AgentEndpoint agentEndpoint = new AgentEndpoint();
         agentEndpoint.setAddress(address);
         agentEndpoint.setPort(port);
@@ -228,4 +230,52 @@ public interface A2aService {
      * @throws NacosException if request parameter is invalid or handle error or agent not found
      */
     void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException;
+    
+    /**
+     * Subscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param agentCardListener the callback listener for agent card
+     * @return current agent card when subscribe success
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    default AgentCardDetailInfo subscribeAgentCard(String agentName, AbstractNacosAgentCardListener agentCardListener)
+            throws NacosException {
+        return subscribeAgentCard(agentName, StringUtils.EMPTY, agentCardListener);
+    }
+    
+    /**
+     * Subscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param version           version of agent, if empty or null, means subscribe latest version
+     * @param agentCardListener the callback listener for agent card
+     * @return current agent card when subscribe success, nullable if agent card not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    AgentCardDetailInfo subscribeAgentCard(String agentName, String version,
+            AbstractNacosAgentCardListener agentCardListener) throws NacosException;
+    
+    /**
+     * Unsubscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param agentCardListener the callback listener for agent card
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    default void unsubscribeAgentCard(String agentName, AbstractNacosAgentCardListener agentCardListener)
+            throws NacosException {
+        unsubscribeAgentCard(agentName, StringUtils.EMPTY, agentCardListener);
+    }
+    
+    /**
+     * Unsubscribe agent card.
+     *
+     * @param agentName         name of agent
+     * @param version           version of agent, if empty or null, means unsubscribe latest version
+     * @param agentCardListener the callback listener for agent card
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
+            throws NacosException;
 }

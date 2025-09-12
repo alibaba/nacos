@@ -14,34 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.a2a;
+package com.alibaba.nacos.api.ai.listener;
 
-import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 
 /**
- * Agent Card detail info with Nacos extension field.
+ * Nacos AI Module agent card event.
  *
  * @author xiweng.yy
  */
-public class AgentCardDetailInfo extends AgentCard {
+public class NacosAgentCardEvent implements NacosAiEvent {
     
-    private String registrationType = AiConstants.A2a.A2A_ENDPOINT_TYPE_URL;
+    private final String agentName;
     
-    private Boolean latestVersion;
+    private final AgentCardDetailInfo agentCard;
     
-    public String getRegistrationType() {
-        return registrationType;
+    public NacosAgentCardEvent(AgentCardDetailInfo agentCard) {
+        this.agentName = agentCard.getName();
+        this.agentCard = agentCard;
     }
     
-    public void setRegistrationType(String registrationType) {
-        this.registrationType = registrationType;
+    public String getAgentName() {
+        return agentName;
     }
     
-    public Boolean isLatestVersion() {
-        return latestVersion;
-    }
-    
-    public void setLatestVersion(Boolean latestVersion) {
-        this.latestVersion = latestVersion;
+    public AgentCardDetailInfo getAgentCard() {
+        return agentCard;
     }
 }

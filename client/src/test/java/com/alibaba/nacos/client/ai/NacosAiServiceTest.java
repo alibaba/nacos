@@ -25,8 +25,9 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
-import com.alibaba.nacos.client.ai.event.McpServerChangeNotifier;
+import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import org.junit.jupiter.api.AfterEach;
@@ -58,10 +59,13 @@ class NacosAiServiceTest {
     private AiGrpcClient grpcClient;
     
     @Mock
-    private NacosMcpServerCacheHolder cacheHolder;
+    private NacosMcpServerCacheHolder mcpServerCacheHolder;
     
     @Mock
-    private McpServerChangeNotifier mcpServerNotifier;
+    private NacosAgentCardCacheHolder agentCardCacheHolder;
+    
+    @Mock
+    private AiChangeNotifier aiChangeNotifier;
     
     NacosAiService nacosAiService;
     
@@ -173,7 +177,7 @@ class NacosAiServiceTest {
         when(grpcClient.subscribeMcpServer("testMcpName", null)).thenReturn(expected);
         McpServerDetailInfo actual = nacosAiService.subscribeMcpServer("testMcpName", listener);
         assertEquals(expected, actual);
-        verify(mcpServerNotifier).registerListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier).registerListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
         verify(listener).onEvent(any(NacosMcpServerEvent.class));
     }
     
@@ -188,17 +192,17 @@ class NacosAiServiceTest {
         injectMocks();
         AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
-        verify(mcpServerNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
         verify(grpcClient).unsubscribeMcpServer("testMcpName", null);
     }
     
     @Test
     void unsubscribeMcpServerWithOtherListener() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
-        when(mcpServerNotifier.isSubscribed("testMcpName")).thenReturn(true);
+        when(aiChangeNotifier.isMcpServerSubscribed("testMcpName", null)).thenReturn(true);
         AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
-        verify(mcpServerNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
         verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
     }
     
@@ -206,7 +210,7 @@ class NacosAiServiceTest {
     void unsubscribeMcpServerWithNullListener() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.unsubscribeMcpServer("testMcpName", null);
-        verify(mcpServerNotifier, never()).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier, never()).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
         verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
     }
     
@@ -218,18 +222,23 @@ class NacosAiServiceTest {
     private void injectMocks() throws NoSuchFieldException, IllegalAccessException {
         Field field = NacosAiService.class.getDeclaredField("grpcClient");
         field.setAccessible(true);
-        AiGrpcClient autoBuildGrpcClient = (AiGrpcClient) field.get(nacosAiService);
+        final AiGrpcClient autoBuildGrpcClient = (AiGrpcClient) field.get(nacosAiService);
         field.set(nacosAiService, grpcClient);
-        field = NacosAiService.class.getDeclaredField("cacheHolder");
+        field = NacosAiService.class.getDeclaredField("mcpServerCacheHolder");
         field.setAccessible(true);
         NacosMcpServerCacheHolder autoBuildCacheHolder = (NacosMcpServerCacheHolder) field.get(nacosAiService);
-        field.set(nacosAiService, cacheHolder);
-        field = NacosAiService.class.getDeclaredField("mcpServerNotifier");
+        field.set(nacosAiService, mcpServerCacheHolder);
+        field = NacosAiService.class.getDeclaredField("agentCardCacheHolder");
         field.setAccessible(true);
-        field.set(nacosAiService, mcpServerNotifier);
+        NacosAgentCardCacheHolder autoBuildAgentCacheHolder = (NacosAgentCardCacheHolder) field.get(nacosAiService);
+        field.set(nacosAiService, agentCardCacheHolder);
+        field = NacosAiService.class.getDeclaredField("aiChangeNotifier");
+        field.setAccessible(true);
+        field.set(nacosAiService, aiChangeNotifier);
         try {
             autoBuildGrpcClient.shutdown();
             autoBuildCacheHolder.shutdown();
+            autoBuildAgentCacheHolder.shutdown();
         } catch (NacosException ignored) {
         }
     }

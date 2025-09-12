@@ -145,7 +145,7 @@ public interface AiService extends A2aService {
      * @param mcpName           name of mcp server
      * @param version           version of mcp server
      * @param mcpServerListener listener of mcp server, callback when mcp server is changed
-     * @return The detail info of mcp server at current time
+     * @return The detail info of mcp server at current time, nullable if agent card not found
      * @throws NacosException if request parameter is invalid or handle error
      */
     McpServerDetailInfo subscribeMcpServer(String mcpName, String version,

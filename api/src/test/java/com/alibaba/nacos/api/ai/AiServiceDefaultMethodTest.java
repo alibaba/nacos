@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -50,7 +51,8 @@ class AiServiceDefaultMethodTest {
             
             @Override
             public String releaseMcpServer(McpServerBasicInfo serverSpecification,
-                    McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+                    McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification)
+                    throws NacosException {
                 invokeMark.set(true);
                 return "";
             }
@@ -79,25 +81,36 @@ class AiServiceDefaultMethodTest {
             }
             
             @Override
-            public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType) throws NacosException {
+            public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
+                    throws NacosException {
                 return null;
             }
             
             @Override
-            public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest) throws NacosException {
-            
-            }
-            
-            @Override
-            public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint)
+            public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest)
                     throws NacosException {
                 
             }
             
             @Override
-            public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
-                    throws NacosException {
+            public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
                 
+            }
+            
+            @Override
+            public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+                
+            }
+            
+            @Override
+            public AgentCardDetailInfo subscribeAgentCard(String agentName, String version,
+                    AbstractNacosAgentCardListener agentCardListener) throws NacosException {
+                return null;
+            }
+            
+            @Override
+            public void unsubscribeAgentCard(String agentName, String version,
+                    AbstractNacosAgentCardListener agentCardListener) throws NacosException {
             }
             
             @Override

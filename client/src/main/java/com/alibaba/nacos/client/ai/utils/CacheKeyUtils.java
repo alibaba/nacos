@@ -19,11 +19,11 @@ package com.alibaba.nacos.client.ai.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
- * Nacos AI module mcp server utils.
+ * Nacos AI module cache key utils.
  *
  * @author xiweng.yy
  */
-public class McpServerUtils {
+public class CacheKeyUtils {
     
     public static final String LATEST_VERSION = "latest";
     
@@ -35,9 +35,24 @@ public class McpServerUtils {
      * @return mcp server versioned key, pattern ${mcpName}::${version}
      */
     public static String buildMcpServerKey(String mcpName, String version) {
+        return buildVersionedKey(mcpName, version);
+    }
+    
+    /**
+     * Build AgentCard versioned key.
+     *
+     * @param agentName name of agent name
+     * @param version version of agent name, if version is blank or null, use latest version
+     * @return mcp server versioned key, pattern ${mcpName}::${version}
+     */
+    public static String buildAgentCardKey(String agentName, String version) {
+        return buildVersionedKey(agentName, version);
+    }
+    
+    private static String buildVersionedKey(String name, String version) {
         if (StringUtils.isBlank(version)) {
             version = LATEST_VERSION;
         }
-        return mcpName + "::" + version;
+        return name + "::" + version;
     }
 }

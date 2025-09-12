@@ -34,9 +34,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
-class McpServerChangeNotifierTest {
+class AiChangeNotifierTest {
     
-    McpServerChangeNotifier changeNotifier;
+    AiChangeNotifier changeNotifier;
     
     private AtomicBoolean invokedMark;
     
@@ -44,7 +44,7 @@ class McpServerChangeNotifierTest {
     
     @BeforeEach
     void setUp() {
-        changeNotifier = new McpServerChangeNotifier();
+        changeNotifier = new AiChangeNotifier();
         invokedMark = new AtomicBoolean(false);
         mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
@@ -127,14 +127,14 @@ class McpServerChangeNotifierTest {
     
     @Test
     void registerNullListener() {
-        changeNotifier.registerListener("test", null, null);
-        assertFalse(changeNotifier.isSubscribed("test"));
+        changeNotifier.registerListener("test", null, (McpServerListenerInvoker) null);
+        assertFalse(changeNotifier.isMcpServerSubscribed("test", ""));
     }
     
     @Test
     void deregisterNullListener() {
-        changeNotifier.deregisterListener("test", null, null);
-        assertFalse(changeNotifier.isSubscribed("test"));
+        changeNotifier.deregisterListener("test", null, (McpServerListenerInvoker) null);
+        assertFalse(changeNotifier.isMcpServerSubscribed("test", ""));
     }
     
     @Test
@@ -147,6 +147,6 @@ class McpServerChangeNotifierTest {
         };
         McpServerListenerInvoker invoker = new McpServerListenerInvoker(listener);
         changeNotifier.deregisterListener("test", null, invoker);
-        assertFalse(changeNotifier.isSubscribed("test"));
+        assertFalse(changeNotifier.isMcpServerSubscribed("test", ""));
     }
 }

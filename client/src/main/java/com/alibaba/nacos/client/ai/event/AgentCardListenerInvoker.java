@@ -16,27 +16,26 @@
 
 package com.alibaba.nacos.client.ai.event;
 
-import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
-import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
+import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Nacos AI module mcp server listener invoker.
+ * Nacos AI module agent card listener invoker.
  *
  * @author xiweng.yy
  */
-public class McpServerListenerInvoker
-        extends AbstractAiListenerInvoker<NacosMcpServerEvent, AbstractNacosMcpServerListener> {
+public class AgentCardListenerInvoker
+        extends AbstractAiListenerInvoker<NacosAgentCardEvent, AbstractNacosAgentCardListener> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(McpServerListenerInvoker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgentCardListenerInvoker.class);
     
-    public McpServerListenerInvoker(AbstractNacosMcpServerListener listener) {
+    public AgentCardListenerInvoker(AbstractNacosAgentCardListener listener) {
         super(listener);
     }
     
-    protected void logInvoke(NacosMcpServerEvent event) {
-        LOGGER.info("Invoke event namespaceId: {}, mcpId: {}, mcpName: {} to Listener: {}", event.getNamespaceId(),
-                event.getMcpId(), event.getMcpName(), listener.toString());
+    protected void logInvoke(NacosAgentCardEvent event) {
+        LOGGER.info("Invoke event agentName: {} to Listener: {}", event.getAgentName(), listener.toString());
     }
 }

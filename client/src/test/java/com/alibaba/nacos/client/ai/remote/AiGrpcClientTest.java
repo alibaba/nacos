@@ -38,6 +38,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -85,6 +86,9 @@ class AiGrpcClientTest {
     @Mock
     private NacosMcpServerCacheHolder mcpServerCacheHolder;
     
+    @Mock
+    private NacosAgentCardCacheHolder agentCardCacheHolder;
+    
     AiGrpcClient aiGrpcClient;
     
     @BeforeEach
@@ -102,7 +106,7 @@ class AiGrpcClientTest {
     
     @Test
     void start() throws NacosException {
-        assertDoesNotThrow(() -> aiGrpcClient.start(mcpServerCacheHolder));
+        assertDoesNotThrow(() -> aiGrpcClient.start(mcpServerCacheHolder, agentCardCacheHolder));
     }
     
     @Test

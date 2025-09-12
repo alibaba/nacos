@@ -117,7 +117,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(initNotifyRequest);
         //check watcher notified
         Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 1);
+        System.out.println(watcher1Flag.get());
         Assertions.assertTrue(watcher1Flag.get() == 1);
         
         //build change notify add
@@ -128,7 +128,6 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         
         //check watcher notified
         Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 2);
         Assertions.assertTrue(watcher1Flag.get() == 2);
         
         //check not complete future timeout

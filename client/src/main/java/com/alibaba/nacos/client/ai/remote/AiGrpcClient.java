@@ -49,6 +49,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -96,6 +97,8 @@ public class AiGrpcClient implements Closeable {
     
     private NacosMcpServerCacheHolder mcpServerCacheHolder;
     
+    private NacosAgentCardCacheHolder agentCardCacheHolder;
+    
     public AiGrpcClient(String namespaceId, NacosClientProperties properties) {
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
@@ -120,8 +123,10 @@ public class AiGrpcClient implements Closeable {
      *
      * @throws NacosException nacos exception
      */
-    public void start(NacosMcpServerCacheHolder mcpServerCacheHolder) throws NacosException {
+    public void start(NacosMcpServerCacheHolder mcpServerCacheHolder, NacosAgentCardCacheHolder agentCardCacheHolder)
+            throws NacosException {
         this.mcpServerCacheHolder = mcpServerCacheHolder;
+        this.agentCardCacheHolder = agentCardCacheHolder;
         this.serverListManager.start();
         this.rpcClient.registerConnectionListener(this.redoService);
         this.rpcClient.serverListFactory(this.serverListManager);
@@ -272,8 +277,14 @@ public class AiGrpcClient implements Closeable {
         }
         McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, version);
         if (null == cachedServer) {
-            cachedServer = queryMcpServer(mcpName, version);
-            mcpServerCacheHolder.processMcpServerDetailInfo(cachedServer);
+            try {
+                cachedServer = queryMcpServer(mcpName, version);
+                mcpServerCacheHolder.processMcpServerDetailInfo(cachedServer);
+            } catch (NacosException e) {
+                if (NacosException.NOT_FOUND != e.getErrCode()) {
+                    throw e;
+                }
+            }
             mcpServerCacheHolder.addMcpServerUpdateTask(mcpName, version);
         }
         return cachedServer;
@@ -416,6 +427,49 @@ public class AiGrpcClient implements Closeable {
         request.setEndpoint(endpoint);
         requestToServer(request, AgentEndpointResponse.class);
         redoService.agentEndpointDeregistered(agentName);
+    }
+    
+    /**
+     * Subscribe agent card.
+     *
+     * @param agentName name of agent card
+     * @param version   version of agent card
+     * @return current agent card
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public AgentCardDetailInfo subscribeAgentCard(String agentName, String version) throws NacosException {
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        AgentCardDetailInfo cachedAgentCard = agentCardCacheHolder.getAgentCard(agentName, version);
+        if (null == cachedAgentCard) {
+            try {
+                cachedAgentCard = getAgentCard(agentName, version, StringUtils.EMPTY);
+                agentCardCacheHolder.processAgentCardDetailInfo(cachedAgentCard);
+            } catch (NacosException e) {
+                if (NacosException.NOT_FOUND != e.getErrCode()) {
+                    throw e;
+                }
+            }
+            agentCardCacheHolder.addAgentCardUpdateTask(agentName, version);
+        }
+        return cachedAgentCard;
+    }
+    
+    /**
+     * Un-subscribe agent card.
+     *
+     * @param agentName name of agent card
+     * @param version   version of agent card
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void unsubscribeAgentCard(String agentName, String version) throws NacosException {
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        agentCardCacheHolder.removeAgentCardUpdateTask(agentName, version);
     }
     
     public boolean isEnable() {
