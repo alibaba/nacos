@@ -55,18 +55,18 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class McpRegistryControllerTest {
-
+    
     @Mock
     private NacosMcpRegistryService nacosMcpRegistryService;
-
+    
     private ObjectMapper mapper = new ObjectMapper();
-
+    
     private MockMvc mockMvc;
-
+    
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     McpRegistryController mcpRegistryController;
-
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
@@ -74,12 +74,12 @@ class McpRegistryControllerTest {
         mcpRegistryController = new McpRegistryController(nacosMcpRegistryService);
         mockMvc = MockMvcBuilders.standaloneSetup(mcpRegistryController).build();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnvironment);
     }
-
+    
     @Test
     void listMcpServersInvalidCursor() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers")
@@ -87,7 +87,7 @@ class McpRegistryControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:cursor must be >= 0");
     }
-
+    
     @Test
     void listMcpServersInvalidLimit() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers")
@@ -95,14 +95,13 @@ class McpRegistryControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:limit must <= 100");
     }
-
+    
     @Test
     void listMcpServersFirstPageWithNextCursor() throws Exception {
         McpRegistryServerDetail d1 = serverDetail("id-1", "2025-06-10T02:29:17Z", "2025-06-10T02:29:17Z");
         McpRegistryServerDetail d2 = serverDetail("id-2", "2025-06-11T02:29:17Z", "2025-06-12T02:29:17Z");
         McpRegistryServerList internal = new McpRegistryServerList();
         internal.setServers(java.util.List.of(d1, d2));
-        internal.setTotal_count(5);
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(internal);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers")
                 .param("limit", "2");
@@ -120,13 +119,12 @@ class McpRegistryControllerTest {
         assertEquals("id-1", root.get("servers").get(0).get("_meta").get("io.modelcontextprotocol.registry/official")
                 .get("id").asText());
     }
-
+    
     @Test
     void listMcpServersLastPageNoNextCursor() throws Exception {
         McpRegistryServerDetail d1 = serverDetail("id-3", "2025-06-10T02:29:17Z", "2025-06-10T02:29:17Z");
         McpRegistryServerList internal = new McpRegistryServerList();
         internal.setServers(java.util.List.of(d1));
-        internal.setTotal_count(1);
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(internal);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers")
                 .param("limit", "10");
@@ -135,7 +133,7 @@ class McpRegistryControllerTest {
         // next_cursor should be null (absent)
         assertEquals(true, root.get("metadata").get("next_cursor").isNull());
     }
-
+    
     @Test
     void getServer() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -146,7 +144,7 @@ class McpRegistryControllerTest {
         assertEquals(200, response.getStatus());
         assertEquals(mapper.writeValueAsString(new McpRegistryServerDetail()), response.getContentAsString());
     }
-
+    
     @Test
     void getServerNotFound() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -155,7 +153,7 @@ class McpRegistryControllerTest {
         assertEquals(404, response.getStatus());
         assertEquals("{\"error\":\"Server not found\"}", response.getContentAsString());
     }
-
+    
     @Test
     void getMcpServerToolsInfo() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -165,10 +163,9 @@ class McpRegistryControllerTest {
         assertEquals(mapper.writeValueAsString(new McpToolSpecification()),
                 mockMvc.perform(builder).andReturn().getResponse().getContentAsString());
     }
-
+    
     private McpRegistryServerDetail serverDetail(String id, String publishedAt, String updatedAt) {
         McpRegistryServerDetail d = new McpRegistryServerDetail();
-        d.setId(id);
         d.setName(id + "-name");
         d.setDescription("desc-" + id);
         d.setPublishedAt(publishedAt);
@@ -176,7 +173,7 @@ class McpRegistryControllerTest {
         d.setUpdatedAt(updatedAt);
         return d;
     }
-
+    
     private static <T extends Throwable> void assertServletException(Class<T> expectedCause, Executable executable,
             String expectedMsg) throws Throwable {
         try {

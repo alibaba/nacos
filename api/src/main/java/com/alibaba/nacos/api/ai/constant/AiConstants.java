@@ -46,6 +46,10 @@ public class AiConstants {
         public static final String MCP_STATUS_ACTIVE = "active";
         
         public static final String MCP_STATUS_DEPRECATED = "deprecated";
+        
+        public static final String OFFICIAL_TRANSPORT_SSE = "sse";
+        
+        public static final String OFFICIAL_TRANSPORT_STREAMABLE = "streamable-http";
     }
     
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";

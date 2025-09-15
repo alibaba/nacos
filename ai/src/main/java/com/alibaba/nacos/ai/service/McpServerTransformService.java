@@ -54,17 +54,17 @@ import java.time.Duration;
  */
 @Service
 public class McpServerTransformService {
-
+    
     private static final String SERVERS_FIELD = "servers";
 
     private static final String HTTP_PREFIX = "http://";
-
+    
     private static final String HTTPS_PREFIX = "https://";
-
+    
     private static final String PROTOCOL_JAVASCRIPT = "javascript:";
-
+    
     private static final String PROTOCOL_DATA = "data:";
-
+    
     private static final String PROTOCOL_FILE = "file:";
 
     private static final String METADATA_FIELD = "metadata";
@@ -89,9 +89,7 @@ public class McpServerTransformService {
 
     private static final String AUTH_SCHEME_BEARER = "Bearer ";
 
-    private static final String TRANSPORT_SSE = "sse";
-
-    private static final String TRANSPORT_STREAMABLE = "streamable-http";
+    // Use official transport constants defined in AiConstants.Mcp
 
     private static final int HTTP_STATUS_SUCCESS_MIN = 200;
 
@@ -108,7 +106,7 @@ public class McpServerTransformService {
     private static final int MAX_PAGES_GUARD = 200;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-
+    
     /**
      * Holder for a single URL page fetch.
      */
@@ -191,7 +189,7 @@ public class McpServerTransformService {
             default:
                 throw new IllegalArgumentException("Unsupported import type: " + type);
         }
-
+        
         // Generate IDs for servers without IDs
         servers.forEach(server -> {
             if (StringUtils.isBlank(server.getId())) {
@@ -200,7 +198,7 @@ public class McpServerTransformService {
         });
         return servers;
     }
-
+    
     /**
      * Enum-based dispatcher with pagination and search support.
      */
@@ -229,7 +227,7 @@ public class McpServerTransformService {
         });
         return servers;
     }
-
+    
     /**
      * Fetch one page from URL source and return servers with next cursor.
      * Does not loop across multiple pages. Caller can iterate using nextCursor.
@@ -237,7 +235,7 @@ public class McpServerTransformService {
     public UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit) throws Exception {
         return fetchUrlPage(urlData, cursor, limit, null);
     }
-
+    
     /**
      * Fetch one registry page with optional search keyword.
      */
@@ -351,7 +349,7 @@ public class McpServerTransformService {
         if (registryServer == null) {
             return null;
         }
-
+        
         try {
             McpServerDetailInfo server = new McpServerDetailInfo();
 
@@ -390,7 +388,7 @@ public class McpServerTransformService {
             return null;
         }
     }
-
+    
     /**
      * Fill basic info: id/name/description/repository.
      */
@@ -526,10 +524,10 @@ public class McpServerTransformService {
             String tt = first != null ? first.getTransportType() : null;
             if (tt != null) {
                 String lower = tt.trim().toLowerCase();
-                if (TRANSPORT_SSE.equals(lower)) {
+                if (AiConstants.Mcp.OFFICIAL_TRANSPORT_SSE.equals(lower)) {
                     return AiConstants.Mcp.MCP_PROTOCOL_SSE;
                 }
-                if (TRANSPORT_STREAMABLE.equals(lower)) {
+                if (AiConstants.Mcp.OFFICIAL_TRANSPORT_STREAMABLE.equals(lower)) {
                     return AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
                 }
             }
@@ -608,16 +606,17 @@ public class McpServerTransformService {
             remoteConfig.setFrontEndpointConfigList(endpoints);
         }
     }
-
+    
     /**
      * Map registry transport type to Nacos MCP front type constants.
      */
+    @SuppressWarnings("unused")
     private String mapTransportType(String transportType, String fallback) {
         String t = transportType == null ? null : transportType.trim().toLowerCase();
-        if (TRANSPORT_SSE.equals(t) || AiConstants.Mcp.MCP_PROTOCOL_SSE.equalsIgnoreCase(transportType)) {
+        if (AiConstants.Mcp.OFFICIAL_TRANSPORT_SSE.equals(t) || AiConstants.Mcp.MCP_PROTOCOL_SSE.equalsIgnoreCase(transportType)) {
             return AiConstants.Mcp.MCP_PROTOCOL_SSE;
         }
-        if (TRANSPORT_STREAMABLE.equals(t)
+        if (AiConstants.Mcp.OFFICIAL_TRANSPORT_STREAMABLE.equals(t)
                 || AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equalsIgnoreCase(transportType)) {
             return AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
         }
@@ -630,7 +629,7 @@ public class McpServerTransformService {
         }
         return AiConstants.Mcp.MCP_PROTOCOL_SSE;
     }
-
+    
     /**
      * Configure remote service from package information.
      *
@@ -638,6 +637,7 @@ public class McpServerTransformService {
      * @param mcpPackage   MCP package information
      * @param protocol     Protocol type
      */
+    @SuppressWarnings("unused")
     private void configureRemoteServiceFromPackage(McpServerRemoteServiceConfig remoteConfig,
             Package mcpPackage, String protocol) {
         if (mcpPackage == null || remoteConfig == null) {
@@ -652,7 +652,7 @@ public class McpServerTransformService {
             remoteConfig.setExportPath(command);
         }
     }
-
+    
     /**
      * Build command from package information.
      *
@@ -717,10 +717,10 @@ public class McpServerTransformService {
                 }
             }
         }
-
+        
         return command.toString();
     }
-
+    
     /**
      * Extract argument value from polymorphic Argument interface.
      * 
@@ -737,7 +737,7 @@ public class McpServerTransformService {
         }
         return null;
     }
-
+    
     /**
      * Parse URL data to MCP servers with optional initial cursor and page limit.
      *
@@ -751,7 +751,7 @@ public class McpServerTransformService {
     private List<McpServerDetailInfo> parseUrlData(String urlData, String cursor, Integer limit) throws Exception {
         return parseUrlData(urlData, cursor, limit, null);
     }
-
+    
     /**
      * Parse URL data with optional search keyword and pagination.
      */
@@ -835,7 +835,7 @@ public class McpServerTransformService {
         }
         return out;
     }
-
+    
     /**
      * JSON import: parse into a single McpRegistryServerDetail object.
      */
@@ -973,13 +973,13 @@ public class McpServerTransformService {
         if (StringUtils.isBlank(name)) {
             return UUID.randomUUID().toString().replace("-", "");
         }
-
+    
         // Use name-based ID with random suffix
         String baseId = name.toLowerCase().replaceAll("[^a-z0-9]", "");
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         return baseId + "-" + suffix;
     }
-
+    
     /**
      * Validate URL security and validity based on protocol.
      *
@@ -991,14 +991,14 @@ public class McpServerTransformService {
         if (StringUtils.isBlank(url)) {
             return false;
         }
-
+        
         // Basic security checks - prevent potential malicious URLs
         String lowerUrl = url.toLowerCase();
         if (lowerUrl.contains(PROTOCOL_JAVASCRIPT) || lowerUrl.contains(PROTOCOL_DATA)
                 || lowerUrl.contains(PROTOCOL_FILE)) {
             return false;
         }
-
+        
         switch (protocol) {
             case AiConstants.Mcp.MCP_PROTOCOL_HTTP:
                 // HTTP protocol requires valid HTTP/HTTPS URLs

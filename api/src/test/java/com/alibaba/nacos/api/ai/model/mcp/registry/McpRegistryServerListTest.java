@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpRegistryServerListTest extends BasicRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         McpRegistryServerList mcpRegistryServerList = new McpRegistryServerList();

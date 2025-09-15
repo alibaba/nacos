@@ -172,7 +172,7 @@ class McpServerTransformServiceTest {
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
         assertEquals("npx test-mcp-server", server.getRemoteServerConfig().getExportPath());
     }
-
+    
     @Test
     void testUrlValidationWithMaliciousUrls() throws Exception {
         // Test with non-registry format to trigger URL validation

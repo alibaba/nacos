@@ -70,8 +70,8 @@ public class McpServerImportService {
     private static final String IMPORT_TYPE_URL = "url";
 
     public McpServerImportService(McpServerTransformService transformService,
-            McpServerValidationService validationService,
-            McpServerOperationService operationService) {
+                                  McpServerValidationService validationService,
+                                  McpServerOperationService operationService) {
         this.transformService = transformService;
         this.validationService = validationService;
         this.operationService = operationService;

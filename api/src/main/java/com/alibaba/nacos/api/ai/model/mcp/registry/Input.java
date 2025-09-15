@@ -49,15 +49,15 @@ public class Input {
     public String getDescription() {
         return description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     public Boolean getIsRequired() {
         return isRequired;
     }
-    
+
     public void setIsRequired(Boolean isRequired) {
         this.isRequired = isRequired;
     }

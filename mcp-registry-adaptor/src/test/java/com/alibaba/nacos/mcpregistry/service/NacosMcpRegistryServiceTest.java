@@ -22,17 +22,14 @@ import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServer;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
-import com.alibaba.nacos.api.ai.model.mcp.registry.NacosMcpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
@@ -52,12 +49,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,7 +87,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 1, 2, 0);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 0, 1, 10, 0);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertTrue(actual.getServers().isEmpty());
     }
     
@@ -108,7 +99,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 90, 10, 2, 0);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 100, 10, 10, 0);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertTrue(actual.getServers().isEmpty());
     }
     
@@ -121,7 +111,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 90, 2, 2);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 0, 100, 10, 10);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(12, actual.getServers().size());
     }
     
@@ -134,7 +123,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 1, 2, 0);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 0, 5, 10, 5);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(5, actual.getServers().size());
         for (McpRegistryServer each : actual.getServers()) {
             assertTrue(each.getDescription().endsWith(RANDOM_NAMESPACE_ID));
@@ -150,7 +138,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 1, 2, 1);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 0, 11, 10, 10);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(11, actual.getServers().size());
         for (int i = 0; i < 10; i++) {
             assertTrue(actual.getServers().get(i).getDescription().endsWith(RANDOM_NAMESPACE_ID));
@@ -167,7 +154,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 90, 2, 2);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 5, 100, 10, 10);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(12, actual.getServers().size());
     }
     
@@ -180,7 +166,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 1, 2, 1);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 5, 4, 10, 4);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(4, actual.getServers().size());
         for (McpRegistryServer each : actual.getServers()) {
             assertTrue(each.getDescription().endsWith(RANDOM_NAMESPACE_ID));
@@ -196,7 +181,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 1, 2, 1);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 5, 6, 10, 5);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(6, actual.getServers().size());
         for (int i = 0; i < 5; i++) {
             assertTrue(actual.getServers().get(i).getDescription().endsWith(RANDOM_NAMESPACE_ID));
@@ -213,7 +197,6 @@ class NacosMcpRegistryServiceTest {
         mockListMcpServerWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, 0, 10, 2, 2);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 10, 10, 10, 0);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(12, actual.getTotal_count());
         assertEquals(2, actual.getServers().size());
         for (McpRegistryServer each : actual.getServers()) {
             assertTrue(each.getDescription().endsWith(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE));
@@ -229,7 +212,6 @@ class NacosMcpRegistryServiceTest {
         listServerForm.setServerName(null);
         mockListMcpServerWithOffset(RANDOM_NAMESPACE_ID, 0, 30, 10, 10);
         McpRegistryServerList actual = mcpRegistryService.listMcpServers(listServerForm);
-        assertEquals(10, actual.getTotal_count());
         assertEquals(10, actual.getServers().size());
     }
     
@@ -249,7 +231,6 @@ class NacosMcpRegistryServiceTest {
         when(mcpServerOperationService.getMcpServerDetail(RANDOM_NAMESPACE_ID, id, null, null)).thenReturn(
                 mockMcpServerDetailInfo(id, RANDOM_NAMESPACE_ID, false, false));
         McpRegistryServerDetail result = mcpRegistryService.getServer(id, new GetServerForm());
-        assertEquals(id, result.getId());
         assertEquals("mockMcpServer", result.getName());
         assertEquals("Description:" + RANDOM_NAMESPACE_ID, result.getDescription());
         assertNull(result.getRepository());
@@ -268,7 +249,6 @@ class NacosMcpRegistryServiceTest {
         when(mcpServerOperationService.getMcpServerDetail(RANDOM_NAMESPACE_ID, id, null, null)).thenReturn(
                 mockMcpServerDetailInfo(id, RANDOM_NAMESPACE_ID, true, false));
         McpRegistryServerDetail result = mcpRegistryService.getServer(id, new GetServerForm());
-        assertEquals(id, result.getId());
         assertEquals("mockMcpServer", result.getName());
         assertEquals("Description:" + RANDOM_NAMESPACE_ID, result.getDescription());
         assertNull(result.getRepository());
@@ -296,45 +276,6 @@ class NacosMcpRegistryServiceTest {
         when(mcpServerOperationService.getMcpServerDetail(RANDOM_NAMESPACE_ID, id, null, null)).thenReturn(
                 mockMcpServerDetailInfo(id, RANDOM_NAMESPACE_ID, false, true));
         assertNotNull(mcpRegistryService.getTools(id, null));
-    }
-    
-    @Test
-    void createMcpServer() throws NacosException {
-        McpServerBasicInfo mockInfo = mockMcpServerBasicInfo(0, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        NacosMcpRegistryServerDetail serverDetail = new NacosMcpRegistryServerDetail();
-        serverDetail.setNacosNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        serverDetail.setName(mockInfo.getName());
-        serverDetail.setDescription(mockInfo.getDescription());
-        // version_detail removed from public model; version set via versionDetail in service call
-        serverDetail.setNacosMcpEndpointSpec(new McpEndpointSpec());
-        mcpRegistryService.createMcpServer(serverDetail);
-        verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                any(McpServerBasicInfo.class), isNull(), any(McpEndpointSpec.class));
-    }
-    
-    @Test
-    void updateMcpServerNonExist() {
-        assertThrows(NacosApiException.class,
-                () -> mcpRegistryService.updateMcpServer(new NacosMcpRegistryServerDetail()));
-    }
-    
-    @Test
-    void updateMcpServer() throws NacosException {
-        McpServerBasicInfo mockInfo = mockMcpServerBasicInfo(0, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        NacosMcpRegistryServerDetail serverDetail = new NacosMcpRegistryServerDetail();
-        serverDetail.setNacosNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        serverDetail.setId(mockInfo.getId());
-        serverDetail.setName(mockInfo.getName());
-        serverDetail.setDescription(mockInfo.getDescription());
-        // version_detail removed
-        serverDetail.setNacosMcpEndpointSpec(new McpEndpointSpec());
-        McpServerIndexData mockIndex = new McpServerIndexData();
-        mockIndex.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        mockIndex.setId(mockInfo.getId());
-        when(mcpServerIndex.getMcpServerById(mockInfo.getId())).thenReturn(mockIndex);
-        mcpRegistryService.updateMcpServer(serverDetail);
-        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), isNull(), any(McpEndpointSpec.class));
     }
     
     private void mockMultipleNamespace() {

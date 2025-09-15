@@ -22,7 +22,6 @@ package com.alibaba.nacos.api.ai.model.mcp.registry;
  * @author xinluo
  */
 public class McpErrorResponse {
-
     private String error;
 
     public String getError() {

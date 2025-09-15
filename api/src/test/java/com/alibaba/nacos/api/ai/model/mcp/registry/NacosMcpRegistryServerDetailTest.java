@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         // Repository是空对象
@@ -55,7 +55,7 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertTrue(json.contains("\"url\":\"127.0.0.1:8848/sse\""));
         assertTrue(json.contains("\"transport_type\":\"https\""));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\","

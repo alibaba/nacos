@@ -73,13 +73,13 @@ import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE
 @RequestMapping(Constants.MCP_CONSOLE_PATH)
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class ConsoleMcpController {
-
+    
     private final McpProxy mcpProxy;
-
+    
     public ConsoleMcpController(McpProxy mcpProxy) {
         this.mcpProxy = mcpProxy;
     }
-
+    
     /**
      * List mcp server.
      *
@@ -98,7 +98,7 @@ public class ConsoleMcpController {
                 mcpProxy.listMcpServers(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
                         pageForm.getPageNo(), pageForm.getPageSize()));
     }
-
+    
     /**
      * Import tools from mcp result.
      *
@@ -136,7 +136,7 @@ public class ConsoleMcpController {
             throw new NacosException(NacosException.SERVER_ERROR, "Failed to import tools from MCP server", e);
         }
     }
-
+    
     /**
      * Get specified mcp server detail info.
      *
@@ -151,7 +151,7 @@ public class ConsoleMcpController {
         return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(),
                 mcpForm.getVersion()));
     }
-
+    
     /**
      * Create new mcp server.
      *
@@ -168,7 +168,7 @@ public class ConsoleMcpController {
         String mcpId = mcpProxy.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools, endpointSpec);
         return Result.success(mcpId);
     }
-
+    
     /**
      * Update existed mcp server.
      *
@@ -189,7 +189,7 @@ public class ConsoleMcpController {
         mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getLatest(), basicInfo, mcpTools, endpointSpec);
         return Result.success("ok");
     }
-
+    
     /**
      * Delete existed mcp server.
      *
@@ -204,7 +204,7 @@ public class ConsoleMcpController {
                 mcpForm.getVersion());
         return Result.success("ok");
     }
-
+    
     /**
      * Validate MCP server import request.
      *
@@ -258,5 +258,4 @@ public class ConsoleMcpController {
         request.setSearch(form.getSearch());
         return request;
     }
-
 }

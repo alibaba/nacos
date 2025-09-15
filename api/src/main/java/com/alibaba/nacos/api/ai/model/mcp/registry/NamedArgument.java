@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class NamedArgument extends InputWithVariables implements Argument {
 
     private String type = "named";
-
+    
     private String name;
 
     @JsonProperty("is_repeated")

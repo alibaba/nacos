@@ -29,7 +29,7 @@ import java.util.List;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Remote {
-
+    
     @JsonProperty("transport_type")
     @JsonAlias("type")
     private String transportType;
