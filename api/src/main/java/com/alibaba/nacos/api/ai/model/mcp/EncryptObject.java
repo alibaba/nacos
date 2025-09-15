@@ -21,8 +21,8 @@ import java.util.Map;
 
 /**
  * Encrypted payload wrapper for MCP tool specification.
- *
  * Holds ciphertext and encryption metadata (algorithm, iv, keyId, version, etc.).
+ * @author luoxiner
  */
 public class EncryptObject implements Serializable {
 
