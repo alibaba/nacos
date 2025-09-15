@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.mcp.registry;
+package com.alibaba.nacos.mcpregistry.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,23 +22,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * McpRegistryServerList (renamed from ServerList) aligns with registry package.
+ * ServerList response per official MCP Registry OpenAPI: { servers: ServerDetail[], metadata: { next_cursor, count } }.
  *
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class McpRegistryServerList {
+public class ServerListResponse {
 
-    private List<McpRegistryServerDetail> servers;
+    private List<ServerDetailResponse> servers;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Metadata metadata;
 
-    public List<McpRegistryServerDetail> getServers() {
+    public List<ServerDetailResponse> getServers() {
         return servers;
     }
 
-    public void setServers(List<McpRegistryServerDetail> servers) {
+    public void setServers(List<ServerDetailResponse> servers) {
         this.servers = servers;
     }
 
@@ -52,9 +51,10 @@ public class McpRegistryServerList {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Metadata {
+        
         @JsonProperty("next_cursor")
         private String nextCursor;
-
+        
         private Integer count;
 
         public Metadata() {

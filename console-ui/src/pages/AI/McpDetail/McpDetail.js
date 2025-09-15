@@ -396,7 +396,8 @@ class McpDetail extends React.Component {
 
   // 将Package定义转换为MCP Server配置
   convertPackageToMcpConfig = packageDef => {
-    if (!packageDef || !packageDef.name) {
+    const pkgName = packageDef?.identifier || packageDef?.name;
+    if (!packageDef || !pkgName) {
       return null;
     }
 
@@ -410,13 +411,10 @@ class McpDetail extends React.Component {
     if (!serverName || serverName.trim() === '') {
       serverName = 'mcp-server';
     }
-
     const serverConfig = {};
-
-    // 处理运行时命令
     if (packageDef.runtime_hint) {
       serverConfig.command = packageDef.runtime_hint;
-    } else if (packageDef.registry_name === 'npm') {
+    } else if (this.getRegistryType(packageDef) === 'npm') {
       serverConfig.command = 'npx';
     } else {
       // 默认命令根据注册表类型推断
@@ -427,7 +425,7 @@ class McpDetail extends React.Component {
         uv: 'uvx',
         dnx: 'dnx',
       };
-      serverConfig.command = registryCommands[packageDef.registry_name] || 'npx';
+      serverConfig.command = registryCommands[this.getRegistryType(packageDef)] || 'npx';
     }
 
     // 构建参数数组
@@ -437,7 +435,7 @@ class McpDetail extends React.Component {
     let hasPackageInRuntimeArgs = false;
     if (packageDef.runtime_arguments && Array.isArray(packageDef.runtime_arguments)) {
       for (const arg of packageDef.runtime_arguments) {
-        if (arg.value && arg.value.includes(packageDef.name)) {
+        if (arg.value && arg.value.includes(pkgName)) {
           hasPackageInRuntimeArgs = true;
           break;
         }
@@ -454,28 +452,31 @@ class McpDetail extends React.Component {
     // 如果runtime_arguments中没有包含包名，则添加包名和版本
     if (!hasPackageInRuntimeArgs) {
       // 添加包名和版本（根据不同的注册表类型处理）
-      if (packageDef.registry_name === 'npm' && serverConfig.command === 'npx') {
+      if (this.getRegistryType(packageDef) === 'npm' && serverConfig.command === 'npx') {
         // 检查是否已经有 -y 参数
         if (!args.includes('-y')) {
           args.push('-y'); // 自动确认安装
         }
         if (packageDef.version && packageDef.version !== 'latest') {
-          args.push(`${packageDef.name}@${packageDef.version}`);
+          args.push(`${pkgName}@${packageDef.version}`);
         } else {
-          args.push(packageDef.name);
+          args.push(pkgName);
         }
-      } else if (packageDef.registry_name === 'docker') {
+      } else if (this.getRegistryType(packageDef) === 'docker') {
         args.push('run', '--rm', '-i');
         if (packageDef.version && packageDef.version !== 'latest') {
-          args.push(`${packageDef.name}:${packageDef.version}`);
+          args.push(`${pkgName}:${packageDef.version}`);
         } else {
-          args.push(packageDef.name);
+          args.push(pkgName);
         }
-      } else if (packageDef.registry_name === 'pip' || packageDef.registry_name === 'uv') {
+      } else if (
+        this.getRegistryType(packageDef) === 'pip' ||
+        this.getRegistryType(packageDef) === 'uv'
+      ) {
         args.push('-m');
-        args.push(packageDef.name.split('/').pop()); // 取包名的最后部分
+        args.push(pkgName.split('/').pop()); // 取包名的最后部分
       } else {
-        args.push(packageDef.name);
+        args.push(pkgName);
         if (packageDef.version && packageDef.version !== 'latest') {
           args.push(packageDef.version);
         }
@@ -523,12 +524,7 @@ class McpDetail extends React.Component {
       }
     }
 
-    // 添加描述
-    if (packageDef.description) {
-      serverConfig.description = packageDef.description;
-    } else {
-      serverConfig.description = `MCP Server for ${packageDef.name}`;
-    }
+    // 描述字段已移除：不再从 packageDef 读取，也不生成默认描述
 
     config.mcpServers[serverName] = serverConfig;
     return config;
@@ -658,6 +654,7 @@ class McpDetail extends React.Component {
               </p>
               {(() => {
                 const repositoryUrl = this.getPackageRepositoryUrl(packageDef);
+                const displayName = this.getPackageName(packageDef);
                 if (repositoryUrl) {
                   return (
                     <a
@@ -681,7 +678,7 @@ class McpDetail extends React.Component {
                         e.target.style.textDecoration = 'none';
                       }}
                     >
-                      {packageDef.name}
+                      {displayName}
                     </a>
                   );
                 } else {
@@ -695,7 +692,7 @@ class McpDetail extends React.Component {
                         color: '#000',
                       }}
                     >
-                      {packageDef.name}
+                      {displayName}
                     </p>
                   );
                 }
@@ -723,7 +720,7 @@ class McpDetail extends React.Component {
               </p>
               <p
                 style={{
-                  backgroundColor: this.getRegistryColor(packageDef.registry_name),
+                  backgroundColor: this.getRegistryColor(this.getRegistryType(packageDef)),
                   color: 'white',
                   padding: '2px 8px',
                   borderRadius: '12px',
@@ -731,7 +728,7 @@ class McpDetail extends React.Component {
                   fontWeight: 'bold',
                 }}
               >
-                {packageDef.registry_name}
+                {this.getRegistryType(packageDef)}
               </p>
             </Col>
             {packageDef.runtime_hint && (
@@ -752,14 +749,7 @@ class McpDetail extends React.Component {
                 </p>
               </Col>
             )}
-            {packageDef.description && (
-              <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-                <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
-                  {locale.description || '描述'}:
-                </p>
-                <p style={{ color: '#000' }}>{packageDef.description}</p>
-              </Col>
-            )}
+            {/* 包描述已移除，不再展示 */}
           </Row>
         </div>
 
@@ -1127,9 +1117,22 @@ class McpDetail extends React.Component {
     return colors[registryType] || '#666666';
   };
 
+  // 注册表类型：优先 registry_type，兼容旧 registry_name
+  getRegistryType = packageDef => {
+    if (!packageDef) return '';
+    return packageDef.registry_type || packageDef.registry_name || '';
+  };
+
+  // 包名显示与链接用：优先 identifier，兼容旧 name
+  getPackageName = packageDef => {
+    if (!packageDef) return '';
+    return packageDef.identifier || packageDef.name || '';
+  };
+
   // 获取包名对应的仓库链接
   getPackageRepositoryUrl = packageDef => {
-    const { registry_name, name } = packageDef;
+    const registry_name = this.getRegistryType(packageDef);
+    const name = (packageDef && (packageDef.identifier || packageDef.name)) || '';
 
     switch (registry_name) {
       case 'npm':
@@ -1448,14 +1451,15 @@ class McpDetail extends React.Component {
     const packageConfigs = [];
     for (let i = 0; i < packagesToShow.length; i++) {
       const packageDef = packagesToShow[i];
-      // 简化包名用于Tab标题
-      const shortName = packageDef.name.split('/').pop() || packageDef.name;
+      // 简化包名用于Tab标题（优先 identifier，其次 name）
+      const fullName = (packageDef && (packageDef.identifier || packageDef.name)) || '';
+      const shortName = fullName.split('/').pop() || fullName;
       const packageConfig = {
         index: i,
-        packageName: `${packageDef.name}@${packageDef.version}`,
+        packageName: `${fullName}@${packageDef.version}`,
         shortTitle: `${shortName}@${packageDef.version}`,
-        registryType: packageDef.registry_name,
-        description: packageDef.description,
+        registryType: this.getRegistryType(packageDef),
+        // 描述字段已移除
         mcpConfig: this.convertPackageToMcpConfig(packageDef),
       };
       packageConfigs.push(packageConfig);

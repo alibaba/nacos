@@ -32,12 +32,18 @@ import {
   Pagination,
   Select,
   Table,
+  Card,
+  Grid,
+  Balloon,
+  Loading,
+  Progress,
 } from '@alifd/next';
-import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
+import BatchHandle from 'components/BatchHandle';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
+import ImportMcpDialog from './ImportMcpDialog';
 import { getParams, request, setParams } from '@/globalLib';
 import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
@@ -79,6 +85,8 @@ class McpManagement extends React.Component {
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppId;
     this.isAdvance = getParams('isAdvanceQuery') || false;
+    this.DEFAULT_REGISTRY_URL = 'https://registry.modelcontextprotocol.io/v0/servers';
+
     this.state = {
       configurations: {
         pageItems: [],
@@ -127,6 +135,8 @@ class McpManagement extends React.Component {
       defaultFuzzySearch: true,
       // ensure mcpName is controlled and initialized from query params
       mcpName: this.mcpName || '',
+      // Import dialog state (visibility only; logic moved to child component)
+      importVisible: false,
     };
     const obj = {
       dataId: this.dataId || '',
@@ -302,6 +312,10 @@ class McpManagement extends React.Component {
       });
     }
   };
+
+  // ---------- Import MCP Server ----------
+  openImportDialog = () => this.setState({ importVisible: true });
+  closeImportDialog = () => this.setState({ importVisible: false });
 
   chooseNav(record, key) {
     const self = this;
@@ -659,6 +673,11 @@ class McpManagement extends React.Component {
                     {locale.addNewMcpServer}
                   </Button>
                 </Form.Item>
+                <Form.Item>
+                  <Button onClick={this.openImportDialog}>
+                    {locale.importMcpServer || '导入 MCP Server'}
+                  </Button>
+                </Form.Item>
                 <Form.Item label="Server Name">
                   <Input
                     htmlType="text"
@@ -792,6 +811,12 @@ class McpManagement extends React.Component {
             )}
             <ShowCodeing ref={this.showcode} />
             <DeleteDialog ref={this.deleteDialog} />
+            <ImportMcpDialog
+              visible={this.state.importVisible}
+              onClose={this.closeImportDialog}
+              onImported={this.getData}
+              locale={this.props.locale}
+            />
           </div>
           {this.state.hasdash && (
             <div className="dash-right-container">

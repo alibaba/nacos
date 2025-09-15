@@ -17,10 +17,9 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
-import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServer;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
@@ -29,8 +28,9 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.Argument;
 import com.alibaba.nacos.api.ai.model.mcp.registry.NamedArgument;
 import com.alibaba.nacos.api.ai.model.mcp.registry.PositionalArgument;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
-import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Meta;
+import com.alibaba.nacos.api.ai.model.mcp.registry.OfficialMeta;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +39,13 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
  * MCP Server Transform Service.
@@ -47,189 +54,293 @@ import java.util.UUID;
  */
 @Service
 public class McpServerTransformService {
-    
+
     private static final String SERVERS_FIELD = "servers";
-    
-    private static final String TOTAL_COUNT_FIELD = "total_count";
-    
-    private static final String REPOSITORY_FIELD = "repository";
-    
-    private static final String VERSION_DETAIL_FIELD = "version_detail";
-    
-    private static final String COMMAND_FIELD = "command";
-    
-    private static final String URL_FIELD = "url";
-    
-    private static final String ENDPOINT_FIELD = "endpoint";
-    
-    private static final String BASE_URL_FIELD = "baseUrl";
-    
-    private static final String SERVICE_FIELD = "service";
-    
-    private static final String SERVICE_NAME_FIELD = "serviceName";
-    
+
     private static final String HTTP_PREFIX = "http://";
-    
+
     private static final String HTTPS_PREFIX = "https://";
-    
+
     private static final String PROTOCOL_JAVASCRIPT = "javascript:";
-    
+
     private static final String PROTOCOL_DATA = "data:";
-    
+
     private static final String PROTOCOL_FILE = "file:";
-    
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    
+
+    private static final String METADATA_FIELD = "metadata";
+
+    private static final String NEXT_CURSOR_FIELD = "next_cursor";
+
+    private static final String CURSOR_QUERY_NAME = "cursor";
+
+    private static final String LIMIT_QUERY_NAME = "limit";
+
+    private static final String SEARCH_QUERY_NAME = "search";
+
+    private static final String HEADER_ACCEPT = "Accept";
+
+    private static final String HEADER_AUTHORIZATION = "Authorization";
+
+    private static final String HEADER_ACCEPT_JSON = "application/json";
+
+    private static final String QUERY_MARK = "?";
+
+    private static final String AMPERSAND = "&";
+
+    private static final String AUTH_SCHEME_BEARER = "Bearer ";
+
+    private static final String TRANSPORT_SSE = "sse";
+
+    private static final String TRANSPORT_STREAMABLE = "streamable-http";
+
+    private static final int HTTP_STATUS_SUCCESS_MIN = 200;
+
+    private static final int HTTP_STATUS_SUCCESS_MAX = 299;
+
+    private static final int CONNECT_TIMEOUT_SECONDS = 10;
+
+    private static final int READ_TIMEOUT_SECONDS = 20;
+
     /**
-     * Transform external format to Nacos MCP server format.
-     *
-     * @param importData import data string
-     * @param importType import type (file, url, json)
-     * @return list of MCP server detail info
-     * @throws Exception if transformation fails
+     * Safety guard to avoid infinite loops when server keeps returning cursors.
+     * Limits the maximum number of pages iterated when fetching from URL.
      */
-    public List<McpServerDetailInfo> transformToNacosFormat(String importData, String importType) throws Exception {
-        List<McpServerDetailInfo> servers = new ArrayList<>();
-        
-        switch (importType) {
-            case "file":
-            case "json":
-                servers = parseJsonData(importData);
+    private static final int MAX_PAGES_GUARD = 200;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Holder for a single URL page fetch.
+     */
+    public static class UrlPageResult {
+
+        private final List<McpServerDetailInfo> servers;
+
+        private final String nextCursor;
+
+        public UrlPageResult(List<McpServerDetailInfo> servers, String nextCursor) {
+            this.servers = servers;
+            this.nextCursor = nextCursor;
+        }
+
+        public List<McpServerDetailInfo> getServers() {
+            return servers;
+        }
+
+        public String getNextCursor() {
+            return nextCursor;
+        }
+    }
+
+    /**
+     * Import type enum to avoid string-based switches.
+     */
+    private enum ImportType {
+        /** Import from local file content. */
+        FILE,
+        /** Import from a JSON string. */
+        JSON,
+        /** Import from a remote URL. */
+        URL;
+
+        static ImportType from(String s) {
+            if (s == null) {
+                throw new IllegalArgumentException("Unsupported import type: null");
+            }
+            switch (s.trim().toLowerCase()) {
+                case "file":
+                    return FILE;
+                case "json":
+                    return JSON;
+                case "url":
+                    return URL;
+                default:
+                    throw new IllegalArgumentException("Unsupported import type: " + s);
+            }
+        }
+    }
+
+    // removed overload: transformToNacosFormat(String importData, String
+    // importType)
+
+    /**
+     * Transform with optional URL pagination parameters and search keyword.
+     * Only effective when importType equals to 'url'.
+     */
+    public List<McpServerDetailInfo> transformToNacosFormat(String importData, String importType,
+            String cursor, Integer limit, String search) throws Exception {
+        return transformToNacosFormat(importData, ImportType.from(importType), cursor, limit, search);
+    }
+
+    /**
+     * Enum-based dispatcher for transformation.
+     */
+    public List<McpServerDetailInfo> transformToNacosFormat(String importData, ImportType type) throws Exception {
+        List<McpServerDetailInfo> servers;
+        switch (type) {
+            case FILE:
+                servers = parseFileToNacosServers(importData);
                 break;
-            case "url":
-                servers = parseUrlData(importData);
+            case JSON:
+                servers = parseJsonToNacosServers(importData);
+                break;
+            case URL:
+                // No explicit pagination provided on this path
+                servers = parseUrlData(importData, null, null);
                 break;
             default:
-                throw new IllegalArgumentException("Unsupported import type: " + importType);
+                throw new IllegalArgumentException("Unsupported import type: " + type);
         }
-        
+
         // Generate IDs for servers without IDs
         servers.forEach(server -> {
             if (StringUtils.isBlank(server.getId())) {
                 server.setId(generateServerId(server.getName()));
             }
         });
-        
         return servers;
     }
-    
+
     /**
-     * Parse JSON data to MCP servers.
-     *
-     * @param jsonData JSON data string
-     * @return list of MCP server detail info
-     * @throws Exception if parsing fails
+     * Enum-based dispatcher with pagination and search support.
      */
-    private List<McpServerDetailInfo> parseJsonData(String jsonData) throws Exception {
-        JsonNode rootNode = objectMapper.readTree(jsonData);
-        
-        // First, try to parse as MCP Registry format
-        if (isMcpRegistryFormat(rootNode)) {
-            return parseRegistryData(jsonData);
+    public List<McpServerDetailInfo> transformToNacosFormat(String importData, ImportType type,
+            String cursor, Integer limit, String search) throws Exception {
+        List<McpServerDetailInfo> servers;
+        switch (type) {
+            case FILE:
+                servers = parseFileToNacosServers(importData);
+                break;
+            case JSON:
+                servers = parseJsonToNacosServers(importData);
+                break;
+            case URL:
+                servers = parseUrlData(importData, cursor, limit, search);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported import type: " + type);
         }
-        
-        // Fallback to original parsing logic
-        List<McpServerDetailInfo> servers = new ArrayList<>();
-        
-        if (rootNode.isArray()) {
-            // Direct array of servers
-            for (JsonNode serverNode : rootNode) {
-                McpServerDetailInfo server = transformJsonNodeToServer(serverNode);
-                if (server != null) {
-                    servers.add(server);
-                }
+
+        // Generate IDs for servers without IDs
+        servers.forEach(server -> {
+            if (StringUtils.isBlank(server.getId())) {
+                server.setId(generateServerId(server.getName()));
             }
-        } else if (rootNode.has(SERVERS_FIELD)) {
-            // Wrapped in servers field
-            JsonNode serversNode = rootNode.get(SERVERS_FIELD);
-            if (serversNode.isArray()) {
-                for (JsonNode serverNode : serversNode) {
-                    McpServerDetailInfo server = transformJsonNodeToServer(serverNode);
-                    if (server != null) {
-                        servers.add(server);
-                    }
-                }
-            }
-        } else {
-            // Single server object
-            McpServerDetailInfo server = transformJsonNodeToServer(rootNode);
-            if (server != null) {
-                servers.add(server);
-            }
-        }
-        
+        });
         return servers;
     }
-    
+
     /**
-     * Check if the JSON data is in MCP Registry format.
-     *
-     * @param rootNode JSON root node
-     * @return true if it's MCP Registry format
+     * Fetch one page from URL source and return servers with next cursor.
+     * Does not loop across multiple pages. Caller can iterate using nextCursor.
      */
-    private boolean isMcpRegistryFormat(JsonNode rootNode) {
-        // Check for MCP Registry API response structure
-        if (rootNode.has(SERVERS_FIELD) && rootNode.has(TOTAL_COUNT_FIELD)) {
-            return true;
-        }
-        
-        // Check for single server with registry-specific fields
-        if (rootNode.has(REPOSITORY_FIELD) && rootNode.has(VERSION_DETAIL_FIELD)) {
-            return true;
-        }
-        
-        // Check for array of registry servers
-        if (rootNode.isArray() && rootNode.size() > 0) {
-            JsonNode firstServer = rootNode.get(0);
-            return firstServer.has(REPOSITORY_FIELD) && firstServer.has(VERSION_DETAIL_FIELD);
-        }
-        
-        return false;
+    public UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit) throws Exception {
+        return fetchUrlPage(urlData, cursor, limit, null);
     }
-    
+
     /**
-     * Parse MCP Registry JSON data to MCP servers.
-     *
-     * @param jsonData MCP Registry JSON data string
-     * @return list of MCP server detail info
-     * @throws Exception if parsing fails
+     * Fetch one registry page with optional search keyword.
      */
-    private List<McpServerDetailInfo> parseRegistryData(String jsonData) throws Exception {
-        JsonNode rootNode = objectMapper.readTree(jsonData);
+    public UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit, String search) throws Exception {
+        if (StringUtils.isBlank(urlData)) {
+            throw new IllegalArgumentException("URL is blank");
+        }
+
+        String base = urlData.trim();
+        HttpClient client = createHttpClient();
+        String bearer = resolveBearerToken();
+
+        String pageUrl = buildPageUrl(base, cursor, limit, search);
+        HttpRequest request = buildGetRequest(pageUrl, bearer);
+        HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
+        int code = resp.statusCode();
+        if (!isSuccessStatus(code)) {
+            throw new IllegalStateException("HTTP " + code + " when fetching " + pageUrl);
+        }
+
         List<McpServerDetailInfo> servers = new ArrayList<>();
-        
-        if (rootNode.has(SERVERS_FIELD) && rootNode.has(TOTAL_COUNT_FIELD)) {
-            // Parse as McpRegistryServerList
-            McpRegistryServerList registryList = objectMapper.treeToValue(rootNode, McpRegistryServerList.class);
-            if (registryList.getServers() != null) {
-                for (McpRegistryServer registryServer : registryList.getServers()) {
+        String next = null;
+
+        try {
+            // Prefer typed parse for servers array when possible
+            McpRegistryServerList listPage = objectMapper.readValue(resp.body(), McpRegistryServerList.class);
+            if (listPage != null && listPage.getServers() != null) {
+                for (McpRegistryServer registryServer : listPage.getServers()) {
                     McpServerDetailInfo server = transformRegistryServerToNacos(registryServer);
                     if (server != null) {
                         servers.add(server);
                     }
                 }
             }
-        } else if (rootNode.isArray()) {
-            // Array of registry servers
-            for (JsonNode serverNode : rootNode) {
-                McpRegistryServer registryServer = objectMapper.treeToValue(serverNode, McpRegistryServer.class);
-                McpServerDetailInfo server = transformRegistryServerToNacos(registryServer);
-                if (server != null) {
-                    servers.add(server);
-                }
-            }
-        } else {
-            // Single registry server
-            McpRegistryServer registryServer = objectMapper.treeToValue(rootNode, McpRegistryServer.class);
-            McpServerDetailInfo server = transformRegistryServerToNacos(registryServer);
-            if (server != null) {
-                servers.add(server);
-            }
+        } catch (Exception ignore) {
+            throw new IllegalStateException("Failed to parse response body", ignore);
         }
-        
-        return servers;
+
+        // Always parse as tree to extract next cursor and ensure servers on fallback
+        JsonNode root = objectMapper.readTree(resp.body());
+        if (servers.isEmpty()) {
+            appendServersFromRoot(root, servers);
+        }
+        next = extractNextCursor(root);
+
+        // Ensure IDs
+        servers.forEach(s -> {
+            if (StringUtils.isBlank(s.getId())) {
+                s.setId(generateServerId(s.getName()));
+            }
+        });
+
+        return new UrlPageResult(servers, next);
     }
-    
+
+    /**
+     * Iterate URL pages and collect all servers until no more pages or guard limit.
+     *
+     * @param urlData base registry URL
+     * @return all servers available from the paginated endpoint
+     */
+    public List<McpServerDetailInfo> fetchUrlServersAll(String urlData) throws Exception {
+        List<McpServerDetailInfo> collected = new ArrayList<>();
+        String cursor = null;
+        int pages = 0;
+        while (pages < MAX_PAGES_GUARD) {
+            pages++;
+            UrlPageResult page = fetchUrlPage(urlData, cursor, null);
+            if (page.getServers() != null && !page.getServers().isEmpty()) {
+                collected.addAll(page.getServers());
+            }
+            String next = page.getNextCursor();
+            if (next == null) {
+                break;
+            }
+            cursor = next;
+        }
+        return collected;
+    }
+
+    /**
+     * Iterate URL pages with search and collect all servers until no more pages or
+     * guard limit.
+     */
+    public List<McpServerDetailInfo> fetchUrlServersAll(String urlData, String search) throws Exception {
+        List<McpServerDetailInfo> collected = new ArrayList<>();
+        String cursor = null;
+        int pages = 0;
+        while (pages < MAX_PAGES_GUARD) {
+            pages++;
+            UrlPageResult page = fetchUrlPage(urlData, cursor, 30, search);
+            if (page.getServers() != null && !page.getServers().isEmpty()) {
+                collected.addAll(page.getServers());
+            }
+            String next = page.getNextCursor();
+            if (next == null) {
+                break;
+            }
+            cursor = next;
+        }
+        return collected;
+    }
+
     /**
      * Transform MCP Registry Server to Nacos MCP Server format.
      *
@@ -240,223 +351,363 @@ public class McpServerTransformService {
         if (registryServer == null) {
             return null;
         }
-        
+
         try {
             McpServerDetailInfo server = new McpServerDetailInfo();
-            
-            // Basic server info from registry
-            server.setId(registryServer.getId());
-            server.setName(registryServer.getName());
-            server.setDescription(registryServer.getDescription());
-            
-            // Repository information
-            if (registryServer.getRepository() != null) {
-                server.setRepository(registryServer.getRepository());
+
+            // 1) Basic information
+            fillBasicInfo(registryServer, server);
+
+            // 2) Version details
+            ServerVersionDetail versionDetail = buildVersion(registryServer);
+            if (versionDetail != null) {
+                server.setVersionDetail(versionDetail);
             }
-            
-            // Version information
-            if (registryServer.getVersion_detail() != null) {
-                server.setVersionDetail(registryServer.getVersion_detail());
+
+            // 2.1) Early protocol inference
+            String earlyProtocol = inferServerProtocol(registryServer);
+            if (StringUtils.isNotBlank(earlyProtocol)) {
+                server.setProtocol(earlyProtocol);
+                server.setFrontProtocol(earlyProtocol);
             }
-            
-            // Handle packages to infer protocol and remote configuration
-            if (registryServer.getPackages() != null && !registryServer.getPackages().isEmpty()) {
-                Package firstPackage = registryServer.getPackages().get(0);
-                
-                // Infer protocol from package registry type
-                String protocol = inferProtocolFromPackage(firstPackage);
-                server.setProtocol(protocol);
-                server.setFrontProtocol(protocol);
-                
-                // Set up remote service config based on package info
-                McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
-                configureRemoteServiceFromPackage(remoteConfig, firstPackage, protocol);
-                server.setRemoteServerConfig(remoteConfig);
-            }
-            
-            // Handle remotes for detailed registry servers (backward compatibility)
+
+            // 3) Package config
             if (registryServer instanceof McpRegistryServerDetail) {
-                McpRegistryServerDetail detailServer = (McpRegistryServerDetail) registryServer;
-                if (detailServer.getRemotes() != null && !detailServer.getRemotes().isEmpty() 
-                        && server.getRemoteServerConfig() == null) {
-                    Remote firstRemote = detailServer.getRemotes().get(0);
-                    
-                    // Infer protocol from remote configuration
-                    String protocol = inferProtocolFromRemote(firstRemote);
-                    server.setProtocol(protocol);
-                    server.setFrontProtocol(protocol);
-                    
-                    // Set up remote service config based on protocol
-                    McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
-                    configureRemoteService(remoteConfig, firstRemote, protocol);
-                    server.setRemoteServerConfig(remoteConfig);
-                }
+                applyPackageConfigIfAny((McpRegistryServerDetail) registryServer, server);
             }
-            
-            // Default protocol if not set
-            if (StringUtils.isBlank(server.getProtocol())) {
-                server.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
-                server.setFrontProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+
+            // 4) Remote config
+            if (registryServer instanceof McpRegistryServerDetail) {
+                applyRemoteConfigIfAny((McpRegistryServerDetail) registryServer, server);
             }
-            
+
+            // 5) Protocol fallback
+            applyDefaultProtocolIfMissing(server);
+
             return server;
         } catch (Exception e) {
             // Log error and skip invalid server
             return null;
         }
     }
-    
+
     /**
-     * Infer protocol from remote configuration.
-     *
-     * @param remote Remote configuration
-     * @return inferred protocol
+     * Fill basic info: id/name/description/repository.
      */
-    private String inferProtocolFromRemote(Remote remote) {
-        if (remote == null) {
+    private void fillBasicInfo(McpRegistryServer registryServer, McpServerDetailInfo out) {
+        String id = resolveRegistryId(registryServer);
+        out.setId(id);
+        out.setName(registryServer.getName());
+        out.setDescription(registryServer.getDescription());
+        // Map status from registry to nacos model (default to active)
+        out.setStatus(normalizeStatus(registryServer.getStatus()));
+        if (registryServer.getRepository() != null) {
+            out.setRepository(registryServer.getRepository());
+        }
+    }
+
+    /**
+     * Normalize registry status to nacos supported values.
+     */
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return AiConstants.Mcp.MCP_STATUS_ACTIVE;
+        }
+        String s = status.trim().toLowerCase();
+        if (AiConstants.Mcp.MCP_STATUS_ACTIVE.equals(s) || AiConstants.Mcp.MCP_STATUS_DEPRECATED.equals(s)) {
+            return s;
+        }
+        return AiConstants.Mcp.MCP_STATUS_ACTIVE;
+    }
+
+    /**
+     * Derive registry id from _meta.official.id or repository.id.
+     */
+    private String resolveRegistryId(McpRegistryServer registryServer) {
+        if (registryServer instanceof McpRegistryServerDetail) {
+            McpRegistryServerDetail detail = (McpRegistryServerDetail) registryServer;
+            Meta meta = detail.getMeta();
+            if (meta != null && meta.getOfficial() != null) {
+                String id = meta.getOfficial().getId();
+                if (StringUtils.isNotBlank(id)) {
+                    return id;
+                }
+            }
+        }
+        return registryServer.getRepository() != null ? registryServer.getRepository().getId() : null;
+    }
+
+    /**
+     * Build version detail: version, release_date, is_latest.
+     */
+    private ServerVersionDetail buildVersion(McpRegistryServer registryServer) {
+        ServerVersionDetail v = null;
+        if (StringUtils.isNotBlank(registryServer.getVersion())) {
+            v = new ServerVersionDetail();
+            v.setVersion(registryServer.getVersion());
+        }
+        if (registryServer instanceof McpRegistryServerDetail) {
+            McpRegistryServerDetail detail = (McpRegistryServerDetail) registryServer;
+            Meta meta = detail.getMeta();
+            OfficialMeta official = meta != null ? meta.getOfficial() : null;
+            if (v == null) {
+                v = new ServerVersionDetail();
+            }
+            String release = detail.getPublishedAt();
+            if (StringUtils.isBlank(release) && official != null) {
+                release = official.getPublishedAt();
+            }
+            if (StringUtils.isNotBlank(release)) {
+                v.setRelease_date(release);
+            }
+            if (official != null && official.getIsLatest() != null) {
+                v.setIs_latest(official.getIsLatest());
+            }
+        }
+        return v;
+    }
+
+    /**
+     * If package is declared, build remote service config from package (no protocol
+     * inference here).
+     */
+    private void applyPackageConfigIfAny(McpRegistryServerDetail detail, McpServerDetailInfo out) {
+        if (detail.getPackages() == null || detail.getPackages().isEmpty()) {
+            return;
+        }
+        out.setPackages(detail.getPackages());
+    }
+
+    /**
+     * If remote exists, and package did not produce a remote config, build remote
+     * service config (no protocol inference).
+     */
+    private void applyRemoteConfigIfAny(McpRegistryServerDetail detail, McpServerDetailInfo out) {
+        if (out.getRemoteServerConfig() != null) {
+            return;
+        }
+        if (detail.getRemotes() == null || detail.getRemotes().isEmpty()) {
+            return;
+        }
+        String protocol = resolveProtocolOrDefault(out);
+        McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
+        configureRemoteService(remoteConfig, detail.getRemotes(), protocol);
+        out.setRemoteServerConfig(remoteConfig);
+    }
+
+    /**
+     * Resolve current protocol or return stdio as default for building remote
+     * config.
+     */
+    private String resolveProtocolOrDefault(McpServerDetailInfo out) {
+        return StringUtils.isNotBlank(out.getProtocol()) ? out.getProtocol() : AiConstants.Mcp.MCP_PROTOCOL_STDIO;
+    }
+
+    /**
+     * Early protocol inference after version detail:
+     * - If packages exist, return stdio.
+     * - Else, from first remote.transportType decide sse/streamable.
+     * - Otherwise, return null (later fallback will apply).
+     */
+    private String inferServerProtocol(McpRegistryServer registryServer) {
+        if (!(registryServer instanceof McpRegistryServerDetail)) {
+            return null;
+        }
+        McpRegistryServerDetail detail = (McpRegistryServerDetail) registryServer;
+
+        // Prefer stdio when packages exist
+        if (detail.getPackages() != null && !detail.getPackages().isEmpty()) {
             return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
         }
-        
-        String transportType = remote.getTransportType();
-        if (StringUtils.isNotBlank(transportType)) {
-            switch (transportType.toLowerCase()) {
-                case "http":
-                case "https":
-                    return AiConstants.Mcp.MCP_PROTOCOL_HTTP;
-                case "stdio":
-                    return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
-                case "dubbo":
-                    return AiConstants.Mcp.MCP_PROTOCOL_DUBBO;
-                default:
-                    break;
+
+        // Without packages, try transportType from the first remote
+        if (detail.getRemotes() != null && !detail.getRemotes().isEmpty()) {
+            Remote first = detail.getRemotes().get(0);
+            String tt = first != null ? first.getTransportType() : null;
+            if (tt != null) {
+                String lower = tt.trim().toLowerCase();
+                if (TRANSPORT_SSE.equals(lower)) {
+                    return AiConstants.Mcp.MCP_PROTOCOL_SSE;
+                }
+                if (TRANSPORT_STREAMABLE.equals(lower)) {
+                    return AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
+                }
             }
         }
-        
-        // Infer from URL if transport type is not clear
-        String url = remote.getUrl();
-        if (StringUtils.isNotBlank(url)) {
-            if (url.startsWith(HTTP_PREFIX) || url.startsWith(HTTPS_PREFIX)) {
-                return AiConstants.Mcp.MCP_PROTOCOL_HTTP;
-            }
-        }
-        
-        // Default to stdio
-        return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
+        return null;
     }
-    
+
+    /**
+     * If protocol is not set, default to stdio.
+     */
+    private void applyDefaultProtocolIfMissing(McpServerDetailInfo out) {
+        if (StringUtils.isBlank(out.getProtocol())) {
+            out.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+            out.setFrontProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+        }
+    }
+
     /**
      * Configure remote service based on protocol and remote info.
      *
      * @param remoteConfig Remote service config to configure
-     * @param remote Remote information
-     * @param protocol Protocol type
+     * @param remote       Remote information
+     * @param protocol     Protocol type
      */
-    private void configureRemoteService(McpServerRemoteServiceConfig remoteConfig, Remote remote, String protocol) {
-        if (remote == null || remoteConfig == null) {
+    private void configureRemoteService(McpServerRemoteServiceConfig remoteConfig, List<Remote> remotes, String protocol) {
+        if (remoteConfig == null || remotes == null || remotes.isEmpty()) {
             return;
         }
-        
-        String url = remote.getUrl();
-        if (StringUtils.isNotBlank(url)) {
-            // Validate URL security and validity
-            if (!isValidUrl(url, protocol)) {
-                throw new IllegalArgumentException("Invalid URL: " + url);
+
+        List<FrontEndpointConfig> endpoints = new ArrayList<>();
+        for (Remote remote : remotes) {
+            if (remote == null || StringUtils.isBlank(remote.getUrl())) {
+                continue;
             }
-            switch (protocol) {
-                case AiConstants.Mcp.MCP_PROTOCOL_HTTP:
-                    // For HTTP protocol, set the base URL
-                    remoteConfig.setExportPath(url);
-                    break;
-                case AiConstants.Mcp.MCP_PROTOCOL_STDIO:
-                    // For stdio protocol, treat URL as command or export path
-                    remoteConfig.setExportPath(url);
-                    break;
-                case AiConstants.Mcp.MCP_PROTOCOL_DUBBO:
-                    // For Dubbo protocol, configure service details
-                    remoteConfig.setExportPath(url);
-                    break;
-                default:
-                    remoteConfig.setExportPath(url);
-                    break;
+
+            String url = remote.getUrl().trim();
+            // Only accept http(s) URLs for front endpoint mapping
+            if (!isValidUrl(url, AiConstants.Mcp.MCP_PROTOCOL_HTTP)) {
+                continue;
+            }
+
+            try {
+                URI uri = URI.create(url);
+                String scheme = uri.getScheme();
+                String host = uri.getHost();
+                int port = uri.getPort();
+                String path = uri.getRawPath() + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : "")
+                        + (uri.getRawFragment() != null ? "#" + uri.getRawFragment() : "");
+
+                if (StringUtils.isBlank(host)) {
+                    // Malformed URL; skip
+                    continue;
+                }
+
+                boolean isHttps = "https".equalsIgnoreCase(scheme);
+                int effectivePort = (port > 0) ? port : (isHttps ? 443 : 80);
+                String endpointData = host + ":" + effectivePort;
+
+                remoteConfig.setExportPath(path);
+
+                FrontEndpointConfig cfg = new FrontEndpointConfig();
+                cfg.setEndpointData(endpointData);
+                cfg.setPath(StringUtils.isNotBlank(path) ? path : "/");
+                cfg.setType(remote.getTransportType());
+                cfg.setProtocol(isHttps ? "https" : AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+                cfg.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+                cfg.setHeaders(remote.getHeaders());
+
+                endpoints.add(cfg);
+            } catch (Exception e) {
+                throw new IllegalStateException("Invalid URL: " + url, e);
             }
         }
+
+        if (!endpoints.isEmpty()) {
+            remoteConfig.setFrontEndpointConfigList(endpoints);
+        }
     }
-    
+
     /**
-     * Infer protocol from MCP package information.
-     *
-     * @param mcpPackage MCP package information
-     * @return inferred protocol
+     * Map registry transport type to Nacos MCP front type constants.
      */
-    private String inferProtocolFromPackage(Package mcpPackage) {
-        if (mcpPackage == null) {
-            return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
+    private String mapTransportType(String transportType, String fallback) {
+        String t = transportType == null ? null : transportType.trim().toLowerCase();
+        if (TRANSPORT_SSE.equals(t) || AiConstants.Mcp.MCP_PROTOCOL_SSE.equalsIgnoreCase(transportType)) {
+            return AiConstants.Mcp.MCP_PROTOCOL_SSE;
         }
-        
-        String registryName = mcpPackage.getRegistryName();
-        if (StringUtils.isNotBlank(registryName)) {
-            switch (registryName.toLowerCase()) {
-                case "npm":
-                case "pypi":
-                    // Package managers typically use stdio protocol
-                    return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
-                case "docker":
-                    // Docker containers might use HTTP
-                    return AiConstants.Mcp.MCP_PROTOCOL_HTTP;
-                default:
-                    break;
-            }
+        if (TRANSPORT_STREAMABLE.equals(t)
+                || AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equalsIgnoreCase(transportType)) {
+            return AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
         }
-        
-        // Default to stdio for package-based servers
-        return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
+        // Fallback: use provided protocol if it's a known front type; else default SSE
+        if (AiConstants.Mcp.MCP_PROTOCOL_SSE.equalsIgnoreCase(fallback)) {
+            return AiConstants.Mcp.MCP_PROTOCOL_SSE;
+        }
+        if (AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE.equalsIgnoreCase(fallback)) {
+            return AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
+        }
+        return AiConstants.Mcp.MCP_PROTOCOL_SSE;
     }
-    
+
     /**
      * Configure remote service from package information.
      *
      * @param remoteConfig Remote service config to configure
-     * @param mcpPackage MCP package information
-     * @param protocol Protocol type
+     * @param mcpPackage   MCP package information
+     * @param protocol     Protocol type
      */
-    private void configureRemoteServiceFromPackage(McpServerRemoteServiceConfig remoteConfig, 
+    private void configureRemoteServiceFromPackage(McpServerRemoteServiceConfig remoteConfig,
             Package mcpPackage, String protocol) {
         if (mcpPackage == null || remoteConfig == null) {
             return;
         }
-        
-        String registryName = mcpPackage.getRegistryName();
-        String packageName = mcpPackage.getName();
-        
+
+        String registryName = mcpPackage.getRegistryType();
+        String packageName = mcpPackage.getIdentifier();
+
         if (StringUtils.isNotBlank(registryName) && StringUtils.isNotBlank(packageName)) {
             String command = buildPackageCommand(registryName, packageName, mcpPackage);
             remoteConfig.setExportPath(command);
         }
     }
-    
+
     /**
      * Build command from package information.
      *
      * @param registryName Package registry name
-     * @param packageName Package name
-     * @param mcpPackage Package details
+     * @param packageName  Package name
+     * @param mcpPackage   Package details
      * @return command string
      */
     private String buildPackageCommand(String registryName, String packageName, Package mcpPackage) {
         StringBuilder command = new StringBuilder();
-        
-        switch (registryName.toLowerCase()) {
-            case "npm":
-                command.append("npx ").append(packageName);
-                break;
-            case "pypi":
-                command.append("python -m ").append(packageName);
-                break;
-            default:
-                command.append(packageName);
-                break;
+
+        // Prefer runtime_hint if present (e.g., npx, uvx, dnx)
+        String runtimeHint = null;
+        try {
+            runtimeHint = mcpPackage.getRuntimeHint();
+        } catch (Throwable ignore) {
+            // field may not exist on older model versions
         }
-        
+
+        if (StringUtils.isNotBlank(runtimeHint)) {
+            command.append(runtimeHint).append(" ");
+            command.append(packageName);
+        } else {
+            switch (registryName.toLowerCase()) {
+                case "npm":
+                    command.append("npx ").append(packageName);
+                    break;
+                case "pypi":
+                    command.append("python -m ").append(packageName);
+                    break;
+                case "oci":
+                case "docker":
+                    // Heuristic: use docker run-like invocation; exact flags are registry-specific
+                    command.append("docker run ").append(packageName);
+                    break;
+                default:
+                    command.append(packageName);
+                    break;
+            }
+        }
+
+        // Add runtime arguments if available
+        try {
+            if (mcpPackage.getRuntimeArguments() != null) {
+                for (Argument arg : mcpPackage.getRuntimeArguments()) {
+                    String argValue = extractArgumentValue(arg);
+                    if (StringUtils.isNotBlank(argValue)) {
+                        command.append(" ").append(argValue);
+                    }
+                }
+            }
+        } catch (Throwable ignore) {
+            // runtimeArguments may not exist on older model versions
+        }
+
         // Add package arguments if available
         if (mcpPackage.getPackageArguments() != null) {
             for (Argument arg : mcpPackage.getPackageArguments()) {
@@ -466,10 +717,10 @@ public class McpServerTransformService {
                 }
             }
         }
-        
+
         return command.toString();
     }
-    
+
     /**
      * Extract argument value from polymorphic Argument interface.
      * 
@@ -486,140 +737,232 @@ public class McpServerTransformService {
         }
         return null;
     }
-    
+
     /**
-     * Parse URL data to MCP servers.
-     * 
-     * <p>TODO: Implement proper URL fetching functionality to retrieve data from remote URLs
+     * Parse URL data to MCP servers with optional initial cursor and page limit.
      *
-     * @param urlData URL data string
-     * @return list of MCP server detail info
-     * @throws UnsupportedOperationException URL fetching is not implemented yet
+     * @param urlData base URL
+     * @param cursor  optional starting cursor (nullable)
+     * @param limit   optional page size (items per page). If null, server default
+     *                applies.
+     * @return list of servers
+     * @throws Exception on HTTP or parsing errors
      */
-    private List<McpServerDetailInfo> parseUrlData(String urlData) throws Exception {
-        // URL fetching functionality is not implemented yet
-        throw new UnsupportedOperationException("URL fetching not implemented yet. Please use JSON import instead.");
+    private List<McpServerDetailInfo> parseUrlData(String urlData, String cursor, Integer limit) throws Exception {
+        return parseUrlData(urlData, cursor, limit, null);
     }
-    
+
     /**
-     * Transform JSON node to MCP server.
-     *
-     * @param serverNode JSON node
-     * @return MCP server detail info
+     * Parse URL data with optional search keyword and pagination.
      */
-    private McpServerDetailInfo transformJsonNodeToServer(JsonNode serverNode) {
-        try {
-            McpServerDetailInfo server = new McpServerDetailInfo();
-            
-            // Basic server info
-            server.setId(getTextValue(serverNode, "id"));
-            server.setName(getTextValue(serverNode, "name"));
-            server.setDescription(getTextValue(serverNode, "description"));
-            server.setProtocol(getTextValue(serverNode, "protocol"));
-            server.setFrontProtocol(getTextValue(serverNode, "frontProtocol"));
-            
-            // Handle different protocol formats
-            if (StringUtils.isBlank(server.getProtocol())) {
-                server.setProtocol(inferProtocolFromConfig(serverNode));
+    private List<McpServerDetailInfo> parseUrlData(String urlData, String cursor, Integer limit, String search)
+            throws Exception {
+        if (StringUtils.isBlank(urlData)) {
+            throw new IllegalArgumentException("URL is blank");
+        }
+
+        // limit == -1 means fetch all pages
+        if (limit != null && limit == -1) {
+            // fetch all pages with search filtering if provided
+            return fetchUrlServersAll(urlData.trim(), search);
+        }
+
+        // Otherwise, fetch a single page using fetchUrlPage
+        UrlPageResult page = fetchUrlPage(urlData.trim(), cursor, limit, search);
+        List<McpServerDetailInfo> result = page.getServers();
+        return (result != null) ? result : new ArrayList<>();
+    }
+
+    /**
+     * File import wrapper: parse into a list of RegistryDetails and convert to
+     * Nacos servers.
+     */
+    private List<McpServerDetailInfo> parseFileToNacosServers(String data) throws Exception {
+        List<McpServerDetailInfo> out = new ArrayList<>();
+        List<McpRegistryServerDetail> details = parseFileToRegistryDetails(data);
+        for (McpRegistryServerDetail d : details) {
+            McpServerDetailInfo info = transformRegistryServerToNacos(d);
+            if (info != null) {
+                out.add(info);
             }
-            
-            // Repository info
-            JsonNode repoNode = serverNode.get("repository");
-            if (repoNode != null) {
-                Repository repo = new Repository();
-                server.setRepository(repo);
-            }
-            
-            // Version info
-            JsonNode versionNode = serverNode.get("version");
-            if (versionNode != null) {
-                ServerVersionDetail versionDetail = new ServerVersionDetail();
-                if (versionNode.isTextual()) {
-                    versionDetail.setVersion(versionNode.asText());
-                } else {
-                    versionDetail.setVersion(getTextValue(versionNode, "version"));
-                }
-                server.setVersionDetail(versionDetail);
-            }
-            
-            // Remote server config - simplified for stdio protocol
-            if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(server.getProtocol())) {
-                McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
-                String exportPath = getTextValue(serverNode, "command");
-                if (StringUtils.isNotBlank(exportPath)) {
-                    remoteConfig.setExportPath(exportPath);
-                }
-                server.setRemoteServerConfig(remoteConfig);
-            }
-            
-            // Tools - simplified structure
-            JsonNode toolsNode = serverNode.get("tools");
-            if (toolsNode != null && toolsNode.isArray()) {
-                McpToolSpecification toolSpec = new McpToolSpecification();
-                List<McpTool> tools = new ArrayList<>();
-                
-                for (JsonNode toolNode : toolsNode) {
-                    McpTool tool = new McpTool();
-                    String toolName = getTextValue(toolNode, "name");
-                    String toolDesc = getTextValue(toolNode, "description");
-                    
-                    if (StringUtils.isNotBlank(toolName)) {
-                        // Set basic tool info - actual implementation depends on McpTool structure
-                        tools.add(tool);
+        }
+        return out;
+    }
+
+    /**
+     * JSON import wrapper: parse into a single RegistryDetail and convert to a
+     * Nacos server list.
+     */
+    private List<McpServerDetailInfo> parseJsonToNacosServers(String data) throws Exception {
+        List<McpServerDetailInfo> out = new ArrayList<>();
+        McpRegistryServerDetail detail = parseJsonToRegistryDetail(data);
+        McpServerDetailInfo info = transformRegistryServerToNacos(detail);
+        if (info != null) {
+            out.add(info);
+        }
+        return out;
+    }
+
+    /**
+     * File import: parse into a list of McpRegistryServerDetail.
+     */
+    private List<McpRegistryServerDetail> parseFileToRegistryDetails(String data) throws Exception {
+        List<McpRegistryServerDetail> out = new ArrayList<>();
+        JsonNode root = objectMapper.readTree(data);
+        if (root.has(SERVERS_FIELD)) {
+            JsonNode serversNode = root.get(SERVERS_FIELD);
+            if (serversNode.isArray()) {
+                for (JsonNode s : serversNode) {
+                    McpRegistryServerDetail d = objectMapper.treeToValue(s, McpRegistryServerDetail.class);
+                    if (d != null) {
+                        out.add(d);
                     }
                 }
-                
-                if (!tools.isEmpty()) {
-                    toolSpec.setTools(tools);
-                    server.setToolSpec(toolSpec);
+            }
+        } else if (root.isArray()) {
+            for (JsonNode s : root) {
+                McpRegistryServerDetail d = objectMapper.treeToValue(s, McpRegistryServerDetail.class);
+                if (d != null) {
+                    out.add(d);
                 }
             }
-            
-            return server;
-        } catch (Exception e) {
-            // Log error and skip invalid server
-            return null;
+        } else {
+            // Also support single object: wrap into a list
+            McpRegistryServerDetail d = objectMapper.treeToValue(root, McpRegistryServerDetail.class);
+            if (d != null) {
+                out.add(d);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * JSON import: parse into a single McpRegistryServerDetail object.
+     */
+    private McpRegistryServerDetail parseJsonToRegistryDetail(String data) throws Exception {
+        JsonNode root = objectMapper.readTree(data);
+        if (root.has(SERVERS_FIELD)) {
+            JsonNode serversNode = root.get(SERVERS_FIELD);
+            if (serversNode.isArray() && serversNode.size() > 0) {
+                return objectMapper.treeToValue(serversNode.get(0), McpRegistryServerDetail.class);
+            }
+            throw new IllegalArgumentException("Invalid json import: 'servers' is not an array or empty");
+        }
+        if (root.isArray()) {
+            if (root.size() == 0) {
+                throw new IllegalArgumentException("Invalid json import: empty array");
+            }
+            return objectMapper.treeToValue(root.get(0), McpRegistryServerDetail.class);
+        }
+        return objectMapper.treeToValue(root, McpRegistryServerDetail.class);
+    }
+
+    private HttpClient createHttpClient() {
+        return HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
+                .build();
+    }
+
+    private String resolveBearerToken() {
+        String bearer = System.getProperty("nacos.mcp.registry.token");
+        if (StringUtils.isBlank(bearer)) {
+            bearer = System.getenv("MCP_REGISTRY_TOKEN");
+        }
+        return StringUtils.isBlank(bearer) ? null : bearer.trim();
+    }
+
+    private String buildPageUrl(String base, String cursor, Integer limit, String search) {
+        StringBuilder url = new StringBuilder(base);
+        boolean hasQuery = base.contains(QUERY_MARK);
+        if (StringUtils.isNotBlank(cursor)) {
+            String enc = URLEncoder.encode(cursor, StandardCharsets.UTF_8);
+            url.append(hasQuery ? AMPERSAND : QUERY_MARK).append(CURSOR_QUERY_NAME).append("=").append(enc);
+            hasQuery = true;
+        }
+        if (limit != null && limit > 0) {
+            url.append(hasQuery ? AMPERSAND : QUERY_MARK).append(LIMIT_QUERY_NAME).append("=").append(limit);
+            hasQuery = true;
+        }
+        if (StringUtils.isNotBlank(search)) {
+            String encSearch = URLEncoder.encode(search, StandardCharsets.UTF_8);
+            url.append(hasQuery ? AMPERSAND : QUERY_MARK).append(SEARCH_QUERY_NAME).append("=").append(encSearch);
+        }
+        return url.toString();
+    }
+
+    private HttpRequest buildGetRequest(String url, String bearer) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(READ_TIMEOUT_SECONDS))
+                .GET()
+                .header(HEADER_ACCEPT, HEADER_ACCEPT_JSON);
+        if (StringUtils.isNotBlank(bearer)) {
+            builder.header(HEADER_AUTHORIZATION, AUTH_SCHEME_BEARER + bearer);
+        }
+        return builder.build();
+    }
+
+    private void appendServersFromRoot(JsonNode root, List<McpServerDetailInfo> out) {
+        JsonNode serversNode = root.get(SERVERS_FIELD);
+        if (serversNode != null && serversNode.isArray()) {
+            for (JsonNode serverNode : serversNode) {
+                try {
+                    McpRegistryServer registryServer = objectMapper.treeToValue(serverNode, McpRegistryServer.class);
+                    McpServerDetailInfo server = transformRegistryServerToNacos(registryServer);
+                    if (server != null) {
+                        out.add(server);
+                    }
+                } catch (Exception e) {
+                    // skip invalid item
+                }
+            }
+            return;
+        }
+
+        if (root.isArray()) {
+            for (JsonNode serverNode : root) {
+                try {
+                    McpRegistryServer registryServer = objectMapper.treeToValue(serverNode, McpRegistryServer.class);
+                    McpServerDetailInfo server = transformRegistryServerToNacos(registryServer);
+                    if (server != null) {
+                        out.add(server);
+                    }
+                } catch (Exception e) {
+                    // skip invalid item
+                }
+            }
+            return;
+        }
+
+        try {
+            McpRegistryServer registryServer = objectMapper.treeToValue(root, McpRegistryServer.class);
+            McpServerDetailInfo server = transformRegistryServerToNacos(registryServer);
+            if (server != null) {
+                out.add(server);
+            }
+        } catch (Exception ignore) {
+            // not a server shape
         }
     }
-    
-    /**
-     * Infer protocol from configuration.
-     *
-     * @param serverNode server JSON node
-     * @return inferred protocol
-     */
-    private String inferProtocolFromConfig(JsonNode serverNode) {
-        if (serverNode.has(COMMAND_FIELD)) {
-            return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
-        }
-        
-        if (serverNode.has(URL_FIELD) || serverNode.has(ENDPOINT_FIELD) || serverNode.has(BASE_URL_FIELD)) {
-            return AiConstants.Mcp.MCP_PROTOCOL_HTTP;
-        }
-        
-        if (serverNode.has(SERVICE_NAME_FIELD) || serverNode.has(SERVICE_FIELD)) {
-            return AiConstants.Mcp.MCP_PROTOCOL_DUBBO;
-        }
-        
-        // Default to stdio
-        return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
-    }
-    
-    /**
-     * Get text value from JSON node.
-     *
-     * @param node JSON node
-     * @param fieldName field name
-     * @return text value or null
-     */
-    private String getTextValue(JsonNode node, String fieldName) {
-        JsonNode fieldNode = node.get(fieldName);
-        if (fieldNode != null && fieldNode.isTextual()) {
-            return fieldNode.asText();
+
+    private String extractNextCursor(JsonNode root) {
+        JsonNode metadata = root.get(METADATA_FIELD);
+        if (metadata != null && metadata.isObject()) {
+            JsonNode nextNode = metadata.get(NEXT_CURSOR_FIELD);
+            if (nextNode != null && nextNode.isTextual()) {
+                String next = nextNode.asText();
+                return StringUtils.isBlank(next) ? null : next;
+            }
         }
         return null;
     }
-    
+
+    private boolean isSuccessStatus(int code) {
+        return code >= HTTP_STATUS_SUCCESS_MIN && code <= HTTP_STATUS_SUCCESS_MAX;
+    }
+
+    // removed: transformJsonNodeToServer/inferProtocolFromConfig/getTextValue
+
     /**
      * Generate server ID from name.
      *
@@ -630,17 +973,17 @@ public class McpServerTransformService {
         if (StringUtils.isBlank(name)) {
             return UUID.randomUUID().toString().replace("-", "");
         }
-        
+
         // Use name-based ID with random suffix
         String baseId = name.toLowerCase().replaceAll("[^a-z0-9]", "");
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         return baseId + "-" + suffix;
     }
-    
+
     /**
      * Validate URL security and validity based on protocol.
      *
-     * @param url URL to validate
+     * @param url      URL to validate
      * @param protocol Protocol type
      * @return true if URL is valid
      */
@@ -648,13 +991,14 @@ public class McpServerTransformService {
         if (StringUtils.isBlank(url)) {
             return false;
         }
-        
+
         // Basic security checks - prevent potential malicious URLs
         String lowerUrl = url.toLowerCase();
-        if (lowerUrl.contains(PROTOCOL_JAVASCRIPT) || lowerUrl.contains(PROTOCOL_DATA) || lowerUrl.contains(PROTOCOL_FILE)) {
+        if (lowerUrl.contains(PROTOCOL_JAVASCRIPT) || lowerUrl.contains(PROTOCOL_DATA)
+                || lowerUrl.contains(PROTOCOL_FILE)) {
             return false;
         }
-        
+
         switch (protocol) {
             case AiConstants.Mcp.MCP_PROTOCOL_HTTP:
                 // HTTP protocol requires valid HTTP/HTTPS URLs
@@ -664,10 +1008,12 @@ public class McpServerTransformService {
                 return !lowerUrl.contains("..") && !lowerUrl.contains("&") && !lowerUrl.contains("|");
             case AiConstants.Mcp.MCP_PROTOCOL_DUBBO:
                 // Dubbo protocol allows dubbo:// URLs or standard service URLs
-                return lowerUrl.startsWith("dubbo://") || lowerUrl.startsWith(HTTP_PREFIX) || lowerUrl.startsWith(HTTPS_PREFIX);
+                return lowerUrl.startsWith("dubbo://") || lowerUrl.startsWith(HTTP_PREFIX)
+                        || lowerUrl.startsWith(HTTPS_PREFIX);
             default:
                 // For unknown protocols, apply basic validation
-                return !lowerUrl.contains("..") && !lowerUrl.contains(PROTOCOL_JAVASCRIPT) && !lowerUrl.contains(PROTOCOL_DATA);
+                return !lowerUrl.contains("..") && !lowerUrl.contains(PROTOCOL_JAVASCRIPT)
+                        && !lowerUrl.contains(PROTOCOL_DATA);
         }
     }
 }

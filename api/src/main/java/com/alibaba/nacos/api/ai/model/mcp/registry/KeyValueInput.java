@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
- * KeyValueInput model for MCP registry, used for environment variables or headers.
+ * KeyValueInput used for headers / env vars.
+ *
  * @author xinluo
  */
 public class KeyValueInput extends InputWithVariables {
+
+    @JsonProperty("name")
     private String name;
 
-    /**
-     * Get the name of the header or environment variable.
-     * @return variable name
-     */
     public String getName() {
         return name;
     }

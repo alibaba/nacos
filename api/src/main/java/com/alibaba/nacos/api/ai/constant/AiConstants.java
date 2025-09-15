@@ -42,6 +42,10 @@ public class AiConstants {
         public static final String MCP_ENDPOINT_TYPE_DIRECT = "DIRECT";
         
         public static final String MCP_FRONT_ENDPOINT_TYPE_TO_BACK = "BACKEND";
+        
+        public static final String MCP_STATUS_ACTIVE = "active";
+        
+        public static final String MCP_STATUS_DEPRECATED = "deprecated";
     }
     
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
@@ -57,12 +61,14 @@ public class AiConstants {
         public static final String A2A_DEFAULT_NAMESPACE = "public";
         
         /**
-         * Default endpoint type using `url` field of agent card directly when discovery a2a agent.
+         * Default endpoint type using `url` field of agent card directly when discovery
+         * a2a agent.
          */
         public static final String A2A_ENDPOINT_TYPE_URL = "URL";
         
         /**
-         * Default endpoint type using `backend` service of agent when discovery a2a agent.
+         * Default endpoint type using `backend` service of agent when discovery a2a
+         * agent.
          */
         public static final String A2A_ENDPOINT_TYPE_SERVICE = "SERVICE";
         

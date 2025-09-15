@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,55 +16,50 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 /**
- * Input model for MCP registry argument input.
+ * Input per components.schemas.Input.
+ *
  * @author xinluo
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Input {
     
     private String description;
     
     @JsonProperty("is_required")
-    private boolean isRequired;
+    private Boolean isRequired;
     
     private String format;
     
     private String value;
     
     @JsonProperty("is_secret")
-    private boolean isSecret;
+    private Boolean isSecret;
     
-    @JsonProperty("default_value")
+    @JsonProperty("default")
     private String defaultValue;
 
     private List<String> choices;
-
-    public boolean isSecret() {
-        return isSecret;
-    }
-
-    public void setSecret(boolean secret) {
-        isSecret = secret;
-    }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
-    public boolean isRequired() {
+    
+    public Boolean getIsRequired() {
         return isRequired;
     }
-
-    public void setRequired(boolean required) {
-        isRequired = required;
+    
+    public void setIsRequired(Boolean isRequired) {
+        this.isRequired = isRequired;
     }
 
     public String getFormat() {
@@ -81,6 +76,14 @@ public class Input {
 
     public void setValue(String value) {
         this.value = value;
+    }
+    
+    public Boolean getIsSecret() {
+        return isSecret;
+    }
+    
+    public void setIsSecret(Boolean isSecret) {
+        this.isSecret = isSecret;
     }
 
     public String getDefaultValue() {

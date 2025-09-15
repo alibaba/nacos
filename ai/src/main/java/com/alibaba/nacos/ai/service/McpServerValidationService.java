@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerValidationItem;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -195,9 +196,8 @@ public class McpServerValidationService {
         
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(protocol)) {
             // For stdio protocol, check if command is provided
-            if (server.getRemoteServerConfig() == null
-                    || StringUtils.isBlank(server.getRemoteServerConfig().getExportPath())) {
-                errors.add("Command is required for stdio protocol");
+            if (server.getLocalServerConfig() == null && CollectionUtils.isEmpty(server.getPackages())) {
+                errors.add("Local server configuration or packages are required for stdio protocol");
             }
         } else {
             // For non-stdio protocols, basic validation

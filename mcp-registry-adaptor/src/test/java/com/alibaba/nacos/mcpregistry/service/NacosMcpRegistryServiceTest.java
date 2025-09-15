@@ -253,9 +253,8 @@ class NacosMcpRegistryServiceTest {
         assertEquals("mockMcpServer", result.getName());
         assertEquals("Description:" + RANDOM_NAMESPACE_ID, result.getDescription());
         assertNull(result.getRepository());
-        assertEquals("1.0.0", result.getVersion_detail().getVersion());
-        assertTrue(result.getVersion_detail().getIs_latest());
-        assertEquals("2025-06-10T02:29:17Z", result.getVersion_detail().getRelease_date());
+        assertEquals("1.0.0", result.getVersion());
+        assertEquals("2025-06-10T02:29:17Z", result.getPublishedAt());
         assertNull(result.getRemotes());
     }
     
@@ -273,9 +272,8 @@ class NacosMcpRegistryServiceTest {
         assertEquals("mockMcpServer", result.getName());
         assertEquals("Description:" + RANDOM_NAMESPACE_ID, result.getDescription());
         assertNull(result.getRepository());
-        assertEquals("1.0.0", result.getVersion_detail().getVersion());
-        assertTrue(result.getVersion_detail().getIs_latest());
-        assertEquals("2025-06-10T02:29:17Z", result.getVersion_detail().getRelease_date());
+        assertEquals("1.0.0", result.getVersion());
+        assertEquals("2025-06-10T02:29:17Z", result.getPublishedAt());
         assertNotNull(result.getRemotes());
         assertEquals(1, result.getRemotes().size());
         assertEquals("sse", result.getRemotes().get(0).getTransportType());
@@ -307,7 +305,7 @@ class NacosMcpRegistryServiceTest {
         serverDetail.setNacosNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
         serverDetail.setName(mockInfo.getName());
         serverDetail.setDescription(mockInfo.getDescription());
-        serverDetail.setVersion_detail(mockInfo.getVersionDetail());
+        // version_detail removed from public model; version set via versionDetail in service call
         serverDetail.setNacosMcpEndpointSpec(new McpEndpointSpec());
         mcpRegistryService.createMcpServer(serverDetail);
         verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
@@ -328,7 +326,7 @@ class NacosMcpRegistryServiceTest {
         serverDetail.setId(mockInfo.getId());
         serverDetail.setName(mockInfo.getName());
         serverDetail.setDescription(mockInfo.getDescription());
-        serverDetail.setVersion_detail(mockInfo.getVersionDetail());
+        // version_detail removed
         serverDetail.setNacosMcpEndpointSpec(new McpEndpointSpec());
         McpServerIndexData mockIndex = new McpServerIndexData();
         mockIndex.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);

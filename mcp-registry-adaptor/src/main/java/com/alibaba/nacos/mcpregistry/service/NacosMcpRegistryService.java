@@ -50,6 +50,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 import static com.alibaba.nacos.ai.constant.Constants.MCP_LIST_SEARCH_BLUR;
 
@@ -60,6 +63,14 @@ import static com.alibaba.nacos.ai.constant.Constants.MCP_LIST_SEARCH_BLUR;
  */
 @Service
 public class NacosMcpRegistryService {
+
+    private static final String UTC_Z = "Z";
+
+    private static final String TIME_SEPARATOR = "T";
+
+    private static final int MILLIS_LENGTH = 13;
+    
+    private static final int SECONDS_LENGTH = 10;
     
     private final McpServerOperationService mcpServerOperationService;
     
@@ -91,13 +102,23 @@ public class NacosMcpRegistryService {
         
         Page<McpServerBasicInfo> servers = listMcpServerByNamespaceList(namespaceIdList, serverName, offset, limit);
         
-        List<McpRegistryServer> finalServers = servers.getPageItems().stream().map((item) -> {
-            McpRegistryServer server = new McpRegistryServer();
+        // Build base list without issuing per-item detail calls (avoid N+1 in controller)
+        List<McpRegistryServerDetail> finalServers = servers.getPageItems().stream().map((item) -> {
+            McpRegistryServerDetail server = new McpRegistryServerDetail();
             server.setId(item.getId());
             server.setName(item.getName());
             server.setDescription(item.getDescription());
             server.setRepository(item.getRepository());
             server.setVersion_detail(item.getVersionDetail());
+            if (item.getVersionDetail() != null) {
+                server.setVersion(item.getVersionDetail().getVersion());
+                String iso = toRfc3339(item.getVersionDetail().getRelease_date());
+                server.setCreatedAt(iso);
+                server.setUpdatedAt(iso);
+                server.setPublishedAt(iso);
+            }
+            server.setStatus("active");
+            server.setSchema("https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json");
             return server;
         }).collect(Collectors.toList());
         
@@ -165,7 +186,15 @@ public class NacosMcpRegistryService {
         result.setName(mcpServerDetail.getName());
         result.setDescription(mcpServerDetail.getDescription());
         result.setRepository(mcpServerDetail.getRepository());
-        result.setVersion_detail(mcpServerDetail.getVersionDetail());
+        if (mcpServerDetail.getVersionDetail() != null) {
+            result.setVersion(mcpServerDetail.getVersionDetail().getVersion());
+            String iso = toRfc3339(mcpServerDetail.getVersionDetail().getRelease_date());
+            result.setCreatedAt(iso);
+            result.setUpdatedAt(iso);
+            result.setPublishedAt(iso);
+            result.setStatus("active");
+            result.setSchema("https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json");
+        }
         
         List<McpEndpointInfo> backendEndpoints = mcpServerDetail.getBackendEndpoints();
         String frontProtocol = mcpServerDetail.getFrontProtocol();
@@ -173,9 +202,12 @@ public class NacosMcpRegistryService {
             List<Remote> remotes = backendEndpoints.stream().map((item) -> {
                 Remote remote = new Remote();
                 remote.setTransportType(frontProtocol.replace("mcp-", ""));
-                remote.setUrl(
-                        String.format("%s://%s:%d%s", Constants.PROTOCOL_TYPE_HTTP, item.getAddress(), item.getPort(),
-                                item.getPath()));
+                remote.setUrl(String.format("%s://%s:%d%s", Constants.PROTOCOL_TYPE_HTTP, item.getAddress(), item.getPort(), item.getPath()));
+                KeyValueInput headerAuth = new KeyValueInput();
+                headerAuth.setName("Authorization");
+                KeyValueInput headerPath = new KeyValueInput();
+                headerPath.setName("X-Server-Path");
+                remote.setHeaders(List.of(headerAuth, headerPath));
                 return remote;
             }).collect(Collectors.toList());
             result.setRemotes(remotes);
@@ -249,5 +281,27 @@ public class NacosMcpRegistryService {
         McpServerDetailInfo mcpServerDetail = mcpServerOperationService.getMcpServerDetail(indexData.getNamespaceId(),
                 serverId, null, version);
         return mcpServerDetail.getToolSpec();
+    }
+
+    private String toRfc3339(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        try {
+            if (raw.endsWith(UTC_Z) || raw.contains(TIME_SEPARATOR)) {
+                return raw;
+            }
+            long epoch;
+            if (raw.length() == MILLIS_LENGTH && raw.chars().allMatch(Character::isDigit)) {
+                epoch = Long.parseLong(raw);
+            } else if (raw.length() == SECONDS_LENGTH && raw.chars().allMatch(Character::isDigit)) {
+                epoch = Long.parseLong(raw) * 1000L;
+            } else {
+                return raw;
+            }
+            return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(epoch));
+        } catch (Exception e) {
+            return raw;
+        }
     }
 }

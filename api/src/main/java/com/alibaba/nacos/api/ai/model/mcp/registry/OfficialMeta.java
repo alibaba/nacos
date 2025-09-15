@@ -16,49 +16,57 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
-
 /**
- * Remote per components.schemas.Remote.
+ * Official metadata inside _meta.
  *
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Remote {
+public class OfficialMeta {
 
-    @JsonProperty("transport_type")
-    @JsonAlias("type")
-    private String transportType;
+    private String id;
 
-    private String url;
+    @JsonProperty("published_at")
+    private String publishedAt;
 
-    private List<KeyValueInput> headers;
+    @JsonProperty("updated_at")
+    private String updatedAt;
 
-    public String getTransportType() {
-        return transportType;
+    @JsonProperty("is_latest")
+    private Boolean isLatest;
+
+    public String getId() {
+        return id;
     }
 
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getUrl() {
-        return url;
+    public String getPublishedAt() {
+        return publishedAt;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setPublishedAt(String publishedAt) {
+        this.publishedAt = publishedAt;
     }
 
-    public List<KeyValueInput> getHeaders() {
-        return headers;
+    public String getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setHeaders(List<KeyValueInput> headers) {
-        this.headers = headers;
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Boolean getIsLatest() {
+        return isLatest;
+    }
+
+    public void setIsLatest(Boolean isLatest) {
+        this.isLatest = isLatest;
     }
 }

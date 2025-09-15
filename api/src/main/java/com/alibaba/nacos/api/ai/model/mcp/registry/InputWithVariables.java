@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 /**
- * InputWithVariables model for MCP registry, supporting variable mapping.
+ * InputWithVariables per components.schemas.InputWithVariables.
+ *
  * @author xinluo
  */
 public class InputWithVariables extends Input {
+
+    @JsonProperty("variables")
     private Map<String, Input> variables;
 
-    /**
-     * Get variable mapping for input value replacement.
-     * @return variable map
-     */
     public Map<String, Input> getVariables() {
         return variables;
     }

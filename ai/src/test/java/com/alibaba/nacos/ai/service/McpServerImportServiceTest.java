@@ -71,7 +71,8 @@ class McpServerImportServiceTest {
         request.setImportType("json");
 
         List<McpServerDetailInfo> servers = new ArrayList<>();
-        when(transformService.transformToNacosFormat(anyString(), anyString())).thenReturn(servers);
+        when(transformService.transformToNacosFormat(anyString(), anyString(), any(), any(), any()))
+                .thenReturn(servers);
 
         McpServerImportValidationResult validationResult = new McpServerImportValidationResult();
         validationResult.setValid(true);
@@ -97,7 +98,8 @@ class McpServerImportServiceTest {
         for (int i = 0; i < 101; i++) {
             servers.add(new McpServerDetailInfo());
         }
-        when(transformService.transformToNacosFormat(anyString(), anyString())).thenReturn(servers);
+        when(transformService.transformToNacosFormat(anyString(), anyString(), any(), any(), any()))
+                .thenReturn(servers);
 
         // When
         McpServerImportValidationResult result = importService.validateImport("test-namespace", request);
@@ -118,7 +120,7 @@ class McpServerImportServiceTest {
         request.setData("invalid-json");
         request.setImportType("json");
 
-        when(transformService.transformToNacosFormat(anyString(), anyString()))
+        when(transformService.transformToNacosFormat(anyString(), anyString(), any(), any(), any()))
                 .thenThrow(new RuntimeException("Invalid JSON format"));
 
         // When
@@ -139,7 +141,7 @@ class McpServerImportServiceTest {
         request.setData("invalid-data");
         request.setImportType("json");
 
-        when(transformService.transformToNacosFormat(anyString(), anyString()))
+        when(transformService.transformToNacosFormat(anyString(), anyString(), any(), any(), any()))
                 .thenThrow(new RuntimeException("Invalid data"));
 
         // When
@@ -158,7 +160,7 @@ class McpServerImportServiceTest {
         McpServerImportRequest request = new McpServerImportRequest();
         request.setData("{\"servers\":[]}");
         request.setImportType("json");
-        request.setSelectedServers(new String[]{"server1"});
+        request.setSelectedServers(new String[] { "server1" });
         request.setOverrideExisting(false);
 
         // Mock transformation
@@ -167,7 +169,8 @@ class McpServerImportServiceTest {
         server.setId("server1");
         server.setName("Test Server");
         servers.add(server);
-        when(transformService.transformToNacosFormat(anyString(), anyString())).thenReturn(servers);
+        when(transformService.transformToNacosFormat(anyString(), anyString(), any(), any(), any()))
+                .thenReturn(servers);
 
         // Mock validation
         McpServerImportValidationResult validationResult = new McpServerImportValidationResult();

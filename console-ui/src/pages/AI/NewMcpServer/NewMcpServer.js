@@ -250,18 +250,18 @@ class NewMcpServer extends React.Component {
       }
 
       const pkg = {
-        registry_name: this.inferRegistryType(parsedCommand),
-        name: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
+        registry_type: this.inferRegistryType(parsedCommand),
+        identifier: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
         version: this.extractPackageVersionFromArgs(parsedArgs),
       };
 
       // 处理 runtime hint 和 runtime arguments
-      if (parsedCommand && parsedCommand !== pkg.name) {
+      if (parsedCommand && parsedCommand !== pkg.identifier) {
         pkg.runtime_hint = parsedCommand;
 
         // 从 args 中提取 runtime_arguments 和 package_arguments
         if (parsedArgs && Array.isArray(parsedArgs)) {
-          const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.name);
+          const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.identifier);
 
           if (runtimeArgs.length > 0) {
             pkg.runtime_arguments = runtimeArgs.map(arg => ({

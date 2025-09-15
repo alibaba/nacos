@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,69 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
- * McpRegistryServerDetail.
+ * McpRegistryServerDetail (renamed from ServerDetail).
+ *
  * @author xinluo
  */
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", "checkstyle:SummaryJavadoc"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class McpRegistryServerDetail extends McpRegistryServer {
-    
+
+    @JsonProperty("$schema")
+    private String schema;
+
+    private List<Package> packages;
+
     private List<Remote> remotes;
-    
+
+    @JsonProperty("_meta")
+    private Meta meta;
+
+    @JsonProperty("published_at")
+    private String publishedAt;
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+
+    public List<Package> getPackages() {
+        return packages;
+    }
+
+    public void setPackages(List<Package> packages) {
+        this.packages = packages;
+    }
+
     public List<Remote> getRemotes() {
         return remotes;
     }
 
     public void setRemotes(List<Remote> remotes) {
         this.remotes = remotes;
+    }
+
+    public Meta getMeta() {
+        return meta;
+    }
+
+    public void setMeta(Meta meta) {
+        this.meta = meta;
+    }
+
+    public String getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(String publishedAt) {
+        this.publishedAt = publishedAt;
     }
 }

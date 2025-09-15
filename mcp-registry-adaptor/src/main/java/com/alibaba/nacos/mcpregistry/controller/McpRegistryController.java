@@ -17,7 +17,10 @@
 package com.alibaba.nacos.mcpregistry.controller;
 
 import com.alibaba.nacos.mcpregistry.form.GetServerForm;
-import com.alibaba.nacos.mcpregistry.form.ListServerForm;
+import com.alibaba.nacos.mcpregistry.form.ListServerForm; // internal legacy form (for service call)
+import com.alibaba.nacos.mcpregistry.form.ListServersOfficialForm; // new official form
+import com.alibaba.nacos.api.ai.model.mcp.registry.Meta;
+import com.alibaba.nacos.api.ai.model.mcp.registry.OfficialMeta;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpErrorResponse;
@@ -34,7 +37,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 /**
@@ -56,7 +62,7 @@ public class McpRegistryController {
      * List mcp servers.
      * All server info is related to the latest version of the server.
      *
-     * @param listServerForm list mcp servers request form
+     * @param form list mcp servers request form
      *                       Support blur and accurate search
      *                       mode.
      *                       default offset is 0
@@ -65,9 +71,29 @@ public class McpRegistryController {
      * @throws NacosApiException if request parameter is invalid or handle error
      */
     @GetMapping(value = "/v0/servers")
-    public McpRegistryServerList listMcpServers(ListServerForm listServerForm) throws NacosApiException {
-        listServerForm.validate();
-        return nacosMcpRegistryService.listMcpServers(listServerForm);
+    public McpRegistryServerList listMcpServers(ListServersOfficialForm form) throws NacosApiException, NacosException {
+        form.validate();
+        int offset = form.resolveOffset();
+        int limit = form.getLimit();
+        // reuse internal service with converted form
+        ListServerForm internal = new ListServerForm();
+        internal.setOffset(offset);
+        internal.setLimit(limit);
+        McpRegistryServerList internalList = nacosMcpRegistryService.listMcpServers(internal);
+        // Null-safe server list handling
+        List<McpRegistryServerDetail> raw = internalList.getServers();
+        if (raw == null) {
+            raw = Collections.emptyList();
+        }
+        List<McpRegistryServerDetail> details = raw.stream()
+                .map(this::enrich)
+                .collect(Collectors.toList());
+        McpRegistryServerList response = new McpRegistryServerList();
+        response.setServers(details);
+        int returned = details.size();
+        String nextCursor = (offset + returned) < internalList.getTotal_count() ? String.valueOf(offset + returned) : null;
+        response.setMetadata(new McpRegistryServerList.Metadata(nextCursor, returned));
+        return response;
     }
 
     /**
@@ -89,7 +115,7 @@ public class McpRegistryController {
             errorResponse.setError("Server not found");
             return errorResponse;
         }
-        return server;
+        return enrich(server);
     }
 
     /**
@@ -104,5 +130,28 @@ public class McpRegistryController {
     public McpToolSpecification getMcpServerToolsInfo(@PathVariable String id, GetServerForm getServerForm) throws NacosException {
         getServerForm.validate();
         return nacosMcpRegistryService.getTools(id, getServerForm.getVersion());
+    }
+
+    private McpRegistryServerDetail enrich(McpRegistryServerDetail detail) {
+        if (detail == null) {
+            return null;
+        }
+        detail.setStatus("active");
+        detail.setSchema("https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json");
+        Meta meta = detail.getMeta();
+        if (meta == null) {
+            meta = new Meta();
+        }
+        OfficialMeta official = meta.getOfficial();
+        if (official == null) {
+            official = new OfficialMeta();
+        }
+        official.setId(detail.getId());
+        official.setPublishedAt(detail.getPublishedAt());
+        official.setUpdatedAt(detail.getUpdatedAt());
+        official.setIsLatest(detail.getUpdatedAt() != null && detail.getUpdatedAt().equals(detail.getPublishedAt()));
+        meta.setOfficial(official);
+        detail.setMeta(meta);
+        return detail;
     }
 }

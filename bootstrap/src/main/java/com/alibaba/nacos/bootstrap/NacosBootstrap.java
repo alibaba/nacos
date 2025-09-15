@@ -111,7 +111,7 @@ public class NacosBootstrap {
     }
     
     private static ConfigurableApplicationContext startMcpRegistryContext(String[] args,
-                                                                          ConfigurableApplicationContext coreContext) {
+                                                                         ConfigurableApplicationContext coreContext) {
         NacosStartUpManager.start(NacosStartUp.MCP_REGISTRY_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosMcpRegistry.class).parent(coreContext)
                 .banner(getBanner("nacos-mcp-registry-banner.txt")).run(args);

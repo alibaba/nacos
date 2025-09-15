@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,32 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 /**
- * Package model for MCP registry, represents a package configuration.
+ * Package per components.schemas.Package.
+ *
  * @author xinluo
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Package {
-    
-    @JsonProperty("registry_name")
-    private String registryName;
 
-    private String name;
-    
+    @JsonProperty("registry_type")
+    private String registryType;
+
+    @JsonProperty("registry_base_url")
+    private String registryBaseUrl;
+
+    private String identifier;
+
     private String version;
-    
+
+    @JsonProperty("file_sha256")
+    private String fileSha256;
+
     @JsonProperty("runtime_hint")
     private String runtimeHint;
 
@@ -45,28 +54,28 @@ public class Package {
     @JsonProperty("environment_variables")
     private List<KeyValueInput> environmentVariables;
 
-    public List<Argument> getRuntimeArguments() {
-        return runtimeArguments;
+    public String getRegistryType() {
+        return registryType;
     }
 
-    public void setRuntimeArguments(List<Argument> runtimeArguments) {
-        this.runtimeArguments = runtimeArguments;
+    public void setRegistryType(String registryType) {
+        this.registryType = registryType;
     }
 
-    public String getRegistryName() {
-        return registryName;
+    public String getRegistryBaseUrl() {
+        return registryBaseUrl;
     }
 
-    public void setRegistryName(String registryName) {
-        this.registryName = registryName;
+    public void setRegistryBaseUrl(String registryBaseUrl) {
+        this.registryBaseUrl = registryBaseUrl;
     }
 
-    public String getName() {
-        return name;
+    public String getIdentifier() {
+        return identifier;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public String getVersion() {
@@ -77,12 +86,28 @@ public class Package {
         this.version = version;
     }
 
+    public String getFileSha256() {
+        return fileSha256;
+    }
+
+    public void setFileSha256(String fileSha256) {
+        this.fileSha256 = fileSha256;
+    }
+
     public String getRuntimeHint() {
         return runtimeHint;
     }
 
     public void setRuntimeHint(String runtimeHint) {
         this.runtimeHint = runtimeHint;
+    }
+
+    public List<Argument> getRuntimeArguments() {
+        return runtimeArguments;
+    }
+
+    public void setRuntimeArguments(List<Argument> runtimeArguments) {
+        this.runtimeArguments = runtimeArguments;
     }
 
     public List<Argument> getPackageArguments() {

@@ -14,37 +14,54 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.mcp.registry;
+package com.alibaba.nacos.mcpregistry.dto;
 
+import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Meta;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Package;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 /**
- * McpRegistryServer (renamed from Server) to align with registry package naming.
+ * Official ServerDetail schema adapter.
  *
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class McpRegistryServer {
+public class ServerDetailResponse {
 
     private String name;
-    
+
     private String description;
 
-    private String status;
+    /**
+     * Server status, default active.
+     */
+    private String status = "active";
 
     private Repository repository;
 
     private String version;
-
-    @JsonProperty("website_url")
-    private String websiteUrl;
 
     @JsonProperty("created_at")
     private String createdAt;
 
     @JsonProperty("updated_at")
     private String updatedAt;
+
+    @JsonProperty("packages")
+    private List<Package> packages;
+
+    private List<Remote> remotes;
+
+    @JsonProperty("$schema")
+    private String schema;
+
+    @JsonProperty("_meta")
+    private Meta meta;
 
     public String getName() {
         return name;
@@ -86,14 +103,6 @@ public class McpRegistryServer {
         this.version = version;
     }
 
-    public String getWebsiteUrl() {
-        return websiteUrl;
-    }
-
-    public void setWebsiteUrl(String websiteUrl) {
-        this.websiteUrl = websiteUrl;
-    }
-
     public String getCreatedAt() {
         return createdAt;
     }
@@ -108,5 +117,37 @@ public class McpRegistryServer {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<Package> getPackages() {
+        return packages;
+    }
+
+    public void setPackages(List<Package> packages) {
+        this.packages = packages;
+    }
+
+    public List<Remote> getRemotes() {
+        return remotes;
+    }
+
+    public void setRemotes(List<Remote> remotes) {
+        this.remotes = remotes;
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+
+    public Meta getMeta() {
+        return meta;
+    }
+
+    public void setMeta(Meta meta) {
+        this.meta = meta;
     }
 }

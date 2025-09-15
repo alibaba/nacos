@@ -73,18 +73,18 @@ import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE
 @RequestMapping(Constants.MCP_CONSOLE_PATH)
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class ConsoleMcpController {
-    
+
     private final McpProxy mcpProxy;
-    
+
     public ConsoleMcpController(McpProxy mcpProxy) {
         this.mcpProxy = mcpProxy;
     }
-    
+
     /**
      * List mcp server.
      *
      * @param mcpListForm list mcp servers request form
-     * @param pageForm page info
+     * @param pageForm    page info
      * @return mcp server list wrapper with {@link Result}
      * @throws NacosApiException if request parameter is invalid or handle error
      */
@@ -98,7 +98,7 @@ public class ConsoleMcpController {
                 mcpProxy.listMcpServers(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
                         pageForm.getPageNo(), pageForm.getPageSize()));
     }
-    
+
     /**
      * Import tools from mcp result.
      *
@@ -110,7 +110,8 @@ public class ConsoleMcpController {
      */
     @GetMapping("/importToolsFromMcp")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType, @RequestParam String baseUrl,
+    public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType,
+            @RequestParam String baseUrl,
             @RequestParam String endpoint, @RequestParam(required = false) String authToken) throws NacosException {
         McpClientTransport transport = null;
         if (StringUtils.equals(transportType, MCP_PROTOCOL_SSE)) {
@@ -135,7 +136,7 @@ public class ConsoleMcpController {
             throw new NacosException(NacosException.SERVER_ERROR, "Failed to import tools from MCP server", e);
         }
     }
-    
+
     /**
      * Get specified mcp server detail info.
      *
@@ -147,9 +148,10 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion()));
+        return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(),
+                mcpForm.getVersion()));
     }
-    
+
     /**
      * Create new mcp server.
      *
@@ -166,7 +168,7 @@ public class ConsoleMcpController {
         String mcpId = mcpProxy.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools, endpointSpec);
         return Result.success(mcpId);
     }
-    
+
     /**
      * Update existed mcp server.
      *
@@ -187,7 +189,7 @@ public class ConsoleMcpController {
         mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getLatest(), basicInfo, mcpTools, endpointSpec);
         return Result.success("ok");
     }
-    
+
     /**
      * Delete existed mcp server.
      *
@@ -198,10 +200,11 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> deleteMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion());
+        mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(),
+                mcpForm.getVersion());
         return Result.success("ok");
     }
-    
+
     /**
      * Validate MCP server import request.
      *
@@ -217,7 +220,7 @@ public class ConsoleMcpController {
         McpServerImportValidationResult result = mcpProxy.validateImport(mcpImportForm.getNamespaceId(), request);
         return Result.success(result);
     }
-    
+
     /**
      * Execute MCP server import operation.
      *
@@ -233,7 +236,7 @@ public class ConsoleMcpController {
         McpServerImportResponse response = mcpProxy.executeImport(mcpImportForm.getNamespaceId(), request);
         return Result.success(response);
     }
-    
+
     /**
      * Convert McpImportForm to McpServerImportRequest.
      *
@@ -246,9 +249,14 @@ public class ConsoleMcpController {
         request.setData(form.getData());
         request.setOverrideExisting(form.isOverrideExisting());
         request.setValidateOnly(form.isValidateOnly());
+        request.setSkipInvalid(form.isSkipInvalid());
         request.setSelectedServers(form.getSelectedServers());
+        // Optional URL pagination parameters
+        request.setCursor(form.getCursor());
+        request.setLimit(form.getLimit());
+        // Optional registry search parameter
+        request.setSearch(form.getSearch());
         return request;
     }
-    
-}
 
+}
