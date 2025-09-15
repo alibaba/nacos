@@ -70,18 +70,18 @@ public class NacosMcpRegistryService {
     private static final int SECONDS_LENGTH = 10;
 
     private final McpServerOperationService mcpServerOperationService;
-
+    
     private final NamespaceOperationService namespaceOperationService;
-
+    
     private final McpServerIndex mcpServerIndex;
-
+    
     public NacosMcpRegistryService(McpServerOperationService mcpServerOperationService,
             NamespaceOperationService namespaceOperationService, McpServerIndex mcpServerIndex) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.namespaceOperationService = namespaceOperationService;
         this.mcpServerIndex = mcpServerIndex;
     }
-
+    
     /**
      * List mcp server from mcpServerOperationService and convert the result to
      * {@link McpRegistryServerList}.
@@ -145,13 +145,13 @@ public class NacosMcpRegistryService {
         result.setPageNumber(0 == limit ? 1 : (offset / limit + 1));
         return result;
     }
-
+    
     private Page<McpServerBasicInfo> listMcpServerByNamespace(String namespaceId, String serverName, int offset,
             int limit) {
         return mcpServerOperationService.listMcpServerWithOffset(namespaceId, serverName, MCP_LIST_SEARCH_BLUR, offset,
                 limit);
     }
-
+    
     /**
      * Get mcp server details.
      *
@@ -169,7 +169,7 @@ public class NacosMcpRegistryService {
                 id, null, getServerForm.getVersion());
         return buildRegistryDetail(mcpServerDetail, id);
     }
-
+    
     /**
      * Get tools info about the given version of the mcp server.
      *
@@ -187,7 +187,7 @@ public class NacosMcpRegistryService {
                 serverId, null, version);
         return mcpServerDetail.getToolSpec();
     }
-
+    
     private String toRfc3339(String raw) {
         if (raw == null || raw.isEmpty()) {
             return null;
@@ -209,7 +209,7 @@ public class NacosMcpRegistryService {
             return raw;
         }
     }
-
+    
     /**
      * Apply basic meta/schema and official block to detail.
      */
@@ -234,7 +234,7 @@ public class NacosMcpRegistryService {
         meta.setOfficial(official);
         detail.setMeta(meta);
     }
-
+    
     /**
      * Prefer frontend endpoints, fallback to backend.
      */
@@ -244,7 +244,7 @@ public class NacosMcpRegistryService {
         }
         return backend;
     }
-
+    
     /**
      * Resolve transport string from frontProtocol like "mcp-http" -> "http".
      */
@@ -256,7 +256,7 @@ public class NacosMcpRegistryService {
         }
         return null;
     }
-
+    
     /**
      * Map endpoints to remotes with default headers.
      */
@@ -277,7 +277,7 @@ public class NacosMcpRegistryService {
             return remote;
         }).collect(Collectors.toList());
     }
-
+    
     /**
      * Enrich with meta/schema and also build remotes from endpoints.
      */
@@ -297,7 +297,7 @@ public class NacosMcpRegistryService {
             detail.setRemotes(remotes);
         }
     }
-
+    
     /**
      * Build registry detail from detailInfo and enrich including endpoints -> remotes.
      */

@@ -47,9 +47,9 @@ import java.util.Objects;
 @RestController
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class McpRegistryController {
-
+    
     private final NacosMcpRegistryService nacosMcpRegistryService;
-
+    
     public McpRegistryController(NacosMcpRegistryService nacosMcpRegistryService) {
         this.nacosMcpRegistryService = nacosMcpRegistryService;
     }
