@@ -532,7 +532,8 @@ public class McpServerOperationService {
         boolean hasToolSpec = toolSpecification != null;
         boolean hasTools = hasToolSpec && toolSpecification.getTools() != null;
         boolean hasSecuritySchemes = hasToolSpec && toolSpecification.getSecuritySchemes() != null;
-        boolean shouldCreateToolConfig = hasToolSpec && (hasTools || hasSecuritySchemes);
+        boolean hasEncryptedData = hasToolSpec && toolSpecification.getEncryptData() != null;
+        boolean shouldCreateToolConfig = hasToolSpec && (hasTools || hasSecuritySchemes || hasEncryptedData);
         if (shouldCreateToolConfig) {
             toolOperationService.refreshMcpTool(namespaceId, serverSpecification, toolSpecification);
             serverSpecification.getCapabilities().add(McpCapability.TOOL);
