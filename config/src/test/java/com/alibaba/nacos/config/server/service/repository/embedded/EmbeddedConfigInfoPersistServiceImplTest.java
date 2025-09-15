@@ -151,6 +151,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock get config state
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null, configInfoStateWrapperFinalSelect);
+        Mockito.when(databaseOperate.blockUpdate(any())).thenReturn(true);
         
         String srcIp = "srcIp";
         String srcUser = "srcUser";
@@ -218,6 +219,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock get config state
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null, configInfoStateWrapperFinalSelect);
+        Mockito.when(databaseOperate.blockUpdate(any())).thenReturn(true);
         String srcIp = "iptest";
         String srcUser = "users";
         ConfigOperateResult configOperateResult = embeddedConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser,
