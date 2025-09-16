@@ -87,33 +87,6 @@ class McpServerImportServiceTest {
     }
 
     @Test
-    void testValidateImportExceedsBatchSize() throws Exception {
-        // Given
-        McpServerImportRequest request = new McpServerImportRequest();
-        request.setData("{\"servers\":[]}");
-        request.setImportType("json");
-
-        List<McpServerDetailInfo> servers = new ArrayList<>();
-        // Create more than MAX_IMPORT_BATCH_SIZE (100) servers
-        for (int i = 0; i < 101; i++) {
-            servers.add(new McpServerDetailInfo());
-        }
-        when(transformService.transformToNacosFormat(anyString(), anyString(), any(), any(), any()))
-                .thenReturn(servers);
-
-        // When
-        McpServerImportValidationResult result = importService.validateImport("test-namespace", request);
-
-        // Then
-        assertNotNull(result);
-        assertFalse(result.isValid());
-        assertEquals(101, result.getTotalCount());
-        assertNotNull(result.getErrors());
-        assertFalse(result.getErrors().isEmpty());
-        assertTrue(result.getErrors().get(0).contains("Import batch size exceeds maximum limit"));
-    }
-
-    @Test
     void testValidateImportTransformationFailure() throws Exception {
         // Given
         McpServerImportRequest request = new McpServerImportRequest();

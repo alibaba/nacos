@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.LinkedList;
@@ -293,7 +294,20 @@ class NacosMcpRegistryServiceTest {
         List<McpServerBasicInfo> mcpServerBasicInfos = new LinkedList<>();
         mockPage.setPageItems(mcpServerBasicInfos);
         for (int i = 0; i < actualSize; i++) {
-            mockPage.getPageItems().add(mockMcpServerBasicInfo(i, namespaceId));
+            McpServerBasicInfo basicInfo = mockMcpServerBasicInfo(i, namespaceId);
+            mockPage.getPageItems().add(basicInfo);
+            // ensure getServer won't return null by mocking index and detail lookup for each generated id
+            McpServerIndexData indexData = new McpServerIndexData();
+            indexData.setId(basicInfo.getId());
+            indexData.setNamespaceId(namespaceId);
+            Mockito.lenient().when(mcpServerIndex.getMcpServerById(basicInfo.getId())).thenReturn(indexData);
+            // default detail mocks without backend endpoints or tools
+            try {
+                Mockito.lenient().when(mcpServerOperationService.getMcpServerDetail(namespaceId, basicInfo.getId(), null, null))
+                    .thenReturn(mockMcpServerDetailInfo(basicInfo.getId(), namespaceId, false, false));
+            } catch (NacosException e) {
+                throw new RuntimeException(e);
+            }
         }
         when(mcpServerOperationService.listMcpServerWithOffset(namespaceId, null, Constants.MCP_LIST_SEARCH_BLUR,
                 offset, limit)).thenReturn(mockPage);
