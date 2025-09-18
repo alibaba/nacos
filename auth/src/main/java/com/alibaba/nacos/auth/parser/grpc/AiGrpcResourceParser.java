@@ -16,33 +16,39 @@
 
 package com.alibaba.nacos.auth.parser.grpc;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
- * Ai Grpc resource parser.
+ * AI Grpc resource parser.
  *
- * @author xiweng.yy
+ * @author hongye.nhy xiweng.yy
  */
 public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
     
     @Override
     protected String getNamespaceId(Request request) {
-        if (request instanceof AbstractMcpRequest) {
-            return ((AbstractMcpRequest) request).getNamespaceId();
+        String namespaceId = null;
+        if (request instanceof  AbstractMcpRequest) {
+            namespaceId = ((AbstractMcpRequest) request).getNamespaceId();
         } else if (request instanceof AbstractAgentRequest) {
-            return ((AbstractAgentRequest) request).getNamespaceId();
+            namespaceId = ((AbstractAgentRequest) request).getNamespaceId();
         }
-        return StringUtils.EMPTY;
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        }
+        return namespaceId;
     }
     
     @Override
     protected String getGroup(Request request) {
-        return StringUtils.EMPTY;
+        return Constants.DEFAULT_GROUP;
     }
     
     @Override

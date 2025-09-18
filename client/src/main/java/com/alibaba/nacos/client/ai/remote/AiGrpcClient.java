@@ -57,6 +57,7 @@ import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -64,13 +65,19 @@ import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 
 /**
  * Nacos AI GRPC protocol client.
@@ -92,13 +99,17 @@ public class AiGrpcClient implements Closeable {
     private final AbstractServerListManager serverListManager;
     
     private final AiGrpcRedoService redoService;
-    
+
+    private final NacosClientProperties properties;
+
     private SecurityProxy securityProxy;
     
     private NacosMcpServerCacheHolder mcpServerCacheHolder;
     
     private NacosAgentCardCacheHolder agentCardCacheHolder;
-    
+
+    private ScheduledThreadPoolExecutor executorService;
+
     public AiGrpcClient(String namespaceId, NacosClientProperties properties) {
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
@@ -106,6 +117,7 @@ public class AiGrpcClient implements Closeable {
         this.rpcClient = buildRpcClient(properties);
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
         this.redoService = new AiGrpcRedoService(properties, this);
+        this.properties = properties;
     }
     
     private RpcClient buildRpcClient(NacosClientProperties properties) {
@@ -133,6 +145,16 @@ public class AiGrpcClient implements Closeable {
         this.rpcClient.start();
         this.securityProxy = new SecurityProxy(this.serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
+        initSecurityProxy(properties);
+    }
+
+    private void initSecurityProxy(NacosClientProperties properties) {
+        this.executorService = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.ai.security"));
+        final Properties nacosClientPropertiesView = properties.asProperties();
+        this.securityProxy.login(nacosClientPropertiesView);
+        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0,
+                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -541,6 +563,9 @@ public class AiGrpcClient implements Closeable {
         serverListManager.shutdown();
         if (null != securityProxy) {
             securityProxy.shutdown();
+        }
+        if (null != executorService) {
+            ThreadUtils.shutdownThreadPool(executorService, LOGGER);
         }
     }
 }
