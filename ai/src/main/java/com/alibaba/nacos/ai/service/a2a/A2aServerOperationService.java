@@ -34,6 +34,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -91,23 +92,29 @@ public class A2aServerOperationService {
      * @throws NacosException nacos exception
      */
     public void registerAgent(AgentCard agentCard, String namespaceId, String registrationType) throws NacosException {
-        // 1. register agent's info
-        AgentCardVersionInfo agentCardVersionInfo = AgentCardUtil.buildAgentCardVersionInfo(agentCard, registrationType,
-                true);
-        ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, namespaceId);
-        ConfigRequestInfo versionConfigRequest = new ConfigRequestInfo();
-        versionConfigRequest.setUpdateForExist(Boolean.FALSE);
-        configOperationService.publishConfig(configForm, versionConfigRequest, null);
-        
-        // 2. register agent's version info
-        AgentCardDetailInfo agentCardDetailInfo = AgentCardUtil.buildAgentCardDetailInfo(agentCard, registrationType);
-        ConfigForm configFormVersion = transferAgentInfoToConfigForm(agentCardDetailInfo, namespaceId);
-        ConfigRequestInfo agentCardConfigRequest = new ConfigRequestInfo();
-        agentCardConfigRequest.setUpdateForExist(Boolean.FALSE);
-        long startOperationTime = System.currentTimeMillis();
-        configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
-        
-        syncEffectService.toSync(configFormVersion, startOperationTime);
+        try {
+            // 1. register agent's info
+            AgentCardVersionInfo agentCardVersionInfo = AgentCardUtil.buildAgentCardVersionInfo(agentCard,
+                    registrationType, true);
+            ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, namespaceId);
+            ConfigRequestInfo versionConfigRequest = new ConfigRequestInfo();
+            versionConfigRequest.setUpdateForExist(Boolean.FALSE);
+            configOperationService.publishConfig(configForm, versionConfigRequest, null);
+            
+            // 2. register agent's version info
+            AgentCardDetailInfo agentCardDetailInfo = AgentCardUtil.buildAgentCardDetailInfo(agentCard,
+                    registrationType);
+            ConfigForm configFormVersion = transferAgentInfoToConfigForm(agentCardDetailInfo, namespaceId);
+            ConfigRequestInfo agentCardConfigRequest = new ConfigRequestInfo();
+            agentCardConfigRequest.setUpdateForExist(Boolean.FALSE);
+            long startOperationTime = System.currentTimeMillis();
+            configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
+            
+            syncEffectService.toSync(configFormVersion, startOperationTime);
+        } catch (ConfigAlreadyExistsException e) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    String.format("AgentCard name %s already exist", agentCard.getName()));
+        }
     }
     
     /**
