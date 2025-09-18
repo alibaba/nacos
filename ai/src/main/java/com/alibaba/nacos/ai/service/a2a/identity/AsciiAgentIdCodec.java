@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.a2a.identity;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 
 import java.util.Set;
@@ -23,11 +24,15 @@ import java.util.Set;
 /**
  * Agent Identity Codec implement by ASCII.
  *
+ * <p>
+ *     Only consider show-able ASCII code from 32(x20) to 126(x7E).
+ * </p>
+ *
  * @author xiweng.yy
  */
 public class AsciiAgentIdCodec implements AgentIdCodec {
     
-    private static final String ENCODE_PREFIX = "_-.SYSENC:";
+    private static final String ENCODE_PREFIX = "____:";
     
     private static final char ENCODE_MARK_CHAR = '_';
     
@@ -38,20 +43,28 @@ public class AsciiAgentIdCodec implements AgentIdCodec {
     
     @Override
     public String encode(String agentName) {
-        if (ParamUtils.isValid(agentName)) {
+        if (!isNeedEncoded(agentName)) {
             return agentName;
         }
         
         StringBuilder sb = new StringBuilder(ENCODE_PREFIX);
         for (char ch : agentName.toCharArray()) {
-            if (Character.isLetterOrDigit(ch) || VALID_CHAR.contains(ch)) {
-                // Keep letters, numbers, valid characters and non-underscores
+            if (Character.isLetter(ch) || VALID_CHAR.contains(ch)) {
+                // Keep letters, valid characters and non-underscores
+                // number should be encoded, because the encoded result will contain numbers
+                // which will cause search agentName contains unexpected results.
                 sb.append(ch);
             } else {
-                sb.append(ENCODE_MARK_CHAR).append(String.format("%04x", (int) ch));
+                sb.append(ENCODE_MARK_CHAR).append(String.format("%03d", (int) ch));
             }
         }
         return sb.toString();
+    }
+    
+    @Override
+    public String encodeForSearch(String agentName) {
+        String encodedName = encode(agentName);
+        return isEncoded(encodedName) ? encodedName.substring(ENCODE_PREFIX.length()) : encodedName;
     }
     
     @Override
@@ -64,13 +77,13 @@ public class AsciiAgentIdCodec implements AgentIdCodec {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < body.length(); ) {
             char ch = body.charAt(i);
-            if (ch == '_' && i + 5 <= body.length()) {
-                String hexPart = body.substring(i + 1, i + 5);
-                if (isHex(hexPart)) {
+            if (ch == '_' && i + 4 <= body.length()) {
+                String codePart = body.substring(i + 1, i + 4);
+                if (isDigit(codePart)) {
                     try {
-                        int codePoint = Integer.parseInt(hexPart, 16);
+                        int codePoint = Integer.parseInt(codePart, 10);
                         sb.append((char) codePoint);
-                        i += 5;
+                        i += 4;
                         continue;
                     } catch (NumberFormatException e) {
                         throw new IllegalArgumentException("invalid encoded name");
@@ -84,20 +97,31 @@ public class AsciiAgentIdCodec implements AgentIdCodec {
         return sb.toString();
     }
     
-    private boolean isHex(String s) {
+    private boolean isDigit(String s) {
         for (char c : s.toCharArray()) {
-            if (!Character.isDigit(c) && !isHexLetter(c)) {
+            if (!Character.isDigit(c)) {
                 return false;
             }
         }
-        return s.length() == 4;
-    }
-    
-    private boolean isHexLetter(char c) {
-        return (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        return s.length() == 3;
     }
     
     private boolean isEncoded(String name) {
         return name != null && name.startsWith(ENCODE_PREFIX);
+    }
+    
+    private boolean isNeedEncoded(String name) {
+        if (StringUtils.isEmpty(name)) {
+            return false;
+        }
+        if (name.startsWith(ENCODE_PREFIX)) {
+            return false;
+        }
+        for (char ch : name.toCharArray()) {
+            if (!Character.isLetter(ch) && !VALID_CHAR.contains(ch)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

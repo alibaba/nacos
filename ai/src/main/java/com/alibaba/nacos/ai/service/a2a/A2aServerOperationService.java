@@ -251,15 +251,14 @@ public class A2aServerOperationService {
      */
     public Page<AgentCardVersionInfo> listAgents(String namespaceId, String agentName, String search, int pageNo,
             int pageSize) throws NacosException {
-        String encodedName = agentIdCodecHolder.encode(agentName);
         
         String dataId;
-        if (StringUtils.isEmpty(encodedName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
+        if (StringUtils.isEmpty(agentName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
             search = Constants.A2A.SEARCH_BLUR;
-            dataId = Constants.ALL_PATTERN + encodedName + Constants.ALL_PATTERN;
+            dataId = Constants.ALL_PATTERN + agentIdCodecHolder.encodeForSearch(agentName) + Constants.ALL_PATTERN;
         } else {
             search = Constants.A2A.SEARCH_ACCURATE;
-            dataId = encodedName;
+            dataId = agentIdCodecHolder.encode(agentName);
         }
         
         Page<ConfigInfo> configInfoPage = configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId,
