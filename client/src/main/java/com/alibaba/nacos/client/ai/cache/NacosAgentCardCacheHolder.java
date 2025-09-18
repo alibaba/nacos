@@ -139,13 +139,13 @@ public class NacosAgentCardCacheHolder implements Closeable {
         List<AgentInterface> oldInterfaces = oldAgentCard.getAdditionalInterfaces();
         List<AgentInterface> newInterfaces = newAgentCard.getAdditionalInterfaces();
         if (Objects.isNull(oldInterfaces) && Objects.isNull(newInterfaces)) {
-            return Objects.equals(oldAgentCard.getUrl(), newAgentCard.getUrl());
+            return !Objects.equals(oldAgentCard.getUrl(), newAgentCard.getUrl());
         }
         if (anyOneIsNull(oldInterfaces, newInterfaces)) {
             return true;
         }
         // two interfaces both not null.
-        return CollectionUtils.isEqualCollection(oldInterfaces, newInterfaces);
+        return !CollectionUtils.isEqualCollection(oldInterfaces, newInterfaces);
     }
     
     private boolean anyOneIsNull(List<AgentInterface> oldAdditionalInterfaces,
