@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -29,29 +28,22 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Package {
 
-    @JsonProperty("registry_type")
     private String registryType;
 
-    @JsonProperty("registry_base_url")
     private String registryBaseUrl;
 
     private String identifier;
 
     private String version;
 
-    @JsonProperty("file_sha256")
     private String fileSha256;
 
-    @JsonProperty("runtime_hint")
     private String runtimeHint;
 
-    @JsonProperty("runtime_arguments")
     private List<Argument> runtimeArguments;
 
-    @JsonProperty("package_arguments")
     private List<Argument> packageArguments;
 
-    @JsonProperty("environment_variables")
     private List<KeyValueInput> environmentVariables;
 
     public String getRegistryType() {

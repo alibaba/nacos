@@ -217,7 +217,8 @@ public class NacosMcpRegistryService {
         if (detail == null) {
             return;
         }
-        detail.setStatus(AiConstants.Mcp.MCP_STATUS_ACTIVE);
+        // Align with enum-based status in registry model
+        detail.setStatus("active");
         detail.setSchema("https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json");
         Meta meta = detail.getMeta();
         if (meta == null) {
@@ -227,10 +228,19 @@ public class NacosMcpRegistryService {
         if (official == null) {
             official = new OfficialMeta();
         }
-        official.setId(id);
-        official.setPublishedAt(detail.getPublishedAt());
-        official.setUpdatedAt(detail.getUpdatedAt());
-        official.setIsLatest(detail.getUpdatedAt() != null && detail.getUpdatedAt().equals(detail.getPublishedAt()));
+        official.setServerId(id);
+        // published/updated timestamps should be carried in official meta rather than top-level
+        // Keep existing values if already set
+        if (official.getPublishedAt() == null && detail.getMeta() != null && detail.getMeta().getOfficial() != null) {
+            official.setPublishedAt(detail.getMeta().getOfficial().getPublishedAt());
+        }
+        if (official.getUpdatedAt() == null && detail.getMeta() != null && detail.getMeta().getOfficial() != null) {
+            official.setUpdatedAt(detail.getMeta().getOfficial().getUpdatedAt());
+        }
+        // If still null, do not synthesize values here
+        if (official.getIsLatest() == null && detail.getMeta() != null && detail.getMeta().getOfficial() != null) {
+            official.setIsLatest(detail.getMeta().getOfficial().getIsLatest());
+        }
         meta.setOfficial(official);
         detail.setMeta(meta);
     }
@@ -266,7 +276,7 @@ public class NacosMcpRegistryService {
         }
         return endpoints.stream().map((item) -> {
             Remote remote = new Remote();
-            remote.setTransportType(transport);
+            remote.setType(transport);
             remote.setUrl(String.format("%s://%s:%d%s", Constants.PROTOCOL_TYPE_HTTP, item.getAddress(),
                     item.getPort(), item.getPath()));
             KeyValueInput headerAuth = new KeyValueInput();
@@ -310,9 +320,20 @@ public class NacosMcpRegistryService {
         if (mcpServerDetail.getVersionDetail() != null) {
             result.setVersion(mcpServerDetail.getVersionDetail().getVersion());
             String iso = toRfc3339(mcpServerDetail.getVersionDetail().getRelease_date());
-            result.setCreatedAt(iso);
-            result.setUpdatedAt(iso);
-            result.setPublishedAt(iso);
+            Meta meta = result.getMeta();
+            if (meta == null) {
+                meta = new Meta();
+            }
+            OfficialMeta official = meta.getOfficial();
+            if (official == null) {
+                official = new OfficialMeta();
+            }
+            official.setPublishedAt(iso);
+            official.setUpdatedAt(iso);
+            // mark latest when release equals update in our simple synthesis
+            official.setIsLatest(Boolean.TRUE);
+            meta.setOfficial(official);
+            result.setMeta(meta);
         }
         enrich(result, id, mcpServerDetail.getFrontProtocol(),
                 mcpServerDetail.getFrontendEndpoints(), mcpServerDetail.getBackendEndpoints());

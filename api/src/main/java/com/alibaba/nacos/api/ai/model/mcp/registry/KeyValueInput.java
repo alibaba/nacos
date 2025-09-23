@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * KeyValueInput used for headers / env vars.
  *
@@ -25,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class KeyValueInput extends InputWithVariables {
 
-    @JsonProperty("name")
     private String name;
 
     public String getName() {

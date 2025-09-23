@@ -45,7 +45,7 @@ class McpServerTransformServiceTest {
     @Test
     void testTransformMcpRegistryServerList() throws Exception {
         String registryJson = "{\"servers\":[{\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
-                + "{\"id\":\"4e9cf4cf-71f6-4aca-bae8-2d10a29ca2e0\"}},"
+                + "{\"serverId\":\"4e9cf4cf-71f6-4aca-bae8-2d10a29ca2e0\"}},"
                 + "\"name\":\"io.github.21st-dev/magic-mcp\","
                 + "\"description\":\"It's like v0 but in your Cursor/WindSurf/Cline. 21st dev Magic MCP server\","
                 + "\"repository\":{\"url\":\"https://github.com/21st-dev/magic-mcp\",\"source\":\"github\",\"id\":\"935450522\"},"
@@ -73,7 +73,7 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformSingleMcpRegistryServer() throws Exception {
-        String registryJson = "{\"_meta\":{\"io.modelcontextprotocol.registry/official\":{\"id\":\"d3669201-252f-403c-944b-c3ec0845782b\"}},"
+        String registryJson = "{\"_meta\":{\"io.modelcontextprotocol.registry/official\":{\"serverId\":\"d3669201-252f-403c-944b-c3ec0845782b\"}},"
                 + "\"name\":\"io.github.adfin-engineering/mcp-server-adfin\","
                 + "\"description\":\"A Model Context Protocol Server for connecting with Adfin APIs\","
                 + "\"repository\":{\"url\":\"https://github.com/Adfin-Engineering/mcp-server-adfin\",\"source\":\"github\",\"id\":\"951338147\"},"
@@ -107,7 +107,7 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformLegacyFormat() throws Exception {
-        String legacyJson = "{\"servers\":[{\"_meta\":{\"io.modelcontextprotocol.registry/official\":{\"id\":\"legacy-server\"}}"
+        String legacyJson = "{\"servers\":[{\"_meta\":{\"io.modelcontextprotocol.registry/official\":{\"serverId\":\"legacy-server\"}}"
                 + ",\"name\":\"Legacy MCP Server\","
                 + "\"description\":\"A legacy format server\"}]}";
 
@@ -191,7 +191,7 @@ class McpServerTransformServiceTest {
     @Test
     void testUrlValidationWithValidPackage() throws Exception {
         // Test with valid package format that doesn't trigger URL validation issues
-        String jsonWithValidPackage = "{\"_meta\":{\"io.modelcontextprotocol.registry/official\":{\"id\":\"valid-server\"}},"
+        String jsonWithValidPackage = "{\"_meta\":{\"io.modelcontextprotocol.registry/official\":{\"serverId\":\"valid-server\"}},"
                 + "\"name\":\"Valid Server\","
                 + "\"repository\":{\"url\":\"https://github.com/test/valid-server\",\"source\":\"github\",\"id\":\"123\"},"
                 + "\"version\":\"1.0.0\","

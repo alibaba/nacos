@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Official metadata inside _meta.
@@ -27,23 +26,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OfficialMeta {
 
-    private String id;
+    private String serverId;
 
-    @JsonProperty("published_at")
+    private String versionId;
+
     private String publishedAt;
 
-    @JsonProperty("updated_at")
     private String updatedAt;
 
-    @JsonProperty("is_latest")
     private Boolean isLatest;
 
-    public String getId() {
-        return id;
+    public String getServerId() {
+        return serverId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setServerId(String serverId) {
+        this.serverId = serverId;
+    }
+
+    public String getVersionId() {
+        return versionId;
+    }
+
+    public void setVersionId(String versionId) {
+        this.versionId = versionId;
     }
 
     public String getPublishedAt() {

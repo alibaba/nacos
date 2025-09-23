@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * NamedArgument per components.schemas.NamedArgument.
@@ -36,14 +34,7 @@ public class NamedArgument extends InputWithVariables implements Argument {
     
     private String name;
 
-    @JsonProperty("is_repeated")
     private Boolean isRepeated;
-
-    /**
-     * Optional UI/UX hint for value input; accept any JSON type to be forward-compatible.
-     */
-    @JsonProperty("value_hint")
-    private JsonNode valueHint;
 
     public String getType() {
         return type;
@@ -69,11 +60,4 @@ public class NamedArgument extends InputWithVariables implements Argument {
         this.isRepeated = isRepeated;
     }
 
-    public JsonNode getValueHint() {
-        return valueHint;
-    }
-
-    public void setValueHint(JsonNode valueHint) {
-        this.valueHint = valueHint;
-    }
 }

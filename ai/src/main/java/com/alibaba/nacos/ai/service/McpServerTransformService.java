@@ -398,24 +398,10 @@ public class McpServerTransformService {
         out.setName(registryServer.getName());
         out.setDescription(registryServer.getDescription());
         // Map status from registry to nacos model (default to active)
-        out.setStatus(normalizeStatus(registryServer.getStatus()));
+        out.setStatus(registryServer.getStatus());
         if (registryServer.getRepository() != null) {
             out.setRepository(registryServer.getRepository());
         }
-    }
-
-    /**
-     * Normalize registry status to nacos supported values.
-     */
-    private String normalizeStatus(String status) {
-        if (status == null) {
-            return AiConstants.Mcp.MCP_STATUS_ACTIVE;
-        }
-        String s = status.trim().toLowerCase();
-        if (AiConstants.Mcp.MCP_STATUS_ACTIVE.equals(s) || AiConstants.Mcp.MCP_STATUS_DEPRECATED.equals(s)) {
-            return s;
-        }
-        return AiConstants.Mcp.MCP_STATUS_ACTIVE;
     }
 
     /**
@@ -426,9 +412,9 @@ public class McpServerTransformService {
             McpRegistryServerDetail detail = (McpRegistryServerDetail) registryServer;
             Meta meta = detail.getMeta();
             if (meta != null && meta.getOfficial() != null) {
-                String id = meta.getOfficial().getId();
-                if (StringUtils.isNotBlank(id)) {
-                    return id;
+                String serverId = meta.getOfficial().getServerId();
+                if (StringUtils.isNotBlank(serverId)) {
+                    return serverId;
                 }
             }
         }
@@ -451,10 +437,7 @@ public class McpServerTransformService {
             if (v == null) {
                 v = new ServerVersionDetail();
             }
-            String release = detail.getPublishedAt();
-            if (StringUtils.isBlank(release) && official != null) {
-                release = official.getPublishedAt();
-            }
+            String release = official != null ? official.getPublishedAt() : null;
             if (StringUtils.isNotBlank(release)) {
                 v.setRelease_date(release);
             }
@@ -521,7 +504,7 @@ public class McpServerTransformService {
         // Without packages, try transportType from the first remote
         if (detail.getRemotes() != null && !detail.getRemotes().isEmpty()) {
             Remote first = detail.getRemotes().get(0);
-            String tt = first != null ? first.getTransportType() : null;
+            String tt = first != null ? first.getType() : null;
             if (tt != null) {
                 String lower = tt.trim().toLowerCase();
                 if (AiConstants.Mcp.OFFICIAL_TRANSPORT_SSE.equals(lower)) {
@@ -591,7 +574,7 @@ public class McpServerTransformService {
                 FrontEndpointConfig cfg = new FrontEndpointConfig();
                 cfg.setEndpointData(endpointData);
                 cfg.setPath(StringUtils.isNotBlank(path) ? path : "/");
-                cfg.setType(remote.getTransportType());
+                cfg.setType(remote.getType());
                 cfg.setProtocol(isHttps ? "https" : AiConstants.Mcp.MCP_PROTOCOL_HTTP);
                 cfg.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
                 cfg.setHeaders(remote.getHeaders());

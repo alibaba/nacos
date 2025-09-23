@@ -30,15 +30,13 @@ import java.util.List;
 public class Input {
     
     private String description;
-    
-    @JsonProperty("is_required")
+
     private Boolean isRequired;
     
     private String format;
     
     private String value;
-    
-    @JsonProperty("is_secret")
+
     private Boolean isSecret;
     
     @JsonProperty("default")

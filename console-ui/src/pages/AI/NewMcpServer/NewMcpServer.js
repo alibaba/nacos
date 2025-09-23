@@ -132,7 +132,10 @@ class NewMcpServer extends React.Component {
 
         const allPublishedVersions = [];
         for (let i = 0; i < allVersions.length; i++) {
-          if (i === allVersions.length - 1 && !allVersions[i].is_latest) {
+          if (
+            i === allVersions.length - 1 &&
+            !(allVersions[i].isLatest || allVersions[i].is_latest)
+          ) {
             break;
           }
           allPublishedVersions.push(allVersions[i].version);
@@ -140,7 +143,7 @@ class NewMcpServer extends React.Component {
 
         this.setState({
           currentVersion: versionDetail.version,
-          isLatestVersion: versionDetail.is_latest,
+          isLatestVersion: versionDetail.isLatest || versionDetail.is_latest,
           versionsList: allPublishedVersions,
         });
 
@@ -250,21 +253,21 @@ class NewMcpServer extends React.Component {
       }
 
       const pkg = {
-        registry_type: this.inferRegistryType(parsedCommand),
+        registryType: this.inferRegistryType(parsedCommand),
         identifier: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
         version: this.extractPackageVersionFromArgs(parsedArgs),
       };
 
       // 处理 runtime hint 和 runtime arguments
       if (parsedCommand && parsedCommand !== pkg.identifier) {
-        pkg.runtime_hint = parsedCommand;
+        pkg.runtimeHint = parsedCommand;
 
         // 从 args 中提取 runtime_arguments 和 package_arguments
         if (parsedArgs && Array.isArray(parsedArgs)) {
           const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.identifier);
 
           if (runtimeArgs.length > 0) {
-            pkg.runtime_arguments = runtimeArgs.map(arg => ({
+            pkg.runtimeArguments = runtimeArgs.map(arg => ({
               type: 'positional',
               value: arg,
               format: 'string',
@@ -272,7 +275,7 @@ class NewMcpServer extends React.Component {
           }
 
           if (packageArgs.length > 0) {
-            pkg.package_arguments = packageArgs.map(arg => ({
+            pkg.packageArguments = packageArgs.map(arg => ({
               type: 'positional',
               value: arg,
               format: 'string',
@@ -281,7 +284,7 @@ class NewMcpServer extends React.Component {
         }
       } else if (parsedArgs && Array.isArray(parsedArgs)) {
         // 如果 command 就是包名，所有 args 都是 package_arguments
-        pkg.package_arguments = parsedArgs.map(arg => ({
+        pkg.packageArguments = parsedArgs.map(arg => ({
           type: 'positional',
           value: arg,
           format: 'string',
@@ -290,7 +293,7 @@ class NewMcpServer extends React.Component {
 
       // 处理环境变量
       if (config.env && typeof config.env === 'object') {
-        pkg.environment_variables = Object.entries(config.env).map(([name, value]) => ({
+        pkg.environmentVariables = Object.entries(config.env).map(([name, value]) => ({
           name: name,
           value: value,
           format: 'string',
@@ -1088,7 +1091,9 @@ class NewMcpServer extends React.Component {
 
     let hasDraftVersion = false;
     if (versions.length > 0) {
-      hasDraftVersion = !versions[versions.length - 1].is_latest;
+      hasDraftVersion = !(
+        versions[versions.length - 1].isLatest || versions[versions.length - 1].is_latest
+      );
     }
 
     let currentVersionExist = versions

@@ -30,20 +30,20 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Remote {
     
-    @JsonProperty("transport_type")
-    @JsonAlias("type")
-    private String transportType;
+    @JsonProperty("type")
+    @JsonAlias({"transport_type"})
+    private String type;
 
     private String url;
 
     private List<KeyValueInput> headers;
 
-    public String getTransportType() {
-        return transportType;
+    public String getType() {
+        return type;
     }
 
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getUrl() {

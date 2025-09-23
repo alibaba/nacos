@@ -18,6 +18,8 @@ package com.alibaba.nacos.mcpregistry.controller;
 
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Meta;
+import com.alibaba.nacos.api.ai.model.mcp.registry.OfficialMeta;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.mcpregistry.form.GetServerForm;
 import com.alibaba.nacos.mcpregistry.service.NacosMcpRegistryService;
@@ -150,9 +152,12 @@ class McpRegistryControllerTest {
         McpRegistryServerDetail d = new McpRegistryServerDetail();
         d.setName(id + "-name");
         d.setDescription("desc-" + id);
-        d.setPublishedAt(publishedAt);
-        d.setCreatedAt(publishedAt);
-        d.setUpdatedAt(updatedAt);
+        Meta meta = new Meta();
+        OfficialMeta official = new OfficialMeta();
+        official.setPublishedAt(publishedAt);
+        official.setUpdatedAt(updatedAt);
+        meta.setOfficial(official);
+        d.setMeta(meta);
         return d;
     }
 

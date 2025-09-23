@@ -38,39 +38,43 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         mcpRegistryServerDetail.setDescription("test mcp registry server object");
         mcpRegistryServerDetail.setRepository(new Repository());
         mcpRegistryServerDetail.setVersion("1.0.0");
-        mcpRegistryServerDetail.setCreatedAt("2022-01-01T00:00:00Z");
-        mcpRegistryServerDetail.setUpdatedAt("2022-01-01T00:00:00Z");
-        mcpRegistryServerDetail.setPublishedAt("2022-01-01T00:00:00Z");
+        Meta meta = new Meta();
+        OfficialMeta official = new OfficialMeta();
+        official.setPublishedAt("2022-01-01T00:00:00Z");
+        meta.setOfficial(official);
+        mcpRegistryServerDetail.setMeta(meta);
         mcpRegistryServerDetail.setRemotes(Collections.singletonList(new Remote()));
         mcpRegistryServerDetail.getRemotes().get(0).setUrl("127.0.0.1:8848/sse");
-        mcpRegistryServerDetail.getRemotes().get(0).setTransportType("https");
+        mcpRegistryServerDetail.getRemotes().get(0).setType("https");
         String json = mapper.writeValueAsString(mcpRegistryServerDetail);
         assertNotNull(json);
         assertTrue(json.contains("\"name\":\"testRegistryServer\""));
         assertTrue(json.contains("\"description\":\"test mcp registry server object\""));
         assertTrue(json.contains("\"repository\":{}"));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
-        assertTrue(json.contains("\"published_at\":\"2022-01-01T00:00:00Z\""));
+        assertTrue(json.contains("\"io.modelcontextprotocol.registry/official\""));
+        assertTrue(json.contains("\"publishedAt\":\"2022-01-01T00:00:00Z\""));
         assertTrue(json.contains("\"remotes\":[{"));
         assertTrue(json.contains("\"url\":\"127.0.0.1:8848/sse\""));
-        assertTrue(json.contains("\"transport_type\":\"https\""));
+        assertTrue(json.contains("\"type\":\"https\""));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\","
-                + "\"repository\":{},\"version\":\"1.0.0\",\"remotes\":[{\"transport_type\":\"https\","
-                + "\"url\":\"127.0.0.1:8848/sse\"}],\"published_at\":\"2022-01-01T00:00:00Z\"}";
+                + "\"repository\":{},\"version\":\"1.0.0\",\"remotes\":[{\"type\":\"https\","
+                + "\"url\":\"127.0.0.1:8848/sse\"}],\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
+                + "{\"publishedAt\":\"2022-01-01T00:00:00Z\"}}}";
         McpRegistryServerDetail mcpRegistryServerDetail = mapper.readValue(json, McpRegistryServerDetail.class);
         assertNotNull(mcpRegistryServerDetail);
         assertEquals("testRegistryServer", mcpRegistryServerDetail.getName());
         assertEquals("test mcp registry server object", mcpRegistryServerDetail.getDescription());
         assertNotNull(mcpRegistryServerDetail.getRepository());
         assertEquals("1.0.0", mcpRegistryServerDetail.getVersion());
-        assertEquals("2022-01-01T00:00:00Z", mcpRegistryServerDetail.getPublishedAt());
+        assertEquals("2022-01-01T00:00:00Z", mcpRegistryServerDetail.getMeta().getOfficial().getPublishedAt());
         assertNotNull(mcpRegistryServerDetail.getRemotes());
         assertEquals(1, mcpRegistryServerDetail.getRemotes().size());
-        assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getTransportType());
+        assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getType());
         assertEquals("127.0.0.1:8848/sse", mcpRegistryServerDetail.getRemotes().get(0).getUrl());
     }
 }

@@ -39,9 +39,6 @@ public class McpRegistryServerDetail extends McpRegistryServer {
     @JsonProperty("_meta")
     private Meta meta;
 
-    @JsonProperty("published_at")
-    private String publishedAt;
-
     public String getSchema() {
         return schema;
     }
@@ -74,11 +71,4 @@ public class McpRegistryServerDetail extends McpRegistryServer {
         this.meta = meta;
     }
 
-    public String getPublishedAt() {
-        return publishedAt;
-    }
-
-    public void setPublishedAt(String publishedAt) {
-        this.publishedAt = publishedAt;
-    }
 }

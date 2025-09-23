@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
@@ -31,10 +30,8 @@ public class PositionalArgument extends InputWithVariables implements Argument {
 
     private String type = "positional";
 
-    @JsonProperty("value_hint")
     private String valueHint;
 
-    @JsonProperty("is_repeated")
     private Boolean isRepeated;
 
     public String getType() {

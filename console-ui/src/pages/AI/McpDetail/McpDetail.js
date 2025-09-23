@@ -412,8 +412,9 @@ class McpDetail extends React.Component {
       serverName = 'mcp-server';
     }
     const serverConfig = {};
-    if (packageDef.runtime_hint) {
-      serverConfig.command = packageDef.runtime_hint;
+    const runtimeHint = packageDef.runtimeHint || packageDef.runtime_hint;
+    if (runtimeHint) {
+      serverConfig.command = runtimeHint;
     } else if (this.getRegistryType(packageDef) === 'npm') {
       serverConfig.command = 'npx';
     } else {
@@ -433,8 +434,9 @@ class McpDetail extends React.Component {
 
     // 检查是否已经有runtime_arguments包含了包名
     let hasPackageInRuntimeArgs = false;
-    if (packageDef.runtime_arguments && Array.isArray(packageDef.runtime_arguments)) {
-      for (const arg of packageDef.runtime_arguments) {
+    const runtimeArguments = packageDef.runtimeArguments || packageDef.runtime_arguments || [];
+    if (runtimeArguments && Array.isArray(runtimeArguments)) {
+      for (const arg of runtimeArguments) {
         if (arg.value && arg.value.includes(pkgName)) {
           hasPackageInRuntimeArgs = true;
           break;
@@ -443,8 +445,8 @@ class McpDetail extends React.Component {
     }
 
     // 先添加运行时参数
-    if (packageDef.runtime_arguments && Array.isArray(packageDef.runtime_arguments)) {
-      packageDef.runtime_arguments.forEach(arg => {
+    if (runtimeArguments && Array.isArray(runtimeArguments)) {
+      runtimeArguments.forEach(arg => {
         args.push(...this.processArgument(arg));
       });
     }
@@ -484,8 +486,9 @@ class McpDetail extends React.Component {
     }
 
     // 添加包参数
-    if (packageDef.package_arguments && Array.isArray(packageDef.package_arguments)) {
-      packageDef.package_arguments.forEach(arg => {
+    const packageArguments = packageDef.packageArguments || packageDef.package_arguments || [];
+    if (packageArguments && Array.isArray(packageArguments)) {
+      packageArguments.forEach(arg => {
         args.push(...this.processArgument(arg));
       });
     }
@@ -493,9 +496,11 @@ class McpDetail extends React.Component {
     serverConfig.args = args;
 
     // 处理环境变量
-    if (packageDef.environment_variables && Array.isArray(packageDef.environment_variables)) {
+    const environmentVariables =
+      packageDef.environmentVariables || packageDef.environment_variables || [];
+    if (environmentVariables && Array.isArray(environmentVariables)) {
       const env = {};
-      packageDef.environment_variables.forEach(envVar => {
+      environmentVariables.forEach(envVar => {
         if (envVar.name) {
           let value = envVar.value || envVar.default;
           if (!value) {
@@ -542,8 +547,8 @@ class McpDetail extends React.Component {
       case 'positional':
         if (arg.value) {
           result.push(this.replaceVariables(arg.value, arg.variables));
-        } else if (arg.value_hint) {
-          result.push(`<${arg.value_hint}>`);
+        } else if (arg.value_hint || arg.valueHint) {
+          result.push(`<${arg.value_hint || arg.valueHint}>`);
         } else if (arg.default) {
           result.push(this.replaceVariables(arg.default, arg.variables));
         }
@@ -607,9 +612,13 @@ class McpDetail extends React.Component {
     const isTabsExpanded = this.state.packageTabsExpanded[index];
 
     // 统计各类参数数量
-    const runtimeArgsCount = packageDef.runtime_arguments?.length || 0;
-    const packageArgsCount = packageDef.package_arguments?.length || 0;
-    const envVarsCount = packageDef.environment_variables?.length || 0;
+    const runtimeArguments = packageDef.runtimeArguments || packageDef.runtime_arguments || [];
+    const packageArguments = packageDef.packageArguments || packageDef.package_arguments || [];
+    const environmentVariables =
+      packageDef.environmentVariables || packageDef.environment_variables || [];
+    const runtimeArgsCount = runtimeArguments?.length || 0;
+    const packageArgsCount = packageArguments?.length || 0;
+    const envVarsCount = environmentVariables?.length || 0;
     const totalParamsCount = runtimeArgsCount + packageArgsCount + envVarsCount;
 
     return (
@@ -731,7 +740,7 @@ class McpDetail extends React.Component {
                 {this.getRegistryType(packageDef)}
               </p>
             </Col>
-            {packageDef.runtime_hint && (
+            {(packageDef.runtimeHint || packageDef.runtime_hint) && (
               <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
                 <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
                   {locale.runtimeHint || '运行时提示'}:
@@ -745,7 +754,7 @@ class McpDetail extends React.Component {
                     color: '#000',
                   }}
                 >
-                  {packageDef.runtime_hint}
+                  {packageDef.runtimeHint || packageDef.runtime_hint}
                 </p>
               </Col>
             )}
@@ -831,14 +840,14 @@ class McpDetail extends React.Component {
                     </div>
                     {this.state.parameterContainersExpanded[index]?.runtime && (
                       <div style={{ padding: '8px 16px' }}>
-                        {packageDef.runtime_arguments.map((arg, argIndex) => (
+                        {runtimeArguments.map((arg, argIndex) => (
                           <div
                             key={argIndex}
                             style={{
                               marginBottom: '8px',
                               paddingBottom: '8px',
                               borderBottom:
-                                argIndex < packageDef.runtime_arguments.length - 1
+                                argIndex < runtimeArguments.length - 1
                                   ? '1px solid #e6e6e6'
                                   : 'none',
                             }}
@@ -916,14 +925,14 @@ class McpDetail extends React.Component {
                     </div>
                     {this.state.parameterContainersExpanded[index]?.package && (
                       <div style={{ padding: '8px 16px' }}>
-                        {packageDef.package_arguments.map((arg, argIndex) => (
+                        {packageArguments.map((arg, argIndex) => (
                           <div
                             key={argIndex}
                             style={{
                               marginBottom: '8px',
                               paddingBottom: '8px',
                               borderBottom:
-                                argIndex < packageDef.package_arguments.length - 1
+                                argIndex < packageArguments.length - 1
                                   ? '1px solid #e6e6e6'
                                   : 'none',
                             }}
@@ -999,14 +1008,14 @@ class McpDetail extends React.Component {
                     </div>
                     {this.state.parameterContainersExpanded[index]?.env && (
                       <div style={{ padding: '8px 16px' }}>
-                        {packageDef.environment_variables.map((envVar, envIndex) => (
+                        {environmentVariables.map((envVar, envIndex) => (
                           <div
                             key={envIndex}
                             style={{
                               marginBottom: '8px',
                               paddingBottom: '8px',
                               borderBottom:
-                                envIndex < packageDef.environment_variables.length - 1
+                                envIndex < environmentVariables.length - 1
                                   ? '1px solid #e6e6e6'
                                   : 'none',
                             }}
@@ -1047,7 +1056,7 @@ class McpDetail extends React.Component {
                                 {envVar.value || envVar.default || '<未设置>'}
                               </span>
                               <div style={{ display: 'flex', gap: '6px' }}>
-                                {envVar.is_required && (
+                                {(envVar.isRequired || envVar.is_required) && (
                                   <span
                                     style={{
                                       backgroundColor: '#ff4d4f',
@@ -1061,7 +1070,7 @@ class McpDetail extends React.Component {
                                     必填
                                   </span>
                                 )}
-                                {envVar.is_secret && (
+                                {(envVar.isSecret || envVar.is_secret) && (
                                   <span
                                     style={{
                                       backgroundColor: '#faad14',
@@ -1120,7 +1129,7 @@ class McpDetail extends React.Component {
   // 注册表类型：优先 registry_type，兼容旧 registry_name
   getRegistryType = packageDef => {
     if (!packageDef) return '';
-    return packageDef.registry_type || packageDef.registry_name || '';
+    return packageDef.registryType || packageDef.registry_type || packageDef.registry_name || '';
   };
 
   // 包名显示与链接用：优先 identifier，兼容旧 name
@@ -1131,10 +1140,10 @@ class McpDetail extends React.Component {
 
   // 获取包名对应的仓库链接
   getPackageRepositoryUrl = packageDef => {
-    const registry_name = this.getRegistryType(packageDef);
+    const registryType = this.getRegistryType(packageDef);
     const name = (packageDef && (packageDef.identifier || packageDef.name)) || '';
 
-    switch (registry_name) {
+    switch (registryType) {
       case 'npm':
         return `https://www.npmjs.com/package/${name}`;
       case 'docker':
@@ -1247,7 +1256,7 @@ class McpDetail extends React.Component {
               >
                 {header.name}
               </span>
-              {header.is_required && (
+              {(header.isRequired || header.is_required) && (
                 <span
                   style={{
                     backgroundColor: '#ff4d4f',
@@ -1262,7 +1271,7 @@ class McpDetail extends React.Component {
                   必填
                 </span>
               )}
-              {header.is_secret && (
+              {(header.isSecret || header.is_secret) && (
                 <span
                   style={{
                     backgroundColor: '#faad14',
@@ -1468,7 +1477,7 @@ class McpDetail extends React.Component {
     const versionSelections = [];
     for (let i = 0; i < versions.length; i++) {
       const item = versions[i];
-      if (item.is_latest) {
+      if (item.isLatest || item.is_latest) {
         versionSelections.push({
           label: item.version + ` (` + locale.versionIsPublished + ')',
           value: item.version,

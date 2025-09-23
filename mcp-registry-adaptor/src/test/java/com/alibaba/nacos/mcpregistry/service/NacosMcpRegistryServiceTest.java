@@ -236,7 +236,9 @@ class NacosMcpRegistryServiceTest {
         assertEquals("Description:" + RANDOM_NAMESPACE_ID, result.getDescription());
         assertNull(result.getRepository());
         assertEquals("1.0.0", result.getVersion());
-        assertEquals("2025-06-10T02:29:17Z", result.getPublishedAt());
+        assertNotNull(result.getMeta());
+        assertNotNull(result.getMeta().getOfficial());
+        assertEquals("2025-06-10T02:29:17Z", result.getMeta().getOfficial().getPublishedAt());
         assertNull(result.getRemotes());
     }
     
@@ -254,10 +256,12 @@ class NacosMcpRegistryServiceTest {
         assertEquals("Description:" + RANDOM_NAMESPACE_ID, result.getDescription());
         assertNull(result.getRepository());
         assertEquals("1.0.0", result.getVersion());
-        assertEquals("2025-06-10T02:29:17Z", result.getPublishedAt());
+        assertNotNull(result.getMeta());
+        assertNotNull(result.getMeta().getOfficial());
+        assertEquals("2025-06-10T02:29:17Z", result.getMeta().getOfficial().getPublishedAt());
         assertNotNull(result.getRemotes());
         assertEquals(1, result.getRemotes().size());
-        assertEquals("sse", result.getRemotes().get(0).getTransportType());
+        assertEquals("sse", result.getRemotes().get(0).getType());
         assertEquals("http://127.0.0.1:8080/api/path", result.getRemotes().get(0).getUrl());
     }
     
@@ -296,15 +300,17 @@ class NacosMcpRegistryServiceTest {
         for (int i = 0; i < actualSize; i++) {
             McpServerBasicInfo basicInfo = mockMcpServerBasicInfo(i, namespaceId);
             mockPage.getPageItems().add(basicInfo);
-            // ensure getServer won't return null by mocking index and detail lookup for each generated id
+            // ensure getServer won't return null by mocking index and detail lookup for
+            // each generated id
             McpServerIndexData indexData = new McpServerIndexData();
             indexData.setId(basicInfo.getId());
             indexData.setNamespaceId(namespaceId);
             Mockito.lenient().when(mcpServerIndex.getMcpServerById(basicInfo.getId())).thenReturn(indexData);
             // default detail mocks without backend endpoints or tools
             try {
-                Mockito.lenient().when(mcpServerOperationService.getMcpServerDetail(namespaceId, basicInfo.getId(), null, null))
-                    .thenReturn(mockMcpServerDetailInfo(basicInfo.getId(), namespaceId, false, false));
+                Mockito.lenient()
+                        .when(mcpServerOperationService.getMcpServerDetail(namespaceId, basicInfo.getId(), null, null))
+                        .thenReturn(mockMcpServerDetailInfo(basicInfo.getId(), namespaceId, false, false));
             } catch (NacosException e) {
                 throw new RuntimeException(e);
             }
