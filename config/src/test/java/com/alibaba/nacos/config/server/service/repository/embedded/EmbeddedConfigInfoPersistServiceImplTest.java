@@ -245,28 +245,24 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class),
                         eq("I"), eq("formal"), eq(null),
-                        argThat(actualJson -> jsonEqualsIgnoreOrder(
-                                ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser),
-                                actualJson
-                        ))
+                        argThat(actualJson -> {
+                            String expected = ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser);
+                            if (expected == null || actualJson == null) {
+                                return expected == actualJson;
+                            }
+                            String[] expectedParts = expected.replaceAll("[{}\"]", "").split(",");
+                            String[] actualParts = actualJson.replaceAll("[{}\"]", "").split(",");
+                            List<String> expectedList = new ArrayList<>();
+                            List<String> actualList = new ArrayList<>();
+                            for (String part : expectedParts) {
+                                expectedList.add(part.trim());
+                            }
+                            for (String part : actualParts) {
+                                actualList.add(part.trim());
+                            }
+                            return expectedList.size() == actualList.size() && actualList.containsAll(expectedList);
+                        })
                 );
-    }
-    
-    private boolean jsonEqualsIgnoreOrder(String expected, String actual) {
-        if (expected == null || actual == null) {
-            return expected == actual;
-        }
-        String[] expectedParts = expected.replaceAll("[{}\"]", "").split(",");
-        String[] actualParts = actual.replaceAll("[{}\"]", "").split(",");
-        List<String> expectedList = new ArrayList<>();
-        List<String> actualList = new ArrayList<>();
-        for (String part : expectedParts) {
-            expectedList.add(part.trim());
-        }
-        for (String part : actualParts) {
-            actualList.add(part.trim());
-        }
-        return expectedList.size() == actualList.size() && actualList.containsAll(expectedList);
     }
     
     @Test
