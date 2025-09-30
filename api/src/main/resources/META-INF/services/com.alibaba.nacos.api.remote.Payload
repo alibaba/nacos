@@ -81,3 +81,10 @@ com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest
 com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse
 com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest
 com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse
+
+com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest
+com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse
+com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest
+com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse
+com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest
+com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse

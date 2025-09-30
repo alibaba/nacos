@@ -83,6 +83,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -228,6 +229,29 @@ public class ConfigControllerV3 {
         
         return Result.success(
                 configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
+    }
+    
+    /**
+     * Publish config metadata result.
+     *
+     * @param request    the request
+     * @param configForm the config form
+     * @return the result
+     * @throws NacosException the nacos exception
+     */
+    @PutMapping("/metadata")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> publishConfigMetadata(HttpServletRequest request, ConfigFormV3 configForm)
+            throws NacosException {
+        configForm.validate();
+        String configTags = configForm.getConfigTags();
+        String description = configForm.getDesc();
+        String dataId = configForm.getDataId();
+        String group = configForm.getGroup();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags, description);
+        configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags, description);
+        return Result.success(true);
     }
     
     /**

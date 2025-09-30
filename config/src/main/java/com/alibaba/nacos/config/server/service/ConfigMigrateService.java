@@ -404,7 +404,7 @@ public class ConfigMigrateService {
                 changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), targetTenant);
         try {
             CONFIG_MIGRATE_FLAG.set(true);
-            if (changedConfigAllInfo.getCreateUser().equals(NAMESPACE_MIGRATE_SRC_USER)) {
+            if (NAMESPACE_MIGRATE_SRC_USER.equals(changedConfigAllInfo.getCreateUser())) {
                 if (targetConfigAllInfo == null) {
                     configInfoPersistService.removeConfigInfo(changedConfigAllInfo.getDataId(),
                             changedConfigAllInfo.getGroup(), tenant, null, NAMESPACE_MIGRATE_SRC_USER);
@@ -900,6 +900,33 @@ public class ConfigMigrateService {
             }
         } finally {
             CONFIG_MIGRATE_FLAG.set(false);
+        }
+    }
+    
+    /**
+     * Update config metadata migrate.
+     *
+     * @param dataId      the data id
+     * @param group       the group
+     * @param namespaceId the namespace id
+     * @param configTags  the config tags
+     * @param description the description
+     * @throws NacosException the nacos exception
+     */
+    public void updateConfigMetadataMigrate(final String dataId,
+            final String group, final String namespaceId, final String configTags, final String description)
+            throws NacosException {
+        if (!StringUtils.equals(namespaceId, namespacePublic) || !ConfigCompatibleConfig.getInstance()
+                .isNamespaceCompatibleMode()) {
+            return;
+        }
+        ConfigOperateResult configOperateResult;
+        configOperateResult = configInfoPersistService.updateConfigInfoMetadata(dataId, group, StringUtils.EMPTY, configTags, description);
+        if (!configOperateResult.isSuccess()) {
+            LOGGER.warn("[update-config-metadata-fail] dataId: {}, group: {}, namespaceId: {}",
+                    dataId, group, namespaceId);
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                    "update metadata fail.");
         }
     }
     

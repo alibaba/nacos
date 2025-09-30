@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -89,5 +90,39 @@ public class AiGrpcRedoService extends AbstractRedoService {
         McpServerEndpointRedoData result = new McpServerEndpointRedoData(mcpName);
         result.set(mcpServerEndpoint);
         return result;
+    }
+    
+    public void cachedAgentEndpointForRedo(String agentName, AgentEndpoint agentEndpoint) {
+        AgentEndpointRedoData redoData = new AgentEndpointRedoData(agentName, agentEndpoint);
+        super.cachedRedoData(agentName, redoData, AgentEndpoint.class);
+    }
+    
+    public void removeAgentEndpointForRedo(String agentName) {
+        super.removeRedoData(agentName, AgentEndpoint.class);
+    }
+    
+    public void agentEndpointRegistered(String agentName) {
+        super.dataRegistered(agentName, AgentEndpoint.class);
+    }
+    
+    public void agentEndpointDeregister(String agentName) {
+        super.dataDeregister(agentName, AgentEndpoint.class);
+    }
+    
+    public void agentEndpointDeregistered(String agentName) {
+        super.dataDeregistered(agentName, AgentEndpoint.class);
+    }
+    
+    public boolean isAgentEndpointRegistered(String agentName) {
+        return super.isDataRegistered(agentName, AgentEndpoint.class);
+    }
+    
+    public Set<RedoData<AgentEndpoint>> findAgentEndpointRedoData() {
+        return super.findRedoData(AgentEndpoint.class);
+    }
+    
+    public AgentEndpoint getAgentEndpoint(String agentName) {
+        RedoData<AgentEndpoint> redoData = super.getRedoData(agentName, AgentEndpoint.class);
+        return redoData == null ? null : redoData.get();
     }
 }

@@ -20,7 +20,6 @@ import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
-import com.alibaba.nacos.ai.utils.McpRequestUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -78,7 +77,7 @@ public class McpServerEndpointRequestHandler
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
     public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
-        McpRequestUtils.fillNamespaceId(request);
+        McpRequestUtil.fillNamespaceId(request);
         try {
             checkParameters(request);
             Instance instance = buildInstance(request);

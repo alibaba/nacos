@@ -267,10 +267,25 @@ function allOfHandle(schema) {
 
 function createRequestTemplate(path, method, operation, servers) {
   let serverURL = servers && servers.length > 0 ? servers[0].url : '';
-  serverURL = serverURL.replace(/\/\//g, '/');
+  let fullUrl = '';
+  if (typeof serverURL === 'string') {
+    serverURL = serverURL.trim();
+    const m = serverURL.match(/^(https?:\/\/)(.*)$/i);
+    if (m) {
+      serverURL = m[1] + m[2].replace(/\/{2,}/g, '/');
+    } else {
+      serverURL = serverURL.replace(/\/{2,}/g, '/');
+    }
+    // Trim trailing slashes to avoid double slashes when concatenating with path
+    serverURL = serverURL.replace(/\/+$/, '');
+  }
+  // Ensure path starts with a single slash and collapse duplicates
+  const normalizedPath =
+    typeof path === 'string' ? ('/' + path).replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
+  fullUrl = serverURL + normalizedPath;
 
   const template = {
-    url: serverURL + path,
+    url: fullUrl,
     method: method.toUpperCase(),
     headers: [],
   };

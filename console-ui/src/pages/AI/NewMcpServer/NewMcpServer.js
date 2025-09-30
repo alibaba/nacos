@@ -132,7 +132,10 @@ class NewMcpServer extends React.Component {
 
         const allPublishedVersions = [];
         for (let i = 0; i < allVersions.length; i++) {
-          if (i === allVersions.length - 1 && !allVersions[i].is_latest) {
+          if (
+            i === allVersions.length - 1 &&
+            !(allVersions[i].isLatest || allVersions[i].is_latest)
+          ) {
             break;
           }
           allPublishedVersions.push(allVersions[i].version);
@@ -140,7 +143,7 @@ class NewMcpServer extends React.Component {
 
         this.setState({
           currentVersion: versionDetail.version,
-          isLatestVersion: versionDetail.is_latest,
+          isLatestVersion: versionDetail.isLatest || versionDetail.is_latest,
           versionsList: allPublishedVersions,
         });
 
@@ -250,21 +253,21 @@ class NewMcpServer extends React.Component {
       }
 
       const pkg = {
-        registry_name: this.inferRegistryType(parsedCommand),
-        name: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
+        registryType: this.inferRegistryType(parsedCommand),
+        identifier: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
         version: this.extractPackageVersionFromArgs(parsedArgs),
       };
 
       // 处理 runtime hint 和 runtime arguments
-      if (parsedCommand && parsedCommand !== pkg.name) {
-        pkg.runtime_hint = parsedCommand;
+      if (parsedCommand && parsedCommand !== pkg.identifier) {
+        pkg.runtimeHint = parsedCommand;
 
         // 从 args 中提取 runtime_arguments 和 package_arguments
         if (parsedArgs && Array.isArray(parsedArgs)) {
-          const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.name);
+          const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.identifier);
 
           if (runtimeArgs.length > 0) {
-            pkg.runtime_arguments = runtimeArgs.map(arg => ({
+            pkg.runtimeArguments = runtimeArgs.map(arg => ({
               type: 'positional',
               value: arg,
               format: 'string',
@@ -272,7 +275,7 @@ class NewMcpServer extends React.Component {
           }
 
           if (packageArgs.length > 0) {
-            pkg.package_arguments = packageArgs.map(arg => ({
+            pkg.packageArguments = packageArgs.map(arg => ({
               type: 'positional',
               value: arg,
               format: 'string',
@@ -281,7 +284,7 @@ class NewMcpServer extends React.Component {
         }
       } else if (parsedArgs && Array.isArray(parsedArgs)) {
         // 如果 command 就是包名，所有 args 都是 package_arguments
-        pkg.package_arguments = parsedArgs.map(arg => ({
+        pkg.packageArguments = parsedArgs.map(arg => ({
           type: 'positional',
           value: arg,
           format: 'string',
@@ -290,7 +293,7 @@ class NewMcpServer extends React.Component {
 
       // 处理环境变量
       if (config.env && typeof config.env === 'object') {
-        pkg.environment_variables = Object.entries(config.env).map(([name, value]) => ({
+        pkg.environmentVariables = Object.entries(config.env).map(([name, value]) => ({
           name: name,
           value: value,
           format: 'string',
@@ -1088,7 +1091,9 @@ class NewMcpServer extends React.Component {
 
     let hasDraftVersion = false;
     if (versions.length > 0) {
-      hasDraftVersion = !versions[versions.length - 1].is_latest;
+      hasDraftVersion = !(
+        versions[versions.length - 1].isLatest || versions[versions.length - 1].is_latest
+      );
     }
 
     let currentVersionExist = versions
@@ -1327,7 +1332,7 @@ class NewMcpServer extends React.Component {
               {/*{!isEdit && (*/}
 
               {/* 只有在 HTTP 转 MCP 服务开启时才显示后端服务选项 */}
-              {this.state.restToMcpSwitch && (
+              {
                 <FormItem label={locale.backendService}>
                   <RadioGroup
                     disabled={currentVersionExist}
@@ -1355,10 +1360,10 @@ class NewMcpServer extends React.Component {
                     </Radio>
                   </RadioGroup>
                 </FormItem>
-              )}
+              }
 
               {/* HTTP 转 MCP 服务关闭时显示 MCP Server endpoint */}
-              {!this.state.restToMcpSwitch && (
+              {!this.state.useExistService && !this.state.restToMcpSwitch && (
                 <FormItem
                   label={locale.mcpServerEndpoint || 'MCP Server Endpoint'}
                   required
@@ -1421,7 +1426,7 @@ class NewMcpServer extends React.Component {
               )}
 
               {/* 只有在 HTTP 转 MCP 服务开启时才显示服务配置 */}
-              {this.state.restToMcpSwitch && this.state.useExistService && (
+              {this.state.useExistService && (
                 <>
                   <FormItem label={locale.serviceRef} required>
                     <Row gutter={8}>
@@ -1430,7 +1435,7 @@ class NewMcpServer extends React.Component {
                           <p>{currentNamespace}</p>
                         </FormItem>
                       </Col>
-                      <Col span={12}>
+                      <Col span={8}>
                         <FormItem label="service">
                           <Select
                             isPreview={currentVersionExist}
@@ -1453,7 +1458,7 @@ class NewMcpServer extends React.Component {
                           />
                         </FormItem>
                       </Col>
-                      <Col span={8}>
+                      <Col span={6}>
                         <FormItem label={locale.transportProtocol || '传输协议'} required>
                           <Select
                             {...init('serviceTransportProtocol', {
@@ -1489,6 +1494,32 @@ class NewMcpServer extends React.Component {
                           />
                         </FormItem>
                       </Col>
+                      {!this.state.restToMcpSwitch && (
+                        <Col span={6}>
+                          <FormItem label="exportPath">
+                            <Input
+                              isPreview={currentVersionExist}
+                              {...init('exportPath', {
+                                rules: [{ required: true, message: locale.pleaseSelect }],
+                                props: {
+                                  onChange: value => {
+                                    this.setState({
+                                      serverConfig: {
+                                        ...this.state.serverConfig,
+                                        remoteServerConfig: {
+                                          ...this.state.serverConfig?.remoteServerConfig,
+                                          exportPath: value,
+                                        },
+                                      },
+                                    });
+                                  },
+                                },
+                              })}
+                              placeholder={this.field.getValue('exportPath') || '/mcp'}
+                            />
+                          </FormItem>
+                        </Col>
+                      )}
                     </Row>
                   </FormItem>
                 </>

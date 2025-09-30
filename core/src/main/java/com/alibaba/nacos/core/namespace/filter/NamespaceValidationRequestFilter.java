@@ -19,7 +19,6 @@
 package com.alibaba.nacos.core.namespace.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -82,7 +81,7 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
                         continue;
                     }
 
-                    boolean exist = isNamespaceExist(namespaceId);
+                    boolean exist = namespaceOperationService.namespaceExists(namespaceId);
                     if (!exist) {
                         Response response = super.getDefaultResponseInstance(handlerClazz);
                         response.setErrorInfo(ErrorCode.NAMESPACE_NOT_EXIST.getCode(),
@@ -111,21 +110,4 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
         AbstractRpcParamExtractor paramExtractor = ExtractorManager.getRpcExtractor(extractor);
         return paramExtractor.extractParam(request);
     }
-
-    private boolean isNamespaceExist(String namespace) {
-        boolean namespaceExist;
-        try {
-            namespaceExist = namespaceOperationService.isNamespaceExist(namespace);
-        } catch (NacosApiException e) {
-            // public namespace or namespace already exist
-            namespaceExist = true;
-        } catch (Exception e) {
-            Loggers.CORE.warn("Namespace validation query db error for namespace: {}, exception: {}", namespace, e);
-            // throw exception will make the request fail
-            namespaceExist = false;
-        }
-
-        return namespaceExist;
-    }
-
 }

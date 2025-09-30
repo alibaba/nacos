@@ -149,11 +149,19 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService imple
     
     @Override
     public void deleteRole(String role, String userName) {
+        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
+        }
         rolePersistService.deleteRole(role, userName);
     }
     
     @Override
     public void deleteRole(String role) {
+        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
+        }
         rolePersistService.deleteRole(role);
         getCachedRoleInfoMap().remove(role);
     }

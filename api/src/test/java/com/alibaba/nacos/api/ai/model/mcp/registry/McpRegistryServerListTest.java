@@ -30,21 +30,23 @@ class McpRegistryServerListTest extends BasicRequestTest {
     @Test
     void testSerialize() throws JsonProcessingException {
         McpRegistryServerList mcpRegistryServerList = new McpRegistryServerList();
-        mcpRegistryServerList.setTotal_count(1);
-        mcpRegistryServerList.setServers(Collections.singletonList(new McpRegistryServer()));
-        mcpRegistryServerList.setNext("next");
+        // Use detail type to match List<McpRegistryServerDetail> in production code
+        mcpRegistryServerList.setServers(Collections.singletonList(new McpRegistryServerDetail()));
+        // Set metadata with count and next_cursor
+        mcpRegistryServerList.setMetadata(new McpRegistryServerList.Metadata("next", 1));
         String json = mapper.writeValueAsString(mcpRegistryServerList);
         assertTrue(json.contains("\"servers\":[{}]"));
-        assertTrue(json.contains("\"total_count\":1"));
-        assertTrue(json.contains("\"next\":\"next\""));
+        assertTrue(json.contains("\"metadata\":"));
+        assertTrue(json.contains("\"next_cursor\":\"next\""));
+        assertTrue(json.contains("\"count\":1"));
     }
-    
+
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"servers\":[{}],\"total_count\":1,\"next\":\"next\"}";
+        String json = "{\"servers\":[{}],\"metadata\":{\"next_cursor\":\"next\",\"count\":1}}";
         McpRegistryServerList mcpRegistryServerList = mapper.readValue(json, McpRegistryServerList.class);
-        assertEquals(1, mcpRegistryServerList.getTotal_count());
-        assertEquals("next", mcpRegistryServerList.getNext());
         assertEquals(1, mcpRegistryServerList.getServers().size());
+        assertEquals(1, mcpRegistryServerList.getMetadata().getCount());
+        assertEquals("next", mcpRegistryServerList.getMetadata().getNextCursor());
     }
 }

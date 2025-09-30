@@ -86,7 +86,7 @@ if %FUNCTION_MODE% == "naming" (
 )
 
 rem set nacos options
-set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.deployment.mode=%DEPLOYMENT%"
+set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.deployment.type=%DEPLOYMENT%"
 set "NACOS_OPTS=%NACOS_OPTS% -Dloader.path=%BASE_DIR%/plugins,%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb,%BASE_DIR%/plugins/selector"
 set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.home=%BASE_DIR%"
 set "NACOS_OPTS=%NACOS_OPTS% -jar %BASE_DIR%\target\%SERVER%.jar"

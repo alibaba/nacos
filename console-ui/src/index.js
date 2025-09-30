@@ -54,6 +54,9 @@ import Welcome from './pages/Welcome/Welcome';
 import SettingCenter from './pages/SettingCenter';
 import McpManagement from './pages/AI/McpManagement/McpManagement';
 import McpDetail from './pages/AI/McpDetail';
+import AgentManagement from './pages/AI/AgentManagement';
+import NewAgent from './pages/AI/NewAgent';
+import AgentDetail from './pages/AI/AgentDetail';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -105,6 +108,9 @@ const MENU = [
   { path: '/mcpServerManagement', component: McpManagement },
   { path: '/mcpServerDetail', component: McpDetail },
   { path: '/newMcpServer', component: NewMcpServer },
+  { path: '/agentManagement', component: AgentManagement },
+  { path: '/newAgent', component: NewAgent },
+  { path: '/agentDetail', component: AgentDetail },
 ];
 
 @connect(state => ({ ...state.locale, ...state.base }), {

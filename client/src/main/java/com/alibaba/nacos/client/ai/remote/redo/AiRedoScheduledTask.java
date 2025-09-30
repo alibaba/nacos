@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.NamingRedoData;
@@ -44,8 +45,46 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
     protected void redoData() throws NacosException {
         try {
             redoForMcpSeverEndpoint();
+            redoForAgentEndpoint();
         } catch (Exception e) {
             LOGGER.warn("Redo task run with unexpected exception: ", e);
+        }
+    }
+    
+    private void redoForAgentEndpoint() {
+        for (RedoData<AgentEndpoint> each : getRedoService().findAgentEndpointRedoData()) {
+            AgentEndpointRedoData redoData = (AgentEndpointRedoData) each;
+            try {
+                redoForAgentEndpoint(redoData);
+            } catch (NacosException e) {
+                LOGGER.error("Redo agent endpoint operation {} for {}} failed. ", each.getRedoType(),
+                        redoData.getAgentName(), e);
+            }
+        }
+    }
+    
+    private void redoForAgentEndpoint(AgentEndpointRedoData redoData) throws NacosException {
+        NamingRedoData.RedoType redoType = redoData.getRedoType();
+        String agentName = redoData.getAgentName();
+        LOGGER.info("Redo agent endpoint operation {} for {}.", redoType, agentName);
+        AgentEndpoint endpoint = redoData.get();
+        switch (redoType) {
+            case REGISTER:
+                if (!aiGrpcClient.isEnable()) {
+                    return;
+                }
+                aiGrpcClient.doRegisterAgentEndpoint(agentName, endpoint);
+                break;
+            case UNREGISTER:
+                if (!aiGrpcClient.isEnable()) {
+                    return;
+                }
+                aiGrpcClient.doDeregisterAgentEndpoint(agentName, endpoint);
+                break;
+            case REMOVE:
+                getRedoService().removeMcpServerEndpointForRedo(agentName);
+                break;
+            default:
         }
     }
     
@@ -53,7 +92,7 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
         for (RedoData<McpServerEndpoint> each : getRedoService().findMcpServerEndpointRedoData()) {
             McpServerEndpointRedoData redoData = (McpServerEndpointRedoData) each;
             try {
-                redoForEndpoint(redoData);
+                redoForMcpServerEndpoint(redoData);
             } catch (NacosException e) {
                 LOGGER.error("Redo mcp server endpoint operation {} for {}} failed. ", each.getRedoType(),
                         redoData.getMcpName(), e);
@@ -61,7 +100,7 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
         }
     }
     
-    private void redoForEndpoint(McpServerEndpointRedoData redoData) throws NacosException {
+    private void redoForMcpServerEndpoint(McpServerEndpointRedoData redoData) throws NacosException {
         NamingRedoData.RedoType redoType = redoData.getRedoType();
         String mcpName = redoData.getMcpName();
         LOGGER.info("Redo mcp server endpoint operation {} for {}.", redoType, mcpName);

@@ -49,7 +49,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -257,19 +256,25 @@ public class K8sSyncServer {
                 }
             }
         });
-        factory.startAllRegisteredInformers();
 
         // Wait until the cache of each informer has been fully synced before proceeding.
         // This ensures that the local cache contains the latest and complete resource data.
         long timeout = 30000L;
         long startTime = System.currentTimeMillis();
-        for (SharedIndexInformer<?> informer : Arrays.asList(serviceInformer, endpointInformer)) {
-            while (!informer.hasSynced()) {
-                if (System.currentTimeMillis() - startTime > timeout) {
-                    throw new RuntimeException("Informer sync timed out");
-                }
-                ThreadUtils.sleep(100L);
+        serviceInformer.run();
+        while (!serviceInformer.hasSynced()) {
+            if (System.currentTimeMillis() - startTime > timeout) {
+                throw new RuntimeException("Informer serviceInformer sync timed out");
             }
+            ThreadUtils.sleep(100L);
+        }
+        startTime = System.currentTimeMillis();
+        endpointInformer.run();
+        while (!endpointInformer.hasSynced()) {
+            if (System.currentTimeMillis() - startTime > timeout) {
+                throw new RuntimeException("Informer endpointInformer sync timed out");
+            }
+            ThreadUtils.sleep(100L);
         }
     }
     

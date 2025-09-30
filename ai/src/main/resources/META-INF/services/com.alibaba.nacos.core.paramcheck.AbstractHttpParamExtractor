@@ -15,3 +15,4 @@
 #
 
 com.alibaba.nacos.ai.param.McpHttpParamExtractor
+com.alibaba.nacos.ai.param.AgentHttpParamExtractor

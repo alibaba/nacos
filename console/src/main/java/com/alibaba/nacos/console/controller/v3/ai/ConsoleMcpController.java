@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.controller.v3.ai;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpImportForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
@@ -26,6 +27,9 @@ import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -80,7 +84,7 @@ public class ConsoleMcpController {
      * List mcp server.
      *
      * @param mcpListForm list mcp servers request form
-     * @param pageForm page info
+     * @param pageForm    page info
      * @return mcp server list wrapper with {@link Result}
      * @throws NacosApiException if request parameter is invalid or handle error
      */
@@ -106,7 +110,8 @@ public class ConsoleMcpController {
      */
     @GetMapping("/importToolsFromMcp")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType, @RequestParam String baseUrl,
+    public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType,
+            @RequestParam String baseUrl,
             @RequestParam String endpoint, @RequestParam(required = false) String authToken) throws NacosException {
         McpClientTransport transport = null;
         if (StringUtils.equals(transportType, MCP_PROTOCOL_SSE)) {
@@ -143,7 +148,8 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion()));
+        return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(),
+                mcpForm.getVersion()));
     }
     
     /**
@@ -194,9 +200,62 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> deleteMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion());
+        mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(),
+                mcpForm.getVersion());
         return Result.success("ok");
     }
     
-}
+    /**
+     * Validate MCP server import request.
+     *
+     * @param mcpImportForm import request form
+     * @return validation result with details about potential issues
+     * @throws NacosException any exception during validation
+     */
+    @PostMapping("/import/validate")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpServerImportValidationResult> validateImport(McpImportForm mcpImportForm) throws NacosException {
+        mcpImportForm.validate();
+        McpServerImportRequest request = convertToImportRequest(mcpImportForm);
+        McpServerImportValidationResult result = mcpProxy.validateImport(mcpImportForm.getNamespaceId(), request);
+        return Result.success(result);
+    }
 
+    /**
+     * Execute MCP server import operation.
+     *
+     * @param mcpImportForm import request form
+     * @return import response with results and statistics
+     * @throws NacosException any exception during import execution
+     */
+    @PostMapping("/import/execute")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<McpServerImportResponse> executeImport(McpImportForm mcpImportForm) throws NacosException {
+        mcpImportForm.validate();
+        McpServerImportRequest request = convertToImportRequest(mcpImportForm);
+        McpServerImportResponse response = mcpProxy.executeImport(mcpImportForm.getNamespaceId(), request);
+        return Result.success(response);
+    }
+
+    /**
+     * Convert McpImportForm to McpServerImportRequest.
+     *
+     * @param form the form from HTTP request
+     * @return the import request for service layer
+     */
+    private McpServerImportRequest convertToImportRequest(McpImportForm form) {
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType(form.getImportType());
+        request.setData(form.getData());
+        request.setOverrideExisting(form.isOverrideExisting());
+        request.setValidateOnly(form.isValidateOnly());
+        request.setSkipInvalid(form.isSkipInvalid());
+        request.setSelectedServers(form.getSelectedServers());
+        // Optional URL pagination parameters
+        request.setCursor(form.getCursor());
+        request.setLimit(form.getLimit());
+        // Optional registry search parameter
+        request.setSearch(form.getSearch());
+        return request;
+    }
+}

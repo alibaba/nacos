@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,25 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
-import java.util.Map;
-
 /**
- * NamedArgument model for MCP registry, represents command-line named flag argument.
+ * NamedArgument per components.schemas.NamedArgument.
+ *
  * @author xinluo
  */
 @JsonTypeName("named")
-public class NamedArgument implements Argument {
-    
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class NamedArgument extends InputWithVariables implements Argument {
+
     private String type = "named";
     
     private String name;
-    
-    @JsonProperty("is_repeated")
-    private boolean isRepeated;
-    
-    private String value;
-    
-    private Map<String, Input> variables;
+
+    private Boolean isRepeated;
 
     public String getType() {
         return type;
@@ -55,27 +52,12 @@ public class NamedArgument implements Argument {
         this.name = name;
     }
 
-    public boolean isRepeated() {
+    public Boolean getIsRepeated() {
         return isRepeated;
     }
 
-    public void setRepeated(boolean repeated) {
-        isRepeated = repeated;
+    public void setIsRepeated(Boolean isRepeated) {
+        this.isRepeated = isRepeated;
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Map<String, Input> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(Map<String, Input> variables) {
-        this.variables = variables;
-    }
 }

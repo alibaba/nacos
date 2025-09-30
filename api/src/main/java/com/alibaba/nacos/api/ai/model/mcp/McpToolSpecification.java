@@ -29,12 +29,40 @@ import java.util.Map;
  */
 public class McpToolSpecification {
 
+    /**
+     * Tool specification storage type. Defaults to "normal" (plaintext storage).
+     * When set to "encrypted" (or vendor-specific like "encrypt-kms"), server will persist encryptData as-is
+     * and skip parsing tools/securitySchemes.
+     */
+    private String specificationType;
+
+    /**
+     * Encrypted payload and metadata when specificationType indicates encryption.
+     */
+    private EncryptObject encryptData;
+
     private List<McpTool> tools = new LinkedList<>();
     
     private Map<String, McpToolMeta> toolsMeta = new HashMap<>(1);
     
     private List<SecurityScheme> securitySchemes = new ArrayList<>();
     
+    public String getSpecificationType() {
+        return specificationType;
+    }
+
+    public void setSpecificationType(String specificationType) {
+        this.specificationType = specificationType;
+    }
+
+    public EncryptObject getEncryptData() {
+        return encryptData;
+    }
+
+    public void setEncryptData(EncryptObject encryptData) {
+        this.encryptData = encryptData;
+    }
+
     public List<McpTool> getTools() {
         return tools;
     }

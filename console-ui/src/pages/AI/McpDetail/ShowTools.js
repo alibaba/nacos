@@ -290,6 +290,7 @@ const ShowTools = props => {
       const doc = await parseOpenAPI(content);
 
       let config = extractToolsFromOpenAPI(doc);
+      console.log(config);
       // 提取 OpenAPI 顶层的 securitySchemes
       const securitySchemes = Array.isArray(config?.server?.securitySchemes)
         ? config.server.securitySchemes
@@ -563,6 +564,62 @@ const ShowTools = props => {
     });
   };
 
+  // 解析 $ref 引用的辅助函数
+  const resolveRefs = (obj, root, visited = new Set()) => {
+    if (!obj || typeof obj !== 'object') {
+      return obj;
+    }
+
+    // 处理数组
+    if (Array.isArray(obj)) {
+      return obj.map(item => resolveRefs(item, root, visited));
+    }
+
+    // 处理 $ref 引用
+    if (obj.$ref && typeof obj.$ref === 'string') {
+      // 检查循环引用
+      if (visited.has(obj.$ref)) {
+        console.warn('检测到循环引用:', obj.$ref);
+        return { error: 'Circular reference detected' };
+      }
+
+      // 解析引用路径
+      const refPath = obj.$ref;
+
+      // 处理内部引用 (#/components/schemas/xxx)
+      if (refPath.startsWith('#/')) {
+        const pathParts = refPath.substring(2).split('/');
+        let refObj = root;
+
+        for (const part of pathParts) {
+          if (refObj && typeof refObj === 'object' && refObj[part] !== undefined) {
+            refObj = refObj[part];
+          } else {
+            console.warn('无法解析引用路径:', refPath);
+            return obj; // 返回原始引用，避免破坏数据
+          }
+        }
+
+        // 递归解析引用的对象，添加到访问记录中
+        visited.add(refPath);
+        const resolved = resolveRefs(refObj, root, new Set(visited));
+        visited.delete(refPath);
+        return resolved;
+      }
+
+      // 其他类型的引用暂时返回原始对象
+      console.warn('不支持的引用类型:', refPath);
+      return obj;
+    }
+
+    // 递归处理对象的所有属性
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = resolveRefs(value, root, visited);
+    }
+    return result;
+  };
+
   // 校验格式并解析 OpenAPI
   const parseOpenAPI = async content => {
     try {
@@ -578,6 +635,7 @@ const ShowTools = props => {
           throw new Error('Invalid JSON/YAML format');
         }
       }
+      parsedContent = resolveRefs(parsedContent, parsedContent);
       if (parsedContent.swagger) {
         const converted = await swagger2openapi.convertObj(parsedContent, {});
         return converted.openapi;

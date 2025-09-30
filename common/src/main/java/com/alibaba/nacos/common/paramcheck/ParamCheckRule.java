@@ -57,5 +57,7 @@ public class ParamCheckRule {
     
     public int maxMetadataLength = 1024;
     
-    
+    public String agentNamePatternString = "^[\\x20-\\x7E]+$";
+ 
+    public int maxAgentNameLength = 64;
 }

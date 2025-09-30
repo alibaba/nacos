@@ -214,6 +214,17 @@ class PlainMcpServerIndexTest {
         assertDoesNotThrow(() -> UUID.fromString(result.getId()));
     }
     
+    @Test
+    void removeMcpServerByName() {
+        assertDoesNotThrow(
+                () -> plainMcpServerIndex.removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName"));
+    }
+    
+    @Test
+    void removeMcpServerById() {
+        assertDoesNotThrow(() -> plainMcpServerIndex.removeMcpServerById(UUID.randomUUID().toString()));
+    }
+    
     private ConfigQueryChainResponse mockConfigQueryChainResponse(Object obj) {
         ConfigQueryChainResponse mockResponse = new ConfigQueryChainResponse();
         if (null != obj) {

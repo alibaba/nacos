@@ -95,12 +95,12 @@ public class McpServerOperationService {
     
     private final McpServerIndex mcpServerIndex;
     
-    private final McpServerSyncEffectService syncEffectService;
+    private final SyncEffectService syncEffectService;
     
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
             McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex,
-            McpServerSyncEffectService syncEffectService) {
+            SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.toolOperationService = toolOperationService;
@@ -479,6 +479,7 @@ public class McpServerOperationService {
                 }
             }
             mcpServerVersionInfo.setVersions(versionDetails);
+            mcpServerVersionInfo.setEnabled(newSpecification.isEnabled());
         }
         
         ConfigFormV3 mcpServerVersionForm = buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);
@@ -531,7 +532,8 @@ public class McpServerOperationService {
         boolean hasToolSpec = toolSpecification != null;
         boolean hasTools = hasToolSpec && toolSpecification.getTools() != null;
         boolean hasSecuritySchemes = hasToolSpec && toolSpecification.getSecuritySchemes() != null;
-        boolean shouldCreateToolConfig = hasToolSpec && (hasTools || hasSecuritySchemes);
+        boolean hasEncryptedData = hasToolSpec && toolSpecification.getEncryptData() != null;
+        boolean shouldCreateToolConfig = hasToolSpec && (hasTools || hasSecuritySchemes || hasEncryptedData);
         if (shouldCreateToolConfig) {
             toolOperationService.refreshMcpTool(namespaceId, serverSpecification, toolSpecification);
             serverSpecification.getCapabilities().add(McpCapability.TOOL);
