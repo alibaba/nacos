@@ -146,13 +146,14 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     
     @Override
     public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest, McpServerBasicInfo serverSpec,
-            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) throws NacosException {
+            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec, boolean overrideExisting) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
         Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
         params.put("latest", String.valueOf(isLatest));
         params.put("namespaceId", namespaceId);
+        params.put("overrideExisting", String.valueOf(overrideExisting));
         RequestResource resource = buildRequestResource(namespaceId, mcpName);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();

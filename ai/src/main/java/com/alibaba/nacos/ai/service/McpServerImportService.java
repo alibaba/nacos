@@ -268,7 +268,7 @@ public class McpServerImportService {
             McpEndpointSpec endpointSpec = convertToEndpointSpec(server);
 
             if (item.isExists() && overrideExisting) {
-                operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec);
+                operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec, overrideExisting);
             } else {
                 operationService.createMcpServer(namespaceId, basicInfo, toolSpec, endpointSpec);
             }

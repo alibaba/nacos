@@ -120,9 +120,21 @@ public class McpProxyTest {
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
         doNothing().when(mcpHandler)
-                .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification);
+                .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, false);
         
-        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification);
+        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, false);
+    }
+
+    @Test
+    public void updateMcpServerWithOverrideExisting() throws NacosException {
+        McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
+        McpToolSpecification toolSpecification = new McpToolSpecification();
+        McpEndpointSpec endpointSpecification = new McpEndpointSpec();
+
+        doNothing().when(mcpHandler)
+                .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, true);
+
+        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification, true);
     }
     
     @Test

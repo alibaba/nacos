@@ -75,9 +75,9 @@ public class McpRemoteHandler implements McpHandler {
     
     @Override
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
         clientHolder.getAiMaintainerService()
-                .updateMcpServer(serverSpecification.getName(), serverSpecification, toolSpecification, endpointSpecification);
+                .updateMcpServer(serverSpecification.getName(), serverSpecification, toolSpecification, endpointSpecification, overrideExisting);
     }
     
     @Override

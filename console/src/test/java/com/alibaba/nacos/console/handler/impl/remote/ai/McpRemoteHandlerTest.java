@@ -88,9 +88,19 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
         mcpServerBasicInfo.setName("test");
         mcpRemoteHandler.updateMcpServer("", true, mcpServerBasicInfo, new McpToolSpecification(),
-                new McpEndpointSpec());
+                new McpEndpointSpec(), false);
         verify(aiMaintainerService).updateMcpServer(eq("test"), any(McpServerBasicInfo.class),
-                any(McpToolSpecification.class), any(McpEndpointSpec.class));
+                any(McpToolSpecification.class), any(McpEndpointSpec.class), eq(false));
+    }
+
+    @Test
+    void updateMcpServerWithOverrideExisting() throws NacosException {
+        McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
+        mcpServerBasicInfo.setName("test");
+        mcpRemoteHandler.updateMcpServer("", true, mcpServerBasicInfo, new McpToolSpecification(),
+                new McpEndpointSpec(), true);
+        verify(aiMaintainerService).updateMcpServer(eq("test"), any(McpServerBasicInfo.class),
+                any(McpToolSpecification.class), any(McpEndpointSpec.class), eq(true));
     }
     
     @Test

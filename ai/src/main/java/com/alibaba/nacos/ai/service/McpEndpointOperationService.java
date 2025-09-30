@@ -68,11 +68,12 @@ public class McpEndpointOperationService {
      * @param namespaceId           namespace id of mcp server
      * @param mcpName               name of mcp server
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}
+     * @param overrideExisting       if replace all the instances when update the mcp server
      * @return {@link Service}
      * @throws NacosException any exception during handling
      */
     public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName, String version,
-            McpEndpointSpec endpointSpecification) throws NacosException {
+            McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
         if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equalsIgnoreCase(endpointSpecification.getType())) {
             Map<String, String> endpointServiceData = endpointSpecification.getData();
             if (!endpointServiceData.containsKey(CommonParams.NAMESPACE_ID) || !endpointServiceData.containsKey(
@@ -88,10 +89,10 @@ public class McpEndpointOperationService {
         Service service = generateService(namespaceId, versionMcpName);
         if (isNotExist(service)) {
             doCreateNewService(service);
-            doUpdateInstanceInfo(service, endpointSpecification);
+            doUpdateInstanceInfo(service, endpointSpecification, namespaceId, mcpName, overrideExisting, versionMcpName);
             return service;
         }
-        doUpdateInstanceInfo(service, endpointSpecification);
+        doUpdateInstanceInfo(service, endpointSpecification, namespaceId, mcpName, overrideExisting, versionMcpName);
         return service;
     }
     
@@ -149,12 +150,20 @@ public class McpEndpointOperationService {
         serviceOperator.create(service.getNamespace(), service.getGroupedServiceName(), serviceMetadata);
     }
     
-    private void doUpdateInstanceInfo(Service service, McpEndpointSpec endpointSpecification) throws NacosException {
+    private void doUpdateInstanceInfo(Service service, McpEndpointSpec endpointSpecification,
+                          String namespaceId, String mcpServerName, boolean overrideExisting, String versionMcpName) throws NacosException {
         Instance instance = new Instance();
         instance.setIp(endpointSpecification.getData().get(Constants.MCP_SERVER_ENDPOINT_ADDRESS));
         instance.setPort(Integer.parseInt(endpointSpecification.getData().get(Constants.MCP_SERVER_ENDPOINT_PORT)));
         instance.setClusterName(Constants.MCP_SERVER_ENDPOINT_CLUSTER);
         instance.setEphemeral(false);
+        if (overrideExisting) {
+            List<Instance> oldInstances = instanceOperator.listInstance(namespaceId,
+                    Constants.MCP_SERVER_ENDPOINT_GROUP, versionMcpName, null, "", false).getHosts();
+            for (Instance each : oldInstances) {
+                instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, versionMcpName, each);
+            }
+        }
         instanceOperator.registerInstance(service.getNamespace(), service.getGroup(), service.getName(), instance);
     }
 }
