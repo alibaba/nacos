@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.service;
 
-import com.alibaba.nacos.ai.constants.McpServerValidationConstants;
+import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;

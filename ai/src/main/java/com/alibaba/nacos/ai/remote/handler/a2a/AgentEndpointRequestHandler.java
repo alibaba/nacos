@@ -70,6 +70,7 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
     public AgentEndpointResponse handle(AgentEndpointRequest request, RequestMeta meta) throws NacosException {
         AgentEndpointResponse response = new AgentEndpointResponse();
+        response.setType(request.getType());
         AgentRequestUtil.fillNamespaceId(request);
         try {
             validateRequest(request);

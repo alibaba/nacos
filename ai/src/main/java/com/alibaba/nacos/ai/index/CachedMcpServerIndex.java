@@ -16,15 +16,6 @@
 
 package com.alibaba.nacos.ai.index;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import javax.annotation.PreDestroy;
-
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
@@ -38,6 +29,15 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.PreDestroy;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Enhanced MCP cache index implementation combining memory cache and database queries.
@@ -261,9 +261,6 @@ public class CachedMcpServerIndex implements McpServerIndex {
      * Start scheduled sync task.
      */
     private void startSyncTask() {
-        if (syncTask != null && !syncTask.isCancelled()) {
-            syncTask.cancel(false);
-        }
         syncTask = scheduledExecutor.scheduleWithFixedDelay(() -> {
             try {
                 LOGGER.debug("Starting cache sync task");

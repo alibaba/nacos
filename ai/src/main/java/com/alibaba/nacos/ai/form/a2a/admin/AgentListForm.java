@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 
 import java.io.Serial;
-import java.util.Objects;
 
 /**
  * Agent list form.
@@ -52,22 +51,5 @@ public class AgentListForm extends AgentForm {
     
     public void setSearch(String search) {
         this.search = search;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-        AgentListForm that = (AgentListForm) o;
-        return Objects.equals(search, that.search);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), search);
     }
 }
