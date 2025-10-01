@@ -49,7 +49,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -106,7 +106,7 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
      * start.
      */
     public void start() {
-        ScheduledExecutorService agentExecutor = agent.getExecutor();
+        ThreadPoolExecutor agentExecutor = agent.getExecutor();
         agentExecutor.submit(() -> {
             while (!agentExecutor.isShutdown() && !agentExecutor.isTerminated()) {
                 try {

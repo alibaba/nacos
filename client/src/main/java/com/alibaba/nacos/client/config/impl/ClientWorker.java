@@ -94,11 +94,10 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -150,7 +149,15 @@ public class ClientWorker implements Closeable {
     private boolean enableRemoteSyncConfig = false;
     
     private static final int MIN_THREAD_NUM = 2;
-    
+
+    /**
+     * One thread is busy with config listen, and the other is busy whit fuzzy config listen.
+     *
+     * @see ConfigRpcTransportClient#startInternal
+     * @see ConfigFuzzyWatchGroupKeyHolder#start
+     */
+    private static final int LOOP_CONFIG_LISTEN_THREAD_NUM = 2;
+
     private static final int THREAD_MULTIPLE = 1;
     
     private boolean enableClientMetrics = true;
@@ -538,19 +545,35 @@ public class ClientWorker implements Closeable {
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         
         configFuzzyWatchGroupKeyHolder = new ConfigFuzzyWatchGroupKeyHolder(agent, uuid);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
-                new NameThreadFactory("com.alibaba.nacos.client.Worker"));
-        agent.setExecutor(executorService);
+
+        ThreadPoolExecutor executor = instantiateClientExecutor(properties);
+        agent.setExecutor(executor);
+
         agent.start();
         configFuzzyWatchGroupKeyHolder.start();
-        
     }
     
     void initAppLabels(Properties properties) {
         this.appLabels = ConnLabelsUtils.addPrefixForEachKey(defaultLabelsCollectorManager.getLabels(properties),
                 APP_CONN_PREFIX);
     }
-    
+
+    private ThreadPoolExecutor instantiateClientExecutor(final NacosClientProperties properties) {
+        int workerThreadCount = initWorkerThreadCount(properties);
+
+        return new ThreadPoolExecutor(
+                workerThreadCount + LOOP_CONFIG_LISTEN_THREAD_NUM,
+                workerThreadCount * 2 + LOOP_CONFIG_LISTEN_THREAD_NUM,
+                60 * 5, TimeUnit.SECONDS,
+                // when corePoolSize is not enough, task will not wait in queue, because SynchronousQueue 0 capacity
+                // will create new thread to execute task util maximumPoolSize is reached
+                new SynchronousQueue<>(),
+                new NameThreadFactory("com.alibaba.nacos.client.executor"),
+                // CallerRunsPolicy ensures that tasks are not lost
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
     private int initWorkerThreadCount(NacosClientProperties properties) {
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         if (properties == null) {
@@ -842,8 +865,8 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void startInternal() {
-            ScheduledExecutorService executor = getExecutor();
-            executor.schedule(() -> {
+            ThreadPoolExecutor executor = getExecutor();
+            executor.submit(() -> {
                 while (!executor.isShutdown() && !executor.isTerminated()) {
                     try {
                         listenExecutebell.poll(5L, TimeUnit.SECONDS);
@@ -861,8 +884,7 @@ public class ClientWorker implements Closeable {
                         notifyListenConfig();
                     }
                 }
-            }, 0L, TimeUnit.MILLISECONDS);
-            
+            });
         }
         
         @Override
