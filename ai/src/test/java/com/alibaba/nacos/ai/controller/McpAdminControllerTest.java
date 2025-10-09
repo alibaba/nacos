@@ -224,7 +224,7 @@ class McpAdminControllerTest {
     @Test
     void updateMcpServerWithOverrideExisting() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.MCP_ADMIN_PATH)
-                .param("serverSpecification", MCP_SERVER_SPEC);
+                .param("serverSpecification", MCP_SERVER_SPEC).param("overrideExisting", "true");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         Result<String> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
