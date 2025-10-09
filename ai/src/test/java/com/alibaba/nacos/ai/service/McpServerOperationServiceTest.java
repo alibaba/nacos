@@ -49,6 +49,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -847,8 +848,15 @@ class McpServerOperationServiceTest {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerVersionInfo(id)));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, id, null);
-        verify(endpointOperationService, times(2)).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName");
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(endpointOperationService, times(2))
+                .deleteMcpServerEndpointService(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), captor.capture());
+        List<String> allArgs = captor.getAllValues();
+        assertEquals(2, allArgs.size(), "The actual number of calls does not match the expectation.");
+        assertTrue(allArgs.contains("mcpName::1.0.0"), "Missing deletion call for version 1.0.0");
+        assertTrue(allArgs.contains("mcpName::9.9.9"), "Missing deletion call for version 9.9.9");
+
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
         verify(configOperationService, times(2)).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
@@ -871,8 +879,15 @@ class McpServerOperationServiceTest {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerBasicInfo));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", null, null);
-        verify(endpointOperationService, times(2)).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName");
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(endpointOperationService, times(2))
+                .deleteMcpServerEndpointService(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), captor.capture());
+        List<String> allArgs = captor.getAllValues();
+        assertEquals(2, allArgs.size(), "The actual number of calls does not match the expectation.");
+        assertTrue(allArgs.contains("mcpName::1.0.0"), "Missing deletion call for version 1.0.0");
+        assertTrue(allArgs.contains("mcpName::9.9.9"), "Missing deletion call for version 9.9.9");
+
         verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
         verify(mcpServerIndex, times(0)).removeMcpServerById(null);
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
@@ -895,7 +910,7 @@ class McpServerOperationServiceTest {
         verify(mcpServerIndex, times(0)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null);
         verify(mcpServerIndex, times(1)).removeMcpServerById(id);
         verify(endpointOperationService).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName");
+                "mcpName::1.0.0");
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
         verify(configOperationService).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
