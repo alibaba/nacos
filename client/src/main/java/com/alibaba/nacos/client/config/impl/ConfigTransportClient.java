@@ -148,7 +148,7 @@ public abstract class ConfigTransportClient {
     public void start() throws NacosException {
         securityProxy.login(this.properties);
         this.loginScheduledExecutor =
-                Executors.newScheduledThreadPool(1, new NameThreadFactory("com.alibaba.nacos.client.login"));
+                Executors.newSingleThreadScheduledExecutor(new NameThreadFactory("com.alibaba.nacos.client.login-executor"));
         this.loginScheduledExecutor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         startInternal();

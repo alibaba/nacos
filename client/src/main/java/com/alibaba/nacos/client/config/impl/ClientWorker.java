@@ -102,6 +102,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Executors;
 
 import static com.alibaba.nacos.api.common.Constants.APP_CONN_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
@@ -149,14 +150,6 @@ public class ClientWorker implements Closeable {
     private boolean enableRemoteSyncConfig = false;
     
     private static final int MIN_THREAD_NUM = 2;
-
-    /**
-     * One thread is busy with config listen, and the other is busy whit fuzzy config listen.
-     *
-     * @see ConfigRpcTransportClient#startInternal
-     * @see ConfigFuzzyWatchGroupKeyHolder#start
-     */
-    private static final int LOOP_CONFIG_LISTEN_THREAD_NUM = 2;
 
     private static final int THREAD_MULTIPLE = 1;
     
@@ -561,9 +554,7 @@ public class ClientWorker implements Closeable {
     private ThreadPoolExecutor instantiateClientExecutor(final NacosClientProperties properties) {
         int workerThreadCount = initWorkerThreadCount(properties);
 
-        return new ThreadPoolExecutor(
-                workerThreadCount + LOOP_CONFIG_LISTEN_THREAD_NUM,
-                workerThreadCount * 2 + LOOP_CONFIG_LISTEN_THREAD_NUM,
+        return new ThreadPoolExecutor(workerThreadCount, workerThreadCount * 2,
                 60 * 5, TimeUnit.SECONDS,
                 // when corePoolSize is not enough, task will not wait in queue, because SynchronousQueue 0 capacity
                 // will create new thread to execute task util maximumPoolSize is reached
@@ -662,7 +653,9 @@ public class ClientWorker implements Closeable {
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
         Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
-        
+
+        private ExecutorService listenExecutor;
+
         private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<>(1);
         
         private final Object bellItem = new Object();
@@ -722,6 +715,10 @@ public class ClientWorker implements Closeable {
                         executor.shutdown();
                     }
                 });
+                if (listenExecutor != null && !listenExecutor.isShutdown()) {
+                    LOGGER.info("Shutdown listen config executor {}", listenExecutor);
+                    listenExecutor.shutdown();
+                }
             }
             
         }
@@ -865,12 +862,13 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void startInternal() {
-            ThreadPoolExecutor executor = getExecutor();
-            executor.submit(() -> {
-                while (!executor.isShutdown() && !executor.isTerminated()) {
+            listenExecutor =
+                    Executors.newSingleThreadExecutor(new NameThreadFactory("com.alibaba.nacos.client.listen-executor"));
+            listenExecutor.submit(() -> {
+                while (!listenExecutor.isShutdown() && !listenExecutor.isTerminated()) {
                     try {
                         listenExecutebell.poll(5L, TimeUnit.SECONDS);
-                        if (executor.isShutdown() || executor.isTerminated()) {
+                        if (listenExecutor.isShutdown() || listenExecutor.isTerminated()) {
                             continue;
                         }
                         executeConfigListen();
