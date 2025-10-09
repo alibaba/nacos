@@ -46,9 +46,8 @@ public class AgentCardForm extends AgentForm {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Request parameter `agentCard` should not be `null` or empty.");
         }
-        if (StringUtils.isNotEmpty(getRegistrationType())) {
-            validateRegistrationType();
-        }
+        validateRegistrationType();
+        
     }
     
     protected void validateRegistrationType() throws NacosApiException {
