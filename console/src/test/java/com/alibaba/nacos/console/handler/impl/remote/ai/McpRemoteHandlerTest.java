@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -78,19 +79,20 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     void createMcpServer() throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
         mcpServerBasicInfo.setName("test");
-        mcpRemoteHandler.createMcpServer("", mcpServerBasicInfo, new McpToolSpecification(), new McpEndpointSpec());
-        verify(aiMaintainerService).createMcpServer(eq("test"), any(McpServerBasicInfo.class),
-                any(McpToolSpecification.class), any(McpEndpointSpec.class));
+        mcpRemoteHandler.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mcpServerBasicInfo,
+                new McpToolSpecification(), new McpEndpointSpec());
+        verify(aiMaintainerService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq("test"),
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class));
     }
     
     @Test
     void updateMcpServer() throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
         mcpServerBasicInfo.setName("test");
-        mcpRemoteHandler.updateMcpServer("", true, mcpServerBasicInfo, new McpToolSpecification(),
-                new McpEndpointSpec());
-        verify(aiMaintainerService).updateMcpServer(eq("test"), any(McpServerBasicInfo.class),
-                any(McpToolSpecification.class), any(McpEndpointSpec.class));
+        mcpRemoteHandler.updateMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, true, mcpServerBasicInfo,
+                new McpToolSpecification(), new McpEndpointSpec());
+        verify(aiMaintainerService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq("test"), eq(true),
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class));
     }
     
     @Test
