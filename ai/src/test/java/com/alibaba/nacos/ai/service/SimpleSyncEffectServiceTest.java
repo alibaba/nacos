@@ -20,7 +20,9 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,5 +41,22 @@ class SimpleSyncEffectServiceTest {
         syncEffectService.toSync(new ConfigForm(), currentTime, 100, TimeUnit.MILLISECONDS);
         long waitTime = System.currentTimeMillis() - currentTime;
         assertTrue(waitTime >= 100);
+    }
+    
+    @Test
+    void toSyncLongStartTimeWithInterruptedException() throws InterruptedException {
+        AtomicLong waitTime = new AtomicLong();
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread testThread = new Thread(() -> {
+            long currentTime = System.currentTimeMillis();
+            syncEffectService.toSync(new ConfigForm(), currentTime, 2000, TimeUnit.MILLISECONDS);
+            waitTime.set(System.currentTimeMillis() - currentTime);
+            latch.countDown();
+        });
+        testThread.start();
+        TimeUnit.MILLISECONDS.sleep(300);
+        testThread.interrupt();
+        assertTrue(latch.await(2000, TimeUnit.MILLISECONDS));
+        assertTrue(waitTime.get() < 2000);
     }
 }

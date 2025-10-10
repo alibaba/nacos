@@ -65,8 +65,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -905,6 +907,181 @@ class McpServerOperationServiceTest {
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
     }
     
+    @Test
+    void invalidateCacheAfterDbUpdateOperationWithDifferentNames() {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String oldMcpName = "oldName";
+        String newMcpName = "newName";
+        String mcpServerId = mockId();
+        
+        // 使用反射调用私有方法
+        try {
+            java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                    "invalidateCacheAfterDbUpdateOperation", String.class, String.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(serverOperationService, namespaceId, oldMcpName, newMcpName, mcpServerId);
+            
+            // 验证方法调用
+            verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, oldMcpName);
+            verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, newMcpName);
+            verify(mcpServerIndex, times(1)).removeMcpServerById(mcpServerId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Test
+    void invalidateCacheAfterDbUpdateOperationWithSameNames() {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String oldMcpName = "sameName";
+        String newMcpName = "sameName";
+        String mcpServerId = mockId();
+        
+        // 使用反射调用私有方法
+        try {
+            java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                    "invalidateCacheAfterDbUpdateOperation", String.class, String.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(serverOperationService, namespaceId, oldMcpName, newMcpName, mcpServerId);
+            
+            // 验证方法调用
+            // 当名称相同时，只调用一次removeMcpServerByName
+            verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, newMcpName);
+            verify(mcpServerIndex, times(1)).removeMcpServerById(mcpServerId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Test
+    void invalidateCacheAfterDbUpdateOperationWithEmptyNames() {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String oldMcpName = "";
+        String newMcpName = "";
+        String mcpServerId = mockId();
+        
+        // 使用反射调用私有方法
+        try {
+            java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                    "invalidateCacheAfterDbUpdateOperation", String.class, String.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(serverOperationService, namespaceId, oldMcpName, newMcpName, mcpServerId);
+            
+            // 验证方法调用
+            // 当名称为空时，不调用removeMcpServerByName
+            verify(mcpServerIndex, never()).removeMcpServerByName(anyString(), anyString());
+            verify(mcpServerIndex, times(1)).removeMcpServerById(mcpServerId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Test
+    void invalidateCacheAfterDbOperation() {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String mcpName = "testName";
+        String mcpServerId = mockId();
+        
+        // 使用反射调用私有方法
+        try {
+            java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                    "invalidateCacheAfterDbOperation", String.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(serverOperationService, namespaceId, mcpName, mcpServerId);
+            
+            // 验证方法调用
+            verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, mcpName);
+            verify(mcpServerIndex, times(1)).removeMcpServerById(mcpServerId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Test
+    void invalidateCacheAfterDbOperationWithEmptyName() {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String mcpName = "";
+        String mcpServerId = mockId();
+        
+        // 使用反射调用私有方法
+        try {
+            java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                    "invalidateCacheAfterDbOperation", String.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(serverOperationService, namespaceId, mcpName, mcpServerId);
+            
+            // 验证方法调用
+            // 当名称为空时，不调用removeMcpServerByName
+            verify(mcpServerIndex, never()).removeMcpServerByName(anyString(), anyString());
+            verify(mcpServerIndex, times(1)).removeMcpServerById(mcpServerId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Test
+    void invalidateCacheAfterDbOperationWithEmptyId() {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String mcpName = "testName";
+        String mcpServerId = "";
+        
+        // 使用反射调用私有方法
+        try {
+            java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                    "invalidateCacheAfterDbOperation", String.class, String.class, String.class);
+            method.setAccessible(true);
+            method.invoke(serverOperationService, namespaceId, mcpName, mcpServerId);
+            
+            // 验证方法调用
+            verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, mcpName);
+            // 当ID为空时，不调用removeMcpServerById
+            verify(mcpServerIndex, never()).removeMcpServerById(anyString());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Test
+    void invalidateCacheAfterDbOperationWithException() throws Exception {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String mcpName = "testName";
+        String mcpServerId = mockId();
+        
+        // 模拟mcpServerIndex抛出异常
+        doThrow(new RuntimeException("Test exception")).when(mcpServerIndex).removeMcpServerByName(namespaceId, mcpName);
+        
+        // 使用反射调用私有方法
+        java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                "invalidateCacheAfterDbOperation", String.class, String.class, String.class);
+        method.setAccessible(true);
+        method.invoke(serverOperationService, namespaceId, mcpName, mcpServerId);
+        
+        // 验证方法被调用，即使有异常
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, mcpName);
+        verify(mcpServerIndex, never()).removeMcpServerById(mcpServerId);
+    }
+    
+    @Test
+    void invalidateCacheAfterDbUpdateOperationWithException() throws Exception {
+        String namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
+        String oldMcpName = "oldName";
+        String newMcpName = "newName";
+        String mcpServerId = mockId();
+        
+        // 模拟mcpServerIndex抛出异常
+        doThrow(new RuntimeException("Test exception")).when(mcpServerIndex).removeMcpServerByName(namespaceId, oldMcpName);
+        
+        // 使用反射调用私有方法
+        java.lang.reflect.Method method = McpServerOperationService.class.getDeclaredMethod(
+                "invalidateCacheAfterDbUpdateOperation", String.class, String.class, String.class, String.class);
+        method.setAccessible(true);
+        method.invoke(serverOperationService, namespaceId, oldMcpName, newMcpName, mcpServerId);
+        
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(namespaceId, oldMcpName);
+        verify(mcpServerIndex, never()).removeMcpServerByName(namespaceId, newMcpName);
+        verify(mcpServerIndex, never()).removeMcpServerById(mcpServerId);
+    }
+
     private Page<McpServerIndexData> mockIndexData(String id) {
         Page<McpServerIndexData> indexDataPage = new Page<>();
         indexDataPage.setPageNumber(1);
