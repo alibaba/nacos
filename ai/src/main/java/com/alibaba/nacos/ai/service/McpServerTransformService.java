@@ -50,6 +50,11 @@ import java.time.Duration;
 /**
  * MCP Server Transform Service.
  *
+ * <p>
+ *     TODO: It can be abstract a {@code McpServerParser} to handle the different parse logic.
+ *     It's better to use a common interface to handle the different parse logic.
+ * </p>
+ *
  * @author nacos
  */
 @Service
@@ -158,9 +163,6 @@ public class McpServerTransformService {
         }
     }
 
-    // removed overload: transformToNacosFormat(String importData, String
-    // importType)
-
     /**
      * Transform with optional URL pagination parameters and search keyword.
      * Only effective when importType equals to 'url'.
@@ -168,35 +170,6 @@ public class McpServerTransformService {
     public List<McpServerDetailInfo> transformToNacosFormat(String importData, String importType,
             String cursor, Integer limit, String search) throws Exception {
         return transformToNacosFormat(importData, ImportType.from(importType), cursor, limit, search);
-    }
-
-    /**
-     * Enum-based dispatcher for transformation.
-     */
-    public List<McpServerDetailInfo> transformToNacosFormat(String importData, ImportType type) throws Exception {
-        List<McpServerDetailInfo> servers;
-        switch (type) {
-            case FILE:
-                servers = parseFileToNacosServers(importData);
-                break;
-            case JSON:
-                servers = parseJsonToNacosServers(importData);
-                break;
-            case URL:
-                // No explicit pagination provided on this path
-                servers = parseUrlData(importData, null, null);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported import type: " + type);
-        }
-        
-        // Generate IDs for servers without IDs
-        servers.forEach(server -> {
-            if (StringUtils.isBlank(server.getId())) {
-                server.setId(generateServerId(server.getName()));
-            }
-        });
-        return servers;
     }
     
     /**
@@ -226,14 +199,6 @@ public class McpServerTransformService {
             }
         });
         return servers;
-    }
-    
-    /**
-     * Fetch one page from URL source and return servers with next cursor.
-     * Does not loop across multiple pages. Caller can iterate using nextCursor.
-     */
-    public UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit) throws Exception {
-        return fetchUrlPage(urlData, cursor, limit, null);
     }
     
     /**
@@ -290,32 +255,7 @@ public class McpServerTransformService {
 
         return new UrlPageResult(servers, next);
     }
-
-    /**
-     * Iterate URL pages and collect all servers until no more pages or guard limit.
-     *
-     * @param urlData base registry URL
-     * @return all servers available from the paginated endpoint
-     */
-    public List<McpServerDetailInfo> fetchUrlServersAll(String urlData) throws Exception {
-        List<McpServerDetailInfo> collected = new ArrayList<>();
-        String cursor = null;
-        int pages = 0;
-        while (pages < MAX_PAGES_GUARD) {
-            pages++;
-            UrlPageResult page = fetchUrlPage(urlData, cursor, null);
-            if (page.getServers() != null && !page.getServers().isEmpty()) {
-                collected.addAll(page.getServers());
-            }
-            String next = page.getNextCursor();
-            if (next == null) {
-                break;
-            }
-            cursor = next;
-        }
-        return collected;
-    }
-
+    
     /**
      * Iterate URL pages with search and collect all servers until no more pages or
      * guard limit.
@@ -532,7 +472,7 @@ public class McpServerTransformService {
      * Configure remote service based on protocol and remote info.
      *
      * @param remoteConfig Remote service config to configure
-     * @param remote       Remote information
+     * @param remotes      Remote information
      * @param protocol     Protocol type
      */
     private void configureRemoteService(McpServerRemoteServiceConfig remoteConfig, List<Remote> remotes, String protocol) {
@@ -719,20 +659,6 @@ public class McpServerTransformService {
             return positionalArg.getValue();
         }
         return null;
-    }
-    
-    /**
-     * Parse URL data to MCP servers with optional initial cursor and page limit.
-     *
-     * @param urlData base URL
-     * @param cursor  optional starting cursor (nullable)
-     * @param limit   optional page size (items per page). If null, server default
-     *                applies.
-     * @return list of servers
-     * @throws Exception on HTTP or parsing errors
-     */
-    private List<McpServerDetailInfo> parseUrlData(String urlData, String cursor, Integer limit) throws Exception {
-        return parseUrlData(urlData, cursor, limit, null);
     }
     
     /**

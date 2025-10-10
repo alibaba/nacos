@@ -80,14 +80,10 @@ public class AsciiAgentIdCodec implements AgentIdCodec {
             if (ch == '_' && i + 4 <= body.length()) {
                 String codePart = body.substring(i + 1, i + 4);
                 if (isDigit(codePart)) {
-                    try {
-                        int codePoint = Integer.parseInt(codePart, 10);
-                        sb.append((char) codePoint);
-                        i += 4;
-                        continue;
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("invalid encoded name");
-                    }
+                    int codePoint = Integer.parseInt(codePart, 10);
+                    sb.append((char) codePoint);
+                    i += 4;
+                    continue;
                 }
             }
             
