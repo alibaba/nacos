@@ -50,6 +50,11 @@ import java.time.Duration;
 /**
  * MCP Server Transform Service.
  *
+ * <p>
+ *     TODO: It can be abstract a {@code McpServerParser} to handle the different parse logic.
+ *     It's better to use a common interface to handle the different parse logic.
+ * </p>
+ *
  * @author nacos
  */
 @Service
