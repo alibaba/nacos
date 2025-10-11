@@ -32,7 +32,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Mock Naming Service for test {@link com.alibaba.nacos.api.ai.AiService}.
+ * Mock Naming Service for test {@link com.alibaba.nacos.api.ai.AiFactory}.
  *
  * @author xiweng.yy
  */
