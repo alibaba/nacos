@@ -14,38 +14,39 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai;
+package com.alibaba.nacos.api.naming.listener;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.ai.NacosAiService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Properties;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-class AiFactoryTest {
+class AbstractFuzzyWatchEventWatcherTest {
+    
+    AbstractFuzzyWatchEventWatcher fuzzyWatchEventWatcher;
     
     @BeforeEach
     void setUp() {
-    }
-    
-    @AfterEach
-    void tearDown() {
-    }
-    
-    @Test
-    void createAiServiceWithException() {
-        NacosAiService.IS_THROW_EXCEPTION.set(true);
-        assertThrows(NacosException.class, () -> AiFactory.createAiService(new Properties()));
+        fuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(FuzzyWatchChangeEvent event) {
+            
+            }
+        };
     }
     
     @Test
-    void createAiServiceSuccess() throws NacosException {
-        NacosAiService.IS_THROW_EXCEPTION.set(false);
-        assertNotNull(AiFactory.createAiService(new Properties()));
+    void getExecutor() {
+        assertNull(fuzzyWatchEventWatcher.getExecutor());
+    }
+    
+    @Test
+    void onPatternOverLimit() {
+        assertDoesNotThrow(fuzzyWatchEventWatcher::onPatternOverLimit);
+    }
+    
+    @Test
+    void onServiceReachUpLimit() {
+        assertDoesNotThrow(fuzzyWatchEventWatcher::onServiceReachUpLimit);
     }
 }
