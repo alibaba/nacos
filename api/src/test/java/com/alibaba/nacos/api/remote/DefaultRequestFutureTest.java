@@ -28,6 +28,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -331,6 +332,17 @@ class DefaultRequestFutureTest {
         assertFalse(trigger.isTimeout);
         assertTrue(trigger.isCancel);
         assertEquals(callback, requestFuture.getRequestCallBack());
+    }
+    
+    @Test
+    void testFutureTriggerDefaultMethod() {
+        final AtomicInteger callCount = new AtomicInteger(0);
+        DefaultRequestFuture.FutureTrigger mockTrigger = callCount::incrementAndGet;
+        assertEquals(0, callCount.get());
+        mockTrigger.triggerOnTimeout();
+        assertEquals(1, callCount.get());
+        mockTrigger.triggerOnCancel();
+        assertEquals(2, callCount.get());
     }
     
     private class MockFutureTrigger implements DefaultRequestFuture.FutureTrigger {
