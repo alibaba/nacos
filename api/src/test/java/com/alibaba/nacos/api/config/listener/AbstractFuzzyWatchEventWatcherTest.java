@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.listener;
+package com.alibaba.nacos.api.config.listener;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,30 +24,30 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class AbstractFuzzyWatchEventWatcherTest {
     
-    AbstractFuzzyWatchEventWatcher fuzzyWatchEventWatcher;
+    private AbstractFuzzyWatchEventWatcher fuzzyWatchEventWatcher;
     
     @BeforeEach
     void setUp() {
         fuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
             @Override
-            public void onEvent(FuzzyWatchChangeEvent event) {
-            
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                // Empty implementation for testing
             }
         };
     }
     
     @Test
-    void getExecutor() {
+    void testGetExecutor() {
         assertNull(fuzzyWatchEventWatcher.getExecutor());
     }
     
     @Test
-    void onPatternOverLimit() {
-        assertDoesNotThrow(fuzzyWatchEventWatcher::onPatternOverLimit);
+    void testOnPatternOverLimit() {
+        assertDoesNotThrow(() -> fuzzyWatchEventWatcher.onPatternOverLimit());
     }
     
     @Test
-    void onServiceReachUpLimit() {
-        assertDoesNotThrow(fuzzyWatchEventWatcher::onServiceReachUpLimit);
+    void testOnConfigReachUpLimit() {
+        assertDoesNotThrow(() -> fuzzyWatchEventWatcher.onConfigReachUpLimit());
     }
 }

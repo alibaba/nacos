@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.ai.remote.request;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
-import com.alibaba.nacos.api.ai.model.a2a.AgentCardBasicInfo;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import org.junit.jupiter.api.Test;
 

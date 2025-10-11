@@ -59,8 +59,8 @@ class AgentEndpointRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json = "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
-                + "\"endpoint\":{\"transport\":\"JSONRPC\",\"address\":\"127.0.0.1\",\"port\":8848,\"path\":\"\",\"supportTls\":false,\"version\":\"1.0.0\"},"
-                + "\"type\":\"registerEndpoint\",\"module\":\"ai\"}";
+                + "\"endpoint\":{\"transport\":\"JSONRPC\",\"address\":\"127.0.0.1\",\"port\":8848,\"path\":\"\","
+                + "\"supportTls\":false,\"version\":\"1.0.0\"},\"type\":\"registerEndpoint\",\"module\":\"ai\"}";
         AgentEndpointRequest result = mapper.readValue(json, AgentEndpointRequest.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

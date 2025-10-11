@@ -28,7 +28,7 @@ class QueryAgentCardResponseTest extends BasicRequestTest {
     
     @Test
     void testSerialize() throws Exception {
-        QueryAgentCardResponse response = new QueryAgentCardResponse();
+        final QueryAgentCardResponse response = new QueryAgentCardResponse();
         AgentCardDetailInfo agentCardDetailInfo = new AgentCardDetailInfo();
         agentCardDetailInfo.setName("testAgent");
         agentCardDetailInfo.setVersion("1.0.0");
