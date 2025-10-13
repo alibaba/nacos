@@ -418,7 +418,7 @@ class McpServerImportServiceTest {
         assertEquals(0, response.getSuccessCount());
         assertEquals(0, response.getFailedCount());
         assertEquals(1, response.getSkippedCount()); // Server should be skipped
-        verify(operationService, never()).updateMcpServer(anyString(), anyBoolean(), any(), any(), any());
+        verify(operationService, never()).updateMcpServer(anyString(), anyBoolean(), any(), any(), any(), anyBoolean());
         verify(operationService, never()).createMcpServer(anyString(), any(), any(), any());
     }
     
@@ -464,7 +464,7 @@ class McpServerImportServiceTest {
         assertEquals(1, response.getSuccessCount());
         assertEquals(0, response.getFailedCount());
         assertEquals(0, response.getSkippedCount());
-        verify(operationService).updateMcpServer(eq("test-namespace"), eq(true), any(), any(), any());
+        verify(operationService).updateMcpServer(eq("test-namespace"), eq(true), any(), any(), any(), anyBoolean());
         verify(operationService, never()).createMcpServer(anyString(), any(), any(), any());
     }
     
@@ -511,7 +511,7 @@ class McpServerImportServiceTest {
         assertEquals(0, response.getFailedCount());
         assertEquals(0, response.getSkippedCount());
         verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), any());
-        verify(operationService, never()).updateMcpServer(anyString(), anyBoolean(), any(), any(), any());
+        verify(operationService, never()).updateMcpServer(anyString(), anyBoolean(), any(), any(), any(), anyBoolean());
     }
     
     @Test
