@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,13 +32,20 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
-        // Repository是空对象
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         McpRegistryServerDetail mcpRegistryServerDetail = new McpRegistryServerDetail();
         mcpRegistryServerDetail.setName("testRegistryServer");
         mcpRegistryServerDetail.setDescription("test mcp registry server object");
         mcpRegistryServerDetail.setRepository(new Repository());
         mcpRegistryServerDetail.setVersion("1.0.0");
+        mcpRegistryServerDetail.setSchema("http://example.com/schema");
+        
+        // Create test packages
+        Package pkg = new Package();
+        pkg.setIdentifier("test-package");
+        pkg.setVersion("1.0.0");
+        mcpRegistryServerDetail.setPackages(Arrays.asList(pkg));
+        
         Meta meta = new Meta();
         OfficialMeta official = new OfficialMeta();
         official.setPublishedAt("2022-01-01T00:00:00Z");
@@ -52,6 +60,9 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertTrue(json.contains("\"description\":\"test mcp registry server object\""));
         assertTrue(json.contains("\"repository\":{}"));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
+        assertTrue(json.contains("\"$schema\":\"http://example.com/schema\""));
+        assertTrue(json.contains("\"packages\":[{"));
+        assertTrue(json.contains("\"identifier\":\"test-package\""));
         assertTrue(json.contains("\"io.modelcontextprotocol.registry/official\""));
         assertTrue(json.contains("\"publishedAt\":\"2022-01-01T00:00:00Z\""));
         assertTrue(json.contains("\"remotes\":[{"));
@@ -61,7 +72,7 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\","
+        String json = "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\",\"$schema\":\"http://example.com/schema\",\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}],"
                 + "\"repository\":{},\"version\":\"1.0.0\",\"remotes\":[{\"type\":\"https\","
                 + "\"url\":\"127.0.0.1:8848/sse\"}],\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
                 + "{\"publishedAt\":\"2022-01-01T00:00:00Z\"}}}";
@@ -71,6 +82,11 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertEquals("test mcp registry server object", mcpRegistryServerDetail.getDescription());
         assertNotNull(mcpRegistryServerDetail.getRepository());
         assertEquals("1.0.0", mcpRegistryServerDetail.getVersion());
+        assertEquals("http://example.com/schema", mcpRegistryServerDetail.getSchema());
+        assertNotNull(mcpRegistryServerDetail.getPackages());
+        assertEquals(1, mcpRegistryServerDetail.getPackages().size());
+        assertEquals("test-package", mcpRegistryServerDetail.getPackages().get(0).getIdentifier());
+        assertEquals("1.0.0", mcpRegistryServerDetail.getPackages().get(0).getVersion());
         assertEquals("2022-01-01T00:00:00Z", mcpRegistryServerDetail.getMeta().getOfficial().getPublishedAt());
         assertNotNull(mcpRegistryServerDetail.getRemotes());
         assertEquals(1, mcpRegistryServerDetail.getRemotes().size());

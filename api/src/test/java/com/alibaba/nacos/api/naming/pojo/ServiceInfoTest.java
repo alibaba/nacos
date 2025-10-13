@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -102,6 +104,16 @@ class ServiceInfoTest {
     }
     
     @Test
+    void testGetKeyWithException() {
+        try (MockedStatic<URLEncoder> mockedStatic = Mockito.mockStatic(URLEncoder.class)) {
+            mockedStatic.when(() -> URLEncoder.encode(Mockito.anyString(), Mockito.anyString()))
+                    .thenThrow(new UnsupportedEncodingException());
+            String key = serviceInfo.getKeyEncoded();
+            assertEquals(key, ServiceInfo.getKey("G@@testName", "testClusters"));
+        }
+    }
+    
+    @Test
     void testServiceInfoConstructor() {
         String key1 = "group@@name";
         String key2 = "group@@name@@c2";
@@ -174,5 +186,20 @@ class ServiceInfoTest {
         ServiceInfo actual = mapper.readValue(serviceInfo.getJsonFromServer(), ServiceInfo.class);
         assertEquals(StringUtils.EMPTY, actual.getJsonFromServer());
         assertTrue(actual.isReachProtectionThreshold());
+    }
+    
+    @Test
+    void testGetKeyWithoutClusters() {
+        // 测试带groupName的情况
+        ServiceInfo serviceInfo1 = new ServiceInfo("group@@name", "cluster");
+        assertEquals("group@@name", serviceInfo1.getKeyWithoutClusters());
+        
+        // 测试不带groupName的情况
+        ServiceInfo serviceInfo2 = new ServiceInfo("name", "cluster");
+        assertEquals("name", serviceInfo2.getKeyWithoutClusters());
+        
+        // 测试name中已经包含@@的情况
+        ServiceInfo serviceInfo3 = new ServiceInfo("group@@name@@cluster", "");
+        assertEquals("group@@name@@cluster", serviceInfo3.getKeyWithoutClusters());
     }
 }

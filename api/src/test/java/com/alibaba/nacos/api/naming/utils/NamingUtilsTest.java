@@ -143,6 +143,50 @@ class NamingUtilsTest {
     }
     
     @Test
+    void testGetServiceKey() {
+        // 测试正常情况
+        String serviceKey = NamingUtils.getServiceKey("namespace", "group", "serviceName");
+        assertEquals("namespace@@group@@serviceName", serviceKey);
+        
+        // 测试namespace为空的情况
+        String serviceKeyWithEmptyNamespace = NamingUtils.getServiceKey("", "group", "serviceName");
+        assertEquals("public@@group@@serviceName", serviceKeyWithEmptyNamespace);
+        
+        // 测试namespace为null的情况
+        String serviceKeyWithNullNamespace = NamingUtils.getServiceKey(null, "group", "serviceName");
+        assertEquals("public@@group@@serviceName", serviceKeyWithNullNamespace);
+    }
+    
+    @Test
+    void testParseServiceKey() {
+        // 测试正常情况
+        String serviceKey = "namespace@@group@@serviceName";
+        String[] parts = NamingUtils.parseServiceKey(serviceKey);
+        assertEquals(3, parts.length);
+        assertEquals("namespace", parts[0]);
+        assertEquals("group", parts[1]);
+        assertEquals("serviceName", parts[2]);
+        
+        // 测试只有两个部分
+        String serviceKeyWithTwoParts = "namespace@@group";
+        String[] twoParts = NamingUtils.parseServiceKey(serviceKeyWithTwoParts);
+        assertEquals(2, twoParts.length);
+        assertEquals("namespace", twoParts[0]);
+        assertEquals("group", twoParts[1]);
+        
+        // 测试只有一个部分
+        String serviceKeyWithOnePart = "namespace";
+        String[] onePart = NamingUtils.parseServiceKey(serviceKeyWithOnePart);
+        assertEquals(1, onePart.length);
+        assertEquals("namespace", onePart[0]);
+        
+        // 测试空字符串
+        String[] emptyPart = NamingUtils.parseServiceKey("");
+        assertEquals(1, emptyPart.length);
+        assertEquals("", emptyPart[0]);
+    }
+    
+    @Test
     void testCheckInstanceIsLegal() throws NacosException {
         // check invalid clusterName
         Instance instance = new Instance();
