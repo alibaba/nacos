@@ -154,7 +154,7 @@
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
-        <mcp.version>0.10.0</mcp.version>
+        <mcp.version>0.14.1</mcp.version>
 
         <!-- Maven Central Portal -->
         <central.publishing.maven.version>0.7.0</central.publishing.maven.version>

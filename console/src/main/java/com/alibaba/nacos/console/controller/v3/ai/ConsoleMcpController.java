@@ -48,6 +48,7 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.spec.McpClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -62,6 +63,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE;
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE;
 
 /**
  * Nacos Console AI MCP Server Constants.
@@ -73,13 +75,13 @@ import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE
 @RequestMapping(Constants.MCP_CONSOLE_PATH)
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class ConsoleMcpController {
-    
+
     private final McpProxy mcpProxy;
-    
+
     public ConsoleMcpController(McpProxy mcpProxy) {
         this.mcpProxy = mcpProxy;
     }
-    
+
     /**
      * List mcp server.
      *
@@ -98,7 +100,7 @@ public class ConsoleMcpController {
                 mcpProxy.listMcpServers(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
                         pageForm.getPageNo(), pageForm.getPageSize()));
     }
-    
+
     /**
      * Import tools from mcp result.
      *
@@ -121,6 +123,13 @@ public class ConsoleMcpController {
                 transportBuilder.customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
             }
             transport = transportBuilder.build();
+        } else if (StringUtils.equals(transportType, MCP_PROTOCOL_STREAMABLE)) {
+            HttpClientStreamableHttpTransport.Builder transportBuilder = HttpClientStreamableHttpTransport.builder(baseUrl)
+                    .endpoint(endpoint);
+            if (!StringUtils.isBlank(authToken)) {
+                transportBuilder.customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
+            }
+            transport = transportBuilder.build();
         } else {
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Unsupported transport type: " + transportType,
                     null);
@@ -136,7 +145,7 @@ public class ConsoleMcpController {
             throw new NacosException(NacosException.SERVER_ERROR, "Failed to import tools from MCP server", e);
         }
     }
-    
+
     /**
      * Get specified mcp server detail info.
      *
@@ -151,7 +160,7 @@ public class ConsoleMcpController {
         return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(),
                 mcpForm.getVersion()));
     }
-    
+
     /**
      * Create new mcp server.
      *
@@ -168,7 +177,7 @@ public class ConsoleMcpController {
         String mcpId = mcpProxy.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools, endpointSpec);
         return Result.success(mcpId);
     }
-    
+
     /**
      * Update existed mcp server.
      *
@@ -189,7 +198,7 @@ public class ConsoleMcpController {
         mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getLatest(), basicInfo, mcpTools, endpointSpec, mcpForm.isOverrideExisting());
         return Result.success("ok");
     }
-    
+
     /**
      * Delete existed mcp server.
      *
@@ -204,7 +213,7 @@ public class ConsoleMcpController {
                 mcpForm.getVersion());
         return Result.success("ok");
     }
-    
+
     /**
      * Validate MCP server import request.
      *
