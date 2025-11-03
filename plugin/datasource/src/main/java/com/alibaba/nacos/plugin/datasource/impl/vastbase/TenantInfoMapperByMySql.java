@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.constants;
+package com.alibaba.nacos.plugin.datasource.impl.vastbase;
+
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 
 /**
- * The data source name.
+ * The mysql implementation of TenantInfoMapper.
  *
  * @author hyx
  **/
 
-public class DataSourceConstant {
-    public static final String MYSQL = "mysql";
+public class TenantInfoMapperByMySql extends AbstractMapper implements TenantInfoMapper {
 
-    public static final String VASTBASE = "vastbase";
-
-    public static final String DERBY = "derby";
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.MYSQL;
+    }
 }

@@ -33,3 +33,13 @@ com.alibaba.nacos.plugin.datasource.impl.derby.HistoryConfigInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantCapacityMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.GroupCapacityMapperByDerby
+
+com.alibaba.nacos.plugin.datasource.impl.vastbase.ConfigInfoAggrMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.ConfigInfoBetaMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.ConfigInfoMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.ConfigInfoTagMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.ConfigTagsRelationMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.HistoryConfigInfoMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.TenantInfoMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.TenantCapacityMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.vastbase.GroupCapacityMapperByMysql

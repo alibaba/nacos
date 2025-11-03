@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.persistence.handler;
 
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.DerbyPageHandlerAdapter;
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.MysqlPageHandlerAdapter;
+import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.VastBasePageHandlerAdapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,6 +73,8 @@ public class PageHandlerAdapterFactory {
         addHandlerAdapter(new DerbyPageHandlerAdapter());
         // DefaultPageHandlerAdapter
         addHandlerAdapter(new DerbyPageHandlerAdapter());
+        // VastBasePageHandlerAdapter
+        addHandlerAdapter(new VastBasePageHandlerAdapter());
     }
     
     private void addHandlerAdapter(PageHandlerAdapter handlerAdapter) {

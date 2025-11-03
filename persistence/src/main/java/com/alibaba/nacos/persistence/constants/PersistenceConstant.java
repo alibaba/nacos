@@ -33,7 +33,9 @@ public class PersistenceConstant {
     public static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
     public static final String MYSQL = "mysql";
-    
+
+    public static final String VASTBASE = "vastbase";
+
     public static final String DERBY = "derby";
     
     public static final String EMPTY_DATASOURCE_PLATFORM = "";

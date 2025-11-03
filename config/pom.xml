@@ -119,6 +119,13 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-datasource-plugin</artifactId>
         </dependency>
+
+        <!-- vastbase驱动包 -->
+        <dependency>
+            <groupId>cn.com.vastdata</groupId>
+            <artifactId>vastbase-jdbc</artifactId>
+            <version>2.9v</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
