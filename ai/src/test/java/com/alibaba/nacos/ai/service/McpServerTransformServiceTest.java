@@ -130,8 +130,8 @@ class McpServerTransformServiceTest {
                     }]
                 }
                 """;
-
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(registryJson, "json",null,null,
+        
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(registryJson, "json", null, null,
                 null);
         
         assertNotNull(servers);
@@ -169,7 +169,7 @@ class McpServerTransformServiceTest {
         
         List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(legacyJson, "json", null, null,
                 null);
-
+        
         assertNotNull(servers);
         assertEquals(1, servers.size());
         
@@ -196,7 +196,7 @@ class McpServerTransformServiceTest {
         // Use 'file' import path here which returns an empty list for empty arrays.
         List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(emptyJson, "file", null, null,
                 null);
-
+        
         assertNotNull(servers);
         assertTrue(servers.isEmpty());
     }
@@ -206,7 +206,7 @@ class McpServerTransformServiceTest {
         String invalidJson = "{ invalid json }";
         
         assertThrows(Exception.class, () -> {
-            transformService.transformToNacosFormat(invalidJson, "json");
+            transformService.transformToNacosFormat(invalidJson, "json", null, null, null);
         });
     }
     
@@ -215,7 +215,7 @@ class McpServerTransformServiceTest {
         String validJson = "{\"id\":\"test-server\",\"name\":\"Test Server\"}";
         
         assertThrows(IllegalArgumentException.class, () -> {
-            transformService.transformToNacosFormat(validJson, "unsupported");
+            transformService.transformToNacosFormat(validJson, "unsupported", null, null, null);
         });
     }
     
@@ -242,7 +242,7 @@ class McpServerTransformServiceTest {
                     }]
                 }
                 """;
-
+        
         List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithNpmPackage, "json", null,
                 null, null);
         
@@ -265,7 +265,7 @@ class McpServerTransformServiceTest {
                     "protocol": "http"
                 }
                 """;
-
+        
         // This should handle malicious URLs gracefully by rejecting them or skipping invalid servers
         List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMaliciousUrl, "json", null,
                 null, null);
@@ -298,7 +298,7 @@ class McpServerTransformServiceTest {
                     }]
                 }
                 """;
-
+        
         List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithValidPackage, "json", null,
                 null, null);
         
@@ -308,26 +308,24 @@ class McpServerTransformServiceTest {
         McpServerDetailInfo server = servers.get(0);
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
     }
-
+    
     @Test
     void testTransformServersWithMetadataNoTotalCount() throws Exception {
         // A minimal slice of the provided registry sample: has servers +
         // metadata.next_cursor but no total_count
-        String sample = "{"
-                + "\"servers\":["
-                + "{\"name\":\"ai.waystation/gmail\",\"description\":\"Read emails...\","
+        String sample = "{" + "\"servers\":[" + "{\"name\":\"ai.waystation/gmail\",\"description\":\"Read emails...\","
                 + "\"repository\":{\"url\":\"https://github.com/waystation-ai/mcp\",\"source\":\"github\"},"
                 + "\"version\":\"0.3.1\",\"remotes\":[{\"transport_type\":\"streamable-http\",\"url\":\"https://waystation.ai/gmail/mcp\"}]}"
                 + ",{\"name\":\"io.github.cameroncooke/XcodeBuildMCP\",\"description\":\"tools...\","
                 + "\"repository\":{\"url\":\"https://github.com/cameroncooke/XcodeBuildMCP\",\"source\":\"github\"},"
                 + "\"version\":\"1.12.7\",\"packages\":[{\"registryType\":\"npm\",\"identifier\":\"xcodebuildmcp\",\"version\":\"1.12.7\"}]}]"
                 + ",\"metadata\":{\"next_cursor\":\"abc123\",\"count\":2}}";
-
+        
         List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(sample, "file", null, null, null);
-
+        
         assertNotNull(servers);
         assertEquals(2, servers.size());
-
+        
         // First server
         McpServerDetailInfo s1 = servers.get(0);
         assertNotNull(s1.getId()); // auto-generated since input has no id
@@ -335,7 +333,7 @@ class McpServerTransformServiceTest {
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, s1.getProtocol()); // defaulted because no top-level
         assertNotNull(s1.getVersionDetail());
         assertEquals("0.3.1", s1.getVersionDetail().getVersion());
-
+        
         // Second server
         McpServerDetailInfo s2 = servers.get(1);
         assertNotNull(s2.getId()); // auto-generated
@@ -366,12 +364,12 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithRuntimeHint() throws Exception {
-        String jsonWithRuntimeHint = "{\"name\":\"Runtime Hint Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithRuntimeHint = "{\"name\":\"Runtime Hint Server\"," + "\"version\":\"1.0.0\","
                 + "\"packages\":[{\"registryType\":\"npm\",\"identifier\":\"test-server\",\"version\":\"1.0.0\","
                 + "\"runtimeHint\":\"npx\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithRuntimeHint, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithRuntimeHint, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -385,11 +383,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithDockerPackage() throws Exception {
-        String jsonWithDockerPackage = "{\"name\":\"Docker Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithDockerPackage = "{\"name\":\"Docker Server\"," + "\"version\":\"1.0.0\","
                 + "\"packages\":[{\"registryType\":\"docker\",\"identifier\":\"test/docker-server\",\"version\":\"1.0.0\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDockerPackage, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDockerPackage, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -402,11 +400,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithOciPackage() throws Exception {
-        String jsonWithOciPackage = "{\"name\":\"OCI Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithOciPackage = "{\"name\":\"OCI Server\"," + "\"version\":\"1.0.0\","
                 + "\"packages\":[{\"registryType\":\"oci\",\"identifier\":\"test/oci-server\",\"version\":\"1.0.0\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithOciPackage, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithOciPackage, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -419,11 +417,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithSseProtocol() throws Exception {
-        String jsonWithSse = "{\"name\":\"SSE Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithSse = "{\"name\":\"SSE Server\"," + "\"version\":\"1.0.0\","
                 + "\"remotes\":[{\"transport_type\":\"sse\",\"url\":\"http://localhost:8080/sse\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithSse, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithSse, "json", null, null,
+                null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -435,11 +433,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithStreamableProtocol() throws Exception {
-        String jsonWithStreamable = "{\"name\":\"Streamable Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithStreamable = "{\"name\":\"Streamable Server\"," + "\"version\":\"1.0.0\","
                 + "\"remotes\":[{\"transport_type\":\"streamable-http\",\"url\":\"http://localhost:8080/stream\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithStreamable, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithStreamable, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -451,11 +449,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithInvalidUrlInRemotes() throws Exception {
-        String jsonWithInvalidUrl = "{\"name\":\"Invalid URL Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithInvalidUrl = "{\"name\":\"Invalid URL Server\"," + "\"version\":\"1.0.0\","
                 + "\"remotes\":[{\"transport_type\":\"http\",\"url\":\"invalid:url\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithInvalidUrl, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithInvalidUrl, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -467,13 +465,13 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithArguments() throws Exception {
-        String jsonWithArguments = "{\"name\":\"Server With Arguments\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithArguments = "{\"name\":\"Server With Arguments\"," + "\"version\":\"1.0.0\","
                 + "\"packages\":[{\"registryType\":\"npm\",\"identifier\":\"test-server\",\"version\":\"1.0.0\","
                 + "\"runtimeArguments\":[{\"type\":\"positional\",\"valueHint\":\"--arg1\"}],"
                 + "\"packageArguments\":[{\"type\":\"positional\",\"valueHint\":\"--arg2\"}]}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithArguments, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithArguments, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -489,11 +487,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithRepositoryId() throws Exception {
-        String jsonWithRepositoryId = "{\"name\":\"Server With Repository ID\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithRepositoryId = "{\"name\":\"Server With Repository ID\"," + "\"version\":\"1.0.0\","
                 + "\"repository\":{\"url\":\"https://github.com/test/repo\",\"source\":\"github\",\"id\":\"repo-id-123\"}}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithRepositoryId, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithRepositoryId, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -507,10 +505,10 @@ class McpServerTransformServiceTest {
     void testTransformWithOfficialMetaPublishedAt() throws Exception {
         String jsonWithMeta = "{\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
                 + "{\"serverId\":\"meta-server\",\"publishedAt\":\"2023-01-01T00:00:00Z\"}},"
-                + "\"name\":\"Meta Server\","
-                + "\"version\":\"1.0.0\"}";
+                + "\"name\":\"Meta Server\"," + "\"version\":\"1.0.0\"}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMeta, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMeta, "json", null, null,
+                null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -523,11 +521,11 @@ class McpServerTransformServiceTest {
     @Test
     void testTransformWithOfficialMetaIsLatest() throws Exception {
         String jsonWithMetaIsLatest = "{\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
-                + "{\"serverId\":\"latest-server\",\"isLatest\":true}},"
-                + "\"name\":\"Latest Server\","
+                + "{\"serverId\":\"latest-server\",\"isLatest\":true}}," + "\"name\":\"Latest Server\","
                 + "\"version\":\"1.0.0\"}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMetaIsLatest, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMetaIsLatest, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -539,10 +537,10 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithEmptyName() throws Exception {
-        String jsonWithEmptyName = "{\"name\":\"\","
-                + "\"version\":\"1.0.0\"}";
+        String jsonWithEmptyName = "{\"name\":\"\"," + "\"version\":\"1.0.0\"}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithEmptyName, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithEmptyName, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -554,11 +552,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testUrlValidationWithDataProtocol() throws Exception {
-        String jsonWithDataProtocol = "{\"name\":\"Data Protocol Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithDataProtocol = "{\"name\":\"Data Protocol Server\"," + "\"version\":\"1.0.0\","
                 + "\"remotes\":[{\"transport_type\":\"http\",\"url\":\"data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDataProtocol, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDataProtocol, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -570,11 +568,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testUrlValidationWithJavascriptProtocol() throws Exception {
-        String jsonWithJavascriptProtocol = "{\"name\":\"Javascript Protocol Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithJavascriptProtocol = "{\"name\":\"Javascript Protocol Server\"," + "\"version\":\"1.0.0\","
                 + "\"remotes\":[{\"transport_type\":\"http\",\"url\":\"javascript:alert('xss')\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithJavascriptProtocol, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithJavascriptProtocol, "json",
+                null, null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -586,11 +584,11 @@ class McpServerTransformServiceTest {
     
     @Test
     void testTransformWithDubboProtocol() throws Exception {
-        String jsonWithDubboProtocol = "{\"name\":\"Dubbo Protocol Server\","
-                + "\"version\":\"1.0.0\","
+        String jsonWithDubboProtocol = "{\"name\":\"Dubbo Protocol Server\"," + "\"version\":\"1.0.0\","
                 + "\"remotes\":[{\"transport_type\":\"dubbo\",\"url\":\"dubbo://localhost:20880/service\"}]}";
         
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDubboProtocol, "json", null, null, null);
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDubboProtocol, "json", null,
+                null, null);
         
         assertNotNull(servers);
         assertEquals(1, servers.size());

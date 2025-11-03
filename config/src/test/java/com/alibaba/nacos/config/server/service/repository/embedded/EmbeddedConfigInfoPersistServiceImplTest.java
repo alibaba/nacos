@@ -244,9 +244,9 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq("I"), eq("formal"), eq(null),
-                        argThat(actualJson -> {
-                            String expected = ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser);
+                        eq("I"), eq("formal"), eq(null), argThat(actualJson -> {
+                            String expected = ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo,
+                                    srcUser);
                             if (expected == null || actualJson == null) {
                                 return expected == actualJson;
                             }
@@ -261,8 +261,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
                                 actualList.add(part.trim());
                             }
                             return expectedList.size() == actualList.size() && actualList.containsAll(expectedList);
-                        })
-                );
+                        }));
     }
     
     @Test
