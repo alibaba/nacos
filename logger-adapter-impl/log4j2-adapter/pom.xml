@@ -32,7 +32,6 @@
     <properties>
         <maven.compiler.source>${client.java.version}</maven.compiler.source>
         <maven.compiler.target>${client.java.version}</maven.compiler.target>
-        <log4j2.version>2.23.1</log4j2.version>
     </properties>
     
     <dependencies>
@@ -69,7 +68,7 @@
                         <path>
                             <groupId>org.apache.logging.log4j</groupId>
                             <artifactId>log4j-core</artifactId>
-                            <version>${log4j2.version}</version>
+                            <version>${log4j.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
