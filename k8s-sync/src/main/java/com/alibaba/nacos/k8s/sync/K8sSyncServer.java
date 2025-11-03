@@ -256,7 +256,6 @@ public class K8sSyncServer {
                 }
             }
         });
-        factory.startAllRegisteredInformers();
 
         // Wait until the cache of each informer has been fully synced before proceeding.
         // This ensures that the local cache contains the latest and complete resource data.

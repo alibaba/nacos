@@ -39,6 +39,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         result.setValidCount(3);
         result.setInvalidCount(0);
         result.setDuplicateCount(0);
+        result.setNextCursor("next_cursor_123");
+        result.setHasMore(true);
         
         McpServerValidationItem item1 = new McpServerValidationItem();
         item1.setServerName("server1");
@@ -68,6 +70,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertTrue(json.contains("\"selected\":true"));
         assertTrue(json.contains("\"selected\":false"));
         assertTrue(json.contains("\"errors\":[]"));
+        assertTrue(json.contains("\"nextCursor\":\"next_cursor_123\""));
+        assertTrue(json.contains("\"hasMore\":true"));
     }
     
     @Test
@@ -78,6 +82,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         result.setValidCount(1);
         result.setInvalidCount(1);
         result.setDuplicateCount(0);
+        result.setNextCursor("next_cursor_456");
+        result.setHasMore(false);
         
         McpServerValidationItem validItem = new McpServerValidationItem();
         validItem.setServerName("valid-server");
@@ -105,6 +111,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertTrue(json.contains("\"status\":\"invalid\""));
         assertTrue(json.contains("\"errors\":[\"Missing protocol\",\"Invalid port\"]"));
         assertTrue(json.contains("\"errors\":[\"Invalid JSON format\",\"Missing required fields\"]"));
+        assertTrue(json.contains("\"nextCursor\":\"next_cursor_456\""));
+        assertTrue(json.contains("\"hasMore\":false"));
     }
     
     @Test
@@ -115,6 +123,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         result.setValidCount(1);
         result.setInvalidCount(0);
         result.setDuplicateCount(1);
+        result.setNextCursor("next_cursor_789");
+        result.setHasMore(true);
         
         McpServerValidationItem duplicateItem = new McpServerValidationItem();
         duplicateItem.setServerName("existing-server");
@@ -131,6 +141,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertTrue(json.contains("\"serverName\":\"existing-server\""));
         assertTrue(json.contains("\"status\":\"duplicate\""));
         assertTrue(json.contains("\"exists\":true"));
+        assertTrue(json.contains("\"nextCursor\":\"next_cursor_789\""));
+        assertTrue(json.contains("\"hasMore\":true"));
     }
     
     @Test
@@ -138,7 +150,7 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         String json = "{\"valid\":true,\"totalCount\":3,\"validCount\":3,\"invalidCount\":0,\"duplicateCount\":0,"
                 + "\"servers\":[{\"serverName\":\"server1\",\"serverId\":\"id1\",\"status\":\"valid\",\"selected\":true,\"exists\":false},"
                 + "{\"serverName\":\"server2\",\"serverId\":\"id2\",\"status\":\"valid\",\"selected\":false,\"exists\":false}],"
-                + "\"errors\":[]}";
+                + "\"errors\":[],\"nextCursor\":\"next_cursor_123\",\"hasMore\":true}";
         
         McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
@@ -147,6 +159,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertEquals(3, result.getValidCount());
         assertEquals(0, result.getInvalidCount());
         assertEquals(0, result.getDuplicateCount());
+        assertEquals("next_cursor_123", result.getNextCursor());
+        assertTrue(result.isHasMore());
         
         assertNotNull(result.getServers());
         assertEquals(2, result.getServers().size());
@@ -174,7 +188,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         String json = "{\"valid\":false,\"totalCount\":2,\"validCount\":1,\"invalidCount\":1,\"duplicateCount\":0,"
                 + "\"servers\":[{\"serverName\":\"valid-server\",\"status\":\"valid\",\"exists\":false},"
                 + "{\"serverName\":\"invalid-server\",\"status\":\"invalid\",\"errors\":[\"Missing protocol\",\"Invalid port\"]}],"
-                + "\"errors\":[\"Invalid JSON format\",\"Missing required fields\"]}";
+                + "\"errors\":[\"Invalid JSON format\",\"Missing required fields\"],"
+                + "\"nextCursor\":\"next_cursor_456\",\"hasMore\":false}";
         
         McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
@@ -183,6 +198,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertEquals(1, result.getValidCount());
         assertEquals(1, result.getInvalidCount());
         assertEquals(0, result.getDuplicateCount());
+        assertEquals("next_cursor_456", result.getNextCursor());
+        assertFalse(result.isHasMore());
         
         assertNotNull(result.getServers());
         assertEquals(2, result.getServers().size());
@@ -210,7 +227,7 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
     void testDeserializeDuplicateResult() throws JsonProcessingException {
         String json = "{\"valid\":true,\"totalCount\":2,\"validCount\":1,\"invalidCount\":0,\"duplicateCount\":1,"
                 + "\"servers\":[{\"serverName\":\"existing-server\",\"serverId\":\"existing-id\",\"status\":\"duplicate\",\"exists\":true}],"
-                + "\"errors\":[]}";
+                + "\"errors\":[],\"nextCursor\":\"next_cursor_789\",\"hasMore\":true}";
         
         McpServerImportValidationResult result = mapper.readValue(json, McpServerImportValidationResult.class);
         assertNotNull(result);
@@ -219,6 +236,8 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertEquals(1, result.getValidCount());
         assertEquals(0, result.getInvalidCount());
         assertEquals(1, result.getDuplicateCount());
+        assertEquals("next_cursor_789", result.getNextCursor());
+        assertTrue(result.isHasMore());
         
         assertNotNull(result.getServers());
         assertEquals(1, result.getServers().size());
@@ -246,5 +265,7 @@ class McpServerImportValidationResultTest extends BasicRequestTest {
         assertEquals(0, result.getDuplicateCount());
         assertNull(result.getServers());
         assertNull(result.getErrors());
+        assertNull(result.getNextCursor());
+        assertFalse(result.isHasMore());
     }
 }

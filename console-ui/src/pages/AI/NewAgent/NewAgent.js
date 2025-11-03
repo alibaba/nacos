@@ -83,6 +83,21 @@ class NewAgent extends React.Component {
         this.setState({ loading: false });
         if (data && (data.code === 0 || data.code === 200) && data.data) {
           const agentData = data.data;
+          // 处理 capabilities 字段，确保正确解析三个能力开关的状态
+          const capabilities = {
+            streaming: false,
+            pushNotifications: false,
+            stateTransitionHistory: false,
+          };
+
+          if (agentData.capabilities && typeof agentData.capabilities === 'object') {
+            capabilities.streaming = !!agentData.capabilities.streaming;
+            capabilities.pushNotifications = !!agentData.capabilities.pushNotifications;
+            capabilities.stateTransitionHistory = !!agentData.capabilities.stateTransitionHistory;
+          }
+
+          console.log(capabilities);
+
           this.field.setValues({
             name: agentData.name,
             description: agentData.description,
@@ -92,13 +107,17 @@ class NewAgent extends React.Component {
             preferredTransport: agentData.preferredTransport,
             iconUrl: agentData.iconUrl,
             documentationUrl: agentData.documentationUrl,
-            providerName: agentData.provider?.name || '',
+            organization: agentData.provider?.organization || '',
             providerUrl: agentData.provider?.url || '',
-            capabilities: agentData.capabilities
-              ? JSON.stringify(agentData.capabilities, null, 2)
-              : '',
+            // 设置能力配置开关的值
+            streaming: capabilities.streaming,
+            pushNotifications: capabilities.pushNotifications,
+            stateTransitionHistory: capabilities.stateTransitionHistory,
             skills: agentData.skills ? JSON.stringify(agentData.skills, null, 2) : '',
             security: agentData.security ? JSON.stringify(agentData.security, null, 2) : '',
+            securitySchemes: agentData.securitySchemes
+              ? JSON.stringify(agentData.securitySchemes, null, 2)
+              : '',
             defaultInputModes: agentData.defaultInputModes?.join(',') || '',
             defaultOutputModes: agentData.defaultOutputModes?.join(',') || '',
             additionalInterfaces: agentData.additionalInterfaces
@@ -146,31 +165,20 @@ class NewAgent extends React.Component {
         documentationUrl: values.documentationUrl,
         // Add provider info if provided
         provider:
-          values.providerName || values.providerUrl
+          values.organization || values.providerUrl
             ? {
-                name: values.providerName || '',
+                organization: values.organization || '',
                 url: values.providerUrl || '',
               }
             : undefined,
       };
 
-      // Add advanced configurations if provided and not empty
-      if (
-        values.capabilities &&
-        values.capabilities.trim() &&
-        values.capabilities.trim() !== 'null'
-      ) {
-        try {
-          const parsed = JSON.parse(values.capabilities.trim());
-          if (parsed !== null && parsed !== undefined) {
-            agentCard.capabilities = parsed;
-          }
-        } catch (e) {
-          Message.error('能力配置JSON格式错误: ' + e.message);
-          this.setState({ loading: false });
-          return;
-        }
-      }
+      // 构建 capabilities 对象，使用三个开关的值
+      agentCard.capabilities = {
+        streaming: !!values.streaming,
+        pushNotifications: !!values.pushNotifications,
+        stateTransitionHistory: !!values.stateTransitionHistory,
+      };
 
       if (values.skills && values.skills.trim() && values.skills.trim() !== 'null') {
         try {
@@ -193,6 +201,23 @@ class NewAgent extends React.Component {
           }
         } catch (e) {
           Message.error('安全配置JSON格式错误: ' + e.message);
+          this.setState({ loading: false });
+          return;
+        }
+      }
+
+      if (
+        values.securitySchemes &&
+        values.securitySchemes.trim() &&
+        values.securitySchemes.trim() !== 'null'
+      ) {
+        try {
+          const parsed = JSON.parse(values.securitySchemes.trim());
+          if (parsed !== null && parsed !== undefined) {
+            agentCard.securitySchemes = parsed;
+          }
+        } catch (e) {
+          Message.error('安全模式配置JSON格式错误: ' + e.message);
           this.setState({ loading: false });
           return;
         }
@@ -391,11 +416,7 @@ class NewAgent extends React.Component {
 
           {/* 主要信息放在最上面 */}
           <Form.Item
-            label={
-              <span>
-                <span style={{ color: '#ff4d4f' }}>*</span> Agent名称
-              </span>
-            }
+            label="Agent名称"
             required
             validator={this.validateRequired}
             help="Agent的唯一标识符，创建后不可修改"
@@ -409,11 +430,7 @@ class NewAgent extends React.Component {
           </Form.Item>
 
           <Form.Item
-            label={
-              <span>
-                <span style={{ color: '#ff4d4f' }}>*</span> 版本号
-              </span>
-            }
+            label="版本号"
             required
             validator={this.validateRequired}
             help="遵循语义化版本规范，如：1.0.0"
@@ -422,16 +439,38 @@ class NewAgent extends React.Component {
           </Form.Item>
 
           <Form.Item
-            label={
-              <span>
-                <span style={{ color: '#ff4d4f' }}>*</span> 服务地址
-              </span>
-            }
+            label="服务地址"
             required
             validator={[this.validateRequired, this.validateUrl]}
             help="Agent服务的完整URL地址"
           >
             <Input name="url" placeholder="https://api.example.com/agent" maxLength={500} />
+          </Form.Item>
+
+          <Form.Item
+            label="协议版本"
+            required
+            validator={this.validateRequired}
+            help="Agent协议版本，默认使用最新版本"
+          >
+            <Input name="protocolVersion" placeholder="0.3.0" maxLength={50} />
+          </Form.Item>
+
+          <Form.Item
+            label="传输协议"
+            required
+            validator={this.validateRequired}
+            help="Agent通信使用的传输协议"
+          >
+            <Select
+              name="preferredTransport"
+              placeholder="请选择传输协议"
+              dataSource={[
+                { value: 'JSONRPC', label: 'JSONRPC' },
+                { value: 'GRPC', label: 'GRPC' },
+                { value: 'HTTP+JSON', label: 'HTTP_JSON' },
+              ]}
+            />
           </Form.Item>
 
           <Form.Item label="描述信息" help="简要描述Agent的功能和用途">
@@ -451,12 +490,51 @@ class NewAgent extends React.Component {
             <Input name="defaultOutputModes" placeholder="text,audio,image" maxLength={255} />
           </Form.Item>
 
-          <Form.Item label="能力配置" validator={this.validateJson} help="Agent支持的功能能力配置">
-            <Input.TextArea
-              name="capabilities"
-              placeholder='{"sampling": true, "tools": ["function_calling"], "textGeneration": true}'
-              rows={4}
-            />
+          {/* 将原来的capabilities JSON输入框替换为横向排列的三个独立开关 */}
+          <Form.Item label="能力配置" help="Agent支持的核心能力配置">
+            <div className="capabilities-container">
+              <div className="capability-item">
+                <div className="capability-label">流式传输</div>
+                <div className="capability-switch">
+                  <Switch
+                    {...this.field.init('streaming', {
+                      valueName: 'checked',
+                      initValue: false,
+                    })}
+                    name="streaming"
+                  />
+                </div>
+                <div className="capability-description">是否支持流式数据传输</div>
+              </div>
+
+              <div className="capability-item">
+                <div className="capability-label">推送通知</div>
+                <div className="capability-switch">
+                  <Switch
+                    {...this.field.init('pushNotifications', {
+                      valueName: 'checked',
+                      initValue: false,
+                    })}
+                    name="pushNotifications"
+                  />
+                </div>
+                <div className="capability-description">是否支持推送通知功能</div>
+              </div>
+
+              <div className="capability-item">
+                <div className="capability-label">状态历史</div>
+                <div className="capability-switch">
+                  <Switch
+                    {...this.field.init('stateTransitionHistory', {
+                      valueName: 'checked',
+                      initValue: false,
+                    })}
+                    name="stateTransitionHistory"
+                  />
+                </div>
+                <div className="capability-description">是否支持记录状态转换历史</div>
+              </div>
+            </div>
           </Form.Item>
 
           <Form.Item label="技能列表" validator={this.validateJson} help="Agent具备的技能清单">
@@ -464,22 +542,6 @@ class NewAgent extends React.Component {
               name="skills"
               placeholder='[{"name": "weather_query", "description": "查询天气信息"}]'
               rows={4}
-            />
-          </Form.Item>
-
-          <Form.Item label="协议版本" help="Agent协议版本，默认使用最新版本">
-            <Input name="protocolVersion" placeholder="0.3.0" maxLength={50} />
-          </Form.Item>
-
-          <Form.Item label="传输协议" help="Agent通信使用的传输协议">
-            <Select
-              name="preferredTransport"
-              placeholder="请选择传输协议"
-              dataSource={[
-                { value: 'JSONRPC', label: 'JSONRPC' },
-                { value: 'GRPC', label: 'GRPC' },
-                { value: 'HTTP+JSON', label: 'HTTP_JSON' },
-              ]}
             />
           </Form.Item>
 
@@ -511,7 +573,7 @@ class NewAgent extends React.Component {
               </Form.Item>
 
               <Form.Item label="提供商名称" help="Agent提供商的名称">
-                <Input name="providerName" placeholder="请输入提供商名称" maxLength={255} />
+                <Input name="organization" placeholder="请输入提供商名称" maxLength={255} />
               </Form.Item>
 
               <Form.Item label="提供商URL" validator={this.validateUrl} help="提供商的官方网站地址">
@@ -523,13 +585,25 @@ class NewAgent extends React.Component {
               </Form.Item>
 
               <Form.Item
-                label="安全配置"
+                label="security"
                 validator={this.validateJson}
                 help="Agent的安全认证相关配置 (JSON格式)"
               >
                 <Input.TextArea
                   name="security"
                   placeholder='[{"apiKey": ["read", "write"]}]'
+                  rows={3}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="securitySchemes"
+                validator={this.validateJson}
+                help="Agent的安全模式配置 (JSON格式)"
+              >
+                <Input.TextArea
+                  name="securitySchemes"
+                  placeholder='{"type": "apiKey", "description": "API密钥认证"}'
                   rows={3}
                 />
               </Form.Item>

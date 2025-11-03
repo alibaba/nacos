@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
     
+    private static final String GRAY_NAME = "test-gray-name";
+    
     ConfigChangeClusterSyncRequest configChangeClusterSyncRequest;
     
     String requestId;
@@ -40,6 +42,7 @@ class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
         configChangeClusterSyncRequest.setTag(TAG);
         configChangeClusterSyncRequest.setBeta(Boolean.TRUE);
         configChangeClusterSyncRequest.setLastModified(0L);
+        configChangeClusterSyncRequest.setGrayName(GRAY_NAME);
         configChangeClusterSyncRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configChangeClusterSyncRequest);
     }
@@ -56,6 +59,7 @@ class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"beta\":" + Boolean.TRUE));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
         assertTrue(json.contains("\"lastModified\":" + 0));
+        assertTrue(json.contains("\"grayName\":\"" + GRAY_NAME));
         
     }
     
@@ -65,13 +69,14 @@ class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
         String json =
                 "{\"headers\":{\"header1\":\"test_header1\"},\"requestId\":\"ece89111-3c42-4055-aca4-c95e16ec564b\",\"dataId\":\"test_data\","
                         + "\"group\":\"group\",\"tenant\":\"test_tenant\","
-                        + "\"tag\":\"tag\",\"lastModified\":0,\"beta\":true,\"module\":\"config\"}";
+                        + "\"tag\":\"tag\",\"lastModified\":0,\"beta\":true,\"grayName\":\"test-gray-name\",\"module\":\"config\"}";
         ConfigChangeClusterSyncRequest actual = mapper.readValue(json, ConfigChangeClusterSyncRequest.class);
         assertEquals(DATA_ID, actual.getDataId());
         assertEquals(GROUP, actual.getGroup());
         assertEquals(TENANT, actual.getTenant());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
         assertEquals(0L, actual.getLastModified());
+        assertEquals(GRAY_NAME, actual.getGrayName());
         assertTrue(actual.isBeta());
     }
 }

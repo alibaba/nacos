@@ -411,12 +411,13 @@ public interface McpMaintainerService {
      * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
      *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @param overrideExisting      if replace all the instances when update the mcp server
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
     default boolean updateMcpServer(String mcpName, boolean isLatest, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-                            McpEndpointSpec endpointSpec) throws NacosException {
-        return updateMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, isLatest, serverSpec, toolSpec, endpointSpec);
+                            McpEndpointSpec endpointSpec, boolean overrideExisting) throws NacosException {
+        return updateMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, isLatest, serverSpec, toolSpec, endpointSpec, overrideExisting);
     }
 
     /**
@@ -429,11 +430,12 @@ public interface McpMaintainerService {
      * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
      *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @param overrideExisting  if replace all the instances when update the mcp server
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
     boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-                            McpEndpointSpec endpointSpec) throws NacosException;
+                            McpEndpointSpec endpointSpec, boolean overrideExisting) throws NacosException;
     
     /**
      * Update existed mcp server to Nacos.
@@ -447,12 +449,13 @@ public interface McpMaintainerService {
      * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
      *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @param overrideExisting if replace all the instances when update the mcp server
      * @return {@code true} if update success, {@code false} otherwise
      * @throws NacosException if fail to update mcp server.
      */
     default boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-            McpEndpointSpec endpointSpec) throws NacosException {
-        return updateMcpServer(mcpName, true, serverSpec, toolSpec, endpointSpec);
+            McpEndpointSpec endpointSpec, boolean overrideExisting) throws NacosException {
+        return updateMcpServer(mcpName, true, serverSpec, toolSpec, endpointSpec, overrideExisting);
     }
     
     /**

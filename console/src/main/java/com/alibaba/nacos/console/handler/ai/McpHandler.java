@@ -86,10 +86,11 @@ public interface McpHandler {
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
+     * @param overrideExisting      if replace all the instances when update the mcp server
      * @throws NacosException any exception during handling
      */
     void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException;
     
     /**
      * Delete existed mcp server.

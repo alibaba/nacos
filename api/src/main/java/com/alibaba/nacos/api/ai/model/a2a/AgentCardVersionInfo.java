@@ -25,7 +25,7 @@ import java.util.Objects;
  *
  * @author KiteSoar
  */
-public class AgentCardVersionInfo extends AgentCard {
+public class AgentCardVersionInfo extends AgentCardBasicInfo {
     
     private String latestPublishedVersion;
     

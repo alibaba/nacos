@@ -27,11 +27,21 @@ public class AgentCardDetailInfo extends AgentCard {
     
     private String registrationType = AiConstants.A2a.A2A_ENDPOINT_TYPE_URL;
     
+    private Boolean latestVersion;
+    
     public String getRegistrationType() {
         return registrationType;
     }
     
     public void setRegistrationType(String registrationType) {
         this.registrationType = registrationType;
+    }
+    
+    public Boolean isLatestVersion() {
+        return latestVersion;
+    }
+    
+    public void setLatestVersion(Boolean latestVersion) {
+        this.latestVersion = latestVersion;
     }
 }

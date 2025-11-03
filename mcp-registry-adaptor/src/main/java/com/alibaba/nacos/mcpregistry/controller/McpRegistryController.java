@@ -17,9 +17,9 @@
 package com.alibaba.nacos.mcpregistry.controller;
 
 import com.alibaba.nacos.mcpregistry.form.GetServerForm;
-import com.alibaba.nacos.mcpregistry.form.ListServerForm;
+import com.alibaba.nacos.mcpregistry.form.ListServerForm; // internal legacy form (for service call)
+import com.alibaba.nacos.mcpregistry.form.ListServersOfficialForm; // new official form
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
-import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpErrorResponse;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
@@ -34,11 +34,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
-
 
 /**
  * McpRegistryController.
+ * 
  * @author xinluo
  */
 @NacosApi
@@ -56,23 +58,42 @@ public class McpRegistryController {
      * List mcp servers.
      * All server info is related to the latest version of the server.
      *
-     * @param listServerForm list mcp servers request form
-     *                       Support blur and accurate search
-     *                       mode.
-     *                       default offset is 0
-     *                       default limit is 30
+     * @param form list mcp servers request form
+     *             Support blur and accurate search
+     *             mode.
+     *             default offset is 0
+     *             default limit is 30
      * @return mcp server list {@link McpRegistryServerList}
      * @throws NacosApiException if request parameter is invalid or handle error
      */
     @GetMapping(value = "/v0/servers")
-    public McpRegistryServerList listMcpServers(ListServerForm listServerForm) throws NacosApiException {
-        listServerForm.validate();
-        return nacosMcpRegistryService.listMcpServers(listServerForm);
+    public McpRegistryServerList listMcpServers(ListServersOfficialForm form) throws NacosApiException, NacosException {
+        form.validate();
+        int offset = form.resolveOffset();
+        int limit = form.getLimit();
+        // reuse internal service with converted form
+        ListServerForm internal = new ListServerForm();
+        internal.setOffset(offset);
+        internal.setLimit(limit);
+        McpRegistryServerList internalList = nacosMcpRegistryService.listMcpServers(internal);
+        // Null-safe server list handling; service has enriched items already
+        List<McpRegistryServerDetail> details = internalList.getServers();
+        if (details == null) {
+            details = Collections.emptyList();
+        }
+        McpRegistryServerList response = new McpRegistryServerList();
+        response.setServers(details);
+        int returned = details.size();
+        String nextCursor = String.valueOf(offset + returned);
+        response.setMetadata(new McpRegistryServerList.Metadata(nextCursor, returned));
+        return response;
     }
 
     /**
      * Get mcp server details.
-     * If version is not provided, this api will return the latest version of the server.
+     * If version is not provided, this api will return the latest version of the
+     * server.
+     * 
      * @param getServerForm list mcp servers request form
      * @return mcp server detail or McpErrorResponse when server not found.
      * @throws NacosApiException if request parameter is invalid or handle error
@@ -90,19 +111,5 @@ public class McpRegistryController {
             return errorResponse;
         }
         return server;
-    }
-
-    /**
-     * Get tools of the specified server and version.
-     * @param id mcp server id.
-     * @param getServerForm additional params
-     *                      version mcp server version
-     * @return tools specification of the server.
-     * @throws NacosException if request parameter is invalid or handle error
-     */
-    @GetMapping(value = "/v0/servers/{id}/tools")
-    public McpToolSpecification getMcpServerToolsInfo(@PathVariable String id, GetServerForm getServerForm) throws NacosException {
-        getServerForm.validate();
-        return nacosMcpRegistryService.getTools(id, getServerForm.getVersion());
     }
 }

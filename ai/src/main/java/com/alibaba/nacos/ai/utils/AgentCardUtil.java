@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCardBasicInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
@@ -63,7 +64,7 @@ public class AgentCardUtil {
     public static AgentCardVersionInfo buildAgentCardVersionInfo(AgentCard agentCard, String registrationType,
             boolean isLatest) {
         AgentCardVersionInfo agentCardVersionInfo = new AgentCardVersionInfo();
-        copyAgentCardInfo(agentCardVersionInfo, agentCard);
+        copyAgentCardBasicInfo(agentCardVersionInfo, agentCard);
         agentCardVersionInfo.setRegistrationType(registrationType);
         if (isLatest) {
             agentCardVersionInfo.setLatestPublishedVersion(agentCard.getVersion());
@@ -124,22 +125,26 @@ public class AgentCardUtil {
     }
     
     private static void copyAgentCardInfo(AgentCard target, AgentCard source) {
-        target.setProtocolVersion(source.getProtocolVersion());
-        target.setName(source.getName());
-        target.setDescription(source.getDescription());
+        copyAgentCardBasicInfo(target, source);
         target.setUrl(source.getUrl());
-        target.setVersion(source.getVersion());
         target.setPreferredTransport(source.getPreferredTransport());
         target.setAdditionalInterfaces(source.getAdditionalInterfaces());
-        target.setIconUrl(source.getIconUrl());
         target.setProvider(source.getProvider());
-        target.setCapabilities(source.getCapabilities());
         target.setSecuritySchemes(source.getSecuritySchemes());
         target.setSecurity(source.getSecurity());
         target.setDefaultInputModes(source.getDefaultInputModes());
         target.setDefaultOutputModes(source.getDefaultOutputModes());
-        target.setSkills(source.getSkills());
         target.setSupportsAuthenticatedExtendedCard(source.getSupportsAuthenticatedExtendedCard());
         target.setDocumentationUrl(source.getDocumentationUrl());
+    }
+    
+    private static void copyAgentCardBasicInfo(AgentCardBasicInfo target, AgentCardBasicInfo source) {
+        target.setProtocolVersion(source.getProtocolVersion());
+        target.setName(source.getName());
+        target.setDescription(source.getDescription());
+        target.setVersion(source.getVersion());
+        target.setIconUrl(source.getIconUrl());
+        target.setCapabilities(source.getCapabilities());
+        target.setSkills(source.getSkills());
     }
 }

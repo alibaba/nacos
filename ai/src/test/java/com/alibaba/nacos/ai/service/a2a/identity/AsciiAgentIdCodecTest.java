@@ -33,32 +33,40 @@ class AsciiAgentIdCodecTest {
     // Does not encode when name is already valid
     @Test
     void testUsageDoesNotEncodeValidNames() {
-        String input = "abc123";
+        String input = "abc";
         assertEquals(input, agentIdCodec.encode(input));
     }
     
     // Round-trip encode/decode when input contains a space
     @Test
-    void testEncodeAndDecodeWhenNameContainsSpace() {
-        String input = "hello world";
+    void testValidSpecialCharsAreKept() {
+        String input = "name-ok.:";
+        assertEquals(input, agentIdCodec.encode(input));
+    }
+    
+    @Test
+    void testValidNamesWithNumber() {
+        String input = "name-ok.1:2";
         String encoded = agentIdCodec.encode(input);
-        assertEquals("_-.SYSENC:hello_0020world", encoded);
+        assertEquals("____:name-ok._049:_050", encoded);
         assertEquals(input, agentIdCodec.decode(encoded));
     }
     
-    // Valid special characters (._:-) should be preserved without encoding
     @Test
-    void testValidSpecialCharsAreKept() {
-        String input = "name_ok.1:2";
-        assertEquals(input, agentIdCodec.encode(input));
+    void testEncodeAndDecodeWhenNameContainsSpace() {
+        String input = "hello world";
+        String encoded = agentIdCodec.encode(input);
+        assertEquals("____:hello_032world", encoded);
+        assertEquals(input, agentIdCodec.decode(encoded));
     }
+    // Valid special characters (._:-) should be preserved without encoding
     
     // Round-trip encode/decode for mixed unicode letters and ASCII
     @Test
     void testRoundTripUnicodeChars() {
         String input = " Ω test";
         String encoded = agentIdCodec.encode(input);
-        assertEquals("_-.SYSENC:_0020Ω_0020test", encoded);
+        assertEquals("____:_032Ω_032test", encoded);
         String decoded = agentIdCodec.decode(encoded);
         assertEquals(input, decoded);
     }
@@ -68,16 +76,16 @@ class AsciiAgentIdCodecTest {
     void testUnderscoreFollowedByHexAmbiguityHandledByPolicy() {
         String original = "1 _abcd";
         String encoded = agentIdCodec.encode(original);
-        assertEquals("_-.SYSENC:1_0020_005fabcd", encoded);
+        assertEquals("____:_049_032_095abcd", encoded);
         assertEquals(original, agentIdCodec.decode(encoded));
     }
     
-    // Round-trip for extreme boundary code points (NUL and U+FFFF)
+    // Round-trip for extreme boundary code points (NUL and U+FF)
     @Test
     void testBoundaryCharacters() {
-        String input = "\u0000\uFFFF";
+        String input = " ~";
         String encoded = agentIdCodec.encode(input);
-        assertEquals("_-.SYSENC:_0000_ffff", encoded);
+        assertEquals("____:_032_126", encoded);
         String decoded = agentIdCodec.decode(encoded);
         assertEquals(input, decoded);
     }
@@ -91,7 +99,7 @@ class AsciiAgentIdCodecTest {
         
         String underscoreOnly = "_";
         String encodedUnderscore = agentIdCodec.encode(underscoreOnly);
-        assertEquals(underscoreOnly, encodedUnderscore);
+        assertEquals("____:_095", encodedUnderscore);
     }
     
     // Encoding is idempotent for already-encoded output; decode restores original
@@ -100,7 +108,7 @@ class AsciiAgentIdCodecTest {
         String original = "with space and Ω and tab\t";
         String first = agentIdCodec.encode(original);
         String second = agentIdCodec.encode(first);
-        assertEquals("_-.SYSENC:with_0020space_0020and_0020Ω_0020and_0020tab_0009", first);
+        assertEquals("____:with_032space_032and_032Ω_032and_032tab_009", first);
         // encodeName should not double-encode an already valid string
         assertEquals(first, second);
         // decode should restore original
@@ -112,7 +120,7 @@ class AsciiAgentIdCodecTest {
     void testMixedUnicodeAndControlCharactersRoundTrip() {
         String original = "A B\tC_";
         String encoded = agentIdCodec.encode(original);
-        assertEquals("_-.SYSENC:A_0020B_0009C_005f",  encoded);
+        assertEquals("____:A_032B_009C_095",  encoded);
         String decoded = agentIdCodec.decode(encoded);
         assertEquals(original, decoded);
     }
@@ -120,10 +128,46 @@ class AsciiAgentIdCodecTest {
     // Decoding a string with encoded prefix returns body; encoding leaves valid input unchanged
     @Test
     void testDecodeNameWithFakeEncodedPrefixBody() {
-        String fake = "_-.SYSENC:hello";
+        String fake = "____:hello";
         // This string is already valid; encodeName should return as-is
         assertEquals(fake, agentIdCodec.encode(fake));
         // decodeName should strip prefix and return body unchanged
         assertEquals("hello", agentIdCodec.decode(fake));
+    }
+    
+    @Test
+    void testDecodeWithoutPrefix() {
+        String fake = "hello";
+        assertEquals(fake, agentIdCodec.decode(fake));
+    }
+    
+    @Test
+    void testDecodeWithIllegalString() {
+        String fake = "____:hello_02aworld";
+        assertEquals("hello_02aworld", agentIdCodec.decode(fake));
+    }
+    
+    @Test
+    void testEncodeForSearchWithEmpty() {
+        String empty = "";
+        assertEquals("", agentIdCodec.encodeForSearch(empty));
+    }
+    
+    @Test
+    void testEncodeForNotEncode() {
+        String input = "hello";
+        assertEquals(input, agentIdCodec.encodeForSearch(input));
+    }
+    
+    @Test
+    void testEncodeForSearchWithUnderscore() {
+        String underscore = "_";
+        assertEquals("_095", agentIdCodec.encodeForSearch(underscore));
+    }
+    
+    @Test
+    void testEncodeForSearchWithSpecialChars() {
+        String specialChars = "hello world";
+        assertEquals("hello_032world", agentIdCodec.encodeForSearch(specialChars));
     }
 }

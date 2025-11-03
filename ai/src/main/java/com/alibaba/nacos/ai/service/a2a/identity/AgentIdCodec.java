@@ -38,6 +38,14 @@ public interface AgentIdCodec {
     String encode(String agentName);
     
     /**
+     * Encode agent name to identity for search, which means only do encode value without any prefix and suffix, used to do blur search.
+     *
+     * @param agentName agent name
+     * @return identity encoded from agent name
+     */
+    String encodeForSearch(String agentName);
+    
+    /**
      * Decode agent id to agent name.
      *
      * @param agentId agent identity

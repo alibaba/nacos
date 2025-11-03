@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,27 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * McpRegistryServer.
+ * McpRegistryServer (renamed from Server) to align with registry package naming.
+ *
  * @author xinluo
  */
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", "PMD.LowerCamelCaseVariableNamingRule"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class McpRegistryServer {
-    
-    private String id;
-    
+
     private String name;
     
     private String description;
-    
+
+    private String status;
+
     private Repository repository;
-    
-    private ServerVersionDetail version_detail;
-    
-    private List<Package> packages;
 
-    public String getId() {
-        return id;
-    }
+    private String version;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    private String websiteUrl;
 
     public String getName() {
         return name;
@@ -61,6 +54,14 @@ public class McpRegistryServer {
         this.description = description;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public Repository getRepository() {
         return repository;
     }
@@ -69,19 +70,19 @@ public class McpRegistryServer {
         this.repository = repository;
     }
 
-    public ServerVersionDetail getVersion_detail() {
-        return version_detail;
+    public String getVersion() {
+        return version;
     }
 
-    public void setVersion_detail(ServerVersionDetail version_detail) {
-        this.version_detail = version_detail;
+    public void setVersion(String version) {
+        this.version = version;
     }
-    
-    public List<Package> getPackages() {
-        return packages;
+
+    public String getWebsiteUrl() {
+        return websiteUrl;
     }
-    
-    public void setPackages(List<Package> packages) {
-        this.packages = packages;
+
+    public void setWebsiteUrl(String websiteUrl) {
+        this.websiteUrl = websiteUrl;
     }
 }

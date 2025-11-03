@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -49,7 +50,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -87,7 +88,9 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
     private final AtomicLong fuzzyListenLastAllSyncTime = new AtomicLong(System.currentTimeMillis());
     
     private static final long FUZZY_LISTEN_ALL_SYNC_INTERNAL = 3 * 60 * 1000;
-    
+
+    private ExecutorService fuzzyWatcherExecutor;
+
     private String taskId = "0";
     
     /**
@@ -106,12 +109,14 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
      * start.
      */
     public void start() {
-        ScheduledExecutorService agentExecutor = agent.getExecutor();
-        agentExecutor.submit(() -> {
-            while (!agentExecutor.isShutdown() && !agentExecutor.isTerminated()) {
+        fuzzyWatcherExecutor = Executors.newSingleThreadScheduledExecutor(
+                new NameThreadFactory("com.alibaba.nacos.client.fuzzy-watcher-executor")
+        );
+        fuzzyWatcherExecutor.submit(() -> {
+            while (!fuzzyWatcherExecutor.isShutdown() && !fuzzyWatcherExecutor.isTerminated()) {
                 try {
                     fuzzyListenExecuteBell.poll(5L, TimeUnit.SECONDS);
-                    if (agentExecutor.isShutdown() || agentExecutor.isTerminated()) {
+                    if (fuzzyWatcherExecutor.isShutdown() || fuzzyWatcherExecutor.isTerminated()) {
                         continue;
                     }
                     executeConfigFuzzyListen();
@@ -129,12 +134,15 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
     }
 
     /**
-     * Deregistering it from the NotifyCenter.
+     * Deregistering it from the NotifyCenter and shutting down the executor.
      */
     @Override
     public void shutdown() {
         // deregister subscriber which registered in constructor
         NotifyCenter.deregisterSubscriber(this);
+        if (fuzzyWatcherExecutor != null && !fuzzyWatcherExecutor.isShutdown()) {
+            fuzzyWatcherExecutor.shutdown();
+        }
     }
     
     /**
@@ -384,9 +392,7 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
         for (ConfigFuzzyWatchContext context : contextLists) {
             ExecutorService executorService = agent.getExecutor();
             // Submit task for execution
-            Future<?> future = executorService.submit(() -> {
-                executeFuzzyWatchRequest(context, rpcClient);
-            });
+            Future<?> future = executorService.submit(() -> executeFuzzyWatchRequest(context, rpcClient));
             listenFutures.add(future);
         }
         

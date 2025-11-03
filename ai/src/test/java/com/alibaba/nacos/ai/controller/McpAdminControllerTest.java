@@ -218,7 +218,21 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), isNull(), isNull());
+                any(McpServerBasicInfo.class), isNull(), isNull(), eq(false));
+    }
+
+    @Test
+    void updateMcpServerWithOverrideExisting() throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.MCP_ADMIN_PATH)
+                .param("serverSpecification", MCP_SERVER_SPEC).param("overrideExisting", "true");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
+                any(McpServerBasicInfo.class), isNull(), isNull(), eq(true));
     }
     
     @Test
@@ -232,7 +246,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
-                any(McpServerBasicInfo.class), isNull(), isNull());
+                any(McpServerBasicInfo.class), isNull(), isNull(), eq(false));
     }
     
     @Test

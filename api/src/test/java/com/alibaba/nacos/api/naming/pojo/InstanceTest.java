@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InstanceTest {
@@ -138,6 +140,71 @@ class InstanceTest {
         assertEquals(actual, expected);
         expected.addMetadata("a", "c");
         assertNotEquals(actual, expected);
+    }
+    
+    @Test
+    void testValidateSuccess() throws Exception {
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8080);
+        
+        // 验证应该成功，不会抛出异常
+        instance.validate();
+    }
+    
+    @Test
+    void testValidateFailureWithEmptyIp() {
+        Instance instance = new Instance();
+        instance.setPort(8080);
+        
+        // IP为空，验证应该失败
+        assertThrows(NacosApiException.class, instance::validate);
+    }
+    
+    @Test
+    void testValidateFailureWithInvalidPort() {
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(99999); // 无效端口 > 65535
+        
+        // 端口无效，验证应该失败
+        assertThrows(NacosApiException.class, instance::validate);
+        
+        Instance instance2 = new Instance();
+        instance2.setIp("1.1.1.1");
+        instance2.setPort(-1); // 无效端口 < 0
+        
+        // 端口无效，验证应该失败
+        assertThrows(NacosApiException.class, instance2::validate);
+    }
+    
+    @Test
+    void testFillDefaultValue() throws NacosApiException {
+        Instance instance = new Instance();
+        // 初始时 clusterName 为 null
+        assertNull(instance.getClusterName());
+        
+        // 调用私有方法 fillDefaultValue 是通过 validate 方法间接测试
+        instance.setIp("1.1.1.1");
+        instance.setPort(8080);
+        instance.validate();
+        
+        // clusterName 应该被设置为默认值
+        assertEquals(Constants.DEFAULT_CLUSTER_NAME, instance.getClusterName());
+    }
+    
+    @Test
+    void testFillDefaultValueWithExistingClusterName() throws NacosApiException {
+        Instance instance = new Instance();
+        instance.setClusterName("test-cluster");
+        instance.setIp("1.1.1.1");
+        instance.setPort(8080);
+        
+        // 调用 validate 会触发 fillDefaultValue
+        instance.validate();
+        
+        // clusterName 应该保持原值
+        assertEquals("test-cluster", instance.getClusterName());
     }
     
     private void setInstance(Instance instance) {

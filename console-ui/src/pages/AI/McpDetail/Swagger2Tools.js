@@ -34,7 +34,6 @@ export function extractToolsFromOpenAPI(openapi) {
     for (const path in openapi.paths) {
       const pathItem = openapi.paths[path];
       const operations = getOperations(pathItem);
-      console.log(operations);
       for (const method in operations) {
         const operation = operations[method];
         const tool = convertOperation(path, method, operation, openapi.servers);
@@ -67,7 +66,6 @@ function getOperations(pathItem) {
 }
 
 function convertOperation(path, method, operation, servers) {
-  console.log(operation);
   // Generate a tool name
   let toolName = operation.operationId || '';
   if (!toolName) {
@@ -270,27 +268,21 @@ function allOfHandle(schema) {
 function createRequestTemplate(path, method, operation, servers) {
   let serverURL = servers && servers.length > 0 ? servers[0].url : '';
   let fullUrl = '';
-  try {
-    // Prefer the standard URL API for safe joining; it preserves protocol and slashes correctly
-    fullUrl = new URL(path, serverURL).toString();
-  } catch (e) {
-    // Fallback for very old environments or invalid base: keep protocol double slashes, normalize others
-    if (typeof serverURL === 'string') {
-      serverURL = serverURL.trim();
-      const m = serverURL.match(/^(https?:\/\/)(.*)$/i);
-      if (m) {
-        serverURL = m[1] + m[2].replace(/\/{2,}/g, '/');
-      } else {
-        serverURL = serverURL.replace(/\/{2,}/g, '/');
-      }
-      // Trim trailing slashes to avoid double slashes when concatenating with path
-      serverURL = serverURL.replace(/\/+$/, '');
+  if (typeof serverURL === 'string') {
+    serverURL = serverURL.trim();
+    const m = serverURL.match(/^(https?:\/\/)(.*)$/i);
+    if (m) {
+      serverURL = m[1] + m[2].replace(/\/{2,}/g, '/');
+    } else {
+      serverURL = serverURL.replace(/\/{2,}/g, '/');
     }
-    // Ensure path starts with a single slash and collapse duplicates
-    const normalizedPath =
-      typeof path === 'string' ? ('/' + path).replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
-    fullUrl = serverURL + normalizedPath;
+    // Trim trailing slashes to avoid double slashes when concatenating with path
+    serverURL = serverURL.replace(/\/+$/, '');
   }
+  // Ensure path starts with a single slash and collapse duplicates
+  const normalizedPath =
+    typeof path === 'string' ? ('/' + path).replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
+  fullUrl = serverURL + normalizedPath;
 
   const template = {
     url: fullUrl,

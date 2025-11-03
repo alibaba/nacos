@@ -404,7 +404,7 @@ public class ConfigMigrateService {
                 changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), targetTenant);
         try {
             CONFIG_MIGRATE_FLAG.set(true);
-            if (changedConfigAllInfo.getCreateUser().equals(NAMESPACE_MIGRATE_SRC_USER)) {
+            if (NAMESPACE_MIGRATE_SRC_USER.equals(changedConfigAllInfo.getCreateUser())) {
                 if (targetConfigAllInfo == null) {
                     configInfoPersistService.removeConfigInfo(changedConfigAllInfo.getDataId(),
                             changedConfigAllInfo.getGroup(), tenant, null, NAMESPACE_MIGRATE_SRC_USER);

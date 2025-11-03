@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.remote.request;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+import com.alibaba.nacos.api.common.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RequestMetaTest {
     
@@ -85,5 +88,45 @@ class RequestMetaTest {
         assertEquals(AbilityStatus.NOT_SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
         requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
         assertEquals(AbilityStatus.SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+    }
+    
+    @Test
+    void testExtractAppLabels() {
+        Map<String, String> labels = new HashMap<>(requestMeta.getLabels());
+        labels.put(Constants.APP_CONN_PREFIX + "testKey", "testValue");
+        labels.put(Constants.APP_CONN_PREFIX + "anotherKey", "anotherValue");
+        labels.put("no_app_prefix_key", "aaa");
+        requestMeta.setLabels(labels);
+        
+        Map<String, String> appLabels = requestMeta.getAppLabels();
+        assertNotNull(appLabels);
+        assertEquals(5, appLabels.size()); // appname, client_version_key, client_ip + 2 custom keys
+        assertEquals("testValue", appLabels.get("testKey"));
+        assertEquals("anotherValue", appLabels.get("anotherKey"));
+    }
+    
+    @Test
+    void testExtractAppLabelsEmptyAndBlankValues() {
+        Map<String, String> labels = new HashMap<>(requestMeta.getLabels());
+        // This should not be included - no value after prefix
+        labels.put(Constants.APP_CONN_PREFIX, "value");
+        // This should not be included - blank value
+        labels.put(Constants.APP_CONN_PREFIX + "blankValue", "   ");
+        // This should not be included - empty value
+        labels.put(Constants.APP_CONN_PREFIX + "emptyValue", "");
+        // This should be included
+        labels.put(Constants.APP_CONN_PREFIX + "validKey", "validValue");
+        
+        requestMeta.setLabels(labels);
+        
+        Map<String, String> appLabels = requestMeta.getAppLabels();
+        assertNotNull(appLabels);
+        assertEquals(4, appLabels.size()); // appname, client_version_key, client_ip + 1 valid custom key
+        assertEquals("validValue", appLabels.get("validKey"));
+        assertTrue(appLabels.containsKey("validKey"));
+        // Keys with blank or empty values should not be included
+        assertFalse(appLabels.containsKey("blankValue"));
+        assertFalse(appLabels.containsKey("emptyValue"));
+        assertFalse(appLabels.containsKey("")); // key with just prefix
     }
 }

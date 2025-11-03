@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.auth;
 
+import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
+import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -35,9 +38,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.lang.reflect.Method;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -55,14 +56,20 @@ class GrpcProtocolAuthServiceTest {
     
     private AbstractNamingRequest namingRequest;
     
+    private AbstractMcpRequest mcpRequest;
+
+    private AbstractAgentRequest agentRequest;
+
     private GrpcProtocolAuthService protocolAuthService;
-    
+
     @BeforeEach
     void setUp() throws Exception {
         protocolAuthService = new GrpcProtocolAuthService(authConfig);
         protocolAuthService.initialize();
         mockConfigRequest();
         mockNamingRequest();
+        mockMcpRequest();
+        mockAgentRequest();
     }
     
     private void mockConfigRequest() {
@@ -78,6 +85,20 @@ class GrpcProtocolAuthServiceTest {
         namingRequest.setNamespace("testNNs");
         namingRequest.setGroupName("testNG");
         namingRequest.setServiceName("testS");
+    }
+
+    private void mockMcpRequest() {
+        mcpRequest = new AbstractMcpRequest() {
+        };
+        mcpRequest.setNamespaceId("testNNs");
+        mcpRequest.setMcpName("testS");
+    }
+
+    private void mockAgentRequest() {
+        agentRequest = new AbstractAgentRequest() {
+        };
+        agentRequest.setNamespaceId("testNNs");
+        agentRequest.setAgentName("testS");
     }
     
     @Test
@@ -130,6 +151,30 @@ class GrpcProtocolAuthServiceTest {
         assertEquals("testD", actual.getName());
         assertEquals("testCNs", actual.getNamespaceId());
         assertEquals("testCG", actual.getGroup());
+        assertNotNull(actual.getProperties());
+    }
+
+    @Test
+    @Secured(signType = SignType.AI)
+    void testParseResourceWithMcpType() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithMcpType");
+        Resource actual = protocolAuthService.parseResource(mcpRequest, secured);
+        assertEquals(SignType.AI, actual.getType());
+        assertEquals(mcpRequest.getMcpName(), actual.getName());
+        assertEquals(mcpRequest.getNamespaceId(), actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertNotNull(actual.getProperties());
+    }
+
+    @Test
+    @Secured(signType = SignType.AI)
+    void testParseResourceWithAgentType() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithAgentType");
+        Resource actual = protocolAuthService.parseResource(agentRequest, secured);
+        assertEquals(SignType.AI, actual.getType());
+        assertEquals(agentRequest.getAgentName(), actual.getName());
+        assertEquals(agentRequest.getNamespaceId(), actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
         assertNotNull(actual.getProperties());
     }
     

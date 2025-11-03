@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -32,7 +33,9 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,7 +55,7 @@ public abstract class ConfigTransportClient {
     
     String tenant;
     
-    private ScheduledExecutorService executor;
+    private ThreadPoolExecutor executor;
     
     final ConfigServerListManager serverListManager;
     
@@ -61,11 +64,19 @@ public abstract class ConfigTransportClient {
     private int maxRetry = 3;
     
     private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
-    
+
+    private ScheduledExecutorService loginScheduledExecutor;
+
     protected SecurityProxy securityProxy;
-    
+
+    /**
+     * Shut down to ensure resource release.
+     */
     public void shutdown() throws NacosException {
         securityProxy.shutdown();
+        if (loginScheduledExecutor != null && !loginScheduledExecutor.isShutdown()) {
+            loginScheduledExecutor.shutdown();
+        }
     }
     
     public ConfigTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
@@ -123,11 +134,11 @@ public abstract class ConfigTransportClient {
         maxRetry = ConvertUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.MAX_RETRY)), Constants.MAX_RETRY);
     }
     
-    public void setExecutor(ScheduledExecutorService executor) {
+    public void setExecutor(ThreadPoolExecutor executor) {
         this.executor = executor;
     }
     
-    public ScheduledExecutorService getExecutor() {
+    public ThreadPoolExecutor getExecutor() {
         return this.executor;
     }
     
@@ -136,7 +147,9 @@ public abstract class ConfigTransportClient {
      */
     public void start() throws NacosException {
         securityProxy.login(this.properties);
-        this.executor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
+        this.loginScheduledExecutor =
+                Executors.newSingleThreadScheduledExecutor(new NameThreadFactory("com.alibaba.nacos.client.login-executor"));
+        this.loginScheduledExecutor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         startInternal();
     }

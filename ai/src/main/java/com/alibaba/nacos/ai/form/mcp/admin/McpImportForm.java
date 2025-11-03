@@ -47,7 +47,28 @@ public class McpImportForm extends McpForm {
     
     private boolean validateOnly = false;
     
+    /**
+     * Whether to skip invalid servers when executing import.
+     */
+    private boolean skipInvalid = false;
+    
     private String[] selectedServers;
+    
+    /**
+     * Optional start cursor for URL-based import pagination.
+     */
+    private String cursor;
+    
+    /**
+     * Optional page size for URL-based import (items per page).
+     */
+    private Integer limit;
+    
+    /**
+     * Optional fuzzy search keyword for registry import listing.
+     * Only used when importType is 'url'.
+     */
+    private String search;
     
     @Override
     public void validate() throws NacosApiException {
@@ -60,7 +81,8 @@ public class McpImportForm extends McpForm {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'data' is not present");
         }
-        if (!IMPORT_TYPE_JSON.equals(importType) && !IMPORT_TYPE_URL.equals(importType) && !IMPORT_TYPE_FILE.equals(importType)) {
+        if (!IMPORT_TYPE_JSON.equals(importType) && !IMPORT_TYPE_URL.equals(importType)
+                && !IMPORT_TYPE_FILE.equals(importType)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "importType must be one of: json, url, file");
         }
@@ -98,11 +120,43 @@ public class McpImportForm extends McpForm {
         this.validateOnly = validateOnly;
     }
     
+    public boolean isSkipInvalid() {
+        return skipInvalid;
+    }
+    
+    public void setSkipInvalid(boolean skipInvalid) {
+        this.skipInvalid = skipInvalid;
+    }
+    
     public String[] getSelectedServers() {
         return selectedServers;
     }
     
     public void setSelectedServers(String[] selectedServers) {
         this.selectedServers = selectedServers;
+    }
+    
+    public String getCursor() {
+        return cursor;
+    }
+    
+    public void setCursor(String cursor) {
+        this.cursor = cursor;
+    }
+    
+    public Integer getLimit() {
+        return limit;
+    }
+    
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+    
+    public String getSearch() {
+        return search;
+    }
+    
+    public void setSearch(String search) {
+        this.search = search;
     }
 }

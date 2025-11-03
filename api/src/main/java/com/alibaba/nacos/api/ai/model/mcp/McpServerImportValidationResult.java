@@ -62,6 +62,16 @@ public class McpServerImportValidationResult implements Serializable {
      * Overall validation errors.
      */
     private List<String> errors;
+
+    /**
+     * Cursor for fetching next page (URL import only). Null if no more pages.
+     */
+    private String nextCursor;
+
+    /**
+     * Whether there are more pages available to load.
+     */
+    private boolean hasMore;
     
     public boolean isValid() {
         return valid;
@@ -117,5 +127,21 @@ public class McpServerImportValidationResult implements Serializable {
     
     public void setErrors(List<String> errors) {
         this.errors = errors;
+    }
+
+    public String getNextCursor() {
+        return nextCursor;
+    }
+
+    public void setNextCursor(String nextCursor) {
+        this.nextCursor = nextCursor;
+    }
+
+    public boolean isHasMore() {
+        return hasMore;
+    }
+
+    public void setHasMore(boolean hasMore) {
+        this.hasMore = hasMore;
     }
 }

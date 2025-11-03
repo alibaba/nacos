@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,20 @@ package com.alibaba.nacos.api.ai.model.mcp.registry;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Repository.
+ * Repository per components.schemas.Repository.
+ *
  * @author xinluo
  */
 public class Repository {
-    @JsonProperty("url")
+
     private String url;
 
-    @JsonProperty("source")
     private String source;
 
-    @JsonProperty("id")
     private String id;
+
+    @JsonProperty("subfolder")
+    private String subfolder;
 
     public String getUrl() {
         return url;
@@ -54,5 +56,13 @@ public class Repository {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getSubfolder() {
+        return subfolder;
+    }
+
+    public void setSubfolder(String subfolder) {
+        this.subfolder = subfolder;
     }
 }

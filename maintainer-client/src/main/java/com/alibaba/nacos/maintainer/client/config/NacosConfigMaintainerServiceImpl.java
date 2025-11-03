@@ -86,7 +86,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("desc", description);
         params.put("configTags", configTags);
         RequestResource resource = buildRequestResource(namespaceId, groupName, dataId);
-        HttpRequest.Builder builder = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
+        HttpRequest.Builder builder = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/metadata").setParamValue(params);
         HttpRequest httpRequest = builder.build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);

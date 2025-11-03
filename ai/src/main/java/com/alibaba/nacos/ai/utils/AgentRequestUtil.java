@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -29,6 +30,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Agent and AgentCard request util.
@@ -70,6 +73,23 @@ public class AgentRequestUtil {
         validateAgentCardField("name", agentCard.getName());
         validateAgentCardField("version", agentCard.getVersion());
         validateAgentCardField("protocolVersion", agentCard.getProtocolVersion());
+        validateAgentCardField("preferredTransport", agentCard.getPreferredTransport());
+        validateAgentCardField("url", agentCard.getUrl());
+        if (null == agentCard.getDescription()) {
+            agentCard.setDescription(StringUtils.EMPTY);
+        }
+        if (null == agentCard.getCapabilities()) {
+            agentCard.setCapabilities(new AgentCapabilities());
+        }
+        if (null == agentCard.getDefaultInputModes()) {
+            agentCard.setDefaultInputModes(List.of());
+        }
+        if (null == agentCard.getDefaultOutputModes()) {
+            agentCard.setDefaultOutputModes(List.of());
+        }
+        if (null == agentCard.getSkills()) {
+            agentCard.setSkills(List.of());
+        }
     }
     
     /**

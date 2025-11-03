@@ -69,6 +69,13 @@ public class McpServerBasicInfo {
     private boolean enabled = true;
     
     /**
+     * Current lifecycle status of MCP server, should be one of
+     * {@link AiConstants.Mcp#MCP_STATUS_ACTIVE} or {@link AiConstants.Mcp#MCP_STATUS_DEPRECATED}.
+     * Default is {@link AiConstants.Mcp#MCP_STATUS_ACTIVE}.
+     */
+    private String status = AiConstants.Mcp.MCP_STATUS_ACTIVE;
+    
+    /**
      * Auto discovery capabilities by Nacos. No need to set when create or update Mcp server.
      */
     private List<McpCapability> capabilities;
@@ -175,5 +182,13 @@ public class McpServerBasicInfo {
 
     public void setPackages(List<Package> packages) {
         this.packages = packages;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

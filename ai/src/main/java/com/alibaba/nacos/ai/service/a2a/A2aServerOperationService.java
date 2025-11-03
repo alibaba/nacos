@@ -34,6 +34,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -91,23 +92,29 @@ public class A2aServerOperationService {
      * @throws NacosException nacos exception
      */
     public void registerAgent(AgentCard agentCard, String namespaceId, String registrationType) throws NacosException {
-        // 1. register agent's info
-        AgentCardVersionInfo agentCardVersionInfo = AgentCardUtil.buildAgentCardVersionInfo(agentCard, registrationType,
-                true);
-        ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, namespaceId);
-        ConfigRequestInfo versionConfigRequest = new ConfigRequestInfo();
-        versionConfigRequest.setUpdateForExist(Boolean.FALSE);
-        configOperationService.publishConfig(configForm, versionConfigRequest, null);
-        
-        // 2. register agent's version info
-        AgentCardDetailInfo agentCardDetailInfo = AgentCardUtil.buildAgentCardDetailInfo(agentCard, registrationType);
-        ConfigForm configFormVersion = transferAgentInfoToConfigForm(agentCardDetailInfo, namespaceId);
-        ConfigRequestInfo agentCardConfigRequest = new ConfigRequestInfo();
-        agentCardConfigRequest.setUpdateForExist(Boolean.FALSE);
-        long startOperationTime = System.currentTimeMillis();
-        configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
-        
-        syncEffectService.toSync(configFormVersion, startOperationTime);
+        try {
+            // 1. register agent's info
+            AgentCardVersionInfo agentCardVersionInfo = AgentCardUtil.buildAgentCardVersionInfo(agentCard,
+                    registrationType, true);
+            ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, namespaceId);
+            ConfigRequestInfo versionConfigRequest = new ConfigRequestInfo();
+            versionConfigRequest.setUpdateForExist(Boolean.FALSE);
+            configOperationService.publishConfig(configForm, versionConfigRequest, null);
+            
+            // 2. register agent's version info
+            AgentCardDetailInfo agentCardDetailInfo = AgentCardUtil.buildAgentCardDetailInfo(agentCard,
+                    registrationType);
+            ConfigForm configFormVersion = transferAgentInfoToConfigForm(agentCardDetailInfo, namespaceId);
+            ConfigRequestInfo agentCardConfigRequest = new ConfigRequestInfo();
+            agentCardConfigRequest.setUpdateForExist(Boolean.FALSE);
+            long startOperationTime = System.currentTimeMillis();
+            configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
+            
+            syncEffectService.toSync(configFormVersion, startOperationTime);
+        } catch (ConfigAlreadyExistsException e) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    String.format("AgentCard name %s already exist", agentCard.getName()));
+        }
     }
     
     /**
@@ -244,15 +251,14 @@ public class A2aServerOperationService {
      */
     public Page<AgentCardVersionInfo> listAgents(String namespaceId, String agentName, String search, int pageNo,
             int pageSize) throws NacosException {
-        String encodedName = agentIdCodecHolder.encode(agentName);
         
         String dataId;
-        if (StringUtils.isEmpty(encodedName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
+        if (StringUtils.isEmpty(agentName) || Constants.A2A.SEARCH_BLUR.equalsIgnoreCase(search)) {
             search = Constants.A2A.SEARCH_BLUR;
-            dataId = Constants.ALL_PATTERN + encodedName + Constants.ALL_PATTERN;
+            dataId = Constants.ALL_PATTERN + agentIdCodecHolder.encodeForSearch(agentName) + Constants.ALL_PATTERN;
         } else {
             search = Constants.A2A.SEARCH_ACCURATE;
-            dataId = encodedName;
+            dataId = agentIdCodecHolder.encode(agentName);
         }
         
         Page<ConfigInfo> configInfoPage = configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId,
@@ -324,6 +330,9 @@ public class A2aServerOperationService {
         }
         if (AiConstants.A2a.A2A_ENDPOINT_TYPE_SERVICE.equalsIgnoreCase(registrationType)) {
             injectEndpoint(result, namespaceId);
+        }
+        if (agentCardVersionInfo.getLatestPublishedVersion().equals(result.getVersion())) {
+            result.setLatestVersion(true);
         }
         return result;
     }

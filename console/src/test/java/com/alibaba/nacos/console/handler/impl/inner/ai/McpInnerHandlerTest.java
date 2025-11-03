@@ -85,9 +85,17 @@ class McpInnerHandlerTest {
     @Test
     void updateMcpServer() throws NacosException {
         mcpInnerHandler.updateMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, true, new McpServerBasicInfo(),
-                new McpToolSpecification(), new McpEndpointSpec());
+                new McpToolSpecification(), new McpEndpointSpec(), false);
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class));
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class), eq(false));
+    }
+
+    @Test
+    void updateMcpServerWithOverrideExisting() throws NacosException {
+        mcpInnerHandler.updateMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, true, new McpServerBasicInfo(),
+                new McpToolSpecification(), new McpEndpointSpec(), true);
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class), eq(true));
     }
     
     @Test

@@ -97,11 +97,12 @@ public class McpProxy {
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
+     * @param overrideExisting       if replace all the instances when update the mcp server
      * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpHandler.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification, endpointSpecification);
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
+        mcpHandler.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification, endpointSpecification, overrideExisting);
     }
     
     /**

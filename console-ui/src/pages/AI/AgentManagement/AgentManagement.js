@@ -421,28 +421,67 @@ class AgentManagement extends React.Component {
             )}
           />
           <Table.Column
-            title={locale.ip || 'IP'}
-            dataIndex="url"
-            cell={value => (
-              <span
-                title={value}
-                style={{
-                  maxWidth: 200,
-                  display: 'inline-block',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {value || '--'}
-              </span>
-            )}
+            title="能力列表"
+            dataIndex="capabilities"
+            cell={(value, index, record) => {
+              const capabilities = [];
+              if (record.capabilities) {
+                if (record.capabilities.streaming) {
+                  capabilities.push('流式传输');
+                }
+                if (record.capabilities.stateTransitionHistory) {
+                  capabilities.push('状态历史');
+                }
+                if (record.capabilities.pushNotifications) {
+                  capabilities.push('推送通知');
+                }
+              }
+              return capabilities.length > 0 ? (
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {capabilities.map((cap, index) => (
+                    <Tag key={index} type="primary" size="small">
+                      {cap}
+                    </Tag>
+                  ))}
+                </div>
+              ) : (
+                '--'
+              );
+            }}
           />
           <Table.Column
-            title={locale.updateTime || 'Update Time'}
+            title="技能列表"
+            dataIndex="skills"
             cell={(value, index, record) => {
-              // 简化时间显示逻辑，直接从versionDetails获取最新版本的时间
-              const latestVersion = record.versionDetails?.[0];
-              return latestVersion?.updatedAt ? this.formatTime(latestVersion.updatedAt) : '--';
+              if (!record.skills || !Array.isArray(record.skills) || record.skills.length === 0) {
+                return '--';
+              }
+
+              const skillNames = record.skills
+                .map(skill => (typeof skill === 'object' && skill !== null ? skill.name : skill))
+                .filter(name => name);
+
+              if (skillNames.length === 0) {
+                return '--';
+              }
+
+              const displaySkills = skillNames.slice(0, 3);
+              const remainingCount = skillNames.length > 3 ? skillNames.length - 3 : 0;
+
+              return (
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {displaySkills.map((skill, index) => (
+                    <Tag key={index} type="normal" size="small">
+                      {skill}
+                    </Tag>
+                  ))}
+                  {remainingCount > 0 && (
+                    <Tag type="normal" size="small">
+                      +{remainingCount}
+                    </Tag>
+                  )}
+                </div>
+              );
             }}
           />
           <Table.Column

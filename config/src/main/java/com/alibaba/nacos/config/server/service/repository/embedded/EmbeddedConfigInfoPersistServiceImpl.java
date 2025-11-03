@@ -229,7 +229,10 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
             }
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
-            databaseOperate.blockUpdate(consumer);
+            boolean result = databaseOperate.blockUpdate(consumer);
+            if (!result) {
+                return new ConfigOperateResult(false);
+            }
             return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
         } finally {

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ErrorCodeTest {
     
@@ -37,5 +38,18 @@ class ErrorCodeTest {
         }
         
         assertEquals(errorCodes.length, codeSet.size());
+    }
+    
+    @Test
+    void testGetErrorCode() {
+        // 测试存在的错误码
+        assertEquals(ErrorCode.SUCCESS, ErrorCode.getErrorCode("SUCCESS"));
+        assertEquals(ErrorCode.PARAMETER_MISSING, ErrorCode.getErrorCode("PARAMETER_MISSING"));
+        assertEquals(ErrorCode.SERVER_ERROR, ErrorCode.getErrorCode("SERVER_ERROR"));
+        
+        // 测试不存在的错误码
+        assertNull(ErrorCode.getErrorCode("NON_EXISTENT_ERROR"));
+        assertNull(ErrorCode.getErrorCode(null));
+        assertNull(ErrorCode.getErrorCode(""));
     }
 }

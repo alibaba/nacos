@@ -161,7 +161,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         Boolean isLatest = mcpServerBasicInfo.getVersionDetail().getIs_latest();
         boolean isPublish = isLatest != null && isLatest;
         mcpServerOperationService.updateMcpServer(namespaceId, isPublish, mcpServerBasicInfo, toolSpecification,
-                endpointSpecification);
+                endpointSpecification, Boolean.FALSE);
         
     }
     
