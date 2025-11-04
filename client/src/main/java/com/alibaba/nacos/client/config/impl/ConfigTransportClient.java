@@ -145,6 +145,7 @@ public abstract class ConfigTransportClient {
     /**
      * base start client.
      */
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void start() throws NacosException {
         securityProxy.login(this.properties);
         this.loginScheduledExecutor =

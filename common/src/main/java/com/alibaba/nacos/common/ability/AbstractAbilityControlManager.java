@@ -54,8 +54,6 @@ public abstract class AbstractAbilityControlManager {
     
     /**
      * initialize abilities.
-     *
-     * @return abilities
      */
     private void initAbilityTable() {
         LOGGER.info("Ready to get current node abilities...");

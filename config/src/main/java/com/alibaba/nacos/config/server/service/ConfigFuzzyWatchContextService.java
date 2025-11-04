@@ -198,7 +198,6 @@ public class ConfigFuzzyWatchContextService {
      * Matches the client effective group keys based on the specified group key pattern, client IP, and tag.
      *
      * @param groupKeyPattern The pattern to match group keys.
-     * @return A set of group keys that match the pattern and are effective for the client.
      */
     private void initMatchGroupKeys(String groupKeyPattern) throws NacosException {
         if (matchedGroupKeysMap.containsKey(groupKeyPattern)) {

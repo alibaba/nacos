@@ -68,14 +68,14 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     }
     
     /**
-     * byuld SyncNotifyRequest.
+     * Build SyncNotifyRequest.
      *
      * @param pattern      pattern
      * @param syncType     syncType
      * @param contexts     contexts
      * @param totalBatch   totalBatch
      * @param currentBatch currentBatch
-     * @return
+     * @return A new NamingFuzzyWatchSyncRequest instance
      */
     public static NamingFuzzyWatchSyncRequest buildSyncNotifyRequest(String pattern, String syncType,
             Set<Context> contexts, int totalBatch, int currentBatch) {
