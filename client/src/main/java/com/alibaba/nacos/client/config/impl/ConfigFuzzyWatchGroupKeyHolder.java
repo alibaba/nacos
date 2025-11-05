@@ -108,6 +108,7 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
     /**
      * start.
      */
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void start() {
         fuzzyWatcherExecutor = Executors.newSingleThreadScheduledExecutor(
                 new NameThreadFactory("com.alibaba.nacos.client.fuzzy-watcher-executor")

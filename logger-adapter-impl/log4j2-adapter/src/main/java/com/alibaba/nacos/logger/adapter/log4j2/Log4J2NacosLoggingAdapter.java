@@ -48,8 +48,6 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
     
-    private static final String NACOS_LOG4J2_PLUGIN_PACKAGE = "com.alibaba.nacos.client.logging.log4j2";
-    
     private static final String APPENDER_MARK = "ASYNC_NAMING";
     
     private static final String LOG4J2_CLASSES = "org.apache.logging.slf4j.Log4jLogger";
@@ -101,7 +99,6 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
         
         // load and start nacos configuration
         Configuration configuration = loadConfiguration(loggerContext, location);
-        configuration.getPluginPackages().add(NACOS_LOG4J2_PLUGIN_PACKAGE);
         configuration.start();
         
         // append loggers and appenders to contextConfiguration

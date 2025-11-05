@@ -91,7 +91,7 @@
             <AppenderRef ref="NAMING_LOG_FILE"/>
         </Async>
         
-        <RollingFile name="AI_LOG_FILE" fileName="${logPath}/nacos/naming.log"
+        <RollingFile name="AI_LOG_FILE" fileName="${logPath}/nacos/ai.log"
             filePattern="${logPath}/nacos/ai.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
@@ -151,5 +151,9 @@
             additivity="false">
             <AppenderRef ref="ASYNC_AI"/>
         </Logger>
+
+        <Root level="${nacosClientProperty:root.log.level:-WARN}">
+            <AppenderRef ref="ASYNC_CONFIG"/>
+        </Root>
     </Loggers>
 </Configuration>

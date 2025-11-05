@@ -27,7 +27,7 @@ public interface FuzzyWatchEventWatcher {
     
     /**
      * executor to notify event, using nacos internal notifier if null  .
-     * @return
+     * @return The executor for event notification
      */
     Executor getExecutor();
     

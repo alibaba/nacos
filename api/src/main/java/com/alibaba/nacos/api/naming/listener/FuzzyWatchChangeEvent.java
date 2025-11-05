@@ -68,7 +68,7 @@ public class FuzzyWatchChangeEvent implements Event {
      * the sync type that trigger this changed,contains {"FUZZY_WATCH_INIT_NOTIFY","FUZZY_WATCH_RESOURCE_CHANGED",
      * "FUZZY_WATCH_DIFF_SYNC_NOTIFY"}.
      *
-     * @return
+     * @return The sync type that triggered this change
      */
     public String getSyncType() {
         return syncType;
