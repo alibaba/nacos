@@ -122,5 +122,10 @@
             additivity="false">
             <AppenderRef ref="ASYNC_NAMING"/>
         </Logger>
+        
+        <Logger name="com.alibaba.nacos.client.ai" level="${nacosClientProperty:com.alibaba.nacos.ai.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="ASYNC_AI"/>
+        </Logger>
     </Loggers>
 </Configuration>
