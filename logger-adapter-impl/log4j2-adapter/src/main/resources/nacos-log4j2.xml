@@ -122,5 +122,9 @@
             additivity="false">
             <AppenderRef ref="ASYNC_NAMING"/>
         </Logger>
+
+        <Root level="${nacosClientProperty:root.log.level:-WARN}">
+          <AppenderRef ref="ASYNC_CONFIG"/>
+        </Root>
     </Loggers>
 </Configuration>
