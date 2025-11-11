@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,13 +36,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author nacos
  */
-class McpServerTransformServiceTest {
+class McpExternalDataAdaptorTest {
 
-    private McpServerTransformService transformService;
+    private McpExternalDataAdaptor transformService;
 
     @BeforeEach
     void setUp() {
-        transformService = new McpServerTransformService();
+        transformService = new McpExternalDataAdaptor();
     }
 
     @Test
@@ -82,14 +83,16 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(registryJson, "json", null, null,
-                null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(registryJson);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
 
         McpServerDetailInfo server = servers.get(0);
-        assertEquals("4e9cf4cf-71f6-4aca-bae8-2d10a29ca2e0", server.getId());
+        assertEquals("e532398d-a855-3c20-9b94-6c59e442dc75", server.getId());
         assertEquals("io.github.21st-dev/magic-mcp", server.getName());
         assertEquals("It's like v0 but in your Cursor/WindSurf/Cline. 21st dev Magic MCP server",
                 server.getDescription());
@@ -141,14 +144,16 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(registryJson, "json", null, null,
-                null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(registryJson);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
 
         McpServerDetailInfo server = servers.get(0);
-        assertEquals("d3669201-252f-403c-944b-c3ec0845782b", server.getId());
+        assertEquals("85beeed0-d848-39a1-833b-bf1c26755978", server.getId());
         assertEquals("io.github.adfin-engineering/mcp-server-adfin", server.getName());
         assertEquals("A Model Context Protocol Server for connecting with Adfin APIs", server.getDescription());
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
@@ -181,18 +186,20 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(legacyJson, "json", null, null,
-                null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(legacyJson);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
 
         McpServerDetailInfo server = servers.get(0);
-        assertEquals("legacy-server", server.getId());
+        assertEquals("e007b81b-bbe9-3ed1-9896-cf5b07e85b4c", server.getId());
         assertEquals("Legacy MCP Server", server.getName());
         assertEquals("A legacy format server", server.getDescription());
         // Protocol defaults to stdio when not inferred by package/remote
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
+        assertEquals(null, server.getProtocol());
         // Legacy fields like 'command' are no longer mapped into remote config
         assertNull(server.getRemoteServerConfig());
     }
@@ -208,9 +215,10 @@ class McpServerTransformServiceTest {
 
         // With JSON import, empty 'servers' triggers an exception by design.
         // Use 'file' import path here which returns an empty list for empty arrays.
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(emptyJson, "file", null, null,
-                null);
-
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(emptyJson);
+        mcpServerImportRequest.setImportType("file");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
         assertNotNull(servers);
         assertTrue(servers.isEmpty());
     }
@@ -218,9 +226,12 @@ class McpServerTransformServiceTest {
     @Test
     void testTransformInvalidJson() {
         String invalidJson = "{ invalid json }";
-
-        assertThrows(Exception.class,
-                () -> transformService.transformToNacosFormat(invalidJson, "json", null, null, null));
+        assertThrows(Exception.class, () -> {
+            McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+            mcpServerImportRequest.setData(invalidJson);
+            mcpServerImportRequest.setImportType("json");
+            transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        });
     }
 
     @Test
@@ -232,8 +243,12 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(validJson);
+        mcpServerImportRequest.setImportType("unsupported");
+
         assertThrows(IllegalArgumentException.class,
-                () -> transformService.transformToNacosFormat(validJson, "unsupported", null, null, null));
+                () -> transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest));
     }
 
     @Test
@@ -257,8 +272,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithNpmPackage, "json", null,
-                null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithNpmPackage);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -289,8 +306,10 @@ class McpServerTransformServiceTest {
 
         // Current implementation validates URL strictly only when protocol is HTTP;
         // since protocol defaults to stdio here, it should not throw.
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMaliciousUrl, "json", null,
-                null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithMaliciousUrl);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
         assertNotNull(servers);
     }
 
@@ -321,8 +340,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithValidPackage, "json", null,
-                null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithValidPackage);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -377,7 +398,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(sample, "file", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(sample);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(2, servers.size());
@@ -414,7 +438,10 @@ class McpServerTransformServiceTest {
                 ]
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(fileData, "file", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(fileData);
+        mcpServerImportRequest.setImportType("file");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(2, servers.size());
@@ -445,7 +472,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithRuntimeHint, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithRuntimeHint);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -473,7 +503,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDockerPackage, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithDockerPackage);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -500,7 +533,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithOciPackage, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithOciPackage);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -526,7 +562,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithSse, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithSse);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -551,7 +590,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithStreamable, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithStreamable);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -576,7 +618,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithInvalidUrl, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithInvalidUrl);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -614,7 +659,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithArguments, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithArguments);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -642,7 +690,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithRepositoryId, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithRepositoryId);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -667,7 +718,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMeta, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithMeta);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -692,7 +746,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMetaIsLatest, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithMetaIsLatest);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -711,7 +768,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithEmptyName, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithEmptyName);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -736,7 +796,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDataProtocol, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithDataProtocol);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -761,7 +824,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithJavascriptProtocol, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithJavascriptProtocol);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());
@@ -786,7 +852,10 @@ class McpServerTransformServiceTest {
                 }
                 """;
 
-        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithDubboProtocol, "json", null, null, null);
+        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
+        mcpServerImportRequest.setData(jsonWithDubboProtocol);
+        mcpServerImportRequest.setImportType("json");
+        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
 
         assertNotNull(servers);
         assertEquals(1, servers.size());

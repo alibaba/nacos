@@ -32,6 +32,7 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
+        // Repository is empty object
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         McpRegistryServerDetail mcpRegistryServerDetail = new McpRegistryServerDetail();
         mcpRegistryServerDetail.setName("testRegistryServer");
@@ -39,17 +40,14 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         mcpRegistryServerDetail.setRepository(new Repository());
         mcpRegistryServerDetail.setVersion("1.0.0");
         mcpRegistryServerDetail.setSchema("http://example.com/schema");
-        
+
         // Create test packages
         Package pkg = new Package();
         pkg.setIdentifier("test-package");
         pkg.setVersion("1.0.0");
         mcpRegistryServerDetail.setPackages(Arrays.asList(pkg));
-        
-        Meta meta = new Meta();
-        OfficialMeta official = new OfficialMeta();
-        official.setPublishedAt("2022-01-01T00:00:00Z");
-        meta.setOfficial(official);
+
+        McpRegistryServerDetail.Meta meta = new McpRegistryServerDetail.Meta();
         mcpRegistryServerDetail.setMeta(meta);
         mcpRegistryServerDetail.setRemotes(Collections.singletonList(new Remote()));
         mcpRegistryServerDetail.getRemotes().get(0).setUrl("127.0.0.1:8848/sse");
@@ -87,7 +85,6 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertEquals(1, mcpRegistryServerDetail.getPackages().size());
         assertEquals("test-package", mcpRegistryServerDetail.getPackages().get(0).getIdentifier());
         assertEquals("1.0.0", mcpRegistryServerDetail.getPackages().get(0).getVersion());
-        assertEquals("2022-01-01T00:00:00Z", mcpRegistryServerDetail.getMeta().getOfficial().getPublishedAt());
         assertNotNull(mcpRegistryServerDetail.getRemotes());
         assertEquals(1, mcpRegistryServerDetail.getRemotes().size());
         assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getType());

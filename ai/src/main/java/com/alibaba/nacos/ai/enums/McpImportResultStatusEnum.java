@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,36 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.utils;
-
-import com.alibaba.nacos.ai.constant.Constants;
+package com.alibaba.nacos.ai.enums;
 
 /**
- * Mcp protocol related utils.
- * @author xinluo 
+ * McpImportResultStatusEnum.
+ * @author xinluo
  */
-public class McpProtocolUtils {
-    
-    public static boolean isProtocolNeedTranslator(String protocol) {
-        return Constants.PROTOCOL_TYPE_HTTP.equals(protocol) || Constants.PROTOCOL_TYPE_HTTPS.equals(protocol);
+public enum McpImportResultStatusEnum {
+
+    /**
+     * SKIPPED.
+     */
+    SKIPPED("skipped"),
+
+    /**
+     * FAILED.
+     */
+    FAILED("failed"),
+
+    /**
+     * SUCCESS.
+     */
+    SUCCESS("success");
+
+    private final String name;
+
+    McpImportResultStatusEnum(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 }

@@ -17,7 +17,11 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
+import com.alibaba.nacos.ai.enums.ExternalDataTypeEnum;
+import com.alibaba.nacos.ai.enums.McpImportResultStatusEnum;
+import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -28,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerValidationItem;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,8 +42,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * MCP Server Import Service.
@@ -48,34 +53,23 @@ import java.util.stream.Collectors;
  */
 @Service
 public class McpServerImportService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(McpServerImportService.class);
-    
-    /**
-     * Maximum servers per import batch.
-     */
-    @SuppressWarnings("unused")
-    private static final int MAX_IMPORT_BATCH_SIZE = 100;
-    
-    private final McpServerTransformService transformService;
-    
+
+    private final McpExternalDataAdaptor transformService;
+
     private final McpServerValidationService validationService;
-    
+
     private final McpServerOperationService operationService;
-    
-    /**
-     * Import type value for URL source to avoid magic string usage.
-     */
-    @SuppressWarnings("unused")
-    private static final String IMPORT_TYPE_URL = "url";
-    
-    public McpServerImportService(McpServerTransformService transformService,
-            McpServerValidationService validationService, McpServerOperationService operationService) {
+
+    public McpServerImportService(McpExternalDataAdaptor transformService,
+                                  McpServerValidationService validationService,
+                                  McpServerOperationService operationService) {
         this.transformService = transformService;
         this.validationService = validationService;
         this.operationService = operationService;
     }
-    
+
     /**
      * Validate servers for import.
      *
@@ -86,13 +80,16 @@ public class McpServerImportService {
      */
     public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request)
             throws NacosException {
+        ExternalDataTypeEnum externalDataTypeEnum = ExternalDataTypeEnum.parseType(request.getImportType());
+        if (Objects.isNull(externalDataTypeEnum)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Invalid import type: " + request.getImportType());
+        }
+
         try {
             List<McpServerDetailInfo> servers;
-            
-            servers = transformService.transformToNacosFormat(request.getData(), request.getImportType(),
-                    request.getCursor(), request.getLimit(), request.getSearch());
+            servers = transformService.adaptExternalDataToNacosMcpServerFormat(request);
             return validationService.validateServers(namespaceId, servers);
-            
+
         } catch (Exception e) {
             McpServerImportValidationResult result = new McpServerImportValidationResult();
             result.setValid(false);
@@ -102,121 +99,92 @@ public class McpServerImportService {
             return result;
         }
     }
-    
+
     /**
      * Execute import of MCP servers.
      *
      * @param namespaceId namespace ID
      * @param request     import request
      * @return import response
-     * @throws NacosException if import fails
      */
-    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
-            throws NacosException {
-        McpServerImportResponse response = new McpServerImportResponse();
-        List<McpServerImportResult> results = new ArrayList<>();
-        
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) {
         try {
             McpServerImportValidationResult validationResult = validateImport(namespaceId, request);
-            if (!validationResult.isValid()) {
-                // If user chooses to skip invalid servers, proceed with only valid items;
-                // otherwise, fail fast as before.
-                if (!request.isSkipInvalid()) {
-                    response.setSuccess(false);
-                    response.setErrorMessage(
-                            "Import validation failed: " + String.join(", ", validationResult.getErrors()));
-                    return response;
-                }
+            boolean valid = validationResult.isValid();
+            boolean overrideExisting = request.isOverrideExisting();
+            if (valid || request.isSkipInvalid()) {
+                List<McpServerValidationItem> validSelectedServers =
+                        filterValidSelectedServers(validationResult.getServers(), request.getSelectedServers());
+                return applyResultOnRequestPolicy(namespaceId, validSelectedServers, overrideExisting);
+            } else {
+                return responseError("Import validation failed: " + String.join(", ",
+                        validationResult.getErrors()));
             }
-            
-            List<McpServerValidationItem> serversToImport = filterSelectedServers(validationResult.getServers(),
-                    request.getSelectedServers());
-            
-            // If validation had invalid items and user chose to skip, but no valid servers
-            // remain, fail with message.
-            if (!validationResult.isValid() && request.isSkipInvalid() && serversToImport.isEmpty()) {
-                response.setSuccess(false);
-                String msg = "Import validation failed and no valid servers to import";
-                if (validationResult.getErrors() != null && !validationResult.getErrors().isEmpty()) {
-                    msg += ": " + String.join(", ", validationResult.getErrors());
-                }
-                response.setErrorMessage(msg);
-                response.setTotalCount(0);
-                response.setResults(results);
-                return response;
-            }
-            
-            int successCount = 0;
-            int failedCount = 0;
-            int skippedCount = 0;
-            
-            for (McpServerValidationItem item : serversToImport) {
-                McpServerImportResult result = importSingleServer(namespaceId, item, request.isOverrideExisting());
-                results.add(result);
-                
-                switch (result.getStatus()) {
-                    case "success":
-                        successCount++;
-                        break;
-                    case "failed":
-                        failedCount++;
-                        break;
-                    case "skipped":
-                        skippedCount++;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            
-            response.setSuccess(failedCount == 0);
-            response.setTotalCount(serversToImport.size());
-            response.setSuccessCount(successCount);
-            response.setFailedCount(failedCount);
-            response.setSkippedCount(skippedCount);
-            response.setResults(results);
-            // If we skipped invalid servers, optionally include a lightweight note for
-            // client visibility.
-            if (!validationResult.isValid() && request.isSkipInvalid()) {
-                int invalid = validationResult.getInvalidCount();
-                if (invalid > 0) {
-                    String baseMsg = "Some invalid servers were skipped: " + invalid;
-                    response.setErrorMessage(baseMsg);
-                }
-            }
-            
         } catch (Exception e) {
             LOG.error("Import execution failed", e);
-            response.setSuccess(false);
-            response.setErrorMessage("Import execution failed: " + e.getMessage());
+            return responseError("Import execution failed: " + e.getMessage());
         }
-        
+    }
+
+    private static McpServerImportResponse responseError(String msg) {
+        McpServerImportResponse response = new McpServerImportResponse();
+        response.setSuccess(false);
+        response.setErrorMessage(msg);
         return response;
     }
-    
+
+    private McpServerImportResponse applyResultOnRequestPolicy(String namespaceId,
+                                                               List<McpServerValidationItem> serversToImport,
+                                                               boolean overwrite) {
+        McpServerImportResponse response = new McpServerImportResponse();
+        List<McpServerImportResult> results = new ArrayList<>();
+        int successCount = 0;
+        int failedCount = 0;
+        int skippedCount = 0;
+        for (McpServerValidationItem item : serversToImport) {
+            McpServerImportResult result = importSingleServer(namespaceId, item, overwrite);
+            if ("success".equals(result.getStatus())) {
+                successCount++;
+            } else if ("failed".equals(result.getStatus())) {
+                failedCount++;
+            } else if ("skipped".equals(result.getStatus())) {
+                skippedCount++;
+            }
+            results.add(result);
+        }
+        response.setSuccess(failedCount == 0);
+        response.setTotalCount(serversToImport.size());
+        response.setSuccessCount(successCount);
+        response.setFailedCount(failedCount);
+        response.setSkippedCount(skippedCount);
+        response.setResults(results);
+        return response;
+    }
+
     /**
-     * Filter selected servers for import.
+     * Filter valid selected servers for import.
      *
      * @param validationItems validation items
      * @param selectedServers selected server IDs
      * @return filtered servers
      */
-    private List<McpServerValidationItem> filterSelectedServers(List<McpServerValidationItem> validationItems,
+    private List<McpServerValidationItem> filterValidSelectedServers(List<McpServerValidationItem> validationItems,
             String[] selectedServers) {
-        if (validationItems == null || validationItems.isEmpty()) {
+        if (CollectionUtils.isEmpty(validationItems)) {
             return Collections.emptyList();
         }
+
         if (selectedServers == null || selectedServers.length == 0) {
-            return validationItems.stream()
-                    .filter(item -> McpServerValidationConstants.STATUS_VALID.equals(item.getStatus()))
-                    .collect(Collectors.toList());
+            return validationItems;
         }
-        
-        Set<String> selectedSet = new HashSet<>(Arrays.asList(selectedServers));
-        return validationItems.stream().filter(item -> selectedSet.contains(item.getServerId())
-                && McpServerValidationConstants.STATUS_VALID.equals(item.getStatus())).collect(Collectors.toList());
+
+        Set<String> selectServers = new HashSet<>(Arrays.asList(selectedServers));
+        return validationItems.stream()
+                .filter(item -> McpServerValidationConstants.STATUS_VALID.equals(item.getStatus()))
+                .filter(item -> selectServers.isEmpty() || selectServers.contains(item.getServerId()))
+                .toList();
     }
-    
+
     /**
      * Import single MCP server.
      *
@@ -230,85 +198,70 @@ public class McpServerImportService {
         McpServerImportResult result = new McpServerImportResult();
         result.setServerName(item.getServerName());
         result.setServerId(item.getServerId());
-        
         try {
             if (item.isExists() && !overrideExisting) {
-                result.setStatus("skipped");
+                result.setStatus(McpImportResultStatusEnum.SKIPPED.getName());
                 result.setConflictType("existing");
                 return result;
             }
-            
+
             McpServerDetailInfo server = item.getServer();
-            
-            // Create basic info from server detail
-            McpServerBasicInfo basicInfo = new McpServerBasicInfo();
-            basicInfo.setId(server.getId());
-            basicInfo.setName(server.getName());
-            basicInfo.setProtocol(server.getProtocol());
-            basicInfo.setFrontProtocol(server.getFrontProtocol());
-            basicInfo.setDescription(server.getDescription());
-            basicInfo.setStatus(server.getStatus());
-            basicInfo.setRepository(server.getRepository());
-            basicInfo.setVersionDetail(server.getVersionDetail());
-            basicInfo.setRemoteServerConfig(server.getRemoteServerConfig());
-            basicInfo.setPackages(server.getPackages());
-            
-            // Extract tool specification
             McpToolSpecification toolSpec = server.getToolSpec();
-            
-            // Create endpoint specification
-            McpEndpointSpec endpointSpec = convertToEndpointSpec(server);
-            
+            McpServerBasicInfo basicInfo = generateMcpBasicInfo(server);
+            McpEndpointSpec endpointSpec = generateEndpointSpec(server);
             if (item.isExists() && overrideExisting) {
-                operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec, overrideExisting);
+                operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec, true);
             } else {
                 operationService.createMcpServer(namespaceId, basicInfo, toolSpec, endpointSpec);
             }
-            
-            result.setStatus("success");
-            
+            result.setStatus(McpImportResultStatusEnum.SUCCESS.getName());
         } catch (Exception e) {
-            result.setStatus("failed");
+            result.setStatus(McpImportResultStatusEnum.FAILED.getName());
             result.setErrorMessage("Failed to import server: " + e.getMessage());
         }
-        
         return result;
     }
-    
+
+    private static McpServerBasicInfo generateMcpBasicInfo(McpServerDetailInfo server) {
+        McpServerBasicInfo basicInfo = new McpServerBasicInfo();
+        basicInfo.setId(server.getId());
+        basicInfo.setName(server.getName());
+        basicInfo.setProtocol(server.getProtocol());
+        basicInfo.setFrontProtocol(server.getFrontProtocol());
+        basicInfo.setDescription(server.getDescription());
+        basicInfo.setStatus(server.getStatus());
+        basicInfo.setRepository(server.getRepository());
+        basicInfo.setVersionDetail(server.getVersionDetail());
+        basicInfo.setRemoteServerConfig(server.getRemoteServerConfig());
+        basicInfo.setPackages(server.getPackages());
+        return basicInfo;
+    }
+
     /**
-     * Convert server detail info to endpoint spec.
+     * Convert {@link McpServerDetailInfo} info to {@link McpEndpointSpec}.
+     * <p>Only keep first item in frontEndpointConfigList for endpoint spec generation.</p>
      *
      * @param server server detail info
-     * @return endpoint spec
+     * @return endpoint spec, null if not convert is not supported.
      */
-    private McpEndpointSpec convertToEndpointSpec(McpServerDetailInfo server) {
+    private McpEndpointSpec generateEndpointSpec(McpServerDetailInfo server) {
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(server.getProtocol())) {
             return null;
         }
-        
-        McpEndpointSpec endpointSpec = new McpEndpointSpec();
-        try {
-            if (server.getRemoteServerConfig() == null
-                    || server.getRemoteServerConfig().getFrontEndpointConfigList() == null
-                    || server.getRemoteServerConfig().getFrontEndpointConfigList().isEmpty()) {
-                return endpointSpec;
-            }
-            
-            // 取第一个前端端点
-            com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig first = server.getRemoteServerConfig()
-                    .getFrontEndpointConfigList().get(0);
-            
-            Object epDataObj = first.getEndpointData();
-            String epData = epDataObj == null ? null
-                    : (epDataObj instanceof String ? (String) epDataObj : String.valueOf(epDataObj));
-            
-            String[] hp = epData.split(":");
-            endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
-            endpointSpec.getData().put("address", hp[0] == null ? "" : hp[0]);
-            endpointSpec.getData().put("port", hp[1] == null ? "" : hp[1]);
-        } catch (Exception ignore) {
-            // keep default empty endpointSpec
+
+        if (server.getRemoteServerConfig() == null
+                || CollectionUtils.isEmpty(server.getRemoteServerConfig().getFrontEndpointConfigList())) {
+            return null;
         }
-        return endpointSpec;
+
+        try {
+            FrontEndpointConfig first = server.getRemoteServerConfig()
+                            .getFrontEndpointConfigList()
+                            .get(0);
+            return McpConfigUtils.convertFrontEndpointConfig(first);
+        } catch (Exception e) {
+            LOG.error("Failed to convert to endpoint spec", e);
+            throw new RuntimeException("Failed to convert to endpoint spec", e);
+        }
     }
 }
