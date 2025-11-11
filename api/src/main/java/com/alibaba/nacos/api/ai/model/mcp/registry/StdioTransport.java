@@ -17,22 +17,17 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * Remote per components.schemas.Remote.
+ * Stdio transport configuration.
  *
  * @author xinluo
  */
+@JsonTypeName("stdio")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Remote {
-
-    private String type;
-
-    private String url;
-
-    private List<KeyValueInput> headers;
+public class StdioTransport {
+    private String type = "stdio";
 
     public String getType() {
         return type;
@@ -40,21 +35,5 @@ public class Remote {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public List<KeyValueInput> getHeaders() {
-        return headers;
-    }
-
-    public void setHeaders(List<KeyValueInput> headers) {
-        this.headers = headers;
     }
 }

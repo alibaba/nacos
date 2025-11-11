@@ -17,37 +17,47 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
-import java.util.Map;
+import java.util.List;
 
 /**
- * _meta wrapper allowing extension namespaces.
+ * StreamableHttpTransport per components.schemas.StreamableHttpTransport.
+ * Transport type using streamable HTTP for MCP server communication.
  *
  * @author xinluo
  */
+@JsonTypeName("streamable-http")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Meta {
+public class StreamableHttpTransport {
 
-    @JsonProperty("io.modelcontextprotocol.registry/publisher-provided")
-    private Map<String, Object> publisherProvided;
+    private String type = "streamable-http";
 
-    @JsonProperty("io.modelcontextprotocol.registry/official")
-    private OfficialMeta official;
+    private String url;
 
-    public Map<String, Object> getPublisherProvided() {
-        return publisherProvided;
+    private List<KeyValueInput> headers;
+
+    public String getType() {
+        return type;
     }
 
-    public void setPublisherProvided(Map<String, Object> publisherProvided) {
-        this.publisherProvided = publisherProvided;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public OfficialMeta getOfficial() {
-        return official;
+    public String getUrl() {
+        return url;
     }
 
-    public void setOfficial(OfficialMeta official) {
-        this.official = official;
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public List<KeyValueInput> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(List<KeyValueInput> headers) {
+        this.headers = headers;
     }
 }

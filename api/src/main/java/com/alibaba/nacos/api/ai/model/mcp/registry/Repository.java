@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * Repository per components.schemas.Repository.
  *
@@ -31,7 +29,6 @@ public class Repository {
 
     private String id;
 
-    @JsonProperty("subfolder")
     private String subfolder;
 
     public String getUrl() {

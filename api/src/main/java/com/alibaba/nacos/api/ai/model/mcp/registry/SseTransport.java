@@ -17,18 +17,21 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
 import java.util.List;
 
 /**
- * Remote per components.schemas.Remote.
+ * SseTransport per components.schemas.SseTransport.
+ * Transport type using Server-Sent Events for MCP server communication.
  *
  * @author xinluo
  */
+@JsonTypeName("sse")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Remote {
+public class SseTransport {
 
-    private String type;
+    private String type = "sse";
 
     private String url;
 

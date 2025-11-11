@@ -19,7 +19,7 @@ class ImportMcpDialog extends React.Component {
         locale: {},
     };
 
-    DEFAULT_REGISTRY_URL = 'https://registry.modelcontextprotocol.io/v0/servers';
+    DEFAULT_REGISTRY_URL = 'https://registry.modelcontextprotocol.io/v0.1/servers';
 
     constructor(props) {
         super(props);
