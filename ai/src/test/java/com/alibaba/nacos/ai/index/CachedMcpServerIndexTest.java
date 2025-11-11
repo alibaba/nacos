@@ -233,8 +233,8 @@ class CachedMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
         
         // 执行搜索
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByName(namespaceId, mcpName,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 0, 10);
+        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -620,8 +620,8 @@ class CachedMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
         
         // 执行搜索，name为null
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByName(namespaceId, null,
-                Constants.MCP_LIST_SEARCH_BLUR, 0, 10);
+        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, null,
+                Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -656,8 +656,8 @@ class CachedMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
         
         // 执行搜索，name为空字符串
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByName(namespaceId, "",
-                Constants.MCP_LIST_SEARCH_ACCURATE, 0, 10);
+        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, "",
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -693,8 +693,8 @@ class CachedMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
         
         // 执行搜索
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByName(namespaceId, mcpName,
-                Constants.MCP_LIST_SEARCH_BLUR, 0, 10);
+        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
+                Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -729,9 +729,9 @@ class CachedMcpServerIndexTest {
         when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(3), eq(5), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
         
-        // 执行搜索，offset=10, limit=5，应该查询第3页
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByName(namespaceId, mcpName,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 10, 5);
+        // 执行搜索，pageNo=3, limit=5
+        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 3, 5);
         
         // 验证结果
         assertNotNull(result);

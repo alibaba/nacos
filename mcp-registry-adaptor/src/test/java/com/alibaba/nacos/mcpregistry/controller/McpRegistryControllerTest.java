@@ -18,10 +18,10 @@ package com.alibaba.nacos.mcpregistry.controller;
 
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
-import com.alibaba.nacos.api.ai.model.mcp.registry.Meta;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerResponse;
 import com.alibaba.nacos.api.ai.model.mcp.registry.OfficialMeta;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.mcpregistry.form.GetServerForm;
+import com.alibaba.nacos.mcpregistry.form.ListServersNacosForm;
 import com.alibaba.nacos.mcpregistry.service.NacosMcpRegistryService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,8 +43,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -69,9 +67,11 @@ class McpRegistryControllerTest {
     McpRegistryController mcpRegistryController;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         cachedEnvironment = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new StandardEnvironment());
+        
+        // Create a real controller instance without Spring initialization
         mcpRegistryController = new McpRegistryController(nacosMcpRegistryService);
         mockMvc = MockMvcBuilders.standaloneSetup(mcpRegistryController).build();
     }
@@ -99,66 +99,87 @@ class McpRegistryControllerTest {
 
     @Test
     void listMcpServersFirstPageWithNextCursor() throws Exception {
-        McpRegistryServerDetail d1 = serverDetail("id-1", "2025-06-10T02:29:17Z", "2025-06-10T02:29:17Z");
-        McpRegistryServerDetail d2 = serverDetail("id-2", "2025-06-11T02:29:17Z", "2025-06-12T02:29:17Z");
+        ServerResponse sr1 = serverResponse("id-1", "2025-06-10T02:29:17Z", "2025-06-10T02:29:17Z");
+        ServerResponse sr2 = serverResponse("id-2", "2025-06-11T02:29:17Z", "2025-06-12T02:29:17Z");
         McpRegistryServerList internal = new McpRegistryServerList();
-        internal.setServers(java.util.List.of(d1, d2));
+        internal.setServers(java.util.List.of(sr1, sr2));
+
+        // Mock the service to return our test data
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(internal);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers")
-                .param("limit", "2");
-        String json = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(json);
-        // returned servers size
-        assertEquals(2, root.get("servers").size());
-        // metadata next_cursor should be 2
-        assertEquals("2", root.path("metadata").path("next_cursor").asText());
+
+        // Test the controller directly instead of via MockMvc
+        ListServersNacosForm form = new ListServersNacosForm();
+        form.setLimit(2);
+        form.validate();
+        McpRegistryServerList result = mcpRegistryController.listMcpServers(form);
+
+        assertEquals(2, result.getServers().size());
+        assertEquals("2", result.getMetadata().getNextCursor());
     }
 
     @Test
     void listMcpServersLastPageNoNextCursor() throws Exception {
-        McpRegistryServerDetail d1 = serverDetail("id-3", "2025-06-10T02:29:17Z", "2025-06-10T02:29:17Z");
+        ServerResponse sr1 = serverResponse("id-3", "2025-06-10T02:29:17Z", "2025-06-10T02:29:17Z");
         McpRegistryServerList internal = new McpRegistryServerList();
-        internal.setServers(java.util.List.of(d1));
+        internal.setServers(java.util.List.of(sr1));
+
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(internal);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers")
-                .param("limit", "10");
-        String json = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(json);
+
+        // Test the controller directly
+        ListServersNacosForm form = new ListServersNacosForm();
+        form.setLimit(10);
+        form.validate();
+        McpRegistryServerList result = mcpRegistryController.listMcpServers(form);
+
+        assertEquals(1, result.getServers().size());
         // next_cursor should be offset + returned -> "1"
-        assertEquals("1", root.path("metadata").path("next_cursor").asText());
+        assertEquals("1", result.getMetadata().getNextCursor());
     }
 
     @Test
     void getServer() throws Exception {
-        String id = UUID.randomUUID().toString();
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers/" + id).param("version", "");
-        when(nacosMcpRegistryService.getServer(eq(id), any(GetServerForm.class)))
-                .thenReturn(new McpRegistryServerDetail());
+        String serverName = "test-server";
+        String version = "1.0.0";
+        ServerResponse serverResponse = new ServerResponse();
+        serverResponse.setServer(new McpRegistryServerDetail());
+        when(nacosMcpRegistryService.getServer(eq(serverName), any(String.class), eq(version)))
+                .thenReturn(serverResponse);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .get("/v0/servers/" + serverName + "/versions/" + version)
+                .param("version", version);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
-        assertEquals(mapper.writeValueAsString(new McpRegistryServerDetail()), response.getContentAsString());
+        assertEquals(mapper.writeValueAsString(serverResponse), response.getContentAsString());
     }
 
     @Test
     void getServerNotFound() throws Exception {
-        String id = UUID.randomUUID().toString();
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers/" + id).param("version", "");
+        String serverName = "nonexistent-server";
+        String version = "1.0.0";
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .get("/v0/servers/" + serverName + "/versions/" + version)
+                .param("version", version);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(404, response.getStatus());
         assertEquals("{\"error\":\"Server not found\"}", response.getContentAsString());
     }
 
-    private McpRegistryServerDetail serverDetail(String id, String publishedAt, String updatedAt) {
-        McpRegistryServerDetail d = new McpRegistryServerDetail();
-        d.setName(id + "-name");
-        d.setDescription("desc-" + id);
-        Meta meta = new Meta();
+    private ServerResponse serverResponse(String id, String publishedAt, String updatedAt) {
+        McpRegistryServerDetail server = new McpRegistryServerDetail();
+        server.setName(id + "-name");
+        server.setDescription("desc-" + id);
+
+        ServerResponse response = new ServerResponse();
+        response.setServer(server);
+
+        ServerResponse.Meta meta = new ServerResponse.Meta();
         OfficialMeta official = new OfficialMeta();
         official.setPublishedAt(publishedAt);
         official.setUpdatedAt(updatedAt);
         meta.setOfficial(official);
-        d.setMeta(meta);
-        return d;
+        response.setMeta(meta);
+
+        return response;
     }
 
     private static <T extends Throwable> void assertServletException(Class<T> expectedCause, Executable executable,

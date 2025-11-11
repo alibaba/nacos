@@ -122,27 +122,33 @@ public class McpServerOperationService {
      */
     public Page<McpServerBasicInfo> listMcpServerWithPage(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) {
-        int offset = pageSize * (pageNo - 1);
-        Page<McpServerIndexData> indexData = mcpServerIndex.searchMcpServerByName(namespaceId, mcpName, search, offset,
+        Page<McpServerIndexData> indexData = mcpServerIndex.searchMcpServerByNameWithPage(namespaceId, mcpName, search, pageNo,
                 pageSize);
-        return mapIndexToBasicServerInfo(indexData);
+        return mapIndexPageToBasicServerPage(indexData);
+    }
+
+    private List<McpServerBasicInfo> mapIndexListToServerList(List<McpServerIndexData> indexData) {
+        List<McpServerBasicInfo> finalResult = Collections.emptyList();
+        if (CollectionUtils.isNotEmpty(indexData)) {
+            finalResult = indexData.stream()
+                    .map((index) -> {
+                        ConfigQueryChainRequest request = buildQueryMcpServerVersionInfoRequest(index.getNamespaceId(), index.getId());
+                        ConfigQueryChainResponse response = configQueryChainService.handle(request);
+                        McpServerBasicInfo basicInfo = transferToMcpServerVersionInfo(response.getContent());
+                        basicInfo.setNamespaceId(index.getNamespaceId());
+                        return basicInfo;
+                    })
+                    .collect(Collectors.toList());
+        }
+        return finalResult;
     }
     
-    private Page<McpServerBasicInfo> mapIndexToBasicServerInfo(Page<McpServerIndexData> indexData) {
+    private Page<McpServerBasicInfo> mapIndexPageToBasicServerPage(Page<McpServerIndexData> indexData) {
         Page<McpServerBasicInfo> result = new Page<>();
         result.setTotalCount(indexData.getTotalCount());
         result.setPageNumber(indexData.getPageNumber());
         result.setPagesAvailable(indexData.getPagesAvailable());
-        
-        List<McpServerBasicInfo> finalResult = Collections.emptyList();
-        
-        if (CollectionUtils.isNotEmpty(indexData.getPageItems())) {
-            finalResult = indexData.getPageItems().stream()
-                    .map((index) -> buildQueryMcpServerVersionInfoRequest(index.getNamespaceId(), index.getId()))
-                    .map(configQueryChainService::handle).map(ConfigQueryChainResponse::getContent)
-                    .map(this::transferToMcpServerVersionInfo).collect(Collectors.toList());
-        }
-        result.setPageItems(finalResult);
+        result.setPageItems(mapIndexListToServerList(indexData.getPageItems()));
         return result;
     }
     
@@ -157,11 +163,11 @@ public class McpServerOperationService {
      * @param limit       limit
      * @return list of {@link McpServerBasicInfo} matched input parameters.
      */
-    public Page<McpServerBasicInfo> listMcpServerWithOffset(String namespaceId, String mcpName, String search,
+    public List<McpServerBasicInfo> listMcpServerWithOffset(String namespaceId, String mcpName, String search,
             int offset, int limit) {
-        Page<McpServerIndexData> indexData = mcpServerIndex.searchMcpServerByName(namespaceId, mcpName, search, offset,
+        List<McpServerIndexData> indexData = mcpServerIndex.searchMcpServerByNameWithOffset(namespaceId, mcpName, search, offset,
                 limit);
-        return mapIndexToBasicServerInfo(indexData);
+        return mapIndexListToServerList(indexData);
     }
     
     /**

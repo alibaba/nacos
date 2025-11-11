@@ -16,15 +16,13 @@
 
 package com.alibaba.nacos.mcpregistry.form;
 
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.NacosForm;
-
 /**
- * Get mcp server form.
+ * Nacos list servers form extending official form with namespaceId.
+ *
  * @author xinluo
  */
-public class GetServerForm implements NacosForm {
-    
+public class ListServersNacosForm extends ListServersOfficialForm {
+
     private String namespaceId;
 
     public String getNamespaceId() {
@@ -33,14 +31,5 @@ public class GetServerForm implements NacosForm {
 
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
-    }
-
-    /**
-     * check form parameters while valid.
-     *
-     * @throws NacosApiException when form parameters is invalid.
-     */
-    @Override
-    public void validate() throws NacosApiException {
     }
 }
