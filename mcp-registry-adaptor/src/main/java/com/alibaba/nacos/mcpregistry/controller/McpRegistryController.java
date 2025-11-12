@@ -17,7 +17,7 @@
 package com.alibaba.nacos.mcpregistry.controller;
 
 import com.alibaba.nacos.mcpregistry.form.GetServerForm;
-import com.alibaba.nacos.mcpregistry.form.ListServerForm; // internal legacy form (for service call)
+import com.alibaba.nacos.mcpregistry.form.ListServerForm;
 import com.alibaba.nacos.mcpregistry.form.ListServersNacosForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpErrorResponse;
@@ -47,9 +47,9 @@ import java.util.Objects;
 @RestController
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class McpRegistryController {
-    
+
     private final NacosMcpRegistryService nacosMcpRegistryService;
-    
+
     public McpRegistryController(NacosMcpRegistryService nacosMcpRegistryService) {
         this.nacosMcpRegistryService = nacosMcpRegistryService;
     }
@@ -77,6 +77,7 @@ public class McpRegistryController {
         internal.setOffset(offset);
         internal.setLimit(limit);
         internal.setNamespaceId(namespaceId);
+        internal.setServerName(form.getSearch());
         McpRegistryServerList internalList = nacosMcpRegistryService.listMcpServers(internal);
         // Null-safe server list handling; service has enriched items already
         List<ServerResponse> details = internalList.getServers();
@@ -96,8 +97,8 @@ public class McpRegistryController {
      * If version is not provided, this api will return the latest version of the
      * server.
      * 
-     * @param name server name
-     * @param form get server request form
+     * @param name     server name
+     * @param form     get server request form
      * @param response HTTP response
      * @return mcp server detail or McpErrorResponse when server not found.
      * @throws NacosApiException if request parameter is invalid or handle error
@@ -105,7 +106,7 @@ public class McpRegistryController {
     @GetMapping(value = "/v0/servers/{name}/versions")
     public Object getServerVersions(@PathVariable String name, GetServerForm form, HttpServletResponse response)
             throws NacosException {
-        McpRegistryServerList server = nacosMcpRegistryService.getServerVersions(name, form.getNamespaceId());
+        McpRegistryServerList server = nacosMcpRegistryService.getServerVersions(form.getNamespaceId(), name);
         if (Objects.isNull(server)) {
             response.setStatus(404);
             response.setHeader(HttpHeaderConsts.CONTENT_TYPE, "application/json");
@@ -122,10 +123,12 @@ public class McpRegistryController {
      * Use the special version `latest` to get the latest version.
      * 
      * @param serverName URL-encoded server name (e.g., "com.example%2Fmy-server")
-     * @param version URL-encoded version to retrieve (e.g., "1.0.0" or "1.0.0%2B20130313144700")
-     * @param form get server request form
-     * @param response HTTP response
-     * @return mcp server detail or McpErrorResponse when server or version not found.
+     * @param version    URL-encoded version to retrieve (e.g., "1.0.0" or
+     *                   "1.0.0%2B20130313144700")
+     * @param form       get server request form
+     * @param response   HTTP response
+     * @return mcp server detail or McpErrorResponse when server or version not
+     *         found.
      * @throws NacosException if handle error
      */
     @GetMapping(value = "/v0/servers/{serverName}/versions/{version}")

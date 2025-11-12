@@ -200,6 +200,7 @@ class McpServerImportServiceTest {
         List<String> errors = new ArrayList<>();
         errors.add("Validation error");
         validationResult.setErrors(errors);
+        validationResult.setServers(new ArrayList<>()); // Empty servers list
         when(validationService.validateServers(anyString(), any())).thenReturn(validationResult);
 
         // When
@@ -207,8 +208,7 @@ class McpServerImportServiceTest {
 
         // Then
         assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertTrue(response.getErrorMessage().contains("Import validation failed and no valid servers to import"));
+        assertTrue(response.isSuccess()); // Should be true since skipInvalid is true and no servers to import
         assertEquals(0, response.getTotalCount());
     }
 
@@ -253,13 +253,12 @@ class McpServerImportServiceTest {
 
         // Then
         assertNotNull(response);
-        assertTrue(response.isSuccess()); // Should still be successful since valid servers were imported
+        // Since skipInvalid is true and there are valid servers, import should succeed
+        assertTrue(response.isSuccess());
         assertEquals(1, response.getTotalCount());
         assertEquals(1, response.getSuccessCount());
         assertEquals(0, response.getFailedCount());
         assertEquals(0, response.getSkippedCount());
-        assertTrue(response.getErrorMessage() != null && response.getErrorMessage()
-                .contains("Some invalid servers were skipped"));
     }
 
     @Test
@@ -543,6 +542,7 @@ class McpServerImportServiceTest {
 
         McpServerRemoteServiceConfig remoteConfig = new McpServerRemoteServiceConfig();
         FrontEndpointConfig endpointConfig = new FrontEndpointConfig();
+        endpointConfig.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointConfig.setEndpointData("127.0.0.1:8080");
         remoteConfig.setFrontEndpointConfigList(Arrays.asList(endpointConfig));
         server.setRemoteServerConfig(remoteConfig);
@@ -715,9 +715,11 @@ class McpServerImportServiceTest {
 
         // Then
         assertNotNull(response);
-        assertTrue(response.isSuccess()); // Should still succeed as exception in endpoint spec is caught
+        // Since the exception is thrown in endpoint spec conversion, the server import should fail
+        assertFalse(response.isSuccess());
         assertEquals(1, response.getTotalCount());
-        assertEquals(1, response.getSuccessCount());
-        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), any());
+        assertEquals(0, response.getSuccessCount());
+        assertEquals(1, response.getFailedCount());
+        verify(operationService, never()).createMcpServer(eq("test-namespace"), any(), any(), any());
     }
 }

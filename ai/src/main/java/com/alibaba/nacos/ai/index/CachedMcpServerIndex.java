@@ -228,14 +228,8 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
         List<String> namespaceList = fetchOrderedNamespaceList();
         for (String namespaceId : namespaceList) {
             try {
-                Page<McpServerIndexData> result = searchMcpServerByNameWithPage(namespaceId, null,
+                searchMcpServerByNameWithPage(namespaceId, null,
                         Constants.MCP_LIST_SEARCH_BLUR, 1, 1000);
-                if (result != null && CollectionUtils.isNotEmpty(result.getPageItems())) {
-                    for (McpServerIndexData indexData : result.getPageItems()) {
-                        cacheIndex.updateIndex(namespaceId, indexData.getId(), indexData.getId());
-                    }
-                    LOGGER.debug("Synced {} MCP servers for namespace: {}", result.getPageItems().size(), namespaceId);
-                }
             } catch (Exception e) {
                 LOGGER.error("Error syncing cache for namespace: {}", namespaceId, e);
             }

@@ -153,24 +153,6 @@ public class McpServerOperationService {
     }
     
     /**
-     * List mcp server.
-     *
-     * @param namespaceId namespace id of mcp servers
-     * @param mcpName     mcp name pattern, if null or empty, filter all mcp servers.
-     * @param search      search type `blur` or `accurate`, means whether to search by fuzzy or exact match by
-     *                    `mcpName`.
-     * @param offset      offset
-     * @param limit       limit
-     * @return list of {@link McpServerBasicInfo} matched input parameters.
-     */
-    public List<McpServerBasicInfo> listMcpServerWithOffset(String namespaceId, String mcpName, String search,
-            int offset, int limit) {
-        List<McpServerIndexData> indexData = mcpServerIndex.searchMcpServerByNameWithOffset(namespaceId, mcpName, search, offset,
-                limit);
-        return mapIndexListToServerList(indexData);
-    }
-    
-    /**
      * Get specified mcp server detail info. mcpServerId or namespaceId + mcpServerName is needed.
      *
      * @param namespaceId namespace id of mcp server
@@ -551,7 +533,7 @@ public class McpServerOperationService {
         if (null != endpointSpecification) {
             Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId,
                     serverSpecification.getName(), serverSpecification.getVersionDetail().getVersion(), endpointSpecification, overrideExisting);
-            String transportProtocol = endpointSpecification.getData().get(Constants.MCP_BACKEND_ISTANCE_PROTOCOL_KEY);
+            String transportProtocol = endpointSpecification.getData().get(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY);
             McpServiceRef serviceRef = new McpServiceRef();
             serviceRef.setNamespaceId(service.getNamespace());
             serviceRef.setGroupName(service.getGroup());

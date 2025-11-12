@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.ai.index;
 
-import java.util.List;
-
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.api.model.Page;
 
@@ -27,19 +25,6 @@ import com.alibaba.nacos.api.model.Page;
  * @author xinluo
  */
 public interface McpServerIndex {
-    
-    /**
-     * Search Mcp server by name and namespaceId.
-     *
-     * @param namespaceId namespaceId
-     * @param name        mcp server name
-     * @param search      search mode
-     * @param offset      offset to list
-     * @param limit       list limit
-     * @return MCP Server Summery
-     */
-    List<McpServerIndexData> searchMcpServerByNameWithOffset(String namespaceId, String name, String search, int offset,
-            int limit);
     
     /**
      * Search Mcp server by name and namespaceId with pagination.

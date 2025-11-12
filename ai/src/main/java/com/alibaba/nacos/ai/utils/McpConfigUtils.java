@@ -97,6 +97,7 @@ public class McpConfigUtils {
             endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
             endpointSpec.getData().put(MCP_ENDPOINT_SPEC_ADDRESS_KEY, hp[0]);
             endpointSpec.getData().put(MCP_ENDPOINT_SPEC_PORT_KEY, hp[1]);
+            endpointSpec.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY, frontEndpointConfig.getProtocol());
             return endpointSpec;
         }
         return null;

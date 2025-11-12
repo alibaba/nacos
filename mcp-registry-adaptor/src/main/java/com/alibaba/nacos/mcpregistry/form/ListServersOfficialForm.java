@@ -44,8 +44,6 @@ public class ListServersOfficialForm implements NacosForm {
 
     private String updatedSince;
 
-    private String version;
-
     public String getCursor() {
         return cursor;
     }
@@ -76,14 +74,6 @@ public class ListServersOfficialForm implements NacosForm {
 
     public void setUpdatedSince(String updatedSince) {
         this.updatedSince = updatedSince;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
     }
     
     /**

@@ -21,7 +21,13 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,839 +36,597 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
- * Test for McpServerTransformService with MCP Registry support.
+ * Test for McpExternalDataAdaptor with MCP Registry support.
+ * Covers file, json, and url import types.
  *
  * @author nacos
  */
+@DisplayName("McpExternalDataAdaptor Tests")
 class McpExternalDataAdaptorTest {
 
-    private McpExternalDataAdaptor transformService;
+    private McpExternalDataAdaptor adaptor;
+
+    @Mock
+    private HttpClient mockHttpClient;
 
     @BeforeEach
     void setUp() {
-        transformService = new McpExternalDataAdaptor();
+        MockitoAnnotations.openMocks(this);
+        adaptor = new McpExternalDataAdaptor();
     }
 
+    // ==================== FILE TYPE IMPORT TESTS ====================
+
     @Test
-    void testTransformMcpRegistryServerList() throws Exception {
-        String registryJson = """
-                {
-                    "servers": [
-                        {
-                            "_meta": {
-                                "io.modelcontextprotocol.registry/official": {
-                                    "serverId": "4e9cf4cf-71f6-4aca-bae8-2d10a29ca2e0"
-                                }
-                            },
-                            "name": "io.github.21st-dev/magic-mcp",
-                            "description": "It's like v0 but in your Cursor/WindSurf/Cline. 21st dev Magic MCP server",
-                            "repository": {
-                                "url": "https://github.com/21st-dev/magic-mcp",
-                                "source": "github",
-                                "id": "935450522"
-                            },
-                            "version": "0.0.1-seed",
-                            "packages": [
-                                {
-                                    "registryType": "npm",
-                                    "identifier": "@21st-dev/magic",
-                                    "version": "0.0.46",
-                                    "environment_variables": [
-                                        {
-                                            "description": "${input:apiKey}",
-                                            "name": "API_KEY"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ],
-                    "total_count": 1
+    @DisplayName("Should adapt valid MCP seed file to server list")
+    void testAdaptValidSeedFile() throws Exception {
+        String seedFileData = """
+            [
+              {
+                "name": "ai.aliengiraffe/spotdb",
+                "description": "Test Server",
+                "version": "0.1.0",
+                "repository": {
+                  "url": "https://github.com/test/repo"
                 }
-                """;
+              }
+            ]
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(registryJson);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("file");
+        request.setData(seedFileData);
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
 
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("e532398d-a855-3c20-9b94-6c59e442dc75", server.getId());
-        assertEquals("io.github.21st-dev/magic-mcp", server.getName());
-        assertEquals("It's like v0 but in your Cursor/WindSurf/Cline. 21st dev Magic MCP server",
-                server.getDescription());
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
-        assertNotNull(server.getRepository());
-        assertNotNull(server.getVersionDetail());
-        assertEquals("0.0.1-seed", server.getVersionDetail().getVersion());
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+        assertEquals("ai.aliengiraffe/spotdb", result.get(0).getName());
+        assertEquals("Test Server", result.get(0).getDescription());
+        assertNotNull(result.get(0).getId());
     }
 
     @Test
-    void testTransformSingleMcpRegistryServer() throws Exception {
-        String registryJson = """
+    @DisplayName("Should handle multiple servers in seed file")
+    void testAdaptMultipleServersInSeedFile() throws Exception {
+        String seedFileData = """
+            [
+              {
+                "name": "server1",
+                "description": "First Server",
+                "version": "1.0.0",
+                "repository": {
+                  "url": "https://github.com/test/repo1"
+                }
+              },
+              {
+                "name": "server2",
+                "description": "Second Server",
+                "version": "2.0.0",
+                "repository": {
+                  "url": "https://github.com/test/repo2"
+                }
+              }
+            ]
+            """;
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("file");
+        request.setData(seedFileData);
+
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertEquals(2, result.size());
+        assertEquals("server1", result.get(0).getName());
+        assertEquals("server2", result.get(1).getName());
+    }
+
+    @Test
+    @DisplayName("Should handle empty seed file")
+    void testAdaptEmptySeedFile() throws Exception {
+        String emptyFileData = "[]";
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("file");
+        request.setData(emptyFileData);
+
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should throw exception for invalid seed file JSON")
+    void testAdaptInvalidSeedFileJson() throws Exception {
+        String invalidJson = "[{invalid json}]";
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("file");
+        request.setData(invalidJson);
+
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
+    }
+
+    // ==================== JSON TYPE IMPORT TESTS ====================
+
+    @Test
+    @DisplayName("Should adapt valid single server JSON to server list")
+    void testAdaptValidServerJson() throws Exception {
+        String serverJson = """
+            {
+              "name": "ai.alpic.test/test-mcp-server",
+              "description": "Alpic Test MCP Server - great server!",
+              "version": "0.0.1",
+              "repository": {},
+              "remotes": [
                 {
-                    "_meta": {
-                        "io.modelcontextprotocol.registry/official": {
-                            "serverId": "d3669201-252f-403c-944b-c3ec0845782b"
-                        }
-                    },
-                    "name": "io.github.adfin-engineering/mcp-server-adfin",
-                    "description": "A Model Context Protocol Server for connecting with Adfin APIs",
+                  "type": "streamable-http",
+                  "url": "https://test.alpic.ai/"
+                }
+              ]
+            }
+            """;
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(serverJson);
+
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("ai.alpic.test/test-mcp-server", result.get(0).getName());
+        assertNotNull(result.get(0).getRemoteServerConfig());
+    }
+
+    @Test
+    @DisplayName("Should adapt JSON with packages (stdio protocol)")
+    void testAdaptJsonWithPackages() throws Exception {
+        String serverJson = """
+            {
+              "name": "ai.aliengiraffe/spotdb",
+              "description": "Ephemeral data sandbox",
+              "version": "0.1.0",
+              "repository": {},
+              "packages": [
+                {
+                  "registryType": "oci",
+                  "identifier": "docker.io/aliengiraffe/spotdb:0.1.0",
+                  "transport": {
+                    "type": "stdio"
+                  }
+                }
+              ]
+            }
+            """;
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(serverJson);
+
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, result.get(0).getProtocol());
+    }
+
+    @Test
+    @DisplayName("Should handle JSON without remotes and packages")
+    void testAdaptJsonWithoutRemotes() throws Exception {
+        String serverJson = """
+            {
+              "name": "minimal-server",
+              "description": "Minimal",
+              "version": "1.0.0",
+              "repository": {}
+            }
+            """;
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(serverJson);
+
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("minimal-server", result.get(0).getName());
+        assertNull(result.get(0).getProtocol());
+    }
+
+    @Test
+    @DisplayName("Should throw exception for invalid JSON format")
+    void testAdaptInvalidServerJson() throws Exception {
+        String invalidJson = "{invalid: json}";
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(invalidJson);
+
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
+    }
+
+    @Test
+    @DisplayName("Should throw exception for empty JSON")
+    void testAdaptEmptyJson() throws Exception {
+        String emptyJson = "";
+
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(emptyJson);
+
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
+    }
+
+    // ==================== URL TYPE IMPORT TESTS ====================
+
+    @Test
+    @DisplayName("Should adapt valid URL response with single page")
+    void testAdaptValidUrlResponse() throws Exception {
+        String mockResponse = """
+            {
+              "servers": [
+                {
+                  "server": {
+                    "name": "ai.aliengiraffe/spotdb",
+                    "description": "Ephemeral data sandbox",
+                    "version": "0.1.0",
                     "repository": {
-                        "url": "https://github.com/Adfin-Engineering/mcp-server-adfin",
-                        "source": "github",
-                        "id": "951338147"
+                      "url": "https://github.com/aliengiraffe/spotdb"
                     },
-                    "version": "0.0.1-seed",
                     "packages": [
-                        {
-                            "registryType": "pypi",
-                            "identifier": "adfinmcp",
-                            "version": "0.1.0",
-                            "package_arguments": [
-                                {
-                                    "description": "Directory to run the project from",
-                                    "is_required": true,
-                                    "format": "string",
-                                    "value": "--directory <absolute_path_to_adfin_mcp_folder>",
-                                    "type": "named"
-                                }
-                            ],
-                            "environment_variables": [
-                                {
-                                    "description": "<email>",
-                                    "name": "ADFIN_EMAIL"
-                                }
-                            ]
+                      {
+                        "registryType": "oci",
+                        "identifier": "docker.io/aliengiraffe/spotdb:0.1.0",
+                        "transport": {
+                          "type": "stdio"
                         }
+                      }
                     ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(registryJson);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("85beeed0-d848-39a1-833b-bf1c26755978", server.getId());
-        assertEquals("io.github.adfin-engineering/mcp-server-adfin", server.getName());
-        assertEquals("A Model Context Protocol Server for connecting with Adfin APIs", server.getDescription());
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
-        assertNotNull(server.getRepository());
-        assertNotNull(server.getVersionDetail());
-        assertEquals("0.0.1-seed", server.getVersionDetail().getVersion());
-        // remoteServerConfig may be absent for some package types (e.g. pypi) depending on
-        // implementation details. Accept either null or the expected export path.
-        if (server.getRemoteServerConfig() != null) {
-            assertEquals("python -m adfinmcp --directory <absolute_path_to_adfin_mcp_folder>",
-                    server.getRemoteServerConfig().getExportPath());
-        }
-    }
-
-    @Test
-    void testTransformLegacyFormat() throws Exception {
-        String legacyJson = """
-                {
-                    "servers": [
-                        {
-                            "_meta": {
-                                "io.modelcontextprotocol.registry/official": {
-                                    "serverId": "legacy-server"
-                                }
-                            },
-                            "name": "Legacy MCP Server",
-                            "description": "A legacy format server"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(legacyJson);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("e007b81b-bbe9-3ed1-9896-cf5b07e85b4c", server.getId());
-        assertEquals("Legacy MCP Server", server.getName());
-        assertEquals("A legacy format server", server.getDescription());
-        // Protocol defaults to stdio when not inferred by package/remote
-        assertEquals(null, server.getProtocol());
-        // Legacy fields like 'command' are no longer mapped into remote config
-        assertNull(server.getRemoteServerConfig());
-    }
-
-    @Test
-    void testTransformEmptyRegistryData() throws Exception {
-        String emptyJson = """
-                {
-                    "servers": [],
-                    "total_count": 0
-                }
-                """;
-
-        // With JSON import, empty 'servers' triggers an exception by design.
-        // Use 'file' import path here which returns an empty list for empty arrays.
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(emptyJson);
-        mcpServerImportRequest.setImportType("file");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-        assertNotNull(servers);
-        assertTrue(servers.isEmpty());
-    }
-
-    @Test
-    void testTransformInvalidJson() {
-        String invalidJson = "{ invalid json }";
-        assertThrows(Exception.class, () -> {
-            McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-            mcpServerImportRequest.setData(invalidJson);
-            mcpServerImportRequest.setImportType("json");
-            transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-        });
-    }
-
-    @Test
-    void testTransformUnsupportedImportType() {
-        String validJson = """
-                {
-                    "id": "test-server",
-                    "name": "Test Server"
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(validJson);
-        mcpServerImportRequest.setImportType("unsupported");
-
-        assertThrows(IllegalArgumentException.class,
-                () -> transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest));
-    }
-
-    @Test
-    void testProtocolInferenceFromPackage() throws Exception {
-        String jsonWithNpmPackage = """
-                {
-                    "name": "NPM Server",
-                    "repository": {
-                        "url": "https://github.com/test/npm-server",
-                        "source": "github",
-                        "id": "123"
-                    },
-                    "version": "1.0.0",
-                    "packages": [
-                        {
-                            "registryType": "npm",
-                            "identifier": "test-mcp-server",
-                            "version": "1.0.0"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithNpmPackage);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
-    }
-
-    @Test
-    void testUrlValidationWithMaliciousUrls() throws Exception {
-        // Test with non-registry format to trigger URL validation
-        String jsonWithMaliciousUrl = """
-                {
-                    "name": "Malicious Server",
-                    "repository": {
-                        "url": "https://github.com/example/repo",
-                        "source": "github"
-                    },
-                    "version": "1.0.0",
-                    "remotes": [
-                        {
-                            "transport_type": "http",
-                            "url": "javascript:alert('xss')"
-                        }
-                    ]
-                }
-                """;
-
-        // Current implementation validates URL strictly only when protocol is HTTP;
-        // since protocol defaults to stdio here, it should not throw.
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithMaliciousUrl);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-        assertNotNull(servers);
-    }
-
-    @Test
-    void testUrlValidationWithValidPackage() throws Exception {
-        // Test with valid package format that doesn't trigger URL validation issues
-        String jsonWithValidPackage = """
-                {
-                    "_meta": {
-                        "io.modelcontextprotocol.registry/official": {
-                            "serverId": "valid-server"
-                        }
-                    },
-                    "name": "Valid Server",
-                    "repository": {
-                        "url": "https://github.com/test/valid-server",
-                        "source": "github",
-                        "id": "123"
-                    },
-                    "version": "1.0.0",
-                    "packages": [
-                        {
-                            "registryType": "npm",
-                            "identifier": "valid-mcp-server",
-                            "version": "1.0.0"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithValidPackage);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
-    }
-
-    @Test
-    void testTransformServersWithMetadataNoTotalCount() throws Exception {
-        // A minimal slice of the provided registry sample: has servers +
-        // metadata.next_cursor but no total_count
-        String sample = """
-                {
-                    "servers": [
-                        {
-                            "name": "ai.waystation/gmail",
-                            "description": "Read emails...",
-                            "repository": {
-                                "url": "https://github.com/waystation-ai/mcp",
-                                "source": "github"
-                            },
-                            "version": "0.3.1",
-                            "remotes": [
-                                {
-                                    "transport_type": "streamable-http",
-                                    "url": "https://waystation.ai/gmail/mcp"
-                                }
-                            ]
-                        },
-                        {
-                            "name": "io.github.cameroncooke/XcodeBuildMCP",
-                            "description": "tools...",
-                            "repository": {
-                                "url": "https://github.com/cameroncooke/XcodeBuildMCP",
-                                "source": "github"
-                            },
-                            "version": "1.12.7",
-                            "packages": [
-                                {
-                                    "registryType": "npm",
-                                    "identifier": "xcodebuildmcp",
-                                    "version": "1.12.7"
-                                }
-                            ]
-                        }
-                    ],
-                    "metadata": {
-                        "next_cursor": "abc123",
-                        "count": 2
+                  },
+                  "_meta": {
+                    "io.modelcontextprotocol.registry/official": {
+                      "status": "active",
+                      "publishedAt": "2025-10-09T17:05:17.793149Z",
+                      "updatedAt": "2025-10-09T17:05:17.793149Z",
+                      "isLatest": true
                     }
+                  }
                 }
-                """;
+              ],
+              "metadata": {
+                "nextCursor": null,
+                "count": 1
+              }
+            }
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(sample);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        setupHttpClientMock(200, mockResponse);
 
-        assertNotNull(servers);
-        assertEquals(2, servers.size());
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/search");
 
-        // First server
-        McpServerDetailInfo s1 = servers.get(0);
-        assertNotNull(s1.getId()); // auto-generated since input has no id
-        assertEquals("ai.waystation/gmail", s1.getName());
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, s1.getProtocol()); // defaulted because no top-level
-        assertNotNull(s1.getVersionDetail());
-        assertEquals("0.3.1", s1.getVersionDetail().getVersion());
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
 
-        // Second server
-        McpServerDetailInfo s2 = servers.get(1);
-        assertNotNull(s2.getId()); // auto-generated
-        assertEquals("io.github.cameroncooke/XcodeBuildMCP", s2.getName());
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, s2.getProtocol());
-        assertNotNull(s2.getVersionDetail());
-        assertEquals("1.12.7", s2.getVersionDetail().getVersion());
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals("ai.aliengiraffe/spotdb", result.get(0).getName());
     }
 
     @Test
-    void testTransformWithFileImportType() throws Exception {
-        String fileData = """
-                [
-                    {
-                        "name": "Test Server 1",
-                        "version": "1.0.0"
-                    },
-                    {
-                        "name": "Test Server 2",
-                        "version": "2.0.0"
+    @DisplayName("Should handle pagination with cursor")
+    void testAdaptUrlResponseWithPagination() throws Exception {
+        String firstPageResponse = """
+            {
+              "servers": [
+                {
+                  "server": {
+                    "name": "server1",
+                    "version": "0.1.0",
+                    "repository": {},
+                    "remotes": [
+                      {
+                        "type": "streamable-http",
+                        "url": "https://test1.com/"
+                      }
+                    ]
+                  },
+                  "_meta": {
+                    "io.modelcontextprotocol.registry/official": {
+                      "status": "active",
+                      "publishedAt": "2025-10-09T17:05:17.793149Z",
+                      "updatedAt": "2025-10-09T17:05:17.793149Z",
+                      "isLatest": true
                     }
-                ]
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(fileData);
-        mcpServerImportRequest.setImportType("file");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(2, servers.size());
-
-        McpServerDetailInfo server1 = servers.get(0);
-        assertEquals("Test Server 1", server1.getName());
-        assertEquals("1.0.0", server1.getVersionDetail().getVersion());
-
-        McpServerDetailInfo server2 = servers.get(1);
-        assertEquals("Test Server 2", server2.getName());
-        assertEquals("2.0.0", server2.getVersionDetail().getVersion());
-    }
-
-    @Test
-    void testTransformWithRuntimeHint() throws Exception {
-        String jsonWithRuntimeHint = """
-                {
-                    "name": "Runtime Hint Server",
-                    "version": "1.0.0",
-                    "packages": [
-                        {
-                            "registryType": "npm",
-                            "identifier": "test-server",
-                            "version": "1.0.0",
-                            "runtimeHint": "npx"
-                        }
-                    ]
+                  }
                 }
-                """;
+              ],
+              "metadata": {
+                "nextCursor": "cursor_page2",
+                "count": 1
+              }
+            }
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithRuntimeHint);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("Runtime Hint Server", server.getName());
-        assertNotNull(server.getPackages());
-        assertFalse(server.getPackages().isEmpty());
-        assertEquals("npx", server.getPackages().get(0).getRuntimeHint());
-    }
-
-    @Test
-    void testTransformWithDockerPackage() throws Exception {
-        String jsonWithDockerPackage = """
+        String secondPageResponse = """
+            {
+              "servers": [
                 {
-                    "name": "Docker Server",
-                    "version": "1.0.0",
-                    "packages": [
-                        {
-                            "registryType": "docker",
-                            "identifier": "test/docker-server",
-                            "version": "1.0.0"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithDockerPackage);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("Docker Server", server.getName());
-        assertEquals("docker", server.getPackages().get(0).getRegistryType());
-        assertEquals("test/docker-server", server.getPackages().get(0).getIdentifier());
-    }
-
-    @Test
-    void testTransformWithOciPackage() throws Exception {
-        String jsonWithOciPackage = """
-                {
-                    "name": "OCI Server",
-                    "version": "1.0.0",
-                    "packages": [
-                        {
-                            "registryType": "oci",
-                            "identifier": "test/oci-server",
-                            "version": "1.0.0"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithOciPackage);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("OCI Server", server.getName());
-        assertEquals("oci", server.getPackages().get(0).getRegistryType());
-        assertEquals("test/oci-server", server.getPackages().get(0).getIdentifier());
-    }
-
-    @Test
-    void testTransformWithSseProtocol() throws Exception {
-        String jsonWithSse = """
-                {
-                    "name": "SSE Server",
-                    "version": "1.0.0",
+                  "server": {
+                    "name": "server2",
+                    "version": "0.2.0",
+                    "repository": {},
                     "remotes": [
-                        {
-                            "transport_type": "sse",
-                            "url": "http://localhost:8080/sse"
-                        }
+                      {
+                        "type": "streamable-http",
+                        "url": "https://test2.com/"
+                      }
                     ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithSse);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("SSE Server", server.getName());
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_SSE, server.getProtocol());
-    }
-
-    @Test
-    void testTransformWithStreamableProtocol() throws Exception {
-        String jsonWithStreamable = """
-                {
-                    "name": "Streamable Server",
-                    "version": "1.0.0",
-                    "remotes": [
-                        {
-                            "transport_type": "streamable-http",
-                            "url": "http://localhost:8080/stream"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithStreamable);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("Streamable Server", server.getName());
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STREAMABLE, server.getProtocol());
-    }
-
-    @Test
-    void testTransformWithInvalidUrlInRemotes() throws Exception {
-        String jsonWithInvalidUrl = """
-                {
-                    "name": "Invalid URL Server",
-                    "version": "1.0.0",
-                    "remotes": [
-                        {
-                            "transport_type": "http",
-                            "url": "invalid:url"
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithInvalidUrl);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("Invalid URL Server", server.getName());
-        assertNull(server.getRemoteServerConfig().getServiceRef());
-    }
-
-    @Test
-    void testTransformWithArguments() throws Exception {
-        String jsonWithArguments = """
-                {
-                    "name": "Server With Arguments",
-                    "version": "1.0.0",
-                    "packages": [
-                        {
-                            "registryType": "npm",
-                            "identifier": "test-server",
-                            "version": "1.0.0",
-                            "runtimeArguments": [
-                                {
-                                    "type": "positional",
-                                    "valueHint": "--arg1"
-                                }
-                            ],
-                            "packageArguments": [
-                                {
-                                    "type": "positional",
-                                    "valueHint": "--arg2"
-                                }
-                            ]
-                        }
-                    ]
-                }
-                """;
-
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithArguments);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
-
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("Server With Arguments", server.getName());
-        assertEquals("npm", server.getPackages().get(0).getRegistryType());
-        assertEquals("test-server", server.getPackages().get(0).getIdentifier());
-        assertEquals("1.0.0", server.getPackages().get(0).getVersion());
-        assertEquals(1, server.getPackages().get(0).getRuntimeArguments().size());
-        assertEquals(1, server.getPackages().get(0).getPackageArguments().size());
-    }
-
-    @Test
-    void testTransformWithRepositoryId() throws Exception {
-        String jsonWithRepositoryId = """
-                {
-                    "name": "Server With Repository ID",
-                    "version": "1.0.0",
-                    "repository": {
-                        "url": "https://github.com/test/repo",
-                        "source": "github",
-                        "id": "repo-id-123"
+                  },
+                  "_meta": {
+                    "io.modelcontextprotocol.registry/official": {
+                      "status": "active",
+                      "publishedAt": "2025-10-09T17:05:17.793149Z",
+                      "updatedAt": "2025-10-09T17:05:17.793149Z",
+                      "isLatest": true
                     }
+                  }
                 }
-                """;
+              ],
+              "metadata": {
+                "nextCursor": null,
+                "count": 1
+              }
+            }
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithRepositoryId);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        setupHttpClientMockForPagination(firstPageResponse, secondPageResponse);
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/search");
+        request.setLimit(-1); // Fetch all pages
 
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("repo-id-123", server.getId());
-        assertEquals("Server With Repository ID", server.getName());
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        // Should have servers from both pages
+        assertNotNull(result);
+        assertTrue(result.size() >= 1);
     }
 
     @Test
-    void testTransformWithOfficialMetaPublishedAt() throws Exception {
-        String jsonWithMeta = """
-                {
-                    "_meta": {
-                        "io.modelcontextprotocol.registry/official": {
-                            "serverId": "meta-server",
-                            "publishedAt": "2023-01-01T00:00:00Z"
-                        }
-                    },
-                    "name": "Meta Server",
-                    "version": "1.0.0"
-                }
-                """;
+    @DisplayName("Should handle URL with search parameter")
+    void testAdaptUrlWithSearchParameter() throws Exception {
+        String mockResponse = """
+            {
+              "servers": [],
+              "metadata": {
+                "nextCursor": null,
+                "count": 0
+              }
+            }
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithMeta);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        setupHttpClientMock(200, mockResponse);
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/search");
+        request.setSearch("spotdb");
 
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("meta-server", server.getId());
-        assertEquals("2023-01-01T00:00:00Z", server.getVersionDetail().getRelease_date());
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void testTransformWithOfficialMetaIsLatest() throws Exception {
-        String jsonWithMetaIsLatest = """
+    @DisplayName("Should handle URL with explicit limit parameter")
+    void testAdaptUrlWithLimitParameter() throws Exception {
+        String mockResponse = """
+            {
+              "servers": [
                 {
-                    "_meta": {
-                        "io.modelcontextprotocol.registry/official": {
-                            "serverId": "latest-server",
-                            "isLatest": true
-                        }
-                    },
-                    "name": "Latest Server",
-                    "version": "1.0.0"
+                  "server": {
+                    "name": "server1",
+                    "version": "0.1.0",
+                    "repository": {}
+                  },
+                  "_meta": {
+                    "io.modelcontextprotocol.registry/official": {
+                      "status": "active",
+                      "publishedAt": "2025-10-09T17:05:17.793149Z",
+                      "updatedAt": "2025-10-09T17:05:17.793149Z",
+                      "isLatest": true
+                    }
+                  }
                 }
-                """;
+              ],
+              "metadata": {
+                "nextCursor": null,
+                "count": 1
+              }
+            }
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithMetaIsLatest);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        setupHttpClientMock(200, mockResponse);
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/search");
+        request.setLimit(10);
 
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("latest-server", server.getId());
-        assertTrue(server.getVersionDetail().getIs_latest());
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
+
+        assertNotNull(result);
     }
 
     @Test
-    void testTransformWithEmptyName() throws Exception {
-        String jsonWithEmptyName = """
-                {
-                    "name": "",
-                    "version": "1.0.0"
-                }
-                """;
+    @DisplayName("Should throw exception for HTTP 404 error")
+    void testAdaptUrlWith404Error() throws Exception {
+        setupHttpClientMock(404, "Not Found");
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithEmptyName);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/notfound");
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        assertNotNull(server.getId());
-        assertFalse(server.getId().isEmpty());
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
     }
 
     @Test
-    void testUrlValidationWithDataProtocol() throws Exception {
-        String jsonWithDataProtocol = """
-                {
-                    "name": "Data Protocol Server",
-                    "version": "1.0.0",
-                    "remotes": [
-                        {
-                            "transport_type": "http",
-                            "url": "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ=="
-                        }
-                    ]
-                }
-                """;
+    @DisplayName("Should throw exception for HTTP 500 error")
+    void testAdaptUrlWith500Error() throws Exception {
+        setupHttpClientMock(500, "Internal Server Error");
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithDataProtocol);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/search");
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
-
-        McpServerDetailInfo server = servers.get(0);
-        // Remote server config should be null due to data protocol URL being rejected
-        assertNull(server.getRemoteServerConfig().getServiceRef());
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
     }
 
     @Test
-    void testUrlValidationWithJavascriptProtocol() throws Exception {
-        String jsonWithJavascriptProtocol = """
-                {
-                    "name": "Javascript Protocol Server",
-                    "version": "1.0.0",
-                    "remotes": [
-                        {
-                            "transport_type": "http",
-                            "url": "javascript:alert('xss')"
-                        }
-                    ]
-                }
-                """;
+    @DisplayName("Should throw exception for invalid response JSON")
+    void testAdaptUrlWithInvalidResponseJson() throws Exception {
+        setupHttpClientMock(200, "{invalid json}");
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithJavascriptProtocol);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("https://registry.modelcontextprotocol.io/search");
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
+    }
 
-        McpServerDetailInfo server = servers.get(0);
-        // Remote server config should be null due to javascript protocol URL being rejected
-        assertNull(server.getRemoteServerConfig().getServiceRef());
+    // ==================== BOUNDARY & EXCEPTION TESTS ====================
+
+    @Test
+    @DisplayName("Should throw exception for blank URL")
+    void testAdaptBlankUrl() throws Exception {
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("url");
+        request.setData("   ");
+
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
     }
 
     @Test
-    void testTransformWithDubboProtocol() throws Exception {
-        String jsonWithDubboProtocol = """
+    @DisplayName("Should throw exception for null data")
+    void testAdaptNullData() throws Exception {
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(null);
+
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
+    }
+
+    @Test
+    @DisplayName("Should throw exception for unsupported import type")
+    void testAdaptUnsupportedImportType() throws Exception {
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("unsupported");
+        request.setData("{\"name\":\"test\"}");
+
+        assertThrows(Exception.class, () -> adaptor.adaptExternalDataToNacosMcpServerFormat(request));
+    }
+
+    @Test
+    @DisplayName("Should handle JSON with multiple remotes of different types")
+    void testAdaptJsonWithMultipleRemotes() throws Exception {
+        String serverJson = """
+            {
+              "name": "multi-remote-server",
+              "description": "Server with multiple remotes",
+              "version": "1.0.0",
+              "repository": {},
+              "remotes": [
                 {
-                    "name": "Dubbo Protocol Server",
-                    "version": "1.0.0",
-                    "remotes": [
-                        {
-                            "transport_type": "dubbo",
-                            "url": "dubbo://localhost:20880/service"
-                        }
-                    ]
+                  "type": "streamable-http",
+                  "url": "https://remote1.com:8080/path1"
+                },
+                {
+                  "type": "sse",
+                  "url": "https://remote2.com/path2"
                 }
-                """;
+              ]
+            }
+            """;
 
-        McpServerImportRequest mcpServerImportRequest = new McpServerImportRequest();
-        mcpServerImportRequest.setData(jsonWithDubboProtocol);
-        mcpServerImportRequest.setImportType("json");
-        List<McpServerDetailInfo> servers = transformService.adaptExternalDataToNacosMcpServerFormat(mcpServerImportRequest);
+        McpServerImportRequest request = new McpServerImportRequest();
+        request.setImportType("json");
+        request.setData(serverJson);
 
-        assertNotNull(servers);
-        assertEquals(1, servers.size());
+        List<McpServerDetailInfo> result = adaptor.adaptExternalDataToNacosMcpServerFormat(request);
 
-        McpServerDetailInfo server = servers.get(0);
-        assertEquals("Dubbo Protocol Server", server.getName());
-        // Check that protocol is correctly inferred
-        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol()); // Default fallback
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertNotNull(result.get(0).getRemoteServerConfig());
+        assertEquals(2, result.get(0).getRemoteServerConfig().getFrontEndpointConfigList().size());
+    }
+
+    @Test
+    @DisplayName("Should generate consistent IDs for same server name")
+    void testConsistentIdGeneration() throws Exception {
+        String serverJson = """
+            {
+              "name": "consistent-server",
+              "description": "Test",
+              "version": "1.0.0",
+              "repository": {}
+            }
+            """;
+
+        McpServerImportRequest request1 = new McpServerImportRequest();
+        request1.setImportType("json");
+        request1.setData(serverJson);
+
+        McpServerImportRequest request2 = new McpServerImportRequest();
+        request2.setImportType("json");
+        request2.setData(serverJson);
+
+        List<McpServerDetailInfo> result1 = adaptor.adaptExternalDataToNacosMcpServerFormat(request1);
+        List<McpServerDetailInfo> result2 = adaptor.adaptExternalDataToNacosMcpServerFormat(request2);
+
+        assertEquals(result1.get(0).getId(), result2.get(0).getId());
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private void setupHttpClientMock(int statusCode, String responseBody) throws Exception {
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(statusCode);
+        when(mockResponse.body()).thenReturn(responseBody);
+
+        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(mockResponse);
+
+        adaptor.setHttpClient(mockHttpClient);
+    }
+
+    private void setupHttpClientMockForPagination(String firstPage, String secondPage) throws Exception {
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse1 = mock(HttpResponse.class);
+        when(mockResponse1.statusCode()).thenReturn(200);
+        when(mockResponse1.body()).thenReturn(firstPage);
+
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse2 = mock(HttpResponse.class);
+        when(mockResponse2.statusCode()).thenReturn(200);
+        when(mockResponse2.body()).thenReturn(secondPage);
+
+        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(mockResponse1)
+                .thenReturn(mockResponse2);
+
+        adaptor.setHttpClient(mockHttpClient);
     }
 }

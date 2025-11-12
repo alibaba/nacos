@@ -57,6 +57,7 @@ public class Package {
             @JsonSubTypes.Type(value = StreamableHttpTransport.class, name = "streamable-http"),
             @JsonSubTypes.Type(value = SseTransport.class, name = "sse")
     })
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private Object transport;
 
     /**

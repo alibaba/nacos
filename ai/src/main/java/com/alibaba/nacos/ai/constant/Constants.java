@@ -51,7 +51,7 @@ public class Constants {
     
     public static final String MCP_SERVER_ENDPOINT_CLUSTER = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
     
-    public static final String MCP_BACKEND_ISTANCE_PROTOCOL_KEY = "transportProtocol";
+    public static final String MCP_BACKEND_INSTANCE_PROTOCOL_KEY = "transportProtocol";
 
     public static final String MCP_SERVER_ENDPOINT_ADDRESS = "address";
     

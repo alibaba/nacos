@@ -66,6 +66,8 @@ import java.util.stream.Collectors;
 @Service
 public class McpExternalDataAdaptor {
 
+    private HttpClient httpClient;
+
     private static final String CURSOR_QUERY_NAME = "cursor";
 
     private static final String LIMIT_QUERY_NAME = "limit";
@@ -119,8 +121,7 @@ public class McpExternalDataAdaptor {
 
     private UrlPageResult fetchUrlPage(String urlData, String cursor, Integer limit, String search) throws Exception {
         String base = urlData.trim();
-        HttpClient client = null;
-        client = createHttpClient();
+        HttpClient client = getHttpClient();
         String pageUrl = buildPageUrl(base, cursor, limit, search);
         HttpRequest request = buildGetRequest(pageUrl);
         HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -137,7 +138,7 @@ public class McpExternalDataAdaptor {
                         .map(this::adaptOfficialMcpServerFromResponse)
                         .collect(Collectors.toList());
             }
-            if (listPage != null) {
+            if (listPage != null && listPage.getMetadata() != null) {
                 next = listPage.getMetadata().getNextCursor();
             }
         } catch (Exception e) {
@@ -266,20 +267,15 @@ public class McpExternalDataAdaptor {
 
             String url = remote.getUrl().trim();
             try {
-                URI uri = URI.create(url);
-                String scheme = uri.getScheme();
-                String host = uri.getHost();
-                int port = uri.getPort();
-                String path = uri.getRawPath();
-
-                boolean isHttps = "https".equalsIgnoreCase(scheme);
-                int effectivePort = (port > 0) ? port : (isHttps ? 443 : 80);
-                String endpointData = host + ":" + effectivePort;
+                UrlComponents components = parseUrlComponents(url);
+                boolean isHttps = "https".equalsIgnoreCase(components.getScheme());
+                int effectivePort = (components.getPort() > 0) ? components.getPort() : (isHttps ? 443 : 80);
+                String endpointData = components.getHost() + ":" + effectivePort;
                 FrontEndpointConfig cfg = new FrontEndpointConfig();
                 cfg.setEndpointData(endpointData);
-                cfg.setPath(StringUtils.isNotBlank(path) ? path : "/");
+                cfg.setPath(StringUtils.isNotBlank(components.getPath()) ? components.getPath() : "/");
                 cfg.setType(remote.getType());
-                cfg.setProtocol(scheme);
+                cfg.setProtocol(components.getScheme());
                 cfg.setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
                 cfg.setHeaders(remote.getHeaders());
                 endpoints.add(cfg);
@@ -289,6 +285,88 @@ public class McpExternalDataAdaptor {
         }
         remoteConfig.setFrontEndpointConfigList(endpoints);
         return remoteConfig;
+    }
+
+    /**
+     * Parse URL into components (scheme, host, port, path).
+     * Manual parsing without using URI class.
+     *
+     * @param url the URL string to parse
+     * @return UrlComponents containing scheme, host, port, and path
+     */
+    private UrlComponents parseUrlComponents(String url) {
+        String scheme = null;
+        String host = null;
+        int port = -1;
+        String path = null;
+
+        // Parse scheme
+        int schemeEnd = url.indexOf("://");
+        if (schemeEnd > 0) {
+            scheme = url.substring(0, schemeEnd);
+            url = url.substring(schemeEnd + 3);
+        }
+
+        // Parse host, port, and path
+        int pathStart = url.indexOf('/');
+        String hostPart;
+        if (pathStart > 0) {
+            hostPart = url.substring(0, pathStart);
+            path = url.substring(pathStart);
+        } else {
+            hostPart = url;
+            path = null;
+        }
+
+        // Parse host and port
+        int portStart = hostPart.lastIndexOf(':');
+        if (portStart > 0) {
+            host = hostPart.substring(0, portStart);
+            try {
+                port = Integer.parseInt(hostPart.substring(portStart + 1));
+            } catch (NumberFormatException e) {
+                // Invalid port, treat the whole thing as host
+                host = hostPart;
+                port = -1;
+            }
+        } else {
+            host = hostPart;
+        }
+
+        return new UrlComponents(scheme, host, port, path);
+    }
+
+    /**
+     * Inner class to hold URL components parsed from a URI.
+     */
+    private static class UrlComponents {
+        private final String scheme;
+        private final String host;
+        private final int port;
+        private final String path;
+
+        public UrlComponents(String scheme, String host, int port, String path) {
+            this.scheme = scheme;
+            this.host = host;
+            this.port = port;
+            this.path = path;
+        }
+
+        public String getScheme() {
+            return scheme;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public String getPath() {
+            return path;
+        }
     }
 
     /**
@@ -338,11 +416,18 @@ public class McpExternalDataAdaptor {
         return JacksonUtils.toObj(data, new TypeReference<>() { });
     }
 
-    private HttpClient createHttpClient() {
-        return HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
-                .build();
+    private HttpClient getHttpClient() {
+        if (httpClient == null) {
+            httpClient = HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
+                    .build();
+        }
+        return httpClient;
+    }
+
+    public void setHttpClient(HttpClient client) {
+        this.httpClient = client;
     }
 
     private String buildPageUrl(String base, String cursor, Integer limit, String search) {

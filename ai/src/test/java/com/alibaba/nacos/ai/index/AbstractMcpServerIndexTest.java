@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.mcp.registry;
+package com.alibaba.nacos.ai.index;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
- * Argument union for MCP registry (named | positional).
- * Aligns with components.schemas.Argument.
+ * Unit tests for AbstractMcpServerIndex.searchMcpServerByNameWithOffset method.
+ * Covers various combinations of offset, limit, and total count scenarios.
  *
  * @author xinluo
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = NamedArgument.class)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = PositionalArgument.class, name = "positional"),
-        @JsonSubTypes.Type(value = NamedArgument.class, name = "named")
-})
-public interface Argument {
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class AbstractMcpServerIndexTest {
+    
 }

@@ -129,23 +129,6 @@ class McpServerOperationServiceTest {
     }
     
     @Test
-    void listMcpServerWithOffset() {
-        String id = mockId();
-        Page<McpServerIndexData> mockIndexData = mockIndexData(id);
-        McpServerVersionInfo mockMcpServer = mockServerVersionInfo(id);
-        when(mcpServerIndex.searchMcpServerByNameWithOffset(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 0, 100)).thenReturn(Collections.singletonList(mockIndexData.getPageItems().get(0)));
-        ConfigQueryChainResponse mockResponse = mockConfigQueryChainResponse(mockMcpServer);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
-        List<McpServerBasicInfo> result = serverOperationService.listMcpServerWithOffset(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_ACCURATE, 0, 100);
-        assertEquals(1, result.size());
-        assertEquals(id, result.get(0).getId());
-        assertEquals("mcpName", result.get(0).getName());
-        assertEquals("9.9.9", result.get(0).getVersion());
-    }
-    
-    @Test
     void listMcpServerWithOverPageNo() {
         Page<McpServerIndexData> mockIndexData = new Page<>();
         mockIndexData.setPageNumber(10);

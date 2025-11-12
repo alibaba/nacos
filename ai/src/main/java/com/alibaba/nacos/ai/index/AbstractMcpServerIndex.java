@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.index;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -78,32 +77,6 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
         result.setPageNumber(pageNo);
         afterSearch(indexDataList, name);
         return result;
-    }
-
-    @Override
-    public List<McpServerIndexData> searchMcpServerByNameWithOffset(String namespaceId, String name, String search, int offset,
-            int limit) {
-        int pageOffset = offset % limit;
-        if (pageOffset == 0) {
-            return searchMcpServerByNameWithPage(namespaceId, name, search, offset / limit + 1, limit).getPageItems();
-        } else {
-            int startPageNo = offset / limit + 1;
-            List<McpServerIndexData> indexDataList = new ArrayList<>();
-            Page<McpServerIndexData> first = searchMcpServerByNameWithPage(namespaceId, name, search, startPageNo, limit);
-            int remainingFromFirst = Math.max(0, first.getPageItems().size() - pageOffset);
-            if (remainingFromFirst > 0) {
-                indexDataList.addAll(first.getPageItems().subList(pageOffset, first.getPageItems().size()));
-            }
-            
-            if (indexDataList.size() < limit && remainingFromFirst == first.getPageItems().size() - pageOffset) {
-                Page<McpServerIndexData> second = searchMcpServerByNameWithPage(namespaceId, name, search, startPageNo + 1, limit);
-                int needed = limit - indexDataList.size();
-                if (needed > 0 && !second.getPageItems().isEmpty()) {
-                    indexDataList.addAll(second.getPageItems().subList(0, Math.min(needed, second.getPageItems().size())));
-                }
-            }
-            return indexDataList;
-        }
     }
 
     /**
