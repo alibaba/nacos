@@ -6,6 +6,7 @@ import { getParams, request } from '../../../globalLib';
 import swagger2openapi from 'swagger2openapi';
 import YAML from 'js-yaml';
 import { extractToolsFromOpenAPI } from './Swagger2Tools';
+import './ShowTools.css';
 
 const { Row, Col } = Grid;
 const currentNamespace = getParams('namespace');
@@ -727,72 +728,17 @@ const ShowTools = props => {
 
   return (
     <Card
-      style={{
-        backgroundColor: 'rgba(250, 250, 250, 0.7)',
-        backdropFilter: 'blur(10px)',
-        boxShadow:
-          isPreview || onlyEditRuntimeInfo
-            ? 'none'
-            : '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-        borderRadius: '8px',
-        border: '1px solid #e8e8e8',
-        transition: 'all 0.3s ease',
-      }}
+      className={`show-tools-card ${
+        isPreview || onlyEditRuntimeInfo ? (isPreview ? 'preview' : 'edit-mode') : ''
+      }`}
       contentHeight="auto"
-      onMouseEnter={e => {
-        if (!isPreview && !onlyEditRuntimeInfo) {
-          e.currentTarget.style.boxShadow =
-            '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }
-      }}
-      onMouseLeave={e => {
-        if (!isPreview && !onlyEditRuntimeInfo) {
-          e.currentTarget.style.boxShadow =
-            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }
-      }}
     >
-      <style>
-        {`
-          .tools-layout {
-            display: flex;
-            min-height: 400px;
-            margin-top: 20px;
-          }
-          
-          .tools-sidebar {
-            width: 250px;
-            border-right: 1px solid #e6e6e6;
-            margin-right: 16px;
-          }
-          
-          .tools-content {
-            flex: 1;
-          }
-          
-          @media (max-width: 768px) {
-            .tools-layout {
-              flex-direction: column;
-            }
-            
-            .tools-sidebar {
-              width: 100%;
-              border-right: none;
-              border-bottom: 1px solid #e6e6e6;
-              margin-right: 0;
-              margin-bottom: 16px;
-            }
-          }
-        `}
-      </style>
       {/* Tools 展示 - 使用与 McpDetail 相同的左右分栏风格 */}
       {serverConfig?.toolSpec?.tools && serverConfig.toolSpec.tools.length > 0 ? (
         <>
           {/* 当有tools时，显示添加按钮 */}
           {!isPreview && !onlyEditRuntimeInfo && (
-            <Button type="primary" onClick={openDialog} style={{ marginRight: 10 }}>
+            <Button type="primary" onClick={openDialog} className="show-tools-btn-mr">
               {locale.newMcpTool}
             </Button>
           )}
@@ -801,7 +747,7 @@ const ShowTools = props => {
             <Button
               type="primary"
               onClick={autoImportToolsFromMCPServer}
-              style={{ marginRight: 10 }}
+              className="show-tools-btn-mr"
               loading={importLoading}
               disabled={importLoading}
             >
@@ -813,7 +759,7 @@ const ShowTools = props => {
             <Button
               type="primary"
               onClick={importToolsFromOpenApi}
-              style={{ marginRight: 10 }}
+              className="show-tools-btn-mr"
               loading={importLoading}
               disabled={importLoading}
             >
@@ -832,73 +778,36 @@ const ShowTools = props => {
                 return (
                   <div
                     key={index}
-                    style={{
-                      padding: '12px 16px',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid #f0f0f0',
-                      backgroundColor: activeToolIndex === index ? '#e6f7ff' : 'transparent',
-                      borderLeft:
-                        activeToolIndex === index ? '3px solid #1890ff' : '3px solid transparent',
-                      overflow: 'hidden',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                    }}
+                    className={`tool-item ${activeToolIndex === index ? 'active' : ''}`}
                     onClick={() => setActiveToolIndex(index)}
                   >
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        marginBottom: '4px',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
-                        lineHeight: '1.4',
-                      }}
-                    >
-                      {tool.name}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '8px',
-                      }}
-                    >
-                      <span
-                        style={{
-                          backgroundColor: isOnline ? '#52c41a' : '#ff4d4f',
-                          color: 'white',
-                          padding: '1px 6px',
-                          borderRadius: '10px',
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                        }}
-                      >
+                    <div className="tool-item-title">{tool.name}</div>
+                    <div className="tool-item-status-bar">
+                      <span className={`tool-status-badge ${isOnline ? 'enabled' : 'disabled'}`}>
                         {isOnline ? '启用' : '禁用'}
                       </span>
                       {tool.inputSchema?.properties && (
-                        <span style={{ color: '#666', fontSize: '12px' }}>
+                        <span className="tool-param-count">
                           {Object.keys(tool.inputSchema.properties).length} 个参数
                         </span>
                       )}
                     </div>
                     {/* 操作按钮 - 只保留编辑和删除 */}
                     {!isPreview && (
-                      <div style={{ marginTop: '8px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <div className="tool-item-actions">
+                        <div className="tool-item-actions-row">
                           <a
+                            className="tool-action-link"
                             onClick={e => {
                               e.stopPropagation();
                               openToolDetail({ type: 'edit', record: tool });
                             }}
-                            style={{ fontSize: '12px' }}
                           >
                             {locale.operationToolEdit}
                           </a>
                           {!onlyEditRuntimeInfo && (
                             <>
-                              <span style={{ fontSize: '12px' }}>|</span>
+                              <span className="tool-action-separator">|</span>
                               <DeleteTool
                                 record={tool}
                                 locale={locale}
@@ -924,62 +833,29 @@ const ShowTools = props => {
                 if (!tool) return null;
 
                 return (
-                  <div style={{ padding: '16px' }}>
+                  <div className="tool-detail-container">
                     {/* Tool 标题 */}
-                    <h2
-                      style={{
-                        fontSize: '20px',
-                        fontWeight: 'bold',
-                        color: '#000',
-                        marginBottom: '16px',
-                        borderBottom: '1px solid #e6e6e6',
-                        paddingBottom: '8px',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
-                        lineHeight: '1.4',
-                      }}
-                    >
-                      {tool.name}
-                    </h2>
+                    <h2 className="tool-detail-title">{tool.name}</h2>
 
                     {/* Tool 信息 */}
                     {tool.description && (
-                      <div style={{ marginBottom: '24px' }}>
-                        <p style={{ color: '#000', fontSize: '14px', lineHeight: '1.6' }}>
-                          {tool.description}
-                        </p>
+                      <div className="tool-detail-description">
+                        <p>{tool.description}</p>
                       </div>
                     )}
 
                     {/* Tool 参数配置 */}
                     {tool.inputSchema?.properties &&
                       Object.keys(tool.inputSchema.properties).length > 0 && (
-                        <div style={{ marginBottom: '16px' }}>
-                          <h3
-                            style={{
-                              color: '#000',
-                              margin: '0 0 16px 0',
-                              borderBottom: '2px solid #d9d9d9',
-                              paddingBottom: '8px',
-                            }}
-                          >
+                        <div className="parameters-section">
+                          <h3 className="parameters-section-title">
                             {locale?.parameters || '参数配置'}
-                            <span style={{ marginLeft: '8px', color: '#666', fontSize: '14px' }}>
+                            <span className="parameters-section-count">
                               (共 {Object.keys(tool.inputSchema.properties).length} 项)
                             </span>
                           </h3>
 
-                          <div
-                            style={{
-                              border: '1px solid rgba(230, 230, 230, 0.4)',
-                              borderRadius: '8px',
-                              backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                              backdropFilter: 'blur(10px)',
-                              boxShadow:
-                                '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                              padding: '16px',
-                            }}
-                          >
+                          <div className="parameters-container">
                             <Tree
                               dataSource={buildParameterTreeData(
                                 tool.inputSchema.properties,
@@ -987,7 +863,7 @@ const ShowTools = props => {
                               )}
                               showLine
                               isLabelBlock
-                              style={{ backgroundColor: 'transparent' }}
+                              className="parameters-tree"
                               labelRender={node => {
                                 // 从参数映射表中获取节点数据
                                 const nodeData = parameterMap.current?.get(node.key);
@@ -1007,129 +883,37 @@ const ShowTools = props => {
 
                                 // 检查是否是组织节点（属性、数组项定义等）
                                 if (nodeData?.isGroupNode) {
-                                  return (
-                                    <span
-                                      style={{
-                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                        fontWeight: 'bold',
-                                        color: '#000',
-                                        fontSize: '14px',
-                                      }}
-                                    >
-                                      {node.label}
-                                    </span>
-                                  );
+                                  return <span className="tree-group-label">{node.label}</span>;
                                 }
 
                                 // 检查是否是参数节点（通过映射表中的 isParameterNode 标识）
                                 if (nodeData?.isParameterNode || node.isLeaf) {
                                   return (
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        width: '100%',
-                                        flexWrap: 'wrap',
-                                      }}
-                                    >
-                                      {/* 参数名 */}
-                                      <span
-                                        style={{
-                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                          fontWeight: 'bold',
-                                          color: '#000',
-                                          fontSize: '14px',
-                                        }}
-                                      >
-                                        {nodeData.name}
-                                      </span>
-
-                                      {/* 类型信息 - 确保总是显示类型 */}
-                                      <span
-                                        style={{
-                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                          color: '#666',
-                                          fontSize: '12px',
-                                          backgroundColor: '#f5f5f5',
-                                          padding: '2px 6px',
-                                          borderRadius: '3px',
-                                          border: '1px solid #ddd',
-                                        }}
-                                      >
+                                    <div className="param-row">
+                                      <span className="param-name">{nodeData.name}</span>
+                                      <span className="type-badge">
                                         [{nodeData.type || 'string'}]
                                       </span>
-
-                                      {/* 必填标记 */}
                                       {nodeData.isRequired && (
-                                        <span
-                                          style={{
-                                            fontFamily:
-                                              'Monaco, Consolas, "Courier New", monospace',
-                                            color: '#000',
-                                            fontSize: '11px',
-                                            fontWeight: 'bold',
-                                          }}
-                                        >
-                                          *必填
-                                        </span>
+                                        <span className="required-badge">*必填</span>
                                       )}
-
-                                      {/* 默认值标记 */}
                                       {nodeData.hasDefault && (
-                                        <span
-                                          style={{
-                                            fontFamily:
-                                              'Monaco, Consolas, "Courier New", monospace',
-                                            color: '#000',
-                                            fontSize: '11px',
-                                          }}
-                                        >
-                                          [默认值]
-                                        </span>
+                                        <span className="default-tag">[默认值]</span>
                                       )}
-
-                                      {/* 描述信息 - 过长时（>64）强制省略号 */}
                                       <span
-                                        style={{
-                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                          color: '#000',
-                                          fontSize: '12px',
-                                          flex: 1,
-                                          minWidth: 0,
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                          whiteSpace: 'nowrap',
-                                        }}
+                                        className="param-desc"
                                         title={nodeData.description || '-'}
                                       >
                                         - {truncateText(nodeData.description || '-', 64)}
                                       </span>
-
-                                      {/* 默认值信息（如果有的话） */}
-                                      {nodeData.hasDefault && nodeData.defaultValue !== undefined && (
-                                        <span
-                                          style={{
-                                            fontFamily:
-                                              'Monaco, Consolas, "Courier New", monospace',
-                                            color: '#000',
-                                            fontSize: '11px',
-                                          }}
-                                        >
-                                          ({JSON.stringify(nodeData.defaultValue)})
-                                        </span>
-                                      )}
-
-                                      {/* 可选值信息（如果有的话） */}
+                                      {nodeData.hasDefault &&
+                                        nodeData.defaultValue !== undefined && (
+                                          <span className="default-value">
+                                            ({JSON.stringify(nodeData.defaultValue)})
+                                          </span>
+                                        )}
                                       {nodeData.enum && (
-                                        <span
-                                          style={{
-                                            fontFamily:
-                                              'Monaco, Consolas, "Courier New", monospace',
-                                            color: '#000',
-                                            fontSize: '11px',
-                                          }}
-                                        >
+                                        <span className="enum-values">
                                           [
                                           {Array.isArray(nodeData.enum)
                                             ? nodeData.enum.join(', ')
@@ -1149,39 +933,11 @@ const ShowTools = props => {
                                   !nodeData.isInfoNode
                                 ) {
                                   return (
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        width: '100%',
-                                        flexWrap: 'wrap',
-                                      }}
-                                    >
-                                      {/* 参数名 */}
-                                      <span
-                                        style={{
-                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                          fontWeight: 'bold',
-                                          color: '#000',
-                                          fontSize: '14px',
-                                        }}
-                                      >
+                                    <div className="param-row">
+                                      <span className="param-name">
                                         {nodeData.name || node.label}
                                       </span>
-
-                                      {/* 类型信息 */}
-                                      <span
-                                        style={{
-                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                          color: '#666',
-                                          fontSize: '12px',
-                                          backgroundColor: '#f5f5f5',
-                                          padding: '2px 6px',
-                                          borderRadius: '3px',
-                                          border: '1px solid #ddd',
-                                        }}
-                                      >
+                                      <span className="type-badge">
                                         [{nodeData.type || 'string'}]
                                       </span>
                                     </div>
@@ -1196,11 +952,7 @@ const ShowTools = props => {
                                     : `${nodeData.name}: ${nodeData.description}`;
                                   return (
                                     <span
-                                      style={{
-                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                        color: '#000',
-                                        fontSize: '13px',
-                                      }}
+                                      className="info-label"
                                       title={`${nodeData.name}: ${nodeData.description}`}
                                     >
                                       {displayText}
@@ -1209,17 +961,7 @@ const ShowTools = props => {
                                 }
 
                                 // 默认渲染（其他类型的节点）
-                                return (
-                                  <span
-                                    style={{
-                                      fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                      color: '#000',
-                                      fontSize: '13px',
-                                    }}
-                                  >
-                                    {node.label}
-                                  </span>
-                                );
+                                return <span className="plain-label">{node.label}</span>;
                               }}
                             />
                           </div>
@@ -1235,84 +977,41 @@ const ShowTools = props => {
 
                         if (templateData) {
                           return (
-                            <div style={{ marginBottom: '16px' }}>
-                              <h3
-                                style={{
-                                  color: '#000',
-                                  margin: '0 0 16px 0',
-                                  borderBottom: '2px solid #d9d9d9',
-                                  paddingBottom: '8px',
-                                }}
-                              >
+                            <div className="protocol-conversion-section">
+                              <h3 className="protocol-conversion-title">
                                 {locale?.protocolConversion || '协议转化配置'}
                               </h3>
 
-                              <div
-                                style={{
-                                  border: '1px solid rgba(230, 230, 230, 0.4)',
-                                  borderRadius: '8px',
-                                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                                  backdropFilter: 'blur(10px)',
-                                  boxShadow:
-                                    '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                                  padding: '16px',
-                                }}
-                              >
+                              <div className="protocol-conversion-container">
                                 {/* 透明认证信息 */}
                                 {templateData.security && (
-                                  <div style={{ marginBottom: '16px' }}>
-                                    <h4
-                                      style={{
-                                        color: '#000',
-                                        fontSize: '14px',
-                                        fontWeight: 'bold',
-                                        marginBottom: '8px',
-                                        borderLeft: '3px solid #52c41a',
-                                        paddingLeft: '8px',
-                                      }}
-                                    >
+                                  <div className="show-tools-mb-16">
+                                    <h4 className="subsection-title transparent-auth">
                                       {locale?.transparentAuth || '透明认证信息'}
                                     </h4>
-                                    <div
-                                      style={{
-                                        backgroundColor: '#f9f9f9',
-                                        padding: '12px',
-                                        borderRadius: '4px',
-                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                        fontSize: '12px',
-                                      }}
-                                    >
-                                      <div style={{ marginBottom: '4px' }}>
-                                        <span style={{ fontWeight: 'bold', color: '#000' }}>
-                                          启用状态:{' '}
-                                        </span>
+                                    <div className="content-box">
+                                      <div className="kv-row">
+                                        <span className="kv-label">启用状态: </span>
                                         <span
-                                          style={{
-                                            color: templateData.security.passthrough
-                                              ? '#52c41a'
-                                              : '#666',
-                                            fontWeight: 'bold',
-                                          }}
+                                          className={`kv-value ${
+                                            templateData.security.passthrough ? 'green' : ''
+                                          }`}
                                         >
                                           {templateData.security.passthrough ? '已启用' : '未启用'}
                                         </span>
                                       </div>
                                       {templateData.security.id && (
-                                        <div style={{ marginBottom: '4px' }}>
-                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
-                                            客户端认证方式:{' '}
-                                          </span>
-                                          <span style={{ color: '#1890ff' }}>
+                                        <div className="kv-row">
+                                          <span className="kv-label">客户端认证方式: </span>
+                                          <span className="kv-value blue">
                                             {templateData.security.id}
                                           </span>
                                         </div>
                                       )}
                                       {templateData.security.type && (
-                                        <div>
-                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
-                                            认证类型:{' '}
-                                          </span>
-                                          <span style={{ color: '#666' }}>
+                                        <div className="kv-row">
+                                          <span className="kv-label">认证类型: </span>
+                                          <span className="kv-value">
                                             {templateData.security.type}
                                           </span>
                                         </div>
@@ -1323,77 +1022,51 @@ const ShowTools = props => {
 
                                 {/* 请求模板信息 */}
                                 {templateData.requestTemplate && (
-                                  <div style={{ marginBottom: '16px' }}>
-                                    <h4
-                                      style={{
-                                        color: '#000',
-                                        fontSize: '14px',
-                                        fontWeight: 'bold',
-                                        marginBottom: '8px',
-                                        borderLeft: '3px solid #1890ff',
-                                        paddingLeft: '8px',
-                                      }}
-                                    >
+                                  <div className="show-tools-mb-16">
+                                    <h4 className="subsection-title request-template">
                                       {locale?.requestTemplate || '请求模板配置'}
                                     </h4>
-                                    <div
-                                      style={{
-                                        backgroundColor: '#f6f8fa',
-                                        padding: '12px',
-                                        borderRadius: '4px',
-                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                        fontSize: '12px',
-                                      }}
-                                    >
+                                    <div className="content-box light-blue">
                                       {templateData.requestTemplate.method && (
-                                        <div style={{ marginBottom: '4px' }}>
-                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
-                                            HTTP 方法:{' '}
-                                          </span>
+                                        <div className="kv-row">
+                                          <span className="kv-label">HTTP 方法: </span>
                                           <span
-                                            style={{
-                                              color: '#fff',
-                                              backgroundColor:
-                                                templateData.requestTemplate.method === 'GET'
-                                                  ? '#52c41a'
-                                                  : templateData.requestTemplate.method === 'POST'
-                                                  ? '#1890ff'
-                                                  : templateData.requestTemplate.method === 'PUT'
-                                                  ? '#fa8c16'
-                                                  : '#f5222d',
-                                              padding: '2px 6px',
-                                              borderRadius: '3px',
-                                              fontSize: '11px',
-                                              fontWeight: 'bold',
-                                            }}
+                                            className={`http-method-badge ${
+                                              String(
+                                                templateData.requestTemplate.method
+                                              ).toLowerCase() === 'get'
+                                                ? 'get'
+                                                : String(
+                                                    templateData.requestTemplate.method
+                                                  ).toLowerCase() === 'post'
+                                                ? 'post'
+                                                : String(
+                                                    templateData.requestTemplate.method
+                                                  ).toLowerCase() === 'put'
+                                                ? 'put'
+                                                : String(
+                                                    templateData.requestTemplate.method
+                                                  ).toLowerCase() === 'delete'
+                                                ? 'delete'
+                                                : 'other'
+                                            }`}
                                           >
                                             {templateData.requestTemplate.method}
                                           </span>
                                         </div>
                                       )}
                                       {templateData.requestTemplate.url && (
-                                        <div style={{ marginBottom: '4px' }}>
-                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
-                                            请求路径:{' '}
-                                          </span>
-                                          <span
-                                            style={{
-                                              color: '#1890ff',
-                                              backgroundColor: '#e6f7ff',
-                                              padding: '2px 6px',
-                                              borderRadius: '3px',
-                                            }}
-                                          >
+                                        <div className="kv-row">
+                                          <span className="kv-label">请求路径: </span>
+                                          <span className="url-chip">
                                             {templateData.requestTemplate.url}
                                           </span>
                                         </div>
                                       )}
                                       {templateData.requestTemplate.security && (
-                                        <div style={{ marginBottom: '4px' }}>
-                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
-                                            后端认证方式:{' '}
-                                          </span>
-                                          <span style={{ color: '#fa8c16' }}>
+                                        <div className="kv-row">
+                                          <span className="kv-label">后端认证方式: </span>
+                                          <span className="kv-value orange">
                                             {templateData.requestTemplate.security.id}
                                           </span>
                                         </div>
@@ -1403,62 +1076,17 @@ const ShowTools = props => {
                                       {templateData.requestTemplate.headers &&
                                         Object.keys(templateData.requestTemplate.headers).length >
                                           0 && (
-                                          <div style={{ marginBottom: '12px' }}>
-                                            <div
-                                              style={{
-                                                fontWeight: 'bold',
-                                                color: '#000',
-                                                marginBottom: '4px',
-                                                borderBottom: '1px solid #d9d9d9',
-                                                paddingBottom: '2px',
-                                              }}
-                                            >
-                                              headers:
-                                            </div>
-                                            <div
-                                              style={{
-                                                backgroundColor: '#e6f7ff',
-                                                border: '1px solid #91d5ff',
-                                                borderRadius: '3px',
-                                                padding: '8px',
-                                                maxHeight: '120px',
-                                                overflowY: 'auto',
-                                                fontSize: '11px',
-                                              }}
-                                            >
+                                          <div className="show-tools-mb-12">
+                                            <div className="headers-title">headers:</div>
+                                            <div className="headers-box">
                                               {typeof templateData.requestTemplate.headers ===
                                               'object' ? (
                                                 Object.entries(
                                                   templateData.requestTemplate.headers
                                                 ).map(([key, value], index) => (
-                                                  <div
-                                                    key={index}
-                                                    style={{
-                                                      marginBottom: '6px',
-                                                      display: 'flex',
-                                                      alignItems: 'flex-start',
-                                                      gap: '8px',
-                                                    }}
-                                                  >
-                                                    <span
-                                                      style={{
-                                                        fontWeight: 'bold',
-                                                        color: '#000',
-                                                        fontFamily:
-                                                          'Monaco, Consolas, "Courier New", monospace',
-                                                        minWidth: 'fit-content',
-                                                      }}
-                                                    >
-                                                      {key}:
-                                                    </span>
-                                                    <span
-                                                      style={{
-                                                        color: '#1890ff',
-                                                        fontFamily:
-                                                          'Monaco, Consolas, "Courier New", monospace',
-                                                        wordBreak: 'break-word',
-                                                      }}
-                                                    >
+                                                  <div key={index} className="header-row">
+                                                    <span className="header-key">{key}:</span>
+                                                    <span className="header-value">
                                                       {typeof value === 'object'
                                                         ? JSON.stringify(value)
                                                         : String(value)}
@@ -1466,14 +1094,7 @@ const ShowTools = props => {
                                                   </div>
                                                 ))
                                               ) : (
-                                                <div
-                                                  style={{
-                                                    color: '#1890ff',
-                                                    fontFamily:
-                                                      'Monaco, Consolas, "Courier New", monospace',
-                                                    whiteSpace: 'pre-wrap',
-                                                  }}
-                                                >
+                                                <div className="header-raw">
                                                   {templateData.requestTemplate.headers}
                                                 </div>
                                               )}
@@ -1483,31 +1104,9 @@ const ShowTools = props => {
 
                                       {/* 请求体 */}
                                       {templateData.requestTemplate.body && (
-                                        <div style={{ marginBottom: '12px' }}>
-                                          <div
-                                            style={{
-                                              fontWeight: 'bold',
-                                              color: '#000',
-                                              marginBottom: '4px',
-                                              borderBottom: '1px solid #d9d9d9',
-                                              paddingBottom: '2px',
-                                            }}
-                                          >
-                                            body:
-                                          </div>
-                                          <div
-                                            style={{
-                                              backgroundColor: '#f6ffed',
-                                              border: '1px solid #b7eb8f',
-                                              borderRadius: '3px',
-                                              padding: '8px',
-                                              maxHeight: '100px',
-                                              overflowY: 'auto',
-                                              whiteSpace: 'pre-wrap',
-                                              color: '#52c41a',
-                                              fontSize: '11px',
-                                            }}
-                                          >
+                                        <div className="show-tools-mb-12">
+                                          <div className="body-title">body:</div>
+                                          <div className="body-box">
                                             {typeof templateData.requestTemplate.body === 'object'
                                               ? JSON.stringify(
                                                   templateData.requestTemplate.body,
@@ -1525,54 +1124,15 @@ const ShowTools = props => {
                                 {/* 响应模板信息 */}
                                 {templateData.responseTemplate && (
                                   <div>
-                                    <h4
-                                      style={{
-                                        color: '#000',
-                                        fontSize: '14px',
-                                        fontWeight: 'bold',
-                                        marginBottom: '8px',
-                                        borderLeft: '3px solid #fa8c16',
-                                        paddingLeft: '8px',
-                                      }}
-                                    >
+                                    <h4 className="subsection-title response-template">
                                       {locale?.responseTemplate || '响应模板配置'}
                                     </h4>
-                                    <div
-                                      style={{
-                                        backgroundColor: '#fffbf0',
-                                        padding: '12px',
-                                        borderRadius: '4px',
-                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                                        fontSize: '12px',
-                                      }}
-                                    >
+                                    <div className="content-box light-orange">
                                       {/* 响应体模板 */}
                                       {templateData.responseTemplate.body && (
-                                        <div style={{ marginBottom: '12px' }}>
-                                          <div
-                                            style={{
-                                              fontWeight: 'bold',
-                                              color: '#000',
-                                              marginBottom: '4px',
-                                              borderBottom: '1px solid #d9d9d9',
-                                              paddingBottom: '2px',
-                                            }}
-                                          >
-                                            body:
-                                          </div>
-                                          <div
-                                            style={{
-                                              backgroundColor: '#f6f8fa',
-                                              border: '1px solid #e1e4e8',
-                                              borderRadius: '3px',
-                                              padding: '8px',
-                                              maxHeight: '100px',
-                                              overflowY: 'auto',
-                                              whiteSpace: 'pre-wrap',
-                                              color: '#666',
-                                              fontSize: '11px',
-                                            }}
-                                          >
+                                        <div className="show-tools-mb-12">
+                                          <div className="section-title-sm">body:</div>
+                                          <div className="resp-body-box">
                                             {templateData.responseTemplate.body}
                                           </div>
                                         </div>
@@ -1580,31 +1140,9 @@ const ShowTools = props => {
 
                                       {/* 响应前缀 */}
                                       {templateData.responseTemplate.prependBody && (
-                                        <div style={{ marginBottom: '12px' }}>
-                                          <div
-                                            style={{
-                                              fontWeight: 'bold',
-                                              color: '#000',
-                                              marginBottom: '4px',
-                                              borderBottom: '1px solid #d9d9d9',
-                                              paddingBottom: '2px',
-                                            }}
-                                          >
-                                            prependBody:
-                                          </div>
-                                          <div
-                                            style={{
-                                              backgroundColor: '#e6f7ff',
-                                              border: '1px solid #91d5ff',
-                                              borderRadius: '3px',
-                                              padding: '8px',
-                                              maxHeight: '80px',
-                                              overflowY: 'auto',
-                                              whiteSpace: 'pre-wrap',
-                                              color: '#1890ff',
-                                              fontSize: '11px',
-                                            }}
-                                          >
+                                        <div className="show-tools-mb-12">
+                                          <div className="section-title-sm">prependBody:</div>
+                                          <div className="resp-prepend-box">
                                             {templateData.responseTemplate.prependBody}
                                           </div>
                                         </div>
@@ -1612,31 +1150,9 @@ const ShowTools = props => {
 
                                       {/* 响应后缀 */}
                                       {templateData.responseTemplate.appendBody && (
-                                        <div style={{ marginBottom: '12px' }}>
-                                          <div
-                                            style={{
-                                              fontWeight: 'bold',
-                                              color: '#000',
-                                              marginBottom: '4px',
-                                              borderBottom: '1px solid #d9d9d9',
-                                              paddingBottom: '2px',
-                                            }}
-                                          >
-                                            appendBody:
-                                          </div>
-                                          <div
-                                            style={{
-                                              backgroundColor: '#f6ffed',
-                                              border: '1px solid #b7eb8f',
-                                              borderRadius: '3px',
-                                              padding: '8px',
-                                              maxHeight: '80px',
-                                              overflowY: 'auto',
-                                              whiteSpace: 'pre-wrap',
-                                              color: '#52c41a',
-                                              fontSize: '11px',
-                                            }}
-                                          >
+                                        <div className="show-tools-mb-12">
+                                          <div className="section-title-sm">appendBody:</div>
+                                          <div className="resp-append-box">
                                             {templateData.responseTemplate.appendBody}
                                           </div>
                                         </div>
@@ -1653,25 +1169,13 @@ const ShowTools = props => {
                                         if (otherFields.length > 0) {
                                           return (
                                             <div>
-                                              <div
-                                                style={{
-                                                  fontWeight: 'bold',
-                                                  color: '#000',
-                                                  marginBottom: '4px',
-                                                  borderBottom: '1px solid #d9d9d9',
-                                                  paddingBottom: '2px',
-                                                }}
-                                              >
-                                                其他配置:
-                                              </div>
+                                              <div className="other-config-title">其他配置:</div>
                                               {otherFields.map(field => (
-                                                <div key={field} style={{ marginBottom: '6px' }}>
-                                                  <span
-                                                    style={{ fontWeight: 'bold', color: '#fa8c16' }}
-                                                  >
+                                                <div key={field} className="show-tools-mb-6">
+                                                  <span className="other-config-key">
                                                     {field}:{' '}
                                                   </span>
-                                                  <span style={{ color: '#666' }}>
+                                                  <span className="other-config-value">
                                                     {typeof responseTemplate[field] === 'object'
                                                       ? JSON.stringify(
                                                           responseTemplate[field],
@@ -1693,16 +1197,7 @@ const ShowTools = props => {
                                         !templateData.responseTemplate.prependBody &&
                                         !templateData.responseTemplate.appendBody &&
                                         Object.keys(templateData.responseTemplate).length === 0 && (
-                                          <div
-                                            style={{
-                                              color: '#999',
-                                              fontStyle: 'italic',
-                                              textAlign: 'center',
-                                              padding: '12px',
-                                            }}
-                                          >
-                                            暂无响应模板配置
-                                          </div>
+                                          <div className="empty-tip">暂无响应模板配置</div>
                                         )}
                                     </div>
                                   </div>
@@ -1720,39 +1215,13 @@ const ShowTools = props => {
           </div>
         </>
       ) : (
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <div
-            style={{
-              fontSize: '40px',
-              color: '#d9d9d9',
-              marginBottom: '8px',
-              lineHeight: 1,
-            }}
-          >
-            🔧
-          </div>
-          <p
-            style={{
-              color: '#666',
-              fontStyle: 'italic',
-              margin: 0,
-              fontSize: '14px',
-              marginBottom: '16px',
-            }}
-          >
-            {locale.noToolsAvailable || '暂无可用的 Tools'}
-          </p>
+        <div className="no-tools-container">
+          <div className="no-tools-emoji">🔧</div>
+          <p className="no-tools-text">{locale.noToolsAvailable || '暂无可用的 Tools'}</p>
 
           {!isPreview && !onlyEditRuntimeInfo && (
-            <div
-              style={{
-                display: 'flex',
-                gap: '12px',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-              }}
-            >
-              <Button type="primary" onClick={openDialog} style={{ minWidth: '140px' }}>
+            <div className="no-tools-actions">
+              <Button type="primary" onClick={openDialog} className="btn-wide">
                 {locale.newMcpTool}
               </Button>
 
@@ -1762,7 +1231,7 @@ const ShowTools = props => {
                   onClick={autoImportToolsFromMCPServer}
                   loading={importLoading}
                   disabled={importLoading}
-                  style={{ minWidth: '140px' }}
+                  className="btn-wide"
                 >
                   {importLoading ? locale.importing : locale.importToolsFromMCP}
                 </Button>
@@ -1774,7 +1243,7 @@ const ShowTools = props => {
                   onClick={importToolsFromOpenApi}
                   loading={importLoading}
                   disabled={importLoading}
-                  style={{ minWidth: '140px' }}
+                  className="btn-wide"
                 >
                   {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
                 </Button>
@@ -1801,7 +1270,7 @@ const ShowTools = props => {
         onOk={handleConfirm}
         onCancel={() => setOpenApiDialogVisible(false)}
         onClose={() => setOpenApiDialogVisible(false)}
-        style={{ width: 800 }}
+        className="openapi-dialog"
       >
         <Form>
           <Form.Item label={locale.selectOpenAPIFile}>
@@ -1813,20 +1282,13 @@ const ShowTools = props => {
               reUpload={true}
               beforeUpload={() => false} // 禁止自动上传
               dragable
-              style={{
-                border: '2px dashed #ccc',
-                borderRadius: '8px',
-                padding: '20px',
-                transition: 'all 0.3s ease',
-                textAlign: 'center',
-                width: '100%',
-              }}
+              className="upload-drag-area"
             >
-              <p className="next-upload-drag-icon">
+              <p className="upload-drag-icon">
                 <Icon type="upload" />
               </p>
-              <div style={{ padding: '20px', textAlign: 'center' }}>
-                <p style={{ fontSize: '14px' }}>{locale.dragAndDropFileHereOrClickToSelect}</p>
+              <div className="upload-drag-inner">
+                <p className="upload-drag-text">{locale.dragAndDropFileHereOrClickToSelect}</p>
               </div>
             </Upload>
           </Form.Item>
@@ -1883,7 +1345,7 @@ const ShowTools = props => {
           }}
           onCancel={() => setTokenDialogVisible(false)}
           onClose={() => setTokenDialogVisible(false)}
-          style={{ width: 600 }}
+          className="token-dialog"
         >
           <Form>
             <Row gutter={20}>

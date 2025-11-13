@@ -402,6 +402,7 @@ class McpServerOperationServiceTest {
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setPath("/nacos");
         mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
         ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,

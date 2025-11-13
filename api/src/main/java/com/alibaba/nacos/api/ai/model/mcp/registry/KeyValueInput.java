@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * KeyValueInput used for headers / env vars.
  *
  * @author xinluo
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class KeyValueInput extends InputWithVariables {
 
     private String name;

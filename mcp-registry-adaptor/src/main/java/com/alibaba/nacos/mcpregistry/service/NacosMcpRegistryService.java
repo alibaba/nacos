@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerResponse;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
-import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
 import com.alibaba.nacos.api.ai.model.mcp.registry.OfficialMeta;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -257,11 +256,7 @@ public class NacosMcpRegistryService {
             remote.setType(type);
             String url = buildUrl(item);
             remote.setUrl(url);
-            KeyValueInput headerAuth = new KeyValueInput();
-            headerAuth.setName("Authorization");
-            KeyValueInput headerPath = new KeyValueInput();
-            headerPath.setName("X-Server-Path");
-            remote.setHeaders(List.of(headerAuth, headerPath));
+            remote.setHeaders(item.getHeaders());
             return remote;
         }).collect(Collectors.toList());
     }

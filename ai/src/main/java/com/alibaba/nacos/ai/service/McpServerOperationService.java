@@ -294,8 +294,18 @@ public class McpServerOperationService {
                     endpointInfo.setPort(Constants.PROTOCOL_TYPE_HTTP.equals(each.getProtocol()) ? 80 : 443);
                 }
                 frontendEndpoints.add(endpointInfo);
-            } else {
-                frontendEndpoints.addAll(detailInfo.getBackendEndpoints());
+            } else if (AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK.equals(each.getEndpointType())) {
+                detailInfo.getBackendEndpoints().stream()
+                    .map((endpoint) -> {
+                        McpEndpointInfo frontEndpoint = new McpEndpointInfo();
+                        frontEndpoint.setAddress(endpoint.getAddress());
+                        frontEndpoint.setPort(endpoint.getPort());
+                        frontEndpoint.setProtocol(endpoint.getProtocol());
+                        frontEndpoint.setPath(each.getPath());
+                        frontEndpoint.setHeaders(each.getHeaders());
+                        return frontEndpoint;
+                    })
+                    .forEach(frontendEndpoints::add);
             }
             detailInfo.setFrontendEndpoints(frontendEndpoints);
         }

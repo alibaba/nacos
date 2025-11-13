@@ -87,19 +87,16 @@ public class McpConfigUtils {
      */
     public static McpEndpointSpec convertFrontEndpointConfig(FrontEndpointConfig frontEndpointConfig) {
         Object epDataObj = frontEndpointConfig.getEndpointData();
-        if (frontEndpointConfig.getEndpointType().equals(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT)) {
-            String epData = (String) epDataObj;
-            McpEndpointSpec endpointSpec = new McpEndpointSpec();
-            String[] hp = epData.split(MCP_ENDPOINT_CONFIG_DIRECT_SPLIT);
-            if (hp.length != MCP_ENDPOINT_SPEC_PORT_KEY_LENGTH) {
-                throw new IllegalArgumentException("Invalid endpoint data: " + epData);
-            }
-            endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
-            endpointSpec.getData().put(MCP_ENDPOINT_SPEC_ADDRESS_KEY, hp[0]);
-            endpointSpec.getData().put(MCP_ENDPOINT_SPEC_PORT_KEY, hp[1]);
-            endpointSpec.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY, frontEndpointConfig.getProtocol());
-            return endpointSpec;
+        String epData = (String) epDataObj;
+        McpEndpointSpec endpointSpec = new McpEndpointSpec();
+        String[] hp = epData.split(MCP_ENDPOINT_CONFIG_DIRECT_SPLIT);
+        if (hp.length != MCP_ENDPOINT_SPEC_PORT_KEY_LENGTH) {
+            throw new IllegalArgumentException("Invalid endpoint data: " + epData);
         }
-        return null;
+        endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpointSpec.getData().put(MCP_ENDPOINT_SPEC_ADDRESS_KEY, hp[0]);
+        endpointSpec.getData().put(MCP_ENDPOINT_SPEC_PORT_KEY, hp[1]);
+        endpointSpec.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY, frontEndpointConfig.getProtocol());
+        return endpointSpec;
     }
 }

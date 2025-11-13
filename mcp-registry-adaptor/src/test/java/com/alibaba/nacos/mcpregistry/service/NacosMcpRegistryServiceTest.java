@@ -260,7 +260,7 @@ class NacosMcpRegistryServiceTest {
         assertEquals("2025-06-10T02:29:17Z", result.getMeta().getOfficial().getPublishedAt());
         assertNotNull(result.getServer().getRemotes());
         assertEquals(1, result.getServer().getRemotes().size());
-        assertEquals("http", result.getServer().getRemotes().get(0).getType());
+        assertEquals("sse", result.getServer().getRemotes().get(0).getType());
         assertEquals("http://127.0.0.1:8080/api/path", result.getServer().getRemotes().get(0).getUrl());
     }
 

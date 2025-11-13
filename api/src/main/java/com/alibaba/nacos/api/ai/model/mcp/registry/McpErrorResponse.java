@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Error response wrapper with single error string.
  *
  * @author xinluo
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class McpErrorResponse {
     private String error;
 

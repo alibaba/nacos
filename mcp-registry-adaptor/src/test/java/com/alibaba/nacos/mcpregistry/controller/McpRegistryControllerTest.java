@@ -82,6 +82,7 @@ class McpRegistryControllerTest {
     void testListMcpServersDefaultParams() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(2);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("2", 2));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -108,6 +109,7 @@ class McpRegistryControllerTest {
     void testListMcpServersWithCursor() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(3);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("13", 3));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -133,6 +135,7 @@ class McpRegistryControllerTest {
     void testListMcpServersWithLimit() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(5);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("5", 5));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -157,6 +160,7 @@ class McpRegistryControllerTest {
     void testListMcpServersWithSearch() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(1);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("1", 1));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -181,6 +185,7 @@ class McpRegistryControllerTest {
     void testListMcpServersWithUpdatedSince() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(2);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("2", 2));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -205,6 +210,7 @@ class McpRegistryControllerTest {
     void testListMcpServersWithVersion() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(1);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("1", 1));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -229,6 +235,7 @@ class McpRegistryControllerTest {
     void testListMcpServersWithAllParams() throws Exception {
         // Setup
         McpRegistryServerList mockServerList = createMockServerList(3);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata("8", 3));
         when(nacosMcpRegistryService.listMcpServers(any())).thenReturn(mockServerList);
         
         // Execute
@@ -283,7 +290,8 @@ class McpRegistryControllerTest {
         // Setup
         String serverName = "com.example%2Fmy-server";
         McpRegistryServerList mockServerList = createMockServerList(2);
-        when(nacosMcpRegistryService.getServerVersions(eq(serverName), isNull())).thenReturn(mockServerList);
+        mockServerList.setMetadata(new McpRegistryServerList.Metadata(null, 2));
+        when(nacosMcpRegistryService.getServerVersions(any(), any())).thenReturn(mockServerList);
         
         // Execute
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers/{name}/versions", serverName);
@@ -307,7 +315,7 @@ class McpRegistryControllerTest {
     void testGetServerVersionsNotFound() throws Exception {
         // Setup
         String serverName = "com.example%2Fnonexistent";
-        when(nacosMcpRegistryService.getServerVersions(eq(serverName), isNull())).thenReturn(null);
+        when(nacosMcpRegistryService.getServerVersions(any(), any())).thenReturn(null);
         
         // Execute
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v0/servers/{name}/versions", serverName);
@@ -475,7 +483,7 @@ class McpRegistryControllerTest {
     void testGetServerVersionsServiceException() throws Exception {
         // Setup
         String serverName = "com.example%2Fmy-server";
-        when(nacosMcpRegistryService.getServerVersions(eq(serverName), isNull()))
+        when(nacosMcpRegistryService.getServerVersions(any(), any()))
                 .thenReturn(new McpRegistryServerList());
         
         // Execute & Verify
