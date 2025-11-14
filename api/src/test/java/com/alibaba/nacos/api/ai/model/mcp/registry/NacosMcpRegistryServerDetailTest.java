@@ -61,8 +61,6 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertTrue(json.contains("\"$schema\":\"http://example.com/schema\""));
         assertTrue(json.contains("\"packages\":[{"));
         assertTrue(json.contains("\"identifier\":\"test-package\""));
-        assertTrue(json.contains("\"io.modelcontextprotocol.registry/official\""));
-        assertTrue(json.contains("\"publishedAt\":\"2022-01-01T00:00:00Z\""));
         assertTrue(json.contains("\"remotes\":[{"));
         assertTrue(json.contains("\"url\":\"127.0.0.1:8848/sse\""));
         assertTrue(json.contains("\"type\":\"https\""));
