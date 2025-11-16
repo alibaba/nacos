@@ -40,6 +40,10 @@ public class ListServersOfficialForm implements NacosForm {
 
     private Integer limit = DEFAULT_LIMIT;
 
+    private String search;
+
+    private String updatedSince;
+
     public String getCursor() {
         return cursor;
     }
@@ -56,6 +60,22 @@ public class ListServersOfficialForm implements NacosForm {
         this.limit = limit;
     }
 
+    public String getSearch() {
+        return search;
+    }
+
+    public void setSearch(String search) {
+        this.search = search;
+    }
+
+    public String getUpdatedSince() {
+        return updatedSince;
+    }
+
+    public void setUpdatedSince(String updatedSince) {
+        this.updatedSince = updatedSince;
+    }
+    
     /**
      * 解析 cursor 字段为 offset 数值.
      * 当 cursor 为空时返回 0；当为非法数字时抛出 NacosApiException.

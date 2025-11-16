@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * Repository per components.schemas.Repository.
  *
  * @author xinluo
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Repository {
 
     private String url;
@@ -31,7 +32,6 @@ public class Repository {
 
     private String id;
 
-    @JsonProperty("subfolder")
     private String subfolder;
 
     public String getUrl() {

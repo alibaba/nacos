@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -27,18 +29,19 @@ import java.util.List;
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class McpRegistryServerList {
 
-    private List<McpRegistryServerDetail> servers;
+    private List<ServerResponse> servers;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Metadata metadata;
 
-    public List<McpRegistryServerDetail> getServers() {
+    public List<ServerResponse> getServers() {
         return servers;
     }
 
-    public void setServers(List<McpRegistryServerDetail> servers) {
+    public void setServers(List<ServerResponse> servers) {
         this.servers = servers;
     }
 
@@ -52,7 +55,8 @@ public class McpRegistryServerList {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Metadata {
-        @JsonProperty("next_cursor")
+        @JsonProperty("nextCursor")
+        @JsonAlias("next_cursor")
         private String nextCursor;
 
         private Integer count;

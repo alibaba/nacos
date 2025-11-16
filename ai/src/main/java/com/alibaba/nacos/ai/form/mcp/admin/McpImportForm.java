@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.form.mcp.admin;
 
+import com.alibaba.nacos.ai.enums.ExternalDataTypeEnum;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -32,12 +33,6 @@ public class McpImportForm extends McpForm {
     
     @Serial
     private static final long serialVersionUID = 8016131725604983671L;
-    
-    private static final String IMPORT_TYPE_JSON = "json";
-
-    private static final String IMPORT_TYPE_URL = "url";
-
-    private static final String IMPORT_TYPE_FILE = "file";
     
     private String importType;
     
@@ -81,8 +76,7 @@ public class McpImportForm extends McpForm {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'data' is not present");
         }
-        if (!IMPORT_TYPE_JSON.equals(importType) && !IMPORT_TYPE_URL.equals(importType)
-                && !IMPORT_TYPE_FILE.equals(importType)) {
+        if (ExternalDataTypeEnum.parseType(importType) == null) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "importType must be one of: json, url, file");
         }

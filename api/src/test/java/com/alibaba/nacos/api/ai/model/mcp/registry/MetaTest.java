@@ -31,36 +31,24 @@ class MetaTest extends BasicRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
-        Meta meta = new Meta();
+        McpRegistryServerDetail.Meta meta = new McpRegistryServerDetail.Meta();
         
         Map<String, Object> publisherProvided = new HashMap<>();
         publisherProvided.put("key1", "value1");
-        meta.setPublisherProvided(publisherProvided);
-        
-        OfficialMeta officialMeta = new OfficialMeta();
-        officialMeta.setPublishedAt("2022-01-01T00:00:00Z");
-        officialMeta.setServerId("server1");
-        meta.setOfficial(officialMeta);
+        meta.setPublisherMeta(publisherProvided);
         
         String json = mapper.writeValueAsString(meta);
         assertNotNull(json);
         assertTrue(json.contains("\"io.modelcontextprotocol.registry/publisher-provided\":"));
         assertTrue(json.contains("\"key1\":\"value1\""));
-        assertTrue(json.contains("\"io.modelcontextprotocol.registry/official\":"));
-        assertTrue(json.contains("\"publishedAt\":\"2022-01-01T00:00:00Z\""));
-        assertTrue(json.contains("\"serverId\":\"server1\""));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"io.modelcontextprotocol.registry/publisher-provided\":{\"key1\":\"value1\"},"
-                + "\"io.modelcontextprotocol.registry/official\":{\"publishedAt\":\"2022-01-01T00:00:00Z\","
-                + "\"serverId\":\"server1\"}}";
+        String json = "{\"io.modelcontextprotocol.registry/publisher-provided\":{\"key1\":\"value1\"}}";
         
-        Meta meta = mapper.readValue(json, Meta.class);
+        McpRegistryServerDetail.Meta meta = mapper.readValue(json, McpRegistryServerDetail.Meta.class);
         assertNotNull(meta);
-        assertEquals("value1", meta.getPublisherProvided().get("key1"));
-        assertEquals("2022-01-01T00:00:00Z", meta.getOfficial().getPublishedAt());
-        assertEquals("server1", meta.getOfficial().getServerId());
+        assertEquals("value1", meta.getPublisherMeta().get("key1"));
     }
 }

@@ -22,6 +22,7 @@ import {
 import ShowTools from '../McpDetail/ShowTools';
 import MonacoEditor from '../../../components/MonacoEditor';
 import { McpServerManagementRoute } from '../../../layouts/menu';
+import './NewMcpServer.css';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
@@ -80,6 +81,7 @@ class NewMcpServer extends React.Component {
       isInputError: '',
       securitySchemeIdx: 0,
       advancedConfigCollapsed: true, // 高级配置默认折叠
+      frontEndpointConfigList: [], // 保存原始的 frontEndpointConfigList，用于编辑时原封不动地返回
     };
   }
 
@@ -198,9 +200,10 @@ class NewMcpServer extends React.Component {
           restToMcpSwitchValue = true;
         }
 
-        // 根据后端接口的 protocol 字段设置传输协议下拉框的值
+        // 从 serviceRef 的 transportProtocol 字段获取传输协议，如果不存在则使用后端 protocol 字段
         const transportProtocolValue =
-          protocol === 'https' || protocol === 'http' ? protocol : 'http';
+          remoteServerConfig?.serviceRef?.transportProtocol ||
+          (protocol === 'https' || protocol === 'http' ? protocol : 'http');
 
         // 设置传输协议字段的值
         this.field.setValues({
@@ -213,6 +216,8 @@ class NewMcpServer extends React.Component {
           serverConfig: result.data,
           useExistService: true, // 编辑时 默认使用已有服务，隐藏新建服务
           restToMcpSwitch: restToMcpSwitchValue,
+          // 保存原始的 frontEndpointConfigList，用于编辑时原封不动地返回
+          frontEndpointConfigList: result.data?.remoteServerConfig?.frontEndpointConfigList || [],
         });
       }
     }
@@ -651,6 +656,11 @@ class NewMcpServer extends React.Component {
                   enabled: true,
                   remoteServerConfig: {
                     exportPath: exportPath,
+                    // 编辑时，原封不动返回 frontEndpointConfigList
+                    ...(this.state.frontEndpointConfigList &&
+                    this.state.frontEndpointConfigList.length > 0
+                      ? { frontEndpointConfigList: this.state.frontEndpointConfigList }
+                      : {}),
                   },
                 },
                 null,
@@ -684,6 +694,11 @@ class NewMcpServer extends React.Component {
                 enabled: true,
                 remoteServerConfig: {
                   exportPath: values?.exportPath || '',
+                  // 编辑时，原封不动返回 frontEndpointConfigList
+                  ...(this.state.frontEndpointConfigList &&
+                  this.state.frontEndpointConfigList.length > 0
+                    ? { frontEndpointConfigList: this.state.frontEndpointConfigList }
+                    : {}),
                 },
               },
               null,
@@ -805,13 +820,13 @@ class NewMcpServer extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /^[a-zA-Z0-9_-]+$/;
-
+    const chartReg = /^[a-zA-Z0-9_/\-\.]+$/;
     if (!chartReg.test(value)) {
       console.log('Invalid chart name:', value);
       callback(locale.doNotEnter);
       this.setState({
-        isInputError: 'Server name should only contain letters, numbers, underscores, and hyphens.',
+        isInputError:
+          'Server name should only contain letters, numbers, underscores, hyphens, and slashes.',
       });
     } else {
       callback();
@@ -1049,9 +1064,7 @@ class NewMcpServer extends React.Component {
 
   LocalServerConfigLabel = () => {
     const { locale = {} } = this.props;
-    const trigger = (
-      <Icon type="help" color="#333" size="small" style={{ marginLeft: 2, cursor: 'pointer' }} />
-    );
+    const trigger = <Icon type="help" color="#333" size="small" className="help-icon" />;
     return (
       <span>
         {locale.localServerConfig}
@@ -1069,7 +1082,7 @@ class NewMcpServer extends React.Component {
             </a>{' '}
             {locale.localServerTips2}
           </div>
-          <div style={{ margin: '10px 0' }}>2. {locale.localServerTips3}</div>
+          <div className="help-tooltip-tips">2. {locale.localServerTips3}</div>
           <div>2. {locale.localServerTips4}</div>
         </Balloon.Tooltip>
       </span>
@@ -1104,20 +1117,20 @@ class NewMcpServer extends React.Component {
       <Loading
         shape={'flower'}
         tip={'Loading...'}
-        style={{ width: '100%', position: 'relative' }}
+        className="new-mcp-server-container"
         visible={this.state.loading}
         color={'#333'}
       >
-        <Row>
-          <Col span={16}>
+        <Row className="new-mcp-server-header">
+          <Col span={16} className="new-mcp-server-title">
             <h1>
               {!getParams('mcptype') && locale.addNewMcpServer}
               {getParams('mcptype') && (isEdit ? locale.editService : locale.viewService)}
             </h1>
           </Col>
-          <Col span={8}>
+          <Col span={8} className="new-mcp-server-actions">
             <FormItem label=" ">
-              <div style={{ textAlign: 'right' }}>
+              <div className="text-right">
                 {isEdit ? (
                   <>
                     <Button
@@ -1125,7 +1138,7 @@ class NewMcpServer extends React.Component {
                       onClick={() => {
                         this.publishConfig(false);
                       }}
-                      style={{ marginRight: 10 }}
+                      className="new-mcp-server-actions button"
                     >
                       {locale.createNewVersionAndSave}
                     </Button>
@@ -1135,7 +1148,7 @@ class NewMcpServer extends React.Component {
                       onClick={() => {
                         this.publishConfig(true);
                       }}
-                      style={{ marginRight: 10 }}
+                      className="new-mcp-server-actions button"
                     >
                       {locale.createNewVersionAndPublish}
                     </Button>
@@ -1143,7 +1156,7 @@ class NewMcpServer extends React.Component {
                 ) : (
                   <Button
                     type={'primary'}
-                    style={{ marginRight: 10 }}
+                    className="new-mcp-server-actions button"
                     onClick={() => {
                       this.publishConfig(true);
                     }}
@@ -1186,7 +1199,7 @@ class NewMcpServer extends React.Component {
               maxLength={255}
               addonTextBefore={
                 this.state.addonBefore ? (
-                  <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
+                  <div className="form-addon-before">{this.state.addonBefore}</div>
                 ) : null
               }
               isPreview={isEdit}
@@ -1325,9 +1338,7 @@ class NewMcpServer extends React.Component {
                     });
                   }}
                 />
-                <span style={{ marginLeft: '8px' }}>
-                  {this.state.restToMcpSwitch ? '开启' : '关闭'}
-                </span>
+                <span className="switch-label">{this.state.restToMcpSwitch ? '开启' : '关闭'}</span>
               </FormItem>
               {/*{!isEdit && (*/}
 
@@ -1549,7 +1560,7 @@ class NewMcpServer extends React.Component {
                                 },
                               },
                             })}
-                            style={{ width: '100%' }}
+                            className="new-service-address"
                           />
                         </FormItem>
                       </Col>
@@ -1575,7 +1586,7 @@ class NewMcpServer extends React.Component {
                             min={1}
                             max={65535}
                             step={1}
-                            style={{ width: '100%' }}
+                            className="port-number-picker"
                             placeholder="8080"
                           />
                         </FormItem>
@@ -1628,22 +1639,7 @@ class NewMcpServer extends React.Component {
               <FormItem label={this.LocalServerConfigLabel()} required>
                 {currentVersionExist ? (
                   // 预览模式使用格式化的 pre 标签
-                  <pre
-                    style={{
-                      backgroundColor: '#f6f7f9',
-                      border: '1px solid #dcdee3',
-                      borderRadius: '4px',
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-all',
-                      maxHeight: '400px',
-                      overflow: 'auto',
-                      margin: 0,
-                    }}
-                  >
+                  <pre className="config-preview-pre">
                     {(() => {
                       try {
                         const configValue = this.field.getValue('localServerConfig');
@@ -1777,8 +1773,8 @@ class NewMcpServer extends React.Component {
             />
             {currentVersionExist && (
               <>
-                <p style={{ color: 'red' }}>{locale.editExistVersionMessage}</p>
-                <p style={{ color: 'red' }}>{locale.editMoreNeedNewVersion}</p>
+                <p className="version-error-text">{locale.editExistVersionMessage}</p>
+                <p className="version-error-text">{locale.editMoreNeedNewVersion}</p>
               </>
             )}
           </FormItem>
@@ -1786,19 +1782,7 @@ class NewMcpServer extends React.Component {
           <FormItem label={locale.description}>
             <Input.TextArea
               isPreview={currentVersionExist}
-              renderPreview={value => (
-                <div
-                  style={{
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    overflowWrap: 'break-word',
-                    maxHeight: 240,
-                    overflowY: 'auto',
-                  }}
-                >
-                  {value || '-'}
-                </div>
-              )}
+              renderPreview={value => <div className="description-preview">{value || '-'}</div>}
               {...init('description', {
                 props: {
                   ...descAreaProps,
@@ -1818,67 +1802,35 @@ class NewMcpServer extends React.Component {
           {/* Security Schemes 配置 - 只在非stdio协议且 restToMcpSwitch 开启时显示 */}
           {this.field.getValue('frontProtocol') !== 'stdio' && this.state.restToMcpSwitch && (
             <FormItem label={locale.advancedConfig || '高级配置'}>
-              <div style={{ marginBottom: 16 }}>
+              <div className="advanced-config-container">
                 <Button
                   type="normal"
                   size="small"
                   onClick={this.toggleAdvancedConfig}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '4px 8px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: '#333',
-                    fontSize: '14px',
-                  }}
+                  className="advanced-config-toggle-btn"
                 >
                   <Icon
                     type={this.state.advancedConfigCollapsed ? 'arrow-right' : 'arrow-down'}
-                    style={{ marginRight: 4, fontSize: '12px' }}
+                    className="advanced-config-toggle-icon"
                   />
                   {locale.securitySchemes || '安全认证方案'}
                 </Button>
               </div>
 
               {!this.state.advancedConfigCollapsed && (
-                <div style={{ paddingLeft: 16, borderLeft: '2px solid #f0f0f0' }}>
+                <div className="advanced-config-content">
                   <Button
                     type="primary"
                     size="small"
                     onClick={this.addNewSecurityScheme}
-                    style={{ marginBottom: 10 }}
+                    className="add-security-scheme-btn"
                   >
                     {locale.addSecurityScheme || '添加认证方案'}
                   </Button>
 
                   {this.field.getValue('securitySchemes') &&
                     this.field.getValue('securitySchemes').map((item, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          border: '1px solid rgba(0, 0, 0, 0.06)',
-                          padding: '20px',
-                          marginBottom: '16px',
-                          borderRadius: '6px',
-                          backgroundColor: '#fff',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                          transition: 'all 0.2s ease',
-                          backdropFilter: 'blur(8px)',
-                          position: 'relative',
-                          overflow: 'hidden',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.boxShadow =
-                            '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-                          e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.boxShadow =
-                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                          e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)';
-                        }}
-                      >
+                      <div key={index} className="security-scheme-item">
                         <Row gutter={8}>
                           <Col span={6}>
                             <FormItem label={locale.schemeId || 'ID'} required>

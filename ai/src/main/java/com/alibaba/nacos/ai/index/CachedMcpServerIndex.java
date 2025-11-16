@@ -16,10 +16,16 @@
 
 package com.alibaba.nacos.ai.index;
 
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PreDestroy;
+
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
@@ -27,33 +33,21 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.PreDestroy;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Enhanced MCP cache index implementation combining memory cache and database queries.
  *
  * @author misselvexu
  */
-public class CachedMcpServerIndex implements McpServerIndex {
+public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedMcpServerIndex.class);
     
     private final McpCacheIndex cacheIndex;
-    
-    private final ConfigDetailService configDetailService;
-    
-    private final NamespaceOperationService namespaceOperationService;
-    
+
     private final ConfigQueryChainService configQueryChainService;
     
     private final ScheduledExecutorService scheduledExecutor;
@@ -71,8 +65,7 @@ public class CachedMcpServerIndex implements McpServerIndex {
             NamespaceOperationService namespaceOperationService, ConfigQueryChainService configQueryChainService,
             McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor, boolean cacheEnabled,
             long syncInterval) {
-        this.configDetailService = configDetailService;
-        this.namespaceOperationService = namespaceOperationService;
+        super(namespaceOperationService, configDetailService);
         this.configQueryChainService = configQueryChainService;
         this.cacheIndex = cacheIndex;
         this.scheduledExecutor = scheduledExecutor;
@@ -83,15 +76,6 @@ public class CachedMcpServerIndex implements McpServerIndex {
         }
         LOGGER.info("CachedMcpServerIndex initialized with cacheEnabled={}, syncInterval={}s", cacheEnabled,
                 syncInterval);
-    }
-    
-    /**
-     * Search MCP servers by name with pagination.
-     */
-    @Override
-    public Page<McpServerIndexData> searchMcpServerByName(String namespaceId, String name, String search, int offset,
-            int limit) {
-        return searchFromDatabase(namespaceId, name, search, offset, limit);
     }
     
     /**
@@ -124,10 +108,15 @@ public class CachedMcpServerIndex implements McpServerIndex {
      */
     @Override
     public McpServerIndexData getMcpServerByName(String namespaceId, String name) {
-        if (namespaceId == null || name == null || namespaceId.isEmpty() || name.isEmpty()) {
+        if (StringUtils.isEmpty(namespaceId) && StringUtils.isEmpty(name)) {
             LOGGER.warn("Invalid parameters for getMcpServerByName: namespaceId={}, name={}", namespaceId, name);
             return null;
         }
+
+        if (StringUtils.isEmpty(namespaceId)) {
+            return getFirstMcpServerByName(name);
+        }
+
         if (!cacheEnabled) {
             LOGGER.debug("Cache disabled, querying directly from database for name: {}:{}", namespaceId, name);
             return getMcpServerByNameFromDatabase(namespaceId, name);
@@ -147,23 +136,9 @@ public class CachedMcpServerIndex implements McpServerIndex {
         }
         return dbData;
     }
-    
-    /**
-     * Search MCP servers from database with pagination.
-     */
-    private Page<McpServerIndexData> searchFromDatabase(String namespaceId, String name, String search, int offset,
-            int limit) {
-        int pageNo = offset / limit + 1;
-        LOGGER.debug("Searching from database: namespaceId={}, name={}, search={}, pageNo={}, limit={}", namespaceId,
-                name, search, pageNo, limit);
-        Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, search, pageNo, limit);
-        List<McpServerIndexData> indexDataList = serverInfos.getPageItems().stream()
-                .map(this::mapMcpServerVersionConfigToIndexData).toList();
-        Page<McpServerIndexData> result = new Page<>();
-        result.setPageItems(indexDataList);
-        result.setTotalCount(serverInfos.getTotalCount());
-        result.setPagesAvailable((int) Math.ceil((double) serverInfos.getTotalCount() / (double) limit));
-        result.setPageNumber(pageNo);
+
+    @Override
+    protected void afterSearch(List<McpServerIndexData> indexDataList, String name) {
         // Update cache
         if (cacheEnabled) {
             for (McpServerIndexData indexData : indexDataList) {
@@ -171,7 +146,6 @@ public class CachedMcpServerIndex implements McpServerIndex {
             }
             LOGGER.debug("Updated cache with {} entries from search results", indexDataList.size());
         }
-        return result;
     }
     
     /**
@@ -214,49 +188,7 @@ public class CachedMcpServerIndex implements McpServerIndex {
         LOGGER.debug("MCP server not found in database: name={}:{}", namespaceId, name);
         return null;
     }
-    
-    /**
-     * Search MCP servers.
-     */
-    private Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search, int pageNo,
-            int limit) {
-        HashMap<String, Object> advanceInfo = new HashMap<>(1);
-        if (Objects.isNull(serverName)) {
-            serverName = "";
-        }
-        String dataId = Constants.ALL_PATTERN;
-        if (Constants.MCP_LIST_SEARCH_BLUR.equals(search) || serverName.isEmpty()) {
-            String nameTag = McpConfigUtils.formatServerNameTagBlurSearchValue(serverName);
-            advanceInfo.put(Constants.CONFIG_TAGS_NAME, nameTag);
-            search = Constants.MCP_LIST_SEARCH_BLUR;
-        } else {
-            advanceInfo.put(Constants.CONFIG_TAGS_NAME,
-                    McpConfigUtils.formatServerNameTagAccurateSearchValue(serverName));
-            dataId = null;
-        }
-        return configDetailService.findConfigInfoPage(search, pageNo, limit, dataId,
-                Constants.MCP_SERVER_VERSIONS_GROUP, namespace, advanceInfo);
-    }
-    
-    /**
-     * Map configuration information to index data.
-     */
-    private McpServerIndexData mapMcpServerVersionConfigToIndexData(ConfigInfo configInfo) {
-        McpServerIndexData data = new McpServerIndexData();
-        data.setId(configInfo.getDataId().replace(Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX, ""));
-        data.setNamespaceId(configInfo.getTenant());
-        return data;
-    }
-    
-    /**
-     * Get ordered namespace list.
-     */
-    private List<String> fetchOrderedNamespaceList() {
-        return namespaceOperationService.getNamespaceList().stream()
-                .sorted(Comparator.comparing(com.alibaba.nacos.api.model.response.Namespace::getNamespace))
-                .map(com.alibaba.nacos.api.model.response.Namespace::getNamespace).toList();
-    }
-    
+
     /**
      * Start scheduled sync task.
      */
@@ -296,14 +228,8 @@ public class CachedMcpServerIndex implements McpServerIndex {
         List<String> namespaceList = fetchOrderedNamespaceList();
         for (String namespaceId : namespaceList) {
             try {
-                Page<McpServerIndexData> result = searchMcpServerByName(namespaceId, null,
-                        Constants.MCP_LIST_SEARCH_BLUR, 0, 1000);
-                if (result != null && CollectionUtils.isNotEmpty(result.getPageItems())) {
-                    for (McpServerIndexData indexData : result.getPageItems()) {
-                        cacheIndex.updateIndex(namespaceId, indexData.getId(), indexData.getId());
-                    }
-                    LOGGER.debug("Synced {} MCP servers for namespace: {}", result.getPageItems().size(), namespaceId);
-                }
+                searchMcpServerByNameWithPage(namespaceId, null,
+                        Constants.MCP_LIST_SEARCH_BLUR, 1, 1000);
             } catch (Exception e) {
                 LOGGER.error("Error syncing cache for namespace: {}", namespaceId, e);
             }

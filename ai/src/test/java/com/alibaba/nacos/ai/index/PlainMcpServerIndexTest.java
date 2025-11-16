@@ -82,8 +82,8 @@ class PlainMcpServerIndexTest {
         when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(10), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 anyMap())).thenReturn(searchPage);
-        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", Constants.MCP_LIST_SEARCH_ACCURATE, 0, 10);
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByNameWithPage(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
         assertEquals(0, result.getTotalCount());
         assertEquals(1, result.getPageNumber());
         assertEquals(0, result.getPagesAvailable());
@@ -96,8 +96,8 @@ class PlainMcpServerIndexTest {
         when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(10), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 anyMap())).thenReturn(searchPage);
-        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", Constants.MCP_LIST_SEARCH_ACCURATE, 0, 10);
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByNameWithPage(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
         assertEquals(1, result.getTotalCount());
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPagesAvailable());
@@ -110,8 +110,8 @@ class PlainMcpServerIndexTest {
         when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), eq("*"),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 anyMap())).thenReturn(searchPage);
-        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 0, 10);
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByNameWithPage(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
         assertEquals(10, result.getTotalCount());
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPagesAvailable());
@@ -125,8 +125,8 @@ class PlainMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 anyMap())).thenReturn(searchPage);
         
-        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 0, 10);
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByNameWithPage(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
         
         assertEquals(25, result.getTotalCount());
         assertEquals(1, result.getPageNumber());
@@ -141,8 +141,8 @@ class PlainMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 anyMap())).thenReturn(searchPage);
         
-        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 10, 10);
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByNameWithPage(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 2, 10);
         
         assertEquals(25, result.getTotalCount());
         assertEquals(2, result.getPageNumber());
@@ -157,8 +157,8 @@ class PlainMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 anyMap())).thenReturn(searchPage);
         
-        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 20, 10);
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByNameWithPage(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 3, 10);
         
         assertEquals(25, result.getTotalCount());
         assertEquals(3, result.getPageNumber());

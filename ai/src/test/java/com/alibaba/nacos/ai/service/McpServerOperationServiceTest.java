@@ -113,8 +113,8 @@ class McpServerOperationServiceTest {
         String id = mockId();
         Page<McpServerIndexData> mockIndexData = mockIndexData(id);
         McpServerVersionInfo mockMcpServer = mockServerVersionInfo(id);
-        when(mcpServerIndex.searchMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 0, 100)).thenReturn(mockIndexData);
+        when(mcpServerIndex.searchMcpServerByNameWithPage(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(mockIndexData);
         ConfigQueryChainResponse mockResponse = mockConfigQueryChainResponse(mockMcpServer);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
         Page<McpServerBasicInfo> result = serverOperationService.listMcpServerWithPage(
@@ -129,35 +129,14 @@ class McpServerOperationServiceTest {
     }
     
     @Test
-    void listMcpServerWithOffset() {
-        String id = mockId();
-        Page<McpServerIndexData> mockIndexData = mockIndexData(id);
-        McpServerVersionInfo mockMcpServer = mockServerVersionInfo(id);
-        when(mcpServerIndex.searchMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 0, 100)).thenReturn(mockIndexData);
-        ConfigQueryChainResponse mockResponse = mockConfigQueryChainResponse(mockMcpServer);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
-        Page<McpServerBasicInfo> result = serverOperationService.listMcpServerWithOffset(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_ACCURATE, 0, 100);
-        assertEquals(1, result.getPageNumber());
-        assertEquals(1, result.getPagesAvailable());
-        assertEquals(1, result.getTotalCount());
-        assertEquals(1, result.getPageItems().size());
-        assertEquals(id, result.getPageItems().get(0).getId());
-        assertEquals("mcpName", result.getPageItems().get(0).getName());
-        assertEquals("9.9.9", result.getPageItems().get(0).getVersion());
-    }
-    
-    @Test
     void listMcpServerWithOverPageNo() {
-        String id = mockId();
         Page<McpServerIndexData> mockIndexData = new Page<>();
         mockIndexData.setPageNumber(10);
         mockIndexData.setPagesAvailable(1);
         mockIndexData.setTotalCount(1);
         mockIndexData.setPageItems(Collections.emptyList());
-        when(mcpServerIndex.searchMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 900, 100)).thenReturn(mockIndexData);
+        when(mcpServerIndex.searchMcpServerByNameWithPage(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
+                Constants.MCP_LIST_SEARCH_ACCURATE, 10, 100)).thenReturn(mockIndexData);
         Page<McpServerBasicInfo> result = serverOperationService.listMcpServerWithPage(
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_ACCURATE, 10, 100);
         assertEquals(10, result.getPageNumber());
@@ -423,6 +402,7 @@ class McpServerOperationServiceTest {
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setPath("/nacos");
         mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
         ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,

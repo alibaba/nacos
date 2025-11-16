@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.Map;
 
@@ -25,9 +25,9 @@ import java.util.Map;
  *
  * @author xinluo
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class InputWithVariables extends Input {
 
-    @JsonProperty("variables")
     private Map<String, Input> variables;
 
     public Map<String, Input> getVariables() {

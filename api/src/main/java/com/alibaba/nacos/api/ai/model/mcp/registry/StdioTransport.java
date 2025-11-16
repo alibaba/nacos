@@ -16,38 +16,26 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * _meta wrapper allowing extension namespaces.
+ * Stdio transport configuration.
  *
  * @author xinluo
  */
+@JsonTypeName("stdio")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Meta {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class StdioTransport {
+    private String type = "stdio";
 
-    @JsonProperty("io.modelcontextprotocol.registry/publisher-provided")
-    private Map<String, Object> publisherProvided;
-
-    @JsonProperty("io.modelcontextprotocol.registry/official")
-    private OfficialMeta official;
-
-    public Map<String, Object> getPublisherProvided() {
-        return publisherProvided;
+    public String getType() {
+        return type;
     }
 
-    public void setPublisherProvided(Map<String, Object> publisherProvided) {
-        this.publisherProvided = publisherProvided;
-    }
-
-    public OfficialMeta getOfficial() {
-        return official;
-    }
-
-    public void setOfficial(OfficialMeta official) {
-        this.official = official;
+    public void setType(String type) {
+        this.type = type;
     }
 }

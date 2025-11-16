@@ -16,10 +16,15 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * McpRegistryServerDetail (renamed from ServerDetail).
@@ -27,7 +32,22 @@ import java.util.List;
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class McpRegistryServerDetail extends McpRegistryServer {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class McpRegistryServerDetail {
+
+    private String name;
+
+    private String description;
+
+    private String title;
+
+    private Repository repository;
+
+    private String version;
+
+    private String websiteUrl;
+
+    private List<Icon> icons;
 
     @JsonProperty("$schema")
     private String schema;
@@ -38,6 +58,28 @@ public class McpRegistryServerDetail extends McpRegistryServer {
 
     @JsonProperty("_meta")
     private Meta meta;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Meta {
+        @JsonProperty("io.modelcontextprotocol.registry/publisher-provided")
+        private Map<String, Object> publisherMeta;
+
+        @JsonAnySetter
+        private Map<String, Object> extensionMeta = new HashMap<>();
+
+        public Map<String, Object> getPublisherMeta() {
+            return publisherMeta;
+        }
+
+        public void setPublisherMeta(Map<String, Object> publisherMeta) {
+            this.publisherMeta = publisherMeta;
+        }
+
+        @JsonAnyGetter
+        public Map<String, Object> getExtensionMeta() {
+            return extensionMeta;
+        }
+    }
 
     public String getSchema() {
         return schema;
@@ -71,4 +113,59 @@ public class McpRegistryServerDetail extends McpRegistryServer {
         this.meta = meta;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Repository getRepository() {
+        return repository;
+    }
+
+    public void setRepository(Repository repository) {
+        this.repository = repository;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getWebsiteUrl() {
+        return websiteUrl;
+    }
+
+    public void setWebsiteUrl(String websiteUrl) {
+        this.websiteUrl = websiteUrl;
+    }
+
+    public List<Icon> getIcons() {
+        return icons;
+    }
+
+    public void setIcons(List<Icon> icons) {
+        this.icons = icons;
+    }
 }

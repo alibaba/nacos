@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -28,10 +27,9 @@ import java.util.List;
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Remote {
-    
-    @JsonProperty("type")
-    @JsonAlias({"transport_type"})
+
     private String type;
 
     private String url;

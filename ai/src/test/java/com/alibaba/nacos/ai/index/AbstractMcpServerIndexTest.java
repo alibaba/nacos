@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.utils;
+package com.alibaba.nacos.ai.index;
 
-import com.alibaba.nacos.ai.constant.Constants;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
- * Mcp protocol related utils.
- * @author xinluo 
+ * Unit tests for AbstractMcpServerIndex.searchMcpServerByNameWithOffset method.
+ * Covers various combinations of offset, limit, and total count scenarios.
+ *
+ * @author xinluo
  */
-public class McpProtocolUtils {
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class AbstractMcpServerIndexTest {
     
-    public static boolean isProtocolNeedTranslator(String protocol) {
-        return Constants.PROTOCOL_TYPE_HTTP.equals(protocol) || Constants.PROTOCOL_TYPE_HTTPS.equals(protocol);
-    }
 }

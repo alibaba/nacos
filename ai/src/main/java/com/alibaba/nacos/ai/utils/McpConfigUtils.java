@@ -17,6 +17,9 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 
@@ -29,6 +32,14 @@ import static com.alibaba.nacos.ai.constant.Constants.MCP_SERVER_CONFIG_MARK;
  * @author xinluo
  */
 public class McpConfigUtils {
+
+    private static final String MCP_ENDPOINT_CONFIG_DIRECT_SPLIT = ":";
+
+    private static final String MCP_ENDPOINT_SPEC_ADDRESS_KEY = "address";
+
+    private static final String MCP_ENDPOINT_SPEC_PORT_KEY = "port";
+
+    private static final int MCP_ENDPOINT_SPEC_PORT_KEY_LENGTH = 2;
 
     /**
      * Format the Mcp server version info config data id.
@@ -65,5 +76,27 @@ public class McpConfigUtils {
 
     public static String buildMcpServerVersionConfigTags(String serverName) {
         return StringUtils.join(Arrays.asList(MCP_SERVER_CONFIG_MARK, Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + serverName), ",");
+    }
+
+    /**
+     * Convert {@link FrontEndpointConfig} to {@link McpEndpointSpec}.
+     * <p>Only support MCP_ENDPOINT_TYPE_DIRECT type.</p>
+     * @param frontEndpointConfig front endpoint config
+     * @return mcp endpoint spec
+     * @throws IllegalArgumentException if convert failed
+     */
+    public static McpEndpointSpec convertFrontEndpointConfig(FrontEndpointConfig frontEndpointConfig) {
+        Object epDataObj = frontEndpointConfig.getEndpointData();
+        String epData = (String) epDataObj;
+        McpEndpointSpec endpointSpec = new McpEndpointSpec();
+        String[] hp = epData.split(MCP_ENDPOINT_CONFIG_DIRECT_SPLIT);
+        if (hp.length != MCP_ENDPOINT_SPEC_PORT_KEY_LENGTH) {
+            throw new IllegalArgumentException("Invalid endpoint data: " + epData);
+        }
+        endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpointSpec.getData().put(MCP_ENDPOINT_SPEC_ADDRESS_KEY, hp[0]);
+        endpointSpec.getData().put(MCP_ENDPOINT_SPEC_PORT_KEY, hp[1]);
+        endpointSpec.getData().put(Constants.MCP_BACKEND_INSTANCE_PROTOCOL_KEY, frontEndpointConfig.getProtocol());
+        return endpointSpec;
     }
 }

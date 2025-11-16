@@ -36,22 +36,22 @@ public class McpServerImportResponse implements Serializable {
     /**
      * Total count of servers to import.
      */
-    private int totalCount;
+    private int totalCount = 0;
     
     /**
      * Successfully imported count.
      */
-    private int successCount;
+    private int successCount = 0;
     
     /**
      * Failed import count.
      */
-    private int failedCount;
+    private int failedCount = 0;
     
     /**
      * Skipped count (duplicates).
      */
-    private int skippedCount;
+    private int skippedCount = 0;
     
     /**
      * Import results for each server.

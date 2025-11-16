@@ -29,16 +29,12 @@ class OfficialMetaTest extends BasicRequestTest {
     @Test
     void testSerialize() throws JsonProcessingException {
         OfficialMeta officialMeta = new OfficialMeta();
-        officialMeta.setServerId("server1");
-        officialMeta.setVersionId("version1");
         officialMeta.setPublishedAt("2022-01-01T00:00:00Z");
         officialMeta.setUpdatedAt("2022-01-02T00:00:00Z");
         officialMeta.setIsLatest(true);
         
         String json = mapper.writeValueAsString(officialMeta);
         assertNotNull(json);
-        assertTrue(json.contains("\"serverId\":\"server1\""));
-        assertTrue(json.contains("\"versionId\":\"version1\""));
         assertTrue(json.contains("\"publishedAt\":\"2022-01-01T00:00:00Z\""));
         assertTrue(json.contains("\"updatedAt\":\"2022-01-02T00:00:00Z\""));
         assertTrue(json.contains("\"isLatest\":true"));
@@ -52,8 +48,6 @@ class OfficialMetaTest extends BasicRequestTest {
         
         OfficialMeta officialMeta = mapper.readValue(json, OfficialMeta.class);
         assertNotNull(officialMeta);
-        assertEquals("server1", officialMeta.getServerId());
-        assertEquals("version1", officialMeta.getVersionId());
         assertEquals("2022-01-01T00:00:00Z", officialMeta.getPublishedAt());
         assertEquals("2022-01-02T00:00:00Z", officialMeta.getUpdatedAt());
         assertEquals(true, officialMeta.getIsLatest());

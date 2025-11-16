@@ -46,14 +46,14 @@ class InputTest extends BasicRequestTest {
         assertTrue(json.contains("\"format\":\"string\""));
         assertTrue(json.contains("\"value\":\"test value\""));
         assertTrue(json.contains("\"isSecret\":false"));
-        assertTrue(json.contains("\"default\":\"default value\""));
+        assertTrue(json.contains("\"defaultValue\":\"default value\""));
         assertTrue(json.contains("\"choices\":[\"choice1\",\"choice2\"]"));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"description\":\"test description\",\"isRequired\":true,\"format\":\"string\","
-                + "\"value\":\"test value\",\"isSecret\":false,\"default\":\"default value\","
+                + "\"value\":\"test value\",\"isSecret\":false,\"defaultValue\":\"default value\","
                 + "\"choices\":[\"choice1\",\"choice2\"]}";
         
         Input input = mapper.readValue(json, Input.class);

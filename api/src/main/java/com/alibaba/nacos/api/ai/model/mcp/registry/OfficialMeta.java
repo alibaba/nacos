@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -24,11 +25,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OfficialMeta {
-
-    private String serverId;
-
-    private String versionId;
 
     private String publishedAt;
 
@@ -36,43 +34,77 @@ public class OfficialMeta {
 
     private Boolean isLatest;
 
-    public String getServerId() {
-        return serverId;
-    }
+    private String status;
 
-    public void setServerId(String serverId) {
-        this.serverId = serverId;
-    }
-
-    public String getVersionId() {
-        return versionId;
-    }
-
-    public void setVersionId(String versionId) {
-        this.versionId = versionId;
-    }
-
+    /**
+     * Get published at timestamp.
+     *
+     * @return published at
+     */
     public String getPublishedAt() {
         return publishedAt;
     }
 
+    /**
+     * Set published at timestamp.
+     *
+     * @param publishedAt published at
+     */
     public void setPublishedAt(String publishedAt) {
         this.publishedAt = publishedAt;
     }
 
+    /**
+     * Get updated at timestamp.
+     *
+     * @return updated at
+     */
     public String getUpdatedAt() {
         return updatedAt;
     }
 
+    /**
+     * Set updated at timestamp.
+     *
+     * @param updatedAt updated at
+     */
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
     }
 
+    /**
+     * Get is latest flag.
+     *
+     * @return is latest
+     */
     public Boolean getIsLatest() {
         return isLatest;
     }
 
+    /**
+     * Set is latest flag.
+     *
+     * @param isLatest is latest
+     */
     public void setIsLatest(Boolean isLatest) {
         this.isLatest = isLatest;
+    }
+
+    /**
+     * Get status.
+     *
+     * @return status
+     */
+    public String getStatus() {
+        return status;
+    }
+
+    /**
+     * Set status.
+     *
+     * @param status status
+     */
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

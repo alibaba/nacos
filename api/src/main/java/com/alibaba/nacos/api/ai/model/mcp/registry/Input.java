@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -27,6 +27,7 @@ import java.util.List;
  * @author xinluo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Input {
     
     private String description;
@@ -39,11 +40,12 @@ public class Input {
 
     private Boolean isSecret;
     
-    @JsonProperty("default")
     private String defaultValue;
 
     private List<String> choices;
-    
+
+    private String placeholder;
+
     public String getDescription() {
         return description;
     }
@@ -75,11 +77,11 @@ public class Input {
     public void setValue(String value) {
         this.value = value;
     }
-    
+
     public Boolean getIsSecret() {
         return isSecret;
     }
-    
+
     public void setIsSecret(Boolean isSecret) {
         this.isSecret = isSecret;
     }
@@ -98,5 +100,23 @@ public class Input {
 
     public void setChoices(List<String> choices) {
         this.choices = choices;
+    }
+
+    /**
+     * Get placeholder.
+     *
+     * @return placeholder
+     */
+    public String getPlaceholder() {
+        return placeholder;
+    }
+
+    /**
+     * Set placeholder.
+     *
+     * @param placeholder placeholder
+     */
+    public void setPlaceholder(String placeholder) {
+        this.placeholder = placeholder;
     }
 }
