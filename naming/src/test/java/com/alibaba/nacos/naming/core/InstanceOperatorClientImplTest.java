@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -167,7 +168,7 @@ class InstanceOperatorClientImplTest {
         Instance instance = new Instance();
         instance.setServiceName("C");
         instance.getMetadata().put("nullValue", null);
-        instanceOperatorClient.updateInstance("A", Constants.DEFAULT_GROUP, "C", instance);
+        instanceOperatorClient.updateInstance("A", Constants.DEFAULT_GROUP + "@@C", instance);
         
         Mockito.verify(metadataOperateService).updateInstanceMetadata(Mockito.any(), Mockito.any(),
                 Mockito.argThat(argument -> argument.getExtendData().isEmpty()));

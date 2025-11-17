@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.5.2-SNAPSHOT</revision>
+        <revision>2.5.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -151,6 +151,9 @@
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <junit5.version>5.10.2</junit5.version>
         
+        <!-- Maven Central Portal -->
+        <central.publishing.maven.version>0.7.0</central.publishing.maven.version>
+        
         <!-- override dependency version -->
         <spring.version>5.3.39</spring.version>
         <spring-security.version>5.8.15</spring-security.version>
@@ -173,6 +176,11 @@
                     <configuration>
                         <attach>false</attach>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${central.publishing.maven.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -477,6 +485,14 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -1087,19 +1103,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    
-    <distributionManagement>
-        <snapshotRepository>
-            <!-- The ID here must be exactly the same as the value
-             of the server element id in the settings.xml file of MAVEN -->
-            <id>sona</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>sona</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
 </project>
 
