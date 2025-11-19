@@ -96,7 +96,8 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
         final Configuration contextConfiguration = loggerContext.getConfiguration();
         for (Map.Entry<String, Appender> entry : contextConfiguration.getAppenders().entrySet()) {
             if (APPENDER_MARK.equals(entry.getValue().getName())) {
-                return false;  // Nacos configuration is active, no reload needed
+                // Nacos configuration is active, no reload needed
+                return false;
             }
         }
         
