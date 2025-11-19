@@ -426,6 +426,7 @@ class McpDetail extends React.Component {
         docker: 'docker',
         uv: 'uvx',
         dnx: 'dnx',
+        oci: 'docker',
       };
       serverConfig.command = registryCommands[this.getRegistryType(packageDef)] || 'npx';
     }
@@ -465,7 +466,10 @@ class McpDetail extends React.Component {
         } else {
           args.push(pkgName);
         }
-      } else if (this.getRegistryType(packageDef) === 'docker') {
+      } else if (
+        this.getRegistryType(packageDef) === 'docker' ||
+        this.getRegistryType(packageDef) === 'oci'
+      ) {
         args.push('run', '--rm', '-i');
         if (packageDef.version && packageDef.version !== 'latest') {
           args.push(`${pkgName}:${packageDef.version}`);
@@ -651,7 +655,7 @@ class McpDetail extends React.Component {
             </Col>
             <Col span={24} className="mcp-form-col">
               <p className="mcp-label">{locale.version || '版本'}:</p>
-              <p className="mcp-monospace">{packageDef.version || 'latest'}</p>
+              <p className="mcp-monospace">{packageDef.version || '无'}</p>
             </Col>
             <Col span={24} className="mcp-form-col">
               <p className="mcp-label">{locale.registryType || '注册表类型'}:</p>
@@ -882,6 +886,7 @@ class McpDetail extends React.Component {
       pip: '#3776ab',
       uv: '#6b73ff',
       dnx: '#512bd4',
+      oci: '#009688',
     };
     return colors[registryType] || '#666666';
   };

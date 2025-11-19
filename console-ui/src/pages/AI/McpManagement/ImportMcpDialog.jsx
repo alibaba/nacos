@@ -197,7 +197,12 @@ class ImportMcpDialog extends React.Component {
             const mergedServers = importType === 'url'
                 ? (validation.servers || [])
                 : (validation.servers || []);
-            const mergedKeysSet = new Set((mergedServers || []).map(it => it.serverId || it.serverName).filter(Boolean));
+            const mergedKeysSet = new Set((mergedServers || []).map(it => {
+                const name = it.serverName || it.serverId || 'Unnamed';
+                const server = it.server || {};
+                const version = (server.versionDetail && server.versionDetail.version) || '--';
+                return `${name}__${version}`;
+            }).filter(Boolean));
             const prevSelected = this.state.importSelectedServerIds || [];
             const nextSelected = (prevSelected && prevSelected.length) ? prevSelected.filter(id => mergedKeysSet.has(id)) : [];
             this.setState({
@@ -237,7 +242,13 @@ class ImportMcpDialog extends React.Component {
             targets = servers.filter(it => (it.status || '').toLowerCase() === 'valid');
         } else {
             const set = new Set(importSelectedServerIds || []);
-            targets = servers.filter(it => set.has(it.serverId || it.serverName));
+            targets = servers.filter(it => {
+                const name = it.serverName || it.serverId || 'Unnamed';
+                const server = it.server || {};
+                const version = (server.versionDetail && server.versionDetail.version) || '--';
+                const key = `${name}__${version}`;
+                return set.has(key);
+            });
         }
         if (!targets.length) {
             Message.warning(this.props.locale.pleaseSelect || '请先选择要导入的服务');
@@ -255,27 +266,51 @@ class ImportMcpDialog extends React.Component {
 
         let success = 0, failed = 0, current = 0;
         const failedItems = [];
+        const namespaceId = getParams('namespace') || '';
         for (const item of targets) {
             current += 1;
             const server = item.server || {};
+            const name = server.name || item.serverName || item.serverId;
             try {
-                const serverSpec = JSON.stringify(server);
+                let exists = false;
+                let existingId = null;
+                try {
+                    const checkRes = await request({
+                        url: 'v3/console/ai/mcp/list',
+                        method: 'get',
+                        data: { mcpName: name, namespaceId, search: 'accurate', pageNo: 1, pageSize: 10 }
+                    });
+                    if (checkRes && checkRes.code === 0 && checkRes.data && checkRes.data.pageItems) {
+                        const found = checkRes.data.pageItems.find(it => it.name === name);
+                        if (found) {
+                            exists = true;
+                            existingId = found.id;
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+
+                const serverSpecObj = { ...server };
+                if (exists && existingId) {
+                    serverSpecObj.id = existingId;
+                }
+
+                const serverSpec = JSON.stringify(serverSpecObj);
                 const toolSpec = server.toolSpec ? JSON.stringify(server.toolSpec) : '';
                 const endpointSpec = this.buildEndpointSpecByServer(server);
                 const res = await request({
                     url: 'v3/console/ai/mcp',
-                    type: 'post',
+                    type: exists ? 'put' : 'post',
                     data: { serverSpecification: serverSpec, toolSpecification: toolSpec, endpointSpecification: endpointSpec },
                 });
                 if (res && res.code === 0) {
                     success += 1;
                 } else {
                     failed += 1;
-                    failedItems.push({ name: server.name || item.serverName || item.serverId, reason: res?.message || 'unknown error' });
+                    failedItems.push({ name, reason: res?.message || 'unknown error' });
                 }
             } catch (e) {
                 failed += 1;
-                failedItems.push({ name: server.name || item.serverName || item.serverId, reason: e?.message || 'exception' });
+                failedItems.push({ name, reason: e?.message || 'exception' });
             }
             this.setState({ importProgressCurrent: current, importProgressSuccess: success, importProgressFailed: failed, importFailedItems: failedItems });
         }
@@ -597,13 +632,13 @@ class ImportMcpDialog extends React.Component {
                                         return (
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 20, width: '100%', alignItems: 'stretch', justifyItems: 'stretch' }}>
                                         {serversList.map((item, idx) => {
-                                            const key = item.serverId || item.serverName;
                                             const name = item.serverName || item.serverId || 'Unnamed';
+                                            const server = item.server || {};
+                                            const version = (server.versionDetail && server.versionDetail.version) || '--';
+                                            const key = `${name}__${version}`;
                                             const validationStatus = (item.status || '').toLowerCase();
                                             const checked = (this.state.importSelectedServerIds || []).includes(key);
-                                            const server = item.server || {};
                                             const proto = server.frontProtocol || server.protocol || '--';
-                                            const version = (server.versionDetail && server.versionDetail.version) || '--';
                                             const serverStatus = (server.status || '').toLowerCase();
                                             const errorText = (item.errors && item.errors.length) ? item.errors.join('; ') : '';
                                             const alreadyExists = !!item.exists || /already\s+exists/i.test(errorText);

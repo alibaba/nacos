@@ -28,6 +28,7 @@
   --color-pip: #3776ab;
   --color-uv: #6b73ff;
   --color-dnx: #512bd4;
+  --color-oci: #009688;
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
@@ -265,6 +266,10 @@
 
 .mcp-registry-dnx {
   background-color: var(--color-dnx);
+}
+
+.mcp-registry-oci {
+  background-color: var(--color-oci);
 }
 
 .mcp-registry-badge {

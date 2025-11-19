@@ -92,7 +92,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.groupPattern = Pattern.compile(this.paramCheckRule.groupPatternString);
         this.clusterPattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
         this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
-        this.mcpNamePattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
+        this.mcpNamePattern = Pattern.compile(this.paramCheckRule.mcpNamePatternString);
         this.agentNamePattern = Pattern.compile(this.paramCheckRule.agentNamePatternString);
     }
     
@@ -456,7 +456,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
             paramCheckResponse.setSuccess(true);
             return paramCheckResponse;
         }
-        if (mcpName.length() > paramCheckRule.maxClusterLength) {
+        if (mcpName.length() > paramCheckRule.maxMcpNameLength) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage(
                     String.format("Param 'mcpName' is illegal, the param length should not exceed %d.", paramCheckRule.maxClusterLength));
