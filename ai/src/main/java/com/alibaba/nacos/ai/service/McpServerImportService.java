@@ -19,6 +19,8 @@ package com.alibaba.nacos.ai.service;
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
 import com.alibaba.nacos.ai.enums.ExternalDataTypeEnum;
 import com.alibaba.nacos.ai.enums.McpImportResultStatusEnum;
+import com.alibaba.nacos.ai.index.McpCacheIndex;
+import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
@@ -54,6 +56,8 @@ import java.util.Set;
 @Service
 public class McpServerImportService {
 
+    private final McpCacheIndex mcpCacheIndex;
+
     private static final Logger LOG = LoggerFactory.getLogger(McpServerImportService.class);
 
     private final McpExternalDataAdaptor transformService;
@@ -64,10 +68,12 @@ public class McpServerImportService {
 
     public McpServerImportService(McpExternalDataAdaptor transformService,
                                   McpServerValidationService validationService,
-                                  McpServerOperationService operationService) {
+                                  McpServerOperationService operationService, 
+                                  McpCacheIndex mcpCacheIndex) {
         this.transformService = transformService;
         this.validationService = validationService;
         this.operationService = operationService;
+        this.mcpCacheIndex = mcpCacheIndex;
     }
 
     /**
@@ -209,7 +215,8 @@ public class McpServerImportService {
             McpToolSpecification toolSpec = server.getToolSpec();
             McpServerBasicInfo basicInfo = generateMcpBasicInfo(server);
             McpEndpointSpec endpointSpec = generateEndpointSpec(server);
-            if (item.isExists() && overrideExisting) {
+            McpServerIndexData exist = mcpCacheIndex.getMcpServerByName(namespaceId, item.getServerName());
+            if (exist != null && overrideExisting) {
                 operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec, true);
             } else {
                 operationService.createMcpServer(namespaceId, basicInfo, toolSpec, endpointSpec);

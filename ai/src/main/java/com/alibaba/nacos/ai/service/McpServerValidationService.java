@@ -17,8 +17,6 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
@@ -41,9 +39,9 @@ import java.util.Set;
  */
 @Service
 public class McpServerValidationService {
-    
+
     @Autowired
-    private McpServerIndex mcpServerIndex;
+    private McpServerOperationService mcpServerOperationService;
     
     /**
      * Validate MCP servers for import.
@@ -143,9 +141,9 @@ public class McpServerValidationService {
             existingNames.add(serverName);
         }
         
-        // Check if server already exists
         try {
-            McpServerIndexData existingServer = mcpServerIndex.getMcpServerByName(namespaceId, serverName);
+            McpServerDetailInfo existingServer = mcpServerOperationService.getMcpServerDetail(
+                    namespaceId, null, serverName, server.getVersionDetail().getVersion());
             if (existingServer != null) {
                 item.setExists(true);
                 if (!McpServerValidationConstants.STATUS_DUPLICATE.equals(item.getStatus())) {
