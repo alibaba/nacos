@@ -81,5 +81,7 @@ public class AiConstants {
         public static final String A2A_ENDPOINT_TYPE_SERVICE = "SERVICE";
         
         public static final String A2A_ENDPOINT_DEFAULT_TRANSPORT = "JSONRPC";
+        
+        public static final String A2A_ENDPOINT_DEFAULT_PROTOCOL = "HTTP";
     }
 }

@@ -104,5 +104,9 @@ public class Constants {
         public static final String AGENT_ENDPOINT_TRANSPORT_KEY = "__nacos.agent.endpoint.transport__";
         
         public static final String NACOS_AGENT_ENDPOINT_SUPPORT_TLS = "__nacos.agent.endpoint.supportTls__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_KEY = "__nacos.agent.endpoint.protocol__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
     }
 }

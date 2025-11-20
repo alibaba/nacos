@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardBasicInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -105,17 +106,32 @@ public class AgentCardUtil {
      */
     public static AgentInterface buildAgentInterface(Instance instance) {
         AgentInterface agentInterface = new AgentInterface();
+        String protocol = instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY);
+        if (StringUtils.isEmpty(protocol)) {
+            protocol = AiConstants.A2a.A2A_ENDPOINT_DEFAULT_PROTOCOL;
+        }
         boolean isSupportTls = Boolean.parseBoolean(
                 instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
-        String protocol = isSupportTls ? Constants.PROTOCOL_TYPE_HTTPS : Constants.PROTOCOL_TYPE_HTTP;
+        protocol = handlerTlsIfNeeded(protocol, isSupportTls);
         String url = String.format(AGENT_INTERFACE_URL_PATTERN, protocol, instance.getIp(), instance.getPort());
         String path = instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_PATH_KEY);
         if (StringUtils.isNotBlank(path)) {
             url += path.startsWith("/") ? path : "/" + path;
         }
+        String query = instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY);
+        if (StringUtils.isNotBlank(query)) {
+            url += "?" + query;
+        }
         agentInterface.setUrl(url);
         agentInterface.setTransport(instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
         return agentInterface;
+    }
+    
+    private static String handlerTlsIfNeeded(String protocol, boolean isSupportTls) {
+        if (AiConstants.A2a.A2A_ENDPOINT_DEFAULT_PROTOCOL.equalsIgnoreCase(protocol)) {
+            return isSupportTls ? Constants.PROTOCOL_TYPE_HTTPS : Constants.PROTOCOL_TYPE_HTTP;
+        }
+        return protocol;
     }
     
     private static String getCurrentTime() {

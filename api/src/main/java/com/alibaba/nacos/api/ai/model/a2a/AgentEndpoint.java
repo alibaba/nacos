@@ -38,7 +38,7 @@ public class AgentEndpoint {
     private String transport = AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT;
     
     /**
-     * Will be joined with {@link #port}, {@link #path}. Such as `<a href="http://address:port/path">...</a>`
+     * Will be joined with {@link #port}, {@link #path}, {@link #protocol}. Such as `<a href="protocol://address:port/path?query">...</a>`
      */
     private String address;
     
@@ -52,6 +52,20 @@ public class AgentEndpoint {
     private boolean supportTls;
     
     private String version;
+    
+    /**
+     * Custom Protocol for A2A transport. Default `HTTP`.
+     *
+     * @since 3.1.1
+     */
+    private String protocol = AiConstants.A2a.A2A_ENDPOINT_DEFAULT_PROTOCOL;
+    
+    /**
+     * Custom query for A2A url.
+     *
+     * @since 3.1.1
+     */
+    private String query;
     
     public String getAddress() {
         return address;
@@ -101,6 +115,22 @@ public class AgentEndpoint {
         this.version = version;
     }
     
+    public String getProtocol() {
+        return protocol;
+    }
+    
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+    
+    public String getQuery() {
+        return query;
+    }
+    
+    public void setQuery(String query) {
+        this.query = query;
+    }
+    
     /**
      * Only simple check address(IP or domain) and port.
      *
@@ -119,20 +149,22 @@ public class AgentEndpoint {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AgentEndpoint that = (AgentEndpoint) o;
-        return port == that.port && supportTls == that.supportTls && Objects.equals(transport, that.transport)
-                && Objects.equals(address, that.address) && Objects.equals(path, that.path) && Objects.equals(version,
-                that.version);
+        AgentEndpoint endpoint = (AgentEndpoint) o;
+        return port == endpoint.port && supportTls == endpoint.supportTls && Objects.equals(transport,
+                endpoint.transport) && Objects.equals(address, endpoint.address) && Objects.equals(path, endpoint.path)
+                && Objects.equals(version, endpoint.version) && Objects.equals(protocol, endpoint.protocol)
+                && Objects.equals(query, endpoint.query);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(transport, address, port, path, supportTls, version);
+        return Objects.hash(transport, address, port, path, supportTls, version, protocol, query);
     }
     
     @Override
     public String toString() {
         return "AgentEndpoint{" + "transport='" + transport + '\'' + ", address='" + address + '\'' + ", port=" + port
-                + ", path='" + path + '\'' + ", supportTls=" + supportTls + ", version='" + version + '\'' + '}';
+                + ", path='" + path + '\'' + ", supportTls=" + supportTls + ", version='" + version + '\''
+                + ", protocol='" + protocol + '\'' + ", query='" + query + '\'' + '}';
     }
 }
