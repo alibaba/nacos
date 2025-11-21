@@ -33,7 +33,7 @@ public class AiEnabledFilter implements NacosPackageExcludeFilter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AiEnabledFilter.class);
     
-    private static final String AI_ENABLED_KEY = "nacos.extension.ai.enabled";
+    public static final String AI_ENABLED_KEY = "nacos.extension.ai.enabled";
     
     @Override
     public String getResponsiblePackagePrefix() {
