@@ -626,7 +626,7 @@ class NewMcpServer extends React.Component {
           }
         }
 
-        const extensions = this.collectExtensionsPayload();
+        const extensions = this.collectExtensionsPayload(values?.extensions);
         const toolSpecPayload = {
           ...(this.state?.serverConfig?.toolSpec || {}),
           securitySchemes: securitySchemes,
@@ -998,10 +998,11 @@ class NewMcpServer extends React.Component {
       };
     }
 
-    return Object.keys(preservedExtensions).length ? preservedExtensions : undefined;
+    return Object.keys(preservedExtensions).length ? preservedExtensions : {};
   };
 
-  handleExtensionsFieldChange = () => {
+  handleExtensionsFieldChange = (options = {}) => {
+    const { skipServerConfigUpdate = false } = options;
     const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
     if (!downstreamId && this.field.getValue('defaultDownstreamSecurityPassthrough')) {
       this.field.setValue('defaultDownstreamSecurityPassthrough', false);
@@ -1011,19 +1012,23 @@ class NewMcpServer extends React.Component {
       this.field.setValue('defaultUpstreamSecurityCredential', '');
     }
     const extensions = this.collectExtensionsPayload();
-    this.setState(prevState => {
-      const nextToolSpec = {
-        ...(prevState.serverConfig?.toolSpec || {}),
-        extensions,
-      };
-      return {
-        serverConfig: {
-          ...prevState.serverConfig,
-          toolSpec: nextToolSpec,
-        },
-      };
-    });
+    if (!skipServerConfigUpdate) {
+      this.setState(prevState => {
+        const nextToolSpec = {
+          ...(prevState.serverConfig?.toolSpec || {}),
+          extensions,
+        };
+        return {
+          serverConfig: {
+            ...prevState.serverConfig,
+            toolSpec: nextToolSpec,
+          },
+        };
+      });
+    }
+
     return extensions;
+
   };
 
   // 切换高级配置展开/折叠状态
@@ -1082,7 +1087,7 @@ class NewMcpServer extends React.Component {
         this.field.setValue('defaultUpstreamSecurityId', '');
         this.field.setValue('defaultUpstreamSecurityCredential', '');
       }
-      this.handleExtensionsFieldChange();
+      this.handleExtensionsFieldChange({ skipServerConfigUpdate: true });
       this.toolsChange();
     }, 100);
   };

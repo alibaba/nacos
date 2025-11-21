@@ -147,6 +147,7 @@
 .mcp-subsection-title {
   margin-bottom: var(--gap-xl);
   color: var(--text-primary);
+}
 
 .mcp-default-security-row .mcp-form-col {
   margin-bottom: var(--gap-md);
@@ -171,7 +172,6 @@
   margin-top: 8px;
   color: var(--text-tertiary);
   font-size: var(--font-size-base);
-}
   font-style: italic;
   text-align: left;
   white-space: pre-wrap;

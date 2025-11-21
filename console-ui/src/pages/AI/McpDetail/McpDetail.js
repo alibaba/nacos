@@ -17,6 +17,8 @@ import PropTypes from 'prop-types';
 import { generateUrl } from '../../../utils/nacosutil';
 import ShowTools from './ShowTools';
 import './McpDetail.css';
+
+const KNOWN_SECURITY_FIELDS = ['id', 'passthrough', 'credential'];
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -1160,7 +1162,7 @@ class McpDetail extends React.Component {
       }
 
       Object.keys(security).forEach(key => {
-        if (['id', 'passthrough', 'credential'].includes(key)) {
+        if (KNOWN_SECURITY_FIELDS.includes(key)) {
           return;
         }
         const value = security[key];
@@ -1191,6 +1193,10 @@ class McpDetail extends React.Component {
     };
 
     const renderFieldColumns = fields => {
+      if (!Array.isArray(fields) || fields.length === 0) {
+        return [];
+      }
+
       const columns = [];
       fields
         .filter(field => field && field.value !== undefined && field.value !== null && field.value !== '')
