@@ -79,6 +79,7 @@
   word-break: break-word;
   overflow-wrap: break-word;
   line-height: 1.4;
+  color: #1f1f1f;
 }
 
 /* Tool Item Status Badge */

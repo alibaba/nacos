@@ -1097,6 +1097,23 @@ const I18N_CONF = {
     templatePreviewError: 'Template format error, unable to preview',
     backendAuth: 'Backend Authentication',
     clientAuth: 'Client Authentication',
+    defaultDownstreamSecurityTitle: 'Default Downstream Security',
+    defaultDownstreamSecurityDesc:
+      'Applies to all client → gateway requests (tools/list, tools without custom security).',
+    defaultDownstreamSecurityPlaceholder: 'Choose downstream security scheme',
+    defaultUpstreamSecurityTitle: 'Default Upstream Security',
+    defaultUpstreamSecurityDesc:
+      'Applies to gateway → backend calls when tools/request templates do not override security.',
+    defaultUpstreamSecurityPlaceholder: 'Choose upstream security scheme',
+    upstreamCredentialLabel: 'Override Credential',
+    upstreamCredentialPlaceholder: 'Optional credential override when calling backend',
+    defaultSecurityHeading: 'Default Security Behavior',
+    downstreamPassthroughLabel: 'Transparent Auth',
+    downstreamPassthroughEnabled: 'Enabled',
+    downstreamPassthroughDisabled: 'Disabled',
+    securitySchemeNotConfigured: 'No security scheme selected',
+    securitySchemeNotFound: 'Security scheme not found',
+    defaultSecurityCollapsedHint: 'Expand to view all fields',
   },
   NewAgent: {
     edit_agent: 'Edit Agent',
