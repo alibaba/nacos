@@ -613,16 +613,27 @@ class NewMcpServer extends React.Component {
             : '{}',
         };
 
-        // 如果是 stdio 协议，从 localServerConfig 生成 packages
-        if (values?.frontProtocol === 'stdio' && values?.localServerConfig) {
-          try {
-            const localConfig = JSON.parse(values.localServerConfig);
-            const packages = this.convertServerConfigToPackages(localConfig);
-            if (packages && packages.length > 0) {
-              serverSpec.packages = packages;
+        // 如果是 stdio 协议，优先使用 localServerConfig 生成 packages，否则回退到查询结果
+        if (values?.frontProtocol === 'stdio') {
+          let generatedPackages = [];
+
+          if (values?.localServerConfig) {
+            try {
+              const localConfig = JSON.parse(values.localServerConfig);
+              generatedPackages = this.convertServerConfigToPackages(localConfig) || [];
+            } catch (error) {
+              console.error('Failed to parse localServerConfig or convert to packages:', error);
             }
-          } catch (error) {
-            console.error('Failed to parse localServerConfig or convert to packages:', error);
+          }
+
+          if (generatedPackages.length > 0) {
+            serverSpec.packages = generatedPackages;
+          } else if (
+            Array.isArray(this.state?.serverConfig?.packages) &&
+            this.state.serverConfig.packages.length > 0
+          ) {
+            // 深拷贝，避免直接引用 state
+            serverSpec.packages = JSON.parse(JSON.stringify(this.state.serverConfig.packages));
           }
         }
 

@@ -168,7 +168,7 @@
 
 .default-security-sections {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -178,6 +178,8 @@
   border-radius: 8px;
   padding: 16px;
   background-color: #fafbfd;
+  flex: 1 1 calc(50% - 8px);
+  min-width: 280px;
 }
 
 .default-security-card-header {
@@ -194,6 +196,17 @@
   font-size: 12px;
   color: #666;
   margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .default-security-sections {
+    flex-direction: column;
+  }
+
+  .default-security-card {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
 }
 
 /* Security Scheme Item Styles */

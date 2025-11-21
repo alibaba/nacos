@@ -1124,10 +1124,8 @@ class McpDetail extends React.Component {
       endpoints.push(serverConfig);
     }
 
-    const buildDefaultSecurityFields = (sectionKey, security) => {
-      if (!security) {
-        return { fields: [], message: null };
-      }
+    const buildDefaultSecurityFields = (sectionKey, security = {}) => {
+      const safeSecurity = security || {};
 
       const fields = [];
       const pushField = (key, label, value, options = {}) => {
@@ -1137,13 +1135,13 @@ class McpDetail extends React.Component {
         fields.push({ key, label, value, ...options });
       };
 
-      pushField('scheme-id', locale.schemeId || 'ID', security.id, { monospace: true });
+      pushField('scheme-id', locale.schemeId || 'ID', safeSecurity.id, { monospace: true });
 
       if (sectionKey === 'downstream') {
-        const passthroughLabel = security.passthrough
+        const passthroughLabel = safeSecurity.passthrough
           ? locale.downstreamPassthroughEnabled || '启用'
           : locale.downstreamPassthroughDisabled || '禁用';
-        if (security.passthrough !== undefined) {
+        if (safeSecurity.passthrough !== undefined) {
           pushField(
             'downstream-passthrough',
             locale.downstreamPassthroughLabel || '透明认证',
@@ -1156,16 +1154,16 @@ class McpDetail extends React.Component {
         pushField(
           'upstream-credential',
           locale.upstreamCredentialLabel || '覆盖凭证',
-          security.credential,
-          { code: true, fullWidth: true }
+          safeSecurity.credential,
+          { code: true, noBg: true }
         );
       }
 
-      Object.keys(security).forEach(key => {
+      Object.keys(safeSecurity).forEach(key => {
         if (KNOWN_SECURITY_FIELDS.includes(key)) {
           return;
         }
-        const value = security[key];
+        const value = safeSecurity[key];
         const displayValue =
           typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
         pushField(`extension-${key}`, key, displayValue, {
@@ -1175,16 +1173,16 @@ class McpDetail extends React.Component {
       });
 
       let message = null;
-      if (!security.id) {
+      if (!safeSecurity.id) {
         message = (
           <p className="mcp-description-small">
             {locale.securitySchemeNotConfigured || '未配置认证方案'}
           </p>
         );
-      } else if (!securitySchemeMap[security.id]) {
+      } else if (!securitySchemeMap[safeSecurity.id]) {
         message = (
           <p className="mcp-description-small">
-            {(locale.securitySchemeNotFound || '未找到对应的认证方案') + ` (${security.id})`}
+            {(locale.securitySchemeNotFound || '未找到对应的认证方案') + ` (${safeSecurity.id})`}
           </p>
         );
       }
@@ -1209,8 +1207,11 @@ class McpDetail extends React.Component {
           if (field.code) {
             valueClassNames.push('mcp-monospace-code');
           }
+          if (field.noBg) {
+            valueClassNames.push('mcp-no-bg');
+          }
           columns.push(
-            <Col span={span} className="mcp-form-col" key={field.key}>
+            <Col span={span} className="mcp-form-col mcp-default-security-field" key={field.key}>
               <p className="mcp-scheme-label">{field.label}:</p>
               <p className={valueClassNames.join(' ')}>{field.value}</p>
             </Col>
@@ -1220,9 +1221,6 @@ class McpDetail extends React.Component {
     };
 
     const renderDefaultSecurityCard = (sectionKey, title, description, security) => {
-      if (!security) {
-        return null;
-      }
       const defaultSecurityInfo = buildDefaultSecurityFields(sectionKey, security);
       const allFields = defaultSecurityInfo.fields || [];
       const isCollapsed = this.state.defaultSecurityCollapsed?.[sectionKey] !== false;
@@ -1397,7 +1395,7 @@ class McpDetail extends React.Component {
                                 <p className="mcp-scheme-label">
                                   {locale.defaultCredential || '默认凭证'}:
                                 </p>
-                                <p className="mcp-monospace-code">{scheme.defaultCredential}</p>
+                                <p className="mcp-monospace-code mcp-no-bg">{scheme.defaultCredential}</p>
                               </Col>
                             )}
                           </Row>
@@ -1415,17 +1413,17 @@ class McpDetail extends React.Component {
                   <div className="mcp-default-security-sections">
                     {renderDefaultSecurityCard(
                       'downstream',
-                      locale.defaultDownstreamSecurityTitle || '默认下行认证',
+                      locale.defaultDownstreamSecurityTitle || '客户端到网关认证',
                       locale.defaultDownstreamSecurityDesc ||
                         '作用于客户端到网关的请求以及未配置 security 的工具。',
-                      defaultDownstreamSecurity
+                      defaultDownstreamSecurity || {}
                     )}
                     {renderDefaultSecurityCard(
                       'upstream',
-                      locale.defaultUpstreamSecurityTitle || '默认上行认证',
+                      locale.defaultUpstreamSecurityTitle || '网关到后端认证',
                       locale.defaultUpstreamSecurityDesc ||
                         '作用于网关访问后端时的默认配置。',
-                      defaultUpstreamSecurity
+                      defaultUpstreamSecurity || {}
                     )}
                   </div>
                 </>

@@ -79,6 +79,12 @@
   overflow-x: auto;
   word-wrap: break-word;
   word-break: break-word;
+  color: var(--text-primary);
+}
+
+.right-content .next-tabs-content,
+.right-content .next-tabs-tabpane {
+  color: var(--text-primary);
 }
 
 .server-config-responsive {
@@ -113,6 +119,7 @@
   margin-bottom: var(--gap-xl);
   transition: var(--transition);
   cursor: default;
+  color: var(--text-primary);
 }
 
 .mcp-card-small {
@@ -125,6 +132,7 @@
   box-shadow: var(--shadow-xs);
   transition: var(--transition);
   cursor: default;
+  color: var(--text-primary);
 }
 
 /* ==================== Heading Styles ==================== */
@@ -149,8 +157,29 @@
   color: var(--text-primary);
 }
 
+.mcp-subsection-title-inline {
+  color: var(--text-primary);
+}
+
+.mcp-header-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin: 0;
+}
+
+.mcp-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .mcp-default-security-row .mcp-form-col {
   margin-bottom: var(--gap-md);
+}
+
+.mcp-default-security-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .mcp-field-value {
@@ -438,6 +467,7 @@
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
   cursor: default;
+  color: var(--text-primary);
 }
 
 .mcp-param-item {
@@ -703,13 +733,16 @@
 
 .mcp-default-security-sections {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--gap-lg);
   margin-bottom: var(--gap-xl);
 }
 
 .mcp-default-security-card {
   padding: 14px;
+  flex: 1 1 calc(50% - var(--gap-lg) / 2);
+  min-width: 280px;
+  color: var(--text-primary);
 }
 
 .mcp-default-security-card-header {
@@ -787,6 +820,15 @@
     overflow-x: auto;
     word-wrap: break-word;
     word-break: break-word;
+  }
+
+  .mcp-default-security-sections {
+    flex-direction: column;
+  }
+
+  .mcp-default-security-card {
+    flex: 1 1 100%;
+    min-width: unset;
   }
 }
 
