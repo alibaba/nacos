@@ -52,7 +52,7 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
     }
     
     private void redoForAgentEndpoint() {
-        for (RedoData<AgentEndpoint> each : getRedoService().findAgentEndpointRedoData()) {
+        for (RedoData<AgentEndpointWrapper> each : getRedoService().findAgentEndpointRedoData()) {
             AgentEndpointRedoData redoData = (AgentEndpointRedoData) each;
             try {
                 redoForAgentEndpoint(redoData);
@@ -67,22 +67,28 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
         NamingRedoData.RedoType redoType = redoData.getRedoType();
         String agentName = redoData.getAgentName();
         LOGGER.info("Redo agent endpoint operation {} for {}.", redoType, agentName);
-        AgentEndpoint endpoint = redoData.get();
+        AgentEndpointWrapper wrapper = redoData.get();
         switch (redoType) {
             case REGISTER:
                 if (!aiGrpcClient.isEnable()) {
                     return;
                 }
-                aiGrpcClient.doRegisterAgentEndpoint(agentName, endpoint);
+                if (wrapper.isBatch()) {
+                    aiGrpcClient.doRegisterAgentEndpoint(agentName, wrapper.getBatchData());
+                } else {
+                    aiGrpcClient.doRegisterAgentEndpoint(agentName, wrapper.getData());
+                }
                 break;
             case UNREGISTER:
                 if (!aiGrpcClient.isEnable()) {
                     return;
                 }
+                AgentEndpoint endpoint = wrapper.isBatch() ? wrapper.getBatchData().stream().findFirst().get()
+                        : wrapper.getData();
                 aiGrpcClient.doDeregisterAgentEndpoint(agentName, endpoint);
                 break;
             case REMOVE:
-                getRedoService().removeMcpServerEndpointForRedo(agentName);
+                getRedoService().removeAgentEndpointForRedo(agentName);
                 break;
             default:
         }

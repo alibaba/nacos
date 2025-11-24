@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.redo.data.RedoData;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -86,5 +88,57 @@ class AiGrpcRedoServiceTest {
         RedoData<McpServerEndpoint> redoData = redoDatas.iterator().next();
         assertInstanceOf(McpServerEndpointRedoData.class, redoData);
         assertEquals("test2", ((McpServerEndpointRedoData) redoData).getMcpName());
+    }
+    
+    @Test
+    void cachedAgentEndpointForRedoWithSingleEndpoint() {
+        AgentEndpoint endpoint = new AgentEndpoint();
+        endpoint.setAddress("127.0.0.1");
+        endpoint.setPort(8080);
+        AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(endpoint);
+        
+        redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent"));
+        
+        redoService.agentEndpointRegistered("testAgent");
+        assertTrue(redoService.isAgentEndpointRegistered("testAgent"));
+        
+        redoService.agentEndpointDeregister("testAgent");
+        assertTrue(redoService.isAgentEndpointRegistered("testAgent"));
+        
+        redoService.agentEndpointDeregistered("testAgent");
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent"));
+        
+        redoService.removeAgentEndpointForRedo("testAgent");
+        Set<RedoData<AgentEndpointWrapper>> redoDatas = redoService.findAgentEndpointRedoData();
+        assertTrue(redoDatas.isEmpty());
+    }
+    
+    @Test
+    void cachedAgentEndpointForRedoWithBatchEndpoint() {
+        AgentEndpoint endpoint1 = new AgentEndpoint();
+        endpoint1.setAddress("127.0.0.1");
+        endpoint1.setPort(8080);
+        
+        AgentEndpoint endpoint2 = new AgentEndpoint();
+        endpoint2.setAddress("127.0.0.2");
+        endpoint2.setPort(8081);
+        
+        AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(Collections.singletonList(endpoint1));
+        
+        redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
+        assertFalse(redoService.isAgentEndpointRegistered("testAgent"));
+        
+        Set<RedoData<AgentEndpointWrapper>> redoDatas = redoService.findAgentEndpointRedoData();
+        assertEquals(1, redoDatas.size());
+        RedoData<AgentEndpointWrapper> redoData = redoDatas.iterator().next();
+        assertInstanceOf(AgentEndpointRedoData.class, redoData);
+        assertEquals("testAgent", ((AgentEndpointRedoData) redoData).getAgentName());
+        
+        redoService.agentEndpointRegistered("testAgent");
+        assertTrue(redoService.isAgentEndpointRegistered("testAgent"));
+        
+        redoDatas = redoService.findAgentEndpointRedoData();
+        assertTrue(redoDatas.isEmpty());
     }
 }

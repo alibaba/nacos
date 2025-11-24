@@ -49,7 +49,10 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Nacos AI client service implementation.
@@ -225,6 +228,16 @@ public class NacosAiService implements AiService {
     }
     
     @Override
+    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+        if (StringUtils.isBlank(agentName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentName` can't be empty or null");
+        }
+        validateAgentEndpoint(endpoints);
+        grpcClient.registerAgentEndpoints(agentName, endpoints);
+    }
+    
+    @Override
     public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -268,6 +281,23 @@ public class NacosAiService implements AiService {
         aiChangeNotifier.deregisterListener(agentName, version, listenerInvoker);
         if (!aiChangeNotifier.isAgentCardSubscribed(agentName, version)) {
             grpcClient.unsubscribeAgentCard(agentName, version);
+        }
+    }
+    
+    private void validateAgentEndpoint(Collection<AgentEndpoint> endpoints) throws NacosApiException {
+        if (null == endpoints || endpoints.isEmpty()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `endpoints` can't be empty or null, if want to deregister endpoints, please use deregister API.");
+        }
+        Set<String> versions = new HashSet<>();
+        for (AgentEndpoint endpoint : endpoints) {
+            validateAgentEndpoint(endpoint);
+            versions.add(endpoint.getVersion());
+        }
+        if (versions.size() > 1) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    String.format("Required parameter `endpoint.version` can't be different, current includes: %s.",
+                            String.join(",", versions)));
         }
     }
     

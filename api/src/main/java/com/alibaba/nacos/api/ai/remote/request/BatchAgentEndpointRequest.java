@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,29 +14,35 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.remote.response;
+package com.alibaba.nacos.api.ai.remote.request;
 
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
-import com.alibaba.nacos.api.remote.response.Response;
+
+import java.util.Collection;
 
 /**
- * Register or Deregister endpoint for agent to nacos AI module response.
+ * Batch Register endpoints for agent to nacos AI module request.
  *
  * @author xiweng.yy
  */
-public class AgentEndpointResponse extends Response {
+public class BatchAgentEndpointRequest extends AbstractAgentRequest {
+    
+    private Collection<AgentEndpoint> endpoints;
+    
+    public Collection<AgentEndpoint> getEndpoints() {
+        return endpoints;
+    }
+    
+    public void setEndpoints(Collection<AgentEndpoint> endpoints) {
+        this.endpoints = endpoints;
+    }
     
     /**
-     * Should be {@link AiRemoteConstants#REGISTER_ENDPOINT}, {@link AiRemoteConstants#DE_REGISTER_ENDPOINT},
-     * {@link AiRemoteConstants#BATCH_REGISTER_ENDPOINT}.
+     * Should be {@link AiRemoteConstants#BATCH_REGISTER_ENDPOINT}.
      */
-    private String type;
-    
     public String getType() {
-        return type;
+        return AiRemoteConstants.BATCH_REGISTER_ENDPOINT;
     }
     
-    public void setType(String type) {
-        this.type = type;
-    }
 }

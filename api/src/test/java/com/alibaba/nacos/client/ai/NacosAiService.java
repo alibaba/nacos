@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 
+import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -99,6 +100,11 @@ public class NacosAiService implements AiService {
     
     @Override
     public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+    
+    }
+    
+    @Override
+    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
     
     }
     

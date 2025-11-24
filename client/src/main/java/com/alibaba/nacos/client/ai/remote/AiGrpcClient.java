@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
@@ -51,6 +52,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.remote.redo.AgentEndpointWrapper;
 import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
@@ -70,6 +72,7 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -396,8 +399,25 @@ public class AiGrpcClient implements Closeable {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                     "Request Nacos server version is too low, not support agent registry feature.");
         }
-        redoService.cachedAgentEndpointForRedo(agentName, endpoint);
+        redoService.cachedAgentEndpointForRedo(agentName, AgentEndpointWrapper.wrap(endpoint));
         doRegisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    /**
+     * Batch Register agent endpoint into agent.
+     *
+     * @param agentName agent name
+     * @param endpoints agent endpoints
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void registerAgentEndpoints(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+        LOGGER.info("[{}] BATCH REGISTER Agent endpoint size: {} into agent {}", uuid, endpoints.size(), agentName);
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        redoService.cachedAgentEndpointForRedo(agentName, AgentEndpointWrapper.wrap(endpoints));
+        doRegisterAgentEndpoint(agentName, endpoints);
     }
     
     /**
@@ -413,6 +433,22 @@ public class AiGrpcClient implements Closeable {
         request.setAgentName(agentName);
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         request.setEndpoint(endpoint);
+        requestToServer(request, AgentEndpointResponse.class);
+        redoService.agentEndpointRegistered(agentName);
+    }
+    
+    /**
+     * Actual do batch register agent endpoint into agent.
+     *
+     * @param agentName agent name
+     * @param endpoints agent endpoints
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void doRegisterAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
+        request.setNamespaceId(this.namespaceId);
+        request.setAgentName(agentName);
+        request.setEndpoints(endpoints);
         requestToServer(request, AgentEndpointResponse.class);
         redoService.agentEndpointRegistered(agentName);
     }

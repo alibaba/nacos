@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,6 +95,12 @@ class AiServiceDefaultMethodTest {
             
             @Override
             public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+                
+            }
+            
+            @Override
+            public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints)
+                    throws NacosException {
                 
             }
             

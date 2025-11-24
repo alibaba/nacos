@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,9 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.utils.AgentEndpointUtil;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
-import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -42,21 +43,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
- * Register or Deregister endpoint for agent to nacos AI module request handler.
+ * Batch Register endpoints for agent to nacos AI module request handler.
  *
  * @author xiweng.yy
  */
 @Component
-public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointRequest, AgentEndpointResponse> {
+public class BatchAgentEndpointRequestHandler extends RequestHandler<BatchAgentEndpointRequest, AgentEndpointResponse> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentEndpointRequestHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BatchAgentEndpointRequestHandler.class);
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
     private final AgentIdCodecHolder agentIdCodecHolder;
     
-    public AgentEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
+    public BatchAgentEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
             AgentIdCodecHolder agentIdCodecHolder) {
         this.clientOperationService = clientOperationService;
         this.agentIdCodecHolder = agentIdCodecHolder;
@@ -66,63 +72,48 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = AgentRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public AgentEndpointResponse handle(AgentEndpointRequest request, RequestMeta meta) throws NacosException {
+    public AgentEndpointResponse handle(BatchAgentEndpointRequest request, RequestMeta meta) throws NacosException {
         AgentEndpointResponse response = new AgentEndpointResponse();
-        response.setType(request.getType());
+        response.setType(AiRemoteConstants.BATCH_REGISTER_ENDPOINT);
         AgentRequestUtil.fillNamespaceId(request);
         try {
             validateRequest(request);
-            Instance instance = transferInstance(request);
-            String serviceName =
-                    agentIdCodecHolder.encode(request.getAgentName()) + "::" + request.getEndpoint().getVersion();
+            List<Instance> instances = AgentEndpointUtil.transferToInstances(request.getEndpoints());
+            String version = request.getEndpoints().stream().findFirst().get().getVersion();
+            String serviceName = agentIdCodecHolder.encode(request.getAgentName()) + "::" + version;
             Service service = Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
                     serviceName);
-            switch (request.getType()) {
-                case AiRemoteConstants.REGISTER_ENDPOINT:
-                    doRegisterEndpoint(service, instance, meta);
-                    break;
-                case AiRemoteConstants.DE_REGISTER_ENDPOINT:
-                    doDeregisterEndpoint(service, instance, meta);
-                    break;
-                default:
-                    throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                            String.format("parameter `type` should be %s or %s, but was %s",
-                                    AiRemoteConstants.REGISTER_ENDPOINT, AiRemoteConstants.DE_REGISTER_ENDPOINT,
-                                    request.getType()));
-            }
+            clientOperationService.batchRegisterInstance(service, instances, meta.getConnectionId());
         } catch (NacosApiException e) {
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
-            LOGGER.error("[{}] Register agent endpoint to agent {} error: {}", meta.getConnectionId(),
+            LOGGER.error("[{}] Batch Register agent endpoints to agent {} error: {}", meta.getConnectionId(),
                     request.getAgentName(), e.getErrMsg());
         }
         return response;
     }
     
-    private Instance transferInstance(AgentEndpointRequest request) throws NacosApiException {
-        return AgentEndpointUtil.transferToInstance(request.getEndpoint());
-    }
-    
-    private void validateRequest(AgentEndpointRequest request) throws NacosApiException {
+    private void validateRequest(BatchAgentEndpointRequest request) throws NacosApiException {
         if (StringUtils.isBlank(request.getAgentName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `agentName` can't be empty or null");
         }
-        if (null == request.getEndpoint()) {
+        if (null == request.getEndpoints() || request.getEndpoints().isEmpty()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `endpoint` can't be null");
+                    "Required parameter `endpoints` can't be empty or null, if want to deregister, please use deregister API.");
         }
-        if (StringUtils.isBlank(request.getEndpoint().getVersion())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `endpoint.version` can't be empty or null");
+        Collection<AgentEndpoint> endpoints = request.getEndpoints();
+        Set<String> versions = new HashSet<>();
+        for (AgentEndpoint each : endpoints) {
+            if (StringUtils.isBlank(each.getVersion())) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "Required parameter `endpoint.version` can't be empty or null.");
+            }
+            versions.add(each.getVersion());
         }
-    }
-    
-    private void doRegisterEndpoint(Service service, Instance instance, RequestMeta meta) throws NacosException {
-        clientOperationService.registerInstance(service, instance, meta.getConnectionId());
-        
-    }
-    
-    private void doDeregisterEndpoint(Service service, Instance instance, RequestMeta meta) {
-        clientOperationService.deregisterInstance(service, instance, meta.getConnectionId());
+        if (versions.size() > 1) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    String.format("Required parameter `endpoint.version` can't be different, current includes: %s.",
+                            String.join(",", versions)));
+        }
     }
 }

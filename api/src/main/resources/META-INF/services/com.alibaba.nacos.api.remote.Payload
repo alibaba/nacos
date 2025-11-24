@@ -88,3 +88,4 @@ com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest
 com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse
 com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest
 com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse
+com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest

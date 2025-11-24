@@ -25,5 +25,7 @@ public class AiRemoteConstants {
     
     public static final String REGISTER_ENDPOINT = "registerEndpoint";
     
+    public static final String BATCH_REGISTER_ENDPOINT = "batchRegisterEndpoint";
+    
     public static final String DE_REGISTER_ENDPOINT = "deregisterEndpoint";
 }

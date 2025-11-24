@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -39,6 +40,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -219,6 +223,62 @@ class NacosAiServiceTest {
         assertThrows(NacosApiException.class, () -> nacosAiService.unsubscribeMcpServer("", null));
     }
     
+    @Test
+    void registerAgentEndpointWithCollection() throws NoSuchFieldException, IllegalAccessException, NacosException {
+        injectMocks();
+        Collection<AgentEndpoint> endpoints = createTestEndpoints();
+        nacosAiService.registerAgentEndpoint("testAgent", endpoints);
+        verify(grpcClient).registerAgentEndpoints("testAgent", endpoints);
+    }
+    
+    @Test
+    void registerAgentEndpointWithCollectionInvalidAgentName() {
+        Collection<AgentEndpoint> endpoints = createTestEndpoints();
+        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("", endpoints));
+    }
+    
+    @Test
+    void registerAgentEndpointWithCollectionNullEndpoints() {
+        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", (Collection<AgentEndpoint>) null));
+    }
+    
+    @Test
+    void registerAgentEndpointWithCollectionEmptyEndpoints() {
+        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", new ArrayList<>()));
+    }
+    
+    @Test
+    void registerAgentEndpointWithCollectionNullEndpointInList() {
+        Collection<AgentEndpoint> endpoints = Arrays.asList(new AgentEndpoint(), null);
+        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
+    }
+    
+    @Test
+    void registerAgentEndpointWithCollectionEndpointWithoutVersion() {
+        AgentEndpoint endpoint = new AgentEndpoint();
+        endpoint.setAddress("1.1.1.1");
+        endpoint.setPort(8080);
+        // No version set
+        Collection<AgentEndpoint> endpoints = Arrays.asList(endpoint);
+        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
+    }
+    
+    @Test
+    void registerAgentEndpointWithCollectionDifferentVersions() {
+        AgentEndpoint endpoint1 = new AgentEndpoint();
+        endpoint1.setAddress("1.1.1.1");
+        endpoint1.setPort(8080);
+        endpoint1.setVersion("1.0.0");
+        
+        AgentEndpoint endpoint2 = new AgentEndpoint();
+        endpoint2.setAddress("2.2.2.2");
+        endpoint2.setPort(9090);
+        endpoint2.setVersion("2.0.0");
+        
+        Collection<AgentEndpoint> endpoints = Arrays.asList(endpoint1, endpoint2);
+        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
+    }
+    
     private void injectMocks() throws NoSuchFieldException, IllegalAccessException {
         Field field = NacosAiService.class.getDeclaredField("grpcClient");
         field.setAccessible(true);
@@ -241,5 +301,19 @@ class NacosAiServiceTest {
             autoBuildAgentCacheHolder.shutdown();
         } catch (NacosException ignored) {
         }
+    }
+    
+    private Collection<AgentEndpoint> createTestEndpoints() {
+        AgentEndpoint endpoint1 = new AgentEndpoint();
+        endpoint1.setAddress("1.1.1.1");
+        endpoint1.setPort(8080);
+        endpoint1.setVersion("1.0.0");
+        
+        AgentEndpoint endpoint2 = new AgentEndpoint();
+        endpoint2.setAddress("2.2.2.2");
+        endpoint2.setPort(9090);
+        endpoint2.setVersion("1.0.0");
+        
+        return Arrays.asList(endpoint1, endpoint2);
     }
 }
