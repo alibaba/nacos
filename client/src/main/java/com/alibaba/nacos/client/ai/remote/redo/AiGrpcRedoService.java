@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
-import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
