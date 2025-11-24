@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 public final class ValidatorUtils {
     
     private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
+
     
     public static void checkInitParam(NacosClientProperties properties) throws NacosException {
         checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
