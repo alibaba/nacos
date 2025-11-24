@@ -351,4 +351,68 @@ class ConfigInfoMapperByMySqlTest {
                 new Object[]{newContent, newMD5, srcIp, srcUser, appNameTmp, desc, use, effect, type, schema,
                         encryptedDataKey, dataId, group, tenantId, md5}, mapperResult.getParamList().toArray());
     }
+    
+    @Test
+    void testFindConfigInfo4PageFetchRowsWithDescAndTags() {
+        ConfigInfoMapperByMySql configInfoMapperByMySql = new ConfigInfoMapperByMySql();
+        MapperContext context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.DATA_ID, "test.properties");
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        context.putWhereParameter(FieldConstant.CONTENT, "key=value");
+        
+        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageFetchRows(context);
+        String sql = mapperResult.getSql();
+        List<Object> paramList = mapperResult.getParamList();
+        
+        // 验证 SQL 包含新字段
+        assertEquals(true, sql.contains("a.c_desc"));
+        assertEquals(true, sql.contains("GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags"));
+        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation b ON a.id=b.id"));
+        assertEquals(true, sql.contains("GROUP BY"));
+        assertEquals(true, sql.contains("LIMIT"));
+        
+        // 验证参数
+        assertEquals(5, paramList.size());
+        assertEquals(tenantId, paramList.get(0));
+        assertEquals("test.properties", paramList.get(1));
+        assertEquals(groupId, paramList.get(2));
+        assertEquals(appName, paramList.get(3));
+        assertEquals("key=value", paramList.get(4));
+    }
+    
+    @Test
+    void testFindConfigInfoLike4PageFetchRowsWithDescAndTags() {
+        ConfigInfoMapperByMySql configInfoMapperByMySql = new ConfigInfoMapperByMySql();
+        MapperContext context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.DATA_ID, "test");
+        context.putWhereParameter(FieldConstant.GROUP_ID, "DEFAULT");
+        context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        context.putWhereParameter(FieldConstant.CONTENT, "key");
+        context.putWhereParameter(FieldConstant.TYPE, new String[]{"properties", "yaml"});
+        
+        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
+        String sql = mapperResult.getSql();
+        List<Object> paramList = mapperResult.getParamList();
+        
+        // 验证 SQL 包含新字段和聚合函数
+        assertEquals(true, sql.contains("a.c_desc"));
+        assertEquals(true, sql.contains("GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags"));
+        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation b ON a.id=b.id"));
+        assertEquals(true, sql.contains("GROUP BY"));
+        assertEquals(true, sql.contains("LIKE"));
+        assertEquals(true, sql.contains("IN"));
+        
+        // 验证参数数量（tenant + dataId + group + appName + content + 2个type）
+        assertEquals(7, paramList.size());
+        assertEquals(tenantId, paramList.get(0));
+        assertEquals("test", paramList.get(1));
+        assertEquals("DEFAULT", paramList.get(2));
+        assertEquals(appName, paramList.get(3));
+        assertEquals("key", paramList.get(4));
+        assertEquals("properties", paramList.get(5));
+        assertEquals("yaml", paramList.get(6));
+    }
 }

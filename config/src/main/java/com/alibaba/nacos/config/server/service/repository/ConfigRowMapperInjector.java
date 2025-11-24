@@ -30,6 +30,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -386,6 +387,21 @@ public class ConfigRowMapperInjector {
                 info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
             }
+            
+            // 新增字段映射
+            try {
+                info.setDesc(rs.getString("c_desc"));
+            } catch (SQLException ignore) {
+                // 字段不存在时设置为 null，保证向后兼容
+            }
+            try {
+                String configTags = rs.getString("config_tags");
+                // 处理 GROUP_CONCAT/LISTAGG 的结果，可能为 null
+                info.setConfigTags(StringUtils.isBlank(configTags) ? null : configTags);
+            } catch (SQLException ignore) {
+                // 字段不存在时设置为 null，保证向后兼容
+            }
+            
             return info;
         }
     }

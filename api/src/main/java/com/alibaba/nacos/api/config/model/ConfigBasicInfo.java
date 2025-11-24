@@ -60,6 +60,10 @@ public class ConfigBasicInfo implements Serializable {
     
     private long modifyTime;
     
+    private String desc;
+    
+    private String configTags;
+    
     public Long getId() {
         return id;
     }
@@ -130,5 +134,21 @@ public class ConfigBasicInfo implements Serializable {
     
     public void setModifyTime(long modifyTime) {
         this.modifyTime = modifyTime;
+    }
+    
+    public String getDesc() {
+        return desc;
+    }
+    
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+    
+    public String getConfigTags() {
+        return configTags;
+    }
+    
+    public void setConfigTags(String configTags) {
+        this.configTags = configTags;
     }
 }

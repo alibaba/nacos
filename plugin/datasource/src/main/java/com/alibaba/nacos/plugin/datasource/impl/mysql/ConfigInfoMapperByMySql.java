@@ -192,27 +192,35 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         
         List<Object> paramList = new ArrayList<>();
         
-        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key FROM config_info";
+        // 修改 SQL：添加 c_desc 字段和标签关联查询
+        final String sql = "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
+                          + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                          + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id";
+        
         StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" tenant_id=? ");
+        where.append(" a.tenant_id=? ");
         paramList.add(tenant);
         if (StringUtils.isNotBlank(dataId)) {
-            where.append(" AND data_id=? ");
+            where.append(" AND a.data_id=? ");
             paramList.add(dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.append(" AND group_id=? ");
+            where.append(" AND a.group_id=? ");
             paramList.add(group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND app_name=? ");
+            where.append(" AND a.app_name=? ");
             paramList.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
-            where.append(" AND content LIKE ? ");
+            where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        return new MapperResult(sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        
+        // 添加 GROUP BY 子句
+        String groupBy = " GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc";
+        
+        return new MapperResult(sql + where + groupBy + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
                 paramList);
     }
     
@@ -234,25 +242,31 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type FROM config_info");
-        where.like("tenant_id", tenant);
+                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc, "
+                        + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                        + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
+        
+        where.like("a.tenant_id", tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
-            where.and().like("data_id", dataId);
+            where.and().like("a.data_id", dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.and().like("group_id", group);
+            where.and().like("a.group_id", group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.and().eq("app_name", appName);
+            where.and().eq("a.app_name", appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            where.and().like("content", content);
+            where.and().like("a.content", content);
         }
         if (!ArrayUtils.isEmpty(types)) {
-            where.and().in("type", types);
+            where.and().in("a.type", types);
         }
+        
+        where.groupBy("a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc");
         where.limit(context.getStartRow(), context.getPageSize());
+        
         return where.build();
     }
     

@@ -785,6 +785,13 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
                     configInfo.getEncryptedDataKey(), configInfo.getContent());
             configInfo.setContent(pair.getSecond());
+            
+            // 查询并设置标签信息
+            List<String> configTagList = selectTagByConfig(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+            if (CollectionUtils.isNotEmpty(configTagList)) {
+                String configTagsStr = String.join(",", configTagList);
+                configInfo.setConfigTags(configTagsStr);
+            }
         }
         
         return page;
@@ -917,6 +924,13 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
                     configInfo.getEncryptedDataKey(), configInfo.getContent());
             configInfo.setContent(pair.getSecond());
+            
+            // 查询并设置标签信息
+            List<String> configTagList = selectTagByConfig(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+            if (CollectionUtils.isNotEmpty(configTagList)) {
+                String configTagsStr = String.join(",", configTagList);
+                configInfo.setConfigTags(configTagsStr);
+            }
         }
         return page;
         

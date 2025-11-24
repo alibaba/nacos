@@ -192,7 +192,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         
         List<Object> paramList = new ArrayList<>();
         
-        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info";
+        // Derby 版本：简单查询，不使用聚合函数
+        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info";
+        
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
         paramList.add(tenantId);
@@ -204,7 +206,6 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
             where.append(" AND group_id=? ");
             paramList.add(group);
         }
-        
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
             paramList.add(appName);
@@ -213,6 +214,8 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
             where.append(" AND content LIKE ? ");
             paramList.add(content);
         }
+        
+        // Derby 分页语法
         return new MapperResult(
                 sql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
                         + " ROWS ONLY", paramList);
@@ -238,7 +241,8 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type FROM config_info");
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc FROM config_info");
+        
         where.like("tenant_id", tenantId);
         if (StringUtils.isNotBlank(dataId)) {
             where.and().like("data_id", dataId);
@@ -257,6 +261,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         }
         
         where.offset(context.getStartRow(), context.getPageSize());
+        
         return where.build();
     }
     
