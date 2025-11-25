@@ -244,8 +244,13 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key FROM config_info"
-                + " WHERE  tenant_id=?  AND app_name=?  LIMIT " + startRow + "," + pageSize);
+        assertEquals(mapperResult.getSql(), "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,"
+                + "a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
+                + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
+                + "WHERE  a.tenant_id=?  AND a.app_name=? "
+                + " GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc"
+                + " LIMIT " + startRow + "," + pageSize);
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -268,8 +273,13 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type FROM config_info "
-                + "WHERE tenant_id LIKE ?  AND app_name = ?  LIMIT " + startRow + "," + pageSize);
+        assertEquals(mapperResult.getSql(), "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,"
+                + "a.md5,a.encrypted_data_key,a.type,a.c_desc, "
+                + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
+                + "WHERE a.tenant_id LIKE ?  AND a.app_name = ? "
+                + " GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
+                + " LIMIT " + startRow + "," + pageSize);
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
