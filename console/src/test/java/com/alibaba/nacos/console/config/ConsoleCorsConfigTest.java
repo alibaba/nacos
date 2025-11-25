@@ -52,7 +52,7 @@ class ConsoleCorsConfigTest {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         
-        ConsoleCorsConfig config = ConsoleCorsConfig.getInstance();
+        ConsoleCorsConfig config = new ConsoleCorsConfig();
         
         assertTrue(config.isAllowCredentials());
         assertEquals(Collections.emptyList(), config.getAllowedHeaders());
@@ -71,7 +71,7 @@ class ConsoleCorsConfigTest {
         environment.setProperty("nacos.console.cors.allowed-origins", "http://localhost:8080,https://example.com");
         EnvUtil.setEnvironment(environment);
         
-        ConsoleCorsConfig config = ConsoleCorsConfig.getInstance();
+        ConsoleCorsConfig config = new ConsoleCorsConfig();
         
         assertFalse(config.isAllowCredentials());
         assertEquals(Arrays.asList("Content-Type", "Authorization"), config.getAllowedHeaders());
@@ -85,7 +85,7 @@ class ConsoleCorsConfigTest {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         
-        ConsoleCorsConfig config = ConsoleCorsConfig.getInstance();
+        ConsoleCorsConfig config = new ConsoleCorsConfig();
         String result = config.toString();
         
         assertTrue(result.contains("ConsoleCorsConfig"));

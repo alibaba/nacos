@@ -17,7 +17,6 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Arrays;
@@ -29,11 +28,7 @@ import java.util.List;
  *
  * @author zhan7236
  */
-public class ConsoleCorsConfig extends AbstractDynamicConfig {
-    
-    private static final String CONSOLE_CORS = "ConsoleCors";
-    
-    private static final ConsoleCorsConfig INSTANCE = new ConsoleCorsConfig();
+public class ConsoleCorsConfig {
     
     private static final String CONSOLE_CORS_PREFIX = "nacos.console.cors.";
     
@@ -51,23 +46,30 @@ public class ConsoleCorsConfig extends AbstractDynamicConfig {
     
     private static final long DEFAULT_MAX_AGE = 18000L;
     
-    private boolean allowCredentials;
+    private final boolean allowCredentials;
     
-    private List<String> allowedHeaders;
+    private final List<String> allowedHeaders;
     
-    private long maxAge;
+    private final long maxAge;
     
-    private List<String> allowedMethods;
+    private final List<String> allowedMethods;
     
-    private List<String> allowedOrigins;
+    private final List<String> allowedOrigins;
     
-    private ConsoleCorsConfig() {
-        super(CONSOLE_CORS);
-        resetConfig();
+    public ConsoleCorsConfig() {
+        this.allowCredentials = EnvUtil.getProperty(ALLOW_CREDENTIALS_KEY, Boolean.class, DEFAULT_ALLOW_CREDENTIALS);
+        this.allowedHeaders = parseListProperty(ALLOWED_HEADERS_KEY);
+        this.maxAge = EnvUtil.getProperty(MAX_AGE_KEY, Long.class, DEFAULT_MAX_AGE);
+        this.allowedMethods = parseListProperty(ALLOWED_METHODS_KEY);
+        this.allowedOrigins = parseListProperty(ALLOWED_ORIGINS_KEY);
     }
     
-    public static ConsoleCorsConfig getInstance() {
-        return INSTANCE;
+    private List<String> parseListProperty(String key) {
+        String value = EnvUtil.getProperty(key, "");
+        if (StringUtils.isNotBlank(value)) {
+            return Arrays.asList(value.split(","));
+        }
+        return Collections.emptyList();
     }
     
     public boolean isAllowCredentials() {
@@ -88,35 +90,6 @@ public class ConsoleCorsConfig extends AbstractDynamicConfig {
     
     public List<String> getAllowedOrigins() {
         return allowedOrigins;
-    }
-    
-    @Override
-    protected void getConfigFromEnv() {
-        allowCredentials = EnvUtil.getProperty(ALLOW_CREDENTIALS_KEY, Boolean.class, DEFAULT_ALLOW_CREDENTIALS);
-        String allowedHeadersStr = EnvUtil.getProperty(ALLOWED_HEADERS_KEY, "");
-        if (StringUtils.isNotBlank(allowedHeadersStr)) {
-            allowedHeaders = Arrays.asList(allowedHeadersStr.split(","));
-        } else {
-            allowedHeaders = Collections.emptyList();
-        }
-        maxAge = EnvUtil.getProperty(MAX_AGE_KEY, Long.class, DEFAULT_MAX_AGE);
-        String allowedMethodsStr = EnvUtil.getProperty(ALLOWED_METHODS_KEY, "");
-        if (StringUtils.isNotBlank(allowedMethodsStr)) {
-            allowedMethods = Arrays.asList(allowedMethodsStr.split(","));
-        } else {
-            allowedMethods = Collections.emptyList();
-        }
-        String allowedOriginsStr = EnvUtil.getProperty(ALLOWED_ORIGINS_KEY, "");
-        if (StringUtils.isNotBlank(allowedOriginsStr)) {
-            allowedOrigins = Arrays.asList(allowedOriginsStr.split(","));
-        } else {
-            allowedOrigins = Collections.emptyList();
-        }
-    }
-    
-    @Override
-    protected String printConfig() {
-        return toString();
     }
     
     @Override

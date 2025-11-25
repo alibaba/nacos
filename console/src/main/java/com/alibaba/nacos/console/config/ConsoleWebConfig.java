@@ -65,7 +65,7 @@ public class ConsoleWebConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        ConsoleCorsConfig corsConfig = ConsoleCorsConfig.getInstance();
+        ConsoleCorsConfig corsConfig = new ConsoleCorsConfig();
         config.setAllowCredentials(corsConfig.isAllowCredentials());
         if (corsConfig.getAllowedHeaders().isEmpty()) {
             config.addAllowedHeader("*");
