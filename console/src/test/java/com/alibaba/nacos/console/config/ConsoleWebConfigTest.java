@@ -82,6 +82,21 @@ class ConsoleWebConfigTest {
     }
     
     @Test
+    void corsFilterWithCustomConfiguration() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        environment.setProperty("nacos.console.cors.allow-credentials", "false");
+        environment.setProperty("nacos.console.cors.allowed-headers", "Content-Type");
+        environment.setProperty("nacos.console.cors.max-age", "3600");
+        environment.setProperty("nacos.console.cors.allowed-methods", "GET,POST");
+        environment.setProperty("nacos.console.cors.allowed-origins", "http://localhost:8080");
+        EnvUtil.setEnvironment(environment);
+        
+        assertNotNull(consoleWebConfig.corsFilter());
+        EnvUtil.setEnvironment(cachedEnvironment);
+    }
+    
+    @Test
     void xssFilter() {
         assertNotNull(consoleWebConfig.xssFilter());
     }
