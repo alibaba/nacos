@@ -85,7 +85,8 @@ class ConfigTagsRelationMapperByMySqlTest {
         String sql = mapperResult.getSql();
         
         // 验证 SQL 包含子查询结构，确保能返回完整的标签信息
-        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc"));
+        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,"
+                + "c.md5,c.type,c.encrypted_data_key,c.c_desc"));
         assertEquals(true, sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
         assertEquals(true, sql.contains("FROM ("));  // 子查询
         assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询
@@ -132,7 +133,8 @@ class ConfigTagsRelationMapperByMySqlTest {
         String sql = mapperResult.getSql();
         
         // 验证 SQL 包含子查询结构，确保能返回完整的标签信息
-        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc"));
+        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,"
+                + "c.md5,c.encrypted_data_key,c.type,c.c_desc"));
         assertEquals(true, sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
         assertEquals(true, sql.contains("FROM ("));  // 子查询
         assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询

@@ -245,7 +245,8 @@ class ConfigInfoMapperByMySqlTest {
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageFetchRows(context);
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
-        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info WHERE tenant_id=? AND app_name=? LIMIT " + startRow + "," + pageSize;
+        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info "
+                + "WHERE tenant_id=? AND app_name=? LIMIT " + startRow + "," + pageSize;
         String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
                 + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + expectedInnerSql + ") a "
@@ -275,7 +276,8 @@ class ConfigInfoMapperByMySqlTest {
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
-        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc FROM config_info WHERE tenant_id LIKE ? AND app_name = ? LIMIT " + startRow + "," + pageSize;
+        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc"
+                + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? LIMIT " + startRow + "," + pageSize;
         String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,"
                 + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + expectedInnerSql + ") a "
