@@ -67,10 +67,11 @@ class ConfigInfoTagsRelationMapperByDerbyTest {
     @Test
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfo4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(),
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  "
-                        + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        // 验证增强后的 SQL，包含新字段但不包含 configTags（Derby 不支持 GROUP_CONCAT）
+        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc FROM config_info  a LEFT JOIN "
+                + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  "
+                + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
+        assertEquals(expectedSql, mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
@@ -90,10 +91,12 @@ class ConfigInfoTagsRelationMapperByDerbyTest {
     @Test
     void tsetFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type FROM config_info a "
+        // 验证增强后的 SQL，包含新字段但不包含 configTags（Derby 不支持 GROUP_CONCAT）
+        String expectedSql = "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc FROM config_info a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ?  AND "
                 + " ( b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  )"
-                + "  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                + "  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY";
+        assertEquals(expectedSql, mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());

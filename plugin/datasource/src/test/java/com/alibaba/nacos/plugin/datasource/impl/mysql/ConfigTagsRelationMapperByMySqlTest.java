@@ -82,10 +82,16 @@ class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(context);
-        assertEquals("SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  "
-                + "a LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "WHERE  a.tenant_id=?  AND a.data_id=?  AND a.group_id=?  AND a.app_name=?  AND a.content LIKE ? "
-                + " AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT " + startRow + "," + pageSize, mapperResult.getSql());
+        String sql = mapperResult.getSql();
+        
+        // 验证 SQL 包含子查询结构，确保能返回完整的标签信息
+        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc"));
+        assertEquals(true, sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
+        assertEquals(true, sql.contains("FROM ("));  // 子查询
+        assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询
+        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id"));  // 外层关联获取所有标签
+        assertEquals(true, sql.contains("b.tag_name IN"));  // 内层标签筛选条件
+        
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -123,11 +129,17 @@ class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type FROM config_info a LEFT JOIN"
-                + " config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ?  AND a.data_id LIKE ?  "
-                + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND  "
-                + "( b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  )  LIMIT " + startRow
-                + "," + pageSize);
+        String sql = mapperResult.getSql();
+        
+        // 验证 SQL 包含子查询结构，确保能返回完整的标签信息
+        assertEquals(true, sql.contains("SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc"));
+        assertEquals(true, sql.contains("GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags"));
+        assertEquals(true, sql.contains("FROM ("));  // 子查询
+        assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询
+        assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id"));  // 外层关联获取所有标签
+        assertEquals(true, sql.contains("b.tag_name LIKE"));  // 内层标签筛选条件
+        assertEquals(true, sql.contains("LIKE"));
+        
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");

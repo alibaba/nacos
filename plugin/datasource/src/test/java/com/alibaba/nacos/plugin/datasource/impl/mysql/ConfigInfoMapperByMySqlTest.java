@@ -244,13 +244,14 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,"
-                + "a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
+        // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
+        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info WHERE tenant_id=? AND app_name=? LIMIT " + startRow + "," + pageSize;
+        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
                 + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
-                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "WHERE  a.tenant_id=?  AND a.app_name=? "
-                + " GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc"
-                + " LIMIT " + startRow + "," + pageSize);
+                + "FROM (" + expectedInnerSql + ") a "
+                + "LEFT JOIN config_tags_relation b ON a.id=b.id "
+                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc";
+        assertEquals(expectedSql, mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -273,13 +274,14 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,"
-                + "a.md5,a.encrypted_data_key,a.type,a.c_desc, "
+        // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
+        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc FROM config_info WHERE tenant_id LIKE ? AND app_name = ? LIMIT " + startRow + "," + pageSize;
+        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,"
                 + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
-                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "WHERE a.tenant_id LIKE ?  AND a.app_name = ? "
-                + " GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
-                + " LIMIT " + startRow + "," + pageSize);
+                + "FROM (" + expectedInnerSql + ") a "
+                + "LEFT JOIN config_tags_relation b ON a.id=b.id "
+                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc";
+        assertEquals(expectedSql, mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -376,11 +378,12 @@ class ConfigInfoMapperByMySqlTest {
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
-        // 验证 SQL 包含新字段
-        assertEquals(true, sql.contains("a.c_desc"));
+        // 验证优化后的 SQL 结构：包含新字段和优化结构
+        assertEquals(true, sql.contains("c_desc"));
         assertEquals(true, sql.contains("GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags"));
         assertEquals(true, sql.contains("LEFT JOIN config_tags_relation b ON a.id=b.id"));
         assertEquals(true, sql.contains("GROUP BY"));
+        assertEquals(true, sql.contains("FROM (SELECT"));
         assertEquals(true, sql.contains("LIMIT"));
         
         // 验证参数
@@ -407,13 +410,15 @@ class ConfigInfoMapperByMySqlTest {
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
-        // 验证 SQL 包含新字段和聚合函数
-        assertEquals(true, sql.contains("a.c_desc"));
+        // 验证优化后的 SQL 结构：包含新字段和优化结构
+        assertEquals(true, sql.contains("c_desc"));
         assertEquals(true, sql.contains("GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags"));
         assertEquals(true, sql.contains("LEFT JOIN config_tags_relation b ON a.id=b.id"));
         assertEquals(true, sql.contains("GROUP BY"));
         assertEquals(true, sql.contains("LIKE"));
         assertEquals(true, sql.contains("IN"));
+        assertEquals(true, sql.contains("FROM (SELECT"));
+        assertEquals(true, sql.contains("LIMIT"));
         
         // 验证参数数量（tenant + dataId + group + appName + content + 2个type）
         assertEquals(7, paramList.size());

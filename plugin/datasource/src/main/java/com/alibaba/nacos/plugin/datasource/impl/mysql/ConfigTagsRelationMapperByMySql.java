@@ -46,41 +46,50 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         
         List<Object> paramList = new ArrayList<>();
-        StringBuilder where = new StringBuilder(" WHERE ");
-        final String sql =
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id";
         
-        where.append(" a.tenant_id=? ");
+        // 构建内层查询：根据标签条件筛选配置
+        StringBuilder innerWhere = new StringBuilder(" WHERE ");
+        innerWhere.append(" a.tenant_id=? ");
         paramList.add(tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
-            where.append(" AND a.data_id=? ");
+            innerWhere.append(" AND a.data_id=? ");
             paramList.add(dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.append(" AND a.group_id=? ");
+            innerWhere.append(" AND a.group_id=? ");
             paramList.add(group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name=? ");
+            innerWhere.append(" AND a.app_name=? ");
             paramList.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
-            where.append(" AND a.content LIKE ? ");
+            innerWhere.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        where.append(" AND b.tag_name IN (");
+        innerWhere.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
             if (i != 0) {
-                where.append(", ");
+                innerWhere.append(", ");
             }
-            where.append('?');
+            innerWhere.append('?');
             paramList.add(tagArr[i]);
         }
-        where.append(") ");
-        return new MapperResult(sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
-                paramList);
+        innerWhere.append(") ");
+        
+        // 使用子查询分离筛选逻辑和标签聚合逻辑
+        final String sql = "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc,"
+                + "GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags "
+                + "FROM ("
+                + "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
+                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id"
+                + innerWhere
+                + "LIMIT " + context.getStartRow() + "," + context.getPageSize()
+                + ") c LEFT JOIN config_tags_relation d ON c.id=d.id "
+                + "GROUP BY c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc";
+        
+        return new MapperResult(sql, paramList);
     }
     
     @Override
@@ -93,41 +102,50 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        WhereBuilder where = new WhereBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type "
-                        + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
+        // 构建内层查询：根据标签条件筛选配置
+        WhereBuilder innerWhere = new WhereBuilder(
+                "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc "
+                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
         
-        where.like("a.tenant_id", tenant);
+        innerWhere.like("a.tenant_id", tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
-            where.and().like("a.data_id", dataId);
+            innerWhere.and().like("a.data_id", dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.and().like("a.group_id", group);
+            innerWhere.and().like("a.group_id", group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.and().eq("a.app_name", appName);
+            innerWhere.and().eq("a.app_name", appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            where.and().like("a.content", content);
+            innerWhere.and().like("a.content", content);
         }
         if (!ArrayUtils.isEmpty(tagArr)) {
-            where.and().startParentheses();
+            innerWhere.and().startParentheses();
             for (int i = 0; i < tagArr.length; i++) {
                 if (i != 0) {
-                    where.or();
+                    innerWhere.or();
                 }
-                where.like("b.tag_name", tagArr[i]);
+                innerWhere.like("b.tag_name", tagArr[i]);
             }
-            where.endParentheses();
+            innerWhere.endParentheses();
         }
         if (!ArrayUtils.isEmpty(types)) {
-            where.and().in("a.type", types);
+            innerWhere.and().in("a.type", types);
         }
         
-        where.limit(context.getStartRow(), context.getPageSize());
+        innerWhere.limit(context.getStartRow(), context.getPageSize());
+        MapperResult innerResult = innerWhere.build();
         
-        return where.build();
+        // 构建外层查询：获取筛选出的配置的完整标签信息
+        final String sql = "SELECT c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc,"
+                + "GROUP_CONCAT(DISTINCT d.tag_name SEPARATOR ',') as config_tags "
+                + "FROM (" + innerResult.getSql() + ") c "
+                + "LEFT JOIN config_tags_relation d ON c.id=d.id "
+                + "GROUP BY c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.encrypted_data_key,c.type,c.c_desc";
+        
+        return new MapperResult(sql, innerResult.getParamList());
     }
     
     @Override

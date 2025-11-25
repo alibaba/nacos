@@ -47,8 +47,9 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
+        // 增强 SELECT 子句，包含 desc 字段，但不包含 configTags（Derby 不支持 GROUP_CONCAT）
         final String baseSql =
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
+                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc FROM config_info  a LEFT JOIN "
                         + "config_tags_relation b ON a.id=b.id";
         
         where.append(" a.tenant_id=? ");
@@ -94,8 +95,9 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
+        // 增强 SELECT 子句，包含 desc 字段，但不包含 configTags（Derby 不支持 GROUP_CONCAT）
         WhereBuilder where = new WhereBuilder(
-                "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type FROM config_info a LEFT JOIN "
+                "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc FROM config_info a LEFT JOIN "
                         + "config_tags_relation b ON a.id=b.id");
         
         where.like("a.tenant_id", tenantId);

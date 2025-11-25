@@ -192,36 +192,38 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         
         List<Object> paramList = new ArrayList<>();
         
-        // 修改 SQL：添加 c_desc 字段和标签关联查询
-        final String sql = "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
-                          + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
-                          + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id";
-        
-        StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" a.tenant_id=? ");
+        // 性能优化：先 LIMIT 再 JOIN，减少 JOIN 和 GROUP BY 的数据量
+        StringBuilder innerSql = new StringBuilder("SELECT id,data_id,group_id,tenant_id,app_name,"
+                + "content,md5,type,encrypted_data_key,c_desc FROM config_info WHERE tenant_id=?");
         paramList.add(tenant);
+        
         if (StringUtils.isNotBlank(dataId)) {
-            where.append(" AND a.data_id=? ");
+            innerSql.append(" AND data_id=?");
             paramList.add(dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.append(" AND a.group_id=? ");
+            innerSql.append(" AND group_id=?");
             paramList.add(group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name=? ");
+            innerSql.append(" AND app_name=?");
             paramList.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
-            where.append(" AND a.content LIKE ? ");
+            innerSql.append(" AND content LIKE ?");
             paramList.add(content);
         }
         
-        // 添加 GROUP BY 子句
-        String groupBy = " GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc";
+        // 先分页，减少后续 JOIN 的数据量
+        innerSql.append(" LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
         
-        return new MapperResult(sql + where + groupBy + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
-                paramList);
+        // 外层查询：对分页后的结果进行标签关联
+        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
+                          + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                          + "FROM (" + innerSql + ") a LEFT JOIN config_tags_relation b ON a.id=b.id "
+                          + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc";
+        
+        return new MapperResult(sql, paramList);
     }
     
     @Override
@@ -241,33 +243,51 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        WhereBuilder where = new WhereBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc, "
-                        + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
-                        + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
+        List<Object> paramList = new ArrayList<>();
         
-        where.like("a.tenant_id", tenant);
+        // 性能优化：先 LIMIT 再 JOIN，减少 JOIN 和 GROUP BY 的数据量
+        StringBuilder innerSql = new StringBuilder("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,"
+                + "encrypted_data_key,type,c_desc FROM config_info WHERE tenant_id LIKE ?");
+        paramList.add(tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
-            where.and().like("a.data_id", dataId);
+            innerSql.append(" AND data_id LIKE ?");
+            paramList.add(dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.and().like("a.group_id", group);
+            innerSql.append(" AND group_id LIKE ?");
+            paramList.add(group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.and().eq("a.app_name", appName);
+            innerSql.append(" AND app_name = ?");
+            paramList.add(appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            where.and().like("a.content", content);
+            innerSql.append(" AND content LIKE ?");
+            paramList.add(content);
         }
         if (!ArrayUtils.isEmpty(types)) {
-            where.and().in("a.type", types);
+            innerSql.append(" AND type IN (");
+            for (int i = 0; i < types.length; i++) {
+                if (i != 0) {
+                    innerSql.append(", ");
+                }
+                innerSql.append("?");
+                paramList.add(types[i]);
+            }
+            innerSql.append(")");
         }
         
-        where.groupBy("a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc");
-        where.limit(context.getStartRow(), context.getPageSize());
+        // 先分页，减少后续 JOIN 的数据量
+        innerSql.append(" LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
         
-        return where.build();
+        // 外层查询：对分页后的结果进行标签关联
+        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,"
+                          + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                          + "FROM (" + innerSql + ") a LEFT JOIN config_tags_relation b ON a.id=b.id "
+                          + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc";
+        
+        return new MapperResult(sql, paramList);
     }
     
     @Override
