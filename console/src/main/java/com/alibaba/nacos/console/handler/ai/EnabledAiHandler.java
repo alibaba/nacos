@@ -34,6 +34,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnProperty(value = AiEnabledFilter.AI_ENABLED_KEY, havingValue = "true", matchIfMissing = true)
-public @interface EnabledAIHandler {
+public @interface EnabledAiHandler {
 
 }
