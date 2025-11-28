@@ -43,4 +43,6 @@ jobs:
           echo "Server is up"
 
       - name: Run IT Tests
-        run: mvn clean verify -Pintegration-test
+        run: |
+          cd test
+          mvn clean verify -Pintegration-test
