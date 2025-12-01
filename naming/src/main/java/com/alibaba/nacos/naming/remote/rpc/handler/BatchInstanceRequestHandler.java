@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.BatchRegisterInstanceTraceEvent;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -80,7 +80,7 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
         long eventTime = System.currentTimeMillis();
         String clientIp = NamingRequestUtil.getSourceIpForGrpcRequest(meta);
         request.getInstances().forEach(instance -> NotifyCenter.publishEvent(
-                new RegisterInstanceTraceEvent(eventTime, clientIp, true, service.getNamespace(), service.getGroup(),
-                        service.getName(), instance.getIp(), instance.getPort())));
+                new BatchRegisterInstanceTraceEvent(eventTime, clientIp, true, service.getNamespace(),
+                        service.getGroup(), service.getName(), instance.getIp(), instance.getPort())));
     }
 }
