@@ -30,6 +30,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.naming.BatchRegisterInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -37,6 +39,7 @@ import com.alibaba.nacos.core.paramcheck.impl.AgentRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
@@ -84,6 +87,7 @@ public class BatchAgentEndpointRequestHandler extends RequestHandler<BatchAgentE
             Service service = Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
                     serviceName);
             clientOperationService.batchRegisterInstance(service, instances, meta.getConnectionId());
+            publishBatchRegisterInstanceTraceEvent(service, instances, meta);
         } catch (NacosApiException e) {
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
             LOGGER.error("[{}] Batch Register agent endpoints to agent {} error: {}", meta.getConnectionId(),
@@ -115,5 +119,13 @@ public class BatchAgentEndpointRequestHandler extends RequestHandler<BatchAgentE
                     String.format("Required parameter `endpoint.version` can't be different, current includes: %s.",
                             String.join(",", versions)));
         }
+    }
+    
+    private void publishBatchRegisterInstanceTraceEvent(Service service, List<Instance> instances, RequestMeta meta) {
+        long eventTime = System.currentTimeMillis();
+        String clientIp = NamingRequestUtil.getSourceIpForGrpcRequest(meta);
+        instances.forEach(instance -> NotifyCenter.publishEvent(
+                new BatchRegisterInstanceTraceEvent(eventTime, clientIp, true, service.getNamespace(),
+                        service.getGroup(), service.getName(), instance.getIp(), instance.getPort())));
     }
 }
