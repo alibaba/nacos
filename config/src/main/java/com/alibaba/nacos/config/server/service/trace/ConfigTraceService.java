@@ -43,6 +43,8 @@ public class ConfigTraceService {
     
     public static final String PERSISTENCE_EVENT_TAG = "persist-tag";
     
+    public static final String PERSISTENCE_EVENT_METADATA = "persist-metadata";
+    
     /**
      * persist type.
      */
