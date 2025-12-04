@@ -138,7 +138,7 @@ public class ConfigControllerV3 {
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
     private final ConfigMigrateService configMigrateService;
-
+    
     /**
      * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
      */
@@ -244,6 +244,7 @@ public class ConfigControllerV3 {
     public Result<Boolean> publishConfigMetadata(HttpServletRequest request, ConfigFormV3 configForm)
             throws NacosException {
         configForm.validate();
+        String remoteIp = getRemoteIp(request);
         String configTags = configForm.getConfigTags();
         String description = configForm.getDesc();
         String dataId = configForm.getDataId();
@@ -251,6 +252,10 @@ public class ConfigControllerV3 {
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags, description);
         configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags, description);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), remoteIp,
+                ConfigTraceService.PERSISTENCE_EVENT_METADATA, ConfigTraceService.PERSISTENCE_TYPE_PUB, null);
+        ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(dataId, group, namespaceId, time.getTime()));
         return Result.success(true);
     }
     
