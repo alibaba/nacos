@@ -181,7 +181,7 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
                 for (String groupKey : configFuzzyWatchContext.getReceivedGroupKeys()) {
                     ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = ConfigFuzzyWatchNotifyEvent.buildEvent(
                             groupKey, configFuzzyWatchContext.getGroupKeyPattern(), ADD_CONFIG, FUZZY_WATCH_INIT_NOTIFY,
-                            configFuzzyWatcherWrapper.getUuid());
+                            this.clientUuid, configFuzzyWatcherWrapper.getUuid());
                     NotifyCenter.publishEvent(configFuzzyWatchNotifyEvent);
                 }
             }
