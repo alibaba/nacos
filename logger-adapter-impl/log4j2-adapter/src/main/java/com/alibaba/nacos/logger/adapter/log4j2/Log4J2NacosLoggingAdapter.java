@@ -24,13 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.ConfigurationFactory;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -44,13 +39,17 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String NACOS_LOG4J2_LOCATION = "classpath:nacos-log4j2.xml";
     
-    private static final String FILE_PROTOCOL = "file";
-    
     private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
     
     private static final String APPENDER_MARK = "ASYNC_NAMING";
     
     private static final String LOG4J2_CLASSES = "org.apache.logging.slf4j.Log4jLogger";
+    
+    private final NacosLog4j2Configurator configurator;
+    
+    public Log4J2NacosLoggingAdapter() {
+        this.configurator = new NacosLog4j2Configurator();
+    }
     
     @Override
     public boolean isAdaptedLogger(Class<?> loggerClass) {
@@ -94,44 +93,31 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
         if (StringUtils.isBlank(location)) {
             return;
         }
+        
         final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
-        final Configuration contextConfiguration = loggerContext.getConfiguration();
         
-        // load and start nacos configuration
-        Configuration configuration = loadConfiguration(loggerContext, location);
-        configuration.start();
-        
-        // append loggers and appenders to contextConfiguration
-        Map<String, Appender> appenders = configuration.getAppenders();
-        for (Appender appender : appenders.values()) {
-            contextConfiguration.addAppender(appender);
+        // Fast path: check if already loaded (avoid lock contention in normal case)
+        if (loggerContext.getConfiguration().getAppender(APPENDER_MARK) != null) {
+            return;
         }
-        Map<String, LoggerConfig> loggers = configuration.getLoggers();
-        for (String name : loggers.keySet()) {
-            if (name.startsWith(NACOS_LOGGER_PREFIX)) {
-                contextConfiguration.addLogger(name, loggers.get(name));
+        
+        // Thread-safe double-checked locking to prevent duplicate loading in concurrent scenarios
+        // Although normal usage is single-threaded (via ScheduledExecutorService), this ensures
+        // robustness in edge cases like concurrent framework initialization or testing scenarios
+        synchronized (loggerContext) {
+            final Configuration config = loggerContext.getConfiguration();
+            if (config.getAppender(APPENDER_MARK) != null) {
+                return;
+            }
+            
+            try {
+                // Use custom NacosLog4j2Configurator (framework-compliant approach similar to Logback)
+                URI configUri = ResourceUtils.getResourceUrl(location).toURI();
+                configurator.configure(loggerContext, configUri);
+                
+            } catch (Exception e) {
+                throw new IllegalStateException("Could not initialize Log4J2 logging from " + location, e);
             }
         }
-        
-        loggerContext.updateLoggers();
-    }
-    
-    private Configuration loadConfiguration(LoggerContext loggerContext, String location) {
-        try {
-            URL url = ResourceUtils.getResourceUrl(location);
-            ConfigurationSource source = getConfigurationSource(url);
-            // since log4j 2.7 getConfiguration(LoggerContext loggerContext, ConfigurationSource source)
-            return ConfigurationFactory.getInstance().getConfiguration(loggerContext, source);
-        } catch (Exception e) {
-            throw new IllegalStateException("Could not initialize Log4J2 logging from " + location, e);
-        }
-    }
-    
-    private ConfigurationSource getConfigurationSource(URL url) throws IOException {
-        InputStream stream = url.openStream();
-        if (FILE_PROTOCOL.equals(url.getProtocol())) {
-            return new ConfigurationSource(stream, ResourceUtils.getResourceAsFile(url));
-        }
-        return new ConfigurationSource(stream, url);
     }
 }
