@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import org.junit.jupiter.api.AfterEach;
