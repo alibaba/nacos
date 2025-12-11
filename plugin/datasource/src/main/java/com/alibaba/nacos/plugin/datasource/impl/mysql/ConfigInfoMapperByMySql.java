@@ -170,7 +170,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
             paramList.add(dataId);
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ";
+            where += " AND group_id LIKE ? ";
             paramList.add(group);
         }
         if (!StringUtils.isBlank(content)) {
