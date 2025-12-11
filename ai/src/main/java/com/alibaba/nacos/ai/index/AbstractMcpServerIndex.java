@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
@@ -69,13 +70,18 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
             int pageNo, int limit) {
         Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, search, pageNo, limit);
         List<McpServerIndexData> indexDataList = serverInfos.getPageItems().stream()
-                .map(this::mapMcpServerVersionConfigToIndexData).toList();
+                .map((configInfo) -> {
+                    configInfo.setTenant(namespaceId);
+                    return configInfo;
+                })
+                .map(this::mapToMcpServerVersionInfo)
+                .map(this::mcpToIndexAndUpdateToCache)
+                .toList();
         Page<McpServerIndexData> result = new Page<>();
         result.setPageItems(indexDataList);
         result.setTotalCount(serverInfos.getTotalCount());
         result.setPagesAvailable((int) Math.ceil((double) serverInfos.getTotalCount() / (double) limit));
         result.setPageNumber(pageNo);
-        afterSearch(indexDataList, name);
         return result;
     }
 
@@ -85,7 +91,7 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
      * @param searchResult the search results
      * @param name the search name
      */
-    protected abstract void afterSearch(List<McpServerIndexData> searchResult, String name);
+    protected abstract void afterSearch(McpServerIndexData searchResult, String name);
 
     /**
      * Search MCP servers.
@@ -110,11 +116,17 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
                 Constants.MCP_SERVER_VERSIONS_GROUP, namespace, advanceInfo);
     }
 
-    protected McpServerIndexData mapMcpServerVersionConfigToIndexData(ConfigInfo configInfo) {
+    protected McpServerVersionInfo mapToMcpServerVersionInfo(ConfigInfo configInfo) {
+        McpServerVersionInfo obj = JacksonUtils.toObj(configInfo.getContent(), McpServerVersionInfo.class);
+        obj.setNamespaceId(configInfo.getTenant());
+        return obj;
+    }
+
+    protected McpServerIndexData mcpToIndexAndUpdateToCache(McpServerVersionInfo versionInfo) {
         McpServerIndexData data = new McpServerIndexData();
-        McpServerVersionInfo versionInfo = JacksonUtils.toObj(configInfo.getContent(), McpServerVersionInfo.class);
         data.setId(versionInfo.getId());
-        data.setNamespaceId(configInfo.getTenant());
+        data.setNamespaceId(versionInfo.getNamespaceId());
+        afterSearch(data, versionInfo.getName());
         return data;
     }
 }
