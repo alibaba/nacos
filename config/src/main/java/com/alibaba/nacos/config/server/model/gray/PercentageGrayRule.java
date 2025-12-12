@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,33 @@
 
 package com.alibaba.nacos.config.server.model.gray;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.utils.StringUtils;
-
 import java.util.Map;
 import java.util.Objects;
 
-import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.StringUtils;
 
 /**
- * Tag gray rule.
- *
- * @author shiyiyue
+ * Percentage gray rule for percentage bucket.
+ * @author AI Assistant
  */
-public class TagGrayRule extends AbstractGrayRule {
+public class PercentageGrayRule extends AbstractGrayRule {
     
-    String tagValue;
+    private static final String CLIENT_IP_LABEL = "ClientIp";
     
-    public static final String VIP_SERVER_TAG_LABEL = VIPSERVER_TAG;
-    
-    public static final String TYPE_TAG = "tag";
+    public static final String TYPE_PERCENTAGE = "percentage";
     
     public static final String VERSION = "1.0.0";
     
-    public static final int PRIORITY = Integer.MAX_VALUE - 1;
+    public static final int PRIORITY = Integer.MAX_VALUE - 2;
     
-    public TagGrayRule() {
+    private int percentage;
+    
+    public PercentageGrayRule() {
         super();
     }
     
-    public TagGrayRule(String rawGrayRuleExp, int priority) {
+    public PercentageGrayRule(String rawGrayRuleExp, int priority) {
         super(rawGrayRuleExp, priority);
     }
     
@@ -54,17 +51,32 @@ public class TagGrayRule extends AbstractGrayRule {
         if (StringUtils.isBlank(rawGrayRule)) {
             return;
         }
-        this.tagValue = rawGrayRule;
+        try {
+            this.percentage = Integer.parseInt(rawGrayRule);
+            if (this.percentage < 0 || this.percentage > 100) {
+                throw new NacosException(NacosException.INVALID_PARAM, "Percentage must be between 0 and 100");
+            }
+        } catch (NumberFormatException e) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Invalid percentage format: " + rawGrayRule);
+        }
     }
     
     @Override
     public boolean match(Map<String, String> labels) {
-        return labels.containsKey(VIP_SERVER_TAG_LABEL) && tagValue.equals(labels.get(VIP_SERVER_TAG_LABEL));
+        if (!labels.containsKey(CLIENT_IP_LABEL)) {
+            return false;
+        }
+        
+        String clientIp = labels.get(CLIENT_IP_LABEL);
+        int hash = Math.abs(clientIp.hashCode());
+        int bucket = hash % 100;
+        
+        return bucket < this.percentage;
     }
     
     @Override
     public String getType() {
-        return TYPE_TAG;
+        return TYPE_PERCENTAGE;
     }
     
     @Override
@@ -85,12 +97,12 @@ public class TagGrayRule extends AbstractGrayRule {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        TagGrayRule that = (TagGrayRule) o;
-        return tagValue.equals(that.tagValue);
+        PercentageGrayRule that = (PercentageGrayRule) o;
+        return percentage == that.percentage;
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(tagValue);
+        return Objects.hash(percentage);
     }
 }

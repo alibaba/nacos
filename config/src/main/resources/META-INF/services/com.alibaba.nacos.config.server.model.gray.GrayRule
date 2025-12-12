@@ -18,3 +18,7 @@
 
 com.alibaba.nacos.config.server.model.gray.BetaGrayRule
 com.alibaba.nacos.config.server.model.gray.TagGrayRule
+com.alibaba.nacos.config.server.model.gray.PercentageGrayRule
+com.alibaba.nacos.config.server.model.gray.TenantGrayRule
+com.alibaba.nacos.config.server.model.gray.NamespaceGrayRule
+com.alibaba.nacos.config.server.model.gray.CompositeGrayRule

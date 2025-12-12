@@ -31,6 +31,8 @@ public class ConfigCompatibleConfig extends AbstractDynamicConfig {
     
     private boolean namespaceCompatibleMode = true;
     
+    private boolean grayCompatibleMode = true;
+    
     private static final ConfigCompatibleConfig INSTANCE = new ConfigCompatibleConfig();
     
     protected ConfigCompatibleConfig() {
@@ -42,14 +44,20 @@ public class ConfigCompatibleConfig extends AbstractDynamicConfig {
         return namespaceCompatibleMode;
     }
     
+    public boolean isGrayCompatibleMode() {
+        return grayCompatibleMode;
+    }
+    
     @Override
     protected void getConfigFromEnv() {
         namespaceCompatibleMode = EnvUtil.getProperty(PropertiesConstant.NAMESPACE_COMPATIBLE_MODE, Boolean.class, true);
+        grayCompatibleMode = EnvUtil.getProperty(PropertiesConstant.GRAY_CAPATIBEL_MODEL, Boolean.class, true);
     }
     
     @Override
     protected String printConfig() {
         return "ConfigCompatibleConfig{" + "namespaceCompatibleMode=" + namespaceCompatibleMode
+                + ", grayCompatibleMode=" + grayCompatibleMode
                 + '}';
     }
     

@@ -198,6 +198,16 @@ public interface ConfigInfoPersistService {
     void removeTagByIdAtomic(long id);
     
     /**
+     * Save config history.
+     *
+     * @param configInfo config info
+     * @param srcIp      source ip
+     * @param srcUser    source user
+     * @param opType     operation type
+     */
+    void saveConfigHistory(ConfigInfo configInfo, String srcIp, String srcUser, String opType);
+    
+    /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
      *
      * @param dataId  dataId

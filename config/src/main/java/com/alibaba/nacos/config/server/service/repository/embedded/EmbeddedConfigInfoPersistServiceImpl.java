@@ -511,6 +511,16 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
+    public void saveConfigHistory(ConfigInfo configInfo, String srcIp, String srcUser, String opType) {
+        if (configInfo == null) {
+            return;
+        }
+        long id = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_ID);
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        historyConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, now, opType, null, null, null);
+    }
+    
+    @Override
     public void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;

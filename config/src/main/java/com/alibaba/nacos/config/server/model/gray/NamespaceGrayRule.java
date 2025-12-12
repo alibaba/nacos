@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,61 +16,52 @@
 
 package com.alibaba.nacos.config.server.model.gray;
 
-import com.alibaba.nacos.api.exception.NacosException;
-
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.StringUtils;
 
 /**
- * beta gray rule for beta ips.
- * @author shiyiyue1102
+ * Namespace gray rule for namespace filter.
+ * @author AI Assistant
  */
-public class BetaGrayRule extends AbstractGrayRule {
+public class NamespaceGrayRule extends AbstractGrayRule {
     
-    Set<String> betaIps;
+    private static final String NAMESPACE_LABEL = "Namespace";
     
-    public static final String CLIENT_IP_LABEL = "ClientIp";
-    
-    public static final String TYPE_BETA = "beta";
+    public static final String TYPE_NAMESPACE = "namespace";
     
     public static final String VERSION = "1.0.0";
     
-    public static final int PRIORITY = Integer.MAX_VALUE;
+    public static final int PRIORITY = Integer.MAX_VALUE - 5;
     
-    public BetaGrayRule() {
+    private String namespaceValue;
+    
+    public NamespaceGrayRule() {
         super();
     }
     
-    public BetaGrayRule(String betaIps, int priority) {
-        super(betaIps, priority);
+    public NamespaceGrayRule(String rawGrayRuleExp, int priority) {
+        super(rawGrayRuleExp, priority);
     }
     
-    /**
-     * parse beta gray rule.
-     * @param rawGrayRule raw gray rule.
-     * @throws NacosException exception.
-     */
     @Override
     protected void parse(String rawGrayRule) throws NacosException {
-        Set<String> betaIps = new HashSet<>();
-        String[] ips = rawGrayRule.split(",");
-        for (String ip : ips) {
-            betaIps.add(ip);
+        if (StringUtils.isBlank(rawGrayRule)) {
+            return;
         }
-        this.betaIps = betaIps;
+        this.namespaceValue = rawGrayRule;
     }
     
     @Override
-    
     public boolean match(Map<String, String> labels) {
-        return labels.containsKey(CLIENT_IP_LABEL) && betaIps.contains(labels.get(CLIENT_IP_LABEL));
+        return labels.containsKey(NAMESPACE_LABEL) && namespaceValue.equals(labels.get(NAMESPACE_LABEL));
     }
     
     @Override
     public String getType() {
-        return TYPE_BETA;
+        return TYPE_NAMESPACE;
     }
     
     @Override
@@ -91,12 +82,12 @@ public class BetaGrayRule extends AbstractGrayRule {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        BetaGrayRule that = (BetaGrayRule) o;
-        return Objects.equals(betaIps, that.betaIps);
+        NamespaceGrayRule that = (NamespaceGrayRule) o;
+        return Objects.equals(namespaceValue, that.namespaceValue);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(betaIps);
+        return Objects.hash(namespaceValue);
     }
 }
