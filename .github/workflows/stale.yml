@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/stale@v10
         with:
+          operations-per-run: 50
           days-before-issue-stale: 7
           days-before-issue-close: 7
           stale-issue-label: "expired"
