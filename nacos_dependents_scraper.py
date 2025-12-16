@@ -33,7 +33,6 @@ from selenium.common.exceptions import (
     StaleElementReferenceException
 )
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 
 
 class NacosDependentsScraper:
@@ -202,10 +201,12 @@ class NacosDependentsScraper:
             
             for link in pagination_links:
                 # Check if this is a "Next" link and it's enabled
-                if 'Next' in link.text or 'next' in link.get_attribute('rel') or '':
+                link_rel = link.get_attribute('rel') or ''
+                if 'Next' in link.text or 'next' in link_rel:
                     # Check if the link is not disabled
                     parent_element = link.find_element(By.XPATH, '..')
-                    if 'disabled' not in parent_element.get_attribute('class'):
+                    parent_class = parent_element.get_attribute('class') or ''
+                    if 'disabled' not in parent_class:
                         return True
             
             return False
@@ -231,9 +232,11 @@ class NacosDependentsScraper:
             )
             
             for link in pagination_links:
-                if 'Next' in link.text or 'next' in link.get_attribute('rel') or '':
+                link_rel = link.get_attribute('rel') or ''
+                if 'Next' in link.text or 'next' in link_rel:
                     parent_element = link.find_element(By.XPATH, '..')
-                    if 'disabled' not in parent_element.get_attribute('class'):
+                    parent_class = parent_element.get_attribute('class') or ''
+                    if 'disabled' not in parent_class:
                         link.click()
                         
                         # Wait for new page to load
