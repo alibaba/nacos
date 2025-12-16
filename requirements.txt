@@ -1,0 +1,4 @@
+# Python dependencies for Nacos Dependents Scraper
+# Install with: pip install -r requirements.txt
+
+selenium>=4.15.0
