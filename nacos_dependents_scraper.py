@@ -22,6 +22,7 @@ import csv
 import time
 import sys
 from typing import List, Dict, Optional
+from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -159,12 +160,15 @@ class NacosDependentsScraper:
                     repo_url = link.get_attribute('href')
                     repo_name = link.text.strip()
                     
-                    # Validate extracted data
-                    if repo_url and repo_name and 'github.com' in repo_url:
-                        dependents_on_page.append({
-                            'name': repo_name,
-                            'url': repo_url
-                        })
+                    # Validate extracted data with proper URL parsing
+                    if repo_url and repo_name:
+                        parsed_url = urlparse(repo_url)
+                        # Ensure the URL is from GitHub (check netloc/domain)
+                        if parsed_url.netloc == 'github.com' or parsed_url.netloc.endswith('.github.com'):
+                            dependents_on_page.append({
+                                'name': repo_name,
+                                'url': repo_url
+                            })
                         
                 except StaleElementReferenceException:
                     # Element reference became stale, skip this element
