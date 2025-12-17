@@ -93,7 +93,10 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
-        
+        <dependency>
+            <groupId>com.xugudb</groupId>
+            <artifactId>xugu-jdbc</artifactId>
+        </dependency>
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
         <dependency>

@@ -137,6 +137,7 @@
         <log4j.version>2.24.3</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
+        <xugu-jdbc.version>12.3.2</xugu-jdbc.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.75.0</grpc-java.version>
@@ -1005,6 +1006,12 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector-java.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.xugudb</groupId>
+                <artifactId>xugu-jdbc</artifactId>
+                <version>${xugu-jdbc.version}</version>
             </dependency>
             
             <dependency>
