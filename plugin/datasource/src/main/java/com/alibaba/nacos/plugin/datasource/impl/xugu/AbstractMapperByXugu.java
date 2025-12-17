@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.constants;
+package com.alibaba.nacos.plugin.datasource.impl.xugu;
+
+import com.alibaba.nacos.plugin.datasource.enums.xugu.TrustedXuguFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**
- * The data source name.
+ * The abstract xugu mapper contains CRUD methods.
  *
- * @author hyx
+ * @author jowee
  **/
+public abstract class AbstractMapperByXugu extends AbstractMapper {
 
-public class DataSourceConstant {
-    public static final String MYSQL = "mysql";
-    
-    public static final String DERBY = "derby";
-
-    public static final String XU_GU = "xugu";
+    @Override
+    public String getFunction(String functionName) {
+        return TrustedXuguFunctionEnum.getFunctionByName(functionName);
+    }
 }

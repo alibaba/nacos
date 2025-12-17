@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.constants;
+package com.alibaba.nacos.plugin.datasource.impl.xugu;
+
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.ConfigMigrateMapper;
 
 /**
- * The data source name.
+ * The type Config migrate mapper by xugu.
  *
- * @author hyx
- **/
-
-public class DataSourceConstant {
-    public static final String MYSQL = "mysql";
+ * @author jowee
+ */
+public class ConfigMigrateMapperByXugu extends AbstractMapperByXugu implements ConfigMigrateMapper {
     
-    public static final String DERBY = "derby";
-
-    public static final String XU_GU = "xugu";
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.XU_GU;
+    }
 }
