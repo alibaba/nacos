@@ -135,24 +135,26 @@ public class ServiceInfoHolder implements Closeable {
                     + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
-        serviceInfoMap.put(serviceKey, serviceInfo);
+
         InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
-        if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
-            serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
-        }
-        
-        if (enableClientMetrics) {
-            try {
-                MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
-            } catch (Throwable t) {
-                NAMING_LOGGER.error("Failed to update metrics for service info map size", t);
-            }
-        }
-        
+
         if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceKey,
                     JacksonUtils.toJson(serviceInfo.getHosts()));
-            
+
+            if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
+                serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
+            }
+            serviceInfoMap.put(serviceKey, serviceInfo);
+
+            if (enableClientMetrics) {
+                try {
+                    MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+                } catch (Throwable t) {
+                    NAMING_LOGGER.error("Failed to update metrics for service info map size", t);
+                }
+            }
+
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
                         new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
