@@ -49,12 +49,7 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-maintainer-client</artifactId>
         </dependency>
-        
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-default-plugin-all</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-istio</artifactId>
@@ -144,8 +139,18 @@
             </plugin>
         </plugins>
     </reporting>
-    
+
     <profiles>
+        <profile>
+            <id>dev</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.alibaba.nacos</groupId>
+                    <artifactId>nacos-default-plugin-all</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
         <profile>
             <id>native-win64</id>
             <activation>
