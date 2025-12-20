@@ -14,13 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl;
+package com.alibaba.nacos.plugin.datasource.mapper;
+
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoGrayMapperByMySql;
 
 /**
- * A custom interface. just for test
+ * Implement interfaces other than Mapper. just for test
  *
  * @author mikolls
  **/
-public interface TestInterface {
-
+public class TestMapper extends ConfigInfoGrayMapperByMySql {
+    
+    @Override
+    public String getTableName() {
+        return "enable_data_source_log_test";
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.MYSQL;
+    }
+    
 }

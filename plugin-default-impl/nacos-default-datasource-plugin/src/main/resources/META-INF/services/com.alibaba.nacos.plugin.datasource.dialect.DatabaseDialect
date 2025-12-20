@@ -14,9 +14,9 @@
 #  limitations under the License.
 #
 #
-com.alibaba.nacos.plugin.datasource.dialect.DefaultDatabaseDialect
-com.alibaba.nacos.plugin.datasource.dialect.MysqlDatabaseDialect
-com.alibaba.nacos.plugin.datasource.dialect.DerbyDatabaseDialect
-com.alibaba.nacos.plugin.datasource.dialect.PostgresqlDatabaseDialect
+com.alibaba.nacos.plugin.datasource.impl.dialect.DefaultDatabaseDialect
+com.alibaba.nacos.plugin.datasource.impl.dialect.MysqlDatabaseDialect
+com.alibaba.nacos.plugin.datasource.impl.dialect.DerbyDatabaseDialect
+com.alibaba.nacos.plugin.datasource.impl.dialect.PostgresqlDatabaseDialect
 
 

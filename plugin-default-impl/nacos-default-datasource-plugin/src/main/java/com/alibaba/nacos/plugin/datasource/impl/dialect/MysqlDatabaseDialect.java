@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.mapper;
+package com.alibaba.nacos.plugin.datasource.impl.dialect;
 
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.impl.TestInterface;
-import com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoGrayMapperByMySql;
+import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
+import com.alibaba.nacos.plugin.datasource.impl.enums.mysql.TrustedMysqlFunctionEnum;
 
 /**
- * Implement interfaces other than Mapper. just for test
+ * MySQL database dialect.
  *
- * @author mikolls
- **/
-public class TestMapper extends ConfigInfoGrayMapperByMySql implements TestInterface {
-    
+ * @author xiweng.yy
+ */
+public class MysqlDatabaseDialect extends AbstractDatabaseDialect {
+
     @Override
-    public String getTableName() {
-        return "enable_data_source_log_test";
+    public String getType() {
+        return DatabaseTypeConstant.MYSQL;
     }
-    
+
     @Override
-    public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+    public String getFunction(String functionName) {
+        return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
     }
-    
 }

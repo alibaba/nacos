@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
-import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.impl.enums.mysql.TrustedMysqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**

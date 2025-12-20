@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.dialect;
+package com.alibaba.nacos.plugin.datasource.impl.dialect;
 
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
-import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.impl.enums.mysql.TrustedMysqlFunctionEnum;
 
 /**
  * defauLT database dialect.

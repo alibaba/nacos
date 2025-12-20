@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.enums.derby;
+package com.alibaba.nacos.plugin.datasource.impl.enums.mysql;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,17 +26,17 @@ import java.util.Map;
  *
  * @author blake.qiu
  */
-public enum TrustedDerbylFunctionEnum {
+public enum TrustedMysqlFunctionEnum {
 
     /**
      * NOW().
      */
-    NOW("NOW()", "CURRENT_TIMESTAMP");
+    NOW("NOW()", "NOW(3)");
 
-    private static final Map<String, TrustedDerbylFunctionEnum> LOOKUP_MAP = new HashMap<>();
+    private static final Map<String, TrustedMysqlFunctionEnum> LOOKUP_MAP = new HashMap<>();
 
     static {
-        for (TrustedDerbylFunctionEnum entry : TrustedDerbylFunctionEnum.values()) {
+        for (TrustedMysqlFunctionEnum entry : TrustedMysqlFunctionEnum.values()) {
             LOOKUP_MAP.put(entry.functionName, entry);
         }
     }
@@ -45,7 +45,7 @@ public enum TrustedDerbylFunctionEnum {
 
     private final String function;
 
-    TrustedDerbylFunctionEnum(String functionName, String function) {
+    TrustedMysqlFunctionEnum(String functionName, String function) {
         this.functionName = functionName;
         this.function = function;
     }
@@ -57,7 +57,7 @@ public enum TrustedDerbylFunctionEnum {
      * @return function
      */
     public static String getFunctionByName(String functionName) {
-        TrustedDerbylFunctionEnum entry = LOOKUP_MAP.get(functionName);
+        TrustedMysqlFunctionEnum entry = LOOKUP_MAP.get(functionName);
         if (entry != null) {
             return entry.function;
         }

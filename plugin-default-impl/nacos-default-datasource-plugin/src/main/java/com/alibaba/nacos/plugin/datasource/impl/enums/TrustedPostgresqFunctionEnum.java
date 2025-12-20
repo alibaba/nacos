@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.enums.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.enums;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,17 +26,17 @@ import java.util.Map;
  *
  * @author blake.qiu
  */
-public enum TrustedMysqlFunctionEnum {
+public enum TrustedPostgresqFunctionEnum {
 
     /**
      * NOW().
      */
-    NOW("NOW()", "NOW(3)");
+    NOW("NOW()", "NOW()");
 
-    private static final Map<String, TrustedMysqlFunctionEnum> LOOKUP_MAP = new HashMap<>();
+    private static final Map<String, TrustedPostgresqFunctionEnum> LOOKUP_MAP = new HashMap<>();
 
     static {
-        for (TrustedMysqlFunctionEnum entry : TrustedMysqlFunctionEnum.values()) {
+        for (TrustedPostgresqFunctionEnum entry : TrustedPostgresqFunctionEnum.values()) {
             LOOKUP_MAP.put(entry.functionName, entry);
         }
     }
@@ -45,7 +45,7 @@ public enum TrustedMysqlFunctionEnum {
 
     private final String function;
 
-    TrustedMysqlFunctionEnum(String functionName, String function) {
+    TrustedPostgresqFunctionEnum(String functionName, String function) {
         this.functionName = functionName;
         this.function = function;
     }
@@ -57,7 +57,7 @@ public enum TrustedMysqlFunctionEnum {
      * @return function
      */
     public static String getFunctionByName(String functionName) {
-        TrustedMysqlFunctionEnum entry = LOOKUP_MAP.get(functionName);
+        TrustedPostgresqFunctionEnum entry = LOOKUP_MAP.get(functionName);
         if (entry != null) {
             return entry.function;
         }

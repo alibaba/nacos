@@ -14,45 +14,45 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.dialect;
+package com.alibaba.nacos.plugin.datasource.impl.dialect;
 
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
-import com.alibaba.nacos.plugin.datasource.enums.derby.TrustedDerbyFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.impl.enums.TrustedPostgresqFunctionEnum;
 
 /**
- * Derby database dialect.
- *
- * @author xiweng.yy
+ * PostgreSQL database dialect.
+ * @author Long Yu
  */
-public class DerbyDatabaseDialect extends AbstractDatabaseDialect {
+public class PostgresqlDatabaseDialect extends AbstractDatabaseDialect {
 
     @Override
     public String getType() {
-        return DatabaseTypeConstant.DERBY;
+        return DatabaseTypeConstant.POSTGRESQL;
     }
-
+    
     @Override
     public String getLimitTopSqlWithMark(String sql) {
-        return sql + " OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return sql + " LIMIT ? ";
     }
-
+    
     @Override
     public String getLimitPageSqlWithMark(String sql) {
-        return sql + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        return sql + "  OFFSET ? LIMIT ? ";
     }
-
+    
     @Override
     public String getLimitPageSql(String sql, int pageNo, int pageSize) {
-        return sql + " OFFSET " + getPagePrevNum(pageNo, pageSize) + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sql + "  OFFSET " + getPagePrevNum(pageNo, pageSize) + " LIMIT " + pageSize;
     }
-
+    
     @Override
     public String getLimitPageSqlWithOffset(String sql, int startOffset, int pageSize) {
-        return sql + " OFFSET " + startOffset + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sql + "  OFFSET " + startOffset + " LIMIT " + pageSize;
     }
 
     @Override
     public String getFunction(String functionName) {
-        return TrustedDerbyFunctionEnum.getFunctionByName(functionName);
+        return TrustedPostgresqFunctionEnum.getFunctionByName(functionName);
     }
+
 }

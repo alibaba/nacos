@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
-import com.alibaba.nacos.plugin.datasource.enums.derby.TrustedDerbylFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.impl.enums.derby.TrustedDerbylFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**

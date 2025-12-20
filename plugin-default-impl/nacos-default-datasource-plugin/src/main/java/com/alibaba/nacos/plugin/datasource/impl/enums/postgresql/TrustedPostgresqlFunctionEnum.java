@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.enums.postgresql;
+package com.alibaba.nacos.plugin.datasource.impl.enums.postgresql;
 
 import java.util.HashMap;
 import java.util.Map;

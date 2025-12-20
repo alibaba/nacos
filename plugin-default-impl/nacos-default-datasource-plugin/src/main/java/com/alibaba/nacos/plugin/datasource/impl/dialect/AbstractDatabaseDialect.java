@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.dialect;
+package com.alibaba.nacos.plugin.datasource.impl.dialect;
+
+import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 
 import com.alibaba.nacos.plugin.datasource.constants.PrimaryKeyConstant;
 

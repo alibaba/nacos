@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.enums.derby;
+package com.alibaba.nacos.plugin.datasource.impl.enums.mysql;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * TrustedDerbyFunctionEnumTest.
+ * TrustedMysqlFunctionEnumTest.
  *
  * @author blake.qiu
  */
-public class TrustedDerbyFunctionEnumTest {
+public class TrustedMysqlFunctionEnumTest {
 
     @Test
     void testGetFunctionByName() {
-        Assertions.assertEquals("CURRENT_TIMESTAMP", TrustedDerbylFunctionEnum.getFunctionByName("NOW()"));
+        Assertions.assertEquals("NOW(3)", TrustedMysqlFunctionEnum.getFunctionByName("NOW()"));
     }
 
     @Test()
     void testGetFunctionByErrorName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> TrustedDerbylFunctionEnum.getFunctionByName("UNKNOWN"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TrustedMysqlFunctionEnum.getFunctionByName("UNKNOWN"));
     }
 }

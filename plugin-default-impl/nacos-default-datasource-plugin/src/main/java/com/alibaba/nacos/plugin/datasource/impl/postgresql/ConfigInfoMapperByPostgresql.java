@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.postgresql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
-import com.alibaba.nacos.plugin.datasource.enums.postgresql.TrustedPostgresqlFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.impl.enums.postgresql.TrustedPostgresqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.impl.base.BaseConfigInfoMapper;
 
 /**
