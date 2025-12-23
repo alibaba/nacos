@@ -45,19 +45,22 @@ const ShowTools = props => {
   const [activeToolIndex, setActiveToolIndex] = useState(0);
 
   // 初始化参数映射表
-  const parameterMap = useRef(new Map());
+  const inputParameterMap = useRef(new Map());
+  const outputParameterMap = useRef(new Map());
 
   const getServerDetail = () => {
     props.getServerDetail && props.getServerDetail();
   };
 
   // 构建参数树形数据结构
-  const buildParameterTreeData = (properties, required = [], parentKey = '') => {
+  const buildParameterTreeData = (properties, required = [], parentKey = '', mapRef) => {
     if (!properties) return [];
+
+    const targetMapRef = mapRef || inputParameterMap;
 
     // 只在顶层调用时清空参数映射表
     if (!parentKey) {
-      parameterMap.current = new Map();
+      targetMapRef.current = new Map();
     }
 
     return Object.entries(properties).map(([paramName, paramDef], index) => {
@@ -67,7 +70,7 @@ const ShowTools = props => {
       const paramType = paramDef.type || 'string';
 
       // 将参数信息存储到映射表中
-      parameterMap.current.set(nodeKey, {
+      targetMapRef.current.set(nodeKey, {
         name: paramName,
         type: paramType,
         description: paramDef.description || '',
@@ -86,7 +89,7 @@ const ShowTools = props => {
       // 添加基本信息子节点
       if (paramDef.description) {
         const descKey = `${nodeKey}-desc`;
-        parameterMap.current.set(descKey, {
+        targetMapRef.current.set(descKey, {
           name: '描述',
           type: 'info',
           description: paramDef.description,
@@ -101,7 +104,7 @@ const ShowTools = props => {
 
       if (hasDefault) {
         const defaultKey = `${nodeKey}-default`;
-        parameterMap.current.set(defaultKey, {
+        targetMapRef.current.set(defaultKey, {
           name: '默认值',
           type: 'info',
           description: JSON.stringify(paramDef.default),
@@ -117,7 +120,7 @@ const ShowTools = props => {
       if (paramDef.enum) {
         const enumValue = Array.isArray(paramDef.enum) ? paramDef.enum.join(', ') : paramDef.enum;
         const enumKey = `${nodeKey}-enum`;
-        parameterMap.current.set(enumKey, {
+        targetMapRef.current.set(enumKey, {
           name: '可选值',
           type: 'info',
           description: enumValue,
@@ -132,7 +135,7 @@ const ShowTools = props => {
 
       if (paramDef.format) {
         const formatKey = `${nodeKey}-format`;
-        parameterMap.current.set(formatKey, {
+        targetMapRef.current.set(formatKey, {
           name: '格式',
           type: 'info',
           description: paramDef.format,
@@ -151,12 +154,13 @@ const ShowTools = props => {
         const objectChildren = buildParameterTreeData(
           paramDef.properties,
           objectRequired,
-          `${nodeKey}-props`
+          `${nodeKey}-props`,
+          targetMapRef
         );
 
         if (objectChildren.length > 0) {
           const propsKey = `${nodeKey}-properties`;
-          parameterMap.current.set(propsKey, {
+          targetMapRef.current.set(propsKey, {
             name: '属性',
             type: 'group',
             description: '对象属性',
@@ -184,7 +188,8 @@ const ShowTools = props => {
             const propertiesChildren = buildParameterTreeData(
               itemDef.properties,
               itemRequired,
-              `${itemKey}-props`
+              `${itemKey}-props`,
+              targetMapRef
             );
             if (propertiesChildren.length > 0) {
               subChildren.push(...propertiesChildren);
@@ -238,7 +243,7 @@ const ShowTools = props => {
 
         if (itemChildren.length > 0) {
           const itemsKey = `${nodeKey}-items-group`;
-          parameterMap.current.set(itemsKey, {
+          targetMapRef.current.set(itemsKey, {
             name: 'items',
             type: paramDef.items.type,
             isGroupNode: true,
@@ -859,14 +864,16 @@ const ShowTools = props => {
                             <Tree
                               dataSource={buildParameterTreeData(
                                 tool.inputSchema.properties,
-                                tool.inputSchema.required
+                                tool.inputSchema.required,
+                                '',
+                                inputParameterMap
                               )}
                               showLine
                               isLabelBlock
                               className="parameters-tree"
                               labelRender={node => {
                                 // 从参数映射表中获取节点数据
-                                const nodeData = parameterMap.current?.get(node.key);
+                                const nodeData = inputParameterMap.current?.get(node.key);
 
                                 // 如果是子节点（详情信息）
                                 // if (node.isLeaf) {
@@ -961,6 +968,106 @@ const ShowTools = props => {
                                 }
 
                                 // 默认渲染（其他类型的节点）
+                                return <span className="plain-label">{node.label}</span>;
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    {tool.outputSchema?.properties &&
+                      Object.keys(tool.outputSchema.properties).length > 0 && (
+                        <div className="parameters-section">
+                          <h3 className="parameters-section-title">
+                            {locale?.toolOutputSchema || '出参配置'}
+                            <span className="parameters-section-count">
+                              (共 {Object.keys(tool.outputSchema.properties).length} 项)
+                            </span>
+                          </h3>
+
+                          <div className="parameters-container">
+                            <Tree
+                              dataSource={buildParameterTreeData(
+                                tool.outputSchema.properties,
+                                tool.outputSchema.required,
+                                '',
+                                outputParameterMap
+                              )}
+                              showLine
+                              isLabelBlock
+                              className="parameters-tree"
+                              labelRender={node => {
+                                const nodeData = outputParameterMap.current?.get(node.key);
+
+                                if (nodeData?.isGroupNode) {
+                                  return <span className="tree-group-label">{node.label}</span>;
+                                }
+
+                                if (nodeData?.isParameterNode || node.isLeaf) {
+                                  return (
+                                    <div className="param-row">
+                                      <span className="param-name">{nodeData.name}</span>
+                                      <span className="type-badge">[{nodeData.type || 'string'}]</span>
+                                      {nodeData.isRequired && (
+                                        <span className="required-badge">*必填</span>
+                                      )}
+                                      {nodeData.hasDefault && (
+                                        <span className="default-tag">[默认值]</span>
+                                      )}
+                                      <span
+                                        className="param-desc"
+                                        title={nodeData.description || '-'}
+                                      >
+                                        - {truncateText(nodeData.description || '-', 64)}
+                                      </span>
+                                      {nodeData.hasDefault &&
+                                        nodeData.defaultValue !== undefined && (
+                                          <span className="default-value">
+                                            ({JSON.stringify(nodeData.defaultValue)})
+                                          </span>
+                                        )}
+                                      {nodeData.enum && (
+                                        <span className="enum-values">
+                                          [{Array.isArray(nodeData.enum)
+                                            ? nodeData.enum.join(', ')
+                                            : nodeData.enum}]
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                if (
+                                  nodeData &&
+                                  !nodeData.isParameterNode &&
+                                  !nodeData.isGroupNode &&
+                                  !nodeData.isInfoNode
+                                ) {
+                                  return (
+                                    <div className="param-row">
+                                      <span className="param-name">
+                                        {nodeData.name || node.label}
+                                      </span>
+                                      <span className="type-badge">[{nodeData.type || 'string'}]</span>
+                                    </div>
+                                  );
+                                }
+
+                                if (nodeData?.isInfoNode) {
+                                  const isDesc = nodeData.name === '描述';
+                                  const displayText = isDesc
+                                    ? `${nodeData.name}: ${truncateText(nodeData.description, 64)}`
+                                    : `${nodeData.name}: ${nodeData.description}`;
+                                  return (
+                                    <span
+                                      className="info-label"
+                                      title={`${nodeData.name}: ${nodeData.description}`}
+                                    >
+                                      {displayText}
+                                    </span>
+                                  );
+                                }
+
                                 return <span className="plain-label">{node.label}</span>;
                               }}
                             />

@@ -27,6 +27,8 @@ const CreateTools = React.forwardRef((props, ref) => {
     parseName: true,
     values: {
       toolParams: [],
+      outputToolParams: [],
+      outputRequired: [],
       invokeContext: [],
       templates: '',
       transparentAuth: false,
@@ -43,6 +45,19 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [rawData, setRawData] = useState([]);
   const [data, setData] = useState([]);
   const [args, setArgs] = useState({});
+
+  const [outputRawData, setOutputRawData] = useState([]);
+  const [outputData, setOutputData] = useState([]);
+  const [outputArgs, setOutputArgs] = useState({});
+
+  const [outputExpandedKeys, setOutputExpandedKeys] = useState([]);
+  const [outputCurrentNode, setOutputCurrentNode] = useState({
+    description: '',
+    type: 'object',
+    label: locale.OutputArgumentsList || locale.ArgumentsList,
+    key: 'out',
+    children: [],
+  });
   const [originalTemplate, setOriginalTemplate] = useState(''); // 存储原始模板
   const [expandedKeys, setExpandedKeys] = useState([]); // 控制树节点展开状态，默认折叠
   const [currentNode, setCurrentNode] = useState({
@@ -70,7 +85,7 @@ const CreateTools = React.forwardRef((props, ref) => {
   //   }
   // }, [visible]);
 
-  const convertPropertiesToTreeData = (properties, prefix, requiredList = []) => {
+  const convertPropertiesToTreeData = (properties, prefix, store, requiredList = []) => {
     if (properties == null) {
       return [];
     }
@@ -82,13 +97,14 @@ const CreateTools = React.forwardRef((props, ref) => {
       let children = [];
       if (arg.type === 'object') {
         // 嵌套对象暂不处理其 required 列表（当前仅支持根级 required）
-        children = convertPropertiesToTreeData(arg.properties, `${prefix}@@${element}`);
+        children = convertPropertiesToTreeData(arg.properties, `${prefix}@@${element}`, store);
       } else if (arg.type === 'array') {
         children = convertPropertiesToTreeData(
           {
             items: arg.items,
           },
-          `${prefix}@@${element}`
+          `${prefix}@@${element}`,
+          store
         );
       }
       const node = {
@@ -103,7 +119,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         key: `${prefix}@@${element}`,
       };
       result.push(node);
-      args[`${prefix}@@${element}`] = node;
+      store[`${prefix}@@${element}`] = node;
     }
     return result;
   };
@@ -124,13 +140,15 @@ const CreateTools = React.forwardRef((props, ref) => {
   };
 
   const openVisible = ({ record, type, toolsMeta }) => {
-    const { name, description, inputSchema } = record;
+    const { name, description, inputSchema, outputSchema } = record;
     setType(type);
 
+    const nextArgs = {};
     const _toolParams = inputSchema?.properties
       ? convertPropertiesToTreeData(
           inputSchema?.properties,
           'args',
+          nextArgs,
           Array.isArray(inputSchema?.required) ? inputSchema?.required : []
         )
       : [];
@@ -143,7 +161,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       children: [],
     };
 
-    args.args = rootNode;
+    nextArgs.args = rootNode;
     rootNode.children = _toolParams;
     if (rootNode.children.length === 0) {
       const defaultNewArg = {
@@ -160,19 +178,69 @@ const CreateTools = React.forwardRef((props, ref) => {
         },
       };
       rootNode.children = [defaultNewArg];
-      args['args@@NewArg1'] = defaultNewArg;
+      nextArgs['args@@NewArg1'] = defaultNewArg;
     }
 
-    rawData.push(rootNode);
-    setRawData(rawData);
-    setData(JSON.parse(JSON.stringify(rawData)));
-    setArgs(args);
+    setRawData([rootNode]);
+    setData(JSON.parse(JSON.stringify([rootNode])));
+    setArgs(nextArgs);
 
     // 保存默认参数到表单字段
     const defaultParams = rawDataToFiledValue(rootNode.children);
 
     // 默认不展开任何节点
     setExpandedKeys([]);
+
+    // outputSchema tree init
+    const nextOutputArgs = {};
+    const _outputParams = outputSchema?.properties
+      ? convertPropertiesToTreeData(
+          outputSchema?.properties,
+          'out',
+          nextOutputArgs,
+          Array.isArray(outputSchema?.required) ? outputSchema?.required : []
+        )
+      : [];
+    let outputRootNode = {
+      type: 'object',
+      label: locale.OutputArgumentsList || locale.ArgumentsList,
+      key: 'out',
+      description: '',
+      children: [],
+    };
+    nextOutputArgs.out = outputRootNode;
+    outputRootNode.children = _outputParams;
+    if (outputRootNode.children.length === 0) {
+      const defaultNewOut = {
+        type: 'string',
+        label: 'result',
+        key: 'out@@result',
+        description: '',
+        defaultValue: '',
+        required: false,
+        children: [],
+        arg: {
+          type: 'string',
+          description: '',
+        },
+      };
+      outputRootNode.children = [defaultNewOut];
+      nextOutputArgs['out@@result'] = defaultNewOut;
+    }
+
+    setOutputRawData([outputRootNode]);
+    setOutputData(JSON.parse(JSON.stringify([outputRootNode])));
+    setOutputArgs(nextOutputArgs);
+    setOutputExpandedKeys([]);
+    setOutputCurrentNode({
+      description: '',
+      type: 'object',
+      label: locale.OutputArgumentsList || locale.ArgumentsList,
+      key: 'out',
+      children: outputRootNode.children,
+    });
+
+    const defaultOutputParams = rawDataToFiledValue(outputRootNode.children);
 
     const _invokeContext = toolsMeta?.invokeContext
       ? Object.keys(toolsMeta?.invokeContext).map(key => ({
@@ -225,6 +293,8 @@ const CreateTools = React.forwardRef((props, ref) => {
       description,
       toolParams: inputSchema?.properties ? inputSchema?.properties : defaultParams,
       required: inputSchema?.required,
+      outputToolParams: outputSchema?.properties ? outputSchema?.properties : defaultOutputParams,
+      outputRequired: outputSchema?.required,
       invokeContext: _invokeContext,
       templates: templatesStr,
       enabled: toolsMeta?.enabled,
@@ -274,7 +344,19 @@ const CreateTools = React.forwardRef((props, ref) => {
     });
     setData([]);
     setRawData([]);
-    setArgs([]);
+    setArgs({});
+
+    setOutputExpandedKeys([]);
+    setOutputCurrentNode({
+      description: '',
+      type: 'object',
+      label: '',
+      key: '',
+      children: [],
+    });
+    setOutputData([]);
+    setOutputRawData([]);
+    setOutputArgs({});
   };
 
   const createItems = () => {
@@ -337,6 +419,17 @@ const CreateTools = React.forwardRef((props, ref) => {
           required: values?.required,
         },
       };
+
+      const outputProperties = values?.outputToolParams;
+      const hasOutputProperties =
+        outputProperties && typeof outputProperties === 'object' && Object.keys(outputProperties).length > 0;
+      if (hasOutputProperties) {
+        _toolitem.outputSchema = {
+          type: 'object',
+          properties: outputProperties,
+          required: values?.outputRequired,
+        };
+      }
       const _toolsMetaitem = {
         [values?.name]: {
           enabled: values?.enabled,
@@ -699,6 +792,166 @@ const CreateTools = React.forwardRef((props, ref) => {
     // 编辑器始终保持JSON模式，无需动态切换
   };
 
+  const saveOutputParamToFiled = () => {
+    if (!outputRawData || outputRawData.length === 0) {
+      return;
+    }
+    const root = outputRawData[0];
+    field.setValue('outputToolParams', rawDataToFiledValue(root.children));
+    const req = Array.isArray(root.children)
+      ? root.children.filter(n => n.required).map(n => n.label)
+      : [];
+    field.setValue('outputRequired', req);
+  };
+
+  const AddPropertiesToOutputArgs = () => {
+    const parentNode = outputArgs['out'];
+    if (!parentNode.children) {
+      parentNode.children = [];
+    }
+    const childLen = parentNode.children.length + 1;
+    const newArgsName = `newField${childLen}`;
+    const newNodeKey = `out@@${newArgsName}`;
+    const newNode = {
+      label: newArgsName,
+      key: newNodeKey,
+      type: 'string',
+      description: '',
+      defaultValue: '',
+      required: false,
+      children: [],
+      arg: {
+        type: 'string',
+        description: '',
+      },
+    };
+
+    outputArgs[newNodeKey] = newNode;
+    parentNode.children.push(newNode);
+
+    const updatedExpandedKeys = [...outputExpandedKeys];
+    if (!updatedExpandedKeys.includes('out')) {
+      updatedExpandedKeys.push('out');
+    }
+    setOutputExpandedKeys(updatedExpandedKeys);
+
+    setOutputRawData(outputRawData);
+    setOutputArgs(outputArgs);
+    setOutputData(JSON.parse(JSON.stringify(outputRawData)));
+    saveOutputParamToFiled();
+  };
+
+  const AddPropertiesToCurrentOutputNode = () => {
+    if (!outputCurrentNode || !outputCurrentNode.key || outputCurrentNode.type !== 'object') {
+      return;
+    }
+
+    const parentNode = outputArgs[outputCurrentNode.key];
+    if (!parentNode.children) {
+      parentNode.children = [];
+    }
+    const childLen = parentNode.children.length + 1;
+    const newPropertyName = `newProperty${childLen}`;
+    const newNodeKey = `${outputCurrentNode.key}@@${newPropertyName}`;
+    const newNode = {
+      label: newPropertyName,
+      key: newNodeKey,
+      type: 'string',
+      description: '',
+      defaultValue: '',
+      required: false,
+      children: [],
+      arg: {
+        type: 'string',
+        description: '',
+      },
+    };
+
+    outputArgs[newNodeKey] = newNode;
+    parentNode.children.push(newNode);
+
+    const updatedExpandedKeys = [...outputExpandedKeys];
+    if (!updatedExpandedKeys.includes(outputCurrentNode.key)) {
+      updatedExpandedKeys.push(outputCurrentNode.key);
+    }
+    setOutputExpandedKeys(updatedExpandedKeys);
+
+    setOutputRawData(outputRawData);
+    setOutputArgs(outputArgs);
+    setOutputData(JSON.parse(JSON.stringify(outputRawData)));
+    saveOutputParamToFiled();
+  };
+
+  const changeOutputNodeInfo = () => {
+    setOutputData(JSON.parse(JSON.stringify(outputRawData)));
+    saveOutputParamToFiled();
+  };
+
+  const deleteOutputNode = nodeKey => {
+    if (nodeKey === 'out') {
+      return;
+    }
+
+    Dialog.confirm({
+      title: locale.confirmDelete || '确认删除',
+      content: locale.confirmDeleteMessage || '确定要删除此项及其所有子项吗？',
+      onOk: () => {
+        const performDelete = targetKey => {
+          const deleteChildrenRecursively = key => {
+            Object.keys(outputArgs).forEach(argKey => {
+              if (argKey.startsWith(key + '@@')) {
+                delete outputArgs[argKey];
+              }
+            });
+          };
+          deleteChildrenRecursively(targetKey);
+          delete outputArgs[targetKey];
+
+          const keyParts = targetKey.split('@@');
+          const parentKey = keyParts.slice(0, -1).join('@@');
+          if (parentKey && outputArgs[parentKey]) {
+            const parentNode = outputArgs[parentKey];
+            if (parentNode.children) {
+              parentNode.children = parentNode.children.filter(child => child.key !== targetKey);
+              if (
+                parentNode.type === 'object' &&
+                parentNode.children.length === 0 &&
+                parentKey !== 'out'
+              ) {
+                performDelete(parentKey);
+                return;
+              }
+            }
+          }
+        };
+
+        performDelete(nodeKey);
+
+        if (
+          outputCurrentNode.key === nodeKey ||
+          outputCurrentNode.key.startsWith(nodeKey + '@@') ||
+          nodeKey.startsWith(outputCurrentNode.key + '@@') ||
+          !outputArgs[outputCurrentNode.key]
+        ) {
+          setOutputCurrentNode({
+            key: '',
+            label: '',
+            type: 'string',
+            description: '',
+          });
+        }
+
+        const rootNode = outputArgs['out'];
+        if (rootNode) {
+          setOutputRawData([rootNode]);
+          setOutputData(JSON.parse(JSON.stringify([rootNode])));
+          setOutputArgs(outputArgs);
+          saveOutputParamToFiled();
+        }
+      },
+    });
+  };
+
   // 生成注入了安全配置的模板
   const generateTemplateWithSecurity = () => {
     try {
@@ -1056,6 +1309,16 @@ const CreateTools = React.forwardRef((props, ref) => {
       .slice(0, -1)
       .join('@@');
     return args[parentKey]?.type === 'array';
+  };
+
+  const isOutputArrayItemsNode = node => {
+    if (!node || !node.key) return false;
+    if (!node.key.endsWith('@@items')) return false;
+    const parentKey = node.key
+      .split('@@')
+      .slice(0, -1)
+      .join('@@');
+    return outputArgs[parentKey]?.type === 'array';
   };
   return (
     <div>
@@ -1422,312 +1685,717 @@ const CreateTools = React.forwardRef((props, ref) => {
                   </Row>
                 </div>
               </Form.Item>
-            </div>
-            {currentNode.key !== '' && currentNode.key !== 'args' && (
-              <div
-                style={{
-                  marginBottom: '32px',
-                  padding: '20px',
-                  backgroundColor: '#fff',
-                  borderRadius: '8px',
-                  border: '1px solid #e8e8e8',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                }}
-              >
-                <h3
+
+              {currentNode.key !== '' && currentNode.key !== 'args' && (
+                <div
                   style={{
-                    margin: '0 0 20px 0',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#262626',
-                    borderBottom: '2px solid #d9d9d9',
-                    paddingBottom: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
+                    marginTop: '16px',
+                    padding: '20px',
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    border: '1px solid #e8e8e8',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                   }}
                 >
-                  {locale.ArgumentInfo || '参数详情'}
-                </h3>
+                  <h3
+                    style={{
+                      margin: '0 0 20px 0',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#262626',
+                      borderBottom: '2px solid #d9d9d9',
+                      paddingBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    {locale.ArgumentInfo || '参数详情'}
+                  </h3>
 
-                <Row gutter={24}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="args.name"
-                      label={locale.toolParamName}
-                      required
-                      requiredTrigger="onBlur"
-                      asterisk={false}
-                      style={{ marginBottom: '20px' }}
-                    >
-                      <Input
-                        size="large"
-                        style={{ borderRadius: '6px' }}
-                        isPreview={onlyEditRuntimeInfo}
-                        disabled={currentNode.key === 'args' || isArrayItemsNode(currentNode)}
-                        value={currentNode.label}
-                        placeholder="请输入参数名称"
-                        onChange={data => {
-                          if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
-                            currentNode.label = data;
-                            changeNodeInfo(currentNode);
-                          }
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="args.type"
-                      label={locale.toolParamType}
-                      style={{ marginBottom: '20px' }}
-                    >
-                      <Select
-                        size="large"
-                        style={{ borderRadius: '6px' }}
-                        isPreview={onlyEditRuntimeInfo}
-                        disabled={currentNode.key === 'args'}
-                        value={currentNode.type}
-                        placeholder="请选择参数类型"
-                        dataSource={[
-                          { label: '字符串类型 (string)', value: 'string' },
-                          { label: '数字类型 (number)', value: 'number' },
-                          { label: '整数类型 (integer)', value: 'integer' },
-                          { label: '布尔类型 (boolean)', value: 'boolean' },
-                          { label: '数组类型 (array)', value: 'array' },
-                          { label: '对象类型 (object)', value: 'object' },
-                        ]}
-                        onChange={data => {
-                          if (currentNode.key !== '') {
-                            if (!(data === 'array' || data === 'object')) {
-                              currentNode.children = [];
-                            }
-                            currentNode.type = data;
-                            if (currentNode.arg) {
-                              currentNode.arg.type = data;
-                            }
-                            if (data === 'array') {
-                              const itemNode = {
-                                label: 'items',
-                                type: 'string',
-                                description: '',
-                                defaultValue: '',
-                                key: `${currentNode.key}@@items`,
-                                arg: {
-                                  type: 'string',
-                                  description: '',
-                                },
-                              };
-                              currentNode.children = [itemNode];
-                              args[`${currentNode.key}@@items`] = itemNode;
-
-                              // 确保当前节点展开，以显示新添加的items
-                              const updatedExpandedKeys = [...expandedKeys];
-                              if (!updatedExpandedKeys.includes(currentNode.key)) {
-                                updatedExpandedKeys.push(currentNode.key);
-                              }
-                              setExpandedKeys(updatedExpandedKeys);
-
-                              changeNodeInfo(currentNode);
-                            } else if (data === 'object') {
-                              // 为 object 类型自动创建一个默认属性
-                              const defaultPropertyNode = {
-                                label: 'property1',
-                                type: 'string',
-                                description: '',
-                                defaultValue: '',
-                                key: `${currentNode.key}@@property1`,
-                                children: [],
-                                arg: {
-                                  type: 'string',
-                                  description: '',
-                                },
-                              };
-                              currentNode.children = [defaultPropertyNode];
-                              args[`${currentNode.key}@@property1`] = defaultPropertyNode;
-
-                              // 确保当前节点展开，以显示新添加的属性
-                              const updatedExpandedKeys = [...expandedKeys];
-                              if (!updatedExpandedKeys.includes(currentNode.key)) {
-                                updatedExpandedKeys.push(currentNode.key);
-                              }
-                              setExpandedKeys(updatedExpandedKeys);
-
-                              changeNodeInfo(currentNode);
-                            } else {
-                              changeNodeInfo(currentNode);
-                            }
-                          }
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                {/* items 节点不需要描述，隐藏描述编辑 */}
-                {!isArrayItemsNode(currentNode) && (
-                  <Row>
-                    <Col span={24}>
+                  <Row gutter={24}>
+                    <Col span={12}>
                       <Form.Item
-                        label={locale.toolParamDescription}
-                        name="args.description"
+                        name="args.name"
+                        label={locale.toolParamName}
+                        required
+                        requiredTrigger="onBlur"
                         asterisk={false}
                         style={{ marginBottom: '20px' }}
                       >
-                        <Input.TextArea
+                        <Input
                           size="large"
-                          style={{ borderRadius: '6px', minHeight: '80px' }}
-                          disabled={currentNode.key === 'args'}
-                          value={currentNode.description}
-                          placeholder="请输入参数描述信息"
+                          style={{ borderRadius: '6px' }}
+                          isPreview={onlyEditRuntimeInfo}
+                          disabled={currentNode.key === 'args' || isArrayItemsNode(currentNode)}
+                          value={currentNode.label}
+                          placeholder="请输入参数名称"
                           onChange={data => {
-                            if (currentNode.key !== '') {
-                              currentNode.description = data;
-                              if (currentNode.arg) {
-                                currentNode.arg.description = data;
-                              }
+                            if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
+                              currentNode.label = data;
                               changeNodeInfo(currentNode);
                             }
                           }}
                         />
                       </Form.Item>
                     </Col>
-                  </Row>
-                )}
-
-                {/* 是否必填 - 仅对根级参数（args 的直接子节点）展示 */}
-                {currentNode.key && currentNode.key.split('@@').length === 2 && (
-                  <Row>
-                    <Col span={24}>
+                    <Col span={12}>
                       <Form.Item
-                        label={locale.toolParamRequired || '是否必填'}
-                        name="args.required"
-                        asterisk={false}
-                        style={{ marginBottom: '12px' }}
+                        name="args.type"
+                        label={locale.toolParamType}
+                        style={{ marginBottom: '20px' }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          <Switch
-                            size="large"
-                            checked={!!currentNode.required}
-                            onChange={checked => {
-                              if (currentNode.key) {
-                                currentNode.required = !!checked;
+                        <Select
+                          size="large"
+                          style={{ borderRadius: '6px' }}
+                          isPreview={onlyEditRuntimeInfo}
+                          disabled={currentNode.key === 'args'}
+                          value={currentNode.type}
+                          placeholder="请选择参数类型"
+                          dataSource={[
+                            { label: '字符串类型 (string)', value: 'string' },
+                            { label: '数字类型 (number)', value: 'number' },
+                            { label: '整数类型 (integer)', value: 'integer' },
+                            { label: '布尔类型 (boolean)', value: 'boolean' },
+                            { label: '数组类型 (array)', value: 'array' },
+                            { label: '对象类型 (object)', value: 'object' },
+                          ]}
+                          onChange={data => {
+                            if (currentNode.key !== '') {
+                              if (!(data === 'array' || data === 'object')) {
+                                currentNode.children = [];
+                              }
+                              currentNode.type = data;
+                              if (currentNode.arg) {
+                                currentNode.arg.type = data;
+                              }
+                              if (data === 'array') {
+                                const itemNode = {
+                                  label: 'items',
+                                  type: 'string',
+                                  description: '',
+                                  defaultValue: '',
+                                  key: `${currentNode.key}@@items`,
+                                  arg: {
+                                    type: 'string',
+                                    description: '',
+                                  },
+                                };
+                                currentNode.children = [itemNode];
+                                args[`${currentNode.key}@@items`] = itemNode;
+
+                                const updatedExpandedKeys = [...expandedKeys];
+                                if (!updatedExpandedKeys.includes(currentNode.key)) {
+                                  updatedExpandedKeys.push(currentNode.key);
+                                }
+                                setExpandedKeys(updatedExpandedKeys);
+
+                                changeNodeInfo(currentNode);
+                              } else if (data === 'object') {
+                                const defaultPropertyNode = {
+                                  label: 'property1',
+                                  type: 'string',
+                                  description: '',
+                                  defaultValue: '',
+                                  key: `${currentNode.key}@@property1`,
+                                  children: [],
+                                  arg: {
+                                    type: 'string',
+                                    description: '',
+                                  },
+                                };
+                                currentNode.children = [defaultPropertyNode];
+                                args[`${currentNode.key}@@property1`] = defaultPropertyNode;
+
+                                const updatedExpandedKeys = [...expandedKeys];
+                                if (!updatedExpandedKeys.includes(currentNode.key)) {
+                                  updatedExpandedKeys.push(currentNode.key);
+                                }
+                                setExpandedKeys(updatedExpandedKeys);
+
+                                changeNodeInfo(currentNode);
+                              } else {
                                 changeNodeInfo(currentNode);
                               }
-                            }}
-                            disabled={onlyEditRuntimeInfo}
-                            checkedChildren={locale.required || '必填'}
-                            unCheckedChildren={locale.optional || '可选'}
-                          />
-                          <span style={{ marginLeft: 12, color: '#666', fontSize: 12 }}>
-                            {currentNode.required
-                              ? locale.required || '必填'
-                              : locale.optional || '可选'}
-                          </span>
-                        </div>
+                            }
+                          }}
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
-                )}
 
-                {/* 默认值输入 - 仅对非 object/array 且非 items 节点显示 */}
-                {currentNode.type &&
-                  currentNode.type !== 'object' &&
-                  currentNode.type !== 'array' &&
-                  currentNode.key !== 'args' &&
-                  !isArrayItemsNode(currentNode) && (
+                  {!isArrayItemsNode(currentNode) && (
                     <Row>
                       <Col span={24}>
                         <Form.Item
-                          label={locale.toolParamDefaultValue || '默认值'}
-                          name="args.defaultValue"
+                          label={locale.toolParamDescription}
+                          name="args.description"
                           asterisk={false}
-                          style={{ marginBottom: '0' }}
-                          extra={
-                            <div
-                              style={{
-                                color: '#666',
-                                fontSize: '12px',
-                                marginTop: '4px',
-                              }}
-                            >
-                              {currentNode.type === 'boolean'
-                                ? '布尔类型请输入 true 或 false'
-                                : currentNode.type === 'number' || currentNode.type === 'integer'
-                                ? '请输入数字'
-                                : '可选：为此参数设置默认值'}
-                            </div>
-                          }
+                          style={{ marginBottom: '20px' }}
                         >
-                          {currentNode.type === 'boolean' ? (
-                            <Select
-                              size="large"
-                              style={{ borderRadius: '6px' }}
-                              value={currentNode.defaultValue}
-                              placeholder="请选择默认值"
-                              allowClear
-                              dataSource={[
-                                { label: 'true', value: 'true' },
-                                { label: 'false', value: 'false' },
-                              ]}
-                              onChange={data => {
-                                if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
-                                  currentNode.defaultValue = data || '';
-                                  if (currentNode.arg) {
-                                    if (data) {
-                                      currentNode.arg.default = data === 'true';
-                                    } else {
-                                      delete currentNode.arg.default;
-                                    }
-                                  }
-                                  changeNodeInfo(currentNode);
+                          <Input.TextArea
+                            size="large"
+                            style={{ borderRadius: '6px', minHeight: '80px' }}
+                            disabled={currentNode.key === 'args'}
+                            value={currentNode.description}
+                            placeholder="请输入参数描述信息"
+                            onChange={data => {
+                              if (currentNode.key !== '') {
+                                currentNode.description = data;
+                                if (currentNode.arg) {
+                                  currentNode.arg.description = data;
                                 }
-                              }}
-                            />
-                          ) : (
-                            <Input
-                              size="large"
-                              style={{ borderRadius: '6px' }}
-                              value={currentNode.defaultValue}
-                              placeholder={
-                                currentNode.type === 'number' || currentNode.type === 'integer'
-                                  ? '请输入数字默认值'
-                                  : '请输入默认值'
+                                changeNodeInfo(currentNode);
                               }
-                              onChange={data => {
-                                if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
-                                  currentNode.defaultValue = data;
-                                  if (currentNode.arg) {
-                                    if (data && data.trim()) {
-                                      // 根据类型转换默认值
-                                      if (currentNode.type === 'number') {
-                                        const num = parseFloat(data);
-                                        if (!isNaN(num)) {
-                                          currentNode.arg.default = num;
-                                        }
-                                      } else if (currentNode.type === 'integer') {
-                                        const int = parseInt(data, 10);
-                                        if (!isNaN(int)) {
-                                          currentNode.arg.default = int;
-                                        }
-                                      } else {
-                                        currentNode.arg.default = data;
-                                      }
-                                    } else {
-                                      delete currentNode.arg.default;
-                                    }
-                                  }
-                                  changeNodeInfo(currentNode);
-                                }
-                              }}
-                            />
-                          )}
+                            }}
+                          />
                         </Form.Item>
                       </Col>
                     </Row>
                   )}
-              </div>
-            )}
+
+                  {currentNode.key && currentNode.key.split('@@').length === 2 && (
+                    <Row>
+                      <Col span={24}>
+                        <Form.Item
+                          label={locale.toolParamRequired || '是否必填'}
+                          name="args.required"
+                          asterisk={false}
+                          style={{ marginBottom: '12px' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <Switch
+                              size="large"
+                              checked={!!currentNode.required}
+                              onChange={checked => {
+                                if (currentNode.key) {
+                                  currentNode.required = !!checked;
+                                  changeNodeInfo(currentNode);
+                                }
+                              }}
+                              disabled={onlyEditRuntimeInfo}
+                              checkedChildren={locale.required || '必填'}
+                              unCheckedChildren={locale.optional || '可选'}
+                            />
+                            <span style={{ marginLeft: 12, color: '#666', fontSize: 12 }}>
+                              {currentNode.required
+                                ? locale.required || '必填'
+                                : locale.optional || '可选'}
+                            </span>
+                          </div>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {currentNode.type &&
+                    currentNode.type !== 'object' &&
+                    currentNode.type !== 'array' &&
+                    currentNode.key !== 'args' &&
+                    !isArrayItemsNode(currentNode) && (
+                      <Row>
+                        <Col span={24}>
+                          <Form.Item
+                            label={locale.toolParamDefaultValue || '默认值'}
+                            name="args.defaultValue"
+                            asterisk={false}
+                            style={{ marginBottom: '0' }}
+                            extra={
+                              <div
+                                style={{
+                                  color: '#666',
+                                  fontSize: '12px',
+                                  marginTop: '4px',
+                                }}
+                              >
+                                {currentNode.type === 'boolean'
+                                  ? '布尔类型请输入 true 或 false'
+                                  : currentNode.type === 'number' || currentNode.type === 'integer'
+                                  ? '请输入数字'
+                                  : '可选：为此参数设置默认值'}
+                              </div>
+                            }
+                          >
+                            {currentNode.type === 'boolean' ? (
+                              <Select
+                                size="large"
+                                style={{ borderRadius: '6px' }}
+                                value={currentNode.defaultValue}
+                                placeholder="请选择默认值"
+                                allowClear
+                                dataSource={[
+                                  { label: 'true', value: 'true' },
+                                  { label: 'false', value: 'false' },
+                                ]}
+                                onChange={data => {
+                                  if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
+                                    currentNode.defaultValue = data || '';
+                                    if (currentNode.arg) {
+                                      if (data) {
+                                        currentNode.arg.default = data === 'true';
+                                      } else {
+                                        delete currentNode.arg.default;
+                                      }
+                                    }
+                                    changeNodeInfo(currentNode);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <Input
+                                size="large"
+                                style={{ borderRadius: '6px' }}
+                                value={currentNode.defaultValue}
+                                placeholder={
+                                  currentNode.type === 'number' || currentNode.type === 'integer'
+                                    ? '请输入数字默认值'
+                                    : '请输入默认值'
+                                }
+                                onChange={data => {
+                                  if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
+                                    currentNode.defaultValue = data;
+                                    if (currentNode.arg) {
+                                      if (data && data.trim()) {
+                                        if (currentNode.type === 'number') {
+                                          const num = parseFloat(data);
+                                          if (!isNaN(num)) {
+                                            currentNode.arg.default = num;
+                                          }
+                                        } else if (currentNode.type === 'integer') {
+                                          const int = parseInt(data, 10);
+                                          if (!isNaN(int)) {
+                                            currentNode.arg.default = int;
+                                          }
+                                        } else {
+                                          currentNode.arg.default = data;
+                                        }
+                                      } else {
+                                        delete currentNode.arg.default;
+                                      }
+                                    }
+                                    changeNodeInfo(currentNode);
+                                  }
+                                }}
+                              />
+                            )}
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                    )}
+                </div>
+              )}
+            </div>
+
+            {/* 出参配置区域 */}
+            <div
+              style={{
+                marginBottom: '32px',
+                padding: '20px',
+                backgroundColor: '#fff',
+                borderRadius: '8px',
+                border: '1px solid #e8e8e8',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+              }}
+            >
+              <h3
+                style={{
+                  margin: '0 0 20px 0',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#262626',
+                  borderBottom: '2px solid #d9d9d9',
+                  paddingBottom: '8px',
+                }}
+              >
+                {locale.toolOutputSchema || '出参配置'}
+              </h3>
+
+              <Form.Item label={locale.ArgumentTree || '参数树'} style={{ margin: '16px 0 0' }}>
+                <div
+                  style={{
+                    backgroundColor: '#fafafa',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '8px',
+                    padding: '16px',
+                  }}
+                >
+                  <Row style={{ marginBottom: '16px' }}>
+                    <Col style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Button
+                        type="primary"
+                        size="medium"
+                        onClick={AddPropertiesToOutputArgs}
+                        disabled={isPreview || onlyEditRuntimeInfo}
+                        style={{
+                          borderRadius: '6px',
+                          height: '36px',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {locale.AddNewArg || '增加参数'}
+                      </Button>
+
+                      {outputCurrentNode.type === 'object' && outputCurrentNode.key !== 'out' && (
+                        <Button
+                          type="primary"
+                          size="medium"
+                          onClick={AddPropertiesToCurrentOutputNode}
+                          disabled={isPreview || onlyEditRuntimeInfo}
+                          style={{
+                            borderRadius: '6px',
+                            height: '36px',
+                            fontWeight: '500',
+                            backgroundColor: '#722ed1',
+                            borderColor: '#722ed1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          {locale.AddNewProperties || '增加属性'}
+                        </Button>
+                      )}
+
+                      {(isPreview || onlyEditRuntimeInfo) && (
+                        <Tag color="orange" style={{ margin: 0 }}>
+                          {locale.editExistVersionMessage || '只读模式不可编辑'}
+                        </Tag>
+                      )}
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col style={{ width: '100%' }}>
+                      <div
+                        style={{
+                          backgroundColor: '#fff',
+                          border: '1px solid #e8e8e8',
+                          borderRadius: '6px',
+                          padding: '12px',
+                          maxHeight: '400px',
+                          overflowY: 'auto',
+                        }}
+                      >
+                        <Tree
+                          showLine
+                          isLabelBlock
+                          dataSource={outputData}
+                          defaultSelectedKeys={['out']}
+                          expandedKeys={outputExpandedKeys}
+                          onExpand={keys => setOutputExpandedKeys(keys)}
+                          aria-label={'output-schema-tree'}
+                          labelRender={node => {
+                            return (
+                              <Row
+                                style={{ fontSize: 'medium', width: '100%' }}
+                                justify="space-between"
+                                align="middle"
+                              >
+                                <Col>
+                                  <Row>
+                                    <Col>
+                                      <a>
+                                        {node.label}
+                                        {node.key.split('@@').length === 2 && (
+                                          <span style={{ color: '#fa541c', marginLeft: 6 }}>
+                                            {outputArgs[node.key]?.required ? '*' : ''}
+                                          </span>
+                                        )}
+                                      </a>
+                                      &nbsp;&nbsp;({outputArgs[node.key]?.type})
+                                    </Col>
+                                    {!isOutputArrayItemsNode(outputArgs[node.key]) && (
+                                      <Col style={{ textOverflow: 'ellipsis', marginLeft: 10 }}>
+                                        {outputArgs[node.key]?.description?.length <= 25
+                                          ? outputArgs[node.key]?.description
+                                          : `${outputArgs[node.key]?.description?.substring(0, 20)}...`}
+                                      </Col>
+                                    )}
+                                  </Row>
+                                </Col>
+                                {node.key !== 'out' && !isPreview && !onlyEditRuntimeInfo && (
+                                  <Col>
+                                    <Button
+                                      type="primary"
+                                      warning
+                                      size="small"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        deleteOutputNode(node.key);
+                                      }}
+                                      style={{
+                                        marginLeft: 10,
+                                        padding: '2px 8px',
+                                        fontSize: '12px',
+                                        height: '20px',
+                                        lineHeight: '16px',
+                                      }}
+                                    >
+                                      ×
+                                    </Button>
+                                  </Col>
+                                )}
+                              </Row>
+                            );
+                          }}
+                          onSelect={data => {
+                            if (data.length === 1) {
+                              const currentNode = outputArgs[data];
+                              setOutputCurrentNode(currentNode);
+                            } else if (data.length === 0) {
+                              setOutputCurrentNode({
+                                key: '',
+                                label: '',
+                                type: 'string',
+                                description: '',
+                              });
+                            }
+                          }}
+                        />
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+              </Form.Item>
+
+              {outputCurrentNode.key !== '' && outputCurrentNode.key !== 'out' && (
+                <div
+                  style={{
+                    marginTop: '16px',
+                    padding: '20px',
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    border: '1px solid #e8e8e8',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+                  }}
+                >
+                  <h3
+                    style={{
+                      margin: '0 0 20px 0',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#262626',
+                      borderBottom: '2px solid #d9d9d9',
+                      paddingBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    {locale.ArgumentInfo || '参数详情'}
+                  </h3>
+
+                  <Row gutter={24}>
+                    <Col span={12}>
+                      <Form.Item
+                        name="outputArgs.name"
+                        label={locale.toolParamName}
+                        required
+                        requiredTrigger="onBlur"
+                        asterisk={false}
+                        style={{ marginBottom: '20px' }}
+                      >
+                        <Input
+                          size="large"
+                          style={{ borderRadius: '6px' }}
+                          isPreview={onlyEditRuntimeInfo}
+                          disabled={outputCurrentNode.key === 'out' || isOutputArrayItemsNode(outputCurrentNode)}
+                          value={outputCurrentNode.label}
+                          placeholder="请输入参数名称"
+                          onChange={data => {
+                            if (outputCurrentNode.key !== '' && !isOutputArrayItemsNode(outputCurrentNode)) {
+                              outputCurrentNode.label = data;
+                              changeOutputNodeInfo(outputCurrentNode);
+                            }
+                          }}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        name="outputArgs.type"
+                        label={locale.toolParamType}
+                        style={{ marginBottom: '20px' }}
+                      >
+                        <Select
+                          size="large"
+                          style={{ borderRadius: '6px' }}
+                          isPreview={onlyEditRuntimeInfo}
+                          disabled={outputCurrentNode.key === 'out'}
+                          value={outputCurrentNode.type}
+                          placeholder="请选择参数类型"
+                          dataSource={[
+                            { label: '字符串类型 (string)', value: 'string' },
+                            { label: '数字类型 (number)', value: 'number' },
+                            { label: '整数类型 (integer)', value: 'integer' },
+                            { label: '布尔类型 (boolean)', value: 'boolean' },
+                            { label: '数组类型 (array)', value: 'array' },
+                            { label: '对象类型 (object)', value: 'object' },
+                          ]}
+                          onChange={data => {
+                            if (outputCurrentNode.key !== '') {
+                              if (!(data === 'array' || data === 'object')) {
+                                outputCurrentNode.children = [];
+                              }
+                              outputCurrentNode.type = data;
+                              if (outputCurrentNode.arg) {
+                                outputCurrentNode.arg.type = data;
+                              }
+                              if (data === 'array') {
+                                const itemNode = {
+                                  label: 'items',
+                                  type: 'string',
+                                  description: '',
+                                  defaultValue: '',
+                                  key: `${outputCurrentNode.key}@@items`,
+                                  arg: {
+                                    type: 'string',
+                                    description: '',
+                                  },
+                                };
+                                outputCurrentNode.children = [itemNode];
+                                outputArgs[`${outputCurrentNode.key}@@items`] = itemNode;
+
+                                const updatedExpandedKeys = [...outputExpandedKeys];
+                                if (!updatedExpandedKeys.includes(outputCurrentNode.key)) {
+                                  updatedExpandedKeys.push(outputCurrentNode.key);
+                                }
+                                setOutputExpandedKeys(updatedExpandedKeys);
+
+                                changeOutputNodeInfo(outputCurrentNode);
+                              } else if (data === 'object') {
+                                const defaultPropertyNode = {
+                                  label: 'property1',
+                                  type: 'string',
+                                  description: '',
+                                  defaultValue: '',
+                                  key: `${outputCurrentNode.key}@@property1`,
+                                  children: [],
+                                  arg: {
+                                    type: 'string',
+                                    description: '',
+                                  },
+                                };
+                                outputCurrentNode.children = [defaultPropertyNode];
+                                outputArgs[`${outputCurrentNode.key}@@property1`] = defaultPropertyNode;
+
+                                const updatedExpandedKeys = [...outputExpandedKeys];
+                                if (!updatedExpandedKeys.includes(outputCurrentNode.key)) {
+                                  updatedExpandedKeys.push(outputCurrentNode.key);
+                                }
+                                setOutputExpandedKeys(updatedExpandedKeys);
+
+                                changeOutputNodeInfo(outputCurrentNode);
+                              } else {
+                                changeOutputNodeInfo(outputCurrentNode);
+                              }
+                            }
+                          }}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {!isOutputArrayItemsNode(outputCurrentNode) && (
+                    <Row>
+                      <Col span={24}>
+                        <Form.Item
+                          label={locale.toolParamDescription}
+                          name="outputArgs.description"
+                          asterisk={false}
+                          style={{ marginBottom: '20px' }}
+                        >
+                          <Input.TextArea
+                            size="large"
+                            style={{ borderRadius: '6px', minHeight: '80px' }}
+                            disabled={outputCurrentNode.key === 'out'}
+                            value={outputCurrentNode.description}
+                            placeholder="请输入参数描述信息"
+                            onChange={data => {
+                              if (outputCurrentNode.key !== '') {
+                                outputCurrentNode.description = data;
+                                if (outputCurrentNode.arg) {
+                                  outputCurrentNode.arg.description = data;
+                                }
+                                changeOutputNodeInfo(outputCurrentNode);
+                              }
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {outputCurrentNode.key && outputCurrentNode.key.split('@@').length === 2 && (
+                    <Row>
+                      <Col span={24}>
+                        <Form.Item
+                          label={locale.toolParamRequired || '是否必填'}
+                          name="outputArgs.required"
+                          asterisk={false}
+                          style={{ marginBottom: '12px' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <Switch
+                              size="large"
+                              checked={!!outputCurrentNode.required}
+                              onChange={checked => {
+                                if (outputCurrentNode.key) {
+                                  outputCurrentNode.required = !!checked;
+                                  changeOutputNodeInfo(outputCurrentNode);
+                                }
+                              }}
+                              disabled={onlyEditRuntimeInfo}
+                              checkedChildren={locale.required || '必填'}
+                              unCheckedChildren={locale.optional || '可选'}
+                            />
+                            <span style={{ marginLeft: 12, color: '#666', fontSize: 12 }}>
+                              {outputCurrentNode.required
+                                ? locale.required || '必填'
+                                : locale.optional || '可选'}
+                            </span>
+                          </div>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {outputCurrentNode.type &&
+                    outputCurrentNode.type !== 'object' &&
+                    outputCurrentNode.type !== 'array' &&
+                    outputCurrentNode.key !== 'out' &&
+                    !isOutputArrayItemsNode(outputCurrentNode) && (
+                      <Row>
+                        <Col span={24}>
+                          <Form.Item
+                            label={locale.toolParamDefaultValue || '默认值'}
+                            name="outputArgs.defaultValue"
+                            asterisk={false}
+                            style={{ marginBottom: '0' }}
+                          >
+                            <Input
+                              size="large"
+                              style={{ borderRadius: '6px' }}
+                              disabled={onlyEditRuntimeInfo}
+                              value={outputCurrentNode.defaultValue}
+                              placeholder="请输入默认值"
+                              onChange={data => {
+                                if (outputCurrentNode.key !== '') {
+                                  outputCurrentNode.defaultValue = data;
+                                  changeOutputNodeInfo(outputCurrentNode);
+                                }
+                              }}
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                    )}
+                </div>
+              )}
+            </div>
             {showTemplates ? (
               <div
                 style={{
