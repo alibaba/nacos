@@ -43,6 +43,8 @@ public class AuthConstants {
     public static final String PARAM_PASSWORD = "password";
     
     /**
+     * Console resource name prefix.
+     *
      * @deprecated Use {@link Constants.Resource#CONSOLE_RESOURCE_NAME_PREFIX} instead.
      */
     @Deprecated
