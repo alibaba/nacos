@@ -17,6 +17,9 @@
 package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.plugin.PluginStateChecker;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
@@ -25,9 +28,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.alibaba.nacos.api.common.Constants.Exception.FIND_DATASOURCE_ERROR_CODE;
 import static com.alibaba.nacos.api.common.Constants.Exception.FIND_TABLE_ERROR_CODE;
@@ -102,6 +107,12 @@ public class MapperManager {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
         }
+        Optional<PluginStateChecker> checker = PluginStateCheckerHolder.getInstance();
+        if (checker.isPresent() && !checker.get().isPluginEnabled(PluginType.DATASOURCE_MAPPER.getType(), dataSource)) {
+            LOGGER.debug("[MapperManager] Plugin DATASOURCE_MAPPER:{} is disabled", dataSource);
+            throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE,
+                    "[MapperManager] Datasource plugin is disabled: " + dataSource);
+        }
         if (StringUtils.isBlank(dataSource) || StringUtils.isBlank(tableName)) {
             throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE, "dataSource or tableName is null");
         }
@@ -119,5 +130,14 @@ public class MapperManager {
             return MapperProxy.createSingleProxy(mapper);
         }
         return (R) mapper;
+    }
+
+    /**
+     * Get all mappers.
+     *
+     * @return unmodifiable map of all mappers
+     */
+    public Map<String, Map<String, Mapper>> getAllMappers() {
+        return Collections.unmodifiableMap(MAPPER_SPI_MAP);
     }
 }

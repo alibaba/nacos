@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.plugin.datasource.manager;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,20 +56,34 @@ public class DatabaseDialectManager {
     }
     
     public DatabaseDialect getDialect(String databaseType) {
+        // Check if plugin is enabled
+        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(), databaseType)) {
+            LOGGER.debug("[DatabaseDialectManager] Plugin DATASOURCE_DIALECT:{} is disabled", databaseType);
+            throw new IllegalStateException(
+                    "DatabaseDialect plugin is disabled: " + databaseType
+                            + ". Please enable it via plugin management API.");
+        }
+
         DatabaseDialect databaseDialect = SUPPORT_DIALECT_MAP.get(databaseType);
         if (databaseDialect == null) {
-            LOGGER.warn("[DatabaseDialectManager] No dialect found for type: {}, using first available dialect as fallback",
+            LOGGER.warn("[DatabaseDialectManager] No dialect found for type: {}, checking for enabled fallback dialects",
                     databaseType);
-            // Fallback to any available dialect, prefer one that is loaded via SPI
-            if (!SUPPORT_DIALECT_MAP.isEmpty()) {
-                return SUPPORT_DIALECT_MAP.values().iterator().next();
+            // Find first enabled dialect as fallback
+            for (Map.Entry<String, DatabaseDialect> entry : SUPPORT_DIALECT_MAP.entrySet()) {
+                String dialectType = entry.getKey();
+                if (PluginStateCheckerHolder.isPluginEnabled(PluginType.DATASOURCE_DIALECT.getType(), dialectType)) {
+                    LOGGER.warn("[DatabaseDialectManager] Using enabled dialect {} as fallback for {}",
+                            dialectType, databaseType);
+                    return entry.getValue();
+                }
             }
-            throw new IllegalStateException("No DatabaseDialect implementation found. "
-                    + "Please ensure datasource plugin is properly loaded.");
+            throw new IllegalStateException(
+                    "No enabled DatabaseDialect implementation found. "
+                            + "Please ensure datasource plugin is properly loaded and enabled.");
         }
         return databaseDialect;
     }
-    
+
     /**
      * Get DatasourceDialectManager instance.
      *
@@ -75,5 +92,14 @@ public class DatabaseDialectManager {
     public static DatabaseDialectManager getInstance() {
         return INSTANCE;
     }
-    
+
+    /**
+     * Get all registered database dialects.
+     *
+     * @return unmodifiable map of database type to DatabaseDialect
+     */
+    public Map<String, DatabaseDialect> getAllDialects() {
+        return Collections.unmodifiableMap(SUPPORT_DIALECT_MAP);
+    }
+
 }

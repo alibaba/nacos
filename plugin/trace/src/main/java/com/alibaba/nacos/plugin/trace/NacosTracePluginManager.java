@@ -16,15 +16,21 @@
 
 package com.alibaba.nacos.plugin.trace;
 
+import com.alibaba.nacos.api.plugin.PluginStateChecker;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Nacos trace event subscriber manager.
@@ -52,8 +58,29 @@ public class NacosTracePluginManager {
     public static NacosTracePluginManager getInstance() {
         return INSTANCE;
     }
-    
+
     public Collection<NacosTraceSubscriber> getAllTraceSubscribers() {
+        Optional<PluginStateChecker> checker = PluginStateCheckerHolder.getInstance();
+        if (checker.isPresent()) {
+            return traceSubscribers.values().stream()
+                    .filter(subscriber -> {
+                        boolean enabled = checker.get().isPluginEnabled(PluginType.TRACE.getType(), subscriber.getName());
+                        if (!enabled) {
+                            LOGGER.debug("[TracePluginManager] Plugin TRACE:{} is disabled", subscriber.getName());
+                        }
+                        return enabled;
+                    })
+                    .collect(Collectors.toSet());
+        }
         return new HashSet<>(traceSubscribers.values());
+    }
+
+    /**
+     * Get all trace subscribers without filtering.
+     *
+     * @return unmodifiable map of all trace subscribers
+     */
+    public Map<String, NacosTraceSubscriber> getAllPlugins() {
+        return Collections.unmodifiableMap(traceSubscribers);
     }
 }
