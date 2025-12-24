@@ -244,8 +244,7 @@ class ServiceInfoTest {
         
         assertNotSame(original, cloned);
         // Clone method initializes hosts to empty list even if original is null
-        // But getHosts() now returns null if hosts is null
-        assertTrue(cloned.getHosts() == null || cloned.getHosts().isEmpty());
+        assertTrue(cloned.getHosts().isEmpty());
     }
     
     @Test

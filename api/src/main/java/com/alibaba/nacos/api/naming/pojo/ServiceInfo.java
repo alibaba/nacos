@@ -129,7 +129,7 @@ public class ServiceInfo implements Cloneable {
     }
     
     public List<Instance> getHosts() {
-        return hosts == null ? null : new ArrayList<>(hosts);
+        return new ArrayList<>(hosts);
     }
     
     public boolean isValid() {
