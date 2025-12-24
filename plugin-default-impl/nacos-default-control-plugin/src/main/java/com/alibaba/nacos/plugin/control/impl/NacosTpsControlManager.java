@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.control.impl;
 
-import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
