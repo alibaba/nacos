@@ -361,8 +361,10 @@ class ServiceInfoTest {
         ServiceInfo cloned = original.clone();
         
         Instance clonedHost = cloned.getHosts().get(0);
-        // Clone method explicitly sets metadata to null if original is null
-        assertTrue(clonedHost.getMetadata() == null);
+        // Instance metadata is initialized to empty HashMap by default
+        // When clone method doesn't set metadata (because original is null),
+        // the cloned Instance keeps its default empty HashMap
+        assertTrue(clonedHost.getMetadata() != null && clonedHost.getMetadata().isEmpty());
     }
     
     @Test
