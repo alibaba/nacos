@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.control.impl;
 
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
@@ -91,7 +92,7 @@ public class NacosTpsControlManager extends TpsControlManager {
      * @param rule      rule.
      */
     public synchronized void applyTpsRule(String pointName, TpsControlRule rule) {
-        if (rule == null) {
+        if (rule == null || rule.getPointRule() == null) {
             rules.remove(pointName);
         } else {
             rules.put(pointName, rule);
