@@ -41,8 +41,10 @@ com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoAggrMapperByPostgr
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoBetaMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoTagMapperByPostgresql
+com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoGrayMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigTagsRelationMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.GroupCapacityMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.HistoryConfigInfoMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantCapacityMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantInfoMapperByPostgresql
+com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigMigrateMapperByPostgresql
