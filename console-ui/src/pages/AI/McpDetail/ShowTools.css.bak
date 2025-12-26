@@ -690,34 +690,3 @@
     margin-bottom: 16px;
   }
 }
-
-/* Override Upload List Item Style for custom green background */
-/* We target all list items regardless of state to ensure green background */
-.openapi-dialog .next-upload-list-item,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-error,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-uploading,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-done,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-select {
-  background-color: #f6ffed !important;
-  border-color: #b7eb8f !important;
-}
-
-/* Ensure hover state also stays green */
-.openapi-dialog .next-upload-list-item:hover,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-error:hover,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-uploading:hover,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-done:hover,
-.openapi-dialog .next-upload-list-item.next-upload-list-item-select:hover {
-  background-color: #f6ffed !important;
-  border-color: #b7eb8f !important;
-}
-
-.openapi-dialog .next-upload-list-item-name {
-  color: #333 !important;
-}
-
-/* Hide error icon if present */
-.openapi-dialog .next-upload-list-item-error .next-icon-error,
-.openapi-dialog .next-upload-list-item .next-icon-error {
-  display: none !important;
-}

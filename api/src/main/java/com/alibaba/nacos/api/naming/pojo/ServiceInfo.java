@@ -24,7 +24,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service Information with instances and without cluster information, used in data pushing and cached for nacos-client.
@@ -33,7 +35,7 @@ import java.util.List;
  * @author shizhengxing
  */
 @JsonInclude(Include.NON_NULL)
-public class ServiceInfo {
+public class ServiceInfo implements Cloneable {
     
     /**
      * file name pattern: groupName@@name@@clusters.
@@ -277,5 +279,44 @@ public class ServiceInfo {
     
     public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
         this.reachProtectionThreshold = reachProtectionThreshold;
+    }
+    
+    @Override
+    public ServiceInfo clone() {
+        ServiceInfo cloned = new ServiceInfo();
+        cloned.jsonFromServer = this.jsonFromServer;
+        cloned.name = this.name;
+        cloned.groupName = this.groupName;
+        cloned.clusters = this.clusters;
+        cloned.cacheMillis = this.cacheMillis;
+        cloned.lastRefTime = this.lastRefTime;
+        cloned.checksum = this.checksum;
+        cloned.allIps = this.allIps;
+        cloned.reachProtectionThreshold = this.reachProtectionThreshold;
+        cloned.hosts = new ArrayList<>();
+        
+        if (this.hosts != null) {
+            for (Instance host : this.hosts) {
+                Instance clonedHost = new Instance();
+                clonedHost.setInstanceId(host.getInstanceId());
+                clonedHost.setIp(host.getIp());
+                clonedHost.setPort(host.getPort());
+                clonedHost.setWeight(host.getWeight());
+                clonedHost.setHealthy(host.isHealthy());
+                clonedHost.setEnabled(host.isEnabled());
+                clonedHost.setEphemeral(host.isEphemeral());
+                clonedHost.setClusterName(host.getClusterName());
+                clonedHost.setServiceName(host.getServiceName());
+                
+                if (host.getMetadata() != null) {
+                    Map<String, String> clonedMetadata = new HashMap<>(host.getMetadata());
+                    clonedHost.setMetadata(clonedMetadata);
+                }
+                
+                cloned.hosts.add(clonedHost);
+            }
+        }
+        
+        return cloned;
     }
 }
