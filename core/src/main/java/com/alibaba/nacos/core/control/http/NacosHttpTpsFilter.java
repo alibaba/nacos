@@ -26,6 +26,9 @@ import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.Filter;
@@ -38,6 +41,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,7 +54,9 @@ public class NacosHttpTpsFilter implements Filter {
     private ControllerMethodsCache controllerMethodsCache;
     
     private TpsControlManager tpsControlManager;
-    
+
+    private static final int TOO_MANY_REQUESTS_ERROR_CODE = 429;
+
     public NacosHttpTpsFilter(ControllerMethodsCache controllerMethodsCache) {
         this.controllerMethodsCache = controllerMethodsCache;
     }
@@ -96,7 +102,7 @@ public class NacosHttpTpsFilter implements Filter {
                     AsyncContext asyncContext = httpServletRequest.startAsync();
                     asyncContext.setTimeout(0);
                     RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(
-                            () -> generate503Response(httpServletRequest, response, checkResponse.getMessage(),
+                            () -> generate429Response(httpServletRequest, response, checkResponse.getMessage(),
                                     asyncContext), 1000L, TimeUnit.MILLISECONDS);
                     return;
                 }
@@ -113,8 +119,8 @@ public class NacosHttpTpsFilter implements Filter {
     public void destroy() {
         Filter.super.destroy();
     }
-    
-    void generate503Response(HttpServletRequest request, HttpServletResponse response, String message,
+
+    void generate429Response(HttpServletRequest request, HttpServletResponse response, String message,
             AsyncContext asyncContext) {
         
         try {
@@ -122,11 +128,30 @@ public class NacosHttpTpsFilter implements Filter {
             response.setHeader("Pragma", "no-cache");
             response.setDateHeader("Expires", 0);
             response.setHeader("Cache-Control", "no-cache,no-store");
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            response.setStatus(TOO_MANY_REQUESTS_ERROR_CODE);
             response.getOutputStream().println(message);
             asyncContext.complete();
+
+            recordHttpMetrics(request, TOO_MANY_REQUESTS_ERROR_CODE);
         } catch (Exception ex) {
             Loggers.TPS.error("Error to generate tps 503 response", ex);
         }
     }
+
+    private void recordHttpMetrics(HttpServletRequest request, int status) {
+        String method = request.getMethod();
+        String uri = request.getRequestURI();
+        Timer timer = Metrics.globalRegistry.timer(
+                "http.server.requests",
+                Arrays.asList(
+                        Tag.of("method", method != null ? method : "UNKNOWN"),
+                        Tag.of("uri", uri != null ? uri : "UNKNOWN"),
+                        Tag.of("status", String.valueOf(status)),
+                        Tag.of("exception", "TpsOverLimitException"),
+                        Tag.of("outcome", "TPS_OVER_LIMIT_ERROR")
+                )
+        );
+        timer.record(0, TimeUnit.NANOSECONDS);
+    }
+
 }

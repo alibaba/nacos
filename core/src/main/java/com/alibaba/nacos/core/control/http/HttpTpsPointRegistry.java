@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
@@ -42,24 +43,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @NacosWebBean
 public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshedEvent> {
-    
+
     private volatile AtomicBoolean isInit = new AtomicBoolean(false);
-    
+
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        if (!isInit.compareAndSet(false, true)) {
+        // ContextRefreshedEvent may be triggered twice in Spring Boot:
+        // 1. Root ApplicationContext (parent == null)
+        // 2. Web ApplicationContext (parent != null)
+        // We should only process the root context to avoid duplicate registration
+        ApplicationContext context = event.getApplicationContext();
+        ApplicationContext parent = context.getParent();
+
+        // Only process root context (parent == null) and ensure only executed once
+        if (parent != null || !isInit.compareAndSet(false, true)) {
             return;
         }
-        RequestMappingHandlerMapping requestMapping = event.getApplicationContext()
-                .getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
-        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMapping.getHandlerMethods();
-        for (HandlerMethod handlerMethod : handlerMethods.values()) {
-            Method method = handlerMethod.getMethod();
-            if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
-                TpsControl tpsControl = method.getAnnotation(TpsControl.class);
-                String pointName = tpsControl.pointName();
-                ControlManagerCenter.getInstance().getTpsControlManager().registerTpsPoint(pointName);
+
+        try {
+            RequestMappingHandlerMapping requestMapping = context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
+            Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMapping.getHandlerMethods();
+            for (HandlerMethod handlerMethod : handlerMethods.values()) {
+                Method method = handlerMethod.getMethod();
+                if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
+                    TpsControl tpsControl = method.getAnnotation(TpsControl.class);
+                    String pointName = tpsControl.pointName();
+                    ControlManagerCenter.getInstance().getTpsControlManager().registerTpsPoint(pointName);
+                }
             }
+        } catch (Exception ex) {
+            // Reset isInit on failure to allow retry
+            isInit.set(false);
         }
     }
 }
