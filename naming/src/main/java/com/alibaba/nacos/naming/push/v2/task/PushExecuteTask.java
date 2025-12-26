@@ -124,6 +124,10 @@ public class PushExecuteTask extends AbstractExecuteTask {
         public long getTimeout() {
             return PushConfig.getInstance().getPushTaskTimeout();
         }
+
+        public int getMaxPushRetryCount() {
+            return PushConfig.getInstance().getPushMaxRetryCount();
+        }
         
         @Override
         public void onSuccess() {
@@ -154,10 +158,15 @@ public class PushExecuteTask extends AbstractExecuteTask {
             long pushCostTime = System.currentTimeMillis() - executeStartTime;
             Loggers.PUSH.error("[PUSH-FAIL] {}ms, {}, reason={}, target={}", pushCostTime, service, e.getMessage(),
                     subscriber.getIp());
-            if (!(e instanceof NoRequiredRetryException)) {
-                Loggers.PUSH.error("Reason detail: ", e);
+            if (delayTask.getRetryCount() < getMaxPushRetryCount() && !(e instanceof NoRequiredRetryException)) {
+                Loggers.PUSH.error("Retry push task for service {} to client {} (retryCount={})", service, clientId,
+                        delayTask.getRetryCount(), e);
+                delayTask.incrementRetryCount();
                 delayTaskEngine.addTask(service,
                         new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
+            } else {
+                Loggers.PUSH.error("Max push retry count reached for service {} to client {} (retryCount={})", service, clientId,
+                        delayTask.getRetryCount(), e);
             }
             PushResult result = PushResult
                     .pushFailed(service, clientId, actualServiceInfo, subscriber, pushCostTime, e, isPushToAll);

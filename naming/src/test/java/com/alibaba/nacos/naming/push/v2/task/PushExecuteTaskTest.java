@@ -146,4 +146,38 @@ class PushExecuteTaskTest {
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
         verify(delayTaskExecuteEngine).addTask(eq(service), any(PushDelayTask.class));
     }
+    
+    @Test
+    void testRunFailedWithMaxRetryCountReached() {
+        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
+        // Set retry count to max retry count (default is 5)
+        for (int i = 0; i < 5; i++) {
+            delayTask.incrementRetryCount();
+        }
+        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        pushExecutor.setShouldSuccess(false);
+        RuntimeException exception = new RuntimeException("Test exception");
+        pushExecutor.setFailedException(exception);
+        executeTask.run();
+        assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
+        // When max retry count is reached, addTask should not be called
+        verify(delayTaskExecuteEngine, never()).addTask(eq(service), any(PushDelayTask.class));
+    }
+    
+    @Test
+    void testRunFailedWithRetryCountOneLessThanMax() {
+        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
+        // Set retry count to max retry count - 1 (default is 5, so set to 4)
+        for (int i = 0; i < 4; i++) {
+            delayTask.incrementRetryCount();
+        }
+        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        pushExecutor.setShouldSuccess(false);
+        RuntimeException exception = new RuntimeException("Test exception");
+        pushExecutor.setFailedException(exception);
+        executeTask.run();
+        assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
+        // When max retry count is not reached, addTask should be called
+        verify(delayTaskExecuteEngine).addTask(eq(service), any(PushDelayTask.class));
+    }
 }
