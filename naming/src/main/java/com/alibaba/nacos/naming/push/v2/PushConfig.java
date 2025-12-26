@@ -36,7 +36,9 @@ public class PushConfig extends AbstractDynamicConfig {
     private long pushTaskTimeout = PushConstants.DEFAULT_PUSH_TASK_TIMEOUT;
     
     private long pushTaskRetryDelay = PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY;
-    
+
+    private int pushMaxRetryCount = PushConstants.DEFAULT_PUSH_MAX_RETRY_COUNT;
+
     private PushConfig() {
         super(PUSH);
         resetConfig();
@@ -73,4 +75,9 @@ public class PushConfig extends AbstractDynamicConfig {
     public long getPushTaskRetryDelay() {
         return pushTaskRetryDelay;
     }
+
+    public int getPushMaxRetryCount() {
+        return pushMaxRetryCount;
+    }
+    
 }

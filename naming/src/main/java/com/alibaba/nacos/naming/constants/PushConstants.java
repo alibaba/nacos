@@ -43,4 +43,9 @@ public class PushConstants {
     public static final String PUSH_TASK_RETRY_DELAY = "nacos.naming.push.pushTaskRetryDelay";
     
     public static final long DEFAULT_PUSH_TASK_RETRY_DELAY = 1000L;
+
+    /**
+     * Naming TCP push task max retry count.
+     */
+    public static final int DEFAULT_PUSH_MAX_RETRY_COUNT = 5;
 }
