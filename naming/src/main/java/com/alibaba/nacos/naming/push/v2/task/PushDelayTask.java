@@ -47,12 +47,12 @@ public class PushDelayTask extends AbstractDelayTask {
         setLastProcessTime(System.currentTimeMillis());
     }
     
-    public PushDelayTask(Service service, long delay, String targetClient) {
+    public PushDelayTask(Service service, long delay, String targetClient, int retryCount) {
         this.service = service;
         this.pushToAll = false;
         this.targetClients = new HashSet<>(1);
         this.targetClients.add(targetClient);
-        retryCount = 0;
+        this.retryCount = retryCount;
         setTaskInterval(delay);
         setLastProcessTime(System.currentTimeMillis());
     }
@@ -87,10 +87,6 @@ public class PushDelayTask extends AbstractDelayTask {
 
     public int getRetryCount() {
         return retryCount;
-    }
-
-    public void incrementRetryCount() {
-        this.retryCount++;
     }
 
 }

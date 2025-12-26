@@ -109,7 +109,7 @@ class PushExecuteTaskTest {
     
     @Test
     void testRunSuccessForPushSingle() {
-        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
+        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId, 0);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
         assertEquals(1, MetricsMonitor.getTotalPushMonitor().get());
@@ -149,11 +149,8 @@ class PushExecuteTaskTest {
     
     @Test
     void testRunFailedWithMaxRetryCountReached() {
-        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
         // Set retry count to max retry count (default is 5)
-        for (int i = 0; i < 5; i++) {
-            delayTask.incrementRetryCount();
-        }
+        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId, 5);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         pushExecutor.setShouldSuccess(false);
         RuntimeException exception = new RuntimeException("Test exception");
@@ -166,11 +163,8 @@ class PushExecuteTaskTest {
     
     @Test
     void testRunFailedWithRetryCountOneLessThanMax() {
-        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
         // Set retry count to max retry count - 1 (default is 5, so set to 4)
-        for (int i = 0; i < 4; i++) {
-            delayTask.incrementRetryCount();
-        }
+        PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId, 4);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         pushExecutor.setShouldSuccess(false);
         RuntimeException exception = new RuntimeException("Test exception");

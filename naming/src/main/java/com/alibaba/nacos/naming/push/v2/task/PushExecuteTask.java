@@ -161,9 +161,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
             if (delayTask.getRetryCount() < getMaxPushRetryCount() && !(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Retry push task for service {} to client {} (retryCount={})", service, clientId,
                         delayTask.getRetryCount(), e);
-                delayTask.incrementRetryCount();
                 delayTaskEngine.addTask(service,
-                        new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
+                        new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId, delayTask.getRetryCount() + 1));
             } else {
                 Loggers.PUSH.error("Max push retry count reached for service {} to client {} (retryCount={})", service, clientId,
                         delayTask.getRetryCount(), e);

@@ -48,7 +48,7 @@ class PushDelayTaskTest {
     @BeforeEach
     void setUp() throws Exception {
         pushToAllTask = new PushDelayTask(service, 0L);
-        singlePushTask = new PushDelayTask(service, 0L, singleTargetClientId);
+        singlePushTask = new PushDelayTask(service, 0L, singleTargetClientId, 0);
     }
     
     @Test
@@ -72,7 +72,7 @@ class PushDelayTaskTest {
     @Test
     void testMergeSingleToSingle() {
         PushDelayTask oldTask = singlePushTask;
-        PushDelayTask newTask = new PushDelayTask(service, 0L, "newClient");
+        PushDelayTask newTask = new PushDelayTask(service, 0L, "newClient", 0);
         newTask.merge(oldTask);
         assertFalse(newTask.isPushToAll());
         assertNotNull(newTask.getTargetClients());
@@ -91,5 +91,17 @@ class PushDelayTaskTest {
         newTask.merge(oldTask);
         assertTrue(newTask.isPushToAll());
         assertEquals(oldTask.getLastProcessTime(), newTask.getLastProcessTime());
+    }
+    
+    @Test
+    void testGetRetryCount() {
+        PushDelayTask task1 = new PushDelayTask(service, 0L);
+        assertEquals(0, task1.getRetryCount());
+        
+        PushDelayTask task2 = new PushDelayTask(service, 0L, singleTargetClientId, 3);
+        assertEquals(3, task2.getRetryCount());
+        
+        PushDelayTask task3 = new PushDelayTask(service, 0L, singleTargetClientId, 5);
+        assertEquals(5, task3.getRetryCount());
     }
 }
