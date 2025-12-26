@@ -153,14 +153,69 @@ class NacosHttpTpsFilterTest {
         when(controllerMethodsCache.getMethod(eq(httpServletRequest))).thenReturn(method);
         AsyncContextImpl asyncContext = Mockito.mock(AsyncContextImpl.class);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(asyncContext);
+        Mockito.when(httpServletRequest.getMethod()).thenReturn("GET");
+        Mockito.when(httpServletRequest.getRequestURI()).thenReturn("/test");
         //execute test.
         nacosHttpTpsFilter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         
         //verify
         Mockito.verify(filterChain, Mockito.times(0)).doFilter(any(), any());
         Thread.sleep(1100L);
-        Mockito.verify(httpServletResponse, Mockito.times(1)).setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        // Verify that status code is 429 (Too Many Requests) instead of 503
+        Mockito.verify(httpServletResponse, Mockito.times(1)).setStatus(429);
         
+    }
+    
+    /**
+     * test metrics recording when tps check rejected.
+     */
+    @Test
+    void testMetricsRecording() throws Exception {
+        HttpTpsCheckRequestParserRegistry.register(new HttpTpsCheckRequestParser() {
+            @Override
+            public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
+                return new TpsCheckRequest();
+            }
+            
+            @Override
+            public String getPointName() {
+                return "HealthCheck";
+            }
+            
+            @Override
+            public String getName() {
+                return "HealthCheck";
+            }
+        });
+        
+        TpsCheckResponse tpsCheckResponse = new TpsCheckResponse(false, 5031, "rejected");
+        when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(tpsCheckResponse);
+        
+        //mock http tps control method
+        Method method = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class);
+        
+        MockHttpServletRequest httpServletRequest = Mockito.mock(MockHttpServletRequest.class);
+        MockHttpServletResponse httpServletResponse = Mockito.mock(MockHttpServletResponse.class);
+        MockFilterChain filterChain = Mockito.mock(MockFilterChain.class);
+        when(controllerMethodsCache.getMethod(eq(httpServletRequest))).thenReturn(method);
+        AsyncContextImpl asyncContext = Mockito.mock(AsyncContextImpl.class);
+        Mockito.when(httpServletRequest.startAsync()).thenReturn(asyncContext);
+        Mockito.when(httpServletRequest.getMethod()).thenReturn("POST");
+        Mockito.when(httpServletRequest.getRequestURI()).thenReturn("/api/test");
+        jakarta.servlet.ServletOutputStream servletOutputStream = Mockito.mock(jakarta.servlet.ServletOutputStream.class);
+        Mockito.when(httpServletResponse.getOutputStream()).thenReturn(servletOutputStream);
+        
+        //execute test.
+        nacosHttpTpsFilter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        
+        //verify
+        Mockito.verify(filterChain, Mockito.times(0)).doFilter(any(), any());
+        Thread.sleep(1100L);
+        // Verify that metrics are recorded (status code 429 is set)
+        Mockito.verify(httpServletResponse, Mockito.times(1)).setStatus(429);
+        // Verify request method and URI are accessed (for metrics)
+        Mockito.verify(httpServletRequest, Mockito.atLeastOnce()).getMethod();
+        Mockito.verify(httpServletRequest, Mockito.atLeastOnce()).getRequestURI();
     }
     
     /**

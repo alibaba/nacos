@@ -50,12 +50,12 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class NacosHttpTpsFilter implements Filter {
-    
+
+    private static final int TOO_MANY_REQUESTS_ERROR_CODE = 429;
+
     private ControllerMethodsCache controllerMethodsCache;
     
     private TpsControlManager tpsControlManager;
-
-    private static final int TOO_MANY_REQUESTS_ERROR_CODE = 429;
 
     public NacosHttpTpsFilter(ControllerMethodsCache controllerMethodsCache) {
         this.controllerMethodsCache = controllerMethodsCache;
