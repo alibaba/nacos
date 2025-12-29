@@ -30,6 +30,8 @@ public class McpTool {
     private String description;
     
     private Map<String, Object> inputSchema;
+
+    private Map<String, Object> outputSchema;
     
     public String getName() {
         return name;
@@ -53,6 +55,14 @@ public class McpTool {
     
     public void setInputSchema(Map<String, Object> inputSchema) {
         this.inputSchema = inputSchema;
+    }
+
+    public Map<String, Object> getOutputSchema() {
+        return outputSchema;
+    }
+
+    public void setOutputSchema(Map<String, Object> outputSchema) {
+        this.outputSchema = outputSchema;
     }
     
 }

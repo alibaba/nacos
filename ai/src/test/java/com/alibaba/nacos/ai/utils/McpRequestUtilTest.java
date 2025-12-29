@@ -46,7 +46,8 @@ class McpRequestUtilTest {
     
     private static final String MCP_TOOL_SPEC =
             "{\"tools\":[{\"name\":\"list_namespace\",\"description\":\"list namespace in nacos\","
-                    + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"description\":\"aaa\"}}}}],"
+                + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"description\":\"aaa\"}}},"
+                + "\"outputSchema\":{\"type\":\"object\",\"properties\":{\"result\":{\"type\":\"string\"}}}}],"
                     + "\"toolsMeta\":{\"list_namespace\":{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,"
                     + "\"templates\":{\"json-go-tamplate\":{\"templateType\":\"string\",\"requestTemplate\":{\"url\":\"\",\"method\":\"GET\","
                     + "\"headers\":[],\"argsToJsonBody\":false,\"argsToUrlParam\":true,\"argsToFormBody\":true,\"body\":\"string\"},"
@@ -130,6 +131,8 @@ class McpRequestUtilTest {
         assertEquals("list_namespace", actual.getTools().get(0).getName());
         assertEquals("list namespace in nacos", actual.getTools().get(0).getDescription());
         assertEquals(2, actual.getTools().get(0).getInputSchema().size());
+        assertNotNull(actual.getTools().get(0).getOutputSchema());
+        assertEquals("object", actual.getTools().get(0).getOutputSchema().get("type"));
         assertEquals(1, actual.getToolsMeta().size());
         assertNotNull(actual.getToolsMeta().get("list_namespace"));
         assertNotNull(actual.getToolsMeta().get("list_namespace").getInvokeContext());

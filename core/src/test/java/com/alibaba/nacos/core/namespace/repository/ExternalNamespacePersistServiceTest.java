@@ -22,11 +22,16 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.exception.NJdbcException;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -45,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,11 +68,19 @@ class ExternalNamespacePersistServiceTest {
     
     @Mock
     private JdbcTemplate jt;
-    
+
+    @Mock
+    private MapperManager mapperManager;
+
+    @Mock
+    private TenantInfoMapper tenantInfoMapper;
+
     private ExternalNamespacePersistServiceImpl externalNamespacePersistService;
     
     private MockEnvironment environment;
-    
+
+    private MockedStatic<MapperManager> mapperManagerMockedStatic;
+
     @BeforeEach
     void setUp() {
         EnvUtil.setIsStandalone(false);
@@ -74,11 +89,23 @@ class ExternalNamespacePersistServiceTest {
         EnvUtil.setEnvironment(environment);
         DynamicDataSource instance = DynamicDataSource.getInstance();
         ReflectionTestUtils.setField(instance, "basicDataSourceService", dataSourceService);
+
+        // Mock MapperManager static method to avoid SPI loading
+        mapperManagerMockedStatic = Mockito.mockStatic(MapperManager.class);
+        mapperManagerMockedStatic.when(() -> MapperManager.instance(anyBoolean())).thenReturn(mapperManager);
+
         externalNamespacePersistService = new ExternalNamespacePersistServiceImpl();
         
         ReflectionTestUtils.setField(externalNamespacePersistService, "jt", jt);
     }
-    
+
+    @AfterEach
+    void tearDown() {
+        if (mapperManagerMockedStatic != null) {
+            mapperManagerMockedStatic.close();
+        }
+    }
+
     @Test
     void insertTenantInfoAtomicTest() {
         String kp = "1";
@@ -86,13 +113,18 @@ class ExternalNamespacePersistServiceTest {
         String namespaceName = "namespaceName";
         String namespaceDesc = "namespaceDesc";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
+        when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
+        when(tenantInfoMapper.insert(any())).thenReturn("INSERT INTO tenant_info ...");
+
         externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
                 System.currentTimeMillis());
-        
-        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong())).thenThrow(
-                new NJdbcException("test"));
+
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(),
+                anyLong())).thenThrow(
+                        new NJdbcException("test"));
         assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
+                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
+                        namespaceDesc, "nacos",
                         System.currentTimeMillis()));
         
     }
@@ -102,11 +134,14 @@ class ExternalNamespacePersistServiceTest {
         String kp = "1";
         String namespaceId = "namespaceId";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        
+        when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
+        when(tenantInfoMapper.delete(any())).thenReturn("DELETE FROM tenant_info ...");
+
         externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId);
-        
+
         when(jt.update(anyString(), anyString(), anyString())).thenThrow(new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId));
+        assertThrows(CannotGetJdbcConnectionException.class,
+                () -> externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId));
     }
     
     @Test
@@ -116,17 +151,25 @@ class ExternalNamespacePersistServiceTest {
         String namespaceName = "namespaceName";
         String namespaceDesc = "namespaceDesc";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
+        when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
+        when(tenantInfoMapper.update(any(), any())).thenReturn("UPDATE tenant_info ...");
+
         externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc);
-        
-        when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString())).thenThrow(new NJdbcException("test"));
+
+        when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString()))
+                .thenThrow(new NJdbcException("test"));
         assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc));
+                () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
+                        namespaceDesc));
     }
     
     @Test
     void findTenantByKpTest() {
         String kp = "1";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
+        when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
+        when(tenantInfoMapper.select(any(), any())).thenReturn("SELECT ...");
+
         List<TenantInfo> tenantInfoList = new ArrayList<>(1);
         tenantInfoList.add(new TenantInfo());
         
@@ -153,6 +196,9 @@ class ExternalNamespacePersistServiceTest {
         String kp = "1";
         String namespaceId = "namespaceId";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
+        when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
+        when(tenantInfoMapper.select(any(), any())).thenReturn("SELECT ...");
+
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(namespaceId);
         
@@ -207,10 +253,13 @@ class ExternalNamespacePersistServiceTest {
         String tenantId = "tenantId";
         
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        
-        assertThrows(IllegalArgumentException.class, () -> externalNamespacePersistService.tenantInfoCountByTenantId(null));
-        
-        when(jt.queryForObject(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(null);
+        when(mapperManager.findMapper(anyString(), anyString())).thenReturn(tenantInfoMapper);
+        when(tenantInfoMapper.count(any())).thenReturn("SELECT COUNT(*) ...");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> externalNamespacePersistService.tenantInfoCountByTenantId(null));
+
+        when(jt.queryForObject(anyString(), eq(new String[] { tenantId }), eq(Integer.class))).thenReturn(null);
         int i = externalNamespacePersistService.tenantInfoCountByTenantId(tenantId);
         assertEquals(0, i);
         

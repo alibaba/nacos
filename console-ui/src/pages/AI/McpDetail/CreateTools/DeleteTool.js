@@ -85,3 +85,11 @@ const DeleteTool = props => {
 };
 
 export default DeleteTool;
+
+DeleteTool.propTypes = {
+  record: PropTypes.object,
+  locale: PropTypes.object,
+  getServerDetail: PropTypes.func,
+  serverConfig: PropTypes.object,
+  onChange: PropTypes.func,
+};

@@ -32,6 +32,7 @@
     <modules>
         <module>nacos-default-control-plugin</module>
         <module>nacos-default-auth-plugin</module>
+        <module>nacos-default-datasource-plugin</module>
         <module>nacos-default-plugin-all</module>
     </modules>
 </project>

@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming;
 
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,13 +57,10 @@ public abstract class BaseTest {
     
     @Mock
     protected DistroMapper distroMapper;
-    
+
     @Spy
     protected SwitchDomain switchDomain;
-    
-    @Mock
-    protected UdpPushService pushService;
-    
+
     @Spy
     protected MockEnvironment environment;
     
@@ -82,15 +78,11 @@ public abstract class BaseTest {
         }
         return builder;
     }
-    
-    protected void mockInjectPushServer() {
-        doReturn(pushService).when(context).getBean(UdpPushService.class);
-    }
-    
+
     protected void mockInjectSwitchDomain() {
         doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
     }
-    
+
     protected void mockInjectDistroMapper() {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
     }
