@@ -43,9 +43,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @NacosWebBean
 public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshedEvent> {
-
+    
     private volatile AtomicBoolean isInit = new AtomicBoolean(false);
-
+    
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         // ContextRefreshedEvent may be triggered twice in Spring Boot:
@@ -54,12 +54,12 @@ public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshe
         // We should only process the root context to avoid duplicate registration
         ApplicationContext context = event.getApplicationContext();
         ApplicationContext parent = context.getParent();
-
+        
         // Only process root context (parent == null) and ensure only executed once
         if (parent != null || !isInit.compareAndSet(false, true)) {
             return;
         }
-
+        
         try {
             RequestMappingHandlerMapping requestMapping = context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
             Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMapping.getHandlerMethods();

@@ -29,14 +29,7 @@ import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-
-import jakarta.servlet.AsyncContext;
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.hc.core5.http.HttpStatus;
@@ -52,11 +45,11 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class NacosHttpTpsFilter implements Filter {
-
+    
     private ControllerMethodsCache controllerMethodsCache;
     
     private TpsControlManager tpsControlManager;
-
+    
     public NacosHttpTpsFilter(ControllerMethodsCache controllerMethodsCache) {
         this.controllerMethodsCache = controllerMethodsCache;
     }
@@ -119,9 +112,9 @@ public class NacosHttpTpsFilter implements Filter {
     public void destroy() {
         Filter.super.destroy();
     }
-
+    
     void generate429Response(HttpServletRequest request, HttpServletResponse response, String message,
-            AsyncContext asyncContext) {
+                             AsyncContext asyncContext) {
         
         try {
             // Disable cache.
@@ -131,13 +124,13 @@ public class NacosHttpTpsFilter implements Filter {
             response.setStatus(HttpStatus.SC_TOO_MANY_REQUESTS);
             response.getOutputStream().println(message);
             asyncContext.complete();
-
+            
             recordHttpMetrics(request, HttpStatus.SC_TOO_MANY_REQUESTS);
         } catch (Exception ex) {
             Loggers.TPS.error("Error to generate tps 503 response", ex);
         }
     }
-
+    
     private void recordHttpMetrics(HttpServletRequest request, int status) {
         String method = request.getMethod();
         String uri = request.getRequestURI();
@@ -153,5 +146,5 @@ public class NacosHttpTpsFilter implements Filter {
         );
         timer.record(0, TimeUnit.NANOSECONDS);
     }
-
+    
 }
