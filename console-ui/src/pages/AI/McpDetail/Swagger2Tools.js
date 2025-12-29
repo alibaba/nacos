@@ -3,7 +3,7 @@
  * @returns {object} MCP config object
  * @param openapi
  */
-export function extractToolsFromOpenAPI(openapi) {
+export default function extractToolsFromOpenAPI(openapi) {
   const mcpConfig = {
     server: {
       name: 'openapi-server',
@@ -14,16 +14,18 @@ export function extractToolsFromOpenAPI(openapi) {
 
   // Process security schemes
   if (openapi.components && openapi.components.securitySchemes) {
-    const securitySchemes = openapi.components.securitySchemes;
+    const { securitySchemes } = openapi.components;
     for (const name in securitySchemes) {
-      const scheme = securitySchemes[name];
-      mcpConfig.server.securitySchemes.push({
-        id: name,
-        type: scheme.type,
-        scheme: scheme.scheme,
-        in: scheme.in,
-        name: scheme.name,
-      });
+      if (Object.prototype.hasOwnProperty.call(securitySchemes, name)) {
+        const scheme = securitySchemes[name];
+        mcpConfig.server.securitySchemes.push({
+          id: name,
+          type: scheme.type,
+          scheme: scheme.scheme,
+          in: scheme.in,
+          name: scheme.name,
+        });
+      }
     }
     // Sort security schemes by ID for consistent output
     mcpConfig.server.securitySchemes.sort((a, b) => a.id.localeCompare(b.id));
@@ -32,14 +34,18 @@ export function extractToolsFromOpenAPI(openapi) {
   // Process paths and operations
   if (openapi.paths) {
     for (const path in openapi.paths) {
-      const pathItem = openapi.paths[path];
-      const operations = getOperations(pathItem);
-      for (const method in operations) {
-        const operation = operations[method];
-        const tool = convertOperation(path, method, operation, openapi.servers);
-        // Create response template
-        tool.responseTemplate = createResponseTemplate(operation);
-        mcpConfig.tools.push(tool);
+      if (Object.prototype.hasOwnProperty.call(openapi.paths, path)) {
+        const pathItem = openapi.paths[path];
+        const operations = getOperations(pathItem);
+        for (const method in operations) {
+          if (Object.prototype.hasOwnProperty.call(operations, method)) {
+            const operation = operations[method];
+            const tool = convertOperation(path, method, operation, openapi.servers);
+            // Create response template
+            tool.responseTemplate = createResponseTemplate(operation);
+            mcpConfig.tools.push(tool);
+          }
+        }
       }
     }
   }
@@ -49,7 +55,6 @@ export function extractToolsFromOpenAPI(openapi) {
   return mcpConfig;
 }
 
-// 保持其余函数不变
 function getOperations(pathItem) {
   const operations = {};
 
@@ -107,7 +112,7 @@ function convertOperation(path, method, operation, servers) {
 
       // Set the type based on the schema
       if (param.schema) {
-        const schema = param.schema;
+        const { schema } = param;
         // Set the type based on the schema type
         arg.type = schema.type;
 
@@ -127,13 +132,15 @@ function convertOperation(path, method, operation, servers) {
         if (schema.type === 'object' && schema.properties) {
           arg.properties = {};
           for (const propName in schema.properties) {
-            const prop = schema.properties[propName];
-            if (prop) {
-              arg.properties[propName] = {
-                type: prop.type,
-              };
-              if (prop.description) {
-                arg.properties[propName].description = prop.description;
+            if (Object.prototype.hasOwnProperty.call(schema.properties, propName)) {
+              const prop = schema.properties[propName];
+              if (prop) {
+                arg.properties[propName] = {
+                  type: prop.type,
+                };
+                if (prop.description) {
+                  arg.properties[propName].description = prop.description;
+                }
               }
             }
           }
@@ -147,88 +154,94 @@ function convertOperation(path, method, operation, servers) {
   // Convert request body to arguments
   if (operation.requestBody && operation.requestBody.content) {
     for (const contentType in operation.requestBody.content) {
-      const mediaType = operation.requestBody.content[contentType];
-      if (mediaType.schema) {
-        const schema = mediaType.schema;
+      if (Object.prototype.hasOwnProperty.call(operation.requestBody.content, contentType)) {
+        const mediaType = operation.requestBody.content[contentType];
+        if (mediaType.schema) {
+          const { schema } = mediaType;
 
-        // For JSON and form content types, convert the schema to arguments
-        if (
-          contentType.includes('application/json') ||
-          contentType.includes('application/x-www-form-urlencoded')
-        ) {
-          // For object type, convert each property to an argument
-          if (schema.type === 'object' && schema.properties) {
-            for (const propName in schema.properties) {
-              const prop = schema.properties[propName];
-              if (!prop) {
-                continue;
-              }
+          // For JSON and form content types, convert the schema to arguments
+          if (
+            contentType.includes('application/json') ||
+            contentType.includes('application/x-www-form-urlencoded')
+          ) {
+            // For object type, convert each property to an argument
+            if (schema.type === 'object' && schema.properties) {
+              for (const propName in schema.properties) {
+                if (Object.prototype.hasOwnProperty.call(schema.properties, propName)) {
+                  const prop = schema.properties[propName];
+                  if (!prop) {
+                    continue;
+                  }
 
-              const arg = {
-                name: propName,
-                description: prop.description || '',
-                type: prop.type,
-                required: schema.required && schema.required.includes(propName),
-                position: 'body',
-              };
+                  const arg = {
+                    name: propName,
+                    description: prop.description || '',
+                    type: prop.type,
+                    required: schema.required && schema.required.includes(propName),
+                    position: 'body',
+                  };
 
-              // Handle enum values
-              if (prop.enum && prop.enum.length > 0) {
-                arg.enum = prop.enum;
-              }
+                  // Handle enum values
+                  if (prop.enum && prop.enum.length > 0) {
+                    arg.enum = prop.enum;
+                  }
 
-              // Handle array type
-              if (prop.type === 'array' && prop.items) {
-                arg.items = {
-                  type: prop.items.type,
-                  description: prop.items.description || '',
-                };
-
-                if (prop.items.minItems > 0) {
-                  arg.items.minItems = prop.items.minItems;
-                }
-
-                if (prop.items.type === 'object' && prop.items.properties) {
-                  arg.items.properties = prop.items.properties;
-                }
-              }
-
-              // Handle object type
-              if (prop.type === 'object' && prop.properties) {
-                arg.properties = {};
-                for (const subPropName in prop.properties) {
-                  const subProp = prop.properties[subPropName];
-                  if (subProp) {
-                    const subPropObj = {
-                      type: subProp.type,
-                      description: subProp.description || '',
+                  // Handle array type
+                  if (prop.type === 'array' && prop.items) {
+                    arg.items = {
+                      type: prop.items.type,
+                      description: prop.items.description || '',
                     };
 
-                    if (subProp.default !== undefined) {
-                      subPropObj.default = subProp.default;
+                    if (prop.items.minItems > 0) {
+                      arg.items.minItems = prop.items.minItems;
                     }
 
-                    if (subProp.enum) {
-                      subPropObj.enum = subProp.enum;
+                    if (prop.items.type === 'object' && prop.items.properties) {
+                      arg.items.properties = prop.items.properties;
                     }
-
-                    arg.properties[subPropName] = subPropObj;
                   }
+
+                  // Handle object type
+                  if (prop.type === 'object' && prop.properties) {
+                    arg.properties = {};
+                    for (const subPropName in prop.properties) {
+                      if (Object.prototype.hasOwnProperty.call(prop.properties, subPropName)) {
+                        const subProp = prop.properties[subPropName];
+                        if (subProp) {
+                          const subPropObj = {
+                            type: subProp.type,
+                            description: subProp.description || '',
+                          };
+
+                          if (subProp.default !== undefined) {
+                            subPropObj.default = subProp.default;
+                          }
+
+                          if (subProp.enum) {
+                            subPropObj.enum = subProp.enum;
+                          }
+
+                          arg.properties[subPropName] = subPropObj;
+                        }
+                      }
+                    }
+                  }
+
+                  // Handle allOf
+                  if (!prop.type && prop.allOf && prop.allOf.length === 1) {
+                    arg.type = 'object';
+                    arg.properties = allOfHandle(prop.allOf[0]);
+                  }
+
+                  tool.args.push(arg);
                 }
               }
-
-              // Handle allOf
-              if (!prop.type && prop.allOf && prop.allOf.length === 1) {
-                arg.type = 'object';
-                arg.properties = allOfHandle(prop.allOf[0]);
-              }
-
-              tool.args.push(arg);
             }
           }
         }
+        break; // Only use the first content type
       }
-      break; // Only use the first content type
     }
   }
 
@@ -243,20 +256,22 @@ function allOfHandle(schema) {
 
   if (schema.type === 'object' && schema.properties) {
     for (const propName in schema.properties) {
-      const prop = schema.properties[propName];
-      if (prop) {
-        properties[propName] = {
-          type: prop.type,
-        };
+      if (Object.prototype.hasOwnProperty.call(schema.properties, propName)) {
+        const prop = schema.properties[propName];
+        if (prop) {
+          properties[propName] = {
+            type: prop.type,
+          };
 
-        if (prop.description) {
-          properties[propName].description = prop.description;
-        }
+          if (prop.description) {
+            properties[propName].description = prop.description;
+          }
 
-        // Handle nested allOf
-        if (!prop.type && prop.allOf && prop.allOf.length === 1) {
-          properties[propName].type = 'object';
-          properties[propName].properties = allOfHandle(prop.allOf[0]);
+          // Handle nested allOf
+          if (!prop.type && prop.allOf && prop.allOf.length === 1) {
+            properties[propName].type = 'object';
+            properties[propName].properties = allOfHandle(prop.allOf[0]);
+          }
         }
       }
     }
@@ -281,7 +296,7 @@ function createRequestTemplate(path, method, operation, servers) {
   }
   // Ensure path starts with a single slash and collapse duplicates
   const normalizedPath =
-    typeof path === 'string' ? ('/' + path).replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
+    typeof path === 'string' ? `/${path}`.replace(/\/{2,}/g, '/').replace(/^\/+/, '/') : '';
   fullUrl = serverURL + normalizedPath;
 
   const template = {
@@ -294,8 +309,10 @@ function createRequestTemplate(path, method, operation, servers) {
   if (operation.security && operation.security.length > 0) {
     for (const securityRequirement of operation.security) {
       for (const schemeName in securityRequirement) {
-        template.security = { id: schemeName };
-        break;
+        if (Object.prototype.hasOwnProperty.call(securityRequirement, schemeName)) {
+          template.security = { id: schemeName };
+          break;
+        }
       }
     }
   }
@@ -303,11 +320,13 @@ function createRequestTemplate(path, method, operation, servers) {
   // Add Content-Type header based on request body content type
   if (operation.requestBody) {
     for (const contentType in operation.requestBody.content) {
-      template.headers.push({
-        key: 'Content-Type',
-        value: contentType,
-      });
-      break; // Only use the first content type
+      if (Object.prototype.hasOwnProperty.call(operation.requestBody.content, contentType)) {
+        template.headers.push({
+          key: 'Content-Type',
+          value: contentType,
+        });
+        break; // Only use the first content type
+      }
     }
   }
 
@@ -353,7 +372,7 @@ function createResponseTemplate(operation) {
     }
 
     template.prependBody += `> Content-Type: ${contentType}\n\n`;
-    const schema = mediaType.schema;
+    const { schema } = mediaType;
 
     // Generate field descriptions using recursive function
     if (schema.type === 'array' && schema.items) {
@@ -467,9 +486,3 @@ function processSchemaProperties(template, schema, path, depth, maxDepth) {
     }
   }
 }
-
-// Example usage
-// const fs = require('fs');
-// const openAPIDocString = fs.readFileSync('path/to/openapi.json', 'utf8');
-// const mcpConfig = extractToolsFromOpenAPI(openAPIDocString);
-// fs.writeFileSync('path/to/mcp-server.json', JSON.stringify(mcpConfig, null, 2));

@@ -46,6 +46,16 @@ class McpToolTest extends BasicRequestTest {
         
         inputSchema.put("properties", properties);
         mcpTool.setInputSchema(inputSchema);
+
+        Map<String, Object> outputSchema = new HashMap<>();
+        outputSchema.put("type", "object");
+        Map<String, Object> outputProperties = new HashMap<>();
+        Map<String, String> resultSchema = new HashMap<>();
+        resultSchema.put("type", "string");
+        resultSchema.put("description", "Result");
+        outputProperties.put("result", resultSchema);
+        outputSchema.put("properties", outputProperties);
+        mcpTool.setOutputSchema(outputSchema);
         
         String json = mapper.writeValueAsString(mcpTool);
         assertTrue(json.contains("\"name\":\"testTool\""));
@@ -56,13 +66,19 @@ class McpToolTest extends BasicRequestTest {
         assertTrue(json.contains("\"a\":{"));
         assertTrue(json.contains("\"type\":\"string\""));
         assertTrue(json.contains("\"description\":\"Parameter A\""));
+
+        assertTrue(json.contains("\"outputSchema\":{"));
+        assertTrue(json.contains("\"result\":{"));
+        assertTrue(json.contains("\"description\":\"Result\""));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"name\":\"testTool\",\"description\":\"A test tool for MCP\","
                 + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\","
-                + "\"description\":\"Parameter A\"}}}}";
+                + "\"description\":\"Parameter A\"}}},"
+                + "\"outputSchema\":{\"type\":\"object\",\"properties\":{\"result\":{\"type\":\"string\","
+                + "\"description\":\"Result\"}}}}";
         
         McpTool result = mapper.readValue(json, McpTool.class);
         assertNotNull(result);
@@ -76,5 +92,10 @@ class McpToolTest extends BasicRequestTest {
         Map<String, String> paramA = (Map<String, String>) properties.get("a");
         assertEquals("string", paramA.get("type"));
         assertEquals("Parameter A", paramA.get("description"));
+
+        assertNotNull(result.getOutputSchema());
+        assertEquals("object", result.getOutputSchema().get("type"));
+        Map<String, Object> outProps = (Map<String, Object>) result.getOutputSchema().get("properties");
+        assertNotNull(outProps.get("result"));
     }
 }

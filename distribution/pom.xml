@@ -36,6 +36,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-bootstrap</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-default-plugin-all</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     
     <profiles>
