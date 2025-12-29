@@ -39,6 +39,8 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.hc.core5.http.HttpStatus;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -50,8 +52,6 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class NacosHttpTpsFilter implements Filter {
-
-    private static final int TOO_MANY_REQUESTS_ERROR_CODE = 429;
 
     private ControllerMethodsCache controllerMethodsCache;
     
@@ -128,11 +128,11 @@ public class NacosHttpTpsFilter implements Filter {
             response.setHeader("Pragma", "no-cache");
             response.setDateHeader("Expires", 0);
             response.setHeader("Cache-Control", "no-cache,no-store");
-            response.setStatus(TOO_MANY_REQUESTS_ERROR_CODE);
+            response.setStatus(HttpStatus.SC_TOO_MANY_REQUESTS);
             response.getOutputStream().println(message);
             asyncContext.complete();
 
-            recordHttpMetrics(request, TOO_MANY_REQUESTS_ERROR_CODE);
+            recordHttpMetrics(request, HttpStatus.SC_TOO_MANY_REQUESTS);
         } catch (Exception ex) {
             Loggers.TPS.error("Error to generate tps 503 response", ex);
         }
