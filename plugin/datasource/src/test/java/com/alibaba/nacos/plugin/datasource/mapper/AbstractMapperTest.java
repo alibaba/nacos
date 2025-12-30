@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +44,11 @@ class AbstractMapperTest {
 
             @Override
             public String getFunction(String functionName) {
-                return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
+                // Return NOW(3) for MySQL-style function mapping in tests
+                if ("NOW()".equals(functionName)) {
+                    return "NOW(3)";
+                }
+                return functionName;
             }
         };
     }

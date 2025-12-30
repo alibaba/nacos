@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.datasource.manager;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
-import com.alibaba.nacos.plugin.datasource.dialect.DefaultDatabaseDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +55,14 @@ public class DatabaseDialectManager {
     public DatabaseDialect getDialect(String databaseType) {
         DatabaseDialect databaseDialect = SUPPORT_DIALECT_MAP.get(databaseType);
         if (databaseDialect == null) {
-            return new DefaultDatabaseDialect();
+            LOGGER.warn("[DatabaseDialectManager] No dialect found for type: {}, using first available dialect as fallback",
+                    databaseType);
+            // Fallback to any available dialect, prefer one that is loaded via SPI
+            if (!SUPPORT_DIALECT_MAP.isEmpty()) {
+                return SUPPORT_DIALECT_MAP.values().iterator().next();
+            }
+            throw new IllegalStateException("No DatabaseDialect implementation found. "
+                    + "Please ensure datasource plugin is properly loaded.");
         }
         return databaseDialect;
     }

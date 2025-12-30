@@ -33,8 +33,8 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -95,7 +95,7 @@ public class NamespaceControllerV2 {
      * @return namespace all info
      */
     @GetMapping()
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+    @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE)
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Namespace> getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
@@ -109,7 +109,7 @@ public class NamespaceControllerV2 {
      * @return whether create ok
      */
     @PostMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+    @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "POST ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws NacosException {
@@ -153,7 +153,7 @@ public class NamespaceControllerV2 {
      * @return whether edit ok
      */
     @PutMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+    @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "PUT ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Boolean> editNamespace(NamespaceForm namespaceForm) throws NacosException {
@@ -174,7 +174,7 @@ public class NamespaceControllerV2 {
      * @return whether delete ok
      */
     @DeleteMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+    @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "DELETE ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
