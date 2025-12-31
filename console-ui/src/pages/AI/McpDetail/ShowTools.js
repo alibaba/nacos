@@ -557,6 +557,79 @@ const ShowTools = props => {
                       </div>
                     )}
 
+                    {/* Meta 信息 */}
+                    {tool._meta && Object.keys(tool._meta).length > 0 && (
+                      <div className="parameters-section">
+                        <h3 className="parameters-section-title">
+                          {locale?.metaField || 'Meta'}
+                          <span className="parameters-section-count">
+                            (MCP _meta)
+                          </span>
+                        </h3>
+                        <div className="content-box" style={{ backgroundColor: '#f8f9fa' }}>
+                          <pre style={{
+                            margin: 0,
+                            padding: '12px',
+                            fontSize: '13px',
+                            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            backgroundColor: 'transparent'
+                          }}>
+                            {JSON.stringify(tool._meta, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Annotations 信息 */}
+                    {tool.annotations && (
+                      <div className="parameters-section">
+                        <h3 className="parameters-section-title">
+                          {locale?.annotationsConfig || 'Annotations'}
+                          <span className="parameters-section-count">
+                            (Tool Hints)
+                          </span>
+                        </h3>
+                        <div className="content-box" style={{ backgroundColor: '#f8f9fa' }}>
+                          <div style={{ padding: '12px' }}>
+                            {tool.annotations.title && (
+                              <div className="kv-row" style={{ marginBottom: '8px' }}>
+                                <span className="kv-label" style={{ fontWeight: '500' }}>Title: </span>
+                                <span className="kv-value">{tool.annotations.title}</span>
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                              <div className="kv-row">
+                                <span className="kv-label">Read Only: </span>
+                                <span className={`kv-value ${tool.annotations.readOnlyHint ? 'green' : ''}`}>
+                                  {tool.annotations.readOnlyHint ? 'Yes' : 'No'}
+                                </span>
+                              </div>
+                              <div className="kv-row">
+                                <span className="kv-label">Destructive: </span>
+                                <span className={`kv-value ${tool.annotations.destructiveHint ? 'red' : 'green'}`}>
+                                  {tool.annotations.destructiveHint ? 'Yes' : 'No'}
+                                </span>
+                              </div>
+                              <div className="kv-row">
+                                <span className="kv-label">Idempotent: </span>
+                                <span className={`kv-value ${tool.annotations.idempotentHint ? 'green' : ''}`}>
+                                  {tool.annotations.idempotentHint ? 'Yes' : 'No'}
+                                </span>
+                              </div>
+                              <div className="kv-row">
+                                <span className="kv-label">Open World: </span>
+                                <span className="kv-value">
+                                  {tool.annotations.openWorldHint ? 'Yes' : 'No'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Tool 参数配置 */}
                     {tool.inputSchema?.properties &&
                       Object.keys(tool.inputSchema.properties).length > 0 && (

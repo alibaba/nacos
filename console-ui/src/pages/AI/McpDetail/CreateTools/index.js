@@ -15,6 +15,8 @@ import BasicInfo from './BasicInfo';
 import InputSchema from './InputSchema';
 import OutputSchema from './OutputSchema';
 import AdvancedConfig from './AdvancedConfig';
+import MetaEditor from './MetaEditor';
+import AnnotationsEditor from './AnnotationsEditor';
 import { convertPropertiesToTreeData } from './utils';
 import './CreateTools.css';
 
@@ -45,7 +47,7 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [initialTemplate, setInitialTemplate] = useState('');
 
   const openVisible = ({ record, type, toolsMeta }) => {
-    const { name, description, inputSchema, outputSchema } = record;
+    const { name, description, inputSchema, outputSchema, _meta, annotations } = record;
     setType(type);
 
     // --- Input Schema Initialization ---
@@ -173,6 +175,16 @@ const CreateTools = React.forwardRef((props, ref) => {
 
     setInitialTemplate(templatesStr);
 
+    // Initialize meta field
+    let metaStr = '';
+    if (_meta && typeof _meta === 'object' && Object.keys(_meta).length > 0) {
+      try {
+        metaStr = JSON.stringify(_meta, null, 2);
+      } catch (e) {
+        metaStr = '';
+      }
+    }
+
     field.setValues({
       name,
       description,
@@ -187,6 +199,13 @@ const CreateTools = React.forwardRef((props, ref) => {
       securitySchemeId: extractedSecuritySchemeId || toolsMeta?.securitySchemeId || '',
       clientSecuritySchemeId:
         extractedClientSecuritySchemeId || toolsMeta?.clientSecuritySchemeId || '',
+      meta: metaStr,
+      // Initialize annotations fields
+      annotationsTitle: annotations?.title || '',
+      readOnlyHint: annotations?.readOnlyHint ?? false,
+      destructiveHint: annotations?.destructiveHint ?? true,
+      idempotentHint: annotations?.idempotentHint ?? false,
+      openWorldHint: annotations?.openWorldHint ?? true,
     });
 
     setRefreshKey(prev => prev + 1);
@@ -254,6 +273,48 @@ const CreateTools = React.forwardRef((props, ref) => {
           required: values?.required,
         },
       };
+
+      // Handle meta field (_meta in JSON)
+      if (values?.meta && values.meta.trim()) {
+        try {
+          const parsedMeta = JSON.parse(values.meta);
+          if (parsedMeta && typeof parsedMeta === 'object' && Object.keys(parsedMeta).length > 0) {
+            _toolitem._meta = parsedMeta;
+          }
+        } catch (e) {
+          Message.error(locale.metaJsonError || 'Meta field JSON format error');
+          return;
+        }
+      }
+
+      // Handle annotations field
+      const hasAnnotations = values?.annotationsTitle ||
+        values?.readOnlyHint !== undefined ||
+        values?.destructiveHint !== undefined ||
+        values?.idempotentHint !== undefined ||
+        values?.openWorldHint !== undefined;
+
+      if (hasAnnotations) {
+        const annotations = {};
+        if (values?.annotationsTitle) {
+          annotations.title = values.annotationsTitle;
+        }
+        if (values?.readOnlyHint !== undefined) {
+          annotations.readOnlyHint = values.readOnlyHint;
+        }
+        if (values?.destructiveHint !== undefined) {
+          annotations.destructiveHint = values.destructiveHint;
+        }
+        if (values?.idempotentHint !== undefined) {
+          annotations.idempotentHint = values.idempotentHint;
+        }
+        if (values?.openWorldHint !== undefined) {
+          annotations.openWorldHint = values.openWorldHint;
+        }
+        if (Object.keys(annotations).length > 0) {
+          _toolitem.annotations = annotations;
+        }
+      }
 
       const outputProperties = values?.outputToolParams;
       const hasOutputProperties =
@@ -424,6 +485,22 @@ const CreateTools = React.forwardRef((props, ref) => {
                     onlyEditRuntimeInfo={onlyEditRuntimeInfo}
                     initialRawData={initialOutputData.rawData}
                     initialArgs={initialOutputData.args}
+                    refreshKey={refreshKey}
+                  />
+                </Tab.Item>
+                <Tab.Item title={locale.metaConfig || 'Meta'} key="meta">
+                  <MetaEditor
+                    locale={locale}
+                    field={field}
+                    isPreview={isPreview}
+                    refreshKey={refreshKey}
+                  />
+                </Tab.Item>
+                <Tab.Item title={locale.annotationsConfig || 'Annotations'} key="annotations">
+                  <AnnotationsEditor
+                    locale={locale}
+                    field={field}
+                    isPreview={isPreview}
                     refreshKey={refreshKey}
                   />
                 </Tab.Item>
