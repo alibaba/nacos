@@ -16,7 +16,6 @@ jobs:
           days-before-issue-stale: 7
           days-before-issue-close: 7
           stale-issue-label: "expired"
-          close-issue-label: "expired"
           stale-issue-message: "This issue has been open 7 days with no activity. This will be closed in 7 days."
           close-issue-message: "This issue was closed because it has been inactive for 7 days since being marked as expired."
           days-before-pr-stale: -1
