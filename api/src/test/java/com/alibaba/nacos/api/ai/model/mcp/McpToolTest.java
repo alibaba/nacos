@@ -28,22 +28,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpToolTest extends BasicRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         McpTool mcpTool = new McpTool();
         mcpTool.setName("testTool");
         mcpTool.setDescription("A test tool for MCP");
-
+        
         Map<String, Object> inputSchema = new HashMap<>();
         inputSchema.put("type", "object");
-
+        
         Map<String, Object> properties = new HashMap<>();
         Map<String, String> paramA = new HashMap<>();
         paramA.put("type", "string");
         paramA.put("description", "Parameter A");
         properties.put("a", paramA);
-
+        
         inputSchema.put("properties", properties);
         mcpTool.setInputSchema(inputSchema);
 
@@ -71,7 +71,7 @@ class McpToolTest extends BasicRequestTest {
         annotations.setIdempotentHint(true);
         annotations.setOpenWorldHint(false);
         mcpTool.setAnnotations(annotations);
-
+        
         String json = mapper.writeValueAsString(mcpTool);
         assertTrue(json.contains("\"name\":\"testTool\""));
         assertTrue(json.contains("\"description\":\"A test tool for MCP\""));
@@ -99,7 +99,7 @@ class McpToolTest extends BasicRequestTest {
         assertTrue(json.contains("\"idempotentHint\":true"));
         assertTrue(json.contains("\"openWorldHint\":false"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"name\":\"testTool\",\"description\":\"A test tool for MCP\","
