@@ -59,9 +59,21 @@ class PluginStatePersistenceTest {
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         System.setProperty("nacos.home", tempDir.toString());
         pluginDataDir = Paths.get(tempDir.toString(), "data", "plugin");
+        // Clean up persistence files before each test to ensure isolation
+        if (Files.exists(pluginDataDir)) {
+            Files.walk(pluginDataDir)
+                    .sorted((a, b) -> -a.compareTo(b))
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                    });
+        }
         persistence = new PluginStatePersistence();
     }
 
