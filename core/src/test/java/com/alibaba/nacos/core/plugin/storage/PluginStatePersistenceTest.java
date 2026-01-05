@@ -60,7 +60,9 @@ class PluginStatePersistenceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        System.setProperty("nacos.home", tempDir.toString());
+        // Use EnvUtil.setNacosHomePath to set the static cached path directly
+        // This ensures proper isolation in CI parallel test environments
+        EnvUtil.setNacosHomePath(tempDir.toString());
         pluginDataDir = Paths.get(tempDir.toString(), "data", "plugin");
         // Clean up persistence files before each test to ensure isolation
         if (Files.exists(pluginDataDir)) {
@@ -79,7 +81,8 @@ class PluginStatePersistenceTest {
 
     @AfterEach
     void tearDown() {
-        System.clearProperty("nacos.home");
+        // Clear the static cached path to avoid affecting other tests
+        EnvUtil.setNacosHomePath(null);
     }
 
     @Test
