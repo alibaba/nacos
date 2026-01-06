@@ -39,16 +39,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@link PluginStatePersistence} unit test.
+ * {@link FilePluginStatePersistenceImpl} unit test.
  *
  * @author WangzJi
  */
-class PluginStatePersistenceTest {
+class FilePluginStatePersistenceImplTest {
 
     @TempDir
     Path tempDir;
 
-    private PluginStatePersistence persistence;
+    private FilePluginStatePersistenceImpl persistence;
 
     private Path pluginDataDir;
 
@@ -76,7 +76,7 @@ class PluginStatePersistenceTest {
                         }
                     });
         }
-        persistence = new PluginStatePersistence();
+        persistence = new FilePluginStatePersistenceImpl();
     }
 
     @AfterEach

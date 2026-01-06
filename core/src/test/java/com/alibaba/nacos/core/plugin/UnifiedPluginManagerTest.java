@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.plugin.ConfigItemDefinition;
 import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
-import com.alibaba.nacos.core.plugin.storage.PluginStatePersistence;
+import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,7 +61,7 @@ import static org.mockito.Mockito.when;
 class UnifiedPluginManagerTest {
 
     @Mock
-    private PluginStatePersistence persistence;
+    private PluginStatePersistenceService persistence;
 
     @Mock
     private ApplicationReadyEvent applicationReadyEvent;

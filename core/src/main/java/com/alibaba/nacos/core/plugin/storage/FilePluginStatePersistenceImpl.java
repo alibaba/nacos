@@ -34,16 +34,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Plugin state persistence.
- * Provides file-based persistence for plugin states and configurations.
+ * File-based implementation of plugin state persistence service.
+ * Stores plugin states and configurations as JSON files in {NACOS_HOME}/data/plugin/.
  *
  * @author WangzJi
  * @since 3.2.0
  */
 @Component
-public class PluginStatePersistence {
+public class FilePluginStatePersistenceImpl implements PluginStatePersistenceService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PluginStatePersistence.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilePluginStatePersistenceImpl.class);
 
     private static final String PLUGIN_STATE_FILE = "plugin-states.json";
 
@@ -57,7 +57,7 @@ public class PluginStatePersistence {
 
     private final Object configLock = new Object();
 
-    public PluginStatePersistence() {
+    public FilePluginStatePersistenceImpl() {
         this.dataDir = EnvUtil.getNacosHome() + File.separator + "data" + File.separator + PLUGIN_DATA_DIR;
         ensureDataDirExists();
     }
@@ -67,7 +67,7 @@ public class PluginStatePersistence {
         if (!dir.exists()) {
             boolean created = dir.mkdirs();
             if (created) {
-                LOGGER.info("[PluginStatePersistence] Created plugin data directory: {}", dataDir);
+                LOGGER.info("[FilePluginStatePersistenceImpl] Created plugin data directory: {}", dataDir);
             }
         }
     }
@@ -78,15 +78,16 @@ public class PluginStatePersistence {
      * @param pluginId plugin ID
      * @param enabled whether the plugin is enabled
      */
+    @Override
     public void saveState(String pluginId, boolean enabled) {
         synchronized (stateLock) {
             try {
                 Map<String, Boolean> states = loadAllStates();
                 states.put(pluginId, enabled);
                 writeJsonToFile(PLUGIN_STATE_FILE, states, stateLock);
-                LOGGER.debug("[PluginStatePersistence] Saved plugin state: {}={}", pluginId, enabled);
+                LOGGER.debug("[FilePluginStatePersistenceImpl] Saved plugin state: {}={}", pluginId, enabled);
             } catch (Exception e) {
-                LOGGER.error("[PluginStatePersistence] Failed to save plugin state for {}", pluginId, e);
+                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to save plugin state for {}", pluginId, e);
             }
         }
     }
@@ -97,15 +98,16 @@ public class PluginStatePersistence {
      * @param pluginId plugin ID
      * @param config configuration key-value pairs
      */
+    @Override
     public void saveConfig(String pluginId, Map<String, String> config) {
         synchronized (configLock) {
             try {
                 Map<String, Map<String, String>> configs = loadAllConfigs();
                 configs.put(pluginId, config);
                 writeJsonToFile(PLUGIN_CONFIG_FILE, configs, configLock);
-                LOGGER.debug("[PluginStatePersistence] Saved plugin config for {}", pluginId);
+                LOGGER.debug("[FilePluginStatePersistenceImpl] Saved plugin config for {}", pluginId);
             } catch (Exception e) {
-                LOGGER.error("[PluginStatePersistence] Failed to save plugin config for {}", pluginId, e);
+                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to save plugin config for {}", pluginId, e);
             }
         }
     }
@@ -115,6 +117,7 @@ public class PluginStatePersistence {
      *
      * @return map of plugin ID to enabled state
      */
+    @Override
     public Map<String, Boolean> loadAllStates() {
         synchronized (stateLock) {
             return readJsonFromFile(PLUGIN_STATE_FILE, new TypeReference<Map<String, Boolean>>() {
@@ -127,6 +130,7 @@ public class PluginStatePersistence {
      *
      * @return map of plugin ID to configuration
      */
+    @Override
     public Map<String, Map<String, String>> loadAllConfigs() {
         synchronized (configLock) {
             return readJsonFromFile(PLUGIN_CONFIG_FILE, new TypeReference<Map<String, Map<String, String>>>() {
@@ -139,15 +143,16 @@ public class PluginStatePersistence {
      *
      * @param pluginId plugin ID
      */
+    @Override
     public void deleteState(String pluginId) {
         synchronized (stateLock) {
             try {
                 Map<String, Boolean> states = loadAllStates();
                 states.remove(pluginId);
                 writeJsonToFile(PLUGIN_STATE_FILE, states, stateLock);
-                LOGGER.debug("[PluginStatePersistence] Deleted plugin state for {}", pluginId);
+                LOGGER.debug("[FilePluginStatePersistenceImpl] Deleted plugin state for {}", pluginId);
             } catch (Exception e) {
-                LOGGER.error("[PluginStatePersistence] Failed to delete plugin state for {}", pluginId, e);
+                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to delete plugin state for {}", pluginId, e);
             }
         }
     }
@@ -157,15 +162,16 @@ public class PluginStatePersistence {
      *
      * @param pluginId plugin ID
      */
+    @Override
     public void deleteConfig(String pluginId) {
         synchronized (configLock) {
             try {
                 Map<String, Map<String, String>> configs = loadAllConfigs();
                 configs.remove(pluginId);
                 writeJsonToFile(PLUGIN_CONFIG_FILE, configs, configLock);
-                LOGGER.debug("[PluginStatePersistence] Deleted plugin config for {}", pluginId);
+                LOGGER.debug("[FilePluginStatePersistenceImpl] Deleted plugin config for {}", pluginId);
             } catch (Exception e) {
-                LOGGER.error("[PluginStatePersistence] Failed to delete plugin config for {}", pluginId, e);
+                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to delete plugin config for {}", pluginId, e);
             }
         }
     }
@@ -183,7 +189,7 @@ public class PluginStatePersistence {
             }
             return JacksonUtils.toObj(content, typeRef);
         } catch (Exception e) {
-            LOGGER.error("[PluginStatePersistence] Failed to read file: {}", fileName, e);
+            LOGGER.error("[FilePluginStatePersistenceImpl] Failed to read file: {}", fileName, e);
             return createEmptyMap(typeRef);
         }
     }
@@ -199,7 +205,7 @@ public class PluginStatePersistence {
             String content = JacksonUtils.toJson(data);
             Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            LOGGER.error("[PluginStatePersistence] Failed to write file: {}", fileName, e);
+            LOGGER.error("[FilePluginStatePersistenceImpl] Failed to write file: {}", fileName, e);
         }
     }
 }

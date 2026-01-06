@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
-import com.alibaba.nacos.core.plugin.storage.PluginStatePersistence;
+import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -76,9 +76,9 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
      */
     private final Map<String, Object> pluginInstances = new ConcurrentHashMap<>();
 
-    private final PluginStatePersistence persistence;
+    private final PluginStatePersistenceService persistence;
 
-    public UnifiedPluginManager(PluginStatePersistence persistence) {
+    public UnifiedPluginManager(PluginStatePersistenceService persistence) {
         this.persistence = persistence;
     }
 
