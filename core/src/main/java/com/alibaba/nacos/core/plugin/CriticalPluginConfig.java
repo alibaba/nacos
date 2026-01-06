@@ -32,8 +32,11 @@ public final class CriticalPluginConfig {
     private static final Set<String> CRITICAL_PLUGINS;
 
     static {
+        // Only datasource dialects are critical - Nacos requires at least one database
+        // backend.
+        // Auth plugins are NOT critical - users can disable default auth to use custom
+        // plugins.
         Set<String> plugins = new HashSet<>();
-        plugins.add("auth:nacos");
         plugins.add("datasource-dialect:mysql");
         plugins.add("datasource-dialect:derby");
         plugins.add("datasource-dialect:postgresql");
