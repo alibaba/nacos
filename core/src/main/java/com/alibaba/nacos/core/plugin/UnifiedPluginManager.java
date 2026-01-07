@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.plugin.PluginStateChecker;
 import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
 import org.slf4j.Logger;
@@ -55,6 +57,31 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UnifiedPluginManager implements PluginStateChecker, ApplicationListener<ApplicationReadyEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UnifiedPluginManager.class);
+
+    /**
+     * Configuration property for auth plugin type.
+     */
+    private static final String AUTH_TYPE_PROPERTY = "nacos.core.auth.system.type";
+
+    /**
+     * Default auth plugin type.
+     */
+    private static final String AUTH_TYPE_DEFAULT = "nacos";
+
+    /**
+     * Configuration property for datasource platform (new).
+     */
+    private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
+
+    /**
+     * Configuration property for datasource platform (legacy).
+     */
+    private static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
+
+    /**
+     * Default datasource platform.
+     */
+    private static final String DATASOURCE_PLATFORM_DEFAULT = "mysql";
 
     /**
      * Plugin registry: pluginId -> PluginInfo.
@@ -237,7 +264,8 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         info.setClassName(instance.getClass().getName());
         info.setCritical(CriticalPluginConfig.isCritical(pluginId));
         info.setLoadTimestamp(System.currentTimeMillis());
-        info.setEnabled(true);
+        boolean defaultEnabled = calculateDefaultEnabled(type, name);
+        info.setEnabled(defaultEnabled);
 
         // Check if plugin supports configuration
         if (instance instanceof PluginConfigSpec) {
@@ -249,7 +277,9 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
 
         pluginRegistry.put(pluginId, info);
         pluginInstances.put(pluginId, instance);
-        pluginStates.put(pluginId, true);
+        pluginStates.put(pluginId, defaultEnabled);
+
+        LOGGER.debug("[UnifiedPluginManager] Registered plugin {} with default enabled={}", pluginId, defaultEnabled);
     }
 
     private void loadPersistedData() {
@@ -298,5 +328,41 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
                 LOGGER.warn("[UnifiedPluginManager] Failed to apply config to plugin {}", pluginId, e);
             }
         }
+    }
+
+    /**
+     * Calculate the default enabled status for a plugin based on its type and configuration.
+     * For exclusive plugins (AUTH, DATASOURCE), only the configured one is enabled by default.
+     * For non-exclusive plugins, all are enabled by default.
+     *
+     * @param type plugin type
+     * @param pluginName plugin name
+     * @return default enabled status
+     */
+    private boolean calculateDefaultEnabled(PluginType type, String pluginName) {
+        switch (type) {
+            case AUTH:
+                String authType = EnvUtil.getProperty(AUTH_TYPE_PROPERTY, AUTH_TYPE_DEFAULT);
+                return pluginName.equalsIgnoreCase(authType);
+            case DATASOURCE_DIALECT:
+                String platform = getDatasourcePlatform();
+                return pluginName.equalsIgnoreCase(platform);
+            default:
+                // Non-exclusive plugins are enabled by default
+                return true;
+        }
+    }
+
+    /**
+     * Get the configured datasource platform.
+     *
+     * @return datasource platform name
+     */
+    private String getDatasourcePlatform() {
+        String platform = EnvUtil.getProperty(DATASOURCE_PLATFORM_PROPERTY);
+        if (StringUtils.isBlank(platform)) {
+            platform = EnvUtil.getProperty(DATASOURCE_PLATFORM_PROPERTY_OLD);
+        }
+        return StringUtils.isBlank(platform) ? DATASOURCE_PLATFORM_DEFAULT : platform;
     }
 }

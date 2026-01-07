@@ -35,11 +35,6 @@ public enum PluginType {
     DATASOURCE_DIALECT("datasource-dialect", "Datasource dialect plugin"),
 
     /**
-     * Datasource mapper plugin.
-     */
-    DATASOURCE_MAPPER("datasource-mapper", "Datasource mapper plugin"),
-
-    /**
      * Config change plugin.
      */
     CONFIG_CHANGE("config-change", "Config change plugin"),

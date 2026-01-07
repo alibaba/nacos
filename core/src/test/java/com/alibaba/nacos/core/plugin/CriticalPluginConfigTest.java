@@ -34,7 +34,8 @@ class CriticalPluginConfigTest {
 
     @Test
     void isCriticalAuthNacosTest() {
-        assertTrue(CriticalPluginConfig.isCritical("auth:nacos"));
+        // Auth plugins are NOT critical - users can disable default auth to use custom plugins
+        assertFalse(CriticalPluginConfig.isCritical("auth:nacos"));
     }
 
     @Test
@@ -79,8 +80,7 @@ class CriticalPluginConfigTest {
         Set<String> criticalPlugins = CriticalPluginConfig.getCriticalPlugins();
 
         assertNotNull(criticalPlugins);
-        assertEquals(4, criticalPlugins.size());
-        assertTrue(criticalPlugins.contains("auth:nacos"));
+        assertEquals(3, criticalPlugins.size());
         assertTrue(criticalPlugins.contains("datasource-dialect:mysql"));
         assertTrue(criticalPlugins.contains("datasource-dialect:derby"));
         assertTrue(criticalPlugins.contains("datasource-dialect:postgresql"));
@@ -100,8 +100,9 @@ class CriticalPluginConfigTest {
 
     @Test
     void isCriticalCaseSensitiveTest() {
-        assertTrue(CriticalPluginConfig.isCritical("auth:nacos"));
-        assertFalse(CriticalPluginConfig.isCritical("AUTH:NACOS"));
-        assertFalse(CriticalPluginConfig.isCritical("Auth:Nacos"));
+        // Critical plugin check is case-sensitive
+        assertTrue(CriticalPluginConfig.isCritical("datasource-dialect:mysql"));
+        assertFalse(CriticalPluginConfig.isCritical("DATASOURCE-DIALECT:MYSQL"));
+        assertFalse(CriticalPluginConfig.isCritical("Datasource-Dialect:Mysql"));
     }
 }
