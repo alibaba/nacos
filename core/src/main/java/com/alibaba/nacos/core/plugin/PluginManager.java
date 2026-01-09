@@ -27,11 +27,20 @@ import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -54,9 +63,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 3.2.0
  */
 @Component
-public class UnifiedPluginManager implements PluginStateChecker, ApplicationListener<ApplicationReadyEvent> {
+public class PluginManager implements PluginStateChecker, ApplicationListener<ApplicationReadyEvent> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UnifiedPluginManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
 
     /**
      * Configuration property for auth plugin type.
@@ -105,7 +114,21 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
 
     private final PluginStatePersistenceService persistence;
 
-    public UnifiedPluginManager(PluginStatePersistenceService persistence) {
+    /**
+     * Raft protocol for cluster state synchronization.
+     */
+    @Autowired(required = false)
+    private CPProtocol cpProtocol;
+
+    /**
+     * Feature flag to enable/disable Raft integration.
+     */
+    @Value("${nacos.plugin.raft.enabled:true}")
+    private boolean raftEnabled;
+
+    private static final String PLUGIN_STATE_GROUP = "plugin_state";
+
+    public PluginManager(PluginStatePersistenceService persistence) {
         this.persistence = persistence;
     }
 
@@ -120,7 +143,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         // Load persisted states and configs
         loadPersistedData();
 
-        LOGGER.info("[UnifiedPluginManager] Initialized, {} plugins discovered", pluginRegistry.size());
+        LOGGER.info("[PluginManager] Initialized, {} plugins discovered", pluginRegistry.size());
     }
 
     @Override
@@ -149,11 +172,21 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
                     "Cannot disable critical plugin: " + pluginId);
         }
 
-        pluginStates.put(pluginId, enabled);
-        info.setEnabled(enabled);
-        persistence.saveState(pluginId, enabled);
+        // Submit to Raft for cluster propagation
+        if (cpProtocol != null && raftEnabled) {
+            PluginStateOperation operation = PluginStateOperation.builder()
+                    .type(PluginStateOperation.OperationType.CHANGE_STATE)
+                    .pluginId(pluginId)
+                    .enabled(enabled)
+                    .build();
+            submitToRaft(operation);
+        } else {
+            // Fallback for standalone mode
+            applyStateChangeFromRaft(pluginId, enabled);
+            persistence.saveState(pluginId, enabled);
+        }
 
-        LOGGER.info("[UnifiedPluginManager] Plugin {} status changed to {}", pluginId,
+        LOGGER.info("[PluginManager] Plugin {} status changed to {}", pluginId,
                 enabled ? "enabled" : "disabled");
     }
 
@@ -179,15 +212,21 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         // Validate config
         validateConfig(info, config);
 
-        // Apply config to plugin instance
-        applyConfigToPlugin(pluginId, config);
+        // Submit to Raft for cluster propagation
+        if (cpProtocol != null && raftEnabled) {
+            PluginStateOperation operation = PluginStateOperation.builder()
+                    .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
+                    .pluginId(pluginId)
+                    .config(config)
+                    .build();
+            submitToRaft(operation);
+        } else {
+            // Fallback for standalone mode
+            applyConfigChangeFromRaft(pluginId, config);
+            persistence.saveConfig(pluginId, config);
+        }
 
-        // Save config
-        pluginConfigs.put(pluginId, new HashMap<>(config));
-        info.setConfig(config);
-        persistence.saveConfig(pluginId, config);
-
-        LOGGER.info("[UnifiedPluginManager] Plugin {} config updated", pluginId);
+        LOGGER.info("[PluginManager] Plugin {} config updated", pluginId);
     }
 
     /**
@@ -230,7 +269,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
             try {
                 discoverPluginsFromProvider(provider);
             } catch (Exception e) {
-                LOGGER.warn("[UnifiedPluginManager] Failed to discover plugins from provider: {}",
+                LOGGER.warn("[PluginManager] Failed to discover plugins from provider: {}",
                         provider.getClass().getName(), e);
             }
         }
@@ -246,12 +285,12 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         Map<String, ?> plugins = provider.getAllPlugins();
 
         if (plugins == null || plugins.isEmpty()) {
-            LOGGER.info("[UnifiedPluginManager] No plugins found for type: {}", pluginType.getType());
+            LOGGER.info("[PluginManager] No plugins found for type: {}", pluginType.getType());
             return;
         }
 
         plugins.forEach((name, instance) -> registerPlugin(pluginType, name, instance));
-        LOGGER.info("[UnifiedPluginManager] Discovered {} {} plugins", plugins.size(), pluginType.getType());
+        LOGGER.info("[PluginManager] Discovered {} {} plugins", plugins.size(), pluginType.getType());
     }
 
     private void registerPlugin(PluginType type, String name, Object instance) {
@@ -279,7 +318,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         pluginInstances.put(pluginId, instance);
         pluginStates.put(pluginId, defaultEnabled);
 
-        LOGGER.debug("[UnifiedPluginManager] Registered plugin {} with default enabled={}", pluginId, defaultEnabled);
+        LOGGER.debug("[PluginManager] Registered plugin {} with default enabled={}", pluginId, defaultEnabled);
     }
 
     private void loadPersistedData() {
@@ -325,7 +364,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
             try {
                 ((PluginConfigSpec) instance).applyConfig(config);
             } catch (Exception e) {
-                LOGGER.warn("[UnifiedPluginManager] Failed to apply config to plugin {}", pluginId, e);
+                LOGGER.warn("[PluginManager] Failed to apply config to plugin {}", pluginId, e);
             }
         }
     }
@@ -364,5 +403,103 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
             platform = EnvUtil.getProperty(DATASOURCE_PLATFORM_PROPERTY_OLD);
         }
         return StringUtils.isBlank(platform) ? DATASOURCE_PLATFORM_DEFAULT : platform;
+    }
+
+    /**
+     * Submit plugin state operation to Raft for cluster replication.
+     *
+     * @param operation state operation
+     * @throws NacosApiException if Raft write fails
+     */
+    private void submitToRaft(PluginStateOperation operation) throws NacosApiException {
+        try {
+            byte[] data = SerializeFactory.getDefault().serialize(operation);
+
+            WriteRequest request = WriteRequest.newBuilder()
+                    .setGroup(PLUGIN_STATE_GROUP)
+                    .setData(ByteString.copyFrom(data))
+                    .setOperation(DataOperation.CHANGE.name())
+                    .build();
+
+            Response response = cpProtocol.write(request);
+            if (!response.getSuccess()) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        "Failed to submit plugin state to Raft: " + response.getErrMsg());
+            }
+        } catch (NacosApiException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, e,
+                    "Failed to submit plugin state to Raft");
+        }
+    }
+
+    /**
+     * Apply state change from Raft consensus.
+     * Called by PluginStateProcessor when Raft commit happens.
+     *
+     * @param pluginId plugin ID
+     * @param enabled whether enabled
+     */
+    public void applyStateChangeFromRaft(String pluginId, boolean enabled) {
+        pluginStates.put(pluginId, enabled);
+
+        PluginInfo info = pluginRegistry.get(pluginId);
+        if (info != null) {
+            info.setEnabled(enabled);
+        }
+
+        LOGGER.info("[PluginManager] Applied state change from Raft: {}={}", pluginId, enabled);
+    }
+
+    /**
+     * Apply config change from Raft consensus.
+     * Called by PluginStateProcessor when Raft commit happens.
+     *
+     * @param pluginId plugin ID
+     * @param config configuration
+     */
+    public void applyConfigChangeFromRaft(String pluginId, Map<String, String> config) {
+        pluginConfigs.put(pluginId, new HashMap<>(config));
+
+        PluginInfo info = pluginRegistry.get(pluginId);
+        if (info != null) {
+            info.setConfig(config);
+        }
+
+        applyConfigToPlugin(pluginId, config);
+
+        LOGGER.info("[PluginManager] Applied config change from Raft: {}", pluginId);
+    }
+
+    /**
+     * Update node availability for a plugin.
+     *
+     * @param pluginId plugin ID
+     * @param nodeAvailability node availability map (nodeIp -> available)
+     */
+    public void updateNodeAvailability(String pluginId, Map<String, Boolean> nodeAvailability) {
+        PluginInfo info = pluginRegistry.get(pluginId);
+        if (info != null) {
+            info.setNodeAvailability(nodeAvailability);
+
+            // Calculate counts
+            long availableCount = nodeAvailability.values().stream()
+                    .filter(Boolean::booleanValue)
+                    .count();
+
+            info.setAvailableNodeCount((int) availableCount);
+            info.setTotalNodeCount(nodeAvailability.size());
+        }
+    }
+
+    /**
+     * Check if plugin is available locally.
+     *
+     * @param pluginId plugin ID
+     * @return true if plugin exists in registry
+     */
+    public boolean isPluginAvailable(String pluginId) {
+        return pluginRegistry.containsKey(pluginId);
     }
 }

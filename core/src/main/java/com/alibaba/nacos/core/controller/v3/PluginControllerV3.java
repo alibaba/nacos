@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.plugin.UnifiedPluginManager;
+import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
@@ -57,9 +57,9 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 @RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/plugin")
 public class PluginControllerV3 {
 
-    private final UnifiedPluginManager unifiedPluginManager;
+    private final PluginManager unifiedPluginManager;
 
-    public PluginControllerV3(UnifiedPluginManager unifiedPluginManager) {
+    public PluginControllerV3(PluginManager unifiedPluginManager) {
         this.unifiedPluginManager = unifiedPluginManager;
     }
 
@@ -78,7 +78,7 @@ public class PluginControllerV3 {
         if (StringUtils.isNotBlank(pluginType)) {
             plugins = plugins.stream()
                     .filter(p -> pluginType.equals(p.getPluginType().getType()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         List<PluginInfoVO> vos = plugins.stream()

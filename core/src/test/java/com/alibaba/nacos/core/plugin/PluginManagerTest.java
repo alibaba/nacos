@@ -53,12 +53,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * {@link UnifiedPluginManager} unit test.
+ * {@link PluginManager} unit test.
  *
  * @author WangzJi
  */
 @ExtendWith(MockitoExtension.class)
-class UnifiedPluginManagerTest {
+class PluginManagerTest {
 
     @Mock
     private PluginStatePersistenceService persistence;
@@ -66,7 +66,7 @@ class UnifiedPluginManagerTest {
     @Mock
     private ApplicationReadyEvent applicationReadyEvent;
 
-    private UnifiedPluginManager manager;
+    private PluginManager manager;
 
     @BeforeEach
     void setUp() {
@@ -75,7 +75,7 @@ class UnifiedPluginManagerTest {
         lenient().doNothing().when(persistence).saveState(any(), anyBoolean());
         lenient().doNothing().when(persistence).saveConfig(any(), anyMap());
 
-        manager = new UnifiedPluginManager(persistence);
+        manager = new PluginManager(persistence);
     }
 
     @Test
