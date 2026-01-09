@@ -57,6 +57,7 @@ import McpDetail from './pages/AI/McpDetail';
 import AgentManagement from './pages/AI/AgentManagement';
 import NewAgent from './pages/AI/NewAgent';
 import AgentDetail from './pages/AI/AgentDetail';
+import PluginList from './pages/PluginManagement/PluginList';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -111,6 +112,7 @@ const MENU = [
   { path: '/agentManagement', component: AgentManagement },
   { path: '/newAgent', component: NewAgent },
   { path: '/agentDetail', component: AgentDetail },
+  { path: '/pluginManagement', component: PluginList },
 ];
 
 @connect(state => ({ ...state.locale, ...state.base }), {
