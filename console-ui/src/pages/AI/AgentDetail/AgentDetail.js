@@ -90,7 +90,7 @@ class AgentDetail extends React.Component {
     }
 
     request({
-      url: `/v3/console/ai/a2a?${params.toString()}`,
+      url: `v3/console/ai/a2a?${params.toString()}`,
       success: data => {
         console.log('Agent detail API response:', data);
         this.setState({ loading: false });
@@ -129,7 +129,7 @@ class AgentDetail extends React.Component {
     params.append('namespaceId', namespaceId);
 
     request({
-      url: `/v3/console/ai/a2a/version/list?${params.toString()}`,
+      url: `v3/console/ai/a2a/version/list?${params.toString()}`,
       success: data => {
         if (data && (data.code === 0 || data.code === 200) && data.data) {
           this.setState({

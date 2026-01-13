@@ -78,7 +78,7 @@ class NewAgent extends React.Component {
     params.append('namespaceId', namespaceId);
 
     request({
-      url: `/v3/console/ai/a2a?${params.toString()}`,
+      url: `v3/console/ai/a2a?${params.toString()}`,
       success: data => {
         this.setState({ loading: false });
         if (data && (data.code === 0 || data.code === 200) && data.data) {
@@ -272,7 +272,7 @@ class NewAgent extends React.Component {
         requestData.setAsLatest = values.setAsLatest;
       }
 
-      const url = '/v3/console/ai/a2a';
+      const url = 'v3/console/ai/a2a';
 
       // 使用项目中已有的request方法发送请求，会自动处理认证信息
       request({

@@ -224,7 +224,7 @@ class AgentManagement extends React.Component {
 
     request({
       method: 'DELETE',
-      url: `/v3/console/ai/a2a?${params.toString()}`,
+      url: `v3/console/ai/a2a?${params.toString()}`,
       success: data => {
         if (data && data.code === 0) {
           Message.success(locale.deleteSuccess || 'Delete successful');
@@ -289,7 +289,7 @@ class AgentManagement extends React.Component {
       return new Promise((resolve, reject) => {
         request({
           method: 'DELETE',
-          url: `/v3/console/ai/a2a?${params.toString()}`,
+          url: `v3/console/ai/a2a?${params.toString()}`,
           success: resolve,
           error: reject,
         });
