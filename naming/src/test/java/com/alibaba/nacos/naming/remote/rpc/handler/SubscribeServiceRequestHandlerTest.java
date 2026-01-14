@@ -38,6 +38,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Arrays;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link SubscribeServiceRequestHandler} unit tests.
@@ -53,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @date 2021-09-18 18:25
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SubscribeServiceRequestHandlerTest {
     
     @InjectMocks
@@ -113,5 +117,33 @@ class SubscribeServiceRequestHandlerTest {
         subscribeServiceResponse = subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta());
         assertEquals("C", subscribeServiceResponse.getServiceInfo().getName());
         Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
+    }
+    
+    @Test
+    void testHandleWithBlankServiceName() {
+        SubscribeServiceRequest subscribeServiceRequest = new SubscribeServiceRequest();
+        subscribeServiceRequest.setNamespace("A");
+        subscribeServiceRequest.setGroupName("B");
+        subscribeServiceRequest.setServiceName("");
+        subscribeServiceRequest.setSubscribe(true);
+        
+        NacosException exception = assertThrows(NacosException.class,
+                () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta()));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("Param 'serviceName' is illegal, serviceName is blank", exception.getErrMsg());
+    }
+    
+    @Test
+    void testHandleWithBlankGroupName() {
+        SubscribeServiceRequest subscribeServiceRequest = new SubscribeServiceRequest();
+        subscribeServiceRequest.setNamespace("A");
+        subscribeServiceRequest.setGroupName("");
+        subscribeServiceRequest.setServiceName("C");
+        subscribeServiceRequest.setSubscribe(true);
+        
+        NacosException exception = assertThrows(NacosException.class,
+                () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta()));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("Param 'groupName' is illegal, groupName is blank", exception.getErrMsg());
     }
 }
