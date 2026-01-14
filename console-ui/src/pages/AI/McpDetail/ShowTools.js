@@ -1312,7 +1312,7 @@ const ShowTools = props => {
               const protocol = Number(backendPort) === 443 ? 'https' : 'http';
               const mcpBaseUrl = `${protocol}://${backendAddress}:${backendPort}`;
 
-              let url = `/v3/console/ai/mcp/importToolsFromMcp?transportType=${frontProtocol}&baseUrl=${mcpBaseUrl}&endpoint=${exportPath}`;
+              let url = `v3/console/ai/mcp/importToolsFromMcp?transportType=${frontProtocol}&baseUrl=${mcpBaseUrl}&endpoint=${exportPath}`;
               if (token) {
                 url += `&authToken=${token}`;
               }
