@@ -56,12 +56,16 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
 
     private final PluginStatePersistenceService persistence;
 
+    private final PluginManager pluginManager;
+
     private final Serializer serializer;
 
     private final ReentrantReadWriteLock lock;
 
-    public PluginStateSnapshotOperation(PluginStatePersistenceService persistence, ReentrantReadWriteLock lock) {
+    public PluginStateSnapshotOperation(PluginStatePersistenceService persistence, PluginManager pluginManager,
+            ReentrantReadWriteLock lock) {
         this.persistence = persistence;
+        this.pluginManager = pluginManager;
         this.serializer = SerializeFactory.getDefault();
         this.lock = lock;
     }
@@ -125,6 +129,8 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
                 if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
                     throw new IllegalArgumentException("Snapshot checksum failed");
                 }
+            } else {
+                LOGGER.warn("[PluginStateSnapshotOperation] Snapshot has no checksum metadata, data integrity not verified");
             }
 
             // Deserialize
@@ -135,6 +141,7 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
             if (states != null) {
                 for (Map.Entry<String, Boolean> entry : states.entrySet()) {
                     persistence.saveState(entry.getKey(), entry.getValue());
+                    pluginManager.applyStateChange(entry.getKey(), entry.getValue());
                 }
             }
 
@@ -143,6 +150,7 @@ public class PluginStateSnapshotOperation implements SnapshotOperation {
             if (configs != null) {
                 for (Map.Entry<String, Map<String, String>> entry : configs.entrySet()) {
                     persistence.saveConfig(entry.getKey(), entry.getValue());
+                    pluginManager.applyConfigChange(entry.getKey(), entry.getValue());
                 }
             }
 

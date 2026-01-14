@@ -21,13 +21,13 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.plugin.model.PluginStateOperation;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
+import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -35,16 +35,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Integration test for plugin cluster synchronization.
@@ -57,6 +54,9 @@ class PluginClusterSyncIntegrationTest {
 
     @Mock
     private PluginStatePersistenceService persistence;
+
+    @Mock
+    private PluginStateSynchronizer synchronizer;
 
     @Mock
     private CPProtocol cpProtocol;
@@ -76,9 +76,7 @@ class PluginClusterSyncIntegrationTest {
         lenient().when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         lenient().doNothing().when(cpProtocol).addRequestProcessors(anyList());
 
-        pluginManager = new PluginManager(persistence);
-        ReflectionTestUtils.setField(pluginManager, "cpProtocol", cpProtocol);
-        ReflectionTestUtils.setField(pluginManager, "raftEnabled", true);
+        pluginManager = new PluginManager(persistence, synchronizer);
 
         stateProcessor = new PluginStateProcessor(pluginManager, persistence, protocolManager);
 
@@ -87,33 +85,14 @@ class PluginClusterSyncIntegrationTest {
 
     @Test
     void stateChangePropagationTest() throws Exception {
-        Response mockResponse = Response.newBuilder().setSuccess(true).build();
-        when(cpProtocol.write(any())).thenReturn(mockResponse);
-
         pluginManager.setPluginEnabled("trace:otel", false);
 
-        ArgumentCaptor<WriteRequest> requestCaptor = ArgumentCaptor.forClass(WriteRequest.class);
-        verify(cpProtocol, times(1)).write(requestCaptor.capture());
-
-        WriteRequest request = requestCaptor.getValue();
-        assertEquals("plugin_state", request.getGroup());
-
-        byte[] data = request.getData().toByteArray();
-        PluginStateOperation operation = SerializeFactory.getDefault()
-                .deserialize(data, PluginStateOperation.class);
-
-        assertNotNull(operation);
-        assertEquals(PluginStateOperation.OperationType.CHANGE_STATE, operation.getType());
-        assertEquals("trace:otel", operation.getPluginId());
-        assertFalse(operation.getEnabled());
+        verify(synchronizer, times(1)).syncStateChange("trace:otel", false);
     }
 
     @Test
     void configUpdatePropagationTest() throws Exception {
         registerConfigurablePlugin("trace", "otel");
-
-        Response mockResponse = Response.newBuilder().setSuccess(true).build();
-        when(cpProtocol.write(any())).thenReturn(mockResponse);
 
         Map<String, String> config = new HashMap<>();
         config.put("endpoint", "http://localhost:4317");
@@ -121,19 +100,7 @@ class PluginClusterSyncIntegrationTest {
 
         pluginManager.updatePluginConfig("trace:otel", config);
 
-        ArgumentCaptor<WriteRequest> requestCaptor = ArgumentCaptor.forClass(WriteRequest.class);
-        verify(cpProtocol, times(1)).write(requestCaptor.capture());
-
-        WriteRequest request = requestCaptor.getValue();
-        byte[] data = request.getData().toByteArray();
-        PluginStateOperation operation = SerializeFactory.getDefault()
-                .deserialize(data, PluginStateOperation.class);
-
-        assertNotNull(operation);
-        assertEquals(PluginStateOperation.OperationType.UPDATE_CONFIG, operation.getType());
-        assertEquals("trace:otel", operation.getPluginId());
-        assertEquals("http://localhost:4317", operation.getConfig().get("endpoint"));
-        assertEquals("5000", operation.getConfig().get("timeout"));
+        verify(synchronizer, times(1)).syncConfigChange(eq("trace:otel"), eq(config));
     }
 
     @Test
@@ -181,17 +148,26 @@ class PluginClusterSyncIntegrationTest {
 
     @Test
     void endToEndStateSyncTest() throws Exception {
-        Response mockResponse = Response.newBuilder().setSuccess(true).build();
-        when(cpProtocol.write(any())).thenReturn(mockResponse);
-
         assertTrue(pluginManager.isPluginEnabled("trace", "otel"));
 
+        // Simulate state change through PluginManager
         pluginManager.setPluginEnabled("trace:otel", false);
 
-        ArgumentCaptor<WriteRequest> requestCaptor = ArgumentCaptor.forClass(WriteRequest.class);
-        verify(cpProtocol, times(1)).write(requestCaptor.capture());
+        // Verify synchronizer was called
+        verify(synchronizer, times(1)).syncStateChange("trace:otel", false);
 
-        WriteRequest raftRequest = requestCaptor.getValue();
+        // Simulate Raft apply (what happens after Raft consensus)
+        PluginStateOperation operation = PluginStateOperation.builder()
+                .type(PluginStateOperation.OperationType.CHANGE_STATE)
+                .pluginId("trace:otel")
+                .enabled(false)
+                .build();
+
+        byte[] data = SerializeFactory.getDefault().serialize(operation);
+        WriteRequest raftRequest = WriteRequest.newBuilder()
+                .setData(ByteString.copyFrom(data))
+                .build();
+
         Response raftResponse = stateProcessor.onApply(raftRequest);
 
         assertTrue(raftResponse.getSuccess());

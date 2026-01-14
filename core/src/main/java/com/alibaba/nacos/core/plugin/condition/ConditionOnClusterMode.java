@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.remote.request;
+package com.alibaba.nacos.core.plugin.condition;
+
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Plugin availability request for cluster RPC.
- * Used to query if a plugin is available on a specific node.
+ * Condition that matches when Nacos is running in cluster mode.
  *
  * @author WangzJi
  * @since 3.2.0
  */
-public class PluginAvailabilityRequest extends AbstractClusterRequest {
+public class ConditionOnClusterMode implements Condition {
 
-    private String pluginId;
-
-    public PluginAvailabilityRequest() {
-    }
-
-    public String getPluginId() {
-        return pluginId;
-    }
-
-    public void setPluginId(String pluginId) {
-        this.pluginId = pluginId;
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        return !EnvUtil.getStandaloneMode();
     }
 }

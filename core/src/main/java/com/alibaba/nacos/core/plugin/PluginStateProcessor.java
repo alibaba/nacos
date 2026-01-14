@@ -57,7 +57,7 @@ public class PluginStateProcessor extends RequestProcessor4CP {
 
     private final ReentrantReadWriteLock lock;
 
-    private final ReentrantReadWriteLock.WriteLock writeLock;
+    private final ReentrantReadWriteLock.ReadLock readLock;
 
     public PluginStateProcessor(PluginManager pluginManager, PluginStatePersistenceService persistence,
             ProtocolManager protocolManager) {
@@ -65,7 +65,7 @@ public class PluginStateProcessor extends RequestProcessor4CP {
         this.persistence = persistence;
         this.serializer = SerializeFactory.getDefault();
         this.lock = new ReentrantReadWriteLock();
-        this.writeLock = lock.writeLock();
+        this.readLock = lock.readLock();
 
         // Register with Raft protocol
         protocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
@@ -84,7 +84,7 @@ public class PluginStateProcessor extends RequestProcessor4CP {
 
     @Override
     public Response onApply(WriteRequest request) {
-        writeLock.lock();
+        readLock.lock();
         PluginStateOperation operation = null;
         try {
             operation = serializer.deserialize(
@@ -117,7 +117,7 @@ public class PluginStateProcessor extends RequestProcessor4CP {
                     .setErrMsg(errorMessage)
                     .build();
         } finally {
-            writeLock.unlock();
+            readLock.unlock();
         }
     }
 
@@ -125,17 +125,22 @@ public class PluginStateProcessor extends RequestProcessor4CP {
         if (operation == null) {
             return "operation=null";
         }
-        return String.format("pluginId=%s, operation=%s",
-                operation.getPluginId() != null ? operation.getPluginId() : "unknown",
-                operation.getType() != null ? operation.getType() : "unknown");
+        String pluginId = operation.getPluginId() != null ? operation.getPluginId() : "unknown";
+        String opType = operation.getType() != null ? operation.getType().name() : "unknown";
+        return "pluginId=" + pluginId + ", operation=" + opType;
     }
 
     private void applyStateChange(PluginStateOperation operation) {
         String pluginId = operation.getPluginId();
-        boolean enabled = operation.getEnabled();
+        Boolean enabled = operation.getEnabled();
+
+        if (enabled == null) {
+            throw new IllegalArgumentException(
+                    "Enabled state cannot be null for CHANGE_STATE operation, pluginId=" + pluginId);
+        }
 
         // Apply to in-memory state
-        pluginManager.applyStateChangeFromRaft(pluginId, enabled);
+        pluginManager.applyStateChange(pluginId, enabled);
 
         // Persist to local storage
         persistence.saveState(pluginId, enabled);
@@ -148,7 +153,7 @@ public class PluginStateProcessor extends RequestProcessor4CP {
         Map<String, String> config = operation.getConfig();
 
         // Apply to in-memory config
-        pluginManager.applyConfigChangeFromRaft(pluginId, config);
+        pluginManager.applyConfigChange(pluginId, config);
 
         // Persist to local storage
         persistence.saveConfig(pluginId, config);
@@ -159,7 +164,7 @@ public class PluginStateProcessor extends RequestProcessor4CP {
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.singletonList(
-                new PluginStateSnapshotOperation(persistence, lock)
+                new PluginStateSnapshotOperation(persistence, pluginManager, lock)
         );
     }
 }

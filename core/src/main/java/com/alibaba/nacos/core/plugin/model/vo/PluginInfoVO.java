@@ -34,11 +34,7 @@ public class PluginInfoVO {
     private Boolean critical;
 
     private Boolean configurable;
-
-    private Integer availableNodeCount;
-
-    private Integer totalNodeCount;
-
+    
     public String getPluginId() {
         return pluginId;
     }
@@ -86,28 +82,12 @@ public class PluginInfoVO {
     public void setConfigurable(Boolean configurable) {
         this.configurable = configurable;
     }
-
-    public Integer getAvailableNodeCount() {
-        return availableNodeCount;
-    }
-
-    public void setAvailableNodeCount(Integer availableNodeCount) {
-        this.availableNodeCount = availableNodeCount;
-    }
-
-    public Integer getTotalNodeCount() {
-        return totalNodeCount;
-    }
-
-    public void setTotalNodeCount(Integer totalNodeCount) {
-        this.totalNodeCount = totalNodeCount;
-    }
+    
 
     @Override
     public String toString() {
         return "PluginInfoVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType + '\''
                 + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical=" + critical
-                + ", configurable=" + configurable + ", availableNodeCount=" + availableNodeCount + ", totalNodeCount="
-                + totalNodeCount + '}';
+                + ", configurable=" + configurable + '}';
     }
 }

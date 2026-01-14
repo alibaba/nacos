@@ -51,6 +51,12 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
 
     private static final String PLUGIN_DATA_DIR = "plugin";
 
+    private static final TypeReference<Map<String, Boolean>> STATE_TYPE_REF = new TypeReference<>() {
+    };
+
+    private static final TypeReference<Map<String, Map<String, String>>> CONFIG_TYPE_REF = new TypeReference<>() {
+    };
+
     private final String dataDir;
 
     private final Object stateLock = new Object();
@@ -68,6 +74,8 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
             boolean created = dir.mkdirs();
             if (created) {
                 LOGGER.info("[FilePluginStatePersistenceImpl] Created plugin data directory: {}", dataDir);
+            } else {
+                throw new PluginPersistenceException("Failed to create plugin data directory: " + dataDir);
             }
         }
     }
@@ -84,10 +92,10 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
             try {
                 Map<String, Boolean> states = loadAllStates();
                 states.put(pluginId, enabled);
-                writeJsonToFile(PLUGIN_STATE_FILE, states, stateLock);
+                writeJsonToFile(PLUGIN_STATE_FILE, states);
                 LOGGER.debug("[FilePluginStatePersistenceImpl] Saved plugin state: {}={}", pluginId, enabled);
             } catch (Exception e) {
-                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to save plugin state for {}", pluginId, e);
+                throw new PluginPersistenceException("Failed to save plugin state: " + pluginId, e);
             }
         }
     }
@@ -104,10 +112,10 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
             try {
                 Map<String, Map<String, String>> configs = loadAllConfigs();
                 configs.put(pluginId, config);
-                writeJsonToFile(PLUGIN_CONFIG_FILE, configs, configLock);
+                writeJsonToFile(PLUGIN_CONFIG_FILE, configs);
                 LOGGER.debug("[FilePluginStatePersistenceImpl] Saved plugin config for {}", pluginId);
             } catch (Exception e) {
-                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to save plugin config for {}", pluginId, e);
+                throw new PluginPersistenceException("Failed to save plugin config: " + pluginId, e);
             }
         }
     }
@@ -120,8 +128,7 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
     @Override
     public Map<String, Boolean> loadAllStates() {
         synchronized (stateLock) {
-            return readJsonFromFile(PLUGIN_STATE_FILE, new TypeReference<Map<String, Boolean>>() {
-            });
+            return readJsonFromFile(PLUGIN_STATE_FILE, STATE_TYPE_REF);
         }
     }
 
@@ -133,8 +140,7 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
     @Override
     public Map<String, Map<String, String>> loadAllConfigs() {
         synchronized (configLock) {
-            return readJsonFromFile(PLUGIN_CONFIG_FILE, new TypeReference<Map<String, Map<String, String>>>() {
-            });
+            return readJsonFromFile(PLUGIN_CONFIG_FILE, CONFIG_TYPE_REF);
         }
     }
 
@@ -149,10 +155,10 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
             try {
                 Map<String, Boolean> states = loadAllStates();
                 states.remove(pluginId);
-                writeJsonToFile(PLUGIN_STATE_FILE, states, stateLock);
+                writeJsonToFile(PLUGIN_STATE_FILE, states);
                 LOGGER.debug("[FilePluginStatePersistenceImpl] Deleted plugin state for {}", pluginId);
             } catch (Exception e) {
-                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to delete plugin state for {}", pluginId, e);
+                throw new PluginPersistenceException("Failed to delete plugin state: " + pluginId, e);
             }
         }
     }
@@ -168,10 +174,10 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
             try {
                 Map<String, Map<String, String>> configs = loadAllConfigs();
                 configs.remove(pluginId);
-                writeJsonToFile(PLUGIN_CONFIG_FILE, configs, configLock);
+                writeJsonToFile(PLUGIN_CONFIG_FILE, configs);
                 LOGGER.debug("[FilePluginStatePersistenceImpl] Deleted plugin config for {}", pluginId);
             } catch (Exception e) {
-                LOGGER.error("[FilePluginStatePersistenceImpl] Failed to delete plugin config for {}", pluginId, e);
+                throw new PluginPersistenceException("Failed to delete plugin config: " + pluginId, e);
             }
         }
     }
@@ -199,13 +205,9 @@ public class FilePluginStatePersistenceImpl implements PluginStatePersistenceSer
         return (T) new HashMap<>(16);
     }
 
-    private void writeJsonToFile(String fileName, Object data, Object lock) {
+    private void writeJsonToFile(String fileName, Object data) throws IOException {
         Path filePath = Paths.get(dataDir, fileName);
-        try {
-            String content = JacksonUtils.toJson(data);
-            Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            LOGGER.error("[FilePluginStatePersistenceImpl] Failed to write file: {}", fileName, e);
-        }
+        String content = JacksonUtils.toJson(data);
+        Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
     }
 }

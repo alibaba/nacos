@@ -116,7 +116,24 @@ public class PluginStateOperation implements Serializable {
             return this;
         }
 
+        /**
+         * Build the PluginStateOperation.
+         *
+         * @return the built PluginStateOperation
+         */
         public PluginStateOperation build() {
+            if (operation.pluginId == null || operation.pluginId.isEmpty()) {
+                throw new IllegalStateException("pluginId is required");
+            }
+            if (operation.type == null) {
+                throw new IllegalStateException("type is required");
+            }
+            if (operation.type == OperationType.CHANGE_STATE && operation.enabled == null) {
+                throw new IllegalStateException("enabled is required for CHANGE_STATE operation");
+            }
+            if (operation.type == OperationType.UPDATE_CONFIG && operation.config == null) {
+                throw new IllegalStateException("config is required for UPDATE_CONFIG operation");
+            }
             return operation;
         }
     }

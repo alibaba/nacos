@@ -112,7 +112,7 @@ class PluginStateProcessorTest {
 
         assertNotNull(response);
         assertTrue(response.getSuccess());
-        verify(pluginManager, times(1)).applyStateChangeFromRaft("trace:otel", false);
+        verify(pluginManager, times(1)).applyStateChange("trace:otel", false);
         verify(persistence, times(1)).saveState("trace:otel", false);
     }
 
@@ -137,7 +137,7 @@ class PluginStateProcessorTest {
 
         assertNotNull(response);
         assertTrue(response.getSuccess());
-        verify(pluginManager, times(1)).applyConfigChangeFromRaft("trace:otel", config);
+        verify(pluginManager, times(1)).applyConfigChange("trace:otel", config);
         verify(persistence, times(1)).saveConfig("trace:otel", config);
     }
 

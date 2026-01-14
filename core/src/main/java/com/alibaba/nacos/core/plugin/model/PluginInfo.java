@@ -88,21 +88,6 @@ public class PluginInfo implements Serializable {
      */
     private List<ConfigItemDefinition> configDefinitions;
 
-    /**
-     * Number of nodes where plugin is available.
-     */
-    private int availableNodeCount;
-
-    /**
-     * Total number of nodes in cluster.
-     */
-    private int totalNodeCount;
-
-    /**
-     * Per-node availability: nodeIp -> available.
-     */
-    private Map<String, Boolean> nodeAvailability;
-
     public PluginInfo() {
     }
 
@@ -192,29 +177,5 @@ public class PluginInfo implements Serializable {
 
     public void setConfigDefinitions(List<ConfigItemDefinition> configDefinitions) {
         this.configDefinitions = configDefinitions;
-    }
-
-    public int getAvailableNodeCount() {
-        return availableNodeCount;
-    }
-
-    public void setAvailableNodeCount(int availableNodeCount) {
-        this.availableNodeCount = availableNodeCount;
-    }
-
-    public int getTotalNodeCount() {
-        return totalNodeCount;
-    }
-
-    public void setTotalNodeCount(int totalNodeCount) {
-        this.totalNodeCount = totalNodeCount;
-    }
-
-    public Map<String, Boolean> getNodeAvailability() {
-        return nodeAvailability;
-    }
-
-    public void setNodeAvailability(Map<String, Boolean> nodeAvailability) {
-        this.nodeAvailability = nodeAvailability;
     }
 }

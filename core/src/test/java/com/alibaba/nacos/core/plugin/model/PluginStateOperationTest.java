@@ -24,6 +24,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -106,14 +107,12 @@ class PluginStateOperationTest {
 
     @Test
     void builderPartialBuildTest() {
-        PluginStateOperation operation = PluginStateOperation.builder()
-                .pluginId("trace:test")
-                .build();
-
-        assertNotNull(operation);
-        assertEquals("trace:test", operation.getPluginId());
-        assertNull(operation.getType());
-        assertNull(operation.getEnabled());
-        assertNull(operation.getConfig());
+        // Builder should throw exception when type is not set
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            PluginStateOperation.builder()
+                    .pluginId("trace:test")
+                    .build();
+        });
+        assertEquals("type is required", exception.getMessage());
     }
 }
