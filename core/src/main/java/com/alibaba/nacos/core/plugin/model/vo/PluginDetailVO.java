@@ -43,13 +43,7 @@ public class PluginDetailVO {
     private Map<String, String> config;
 
     private List<ConfigItemDefinition> configDefinitions;
-
-    private Integer availableNodeCount;
-
-    private Integer totalNodeCount;
-
-    private Map<String, Boolean> nodeAvailability;
-
+    
     public String getPluginId() {
         return pluginId;
     }
@@ -113,37 +107,12 @@ public class PluginDetailVO {
     public void setConfigDefinitions(List<ConfigItemDefinition> configDefinitions) {
         this.configDefinitions = configDefinitions;
     }
-
-    public Integer getAvailableNodeCount() {
-        return availableNodeCount;
-    }
-
-    public void setAvailableNodeCount(Integer availableNodeCount) {
-        this.availableNodeCount = availableNodeCount;
-    }
-
-    public Integer getTotalNodeCount() {
-        return totalNodeCount;
-    }
-
-    public void setTotalNodeCount(Integer totalNodeCount) {
-        this.totalNodeCount = totalNodeCount;
-    }
-
-    public Map<String, Boolean> getNodeAvailability() {
-        return nodeAvailability;
-    }
-
-    public void setNodeAvailability(Map<String, Boolean> nodeAvailability) {
-        this.nodeAvailability = nodeAvailability;
-    }
-
+    
     @Override
     public String toString() {
         return "PluginDetailVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType + '\''
                 + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical=" + critical
                 + ", configurable=" + configurable + ", config=" + config + ", configDefinitions=" + configDefinitions
-                + ", availableNodeCount=" + availableNodeCount + ", totalNodeCount=" + totalNodeCount
-                + ", nodeAvailability=" + nodeAvailability + '}';
+                + '}';
     }
 }

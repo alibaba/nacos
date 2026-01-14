@@ -29,6 +29,8 @@ public class PluginStatusForm {
 
     private boolean enabled;
 
+    private boolean localOnly = false;
+
     public String getPluginType() {
         return pluginType;
     }
@@ -51,5 +53,13 @@ public class PluginStatusForm {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isLocalOnly() {
+        return localOnly;
+    }
+
+    public void setLocalOnly(boolean localOnly) {
+        this.localOnly = localOnly;
     }
 }

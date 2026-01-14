@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.plugin.UnifiedPluginManager;
+import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
@@ -41,9 +41,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 
@@ -57,9 +54,9 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 @RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/plugin")
 public class PluginControllerV3 {
 
-    private final UnifiedPluginManager unifiedPluginManager;
+    private final PluginManager unifiedPluginManager;
 
-    public PluginControllerV3(UnifiedPluginManager unifiedPluginManager) {
+    public PluginControllerV3(PluginManager unifiedPluginManager) {
         this.unifiedPluginManager = unifiedPluginManager;
     }
 
@@ -78,12 +75,12 @@ public class PluginControllerV3 {
         if (StringUtils.isNotBlank(pluginType)) {
             plugins = plugins.stream()
                     .filter(p -> pluginType.equals(p.getPluginType().getType()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         List<PluginInfoVO> vos = plugins.stream()
                 .map(this::convertToVO)
-                .collect(Collectors.toList());
+                .toList();
 
         return Result.success(vos);
     }
@@ -103,13 +100,11 @@ public class PluginControllerV3 {
             @RequestParam("pluginName") String pluginName) throws NacosApiException {
 
         String pluginId = pluginType + ":" + pluginName;
-        Optional<PluginInfo> pluginInfoOpt = unifiedPluginManager.getPlugin(pluginId);
-        if (!pluginInfoOpt.isPresent()) {
-            throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "Plugin not found: " + pluginId);
-        }
+        PluginInfo pluginInfo = unifiedPluginManager.getPlugin(pluginId)
+                .orElseThrow(() -> new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
+                        "Plugin not found: " + pluginId));
 
-        PluginDetailVO detailVO = convertToDetailVO(pluginInfoOpt.get());
+        PluginDetailVO detailVO = convertToDetailVO(pluginInfo);
         return Result.success(detailVO);
     }
 
@@ -123,19 +118,10 @@ public class PluginControllerV3 {
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<String> updatePluginStatus(@RequestBody PluginStatusForm form) throws NacosApiException {
-        if (StringUtils.isBlank(form.getPluginType()) || StringUtils.isBlank(form.getPluginName())) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Plugin type and name are required");
-        }
-
-        try {
-            String pluginId = form.getPluginType() + ":" + form.getPluginName();
-            unifiedPluginManager.setPluginEnabled(pluginId, form.isEnabled());
-            return Result.success("Plugin status updated successfully");
-        } catch (Exception e) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
-                    "Failed to update plugin status: " + e.getMessage());
-        }
+        validatePluginIdentifier(form.getPluginType(), form.getPluginName());
+        String pluginId = form.getPluginType() + ":" + form.getPluginName();
+        unifiedPluginManager.setPluginEnabled(pluginId, form.isEnabled(), form.isLocalOnly());
+        return Result.success("Plugin status updated successfully");
     }
 
     /**
@@ -148,48 +134,21 @@ public class PluginControllerV3 {
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<String> updatePluginConfig(@RequestBody PluginConfigForm form) throws NacosApiException {
-        if (StringUtils.isBlank(form.getPluginType()) || StringUtils.isBlank(form.getPluginName())) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Plugin type and name are required");
-        }
-
+        validatePluginIdentifier(form.getPluginType(), form.getPluginName());
         if (form.getConfig() == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Plugin configuration is required");
         }
-
-        try {
-            String pluginId = form.getPluginType() + ":" + form.getPluginName();
-            unifiedPluginManager.updatePluginConfig(pluginId, form.getConfig());
-            return Result.success("Plugin configuration updated successfully");
-        } catch (Exception e) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
-                    "Failed to update plugin configuration: " + e.getMessage());
-        }
+        String pluginId = form.getPluginType() + ":" + form.getPluginName();
+        unifiedPluginManager.updatePluginConfig(pluginId, form.getConfig(), form.isLocalOnly());
+        return Result.success("Plugin configuration updated successfully");
     }
 
-    /**
-     * Get plugin availability across cluster nodes.
-     *
-     * @param pluginType plugin type
-     * @param pluginName plugin name
-     * @return node availability map
-     */
-    @GetMapping("/availability")
-    @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
-            + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<Map<String, Boolean>> getPluginAvailability(
-            @RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName) throws NacosApiException {
-
-        String pluginId = pluginType + ":" + pluginName;
-        Optional<PluginInfo> pluginInfoOpt = unifiedPluginManager.getPlugin(pluginId);
-        if (!pluginInfoOpt.isPresent()) {
-            throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                    "Plugin not found: " + pluginId);
+    private void validatePluginIdentifier(String pluginType, String pluginName) throws NacosApiException {
+        if (StringUtils.isBlank(pluginType) || StringUtils.isBlank(pluginName)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Plugin type and name are required");
         }
-
-        return Result.success(pluginInfoOpt.get().getNodeAvailability());
     }
 
     private PluginInfoVO convertToVO(PluginInfo pluginInfo) {
@@ -200,8 +159,6 @@ public class PluginControllerV3 {
         vo.setEnabled(pluginInfo.isEnabled());
         vo.setCritical(pluginInfo.isCritical());
         vo.setConfigurable(pluginInfo.isConfigurable());
-        vo.setAvailableNodeCount(pluginInfo.getAvailableNodeCount());
-        vo.setTotalNodeCount(pluginInfo.getTotalNodeCount());
         return vo;
     }
 
@@ -215,9 +172,6 @@ public class PluginControllerV3 {
         vo.setConfigurable(pluginInfo.isConfigurable());
         vo.setConfig(pluginInfo.getConfig());
         vo.setConfigDefinitions(pluginInfo.getConfigDefinitions());
-        vo.setAvailableNodeCount(pluginInfo.getAvailableNodeCount());
-        vo.setTotalNodeCount(pluginInfo.getTotalNodeCount());
-        vo.setNodeAvailability(pluginInfo.getNodeAvailability());
         return vo;
     }
 }
