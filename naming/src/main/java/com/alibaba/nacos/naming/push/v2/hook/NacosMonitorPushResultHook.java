@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.push.v2.hook;
 
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 
 /**
  * Nacos naming monitor push result hook.
@@ -26,7 +25,7 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
  * @author xiweng.yy
  */
 public class NacosMonitorPushResultHook implements PushResultHook {
-    
+
     @Override
     public void pushSuccess(PushResult result) {
         MetricsMonitor.incrementPush();
@@ -35,25 +34,13 @@ public class NacosMonitorPushResultHook implements PushResultHook {
         if (null == result.getData().getHosts() || !result.getData().validate()) {
             MetricsMonitor.incrementEmptyPush();
         }
-        if (isRpc(result.getSubscriber())) {
-            NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
-        } else {
-            NamingTpsMonitor.udpPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
-        }
+        NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
     }
-    
+
     @Override
     public void pushFailed(PushResult result) {
         MetricsMonitor.incrementPush();
         MetricsMonitor.incrementFailPush();
-        if (isRpc(result.getSubscriber())) {
-            NamingTpsMonitor.rpcPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
-        } else {
-            NamingTpsMonitor.udpPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
-        }
-    }
-    
-    private boolean isRpc(Subscriber subscriber) {
-        return subscriber.getPort() <= 0;
+        NamingTpsMonitor.rpcPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
     }
 }

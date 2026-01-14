@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.remote.handler;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
-import com.alibaba.nacos.ai.utils.McpRequestUtils;
+import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
@@ -58,7 +58,7 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     @Secured(action = ActionTypes.READ, signType = SignType.AI)
     public QueryMcpServerResponse handle(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
-        McpRequestUtils.fillNamespaceId(request);
+        McpRequestUtil.fillNamespaceId(request);
         if (StringUtils.isBlank(request.getMcpName())) {
             QueryMcpServerResponse errorResponse = new QueryMcpServerResponse();
             errorResponse.setErrorInfo(NacosException.INVALID_PARAM, "parameters `mcpName` can't be empty or null");

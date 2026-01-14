@@ -27,10 +27,10 @@ class McpRequestUtilsTest {
     @Test
     void fillNamespaceId() {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
-        McpRequestUtils.fillNamespaceId(request);
+        McpRequestUtil.fillNamespaceId(request);
         assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, request.getNamespaceId());
         request.setNamespaceId("test");
-        McpRequestUtils.fillNamespaceId(request);
+        McpRequestUtil.fillNamespaceId(request);
         assertEquals("test", request.getNamespaceId());
     }
 }

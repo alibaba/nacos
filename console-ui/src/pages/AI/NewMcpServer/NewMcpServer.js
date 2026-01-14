@@ -22,6 +22,7 @@ import {
 import ShowTools from '../McpDetail/ShowTools';
 import MonacoEditor from '../../../components/MonacoEditor';
 import { McpServerManagementRoute } from '../../../layouts/menu';
+import './NewMcpServer.css';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
@@ -63,6 +64,10 @@ class NewMcpServer extends React.Component {
       values: {
         securitySchemes: [],
         localServerConfig: localServerConfigDesc,
+        defaultDownstreamSecurityId: '',
+        defaultDownstreamSecurityPassthrough: false,
+        defaultUpstreamSecurityId: '',
+        defaultUpstreamSecurityCredential: '',
       },
     });
     this.tenant = getParams('namespace') || '';
@@ -80,6 +85,7 @@ class NewMcpServer extends React.Component {
       isInputError: '',
       securitySchemeIdx: 0,
       advancedConfigCollapsed: true, // 高级配置默认折叠
+      frontEndpointConfigList: [], // 保存原始的 frontEndpointConfigList，用于编辑时原封不动地返回
     };
   }
 
@@ -132,7 +138,10 @@ class NewMcpServer extends React.Component {
 
         const allPublishedVersions = [];
         for (let i = 0; i < allVersions.length; i++) {
-          if (i === allVersions.length - 1 && !allVersions[i].is_latest) {
+          if (
+            i === allVersions.length - 1 &&
+            !(allVersions[i].isLatest || allVersions[i].is_latest)
+          ) {
             break;
           }
           allPublishedVersions.push(allVersions[i].version);
@@ -140,7 +149,7 @@ class NewMcpServer extends React.Component {
 
         this.setState({
           currentVersion: versionDetail.version,
-          isLatestVersion: versionDetail.is_latest,
+          isLatestVersion: versionDetail.isLatest || versionDetail.is_latest,
           versionsList: allPublishedVersions,
         });
 
@@ -190,14 +199,17 @@ class NewMcpServer extends React.Component {
           securitySchemes: securitySchemesFormData,
         });
 
+        this.setDefaultSecurityFields(result.data?.toolSpec?.extensions);
+
         let restToMcpSwitchValue = false;
         if (protocol === 'https' || protocol === 'http') {
           restToMcpSwitchValue = true;
         }
 
-        // 根据后端接口的 protocol 字段设置传输协议下拉框的值
+        // 从 serviceRef 的 transportProtocol 字段获取传输协议，如果不存在则使用后端 protocol 字段
         const transportProtocolValue =
-          protocol === 'https' || protocol === 'http' ? protocol : 'http';
+          remoteServerConfig?.serviceRef?.transportProtocol ||
+          (protocol === 'https' || protocol === 'http' ? protocol : 'http');
 
         // 设置传输协议字段的值
         this.field.setValues({
@@ -210,6 +222,8 @@ class NewMcpServer extends React.Component {
           serverConfig: result.data,
           useExistService: true, // 编辑时 默认使用已有服务，隐藏新建服务
           restToMcpSwitch: restToMcpSwitchValue,
+          // 保存原始的 frontEndpointConfigList，用于编辑时原封不动地返回
+          frontEndpointConfigList: result.data?.remoteServerConfig?.frontEndpointConfigList || [],
         });
       }
     }
@@ -250,21 +264,21 @@ class NewMcpServer extends React.Component {
       }
 
       const pkg = {
-        registry_name: this.inferRegistryType(parsedCommand),
-        name: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
+        registryType: this.inferRegistryType(parsedCommand),
+        identifier: this.extractPackageNameFromArgs(parsedArgs, parsedCommand),
         version: this.extractPackageVersionFromArgs(parsedArgs),
       };
 
       // 处理 runtime hint 和 runtime arguments
-      if (parsedCommand && parsedCommand !== pkg.name) {
-        pkg.runtime_hint = parsedCommand;
+      if (parsedCommand && parsedCommand !== pkg.identifier) {
+        pkg.runtimeHint = parsedCommand;
 
         // 从 args 中提取 runtime_arguments 和 package_arguments
         if (parsedArgs && Array.isArray(parsedArgs)) {
-          const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.name);
+          const { runtimeArgs, packageArgs } = this.separateArguments(parsedArgs, pkg.identifier);
 
           if (runtimeArgs.length > 0) {
-            pkg.runtime_arguments = runtimeArgs.map(arg => ({
+            pkg.runtimeArguments = runtimeArgs.map(arg => ({
               type: 'positional',
               value: arg,
               format: 'string',
@@ -272,7 +286,7 @@ class NewMcpServer extends React.Component {
           }
 
           if (packageArgs.length > 0) {
-            pkg.package_arguments = packageArgs.map(arg => ({
+            pkg.packageArguments = packageArgs.map(arg => ({
               type: 'positional',
               value: arg,
               format: 'string',
@@ -281,7 +295,7 @@ class NewMcpServer extends React.Component {
         }
       } else if (parsedArgs && Array.isArray(parsedArgs)) {
         // 如果 command 就是包名，所有 args 都是 package_arguments
-        pkg.package_arguments = parsedArgs.map(arg => ({
+        pkg.packageArguments = parsedArgs.map(arg => ({
           type: 'positional',
           value: arg,
           format: 'string',
@@ -290,7 +304,7 @@ class NewMcpServer extends React.Component {
 
       // 处理环境变量
       if (config.env && typeof config.env === 'object') {
-        pkg.environment_variables = Object.entries(config.env).map(([name, value]) => ({
+        pkg.environmentVariables = Object.entries(config.env).map(([name, value]) => ({
           name: name,
           value: value,
           format: 'string',
@@ -599,28 +613,45 @@ class NewMcpServer extends React.Component {
             : '{}',
         };
 
-        // 如果是 stdio 协议，从 localServerConfig 生成 packages
-        if (values?.frontProtocol === 'stdio' && values?.localServerConfig) {
-          try {
-            const localConfig = JSON.parse(values.localServerConfig);
-            const packages = this.convertServerConfigToPackages(localConfig);
-            if (packages && packages.length > 0) {
-              serverSpec.packages = packages;
+        // 如果是 stdio 协议，优先使用 localServerConfig 生成 packages，否则回退到查询结果
+        if (values?.frontProtocol === 'stdio') {
+          let generatedPackages = [];
+
+          if (values?.localServerConfig) {
+            try {
+              const localConfig = JSON.parse(values.localServerConfig);
+              generatedPackages = this.convertServerConfigToPackages(localConfig) || [];
+            } catch (error) {
+              console.error('Failed to parse localServerConfig or convert to packages:', error);
             }
-          } catch (error) {
-            console.error('Failed to parse localServerConfig or convert to packages:', error);
           }
+
+          if (generatedPackages.length > 0) {
+            serverSpec.packages = generatedPackages;
+          } else if (
+            Array.isArray(this.state?.serverConfig?.packages) &&
+            this.state.serverConfig.packages.length > 0
+          ) {
+            // 深拷贝，避免直接引用 state
+            serverSpec.packages = JSON.parse(JSON.stringify(this.state.serverConfig.packages));
+          }
+        }
+
+        const extensions = this.collectExtensionsPayload(values?.extensions);
+        const toolSpecPayload = {
+          ...(this.state?.serverConfig?.toolSpec || {}),
+          securitySchemes: securitySchemes,
+        };
+        if (extensions) {
+          toolSpecPayload.extensions = extensions;
+        } else {
+          delete toolSpecPayload.extensions;
         }
 
         const params = {
           id: mcpServerId,
           serverSpecification: JSON.stringify(serverSpec, null, 2),
-          toolSpecification: JSON.stringify(
-            {
-              ...this.state?.serverConfig?.toolSpec,
-              securitySchemes: securitySchemes,
-            } || {}
-          ),
+          toolSpecification: JSON.stringify(toolSpecPayload || {}, null, 2),
         };
 
         if (values?.frontProtocol !== 'stdio') {
@@ -648,6 +679,11 @@ class NewMcpServer extends React.Component {
                   enabled: true,
                   remoteServerConfig: {
                     exportPath: exportPath,
+                    // 编辑时，原封不动返回 frontEndpointConfigList
+                    ...(this.state.frontEndpointConfigList &&
+                    this.state.frontEndpointConfigList.length > 0
+                      ? { frontEndpointConfigList: this.state.frontEndpointConfigList }
+                      : {}),
                   },
                 },
                 null,
@@ -681,6 +717,11 @@ class NewMcpServer extends React.Component {
                 enabled: true,
                 remoteServerConfig: {
                   exportPath: values?.exportPath || '',
+                  // 编辑时，原封不动返回 frontEndpointConfigList
+                  ...(this.state.frontEndpointConfigList &&
+                  this.state.frontEndpointConfigList.length > 0
+                    ? { frontEndpointConfigList: this.state.frontEndpointConfigList }
+                    : {}),
                 },
               },
               null,
@@ -802,13 +843,13 @@ class NewMcpServer extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /^[a-zA-Z0-9_-]+$/;
-
+    const chartReg = /^[a-zA-Z0-9_/\-\.]+$/;
     if (!chartReg.test(value)) {
       console.log('Invalid chart name:', value);
       callback(locale.doNotEnter);
       this.setState({
-        isInputError: 'Server name should only contain letters, numbers, underscores, and hyphens.',
+        isInputError:
+          'Server name should only contain letters, numbers, underscores, hyphens, and slashes.',
       });
     } else {
       callback();
@@ -919,6 +960,88 @@ class NewMcpServer extends React.Component {
     }
   };
 
+  setDefaultSecurityFields = extensions => {
+    const downstream = extensions?.['server.defaultDownstreamSecurity'] || {};
+    const upstream = extensions?.['server.defaultUpstreamSecurity'] || {};
+
+    this.field.setValues({
+      defaultDownstreamSecurityId: downstream.id || '',
+      defaultDownstreamSecurityPassthrough:
+        typeof downstream.passthrough === 'boolean' ? downstream.passthrough : false,
+      defaultUpstreamSecurityId: upstream.id || '',
+      defaultUpstreamSecurityCredential: upstream.credential || '',
+    });
+  };
+
+  collectExtensionsPayload = baseExtensions => {
+    const sourceExtensions =
+      baseExtensions != null
+        ? baseExtensions
+        : this.state?.serverConfig?.toolSpec?.extensions || {};
+
+    const preservedExtensions = {};
+    Object.keys(sourceExtensions || {}).forEach(key => {
+      if (
+        key !== 'server.defaultDownstreamSecurity' &&
+        key !== 'server.defaultUpstreamSecurity'
+      ) {
+        preservedExtensions[key] = sourceExtensions[key];
+      }
+    });
+
+    const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
+    const downstreamPassthrough = this.field.getValue(
+      'defaultDownstreamSecurityPassthrough'
+    );
+    if (downstreamId) {
+      preservedExtensions['server.defaultDownstreamSecurity'] = {
+        id: downstreamId,
+        passthrough: Boolean(downstreamPassthrough),
+      };
+    }
+
+    const upstreamId = this.field.getValue('defaultUpstreamSecurityId');
+    const upstreamCredential = this.field.getValue('defaultUpstreamSecurityCredential');
+    if (upstreamId) {
+      preservedExtensions['server.defaultUpstreamSecurity'] = {
+        id: upstreamId,
+        ...(upstreamCredential ? { credential: upstreamCredential } : {}),
+      };
+    }
+
+    return Object.keys(preservedExtensions).length ? preservedExtensions : {};
+  };
+
+  handleExtensionsFieldChange = (options = {}) => {
+    const { skipServerConfigUpdate = false } = options;
+    const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
+    if (!downstreamId && this.field.getValue('defaultDownstreamSecurityPassthrough')) {
+      this.field.setValue('defaultDownstreamSecurityPassthrough', false);
+    }
+    const upstreamId = this.field.getValue('defaultUpstreamSecurityId');
+    if (!upstreamId && this.field.getValue('defaultUpstreamSecurityCredential')) {
+      this.field.setValue('defaultUpstreamSecurityCredential', '');
+    }
+    const extensions = this.collectExtensionsPayload();
+    if (!skipServerConfigUpdate) {
+      this.setState(prevState => {
+        const nextToolSpec = {
+          ...(prevState.serverConfig?.toolSpec || {}),
+          extensions,
+        };
+        return {
+          serverConfig: {
+            ...prevState.serverConfig,
+            toolSpec: nextToolSpec,
+          },
+        };
+      });
+    }
+
+    return extensions;
+
+  };
+
   // 切换高级配置展开/折叠状态
   toggleAdvancedConfig = () => {
     this.setState({
@@ -963,6 +1086,19 @@ class NewMcpServer extends React.Component {
     // 延迟执行，确保表单字段已经更新
     setTimeout(() => {
       if (!this._mounted) return;
+      const currentSchemes = this.field.getValue('securitySchemes') || [];
+      const availableIds = currentSchemes.map(item => item?.id).filter(Boolean);
+      const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
+      const upstreamId = this.field.getValue('defaultUpstreamSecurityId');
+      if (downstreamId && !availableIds.includes(downstreamId)) {
+        this.field.setValue('defaultDownstreamSecurityId', '');
+        this.field.setValue('defaultDownstreamSecurityPassthrough', false);
+      }
+      if (upstreamId && !availableIds.includes(upstreamId)) {
+        this.field.setValue('defaultUpstreamSecurityId', '');
+        this.field.setValue('defaultUpstreamSecurityCredential', '');
+      }
+      this.handleExtensionsFieldChange({ skipServerConfigUpdate: true });
       this.toolsChange();
     }, 100);
   };
@@ -1025,30 +1161,39 @@ class NewMcpServer extends React.Component {
     // 同步 internal 计数器，便于后续新增时生成唯一行 id
     this.setState({ securitySchemeIdx: mergedSecuritySchemes.length });
 
+    const incomingExtensions = _toolSpec?.extensions;
+    if (incomingExtensions) {
+      this.setDefaultSecurityFields(incomingExtensions);
+    }
+    const extensions = this.collectExtensionsPayload(incomingExtensions);
+
     await new Promise(resolve => {
-      this.setState(
-        {
+      this.setState(prevState => {
+        const prevToolSpec = prevState.serverConfig?.toolSpec || {};
+        const nextToolSpec = {
+          ...prevToolSpec,
+          tools: _toolSpec?.tools || prevToolSpec.tools || [],
+          toolsMeta: _toolSpec?.toolsMeta || prevToolSpec.toolsMeta || {},
+          securitySchemes: mergedSecuritySchemes,
+        };
+        if (extensions) {
+          nextToolSpec.extensions = extensions;
+        } else {
+          delete nextToolSpec.extensions;
+        }
+        return {
           serverConfig: {
-            ...this.state?.serverConfig,
-            toolSpec: {
-              ...this.state?.serverConfig?.toolSpec,
-              tools: _toolSpec?.tools || this.state?.serverConfig?.toolSpec?.tools || [],
-              toolsMeta:
-                _toolSpec?.toolsMeta || this.state?.serverConfig?.toolSpec?.toolsMeta || {},
-              securitySchemes: mergedSecuritySchemes,
-            },
+            ...prevState.serverConfig,
+            toolSpec: nextToolSpec,
           },
-        },
-        resolve
-      );
+        };
+      }, resolve);
     });
   };
 
   LocalServerConfigLabel = () => {
     const { locale = {} } = this.props;
-    const trigger = (
-      <Icon type="help" color="#333" size="small" style={{ marginLeft: 2, cursor: 'pointer' }} />
-    );
+    const trigger = <Icon type="help" color="#333" size="small" className="help-icon" />;
     return (
       <span>
         {locale.localServerConfig}
@@ -1066,7 +1211,7 @@ class NewMcpServer extends React.Component {
             </a>{' '}
             {locale.localServerTips2}
           </div>
-          <div style={{ margin: '10px 0' }}>2. {locale.localServerTips3}</div>
+          <div className="help-tooltip-tips">2. {locale.localServerTips3}</div>
           <div>2. {locale.localServerTips4}</div>
         </Balloon.Tooltip>
       </span>
@@ -1086,9 +1231,19 @@ class NewMcpServer extends React.Component {
       ? this.state.serverConfig?.allVersions
       : [];
 
+    const securitySchemesData = this.field.getValue('securitySchemes') || [];
+    const availableSecuritySchemeOptions = securitySchemesData
+      .filter(item => item?.id)
+      .map(item => ({
+        label: item.id,
+        value: item.id,
+      }));
+
     let hasDraftVersion = false;
     if (versions.length > 0) {
-      hasDraftVersion = !versions[versions.length - 1].is_latest;
+      hasDraftVersion = !(
+        versions[versions.length - 1].isLatest || versions[versions.length - 1].is_latest
+      );
     }
 
     let currentVersionExist = versions
@@ -1099,20 +1254,20 @@ class NewMcpServer extends React.Component {
       <Loading
         shape={'flower'}
         tip={'Loading...'}
-        style={{ width: '100%', position: 'relative' }}
+        className="new-mcp-server-container"
         visible={this.state.loading}
         color={'#333'}
       >
-        <Row>
-          <Col span={16}>
+        <Row className="new-mcp-server-header">
+          <Col span={16} className="new-mcp-server-title">
             <h1>
               {!getParams('mcptype') && locale.addNewMcpServer}
               {getParams('mcptype') && (isEdit ? locale.editService : locale.viewService)}
             </h1>
           </Col>
-          <Col span={8}>
+          <Col span={8} className="new-mcp-server-actions">
             <FormItem label=" ">
-              <div style={{ textAlign: 'right' }}>
+              <div className="text-right">
                 {isEdit ? (
                   <>
                     <Button
@@ -1120,7 +1275,7 @@ class NewMcpServer extends React.Component {
                       onClick={() => {
                         this.publishConfig(false);
                       }}
-                      style={{ marginRight: 10 }}
+                      className="new-mcp-server-actions button"
                     >
                       {locale.createNewVersionAndSave}
                     </Button>
@@ -1130,7 +1285,7 @@ class NewMcpServer extends React.Component {
                       onClick={() => {
                         this.publishConfig(true);
                       }}
-                      style={{ marginRight: 10 }}
+                      className="new-mcp-server-actions button"
                     >
                       {locale.createNewVersionAndPublish}
                     </Button>
@@ -1138,7 +1293,7 @@ class NewMcpServer extends React.Component {
                 ) : (
                   <Button
                     type={'primary'}
-                    style={{ marginRight: 10 }}
+                    className="new-mcp-server-actions button"
                     onClick={() => {
                       this.publishConfig(true);
                     }}
@@ -1181,7 +1336,7 @@ class NewMcpServer extends React.Component {
               maxLength={255}
               addonTextBefore={
                 this.state.addonBefore ? (
-                  <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
+                  <div className="form-addon-before">{this.state.addonBefore}</div>
                 ) : null
               }
               isPreview={isEdit}
@@ -1320,14 +1475,12 @@ class NewMcpServer extends React.Component {
                     });
                   }}
                 />
-                <span style={{ marginLeft: '8px' }}>
-                  {this.state.restToMcpSwitch ? '开启' : '关闭'}
-                </span>
+                <span className="switch-label">{this.state.restToMcpSwitch ? '开启' : '关闭'}</span>
               </FormItem>
               {/*{!isEdit && (*/}
 
               {/* 只有在 HTTP 转 MCP 服务开启时才显示后端服务选项 */}
-              {this.state.restToMcpSwitch && (
+              {
                 <FormItem label={locale.backendService}>
                   <RadioGroup
                     disabled={currentVersionExist}
@@ -1355,10 +1508,10 @@ class NewMcpServer extends React.Component {
                     </Radio>
                   </RadioGroup>
                 </FormItem>
-              )}
+              }
 
               {/* HTTP 转 MCP 服务关闭时显示 MCP Server endpoint */}
-              {!this.state.restToMcpSwitch && (
+              {!this.state.useExistService && !this.state.restToMcpSwitch && (
                 <FormItem
                   label={locale.mcpServerEndpoint || 'MCP Server Endpoint'}
                   required
@@ -1421,7 +1574,7 @@ class NewMcpServer extends React.Component {
               )}
 
               {/* 只有在 HTTP 转 MCP 服务开启时才显示服务配置 */}
-              {this.state.restToMcpSwitch && this.state.useExistService && (
+              {this.state.useExistService && (
                 <>
                   <FormItem label={locale.serviceRef} required>
                     <Row gutter={8}>
@@ -1430,7 +1583,7 @@ class NewMcpServer extends React.Component {
                           <p>{currentNamespace}</p>
                         </FormItem>
                       </Col>
-                      <Col span={12}>
+                      <Col span={8}>
                         <FormItem label="service">
                           <Select
                             isPreview={currentVersionExist}
@@ -1453,7 +1606,7 @@ class NewMcpServer extends React.Component {
                           />
                         </FormItem>
                       </Col>
-                      <Col span={8}>
+                      <Col span={6}>
                         <FormItem label={locale.transportProtocol || '传输协议'} required>
                           <Select
                             {...init('serviceTransportProtocol', {
@@ -1489,6 +1642,32 @@ class NewMcpServer extends React.Component {
                           />
                         </FormItem>
                       </Col>
+                      {!this.state.restToMcpSwitch && (
+                        <Col span={6}>
+                          <FormItem label="exportPath">
+                            <Input
+                              isPreview={currentVersionExist}
+                              {...init('exportPath', {
+                                rules: [{ required: true, message: locale.pleaseSelect }],
+                                props: {
+                                  onChange: value => {
+                                    this.setState({
+                                      serverConfig: {
+                                        ...this.state.serverConfig,
+                                        remoteServerConfig: {
+                                          ...this.state.serverConfig?.remoteServerConfig,
+                                          exportPath: value,
+                                        },
+                                      },
+                                    });
+                                  },
+                                },
+                              })}
+                              placeholder={this.field.getValue('exportPath') || '/mcp'}
+                            />
+                          </FormItem>
+                        </Col>
+                      )}
                     </Row>
                   </FormItem>
                 </>
@@ -1518,7 +1697,7 @@ class NewMcpServer extends React.Component {
                                 },
                               },
                             })}
-                            style={{ width: '100%' }}
+                            className="new-service-address"
                           />
                         </FormItem>
                       </Col>
@@ -1544,7 +1723,7 @@ class NewMcpServer extends React.Component {
                             min={1}
                             max={65535}
                             step={1}
-                            style={{ width: '100%' }}
+                            className="port-number-picker"
                             placeholder="8080"
                           />
                         </FormItem>
@@ -1597,22 +1776,7 @@ class NewMcpServer extends React.Component {
               <FormItem label={this.LocalServerConfigLabel()} required>
                 {currentVersionExist ? (
                   // 预览模式使用格式化的 pre 标签
-                  <pre
-                    style={{
-                      backgroundColor: '#f6f7f9',
-                      border: '1px solid #dcdee3',
-                      borderRadius: '4px',
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-all',
-                      maxHeight: '400px',
-                      overflow: 'auto',
-                      margin: 0,
-                    }}
-                  >
+                  <pre className="config-preview-pre">
                     {(() => {
                       try {
                         const configValue = this.field.getValue('localServerConfig');
@@ -1746,8 +1910,8 @@ class NewMcpServer extends React.Component {
             />
             {currentVersionExist && (
               <>
-                <p style={{ color: 'red' }}>{locale.editExistVersionMessage}</p>
-                <p style={{ color: 'red' }}>{locale.editMoreNeedNewVersion}</p>
+                <p className="version-error-text">{locale.editExistVersionMessage}</p>
+                <p className="version-error-text">{locale.editMoreNeedNewVersion}</p>
               </>
             )}
           </FormItem>
@@ -1755,19 +1919,7 @@ class NewMcpServer extends React.Component {
           <FormItem label={locale.description}>
             <Input.TextArea
               isPreview={currentVersionExist}
-              renderPreview={value => (
-                <div
-                  style={{
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    overflowWrap: 'break-word',
-                    maxHeight: 240,
-                    overflowY: 'auto',
-                  }}
-                >
-                  {value || '-'}
-                </div>
-              )}
+              renderPreview={value => <div className="description-preview">{value || '-'}</div>}
               {...init('description', {
                 props: {
                   ...descAreaProps,
@@ -1787,67 +1939,136 @@ class NewMcpServer extends React.Component {
           {/* Security Schemes 配置 - 只在非stdio协议且 restToMcpSwitch 开启时显示 */}
           {this.field.getValue('frontProtocol') !== 'stdio' && this.state.restToMcpSwitch && (
             <FormItem label={locale.advancedConfig || '高级配置'}>
-              <div style={{ marginBottom: 16 }}>
+              <div className="advanced-config-container">
                 <Button
                   type="normal"
                   size="small"
                   onClick={this.toggleAdvancedConfig}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '4px 8px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: '#333',
-                    fontSize: '14px',
-                  }}
+                  className="advanced-config-toggle-btn"
                 >
                   <Icon
                     type={this.state.advancedConfigCollapsed ? 'arrow-right' : 'arrow-down'}
-                    style={{ marginRight: 4, fontSize: '12px' }}
+                    className="advanced-config-toggle-icon"
                   />
                   {locale.securitySchemes || '安全认证方案'}
                 </Button>
               </div>
 
               {!this.state.advancedConfigCollapsed && (
-                <div style={{ paddingLeft: 16, borderLeft: '2px solid #f0f0f0' }}>
+                <div className="advanced-config-content">
+                  <div className="default-security-sections">
+                    <div className="default-security-card">
+                      <div className="default-security-card-header">
+                        <div className="default-security-card-title">
+                          {locale.defaultDownstreamSecurityTitle || 'Default Downstream Security'}
+                        </div>
+                        <div className="default-security-card-desc">
+                          {locale.defaultDownstreamSecurityDesc ||
+                            'Applies to client-to-gateway requests (e.g., tools/list) when no tool override exists.'}
+                        </div>
+                      </div>
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <FormItem label={locale.selectSecurityScheme || 'Select Security Scheme'}>
+                            <Select
+                              {...init('defaultDownstreamSecurityId', {
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              dataSource={availableSecuritySchemeOptions}
+                              placeholder={
+                                locale.defaultDownstreamSecurityPlaceholder ||
+                                locale.pleaseSelectSecurityScheme ||
+                                'Select security scheme'
+                              }
+                              hasClear
+                              showSearch
+                            />
+                          </FormItem>
+                        </Col>
+                        <Col span={12}>
+                          <FormItem label={locale.transparentAuth || 'Enable Transparent Auth'}>
+                            <Switch
+                              {...init('defaultDownstreamSecurityPassthrough', {
+                                valueName: 'checked',
+                                initValue: false,
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              disabled={!this.field.getValue('defaultDownstreamSecurityId')}
+                            />
+                            <span className="switch-label">
+                              {this.field.getValue('defaultDownstreamSecurityPassthrough')
+                                ? locale.enable || 'Enable'
+                                : locale.disable || 'Disable'}
+                            </span>
+                          </FormItem>
+                        </Col>
+                      </Row>
+                    </div>
+                    <div className="default-security-card">
+                      <div className="default-security-card-header">
+                        <div className="default-security-card-title">
+                          {locale.defaultUpstreamSecurityTitle || 'Default Upstream Security'}
+                        </div>
+                        <div className="default-security-card-desc">
+                          {locale.defaultUpstreamSecurityDesc ||
+                            'Applies to gateway-to-backend calls (e.g., default requestTemplate.security).'}
+                        </div>
+                      </div>
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <FormItem label={locale.selectSecurityScheme || 'Select Security Scheme'}>
+                            <Select
+                              {...init('defaultUpstreamSecurityId', {
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              dataSource={availableSecuritySchemeOptions}
+                              placeholder={
+                                locale.defaultUpstreamSecurityPlaceholder ||
+                                locale.pleaseSelectSecurityScheme ||
+                                'Select security scheme'
+                              }
+                              hasClear
+                              showSearch
+                            />
+                          </FormItem>
+                        </Col>
+                        <Col span={12}>
+                          <FormItem label={locale.upstreamCredentialLabel || 'Override Credential'}>
+                            <Input.TextArea
+                              {...init('defaultUpstreamSecurityCredential', {
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              placeholder={
+                                locale.upstreamCredentialPlaceholder || 'Optional credential override'
+                              }
+                              autoHeight={{ minRows: 2, maxRows: 4 }}
+                              disabled={!this.field.getValue('defaultUpstreamSecurityId')}
+                            />
+                          </FormItem>
+                        </Col>
+                      </Row>
+                    </div>
+                  </div>
                   <Button
                     type="primary"
                     size="small"
                     onClick={this.addNewSecurityScheme}
-                    style={{ marginBottom: 10 }}
+                    className="add-security-scheme-btn"
                   >
                     {locale.addSecurityScheme || '添加认证方案'}
                   </Button>
 
                   {this.field.getValue('securitySchemes') &&
                     this.field.getValue('securitySchemes').map((item, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          border: '1px solid rgba(0, 0, 0, 0.06)',
-                          padding: '20px',
-                          marginBottom: '16px',
-                          borderRadius: '6px',
-                          backgroundColor: '#fff',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                          transition: 'all 0.2s ease',
-                          backdropFilter: 'blur(8px)',
-                          position: 'relative',
-                          overflow: 'hidden',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.boxShadow =
-                            '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-                          e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.boxShadow =
-                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                          e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)';
-                        }}
-                      >
+                      <div key={index} className="security-scheme-item">
                         <Row gutter={8}>
                           <Col span={6}>
                             <FormItem label={locale.schemeId || 'ID'} required>

@@ -43,7 +43,7 @@ import org.springframework.jmx.support.RegistrationPolicy;
 @SpringBootApplication
 public class NacosBootstrap {
     
-    private static final String SPRING_JXM_ENABLED = "spring.jmx.enabled";
+    private static final String SPRING_JMX_ENABLED = "spring.jmx.enabled";
     
     public static void main(String[] args) {
         String type = System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
@@ -65,7 +65,7 @@ public class NacosBootstrap {
     }
     
     private static void prepareCoreContext(ConfigurableApplicationContext coreContext) {
-        if (coreContext.getEnvironment().getProperty(SPRING_JXM_ENABLED, Boolean.class, false)) {
+        if (coreContext.getEnvironment().getProperty(SPRING_JMX_ENABLED, Boolean.class, false)) {
             // Avoid duplicate registration MBean to exporter.
             coreContext.getBean(MBeanExporter.class).setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
         }

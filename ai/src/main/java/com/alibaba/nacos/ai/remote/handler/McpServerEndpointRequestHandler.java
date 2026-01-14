@@ -20,7 +20,6 @@ import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
-import com.alibaba.nacos.ai.utils.McpRequestUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -34,6 +33,10 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -41,6 +44,7 @@ import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
@@ -78,7 +82,7 @@ public class McpServerEndpointRequestHandler
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
     public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
-        McpRequestUtils.fillNamespaceId(request);
+        McpRequestUtil.fillNamespaceId(request);
         try {
             checkParameters(request);
             Instance instance = buildInstance(request);
@@ -119,12 +123,12 @@ public class McpServerEndpointRequestHandler
             case AiRemoteConstants.REGISTER_ENDPOINT:
                 LOGGER.info("[{}] register endpoint {}:{} version {} for mcp server: {}", meta.getConnectionId(),
                         request.getAddress(), request.getPort(), request.getVersion(), request.getMcpName());
-                doRegister(service, instance, meta.getConnectionId());
+                doRegister(service, instance, meta);
                 break;
             case AiRemoteConstants.DE_REGISTER_ENDPOINT:
                 LOGGER.info("[{}] de-register endpoint {}:{} version {} for mcp server: {}", meta.getConnectionId(),
                         request.getAddress(), request.getPort(), request.getVersion(), request.getMcpName());
-                doDeregister(service, instance, meta.getConnectionId());
+                doDeregister(service, instance, meta);
                 break;
             default:
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
@@ -164,11 +168,18 @@ public class McpServerEndpointRequestHandler
         return result;
     }
     
-    private void doRegister(Service service, Instance instance, String connectionId) throws NacosException {
-        clientOperationService.registerInstance(service, instance, connectionId);
+    private void doRegister(Service service, Instance instance, RequestMeta meta) throws NacosException {
+        clientOperationService.registerInstance(service, instance, meta.getConnectionId());
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
+                service.getName(), instance.getIp(), instance.getPort()));
     }
     
-    private void doDeregister(Service service, Instance instance, String connectionId) {
-        clientOperationService.deregisterInstance(service, instance, connectionId);
+    private void doDeregister(Service service, Instance instance, RequestMeta meta) {
+        clientOperationService.deregisterInstance(service, instance, meta.getConnectionId());
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
+                service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
+                instance.getPort()));
     }
 }

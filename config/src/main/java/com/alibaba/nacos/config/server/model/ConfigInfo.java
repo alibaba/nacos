@@ -32,6 +32,10 @@ public class ConfigInfo extends ConfigInfoBase {
     
     private String type;
     
+    private String desc;
+    
+    private String configTags;
+    
     public ConfigInfo() {
     }
     
@@ -74,6 +78,22 @@ public class ConfigInfo extends ConfigInfoBase {
         this.type = type;
     }
     
+    public String getDesc() {
+        return desc;
+    }
+    
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+    
+    public String getConfigTags() {
+        return configTags;
+    }
+    
+    public void setConfigTags(String configTags) {
+        this.configTags = configTags;
+    }
+    
     @Override
     public int hashCode() {
         return super.hashCode();
@@ -88,7 +108,8 @@ public class ConfigInfo extends ConfigInfoBase {
     public String toString() {
         return "ConfigInfo{" + "id=" + getId() + ", dataId='" + getDataId() + '\'' + ", group='" + getGroup() + '\''
                 + ", tenant='" + tenant + '\'' + ", appName='" + appName + '\'' + ", content='" + getContent() + '\''
-                + ", md5='" + getMd5() + '\'' + '}';
+                + ", md5='" + getMd5() + '\'' + ", type='" + type + '\'' + ", desc='" + desc + '\'' 
+                + ", configTags='" + configTags + '\'' + '}';
     }
     
 }

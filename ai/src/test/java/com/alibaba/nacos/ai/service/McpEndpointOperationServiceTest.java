@@ -83,15 +83,15 @@ class McpEndpointOperationServiceTest {
         McpEndpointSpec mcpEndpointSpec = new McpEndpointSpec();
         mcpEndpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
         assertThrows(NacosApiException.class, () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec),
+                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false),
                 "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
         mcpEndpointSpec.getData().put("namespaceId", AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
         assertThrows(NacosApiException.class, () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec),
+                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false),
                 "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
         mcpEndpointSpec.getData().put("groupName", "groupName");
         assertThrows(NacosApiException.class, () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec),
+                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false),
                 "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
     }
     
@@ -103,7 +103,7 @@ class McpEndpointOperationServiceTest {
         mcpEndpointSpec.getData().put("groupName", "groupName");
         mcpEndpointSpec.getData().put("serviceName", "serviceName");
         Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec);
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false);
         assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, service.getNamespace());
         assertEquals("groupName", service.getGroup());
         assertEquals("serviceName", service.getName());
@@ -116,7 +116,7 @@ class McpEndpointOperationServiceTest {
         mcpEndpointSpec.getData().put("address", "127.0.0.1");
         mcpEndpointSpec.getData().put("port", "8848");
         Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec);
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false);
         assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, service.getNamespace());
         assertEquals(Constants.MCP_SERVER_ENDPOINT_GROUP, service.getGroup());
         assertEquals("mcpName::1.0.0", service.getName());
@@ -137,7 +137,7 @@ class McpEndpointOperationServiceTest {
         mcpEndpointSpec.getData().put("address", "127.0.0.1");
         mcpEndpointSpec.getData().put("port", "8848");
         Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec);
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false);
         assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, service.getNamespace());
         assertEquals(Constants.MCP_SERVER_ENDPOINT_GROUP, service.getGroup());
         assertEquals("mcpName::1.0.0", service.getName());

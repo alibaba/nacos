@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * Argument interface for MCP registry model arguments.
+ * Argument union for MCP registry (named | positional).
+ * Aligns with components.schemas.Argument.
+ *
  * @author xinluo
  */
-
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = NamedArgument.class)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PositionalArgument.class, name = "positional"),
         @JsonSubTypes.Type(value = NamedArgument.class, name = "named")

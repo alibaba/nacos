@@ -16,13 +16,18 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.ai.service.McpServerImportService;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
@@ -36,13 +41,18 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @EnabledInnerHandler
+@EnabledAiHandler
 @Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class McpInnerHandler implements McpHandler {
     
     private final McpServerOperationService mcpServerOperationService;
     
-    public McpInnerHandler(McpServerOperationService mcpServerOperationService) {
+    private final McpServerImportService mcpServerImportService;
+    
+    public McpInnerHandler(McpServerOperationService mcpServerOperationService,
+                          McpServerImportService mcpServerImportService) {
         this.mcpServerOperationService = mcpServerOperationService;
+        this.mcpServerImportService = mcpServerImportService;
     }
     
     @Override
@@ -65,13 +75,23 @@ public class McpInnerHandler implements McpHandler {
     
     @Override
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
         mcpServerOperationService.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
-                endpointSpecification);
+                endpointSpecification, overrideExisting);
     }
     
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
         mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
+    }
+    
+    @Override
+    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        return mcpServerImportService.validateImport(namespaceId, request);
+    }
+    
+    @Override
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        return mcpServerImportService.executeImport(namespaceId, request);
     }
 }

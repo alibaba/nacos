@@ -81,9 +81,9 @@ public class ResponseUtil {
     }
     
     /**
-     * Transfer from {@link ConfigInfo} to {@link ConfigBasicInfo} for APIs.
+     * Transfer from {@link ConfigInfoWrapper} to {@link ConfigBasicInfo} for APIs.
      *
-     * @param configInfo {@link ConfigInfo} config basic information from storage.
+     * @param configInfo {@link ConfigInfoWrapper} config basic information from storage.
      * @return {@link ConfigBasicInfo} for APIs response.
      */
     public static ConfigBasicInfo transferToConfigBasicInfo(ConfigInfoWrapper configInfo) {

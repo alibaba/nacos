@@ -110,4 +110,11 @@ public interface GrpcClientConfig extends RpcClientConfig {
      * @return timeout of connection setup
      */
     long capabilityNegotiationTimeout();
+    
+    /**
+     * get allowCoreThreadTimeOut flag for thread pool.
+     *
+     * @return allowCoreThreadTimeOut flag
+     */
+    boolean allowCoreThreadTimeOut();
 }

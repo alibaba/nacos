@@ -301,5 +301,4 @@ class ParamUtilsTest {
         assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", ""));
         assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", UUID.randomUUID().toString()));
     }
-    
 }

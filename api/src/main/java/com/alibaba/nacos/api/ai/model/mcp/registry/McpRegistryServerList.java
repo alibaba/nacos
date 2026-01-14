@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,73 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", 
-        "PMD.LowerCamelCaseVariableNamingRule", "PMD.ClassMustHaveAuthorRule"})
+/**
+ * McpRegistryServerList (renamed from ServerList) aligns with registry package.
+ *
+ * @author xinluo
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class McpRegistryServerList {
-    private List<McpRegistryServer> servers;
-    
-    private int total_count;
-    
-    private String next;
 
-    public List<McpRegistryServer> getServers() {
+    private List<ServerResponse> servers;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Metadata metadata;
+
+    public List<ServerResponse> getServers() {
         return servers;
     }
 
-    public void setServers(List<McpRegistryServer> servers) {
+    public void setServers(List<ServerResponse> servers) {
         this.servers = servers;
     }
 
-    public int getTotal_count() {
-        return total_count;
+    public Metadata getMetadata() {
+        return metadata;
     }
 
-    public void setTotal_count(int total_count) {
-        this.total_count = total_count;
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
     }
 
-    public String getNext() {
-        return next;
-    }
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Metadata {
+        @JsonProperty("nextCursor")
+        @JsonAlias("next_cursor")
+        private String nextCursor;
 
-    public void setNext(String next) {
-        this.next = next;
+        private Integer count;
+
+        public Metadata() {
+        }
+
+        public Metadata(String nextCursor, Integer count) {
+            this.nextCursor = nextCursor;
+            this.count = count;
+        }
+
+        public String getNextCursor() {
+            return nextCursor;
+        }
+
+        public void setNextCursor(String nextCursor) {
+            this.nextCursor = nextCursor;
+        }
+
+        public Integer getCount() {
+            return count;
+        }
+
+        public void setCount(Integer count) {
+            this.count = count;
+        }
     }
 }

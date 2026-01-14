@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.model.mcp;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Icon;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Package;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -30,6 +31,8 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class McpServerBasicInfo {
+    
+    private String namespaceId;
     
     private String id;
     
@@ -48,6 +51,10 @@ public class McpServerBasicInfo {
     private Repository repository;
     
     private List<Package> packages;
+
+    private List<Icon> icons;
+
+    private String websiteUrl;
     
     private ServerVersionDetail versionDetail;
     
@@ -67,6 +74,13 @@ public class McpServerBasicInfo {
     private Map<String, Object> localServerConfig;
     
     private boolean enabled = true;
+    
+    /**
+     * Current lifecycle status of MCP server, should be one of
+     * {@link AiConstants.Mcp#MCP_STATUS_ACTIVE} or {@link AiConstants.Mcp#MCP_STATUS_DEPRECATED}.
+     * Default is {@link AiConstants.Mcp#MCP_STATUS_ACTIVE}.
+     */
+    private String status = AiConstants.Mcp.MCP_STATUS_ACTIVE;
     
     /**
      * Auto discovery capabilities by Nacos. No need to set when create or update Mcp server.
@@ -175,5 +189,37 @@ public class McpServerBasicInfo {
 
     public void setPackages(List<Package> packages) {
         this.packages = packages;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public List<Icon> getIcons() {
+        return icons;
+    }
+
+    public void setIcons(List<Icon> icons) {
+        this.icons = icons;
+    }
+
+    public String getWebsiteUrl() {
+        return websiteUrl;
+    }
+
+    public void setWebsiteUrl(String websiteUrl) {
+        this.websiteUrl = websiteUrl;
+    }
+
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 }

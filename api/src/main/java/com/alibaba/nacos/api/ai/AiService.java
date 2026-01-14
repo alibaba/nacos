@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  *
  * @author xiweng.yy
  */
-public interface AiService {
+public interface AiService extends A2aService {
     
     /**
      * Get mcp server detail info for latest version.
@@ -145,7 +145,7 @@ public interface AiService {
      * @param mcpName           name of mcp server
      * @param version           version of mcp server
      * @param mcpServerListener listener of mcp server, callback when mcp server is changed
-     * @return The detail info of mcp server at current time
+     * @return The detail info of mcp server at current time, nullable if agent card not found
      * @throws NacosException if request parameter is invalid or handle error
      */
     McpServerDetailInfo subscribeMcpServer(String mcpName, String version,

@@ -162,6 +162,17 @@ public final class WhereBuilder {
     }
     
     /**
+     * Build GROUP BY.
+     *
+     * @param fields Group by fields
+     * @return Return {@link WhereBuilder}
+     */
+    public WhereBuilder groupBy(String fields) {
+        where.append(" GROUP BY ").append(fields);
+        return this;
+    }
+    
+    /**
      * Build.
      *
      * @return Return {@link WhereBuilder}

@@ -167,7 +167,7 @@ public abstract class GrpcClient extends RpcClient {
                 new LinkedBlockingQueue<>(clientConfig.threadPoolQueueSize()),
                 new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
                         .build());
-        grpcExecutor.allowCoreThreadTimeOut(true);
+        grpcExecutor.allowCoreThreadTimeOut(clientConfig.allowCoreThreadTimeOut());
         return grpcExecutor;
     }
     

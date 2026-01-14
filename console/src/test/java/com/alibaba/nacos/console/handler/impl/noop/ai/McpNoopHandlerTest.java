@@ -56,7 +56,7 @@ class McpNoopHandlerTest {
     
     @Test
     void updateMcpServer() {
-        assertThrows(NacosApiException.class, () -> mcpNoopHandler.updateMcpServer("", true, null, null, null),
+        assertThrows(NacosApiException.class, () -> mcpNoopHandler.updateMcpServer("", true, null, null, null, false),
                 "Nacos AI MCP module and API required both `naming` and `config` module.");
     }
     

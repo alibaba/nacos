@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -119,5 +120,14 @@ public class MapperManager {
             return MapperProxy.createSingleProxy(mapper);
         }
         return (R) mapper;
+    }
+
+    /**
+     * Get all mappers.
+     *
+     * @return unmodifiable map of all mappers
+     */
+    public Map<String, Map<String, Mapper>> getAllMappers() {
+        return Collections.unmodifiableMap(MAPPER_SPI_MAP);
     }
 }

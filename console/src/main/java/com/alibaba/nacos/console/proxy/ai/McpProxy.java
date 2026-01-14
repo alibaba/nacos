@@ -19,6 +19,9 @@ package com.alibaba.nacos.console.proxy.ai;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -94,11 +97,12 @@ public class McpProxy {
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
+     * @param overrideExisting       if replace all the instances when update the mcp server
      * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpHandler.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification, endpointSpecification);
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
+        mcpHandler.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification, endpointSpecification, overrideExisting);
     }
     
     /**
@@ -111,5 +115,29 @@ public class McpProxy {
      */
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
         mcpHandler.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
+    }
+    
+    /**
+     * Validate MCP server import request.
+     *
+     * @param namespaceId namespace id for mcp servers
+     * @param request     import request containing data and settings
+     * @return validation result with details about potential issues
+     * @throws NacosException any exception during validation
+     */
+    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        return mcpHandler.validateImport(namespaceId, request);
+    }
+    
+    /**
+     * Execute MCP server import operation.
+     *
+     * @param namespaceId namespace id for mcp servers
+     * @param request     import request containing data and settings
+     * @return import response with results and statistics
+     * @throws NacosException any exception during import execution
+     */
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        return mcpHandler.executeImport(namespaceId, request);
     }
 }

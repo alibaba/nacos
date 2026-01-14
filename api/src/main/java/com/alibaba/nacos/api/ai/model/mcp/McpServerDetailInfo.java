@@ -35,8 +35,6 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     
     private List<ServerVersionDetail> allVersions;
     
-    private String namespaceId;
-    
     public List<McpEndpointInfo> getBackendEndpoints() {
         return backendEndpoints;
     }
@@ -67,13 +65,5 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
 
     public void setAllVersions(List<ServerVersionDetail> allVersions) {
         this.allVersions = allVersions;
-    }
-
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
     }
 }

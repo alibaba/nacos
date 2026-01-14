@@ -33,15 +33,11 @@ public class ConfigAllInfo extends ConfigInfo {
     
     private String createIp;
     
-    private String desc;
-    
     private String use;
     
     private String effect;
     
     private String schema;
-    
-    private String configTags;
     
     public ConfigAllInfo() {
     }
@@ -78,14 +74,6 @@ public class ConfigAllInfo extends ConfigInfo {
         this.createIp = createIp;
     }
     
-    public String getDesc() {
-        return desc;
-    }
-    
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-    
     public String getUse() {
         return use;
     }
@@ -108,14 +96,6 @@ public class ConfigAllInfo extends ConfigInfo {
     
     public void setSchema(String schema) {
         this.schema = schema;
-    }
-    
-    public String getConfigTags() {
-        return configTags;
-    }
-    
-    public void setConfigTags(String configTags) {
-        this.configTags = configTags;
     }
     
     @Override

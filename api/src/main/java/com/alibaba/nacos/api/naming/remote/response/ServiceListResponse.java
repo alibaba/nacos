@@ -32,7 +32,7 @@ public class ServiceListResponse extends Response {
     
     private List<String> serviceNames;
     
-    public ServiceListResponse(){
+    public ServiceListResponse() {
     }
     
     private ServiceListResponse(int count, List<String> serviceNames, String message) {

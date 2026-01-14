@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,35 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
- * Input model for MCP registry argument input.
+ * Input per components.schemas.Input.
+ *
  * @author xinluo
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Input {
     
     private String description;
-    
-    @JsonProperty("is_required")
-    private boolean isRequired;
+
+    private Boolean isRequired;
     
     private String format;
     
     private String value;
+
+    private Boolean isSecret;
     
-    @JsonProperty("is_secret")
-    private boolean isSecret;
-    
-    @JsonProperty("default_value")
     private String defaultValue;
 
     private List<String> choices;
 
-    public boolean isSecret() {
-        return isSecret;
-    }
-
-    public void setSecret(boolean secret) {
-        isSecret = secret;
-    }
+    private String placeholder;
 
     public String getDescription() {
         return description;
@@ -59,12 +54,12 @@ public class Input {
         this.description = description;
     }
 
-    public boolean isRequired() {
+    public Boolean getIsRequired() {
         return isRequired;
     }
 
-    public void setRequired(boolean required) {
-        isRequired = required;
+    public void setIsRequired(Boolean isRequired) {
+        this.isRequired = isRequired;
     }
 
     public String getFormat() {
@@ -83,6 +78,14 @@ public class Input {
         this.value = value;
     }
 
+    public Boolean getIsSecret() {
+        return isSecret;
+    }
+
+    public void setIsSecret(Boolean isSecret) {
+        this.isSecret = isSecret;
+    }
+
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -97,5 +100,23 @@ public class Input {
 
     public void setChoices(List<String> choices) {
         this.choices = choices;
+    }
+
+    /**
+     * Get placeholder.
+     *
+     * @return placeholder
+     */
+    public String getPlaceholder() {
+        return placeholder;
+    }
+
+    /**
+     * Set placeholder.
+     *
+     * @param placeholder placeholder
+     */
+    public void setPlaceholder(String placeholder) {
+        this.placeholder = placeholder;
     }
 }

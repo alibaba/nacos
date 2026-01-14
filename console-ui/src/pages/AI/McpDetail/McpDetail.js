@@ -16,6 +16,9 @@ import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import { generateUrl } from '../../../utils/nacosutil';
 import ShowTools from './ShowTools';
+import './McpDetail.css';
+
+const KNOWN_SECURITY_FIELDS = ['id', 'passthrough', 'credential'];
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -51,6 +54,10 @@ class McpDetail extends React.Component {
       parameterContainersExpanded: {},
       // 当前选中的Tool索引
       activeToolIndex: 0,
+      defaultSecurityCollapsed: {
+        downstream: true,
+        upstream: true,
+      },
     };
     this.toolsRef = React.createRef();
   }
@@ -84,11 +91,11 @@ class McpDetail extends React.Component {
   getFormItem = params => {
     const { list = [] } = params;
     return (
-      <Row wrap style={{ textAlign: 'left', marginBottom: '8px' }}>
+      <Row wrap className="mcp-form-row">
         {list.map((item, index) => {
           return (
-            <Col key={item.label} span={12} style={{ display: 'flex' }}>
-              <p style={{ minWidth: 80 }}>{item.label}</p>
+            <Col key={item.label} span={12} className="mcp-form-col">
+              <p className="mcp-label-with-min-width">{item.label}</p>
               <p>{item.value}</p>
             </Col>
           );
@@ -158,6 +165,15 @@ class McpDetail extends React.Component {
           ...prevState.parameterContainersExpanded[packageIndex],
           [containerType]: !prevState.parameterContainersExpanded[packageIndex]?.[containerType],
         },
+      },
+    }));
+  };
+
+  toggleDefaultSecuritySection = sectionKey => {
+    this.setState(prevState => ({
+      defaultSecurityCollapsed: {
+        ...prevState.defaultSecurityCollapsed,
+        [sectionKey]: !prevState.defaultSecurityCollapsed?.[sectionKey],
       },
     }));
   };
@@ -396,7 +412,8 @@ class McpDetail extends React.Component {
 
   // 将Package定义转换为MCP Server配置
   convertPackageToMcpConfig = packageDef => {
-    if (!packageDef || !packageDef.name) {
+    const pkgName = packageDef?.identifier || packageDef?.name;
+    if (!packageDef || !pkgName) {
       return null;
     }
 
@@ -410,13 +427,11 @@ class McpDetail extends React.Component {
     if (!serverName || serverName.trim() === '') {
       serverName = 'mcp-server';
     }
-
     const serverConfig = {};
-
-    // 处理运行时命令
-    if (packageDef.runtime_hint) {
-      serverConfig.command = packageDef.runtime_hint;
-    } else if (packageDef.registry_name === 'npm') {
+    const runtimeHint = packageDef.runtimeHint || packageDef.runtime_hint;
+    if (runtimeHint) {
+      serverConfig.command = runtimeHint;
+    } else if (this.getRegistryType(packageDef) === 'npm') {
       serverConfig.command = 'npx';
     } else {
       // 默认命令根据注册表类型推断
@@ -426,8 +441,9 @@ class McpDetail extends React.Component {
         docker: 'docker',
         uv: 'uvx',
         dnx: 'dnx',
+        oci: 'docker',
       };
-      serverConfig.command = registryCommands[packageDef.registry_name] || 'npx';
+      serverConfig.command = registryCommands[this.getRegistryType(packageDef)] || 'npx';
     }
 
     // 构建参数数组
@@ -435,9 +451,10 @@ class McpDetail extends React.Component {
 
     // 检查是否已经有runtime_arguments包含了包名
     let hasPackageInRuntimeArgs = false;
-    if (packageDef.runtime_arguments && Array.isArray(packageDef.runtime_arguments)) {
-      for (const arg of packageDef.runtime_arguments) {
-        if (arg.value && arg.value.includes(packageDef.name)) {
+    const runtimeArguments = packageDef.runtimeArguments || packageDef.runtime_arguments || [];
+    if (runtimeArguments && Array.isArray(runtimeArguments)) {
+      for (const arg of runtimeArguments) {
+        if (arg.value && arg.value.includes(pkgName)) {
           hasPackageInRuntimeArgs = true;
           break;
         }
@@ -445,8 +462,8 @@ class McpDetail extends React.Component {
     }
 
     // 先添加运行时参数
-    if (packageDef.runtime_arguments && Array.isArray(packageDef.runtime_arguments)) {
-      packageDef.runtime_arguments.forEach(arg => {
+    if (runtimeArguments && Array.isArray(runtimeArguments)) {
+      runtimeArguments.forEach(arg => {
         args.push(...this.processArgument(arg));
       });
     }
@@ -454,28 +471,34 @@ class McpDetail extends React.Component {
     // 如果runtime_arguments中没有包含包名，则添加包名和版本
     if (!hasPackageInRuntimeArgs) {
       // 添加包名和版本（根据不同的注册表类型处理）
-      if (packageDef.registry_name === 'npm' && serverConfig.command === 'npx') {
+      if (this.getRegistryType(packageDef) === 'npm' && serverConfig.command === 'npx') {
         // 检查是否已经有 -y 参数
         if (!args.includes('-y')) {
           args.push('-y'); // 自动确认安装
         }
         if (packageDef.version && packageDef.version !== 'latest') {
-          args.push(`${packageDef.name}@${packageDef.version}`);
+          args.push(`${pkgName}@${packageDef.version}`);
         } else {
-          args.push(packageDef.name);
+          args.push(pkgName);
         }
-      } else if (packageDef.registry_name === 'docker') {
+      } else if (
+        this.getRegistryType(packageDef) === 'docker' ||
+        this.getRegistryType(packageDef) === 'oci'
+      ) {
         args.push('run', '--rm', '-i');
         if (packageDef.version && packageDef.version !== 'latest') {
-          args.push(`${packageDef.name}:${packageDef.version}`);
+          args.push(`${pkgName}:${packageDef.version}`);
         } else {
-          args.push(packageDef.name);
+          args.push(pkgName);
         }
-      } else if (packageDef.registry_name === 'pip' || packageDef.registry_name === 'uv') {
+      } else if (
+        this.getRegistryType(packageDef) === 'pip' ||
+        this.getRegistryType(packageDef) === 'uv'
+      ) {
         args.push('-m');
-        args.push(packageDef.name.split('/').pop()); // 取包名的最后部分
+        args.push(pkgName.split('/').pop()); // 取包名的最后部分
       } else {
-        args.push(packageDef.name);
+        args.push(pkgName);
         if (packageDef.version && packageDef.version !== 'latest') {
           args.push(packageDef.version);
         }
@@ -483,8 +506,9 @@ class McpDetail extends React.Component {
     }
 
     // 添加包参数
-    if (packageDef.package_arguments && Array.isArray(packageDef.package_arguments)) {
-      packageDef.package_arguments.forEach(arg => {
+    const packageArguments = packageDef.packageArguments || packageDef.package_arguments || [];
+    if (packageArguments && Array.isArray(packageArguments)) {
+      packageArguments.forEach(arg => {
         args.push(...this.processArgument(arg));
       });
     }
@@ -492,9 +516,11 @@ class McpDetail extends React.Component {
     serverConfig.args = args;
 
     // 处理环境变量
-    if (packageDef.environment_variables && Array.isArray(packageDef.environment_variables)) {
+    const environmentVariables =
+      packageDef.environmentVariables || packageDef.environment_variables || [];
+    if (environmentVariables && Array.isArray(environmentVariables)) {
       const env = {};
-      packageDef.environment_variables.forEach(envVar => {
+      environmentVariables.forEach(envVar => {
         if (envVar.name) {
           let value = envVar.value || envVar.default;
           if (!value) {
@@ -523,12 +549,7 @@ class McpDetail extends React.Component {
       }
     }
 
-    // 添加描述
-    if (packageDef.description) {
-      serverConfig.description = packageDef.description;
-    } else {
-      serverConfig.description = `MCP Server for ${packageDef.name}`;
-    }
+    // 描述字段已移除：不再从 packageDef 读取，也不生成默认描述
 
     config.mcpServers[serverName] = serverConfig;
     return config;
@@ -546,8 +567,8 @@ class McpDetail extends React.Component {
       case 'positional':
         if (arg.value) {
           result.push(this.replaceVariables(arg.value, arg.variables));
-        } else if (arg.value_hint) {
-          result.push(`<${arg.value_hint}>`);
+        } else if (arg.value_hint || arg.valueHint) {
+          result.push(`<${arg.value_hint || arg.valueHint}>`);
         } else if (arg.default) {
           result.push(this.replaceVariables(arg.default, arg.variables));
         }
@@ -611,153 +632,60 @@ class McpDetail extends React.Component {
     const isTabsExpanded = this.state.packageTabsExpanded[index];
 
     // 统计各类参数数量
-    const runtimeArgsCount = packageDef.runtime_arguments?.length || 0;
-    const packageArgsCount = packageDef.package_arguments?.length || 0;
-    const envVarsCount = packageDef.environment_variables?.length || 0;
+    const runtimeArguments = packageDef.runtimeArguments || packageDef.runtime_arguments || [];
+    const packageArguments = packageDef.packageArguments || packageDef.package_arguments || [];
+    const environmentVariables =
+      packageDef.environmentVariables || packageDef.environment_variables || [];
+    const runtimeArgsCount = runtimeArguments?.length || 0;
+    const packageArgsCount = packageArguments?.length || 0;
+    const envVarsCount = environmentVariables?.length || 0;
     const totalParamsCount = runtimeArgsCount + packageArgsCount + envVarsCount;
 
     return (
-      <div
-        style={{
-          border: '1px solid rgba(230, 230, 230, 0.4)',
-          borderRadius: '8px',
-          padding: '20px',
-          backgroundColor: 'rgba(250, 250, 250, 0.7)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-          marginBottom: '16px',
-          transition: 'all 0.3s ease',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow =
-            '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow =
-            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-        }}
-      >
+      <div className="mcp-card">
         {/* 基本信息 */}
-        <div style={{ marginBottom: '24px' }}>
-          <h3
-            style={{
-              color: '#000',
-              marginBottom: '16px',
-              borderBottom: '2px solid #e6e6e6',
-              paddingBottom: '8px',
-            }}
-          >
-            {locale.basicInformation || '基本信息'}
-          </h3>
-          <Row wrap style={{ textAlign: 'left' }}>
-            <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-              <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
-                {locale.packageName || '包名'}:
-              </p>
+        <div className="mcp-margin-bottom-24">
+          <h3 className="mcp-subsection-title">{locale.basicInformation || '基本信息'}</h3>
+          <Row wrap className="mcp-form-row-aligned">
+            <Col span={24} className="mcp-form-col">
+              <p className="mcp-label">{locale.packageName || '包名'}:</p>
               {(() => {
                 const repositoryUrl = this.getPackageRepositoryUrl(packageDef);
+                const displayName = this.getPackageName(packageDef);
                 if (repositoryUrl) {
                   return (
                     <a
                       href={repositoryUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        fontFamily: 'monospace',
-                        backgroundColor: '#f5f5f5',
-                        padding: '2px 6px',
-                        borderRadius: '3px',
-                        color: '#1890ff',
-                        textDecoration: 'none',
-                      }}
-                      onMouseEnter={e => {
-                        e.target.style.backgroundColor = '#e8f4fd';
-                        e.target.style.textDecoration = 'underline';
-                      }}
-                      onMouseLeave={e => {
-                        e.target.style.backgroundColor = '#f5f5f5';
-                        e.target.style.textDecoration = 'none';
-                      }}
+                      className="mcp-package-link"
                     >
-                      {packageDef.name}
+                      {displayName}
                     </a>
                   );
                 } else {
-                  return (
-                    <p
-                      style={{
-                        fontFamily: 'monospace',
-                        backgroundColor: '#f5f5f5',
-                        padding: '2px 6px',
-                        borderRadius: '3px',
-                        color: '#000',
-                      }}
-                    >
-                      {packageDef.name}
-                    </p>
-                  );
+                  return <p className="mcp-monospace">{displayName}</p>;
                 }
               })()}
             </Col>
-            <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-              <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
-                {locale.version || '版本'}:
-              </p>
+            <Col span={24} className="mcp-form-col">
+              <p className="mcp-label">{locale.version || '版本'}:</p>
+              <p className="mcp-monospace">{packageDef.version || '无'}</p>
+            </Col>
+            <Col span={24} className="mcp-form-col">
+              <p className="mcp-label">{locale.registryType || '注册表类型'}:</p>
               <p
-                style={{
-                  fontFamily: 'monospace',
-                  backgroundColor: '#f5f5f5',
-                  padding: '2px 6px',
-                  borderRadius: '3px',
-                  color: '#000',
-                }}
+                className={`mcp-registry-badge mcp-registry-${this.getRegistryType(
+                  packageDef
+                ).toLowerCase()}`}
               >
-                {packageDef.version || 'latest'}
+                {this.getRegistryType(packageDef)}
               </p>
             </Col>
-            <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-              <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
-                {locale.registryType || '注册表类型'}:
-              </p>
-              <p
-                style={{
-                  backgroundColor: this.getRegistryColor(packageDef.registry_name),
-                  color: 'white',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                }}
-              >
-                {packageDef.registry_name}
-              </p>
-            </Col>
-            {packageDef.runtime_hint && (
-              <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-                <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
-                  {locale.runtimeHint || '运行时提示'}:
-                </p>
-                <p
-                  style={{
-                    fontFamily: 'monospace',
-                    backgroundColor: '#f5f5f5',
-                    padding: '2px 6px',
-                    borderRadius: '3px',
-                    color: '#000',
-                  }}
-                >
-                  {packageDef.runtime_hint}
-                </p>
-              </Col>
-            )}
-            {packageDef.description && (
-              <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-                <p style={{ minWidth: 120, fontWeight: 'bold', color: '#000' }}>
-                  {locale.description || '描述'}:
-                </p>
-                <p style={{ color: '#000' }}>{packageDef.description}</p>
+            {(packageDef.runtimeHint || packageDef.runtime_hint) && (
+              <Col span={24} className="mcp-form-col">
+                <p className="mcp-label">{locale.runtimeHint || '运行时提示'}:</p>
+                <p className="mcp-monospace">{packageDef.runtimeHint || packageDef.runtime_hint}</p>
               </Col>
             )}
           </Row>
@@ -765,124 +693,62 @@ class McpDetail extends React.Component {
 
         {/* 参数配置区域 - 只在有参数时显示 */}
         {totalParamsCount > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '16px',
-              }}
-            >
-              <h3
-                style={{
-                  color: '#000',
-                  margin: 0,
-                  borderBottom: '2px solid #e6e6e6',
-                  paddingBottom: '8px',
-                  flex: 1,
-                }}
-              >
+          <div className="mcp-margin-bottom-16">
+            <div className="mcp-param-container-flex">
+              <h3 className="mcp-subsection-title-inline">
                 {locale.parameterConfiguration || '参数配置'}
-                <span style={{ marginLeft: '8px', color: '#666', fontSize: '14px' }}>
-                  (共 {totalParamsCount} 项)
-                </span>
+                <span className="mcp-param-count">(共 {totalParamsCount} 项)</span>
               </h3>
               <Button
                 size="small"
                 type="normal"
                 onClick={() => this.togglePackageTabs(index)}
-                style={{ marginLeft: '16px' }}
+                className="mcp-button-expand"
               >
                 {isTabsExpanded ? '收起' : '展开'}
               </Button>
             </div>
 
             {isTabsExpanded && (
-              <div
-                style={{
-                  border: '1px solid rgba(230, 230, 230, 0.4)',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                  backdropFilter: 'blur(10px)',
-                  padding: '16px',
-                }}
-              >
+              <div className="mcp-param-container">
                 {/* 运行时参数容器 */}
                 {runtimeArgsCount > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
+                  <div className="mcp-margin-bottom-16">
                     <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        backgroundColor: 'rgba(24, 144, 255, 0.1)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(24, 144, 255, 0.2)',
-                        marginBottom: '8px',
-                      }}
+                      className="mcp-param-toggle mcp-param-toggle-runtime"
                       onClick={() => this.toggleParameterContainer(index, 'runtime')}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1890ff' }}>
+                      <div className="mcp-param-toggle-label">
+                        <span className="mcp-param-toggle-label-runtime">
                           {locale.runtimeArguments || '运行时参数'}
                         </span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>
-                          ({runtimeArgsCount})
-                        </span>
+                        <span className="mcp-param-toggle-count">({runtimeArgsCount})</span>
                       </div>
-                      <span style={{ color: '#1890ff', fontSize: '12px' }}>
+                      <span className="mcp-param-toggle-arrow-runtime">
                         {this.state.parameterContainersExpanded[index]?.runtime
                           ? '收起 ▲'
                           : '展开 ▼'}
                       </span>
                     </div>
                     {this.state.parameterContainersExpanded[index]?.runtime && (
-                      <div style={{ padding: '8px 16px' }}>
-                        {packageDef.runtime_arguments.map((arg, argIndex) => (
+                      <div className="mcp-param-padding">
+                        {runtimeArguments.map((arg, argIndex) => (
                           <div
                             key={argIndex}
-                            style={{
-                              marginBottom: '8px',
-                              paddingBottom: '8px',
-                              borderBottom:
-                                argIndex < packageDef.runtime_arguments.length - 1
-                                  ? '1px solid #e6e6e6'
-                                  : 'none',
-                            }}
+                            className={
+                              argIndex < runtimeArguments.length - 1
+                                ? 'mcp-param-item'
+                                : 'mcp-param-item-last'
+                            }
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span
-                                style={{
-                                  backgroundColor:
-                                    arg.type === 'positional' ? '#52c41a' : '#1890ff',
-                                  color: 'white',
-                                  padding: '2px 8px',
-                                  borderRadius: '12px',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  minWidth: '70px',
-                                  textAlign: 'center',
-                                }}
-                              >
+                            <div className="mcp-param-row">
+                              <span className={`mcp-param-type-badge mcp-param-type-${arg.type}`}>
                                 {arg.type === 'positional' ? '位置参数' : '命名参数'}
                               </span>
-                              <span
-                                style={{
-                                  fontFamily: 'monospace',
-                                  backgroundColor: '#f5f5f5',
-                                  padding: '3px 6px',
-                                  borderRadius: '3px',
-                                  color: '#000',
-                                  fontSize: '12px',
-                                  minWidth: '120px',
-                                }}
-                              >
+                              <span className="mcp-monospace-min-width">
                                 {arg.value || arg.default || '<未设置>'}
                               </span>
-                              <span style={{ color: '#666', fontSize: '12px', flex: 1 }}>
+                              <span className="mcp-description-small">
                                 {arg.description || '无描述'}
                               </span>
                             </div>
@@ -895,81 +761,44 @@ class McpDetail extends React.Component {
 
                 {/* 包参数容器 */}
                 {packageArgsCount > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
+                  <div className="mcp-margin-bottom-16">
                     <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        backgroundColor: 'rgba(82, 196, 26, 0.1)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(82, 196, 26, 0.2)',
-                        marginBottom: '8px',
-                      }}
+                      className="mcp-param-toggle mcp-param-toggle-package"
                       onClick={() => this.toggleParameterContainer(index, 'package')}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#52c41a' }}>
+                      <div className="mcp-param-toggle-label">
+                        <span className="mcp-param-toggle-label-package">
                           {locale.packageArguments || '包参数'}
                         </span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>
-                          ({packageArgsCount})
-                        </span>
+                        <span className="mcp-param-toggle-count">({packageArgsCount})</span>
                       </div>
-                      <span style={{ color: '#52c41a', fontSize: '12px' }}>
+                      <span className="mcp-param-toggle-arrow-package">
                         {this.state.parameterContainersExpanded[index]?.package
                           ? '收起 ▲'
                           : '展开 ▼'}
                       </span>
                     </div>
                     {this.state.parameterContainersExpanded[index]?.package && (
-                      <div style={{ padding: '8px 16px' }}>
-                        {packageDef.package_arguments.map((arg, argIndex) => (
+                      <div className="mcp-param-padding">
+                        {packageArguments.map((arg, argIndex) => (
                           <div
                             key={argIndex}
-                            style={{
-                              marginBottom: '8px',
-                              paddingBottom: '8px',
-                              borderBottom:
-                                argIndex < packageDef.package_arguments.length - 1
-                                  ? '1px solid #e6e6e6'
-                                  : 'none',
-                            }}
+                            className={
+                              argIndex < packageArguments.length - 1
+                                ? 'mcp-param-item'
+                                : 'mcp-param-item-last'
+                            }
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span
-                                style={{
-                                  backgroundColor:
-                                    arg.type === 'positional' ? '#52c41a' : '#1890ff',
-                                  color: 'white',
-                                  padding: '2px 8px',
-                                  borderRadius: '12px',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  minWidth: '70px',
-                                  textAlign: 'center',
-                                }}
-                              >
+                            <div className="mcp-param-row">
+                              <span className={`mcp-param-type-badge mcp-param-type-${arg.type}`}>
                                 {arg.type === 'positional' ? '位置参数' : '命名参数'}
                               </span>
-                              <span
-                                style={{
-                                  fontFamily: 'monospace',
-                                  backgroundColor: '#f5f5f5',
-                                  padding: '3px 6px',
-                                  borderRadius: '3px',
-                                  color: '#000',
-                                  fontSize: '12px',
-                                  minWidth: '120px',
-                                }}
-                              >
+                              <span className="mcp-monospace-min-width">
                                 {arg.name
                                   ? `${arg.name}=${arg.value || arg.default || '<value>'}`
                                   : arg.value || arg.default || '<未设置>'}
                               </span>
-                              <span style={{ color: '#666', fontSize: '12px', flex: 1 }}>
+                              <span className="mcp-description-small">
                                 {arg.description || '无描述'}
                               </span>
                             </div>
@@ -982,114 +811,63 @@ class McpDetail extends React.Component {
 
                 {/* 环境变量容器 */}
                 {envVarsCount > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
+                  <div className="mcp-margin-bottom-16">
                     <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        backgroundColor: 'rgba(250, 140, 22, 0.1)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(250, 140, 22, 0.2)',
-                        marginBottom: '8px',
-                      }}
+                      className="mcp-param-toggle mcp-param-toggle-env"
                       onClick={() => this.toggleParameterContainer(index, 'env')}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fa8c16' }}>
+                      <div className="mcp-param-toggle-label">
+                        <span className="mcp-param-toggle-label-env">
                           {locale.environmentVariables || '环境变量'}
                         </span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>({envVarsCount})</span>
+                        <span className="mcp-param-toggle-count">({envVarsCount})</span>
                       </div>
-                      <span style={{ color: '#fa8c16', fontSize: '12px' }}>
+                      <span className="mcp-param-toggle-arrow-env">
                         {this.state.parameterContainersExpanded[index]?.env ? '收起 ▲' : '展开 ▼'}
                       </span>
                     </div>
                     {this.state.parameterContainersExpanded[index]?.env && (
-                      <div style={{ padding: '8px 16px' }}>
-                        {packageDef.environment_variables.map((envVar, envIndex) => (
-                          <div
-                            key={envIndex}
-                            style={{
-                              marginBottom: '8px',
-                              paddingBottom: '8px',
-                              borderBottom:
-                                envIndex < packageDef.environment_variables.length - 1
-                                  ? '1px solid #e6e6e6'
-                                  : 'none',
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                marginBottom: '4px',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontFamily: 'monospace',
-                                  backgroundColor: '#f5f5f5',
-                                  padding: '3px 6px',
-                                  borderRadius: '3px',
-                                  fontWeight: 'bold',
-                                  color: '#000',
-                                  fontSize: '12px',
-                                  minWidth: '120px',
-                                }}
-                              >
-                                {envVar.name}
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily: 'monospace',
-                                  backgroundColor: '#f0f0f0',
-                                  padding: '3px 6px',
-                                  borderRadius: '3px',
-                                  color: '#000',
-                                  fontSize: '12px',
-                                  minWidth: '120px',
-                                }}
-                              >
-                                {envVar.value || envVar.default || '<未设置>'}
-                              </span>
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                {envVar.is_required && (
-                                  <span
-                                    style={{
-                                      backgroundColor: '#ff4d4f',
-                                      color: 'white',
-                                      padding: '1px 4px',
-                                      borderRadius: '8px',
-                                      fontSize: '10px',
-                                      fontWeight: 'bold',
-                                    }}
-                                  >
-                                    必填
-                                  </span>
-                                )}
-                                {envVar.is_secret && (
-                                  <span
-                                    style={{
-                                      backgroundColor: '#faad14',
-                                      color: 'white',
-                                      padding: '1px 4px',
-                                      borderRadius: '8px',
-                                      fontSize: '10px',
-                                      fontWeight: 'bold',
-                                    }}
-                                  >
-                                    敏感
-                                  </span>
-                                )}
-                              </div>
-                              <span style={{ color: '#666', fontSize: '12px', flex: 1 }}>
-                                {envVar.description || '无描述'}
-                              </span>
+                      <div className="mcp-param-padding">
+                        {environmentVariables.map((envVar, envIndex) => (
+                          <div key={envIndex} className="mcp-env-grid">
+                            {/* 变量名标签 */}
+                            <span className="mcp-env-label">变量名:</span>
+                            {/* 变量名值 */}
+                            <span className="mcp-monospace-value">{envVar.name}</span>
+
+                            {/* 变量值标签 */}
+                            <span className="mcp-env-label">变量值:</span>
+                            {/* 变量值 */}
+                            <span className="mcp-monospace-lighter">
+                              {envVar.value || envVar.default || '<未设置>'}
+                            </span>
+
+                            {/* 标签标签 */}
+                            <span className="mcp-env-label">标签:</span>
+                            {/* 标签值 */}
+                            <div className="mcp-env-tags">
+                              {(envVar.isRequired || envVar.is_required) && (
+                                <span className="mcp-badge-required">必填</span>
+                              )}
+                              {(envVar.isSecret || envVar.is_secret) && (
+                                <span className="mcp-badge-secret">敏感</span>
+                              )}
+                              {!(
+                                envVar.isRequired ||
+                                envVar.is_required ||
+                                envVar.isSecret ||
+                                envVar.is_secret
+                              ) && <span className="mcp-badge-no-label">无标签</span>}
                             </div>
+
+                            {/* 描述标签 */}
+                            {envVar.description && (
+                              <>
+                                <span className="mcp-env-label">描述:</span>
+                                {/* 描述值 */}
+                                <span className="mcp-env-description">{envVar.description}</span>
+                              </>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1123,15 +901,29 @@ class McpDetail extends React.Component {
       pip: '#3776ab',
       uv: '#6b73ff',
       dnx: '#512bd4',
+      oci: '#009688',
     };
     return colors[registryType] || '#666666';
   };
 
+  // 注册表类型：优先 registry_type，兼容旧 registry_name
+  getRegistryType = packageDef => {
+    if (!packageDef) return '';
+    return packageDef.registryType || packageDef.registry_type || packageDef.registry_name || '';
+  };
+
+  // 包名显示与链接用：优先 identifier，兼容旧 name
+  getPackageName = packageDef => {
+    if (!packageDef) return '';
+    return packageDef.identifier || packageDef.name || '';
+  };
+
   // 获取包名对应的仓库链接
   getPackageRepositoryUrl = packageDef => {
-    const { registry_name, name } = packageDef;
+    const registryType = this.getRegistryType(packageDef);
+    const name = (packageDef && (packageDef.identifier || packageDef.name)) || '';
 
-    switch (registry_name) {
+    switch (registryType) {
       case 'npm':
         return `https://www.npmjs.com/package/${name}`;
       case 'docker':
@@ -1155,41 +947,11 @@ class McpDetail extends React.Component {
   renderHeaders = (headers, locale) => {
     if (!headers || headers.length === 0) {
       return (
-        <div style={{ marginBottom: '16px' }}>
-          <div
-            style={{
-              border: '1px solid rgba(230, 230, 230, 0.4)',
-              borderRadius: '8px',
-              padding: '16px',
-              backgroundColor: 'rgba(250, 250, 250, 0.7)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-              textAlign: 'center',
-              minHeight: '60px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+        <div className="mcp-margin-bottom-16">
+          <div className="mcp-empty-state">
             <div>
-              <div
-                style={{
-                  fontSize: '24px',
-                  color: '#d9d9d9',
-                  marginBottom: '8px',
-                  fontWeight: '300',
-                }}
-              >
-                📋
-              </div>
-              <p
-                style={{
-                  color: '#666',
-                  fontStyle: 'italic',
-                  margin: 0,
-                  fontSize: '12px',
-                }}
-              >
+              <div className="mcp-empty-icon">📋</div>
+              <p className="mcp-empty-text">
                 {locale.noHeadersAvailable || '该端点无 Headers 配置'}
               </p>
             </div>
@@ -1199,181 +961,56 @@ class McpDetail extends React.Component {
     }
 
     return (
-      <div style={{ marginBottom: '16px' }}>
+      <div className="mcp-margin-bottom-16">
         {headers.map((header, index) => (
-          <div
-            key={index}
-            style={{
-              border: '1px solid rgba(230, 230, 230, 0.4)',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '8px',
-              backgroundColor: 'rgba(250, 250, 250, 0.7)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-              transition: 'all 0.3s ease',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow =
-                '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow =
-                '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-            }}
-          >
+          <div key={index} className="mcp-card-small">
             {/* Header 名称行 */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-              <span
-                style={{ fontWeight: 'bold', color: '#000', minWidth: '80px', fontSize: '13px' }}
-              >
-                {locale.headerName || 'Name'}:
-              </span>
-              <span
-                style={{
-                  fontFamily: 'monospace',
-                  backgroundColor: '#f5f5f5',
-                  padding: '2px 6px',
-                  borderRadius: '3px',
-                  color: '#000',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                }}
-              >
-                {header.name}
-              </span>
-              {header.is_required && (
-                <span
-                  style={{
-                    backgroundColor: '#ff4d4f',
-                    color: 'white',
-                    padding: '1px 4px',
-                    borderRadius: '8px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    marginLeft: '8px',
-                  }}
-                >
-                  必填
-                </span>
+            <div className="mcp-header-display-row">
+              <span className="mcp-label-small">{locale.headerName || 'Name'}:</span>
+              <span className="mcp-monospace-badge">{header.name}</span>
+              {(header.isRequired || header.is_required) && (
+                <span className="mcp-badge-required-small">必填</span>
               )}
-              {header.is_secret && (
-                <span
-                  style={{
-                    backgroundColor: '#faad14',
-                    color: 'white',
-                    padding: '1px 4px',
-                    borderRadius: '8px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    marginLeft: '4px',
-                  }}
-                >
-                  敏感
-                </span>
+              {(header.isSecret || header.is_secret) && (
+                <span className="mcp-badge-secret-small">敏感</span>
               )}
             </div>
 
             {/* Header 值行 */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-              <span
-                style={{ fontWeight: 'bold', color: '#000', minWidth: '80px', fontSize: '13px' }}
-              >
-                {locale.headerValue || 'Value'}:
-              </span>
-              <span
-                style={{
-                  fontFamily: 'monospace',
-                  backgroundColor: '#f5f5f5',
-                  padding: '2px 6px',
-                  borderRadius: '3px',
-                  color: '#000',
-                  fontSize: '12px',
-                }}
-              >
-                {header.value || header.default || '<未设置>'}
-              </span>
+            <div className="mcp-header-display-row">
+              <span className="mcp-label-small">{locale.headerValue || 'Value'}:</span>
+              <span className="mcp-monospace">{header.value || header.default || '<未设置>'}</span>
             </div>
 
             {/* 格式类型行 */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-              <span
-                style={{ fontWeight: 'bold', color: '#000', minWidth: '80px', fontSize: '13px' }}
-              >
-                {locale.format || 'Type'}:
-              </span>
-              <span
-                style={{
-                  backgroundColor: this.getFormatColor(header.format),
-                  color: 'white',
-                  padding: '1px 6px',
-                  borderRadius: '10px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                }}
-              >
+            <div className="mcp-header-display-row">
+              <span className="mcp-label-small">{locale.format || 'Type'}:</span>
+              <span className={`mcp-format-badge mcp-format-${header.format || 'string'}`}>
                 {header.format || 'string'}
               </span>
             </div>
 
             {/* 描述行 */}
             {header.description && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '4px' }}>
-                <span
-                  style={{ fontWeight: 'bold', color: '#000', minWidth: '80px', fontSize: '13px' }}
-                >
-                  {locale.description || 'Desc'}:
-                </span>
-                <span style={{ color: '#666', fontSize: '12px', lineHeight: '1.4' }}>
-                  {header.description}
-                </span>
+              <div className="mcp-header-display-row-flex-start">
+                <span className="mcp-label-small">{locale.description || 'Desc'}:</span>
+                <span className="mcp-description-text">{header.description}</span>
               </div>
             )}
 
             {/* 默认值行 */}
             {header.default && (
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                <span
-                  style={{ fontWeight: 'bold', color: '#000', minWidth: '80px', fontSize: '13px' }}
-                >
-                  {locale.defaultValue || 'Default'}:
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'monospace',
-                    backgroundColor: '#f0f0f0',
-                    padding: '2px 6px',
-                    borderRadius: '3px',
-                    color: '#000',
-                    fontSize: '12px',
-                  }}
-                >
-                  {header.default}
-                </span>
+              <div className="mcp-header-display-row">
+                <span className="mcp-label-small">{locale.defaultValue || 'Default'}:</span>
+                <span className="mcp-monospace-lighter">{header.default}</span>
               </div>
             )}
 
             {/* 可选值行 */}
             {header.choices && header.choices.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                <span
-                  style={{ fontWeight: 'bold', color: '#000', minWidth: '80px', fontSize: '13px' }}
-                >
-                  {locale.choices || 'Choices'}:
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'monospace',
-                    backgroundColor: '#f5f5f5',
-                    padding: '2px 6px',
-                    borderRadius: '3px',
-                    color: '#000',
-                    fontSize: '12px',
-                    lineHeight: '1.4',
-                  }}
-                >
+              <div className="mcp-header-display-row-full">
+                <span className="mcp-label-small">{locale.choices || 'Choices'}:</span>
+                <span className="mcp-monospace-badge-light">
                   {Array.isArray(header.choices) ? header.choices.join(', ') : header.choices}
                 </span>
               </div>
@@ -1391,48 +1028,6 @@ class McpDetail extends React.Component {
       ? this.state.serverConfig?.allVersions
       : [];
 
-    // 示例Headers数据（用于测试展示非stdio协议的Headers配置）
-    const exampleHeaders = [
-      {
-        name: 'Authorization',
-        value: 'Bearer ${API_TOKEN}',
-        default: 'Bearer your-api-token-here',
-        description: 'API认证令牌',
-        is_required: true,
-        is_secret: true,
-        format: 'string',
-      },
-      {
-        name: 'Content-Type',
-        value: 'application/json',
-        description: '请求内容类型',
-        is_required: false,
-        is_secret: false,
-        format: 'string',
-        choices: ['application/json', 'application/xml', 'text/plain'],
-      },
-      {
-        name: 'X-API-Version',
-        value: '1.0',
-        default: '1.0',
-        description: 'API版本号',
-        is_required: false,
-        is_secret: false,
-        format: 'string',
-      },
-    ];
-
-    // 如果是非stdio协议且没有headers数据，添加示例headers（仅用于演示）
-    if (
-      this.state.serverConfig?.protocol !== 'stdio' &&
-      (!this.state.serverConfig?.headers || this.state.serverConfig.headers.length === 0)
-    ) {
-      // 为了演示效果，临时添加示例headers
-      if (this.state.serverConfig) {
-        this.state.serverConfig.headers = exampleHeaders;
-      }
-    }
-
     // 如果没有packageDef但有示例数据，可以选择展示示例
     let packagesToShow = [];
 
@@ -1448,23 +1043,36 @@ class McpDetail extends React.Component {
     const packageConfigs = [];
     for (let i = 0; i < packagesToShow.length; i++) {
       const packageDef = packagesToShow[i];
-      // 简化包名用于Tab标题
-      const shortName = packageDef.name.split('/').pop() || packageDef.name;
+      // 简化包名用于Tab标题（优先 identifier，其次 name）
+      const fullName = (packageDef && (packageDef.identifier || packageDef.name)) || '';
+      const shortName = fullName.split('/').pop() || fullName;
       const packageConfig = {
         index: i,
-        packageName: `${packageDef.name}@${packageDef.version}`,
+        packageName: `${fullName}@${packageDef.version}`,
         shortTitle: `${shortName}@${packageDef.version}`,
-        registryType: packageDef.registry_name,
-        description: packageDef.description,
+        registryType: this.getRegistryType(packageDef),
+        // 描述字段已移除
         mcpConfig: this.convertPackageToMcpConfig(packageDef),
       };
       packageConfigs.push(packageConfig);
     }
 
+    const securitySchemes = this.state.serverConfig?.toolSpec?.securitySchemes || [];
+    const securitySchemeMap = securitySchemes.reduce((acc, scheme) => {
+      if (scheme && scheme.id) {
+        acc[scheme.id] = scheme;
+      }
+      return acc;
+    }, {});
+    const toolSpecExtensions = this.state.serverConfig?.toolSpec?.extensions || {};
+    const defaultDownstreamSecurity = toolSpecExtensions['server.defaultDownstreamSecurity'];
+    const defaultUpstreamSecurity = toolSpecExtensions['server.defaultUpstreamSecurity'];
+    const hasDefaultSecurity = defaultDownstreamSecurity || defaultUpstreamSecurity;
+
     const versionSelections = [];
     for (let i = 0; i < versions.length; i++) {
       const item = versions[i];
-      if (item.is_latest) {
+      if (item.isLatest || item.is_latest) {
         versionSelections.push({
           label: item.version + ` (` + locale.versionIsPublished + ')',
           value: item.version,
@@ -1516,98 +1124,157 @@ class McpDetail extends React.Component {
       endpoints.push(serverConfig);
     }
 
+    const buildDefaultSecurityFields = (sectionKey, security = {}) => {
+      const safeSecurity = security || {};
+
+      const fields = [];
+      const pushField = (key, label, value, options = {}) => {
+        if (value === undefined || value === null || value === '') {
+          return;
+        }
+        fields.push({ key, label, value, ...options });
+      };
+
+      pushField('scheme-id', locale.schemeId || 'ID', safeSecurity.id, { monospace: true });
+
+      if (sectionKey === 'downstream') {
+        const passthroughLabel = safeSecurity.passthrough
+          ? locale.downstreamPassthroughEnabled || '启用'
+          : locale.downstreamPassthroughDisabled || '禁用';
+        if (safeSecurity.passthrough !== undefined) {
+          pushField(
+            'downstream-passthrough',
+            locale.downstreamPassthroughLabel || '透明认证',
+            passthroughLabel
+          );
+        }
+      }
+
+      if (sectionKey === 'upstream') {
+        pushField(
+          'upstream-credential',
+          locale.upstreamCredentialLabel || '覆盖凭证',
+          safeSecurity.credential,
+          { code: true, noBg: true }
+        );
+      }
+
+      Object.keys(safeSecurity).forEach(key => {
+        if (KNOWN_SECURITY_FIELDS.includes(key)) {
+          return;
+        }
+        const value = safeSecurity[key];
+        const displayValue =
+          typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
+        pushField(`extension-${key}`, key, displayValue, {
+          code: typeof value === 'object',
+          fullWidth: typeof value === 'object',
+        });
+      });
+
+      let message = null;
+      if (!safeSecurity.id) {
+        message = (
+          <p className="mcp-description-small">
+            {locale.securitySchemeNotConfigured || '未配置认证方案'}
+          </p>
+        );
+      } else if (!securitySchemeMap[safeSecurity.id]) {
+        message = (
+          <p className="mcp-description-small">
+            {(locale.securitySchemeNotFound || '未找到对应的认证方案') + ` (${safeSecurity.id})`}
+          </p>
+        );
+      }
+
+      return { fields, message };
+    };
+
+    const renderFieldColumns = fields => {
+      if (!Array.isArray(fields) || fields.length === 0) {
+        return [];
+      }
+
+      const columns = [];
+      fields
+        .filter(field => field && field.value !== undefined && field.value !== null && field.value !== '')
+        .forEach(field => {
+          const span = field.fullWidth ? 24 : 12;
+          const valueClassNames = ['mcp-field-value'];
+          if (field.monospace) {
+            valueClassNames.push('mcp-monospace');
+          }
+          if (field.code) {
+            valueClassNames.push('mcp-monospace-code');
+          }
+          if (field.noBg) {
+            valueClassNames.push('mcp-no-bg');
+          }
+          columns.push(
+            <Col span={span} className="mcp-form-col mcp-default-security-field" key={field.key}>
+              <p className="mcp-scheme-label">{field.label}:</p>
+              <p className={valueClassNames.join(' ')}>{field.value}</p>
+            </Col>
+          );
+        });
+      return columns;
+    };
+
+    const renderDefaultSecurityCard = (sectionKey, title, description, security) => {
+      const defaultSecurityInfo = buildDefaultSecurityFields(sectionKey, security);
+      const allFields = defaultSecurityInfo.fields || [];
+      const isCollapsed = this.state.defaultSecurityCollapsed?.[sectionKey] !== false;
+      const BASIC_FIELD_COUNT = 3;
+      const visibleFields = isCollapsed ? allFields.slice(0, BASIC_FIELD_COUNT) : allFields;
+      const rows = renderFieldColumns(visibleFields);
+      const hasMore = allFields.length > visibleFields.length;
+      return (
+        <div className="mcp-card mcp-default-security-card">
+          <div className="mcp-default-security-card-header">
+            <div className="mcp-default-security-card-text">
+              <div className="mcp-default-security-card-title">{title}</div>
+              <div className="mcp-default-security-card-desc">{description}</div>
+            </div>
+            {allFields.length > BASIC_FIELD_COUNT && (
+              <div className="mcp-default-security-card-actions">
+                <Button
+                  text
+                  size="small"
+                  className="mcp-card-toggle-btn"
+                  onClick={() => this.toggleDefaultSecuritySection(sectionKey)}
+                >
+                  {isCollapsed ? locale.expand || '展开' : locale.collapse || '收起'}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="mcp-default-security-meta">
+            {defaultSecurityInfo.message}
+            {rows.length > 0 && (
+              <Row wrap className="mcp-form-row-aligned mcp-default-security-row">{rows}</Row>
+            )}
+            {isCollapsed && hasMore && (
+              <p className="mcp-default-security-hint">
+                {locale.defaultSecurityCollapsedHint || '展开查看更多详细配置'}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div>
-        <style>
-          {`
-            .responsive-layout {
-              display: flex;
-              gap: 24px;
-            }
-            
-            .left-content {
-              flex: 1;
-              min-width: 0;
-            }
-            
-            .right-content {
-              width: 350px;
-              flex-shrink: 0;
-              overflow-x: auto;
-              word-wrap: break-word;
-              word-break: break-word;
-            }
-            
-            @media (max-width: 768px) {
-              .server-config-responsive {
-                margin-top: 24px !important;
-              }
-              .responsive-layout {
-                flex-direction: column !important;
-                gap: 0 !important;
-              }
-              .left-content {
-                width: 100% !important;
-                margin-bottom: 24px !important;
-              }
-              .right-content {
-                width: 100% !important;
-                order: 2;
-                overflow-x: auto;
-                word-wrap: break-word;
-                word-break: break-word;
-              }
-            }
-            
-            @media (max-width: 1024px) and (min-width: 769px) {
-              .right-content {
-                width: 280px;
-              }
-            }
-            
-            @media (max-width: 900px) and (min-width: 769px) {
-              .responsive-layout {
-                flex-direction: column !important;
-                gap: 0 !important;
-              }
-              .left-content {
-                width: 100% !important;
-                margin-bottom: 24px !important;
-              }
-              .right-content {
-                width: 100% !important;
-                order: 2;
-                overflow-x: auto;
-                word-wrap: break-word;
-                word-break: break-word;
-              }
-            }
-            
-            @media (max-width: 1024px) {
-              .right-content {
-                width: 300px;
-              }
-            }
-          `}
-        </style>
         <Loading
           shape={'flower'}
           tip={'Loading...'}
-          style={{
-            width: '100%',
-            position: 'relative',
-          }}
+          className="mcp-loading-container"
           visible={this.state.loading}
           color={'#333'}
         >
           <Row>
             <Col span={16}>
-              <h1
-                style={{
-                  position: 'relative',
-                  width: '60%',
-                }}
-              >
+              <h1 className="mcp-heading-main">
                 {this.state.serverConfig?.name || locale.mcpServerDetail || 'MCP Server'}
               </h1>
             </Col>
@@ -1615,10 +1282,7 @@ class McpDetail extends React.Component {
               <span>{locale.version}</span>
               <Select
                 dataSource={versionSelections}
-                style={{
-                  marginLeft: 10,
-                  width: '80%',
-                }}
+                className="mcp-version-select"
                 value={this.state.serverConfig?.versionDetail?.version}
                 onChange={data => {
                   this.goToVersion(data);
@@ -1635,110 +1299,30 @@ class McpDetail extends React.Component {
 
           {/* 服务描述 - 平铺展示 */}
           {this.state.serverConfig?.description && (
-            <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-              <p
-                style={{
-                  color: '#666',
-                  fontSize: '16px',
-                  lineHeight: '1.6',
-                  margin: 0,
-                  fontStyle: 'italic',
-                  textAlign: 'left',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {this.state.serverConfig.description}
-              </p>
+            <div className="mcp-margin-vertical-20">
+              <p className="mcp-description-text">{this.state.serverConfig.description}</p>
             </div>
           )}
 
-          <h2
-            style={{
-              color: '#333',
-              fontWeight: 'bold',
-            }}
-          >
-            {locale.basicInformation || '基本信息'}
-          </h2>
+          <h2 className="mcp-section-title">{locale.basicInformation || '基本信息'}</h2>
 
-          <div style={{ marginTop: '16px' }}>
-            <div
-              style={{
-                border: '1px solid rgba(230, 230, 230, 0.4)',
-                borderRadius: '8px',
-                padding: '20px',
-                backgroundColor: 'rgba(250, 250, 250, 0.7)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                marginBottom: '16px',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow =
-                  '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow =
-                  '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-              }}
-            >
-              <Row wrap style={{ textAlign: 'left' }}>
-                <Col span={12} style={{ display: 'flex', marginBottom: '16px' }}>
-                  <div
-                    style={{ minWidth: 120, fontWeight: 'bold', color: '#000', fontSize: '14px' }}
-                  >
-                    {locale.namespace || '命名空间'}:
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'monospace',
-                      backgroundColor: '#f5f5f5',
-                      padding: '4px 12px',
-                      borderRadius: '4px',
-                      color: '#000',
-                      fontSize: '13px',
-                      border: '1px solid #e8e8e8',
-                    }}
-                  >
-                    {getParams('namespace') || 'default'}
-                  </div>
+          <div className="mcp-margin-top-16">
+            <div className="mcp-card">
+              <Row wrap className="mcp-form-row-aligned">
+                <Col span={12} className="mcp-form-col-namespace">
+                  <div className="mcp-label">{locale.namespace || '命名空间'}:</div>
+                  <div className="mcp-namespace-box">{getParams('namespace') || 'default'}</div>
                 </Col>
-                <Col span={12} style={{ display: 'flex', marginBottom: '16px' }}>
-                  <div
-                    style={{ minWidth: 120, fontWeight: 'bold', color: '#000', fontSize: '14px' }}
-                  >
-                    {locale.serverType || '服务类型'}:
-                  </div>
-                  <div
-                    style={{
-                      backgroundColor: '#1890ff',
-                      color: 'white',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                    }}
-                  >
+                <Col span={12} className="mcp-form-col-namespace">
+                  <div className="mcp-label">{locale.serverType || '服务类型'}:</div>
+                  <div className="mcp-server-type-badge">
                     {this.state.serverConfig.frontProtocol}
                   </div>
                 </Col>
                 {this.state.serverConfig?.protocol !== 'stdio' &&
                   this.state.serverConfig?.remoteServerConfig?.serviceRef && (
-                    <Col span={12} style={{ display: 'flex', marginBottom: '16px' }}>
-                      <div
-                        style={{
-                          minWidth: 120,
-                          fontWeight: 'bold',
-                          color: '#000',
-                          fontSize: '14px',
-                        }}
-                      >
-                        {locale.serviceRef || '服务引用'}:
-                      </div>
+                    <Col span={12} className="mcp-form-col-namespace">
+                      <div className="mcp-label">{locale.serviceRef || '服务引用'}:</div>
                       <div>
                         <a
                           onClick={() => {
@@ -1746,25 +1330,7 @@ class McpDetail extends React.Component {
                               this.state.serverConfig?.remoteServerConfig?.serviceRef
                             );
                           }}
-                          style={{
-                            color: '#1890ff',
-                            cursor: 'pointer',
-                            textDecoration: 'none',
-                            fontFamily: 'monospace',
-                            fontSize: '13px',
-                            padding: '2px 8px',
-                            borderRadius: '3px',
-                            backgroundColor: '#f0f8ff',
-                            border: '1px solid #d6ebff',
-                          }}
-                          onMouseEnter={e => {
-                            e.target.style.backgroundColor = '#e6f7ff';
-                            e.target.style.textDecoration = 'underline';
-                          }}
-                          onMouseLeave={e => {
-                            e.target.style.backgroundColor = '#f0f8ff';
-                            e.target.style.textDecoration = 'none';
-                          }}
+                          className="mcp-link"
                         >
                           {this.state.serverConfig?.remoteServerConfig?.serviceRef.namespaceId}/
                           {this.state.serverConfig?.remoteServerConfig?.serviceRef.groupName}/
@@ -1787,88 +1353,49 @@ class McpDetail extends React.Component {
               {this.state.serverConfig?.protocol !== 'stdio' &&
                 this.state.serverConfig?.toolSpec?.securitySchemes?.length > 0 && (
                   <>
-                    <h2
-                      style={{
-                        color: '#333',
-                        fontWeight: 'bold',
-                        marginBottom: '16px',
-                      }}
-                    >
+                    <h2 className="mcp-section-title mcp-margin-bottom-16">
                       {locale.backendServiceAuth || '后端服务认证方式'}
                     </h2>
-                    <div style={{ marginBottom: '24px' }}>
+                    <div className="mcp-margin-bottom-24">
                       {this.state.serverConfig.toolSpec.securitySchemes.map((scheme, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            border: '1px solid rgba(230, 230, 230, 0.4)',
-                            borderRadius: '8px',
-                            padding: '16px',
-                            marginBottom: '12px',
-                            backgroundColor: 'rgba(250, 250, 250, 0.7)',
-                            backdropFilter: 'blur(10px)',
-                            boxShadow:
-                              '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                            transition: 'all 0.3s ease',
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow =
-                              '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow =
-                              '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                          }}
-                        >
-                          <Row wrap style={{ textAlign: 'left' }}>
-                            <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
-                              <p style={{ minWidth: 120, fontWeight: 'bold' }}>
-                                {locale.authType || '认证类型'}:
-                              </p>
+                        <div key={index} className="mcp-card mcp-security-scheme-card">
+                          <Row wrap className="mcp-form-row-aligned">
+                            <Col span={12} className="mcp-form-col">
+                              <p className="mcp-scheme-label">{locale.schemeId || 'ID'}:</p>
+                              <p className="mcp-monospace">{scheme.id || '-'}</p>
+                            </Col>
+                            <Col span={12} className="mcp-form-col">
+                              <p className="mcp-scheme-label">{locale.authType || '认证类型'}:</p>
                               <p>{scheme.type}</p>
                             </Col>
                             {scheme.scheme && (
-                              <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
-                                <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              <Col span={12} className="mcp-form-col">
+                                <p className="mcp-scheme-label">
                                   {locale.authScheme || '认证方案'}:
                                 </p>
                                 <p>{scheme.scheme}</p>
                               </Col>
                             )}
                             {scheme.in && (
-                              <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
-                                <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              <Col span={12} className="mcp-form-col">
+                                <p className="mcp-scheme-label">
                                   {locale.keyLocation || '密钥位置'}:
                                 </p>
                                 <p>{scheme.in}</p>
                               </Col>
                             )}
                             {scheme.name && (
-                              <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
-                                <p style={{ minWidth: 120, fontWeight: 'bold' }}>
-                                  {locale.keyName || '密钥名称'}:
-                                </p>
+                              <Col span={12} className="mcp-form-col">
+                                <p className="mcp-scheme-label">{locale.keyName || '密钥名称'}:</p>
                                 <p>{scheme.name}</p>
                               </Col>
                             )}
                             {scheme.defaultCredential && (
-                              <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-                                <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              <Col span={24} className="mcp-form-col">
+                                <p className="mcp-scheme-label">
                                   {locale.defaultCredential || '默认凭证'}:
                                 </p>
-                                <p
-                                  style={{
-                                    wordBreak: 'break-all',
-                                    fontFamily: 'monospace',
-                                    backgroundColor: '#f5f5f5',
-                                    padding: '4px 8px',
-                                    borderRadius: '3px',
-                                  }}
-                                >
-                                  {scheme.defaultCredential}
-                                </p>
+                                <p className="mcp-monospace-code mcp-no-bg">{scheme.defaultCredential}</p>
                               </Col>
                             )}
                           </Row>
@@ -1877,6 +1404,30 @@ class McpDetail extends React.Component {
                     </div>
                   </>
                 )}
+
+              {hasDefaultSecurity && (
+                <>
+                  <h2 className="mcp-section-title mcp-margin-bottom-16">
+                    {locale.defaultSecurityHeading || '默认安全配置'}
+                  </h2>
+                  <div className="mcp-default-security-sections">
+                    {renderDefaultSecurityCard(
+                      'downstream',
+                      locale.defaultDownstreamSecurityTitle || '客户端到网关认证',
+                      locale.defaultDownstreamSecurityDesc ||
+                        '作用于客户端到网关的请求以及未配置 security 的工具。',
+                      defaultDownstreamSecurity || {}
+                    )}
+                    {renderDefaultSecurityCard(
+                      'upstream',
+                      locale.defaultUpstreamSecurityTitle || '网关到后端认证',
+                      locale.defaultUpstreamSecurityDesc ||
+                        '作用于网关访问后端时的默认配置。',
+                      defaultUpstreamSecurity || {}
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Tools 展示 */}
               <ShowTools
@@ -1891,18 +1442,13 @@ class McpDetail extends React.Component {
 
             {/* 右侧：Server Config 信息 */}
             <div className="right-content">
-              <div
-                className="server-config-responsive"
-                style={{
-                  marginTop: '0px',
-                }}
-              >
+              <div className="server-config-responsive">
                 {/* stdio 协议的 Server Config */}
                 {this.state.serverConfig?.protocol === 'stdio' && (
                   <>
                     {packageConfigs?.length > 0 ? (
                       // 多个Package的Tab展示
-                      <div style={{ marginTop: '12px' }}>
+                      <div className="mcp-margin-top-12">
                         <Tab excessMode="dropdown" defaultActiveKey={0}>
                           {packageConfigs.map((item, index) => {
                             const packageDef = packagesToShow[index];
@@ -1911,58 +1457,19 @@ class McpDetail extends React.Component {
                                 key={item.index}
                                 title={`${item.shortTitle} (${item.registryType})`}
                               >
-                                <div style={{ marginTop: '12px' }}>
+                                <div className="mcp-margin-top-12">
                                   {/* Server Config */}
-                                  <div style={{ marginBottom: '24px' }}>
-                                    <h4
-                                      style={{
-                                        color: '#333',
-                                        fontWeight: 'bold',
-                                        marginBottom: '12px',
-                                        fontSize: '14px',
-                                      }}
-                                    >
+                                  <div className="mcp-margin-bottom-24">
+                                    <h4 className="mcp-header-title">
                                       {locale.serverConfig || '客户端配置'}
                                     </h4>
                                     <pre
-                                      style={{
-                                        cursor: 'pointer',
-                                        border: '1px solid rgba(221, 221, 221, 0.4)',
-                                        borderRadius: '8px',
-                                        padding: '12px',
-                                        backgroundColor: 'rgba(248, 248, 248, 0.7)',
-                                        backdropFilter: 'blur(10px)',
-                                        boxShadow:
-                                          '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                                        position: 'relative',
-                                        transition: 'all 0.3s ease',
-                                        overflow: 'auto',
-                                        maxHeight: '400px',
-                                        fontSize: '12px',
-                                        lineHeight: '1.4',
-                                        whiteSpace: 'pre-wrap',
-                                        wordBreak: 'break-all',
-                                        margin: 0,
-                                      }}
+                                      className="mcp-code-block"
                                       onClick={() =>
                                         this.copyToClipboard(
                                           JSON.stringify(item.mcpConfig, null, 2)
                                         )
                                       }
-                                      onMouseEnter={e => {
-                                        e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
-                                        e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
-                                        e.target.style.boxShadow =
-                                          '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
-                                        e.target.style.transform = 'translateY(-2px)';
-                                      }}
-                                      onMouseLeave={e => {
-                                        e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
-                                        e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
-                                        e.target.style.boxShadow =
-                                          '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                                        e.target.style.transform = 'translateY(0)';
-                                      }}
                                       title="点击复制配置"
                                     >
                                       {JSON.stringify(item.mcpConfig, null, 2)}
@@ -1971,16 +1478,7 @@ class McpDetail extends React.Component {
 
                                   {/* 依赖详情 */}
                                   <div>
-                                    <h4
-                                      style={{
-                                        color: '#333',
-                                        fontWeight: 'bold',
-                                        marginBottom: '12px',
-                                        fontSize: '14px',
-                                      }}
-                                    >
-                                      依赖详情
-                                    </h4>
+                                    <h4 className="mcp-header-title">依赖详情</h4>
                                     {this.renderPackageDetails(packageDef, index)}
                                   </div>
                                 </div>
@@ -1992,37 +1490,8 @@ class McpDetail extends React.Component {
                     ) : (
                       // 原有的localServerConfig显示
                       <pre
-                        style={{
-                          cursor: 'pointer',
-                          border: '1px solid rgba(221, 221, 221, 0.4)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          backgroundColor: 'rgba(248, 248, 248, 0.7)',
-                          backdropFilter: 'blur(10px)',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                          transition: 'all 0.3s ease',
-                          overflow: 'auto',
-                          maxHeight: '400px',
-                          fontSize: '12px',
-                          lineHeight: '1.4',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-all',
-                        }}
+                        className="mcp-code-block-full"
                         onClick={() => this.copyToClipboard(localServerConfig)}
-                        onMouseEnter={e => {
-                          e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
-                          e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
-                          e.target.style.boxShadow =
-                            '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
-                          e.target.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseLeave={e => {
-                          e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
-                          e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
-                          e.target.style.boxShadow =
-                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                          e.target.style.transform = 'translateY(0)';
-                        }}
                         title="点击复制配置"
                       >
                         {localServerConfig}
@@ -2035,61 +1504,23 @@ class McpDetail extends React.Component {
                 {this.state.serverConfig?.protocol !== 'stdio' && (
                   <>
                     {endpoints?.length > 0 ? (
-                      <div style={{ marginTop: '12px' }}>
+                      <div className="mcp-margin-top-12">
                         <Tab excessMode="dropdown" defaultActiveKey={0}>
                           {endpoints?.map(item => (
                             <Tab.Item key={item.index} title={item.address}>
-                              <div style={{ marginTop: '12px' }}>
+                              <div className="mcp-margin-top-12">
                                 {/* Server Config */}
-                                <div style={{ marginBottom: '24px' }}>
-                                  <h4
-                                    style={{
-                                      color: '#333',
-                                      fontWeight: 'bold',
-                                      marginBottom: '12px',
-                                      fontSize: '14px',
-                                    }}
-                                  >
+                                <div className="mcp-margin-bottom-24">
+                                  <h4 className="mcp-header-title">
                                     {locale.serverConfig || '客户端配置'}
                                   </h4>
                                   <pre
-                                    style={{
-                                      cursor: 'pointer',
-                                      border: '1px solid rgba(221, 221, 221, 0.4)',
-                                      borderRadius: '8px',
-                                      padding: '12px',
-                                      backgroundColor: 'rgba(248, 248, 248, 0.7)',
-                                      backdropFilter: 'blur(10px)',
-                                      boxShadow:
-                                        '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                                      transition: 'all 0.3s ease',
-                                      margin: 0,
-                                      overflow: 'auto',
-                                      maxHeight: '400px',
-                                      fontSize: '12px',
-                                      lineHeight: '1.4',
-                                      whiteSpace: 'pre-wrap',
-                                      wordBreak: 'break-all',
-                                    }}
+                                    className="mcp-code-block"
                                     onClick={() =>
                                       this.copyToClipboard(
                                         JSON.stringify(item.serverConfig, null, 2)
                                       )
                                     }
-                                    onMouseEnter={e => {
-                                      e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
-                                      e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
-                                      e.target.style.boxShadow =
-                                        '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
-                                      e.target.style.transform = 'translateY(-2px)';
-                                    }}
-                                    onMouseLeave={e => {
-                                      e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
-                                      e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
-                                      e.target.style.boxShadow =
-                                        '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                                      e.target.style.transform = 'translateY(0)';
-                                    }}
                                     title="点击复制配置"
                                   >
                                     {JSON.stringify(item.serverConfig, null, 2)}
@@ -2098,14 +1529,7 @@ class McpDetail extends React.Component {
 
                                 {/* Headers 配置 */}
                                 <div>
-                                  <h4
-                                    style={{
-                                      color: '#333',
-                                      fontWeight: 'bold',
-                                      marginBottom: '12px',
-                                      fontSize: '14px',
-                                    }}
-                                  >
+                                  <h4 className="mcp-header-title">
                                     {locale.httpHeaders || 'HTTP Headers 配置'}
                                   </h4>
                                   {this.renderHeaders(item.headers, locale)}
@@ -2117,53 +1541,10 @@ class McpDetail extends React.Component {
                       </div>
                     ) : (
                       <div>
-                        <div
-                          style={{
-                            border: '1px solid rgba(230, 230, 230, 0.4)',
-                            borderRadius: '8px',
-                            padding: '16px',
-                            marginBottom: '12px',
-                            backgroundColor: 'rgba(250, 250, 250, 0.7)',
-                            backdropFilter: 'blur(10px)',
-                            boxShadow:
-                              '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                            transition: 'all 0.3s ease',
-                            textAlign: 'center',
-                            minHeight: '120px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow =
-                              '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow =
-                              '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                          }}
-                        >
+                        <div className="mcp-empty-state-large">
                           <div>
-                            <div
-                              style={{
-                                fontSize: '48px',
-                                color: '#d9d9d9',
-                                marginBottom: '12px',
-                                fontWeight: '300',
-                              }}
-                            >
-                              📡
-                            </div>
-                            <p
-                              style={{
-                                color: '#666',
-                                fontStyle: 'italic',
-                                margin: 0,
-                                fontSize: '14px',
-                              }}
-                            >
+                            <div className="mcp-empty-icon-large">📡</div>
+                            <p className="mcp-empty-text-large">
                               {locale.noAvailableEndpoint || '暂无可用的端点'}
                             </p>
                           </div>

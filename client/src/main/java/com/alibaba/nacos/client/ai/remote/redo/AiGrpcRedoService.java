@@ -90,4 +90,38 @@ public class AiGrpcRedoService extends AbstractRedoService {
         result.set(mcpServerEndpoint);
         return result;
     }
+    
+    public void cachedAgentEndpointForRedo(String agentName, AgentEndpointWrapper wrapper) {
+        AgentEndpointRedoData redoData = new AgentEndpointRedoData(agentName, wrapper);
+        super.cachedRedoData(agentName, redoData, AgentEndpointWrapper.class);
+    }
+    
+    public void removeAgentEndpointForRedo(String agentName) {
+        super.removeRedoData(agentName, AgentEndpointWrapper.class);
+    }
+    
+    public void agentEndpointRegistered(String agentName) {
+        super.dataRegistered(agentName, AgentEndpointWrapper.class);
+    }
+    
+    public void agentEndpointDeregister(String agentName) {
+        super.dataDeregister(agentName, AgentEndpointWrapper.class);
+    }
+    
+    public void agentEndpointDeregistered(String agentName) {
+        super.dataDeregistered(agentName, AgentEndpointWrapper.class);
+    }
+    
+    public boolean isAgentEndpointRegistered(String agentName) {
+        return super.isDataRegistered(agentName, AgentEndpointWrapper.class);
+    }
+    
+    public Set<RedoData<AgentEndpointWrapper>> findAgentEndpointRedoData() {
+        return super.findRedoData(AgentEndpointWrapper.class);
+    }
+    
+    public AgentEndpointWrapper getAgentEndpoint(String agentName) {
+        RedoData<AgentEndpointWrapper> redoData = super.getRedoData(agentName, AgentEndpointWrapper.class);
+        return redoData == null ? null : redoData.get();
+    }
 }

@@ -167,6 +167,21 @@ public interface ConfigMaintainerService
     boolean publishConfig(String dataId, String groupName, String namespaceId, String content, String appName,
             String srcUser, String configTags, String desc, String type) throws NacosException;
     
+    
+    /**
+     * Update config metadata boolean.
+     *
+     * @param dataId      the data id
+     * @param groupName   the group name
+     * @param namespaceId the namespace id
+     * @param description the description
+     * @param configTags  the config tags
+     * @return the boolean
+     * @throws NacosException the nacos exception
+     */
+    boolean updateConfigMetadata(String dataId, String groupName, String namespaceId, String description,
+            String configTags) throws NacosException;
+    
     /**
      * Delete a configuration by dataId and default groupName.
      *

@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,64 +32,60 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
     
     @Test
     void testSerialize() throws JsonProcessingException {
-        // Repository是空对象
+        // Repository is empty object
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-        NacosMcpRegistryServerDetail mcpRegistryServerDetail = new NacosMcpRegistryServerDetail();
-        mcpRegistryServerDetail.setId(UUID.randomUUID().toString());
+        McpRegistryServerDetail mcpRegistryServerDetail = new McpRegistryServerDetail();
         mcpRegistryServerDetail.setName("testRegistryServer");
         mcpRegistryServerDetail.setDescription("test mcp registry server object");
         mcpRegistryServerDetail.setRepository(new Repository());
-        mcpRegistryServerDetail.setVersion_detail(new ServerVersionDetail());
-        mcpRegistryServerDetail.getVersion_detail().setVersion("1.0.0");
-        mcpRegistryServerDetail.getVersion_detail().setRelease_date("2022-01-01");
-        mcpRegistryServerDetail.getVersion_detail().setIs_latest(true);
+        mcpRegistryServerDetail.setVersion("1.0.0");
+        mcpRegistryServerDetail.setSchema("http://example.com/schema");
+
+        // Create test packages
+        Package pkg = new Package();
+        pkg.setIdentifier("test-package");
+        pkg.setVersion("1.0.0");
+        mcpRegistryServerDetail.setPackages(Arrays.asList(pkg));
+
+        McpRegistryServerDetail.Meta meta = new McpRegistryServerDetail.Meta();
+        mcpRegistryServerDetail.setMeta(meta);
         mcpRegistryServerDetail.setRemotes(Collections.singletonList(new Remote()));
         mcpRegistryServerDetail.getRemotes().get(0).setUrl("127.0.0.1:8848/sse");
-        mcpRegistryServerDetail.getRemotes().get(0).setTransportType("https");
-        mcpRegistryServerDetail.setNacosMcpEndpointSpec(new McpEndpointSpec());
-        mcpRegistryServerDetail.setMcpToolSpecification(new McpToolSpecification());
-        mcpRegistryServerDetail.setNacosNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        mcpRegistryServerDetail.getRemotes().get(0).setType("https");
         String json = mapper.writeValueAsString(mcpRegistryServerDetail);
         assertNotNull(json);
-        assertTrue(json.contains(String.format("\"id\":\"%s\"", mcpRegistryServerDetail.getId())));
         assertTrue(json.contains("\"name\":\"testRegistryServer\""));
         assertTrue(json.contains("\"description\":\"test mcp registry server object\""));
         assertTrue(json.contains("\"repository\":{}"));
-        assertTrue(json.contains("\"version_detail\":{"));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
-        assertTrue(json.contains("\"release_date\":\"2022-01-01\""));
-        assertTrue(json.contains("\"is_latest\":true"));
+        assertTrue(json.contains("\"$schema\":\"http://example.com/schema\""));
+        assertTrue(json.contains("\"packages\":[{"));
+        assertTrue(json.contains("\"identifier\":\"test-package\""));
         assertTrue(json.contains("\"remotes\":[{"));
         assertTrue(json.contains("\"url\":\"127.0.0.1:8848/sse\""));
-        assertTrue(json.contains("\"transport_type\":\"https\""));
-        assertTrue(json.contains("\"nacosMcpEndpointSpec\":{\"data\":{}}"));
-        assertTrue(json.contains("\"mcpToolSpecification\":{\"tools\":[],\"toolsMeta\":{},\"securitySchemes\":[]}"));
-        assertTrue(json.contains("\"nacosNamespaceId\":\"public\""));
+        assertTrue(json.contains("\"type\":\"https\""));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"ada27489-8572-4746-80a2-11baaf8c2f84\",\"name\":\"testRegistryServer\",\"description\":"
-                + "\"test mcp registry server object\",\"repository\":{},\"version_detail\":{\"version\":\"1.0.0\","
-                + "\"release_date\":\"2022-01-01\",\"is_latest\":true},\"remotes\":[{\"transport_type\":\"https\","
-                + "\"url\":\"127.0.0.1:8848/sse\"}],\"nacosMcpEndpointSpec\":{\"data\":{}},\"mcpToolSpecification\":"
-                + "{\"tools\":[],\"toolsMeta\":{}},\"nacosNamespaceId\":\"public\"}";
-        NacosMcpRegistryServerDetail mcpRegistryServerDetail = mapper.readValue(json, NacosMcpRegistryServerDetail.class);
+        String json = "{\"name\":\"testRegistryServer\",\"description\":\"test mcp registry server object\",\"$schema\":\"http://example.com/schema\",\"packages\":[{\"identifier\":\"test-package\",\"version\":\"1.0.0\"}],"
+                + "\"repository\":{},\"version\":\"1.0.0\",\"remotes\":[{\"type\":\"https\","
+                + "\"url\":\"127.0.0.1:8848/sse\"}],\"_meta\":{\"io.modelcontextprotocol.registry/official\":"
+                + "{\"publishedAt\":\"2022-01-01T00:00:00Z\"}}}";
+        McpRegistryServerDetail mcpRegistryServerDetail = mapper.readValue(json, McpRegistryServerDetail.class);
         assertNotNull(mcpRegistryServerDetail);
-        assertEquals("ada27489-8572-4746-80a2-11baaf8c2f84", mcpRegistryServerDetail.getId());
         assertEquals("testRegistryServer", mcpRegistryServerDetail.getName());
         assertEquals("test mcp registry server object", mcpRegistryServerDetail.getDescription());
         assertNotNull(mcpRegistryServerDetail.getRepository());
-        assertNotNull(mcpRegistryServerDetail.getVersion_detail());
-        assertEquals("1.0.0", mcpRegistryServerDetail.getVersion_detail().getVersion());
-        assertEquals("2022-01-01", mcpRegistryServerDetail.getVersion_detail().getRelease_date());
-        assertTrue(mcpRegistryServerDetail.getVersion_detail().getIs_latest());
+        assertEquals("1.0.0", mcpRegistryServerDetail.getVersion());
+        assertEquals("http://example.com/schema", mcpRegistryServerDetail.getSchema());
+        assertNotNull(mcpRegistryServerDetail.getPackages());
+        assertEquals(1, mcpRegistryServerDetail.getPackages().size());
+        assertEquals("test-package", mcpRegistryServerDetail.getPackages().get(0).getIdentifier());
+        assertEquals("1.0.0", mcpRegistryServerDetail.getPackages().get(0).getVersion());
         assertNotNull(mcpRegistryServerDetail.getRemotes());
         assertEquals(1, mcpRegistryServerDetail.getRemotes().size());
-        assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getTransportType());
+        assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getType());
         assertEquals("127.0.0.1:8848/sse", mcpRegistryServerDetail.getRemotes().get(0).getUrl());
-        assertNotNull(mcpRegistryServerDetail.getNacosMcpEndpointSpec());
-        assertNotNull(mcpRegistryServerDetail.getMcpToolSpecification());
-        assertEquals("public", mcpRegistryServerDetail.getNacosNamespaceId());
     }
 }

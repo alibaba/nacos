@@ -55,7 +55,13 @@ public class RegisterInstanceTraceEvent extends NamingTraceEvent {
     
     public RegisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, String serviceNamespace,
             String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("REGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+        this("REGISTER_INSTANCE_TRACE_EVENT", eventTime, clientIp, rpc, serviceNamespace, serviceGroup, serviceName,
+                instanceIp, instancePort);
+    }
+    
+    public RegisterInstanceTraceEvent(String eventType, long eventTime, String clientIp, boolean rpc,
+            String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
+        super(eventType, eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;
         this.rpc = rpc;
         this.instanceIp = instanceIp;

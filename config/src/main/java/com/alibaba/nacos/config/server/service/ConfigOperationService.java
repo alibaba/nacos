@@ -146,13 +146,16 @@ public class ConfigOperationService {
                     configOperateResult = configInfoPersistService.addConfigInfo(configRequestInfo.getSrcIp(),
                             configForm.getSrcUser(), configInfo, configAdvanceInfo);
                 } catch (DataIntegrityViolationException ive) {
-                    LOGGER.warn("[publish-config-failed] config already exists. dataId: {}, group: {}, namespaceId: {}",
-                            configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId());
-                    throw new ConfigAlreadyExistsException(
-                            String.format("config already exist, dataId: %s, group: %s, namespaceId: %s",
-                                    configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId()));
+                    configOperateResult = new ConfigOperateResult(false);
                 }
             }
+        }
+        if (!configOperateResult.isSuccess()) {
+            LOGGER.warn("[publish-config-failed] config already exists. dataId: {}, group: {}, namespaceId: {}",
+                    configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId());
+            throw new ConfigAlreadyExistsException(
+                    String.format("config already exist, dataId: %s, group: %s, namespaceId: %s",
+                            configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId()));
         }
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),

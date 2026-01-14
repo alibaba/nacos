@@ -53,6 +53,8 @@ class NacosTpsControlManagerTest {
     void testApplyTpsRule1() {
         NacosTpsControlManager nacosTpsControlManager = new NacosTpsControlManager();
         TpsControlRule tpsLimitRule = new TpsControlRule();
+        RuleDetail ruleDetail = new RuleDetail();
+        tpsLimitRule.setPointRule(ruleDetail);
         nacosTpsControlManager.applyTpsRule("test", tpsLimitRule);
         
         assertTrue(nacosTpsControlManager.getRules().containsKey("test"));

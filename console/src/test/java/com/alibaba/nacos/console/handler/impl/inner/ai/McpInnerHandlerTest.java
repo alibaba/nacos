@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.service.McpServerImportService;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -43,11 +44,14 @@ class McpInnerHandlerTest {
     @Mock
     McpServerOperationService mcpServerOperationService;
     
+    @Mock
+    McpServerImportService mcpServerImportService;
+    
     McpInnerHandler mcpInnerHandler;
     
     @BeforeEach
     void setUp() {
-        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService);
+        mcpInnerHandler = new McpInnerHandler(mcpServerOperationService, mcpServerImportService);
     }
     
     @Test
@@ -81,9 +85,17 @@ class McpInnerHandlerTest {
     @Test
     void updateMcpServer() throws NacosException {
         mcpInnerHandler.updateMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, true, new McpServerBasicInfo(),
-                new McpToolSpecification(), new McpEndpointSpec());
+                new McpToolSpecification(), new McpEndpointSpec(), false);
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class));
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class), eq(false));
+    }
+
+    @Test
+    void updateMcpServerWithOverrideExisting() throws NacosException {
+        mcpInnerHandler.updateMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, true, new McpServerBasicInfo(),
+                new McpToolSpecification(), new McpEndpointSpec(), true);
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class), eq(true));
     }
     
     @Test

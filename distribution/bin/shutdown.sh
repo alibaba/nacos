@@ -15,7 +15,7 @@
 cd `dirname $0`/../target
 target_dir=`pwd`
 
-pid=`pgrep -f nacos.nacos`
+pid=`pgrep -f nacos.nacos | xargs`
 if [ -z "$pid" ] ; then
         echo "No nacosServer running."
         exit -1;

@@ -42,7 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,7 +117,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(initNotifyRequest);
         //check watcher notified
         Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 1);
+        System.out.println(watcher1Flag.get());
         Assertions.assertTrue(watcher1Flag.get() == 1);
         
         //build change notify add
@@ -128,7 +128,6 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         
         //check watcher notified
         Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 2);
         Assertions.assertTrue(watcher1Flag.get() == 2);
         
         //check not complete future timeout
@@ -241,7 +240,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         
         RpcClient rpcClient = Mockito.mock(RpcClient.class);
         when(rpcTransportClient.ensureRpcClient(eq("0"))).thenReturn(rpcClient);
-        ScheduledExecutorService scheduledExecutorService = Mockito.mock(ScheduledExecutorService.class);
+        ThreadPoolExecutor scheduledExecutorService = Mockito.mock(ThreadPoolExecutor.class);
         when(rpcTransportClient.getExecutor()).thenReturn(scheduledExecutorService);
         when(scheduledExecutorService.submit(any(Runnable.class))).thenReturn(Mockito.mock(Future.class));
         configFuzzyWatchGroupKeyHolder.executeConfigFuzzyListen();

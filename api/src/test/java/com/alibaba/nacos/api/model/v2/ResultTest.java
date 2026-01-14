@@ -64,6 +64,14 @@ class ResultTest {
     }
     
     @Test
+    void testFailureWithCodeMessageAndData() {
+        Result<String> result = Result.failure(10001, "custom error", "errorData");
+        assertEquals("errorData", result.getData());
+        assertEquals(Integer.valueOf(10001), result.getCode());
+        assertEquals("custom error", result.getMessage());
+    }
+    
+    @Test
     void testToString() {
         Result<String> result = Result.success("test");
         assertEquals("Result{errorCode=0, message='success', data=test}", result.toString());

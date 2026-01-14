@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,32 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import java.util.List;
 
 /**
- * Mcp Remote Endpoint info.
+ * Remote per components.schemas.Remote.
+ *
  * @author xinluo
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Remote {
-    
-    @JsonProperty("transport_type")
-    private String transportType;
+
+    private String type;
 
     private String url;
 
-    public String getTransportType() {
-        return transportType;
+    private List<KeyValueInput> headers;
+
+    public String getType() {
+        return type;
     }
 
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getUrl() {
@@ -43,5 +50,13 @@ public class Remote {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public List<KeyValueInput> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(List<KeyValueInput> headers) {
+        this.headers = headers;
     }
 }

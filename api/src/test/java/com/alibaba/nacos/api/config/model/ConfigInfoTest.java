@@ -68,15 +68,15 @@ class ConfigInfoTest {
         basicInfo.setAppName("testApp");
         basicInfo.setCreateTime(createTime);
         basicInfo.setModifyTime(modifyTime);
+        basicInfo.setDesc("testDesc");
+        basicInfo.setConfigTags("testConfigTag1,testConfigTag2");
     }
     
     private void mockDetailInfo(ConfigDetailInfo detailInfo) {
         detailInfo.setContent("testContent");
-        detailInfo.setDesc("testDesc");
         detailInfo.setEncryptedDataKey("testEncryptedDataKey");
         detailInfo.setCreateUser("testCreateUser");
         detailInfo.setCreateIp("1.1.1.1");
-        detailInfo.setConfigTags("testConfigTag1,testConfigTag2");
     }
     
     @Test

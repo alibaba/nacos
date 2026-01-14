@@ -25,14 +25,14 @@ import com.alibaba.nacos.api.model.NacosForm;
  */
 public class GetServerForm implements NacosForm {
     
-    private String version;
+    private String namespaceId;
 
-    public String getVersion() {
-        return version;
+    public String getNamespaceId() {
+        return namespaceId;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 
     /**

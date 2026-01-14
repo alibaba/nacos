@@ -51,7 +51,7 @@ public class Constants {
     
     public static final String MCP_SERVER_ENDPOINT_CLUSTER = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
     
-    public static final String MCP_BACKEND_ISTANCE_PROTOCOL_KEY = "transportProtocol";
+    public static final String MCP_BACKEND_INSTANCE_PROTOCOL_KEY = "transportProtocol";
 
     public static final String MCP_SERVER_ENDPOINT_ADDRESS = "address";
     
@@ -82,4 +82,31 @@ public class Constants {
     public static final String SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_SPEC_DATA_ID_SUFFIX;
     
     public static final String SERVER_TOOLS_SPEC_CONFIG_DATA_ID_TEMPLATE = "%s-%s" + MCP_SERVER_TOOL_DATA_ID_SUFFIX;
+    
+    public static class A2A {
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/a2a";
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/a2a";
+        
+        public static final String AGENT_GROUP = "agent";
+        
+        public static final String AGENT_VERSION_GROUP = "agent-version";
+        
+        public static final String SEARCH_BLUR = "blur";
+        
+        public static final String SEARCH_ACCURATE = "accurate";
+        
+        public static final String AGENT_ENDPOINT_GROUP = "agent-endpoints";
+        
+        public static final String AGENT_ENDPOINT_PATH_KEY = "__nacos.agent.endpoint.path__";
+        
+        public static final String AGENT_ENDPOINT_TRANSPORT_KEY = "__nacos.agent.endpoint.transport__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_SUPPORT_TLS = "__nacos.agent.endpoint.supportTls__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_KEY = "__nacos.agent.endpoint.protocol__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
+    }
 }

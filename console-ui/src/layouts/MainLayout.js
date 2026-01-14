@@ -67,10 +67,32 @@ class MainLayout extends React.Component {
   }
 
   navTo(url) {
-    const { search } = this.props.location;
-    let urlSearchParams = new URLSearchParams(search);
-    urlSearchParams.set('namespace', window.nownamespace);
-    urlSearchParams.set('namespaceShowName', window.namespaceShowName);
+    // 为不同页面定义需要保留的参数
+    const pageParamMap = {
+      '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
+      '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/mcpServerManagement': ['namespace', 'namespaceShowName'],
+      '/serviceManagement': ['namespace', 'namespaceShowName'],
+    };
+
+    // 获取当前页面需要保留的参数
+    const allowedParams = pageParamMap[url] || ['namespace', 'namespaceShowName'];
+
+    // 创建新的URL参数
+    let urlSearchParams = new URLSearchParams();
+
+    // 只保留允许的参数
+    const currentParams = new URLSearchParams(this.props.location.search);
+    allowedParams.forEach(param => {
+      if (param === 'namespace') {
+        urlSearchParams.set('namespace', window.nownamespace || '');
+      } else if (param === 'namespaceShowName') {
+        urlSearchParams.set('namespaceShowName', window.namespaceShowName || '');
+      } else if (currentParams.has(param)) {
+        urlSearchParams.set(param, currentParams.get(param));
+      }
+    });
+
     this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
   }
 

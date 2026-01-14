@@ -27,18 +27,17 @@ import com.alibaba.nacos.api.model.Page;
 public interface McpServerIndex {
     
     /**
-     * Search Mcp server by name and namespaceId.
+     * Search Mcp server by name and namespaceId with pagination.
      *
-     * @param namespaceId namespaceId
+     * @param namespaceId namespace ID
      * @param name        mcp server name
      * @param search      search mode
-     * @param offset      offset to list
-     * @param limit       list limit
-     * @return MCP Server Summery
+     * @param pageNo      page number
+     * @param limit       page size limit
+     * @return MCP Server Index Data page
      */
-    Page<McpServerIndexData> searchMcpServerByName(String namespaceId, String name, String search, int offset,
+    Page<McpServerIndexData> searchMcpServerByNameWithPage(String namespaceId, String name, String search, int pageNo,
             int limit);
-    
     /**
      * Get mcp server by id.
      *

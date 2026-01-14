@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class DefaultGrpcClientConfigTest {
     
@@ -60,6 +61,7 @@ class DefaultGrpcClientConfigTest {
         assertEquals(3, config.healthCheckRetryTimes());
         assertEquals(3000L, config.healthCheckTimeOut());
         assertEquals(5000L, config.capabilityNegotiationTimeout());
+        assertFalse(config.allowCoreThreadTimeOut());
         assertEquals(1, config.labels().size());
         assertNotNull(config.tlsConfig());
     }
@@ -82,6 +84,7 @@ class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES, "3");
         properties.setProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT, "3000");
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
+        properties.setProperty(GrpcConstants.GRPC_THREADPOOL_ALLOW_CORE_THREAD_TIMEOUT, "false");
         
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
                 .fromProperties(properties, null).build();
@@ -101,6 +104,7 @@ class DefaultGrpcClientConfigTest {
         assertEquals(3, config.healthCheckRetryTimes());
         assertEquals(3000, config.healthCheckTimeOut());
         assertEquals(5000, config.capabilityNegotiationTimeout());
+        assertEquals(false, config.allowCoreThreadTimeOut());
         assertEquals(1, config.labels().size());
         assertNotNull(config.tlsConfig());
     }
@@ -269,5 +273,21 @@ class DefaultGrpcClientConfigTest {
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
         config.setTlsConfig(tlsConfig);
         assertEquals(tlsConfig, config.tlsConfig());
+    }
+    
+    @Test
+    void testSetAllowCoreThreadTimeOut() {
+        boolean allowCoreThreadTimeOut = false;
+        DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
+        builder.setAllowCoreThreadTimeOut(allowCoreThreadTimeOut);
+        DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
+        assertEquals(allowCoreThreadTimeOut, config.allowCoreThreadTimeOut());
+        
+        // Test with true value
+        allowCoreThreadTimeOut = true;
+        builder = DefaultGrpcClientConfig.newBuilder();
+        builder.setAllowCoreThreadTimeOut(allowCoreThreadTimeOut);
+        config = (DefaultGrpcClientConfig) builder.build();
+        assertEquals(allowCoreThreadTimeOut, config.allowCoreThreadTimeOut());
     }
 }

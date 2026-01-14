@@ -40,4 +40,55 @@ class ConfigInfoTest {
         
     }
     
+    @Test
+    void testConfigInfoWithDescAndTags() {
+        ConfigInfo configInfo = new ConfigInfo();
+        configInfo.setDataId("test.properties");
+        configInfo.setGroup("DEFAULT_GROUP");
+        configInfo.setTenant("public");
+        configInfo.setContent("key=value");
+        configInfo.setDesc("测试配置描述");
+        configInfo.setConfigTags("tag1,tag2,tag3");
+        
+        assertEquals("test.properties", configInfo.getDataId());
+        assertEquals("DEFAULT_GROUP", configInfo.getGroup());
+        assertEquals("public", configInfo.getTenant());
+        assertEquals("key=value", configInfo.getContent());
+        assertEquals("测试配置描述", configInfo.getDesc());
+        assertEquals("tag1,tag2,tag3", configInfo.getConfigTags());
+    }
+    
+    @Test
+    void testConfigInfoWithNullDescAndTags() {
+        ConfigInfo configInfo = new ConfigInfo();
+        configInfo.setDataId("test.properties");
+        configInfo.setGroup("DEFAULT_GROUP");
+        configInfo.setTenant("public");
+        configInfo.setContent("key=value");
+        configInfo.setDesc(null);
+        configInfo.setConfigTags(null);
+        
+        assertEquals("test.properties", configInfo.getDataId());
+        assertEquals("DEFAULT_GROUP", configInfo.getGroup());
+        assertEquals("public", configInfo.getTenant());
+        assertEquals("key=value", configInfo.getContent());
+        assertEquals(null, configInfo.getDesc());
+        assertEquals(null, configInfo.getConfigTags());
+    }
+    
+    @Test
+    void testConfigInfoInheritance() {
+        // 测试 ConfigAllInfo 继承 ConfigInfo 后的字段访问
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setDataId("test.properties");
+        configAllInfo.setGroup("DEFAULT_GROUP");
+        configAllInfo.setDesc("继承的描述字段");
+        configAllInfo.setConfigTags("inherited,tags");
+        
+        assertEquals("test.properties", configAllInfo.getDataId());
+        assertEquals("DEFAULT_GROUP", configAllInfo.getGroup());
+        assertEquals("继承的描述字段", configAllInfo.getDesc());
+        assertEquals("inherited,tags", configAllInfo.getConfigTags());
+    }
+    
 }

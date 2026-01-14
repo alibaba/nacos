@@ -65,6 +65,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -151,6 +152,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock get config state
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null, configInfoStateWrapperFinalSelect);
+        Mockito.when(databaseOperate.blockUpdate(any())).thenReturn(true);
         
         String srcIp = "srcIp";
         String srcUser = "srcUser";
@@ -218,6 +220,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //mock get config state
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null, configInfoStateWrapperFinalSelect);
+        Mockito.when(databaseOperate.blockUpdate(any())).thenReturn(true);
         String srcIp = "iptest";
         String srcUser = "users";
         ConfigOperateResult configOperateResult = embeddedConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser,
@@ -241,8 +244,24 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq("I"), eq("formal"), eq(null),
-                        eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
+                        eq("I"), eq("formal"), eq(null), argThat(actualJson -> {
+                            String expected = ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo,
+                                    srcUser);
+                            if (expected == null || actualJson == null) {
+                                return expected == actualJson;
+                            }
+                            String[] expectedParts = expected.replaceAll("[{}\"]", "").split(",");
+                            String[] actualParts = actualJson.replaceAll("[{}\"]", "").split(",");
+                            List<String> expectedList = new ArrayList<>();
+                            List<String> actualList = new ArrayList<>();
+                            for (String part : expectedParts) {
+                                expectedList.add(part.trim());
+                            }
+                            for (String part : actualParts) {
+                                actualList.add(part.trim());
+                            }
+                            return expectedList.size() == actualList.size() && actualList.containsAll(expectedList);
+                        }));
     }
     
     @Test

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 /**
@@ -30,7 +32,20 @@ public class McpTool {
     private String description;
     
     private Map<String, Object> inputSchema;
-    
+
+    private Map<String, Object> outputSchema;
+
+    /**
+     * MCP protocol meta field. See MCP specification for `_meta` usage.
+     */
+    @JsonProperty("_meta")
+    private Map<String, Object> meta;
+
+    /**
+     * MCP Tool annotations - additional properties describing a Tool to clients.
+     */
+    private McpToolAnnotations annotations;
+
     public String getName() {
         return name;
     }
@@ -53,6 +68,30 @@ public class McpTool {
     
     public void setInputSchema(Map<String, Object> inputSchema) {
         this.inputSchema = inputSchema;
+    }
+
+    public Map<String, Object> getOutputSchema() {
+        return outputSchema;
+    }
+
+    public void setOutputSchema(Map<String, Object> outputSchema) {
+        this.outputSchema = outputSchema;
+    }
+    
+    public Map<String, Object> getMeta() {
+        return meta;
+    }
+    
+    public void setMeta(Map<String, Object> meta) {
+        this.meta = meta;
+    }
+    
+    public McpToolAnnotations getAnnotations() {
+        return annotations;
+    }
+    
+    public void setAnnotations(McpToolAnnotations annotations) {
+        this.annotations = annotations;
     }
     
 }

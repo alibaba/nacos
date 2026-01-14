@@ -48,6 +48,8 @@ public class ParamInfo {
     
     private String mcpId;
     
+    private String agentName;
+    
     public String getNamespaceShowName() {
         return namespaceShowName;
     }
@@ -142,5 +144,13 @@ public class ParamInfo {
 
     public void setMcpName(String mcpName) {
         this.mcpName = mcpName;
+    }
+    
+    public String getAgentName() {
+        return agentName;
+    }
+    
+    public void setAgentName(String agentName) {
+        this.agentName = agentName;
     }
 }

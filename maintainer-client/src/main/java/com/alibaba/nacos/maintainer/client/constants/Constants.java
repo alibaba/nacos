@@ -56,6 +56,12 @@ public class Constants {
         public static final String CORE_STATE_ADMIN_PATH = "/v3/admin/core/state";
         
         public static final String AI_MCP_ADMIN_PATH = "/v3/admin/ai/mcp";
+        
+        public static final String AI_AGENT_ADMIN_PATH = "/v3/admin/ai/a2a";
+        
+        public static final String AI_AGENT_LIST_VERSION_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "/version/list";
+        
+        public static final String AI_AGENT_LIST_ADMIN_PATH = AI_AGENT_ADMIN_PATH + "/list";
     }
     
 }
