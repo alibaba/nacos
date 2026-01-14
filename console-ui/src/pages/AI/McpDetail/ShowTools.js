@@ -273,8 +273,6 @@ const ShowTools = props => {
     toolsRef?.current?.openVisible && toolsRef.current.openVisible({ type, record, toolsMeta });
   };
 
-
-
   const importToolsFromOpenApi = () => {
     setOpenApiDialogVisible(true);
     setFile(null);
@@ -289,7 +287,11 @@ const ShowTools = props => {
 
     // Handle @alifd/next Upload component callback structure
     // info can be { file: { originFileObj: File, ... }, fileList: [...] }
-    const originFile = info.file ? info.file.originFileObj : (info.originFileObj ? info.originFileObj : info);
+    const originFile = info.file
+      ? info.file.originFileObj
+      : info.originFileObj
+      ? info.originFileObj
+      : info;
 
     if (originFile instanceof File || originFile instanceof Blob) {
       setFile(originFile);
@@ -426,8 +428,9 @@ const ShowTools = props => {
 
   return (
     <Card
-      className={`show-tools-card ${isPreview || onlyEditRuntimeInfo ? (isPreview ? 'preview' : 'edit-mode') : ''
-        }`}
+      className={`show-tools-card ${
+        isPreview || onlyEditRuntimeInfo ? (isPreview ? 'preview' : 'edit-mode') : ''
+      }`}
       contentHeight="auto"
     >
       {/* Tools 展示 - 使用与 McpDetail 相同的左右分栏风格 */}
@@ -471,7 +474,7 @@ const ShowTools = props => {
               <div style={{ padding: '0 12px 12px 0' }}>
                 <Input
                   hasClear
-                  placeholder={locale.searchTool || "Search tools..."}
+                  placeholder={locale.searchTool || 'Search tools...'}
                   value={toolSearchKeyword}
                   onChange={val => setToolSearchKeyword(val)}
                   style={{ width: '100%' }}
@@ -479,12 +482,18 @@ const ShowTools = props => {
               </div>
               <div className="tools-sidebar-list">
                 {(serverConfig.toolSpec.tools || [])
-                  .filter(t => !toolSearchKeyword || t.name.toLowerCase().includes(toolSearchKeyword.toLowerCase()))
+                  .filter(
+                    t =>
+                      !toolSearchKeyword ||
+                      t.name.toLowerCase().includes(toolSearchKeyword.toLowerCase())
+                  )
                   .map((tool, index) => {
                     // 获取工具的在线状态
                     const toolsMeta = serverConfig?.toolSpec?.toolsMeta?.[tool.name];
                     const isOnline = toolsMeta ? toolsMeta.enabled : true;
-                    const originalIndex = serverConfig.toolSpec.tools.findIndex(t => t.name === tool.name);
+                    const originalIndex = serverConfig.toolSpec.tools.findIndex(
+                      t => t.name === tool.name
+                    );
                     const isActive = activeToolIndex === originalIndex;
 
                     return (
@@ -495,7 +504,9 @@ const ShowTools = props => {
                       >
                         <div className="tool-item-title">{tool.name}</div>
                         <div className="tool-item-status-bar">
-                          <span className={`tool-status-badge ${isOnline ? 'enabled' : 'disabled'}`}>
+                          <span
+                            className={`tool-status-badge ${isOnline ? 'enabled' : 'disabled'}`}
+                          >
                             {isOnline ? '启用' : '禁用'}
                           </span>
                           {tool.inputSchema?.properties && (
@@ -562,20 +573,20 @@ const ShowTools = props => {
                       <div className="parameters-section">
                         <h3 className="parameters-section-title">
                           {locale?.metaField || 'Meta'}
-                          <span className="parameters-section-count">
-                            (MCP _meta)
-                          </span>
+                          <span className="parameters-section-count">(MCP _meta)</span>
                         </h3>
                         <div className="content-box" style={{ backgroundColor: '#f8f9fa' }}>
-                          <pre style={{
-                            margin: 0,
-                            padding: '12px',
-                            fontSize: '13px',
-                            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
-                            backgroundColor: 'transparent'
-                          }}>
+                          <pre
+                            style={{
+                              margin: 0,
+                              padding: '12px',
+                              fontSize: '13px',
+                              fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-all',
+                              backgroundColor: 'transparent',
+                            }}
+                          >
                             {JSON.stringify(tool._meta, null, 2)}
                           </pre>
                         </div>
@@ -587,34 +598,46 @@ const ShowTools = props => {
                       <div className="parameters-section">
                         <h3 className="parameters-section-title">
                           {locale?.annotationsConfig || 'Annotations'}
-                          <span className="parameters-section-count">
-                            (Tool Hints)
-                          </span>
+                          <span className="parameters-section-count">(Tool Hints)</span>
                         </h3>
                         <div className="content-box" style={{ backgroundColor: '#f8f9fa' }}>
                           <div style={{ padding: '12px' }}>
                             {tool.annotations.title && (
                               <div className="kv-row" style={{ marginBottom: '8px' }}>
-                                <span className="kv-label" style={{ fontWeight: '500' }}>Title: </span>
+                                <span className="kv-label" style={{ fontWeight: '500' }}>
+                                  Title:{' '}
+                                </span>
                                 <span className="kv-value">{tool.annotations.title}</span>
                               </div>
                             )}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                               <div className="kv-row">
                                 <span className="kv-label">Read Only: </span>
-                                <span className={`kv-value ${tool.annotations.readOnlyHint ? 'green' : ''}`}>
+                                <span
+                                  className={`kv-value ${
+                                    tool.annotations.readOnlyHint ? 'green' : ''
+                                  }`}
+                                >
                                   {tool.annotations.readOnlyHint ? 'Yes' : 'No'}
                                 </span>
                               </div>
                               <div className="kv-row">
                                 <span className="kv-label">Destructive: </span>
-                                <span className={`kv-value ${tool.annotations.destructiveHint ? 'red' : 'green'}`}>
+                                <span
+                                  className={`kv-value ${
+                                    tool.annotations.destructiveHint ? 'red' : 'green'
+                                  }`}
+                                >
                                   {tool.annotations.destructiveHint ? 'Yes' : 'No'}
                                 </span>
                               </div>
                               <div className="kv-row">
                                 <span className="kv-label">Idempotent: </span>
-                                <span className={`kv-value ${tool.annotations.idempotentHint ? 'green' : ''}`}>
+                                <span
+                                  className={`kv-value ${
+                                    tool.annotations.idempotentHint ? 'green' : ''
+                                  }`}
+                                >
                                   {tool.annotations.idempotentHint ? 'Yes' : 'No'}
                                 </span>
                               </div>
@@ -660,7 +683,8 @@ const ShowTools = props => {
                                 if (nodeData?.isGroupNode) {
                                   return (
                                     <span className="tree-group-label">
-                                      {node.label} <span className="group-type-badge">{nodeData.type}</span>
+                                      {node.label}{' '}
+                                      <span className="group-type-badge">{nodeData.type}</span>
                                     </span>
                                   );
                                 }
@@ -688,12 +712,21 @@ const ShowTools = props => {
 
                                       {nodeData.enum && (
                                         <span className="enum-prop">
-                                          Enum: [{Array.isArray(nodeData.enum) ? nodeData.enum.join(', ') : nodeData.enum}]
+                                          Enum: [
+                                          {Array.isArray(nodeData.enum)
+                                            ? nodeData.enum.join(', ')
+                                            : nodeData.enum}
+                                          ]
                                         </span>
                                       )}
 
-                                      <span className="param-desc" title={nodeData.description || ''}>
-                                        {nodeData.description ? `- ${truncateText(nodeData.description, 100)}` : ''}
+                                      <span
+                                        className="param-desc"
+                                        title={nodeData.description || ''}
+                                      >
+                                        {nodeData.description
+                                          ? `- ${truncateText(nodeData.description, 100)}`
+                                          : ''}
                                       </span>
                                     </div>
                                   );
@@ -702,8 +735,12 @@ const ShowTools = props => {
                                 // 信息节点
                                 if (nodeData?.isInfoNode) {
                                   return (
-                                    <span className="info-label" title={`${nodeData.name}: ${nodeData.description}`}>
-                                      <span className="info-key">{nodeData.name}:</span> {nodeData.description}
+                                    <span
+                                      className="info-label"
+                                      title={`${nodeData.name}: ${nodeData.description}`}
+                                    >
+                                      <span className="info-key">{nodeData.name}:</span>{' '}
+                                      {nodeData.description}
                                     </span>
                                   );
                                 }
@@ -742,7 +779,8 @@ const ShowTools = props => {
                                 if (nodeData?.isGroupNode) {
                                   return (
                                     <span className="tree-group-label">
-                                      {node.label} <span className="group-type-badge">{nodeData.type}</span>
+                                      {node.label}{' '}
+                                      <span className="group-type-badge">{nodeData.type}</span>
                                     </span>
                                   );
                                 }
@@ -766,8 +804,13 @@ const ShowTools = props => {
                                         </span>
                                       )}
 
-                                      <span className="param-desc" title={nodeData.description || ''}>
-                                        {nodeData.description ? `- ${truncateText(nodeData.description, 100)}` : ''}
+                                      <span
+                                        className="param-desc"
+                                        title={nodeData.description || ''}
+                                      >
+                                        {nodeData.description
+                                          ? `- ${truncateText(nodeData.description, 100)}`
+                                          : ''}
                                       </span>
                                     </div>
                                   );
@@ -776,7 +819,8 @@ const ShowTools = props => {
                                 if (nodeData?.isInfoNode) {
                                   return (
                                     <span className="info-label">
-                                      <span className="info-key">{nodeData.name}:</span> {nodeData.description}
+                                      <span className="info-key">{nodeData.name}:</span>{' '}
+                                      {nodeData.description}
                                     </span>
                                   );
                                 }
@@ -813,8 +857,9 @@ const ShowTools = props => {
                                       <div className="kv-row">
                                         <span className="kv-label">启用状态: </span>
                                         <span
-                                          className={`kv-value ${templateData.security.passthrough ? 'green' : ''
-                                            }`}
+                                          className={`kv-value ${
+                                            templateData.security.passthrough ? 'green' : ''
+                                          }`}
                                         >
                                           {templateData.security.passthrough ? '已启用' : '未启用'}
                                         </span>
@@ -850,24 +895,25 @@ const ShowTools = props => {
                                         <div className="kv-row">
                                           <span className="kv-label">HTTP 方法: </span>
                                           <span
-                                            className={`http-method-badge ${String(
-                                              templateData.requestTemplate.method
-                                            ).toLowerCase() === 'get'
-                                              ? 'get'
-                                              : String(
+                                            className={`http-method-badge ${
+                                              String(
                                                 templateData.requestTemplate.method
-                                              ).toLowerCase() === 'post'
+                                              ).toLowerCase() === 'get'
+                                                ? 'get'
+                                                : String(
+                                                    templateData.requestTemplate.method
+                                                  ).toLowerCase() === 'post'
                                                 ? 'post'
                                                 : String(
-                                                  templateData.requestTemplate.method
-                                                ).toLowerCase() === 'put'
-                                                  ? 'put'
-                                                  : String(
+                                                    templateData.requestTemplate.method
+                                                  ).toLowerCase() === 'put'
+                                                ? 'put'
+                                                : String(
                                                     templateData.requestTemplate.method
                                                   ).toLowerCase() === 'delete'
-                                                    ? 'delete'
-                                                    : 'other'
-                                              }`}
+                                                ? 'delete'
+                                                : 'other'
+                                            }`}
                                           >
                                             {templateData.requestTemplate.method}
                                           </span>
@@ -893,12 +939,12 @@ const ShowTools = props => {
                                       {/* 请求头 */}
                                       {templateData.requestTemplate.headers &&
                                         Object.keys(templateData.requestTemplate.headers).length >
-                                        0 && (
+                                          0 && (
                                           <div className="show-tools-mb-12">
                                             <div className="headers-title">headers:</div>
                                             <div className="headers-box">
                                               {typeof templateData.requestTemplate.headers ===
-                                                'object' ? (
+                                              'object' ? (
                                                 Object.entries(
                                                   templateData.requestTemplate.headers
                                                 ).map(([key, value], index) => (
@@ -927,10 +973,10 @@ const ShowTools = props => {
                                           <div className="body-box">
                                             {typeof templateData.requestTemplate.body === 'object'
                                               ? JSON.stringify(
-                                                templateData.requestTemplate.body,
-                                                null,
-                                                2
-                                              )
+                                                  templateData.requestTemplate.body,
+                                                  null,
+                                                  2
+                                                )
                                               : templateData.requestTemplate.body}
                                           </div>
                                         </div>
@@ -996,10 +1042,10 @@ const ShowTools = props => {
                                                   <span className="other-config-value">
                                                     {typeof responseTemplate[field] === 'object'
                                                       ? JSON.stringify(
-                                                        responseTemplate[field],
-                                                        null,
-                                                        2
-                                                      )
+                                                          responseTemplate[field],
+                                                          null,
+                                                          2
+                                                        )
                                                       : String(responseTemplate[field])}
                                                   </span>
                                                 </div>
@@ -1130,7 +1176,7 @@ const ShowTools = props => {
               const protocol = Number(backendPort) === 443 ? 'https' : 'http';
               const mcpBaseUrl = `${protocol}://${backendAddress}:${backendPort}`;
 
-              let url = `/v3/console/ai/mcp/importToolsFromMcp?transportType=${frontProtocol}&baseUrl=${mcpBaseUrl}&endpoint=${exportPath}`;
+              let url = `v3/console/ai/mcp/importToolsFromMcp?transportType=${frontProtocol}&baseUrl=${mcpBaseUrl}&endpoint=${exportPath}`;
               if (token) {
                 url += `&authToken=${token}`;
               }
