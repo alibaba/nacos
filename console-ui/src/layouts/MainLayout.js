@@ -21,7 +21,7 @@ import PropTypes from 'prop-types';
 import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
 import { getState, getNotice, getGuide } from '../reducers/base';
-import getMenuData from './menu';
+import getMenuData, { McpServerManagementRoute } from './menu';
 import './index.scss';
 
 const { SubMenu, Item } = Menu;

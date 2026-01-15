@@ -121,6 +121,10 @@ const MENU = [
   { path: '/skillDetail', component: SkillDetail },
   { path: '/promptManagement', component: PromptManagement },
   { path: '/pluginManagement', component: PluginList },
+  { path: '/skillManagement', component: SkillManagement },
+  { path: '/newSkill', component: NewSkill },
+  { path: '/skillDetail', component: SkillDetail },
+  { path: '/promptManagement', component: PromptManagement },
 ];
 
 @connect(state => ({ ...state.locale, ...state.base }), {
