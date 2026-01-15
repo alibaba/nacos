@@ -1,0 +1,92 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.skill-detail {
+  padding: 20px;
+
+  .info-item {
+    margin-bottom: 16px;
+
+    label {
+      display: inline-block;
+      width: 120px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    span {
+      color: #666;
+    }
+  }
+
+  .instruction-content {
+    padding: 16px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    max-height: 500px;
+    overflow-y: auto;
+
+    pre {
+      margin: 0;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  }
+
+  .resources-list {
+    .resource-item {
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+    }
+
+    .resource-content {
+      padding: 12px;
+      background: #fafafa;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 8px;
+
+      pre {
+        margin: 0;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    }
+
+    .resource-metadata {
+      padding: 12px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      margin-top: 8px;
+
+      pre {
+        margin: 0;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .empty-resources {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+  }
+}

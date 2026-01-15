@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.2.0-SNAPSHOT</revision>
+        <revision>3.2.04-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -570,21 +570,7 @@
             </properties>
             
             <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+
             </build>
         </profile>
         <profile>
@@ -692,6 +678,7 @@
         <module>maintainer-client</module>
         <module>client-basic</module>
         <module>ai</module>
+        <module>copilot</module>
         <module>mcp-registry-adaptor</module>
     </modules>
     
@@ -1052,6 +1039,16 @@
                 <groupId>com.alipay.sofa</groupId>
                 <artifactId>rpc-grpc-impl</artifactId>
                 <version>${rpc-grpc-impl.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.protobuf</groupId>
+                        <artifactId>protobuf-java</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.grpc</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             
             <!-- Third-party libs -->

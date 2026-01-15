@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -173,6 +174,50 @@ public interface AiService extends A2aService {
      */
     void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException;
+    
+    /**
+     * Load skill by skillId.
+     * 
+     * <p>
+     * This method will query the skill main configuration and all resource configurations,
+     * then assemble them into a complete Skill object.
+     * </p>
+     *
+     * @param skillId skill unique ID (can be skill name)
+     * @return complete Skill object with all resources
+     * @throws NacosException if skill not found or query error
+     */
+    Skill loadSkill(String skillId) throws NacosException;
+    
+    /**
+     * Export skill configuration to local directory structure.
+     * 
+     * <p>
+     * This method will create a directory structure on local filesystem following Claude Skill format:
+     * <pre>
+     * {basePath}/
+     *   {skill_name}/
+     *     SKILL.md           (skill main configuration in Markdown format)
+     *     {type1}/           (resource type as subdirectory, if type is not blank)
+     *       {name1}         (resource name as filename with extension, content as file content)
+     *     {type2}/
+     *       {name2}
+     *     {name3}           (if type is blank, write directly to skill directory)
+     *     ...
+     * </pre>
+     * 
+     * <p>
+     * Resource localization rules:
+     * - type → subdirectory name (if type is not blank)
+     * - name → filename (including file extension)
+     * - content → file content
+     * </p>
+     *
+     * @param skill skill object to export
+     * @param basePath base directory path for export
+     * @throws NacosException if export failed
+     */
+    void exportSkillToLocal(Skill skill, String basePath) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

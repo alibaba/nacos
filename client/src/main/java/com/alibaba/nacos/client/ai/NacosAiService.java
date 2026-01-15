@@ -30,8 +30,12 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -46,11 +50,19 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -74,10 +86,14 @@ public class NacosAiService implements AiService {
     
     private final AiChangeNotifier aiChangeNotifier;
     
+    private final ConfigService configService;
+    
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
+        // Create ConfigService instance for Skill operations
+        this.configService = NacosFactory.createConfigService(clientProperties.asProperties());
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
@@ -324,8 +340,338 @@ public class NacosAiService implements AiService {
     }
     
     @Override
+    public Skill loadSkill(String skillId) throws NacosException {
+        if (StringUtils.isBlank(skillId)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skillId` not present");
+        }
+        
+        // skillId can be skill name
+        String skillName = skillId;
+        
+        // Build Group
+        String skillGroup = "nacos-ai-skill-" + skillName;
+        
+        // Query main config (main.json)
+        String mainConfigContent;
+        try {
+            mainConfigContent = configService.getConfig("main.json", skillGroup, 3000);
+        } catch (NacosException e) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "Skill main configuration not found for skillId: " + skillId + ", error: " + e.getMessage());
+        }
+        
+        if (StringUtils.isBlank(mainConfigContent)) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "Skill main configuration not found for skillId: " + skillId);
+        }
+        
+        // Parse main config
+        SkillMainConfig mainConfig;
+        try {
+            mainConfig = JacksonUtils.toObj(mainConfigContent, SkillMainConfig.class);
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Failed to parse skill main configuration: " + e.getMessage(), e);
+        }
+        
+        // Build Skill object
+        Skill skill = new Skill();
+        skill.setNamespaceId(this.namespaceId);
+        skill.setSkillId(mainConfig.getSkillId());
+        skill.setName(mainConfig.getName());
+        skill.setDescription(mainConfig.getDescription());
+        skill.setInstruction(mainConfig.getInstruction());
+        
+        // Query all Resource configs
+        Map<String, SkillResource> resourceMap = new HashMap<>();
+        if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
+            String resourceGroup = skillGroup + "_resource";
+            for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {
+                String resourceName = entry.getKey();
+                SkillResourceRef resourceRef = entry.getValue();
+                
+                // Query resource config
+                String resourceDataId = resourceName + ".json";
+                String resourceContent;
+                try {
+                    resourceContent = configService.getConfig(resourceDataId, resourceGroup, 3000);
+                } catch (NacosException e) {
+                    LOGGER.warn("Resource configuration not found: dataId={}, group={}, error={}",
+                            resourceDataId, resourceGroup, e.getMessage());
+                    continue;
+                }
+                
+                if (StringUtils.isNotBlank(resourceContent)) {
+                    try {
+                        SkillResource resource = JacksonUtils.toObj(resourceContent, SkillResource.class);
+                        resourceMap.put(resourceName, resource);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to parse resource configuration: dataId={}, group={}, error={}",
+                                resourceDataId, resourceGroup, e.getMessage());
+                    }
+                }
+            }
+        }
+        skill.setResource(resourceMap);
+        
+        return skill;
+    }
+    
+    @Override
+    public void exportSkillToLocal(Skill skill, String basePath) throws NacosException {
+        if (skill == null) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skill` not present");
+        }
+        if (StringUtils.isBlank(basePath)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `basePath` not present");
+        }
+        
+        try {
+            // 1. Create skill directory
+            String skillDir = basePath + File.separator + skill.getName();
+            File skillDirFile = new File(skillDir);
+            if (!skillDirFile.exists()) {
+                boolean created = skillDirFile.mkdirs();
+                if (!created) {
+                    throw new NacosException(NacosException.SERVER_ERROR,
+                            "Failed to create skill directory: " + skillDirFile.getPath());
+                }
+            }
+            
+            // 2. Create main configuration file (SKILL.md, following Claude Skill format)
+            String skillMarkdown = buildSkillMarkdown(skill);
+            File skillMarkdownFile = new File(skillDirFile, "SKILL.md");
+            Files.write(skillMarkdownFile.toPath(), skillMarkdown.getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            
+            // 3. Export all Resource configs
+            // Resource localization rules:
+            // - type → subdirectory name (if type is not blank)
+            // - name → filename (including file extension)
+            // - content → file content
+            if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+                for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
+                    SkillResource resource = entry.getValue();
+                    
+                    // Determine file storage location based on type
+                    // If type is blank, write directly to skill directory; otherwise create type subdirectory
+                    String resourceType = resource.getType();
+                    File targetDir = skillDirFile;  // Default to skill directory
+                    
+                    if (StringUtils.isNotBlank(resourceType)) {
+                        // type is not blank, create subdirectory
+                        File typeDir = new File(skillDirFile, resourceType);
+                        if (!typeDir.exists()) {
+                            boolean created = typeDir.mkdirs();
+                            if (!created) {
+                                throw new NacosException(NacosException.SERVER_ERROR,
+                                        "Failed to create resource type directory: " + typeDir.getPath());
+                            }
+                        }
+                        targetDir = typeDir;
+                    }
+                    // If type is blank, targetDir remains skillDirFile, no subdirectory created
+                    
+                    // Use name as filename (name already includes file extension)
+                    String resourceFileName = resource.getName();
+                    if (StringUtils.isBlank(resourceFileName)) {
+                        resourceFileName = entry.getKey();  // If name is blank, use key
+                    }
+                    // Note: name field already includes file extension, no need to add
+                    
+                    // Write file content (content field)
+                    // content is String type, write directly to file
+                    String content = resource.getContent();
+                    if (StringUtils.isBlank(content)) {
+                        // If content is blank, create a JSON containing resource basic info
+                        Map<String, Object> contentMap = new HashMap<>();
+                        contentMap.put("resourceId", resource.getResourceId());
+                        contentMap.put("name", resource.getName());
+                        contentMap.put("type", resource.getType());
+                        if (resource.getMetadata() != null) {
+                            contentMap.put("metadata", resource.getMetadata());
+                        }
+                        content = JacksonUtils.toJson(contentMap);
+                    }
+                    
+                    File resourceFile = new File(targetDir, resourceFileName);
+                    Files.write(resourceFile.toPath(), content.getBytes(StandardCharsets.UTF_8),
+                            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+                }
+            }
+            
+            LOGGER.info("Skill exported to local directory: {}", skillDir);
+        } catch (IOException e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Failed to export skill to local directory: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Build SKILL.md content in Claude Skill format.
+     * 
+     * <p>
+     * Generates a Markdown file following Claude Skill format definition:
+     * - YAML Front Matter with name and description (required)
+     * - Instructions section
+     * - Resources section (with references to files)
+     * </p>
+     * 
+     * @param skill skill object
+     * @return markdown content
+     */
+    private String buildSkillMarkdown(Skill skill) {
+        StringBuilder sb = new StringBuilder();
+        
+        // YAML Front Matter (required by Claude Skill format)
+        sb.append("---\n");
+        sb.append("name: ").append(escapeYamlValue(skill.getName())).append("\n");
+        sb.append("description: ").append(escapeYamlValue(
+                StringUtils.isNotBlank(skill.getDescription()) ? skill.getDescription() : "")).append("\n");
+        sb.append("---\n\n");
+        
+        // Instructions section
+        if (StringUtils.isNotBlank(skill.getInstruction())) {
+            sb.append("## Instructions\n\n");
+            sb.append(skill.getInstruction()).append("\n\n");
+        }
+        
+        // Resources section
+        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+            sb.append("## Resources\n\n");
+            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
+                String resourceName = entry.getKey();
+                SkillResource resource = entry.getValue();
+                sb.append("### ").append(resource.getName()).append("\n\n");
+                if (StringUtils.isNotBlank(resource.getResourceId())) {
+                    sb.append("- **Resource ID**: ").append(resource.getResourceId()).append("\n");
+                }
+                sb.append("- **Type**: ").append(StringUtils.isNotBlank(resource.getType()) ? resource.getType() : "N/A").append("\n");
+                // File path: if type is not blank, then {type}/{name}; otherwise {name}
+                // Note: name field already includes file extension, no need to add
+                String resourceType = resource.getType();
+                String resourceFileName = StringUtils.isNotBlank(resource.getName()) ? resource.getName() : resourceName;
+                if (StringUtils.isNotBlank(resourceType)) {
+                    sb.append("- **File**: `").append(resourceType).append("/").append(resourceFileName).append("`\n\n");
+                } else {
+                    sb.append("- **File**: `").append(resourceFileName).append("`\n\n");
+                }
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Escape YAML value to prevent YAML syntax issues.
+     * 
+     * @param value the value to escape
+     * @return escaped YAML value
+     */
+    private String escapeYamlValue(String value) {
+        if (StringUtils.isBlank(value)) {
+            return "\"\"";
+        }
+        // If value contains special characters, wrap in quotes
+        if (value.contains(":") || value.contains("\"") || value.contains("'") || value.contains("\n") 
+                || value.startsWith(" ") || value.endsWith(" ")) {
+            // Escape double quotes and wrap in double quotes
+            return "\"" + value.replace("\"", "\\\"") + "\"";
+        }
+        return value;
+    }
+    
+    /**
+     * Skill main config (from main.json).
+     */
+    private static class SkillMainConfig {
+        private String skillId;
+        private String name;
+        private String description;
+        private String instruction;
+        private Map<String, SkillResourceRef> resource;
+        
+        public String getSkillId() {
+            return skillId;
+        }
+        
+        public void setSkillId(String skillId) {
+            this.skillId = skillId;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+        
+        public void setDescription(String description) {
+            this.description = description;
+        }
+        
+        public String getInstruction() {
+            return instruction;
+        }
+        
+        public void setInstruction(String instruction) {
+            this.instruction = instruction;
+        }
+        
+        public Map<String, SkillResourceRef> getResource() {
+            return resource;
+        }
+        
+        public void setResource(Map<String, SkillResourceRef> resource) {
+            this.resource = resource;
+        }
+    }
+    
+    /**
+     * Skill resource reference (in main.json).
+     */
+    private static class SkillResourceRef {
+        private String resourceId;
+        private String name;
+        private String type;
+        
+        public String getResourceId() {
+            return resourceId;
+        }
+        
+        public void setResourceId(String resourceId) {
+            this.resourceId = resourceId;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
+        }
+        
+        public String getType() {
+            return type;
+        }
+        
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
         this.mcpServerCacheHolder.shutdown();
+        // ConfigService will be closed automatically when client shuts down
     }
 }

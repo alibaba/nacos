@@ -36,12 +36,30 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-server</artifactId>
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-mcp-registry-adaptor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-auth-plugin</artifactId>
+            <version>${revision}</version>
+
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-datasource-plugin</artifactId>
+            <version>${revision}</version>
+
+        </dependency>
+
+
     </dependencies>
     
     <profiles>

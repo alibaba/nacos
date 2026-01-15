@@ -123,6 +123,16 @@ class AiServiceDefaultMethodTest {
             @Override
             public void shutdown() throws NacosException {
             }
+            
+            @Override
+            public com.alibaba.nacos.api.ai.model.skills.Skill loadSkill(String skillId) throws NacosException {
+                return null;
+            }
+            
+            @Override
+            public void exportSkillToLocal(com.alibaba.nacos.api.ai.model.skills.Skill skill, String basePath)
+                    throws NacosException {
+            }
         };
     }
     

@@ -21,7 +21,7 @@ import PropTypes from 'prop-types';
 import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
 import { getState, getNotice, getGuide } from '../reducers/base';
-import getMenuData, { McpServerManagementRoute, McpServerManagementRouteName } from './menu';
+import getMenuData, { McpServerManagementRoute } from './menu';
 import './index.scss';
 
 const { SubMenu, Item } = Menu;
@@ -71,6 +71,8 @@ class MainLayout extends React.Component {
     const pageParamMap = {
       '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
       '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/skillManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/promptManagement': ['namespace', 'namespaceShowName', 'searchName'],
       '/mcpServerManagement': ['namespace', 'namespaceShowName'],
       '/serviceManagement': ['namespace', 'namespaceShowName'],
     };

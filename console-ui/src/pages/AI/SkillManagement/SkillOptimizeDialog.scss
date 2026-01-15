@@ -1,0 +1,103 @@
+.skill-optimize-dialog {
+  .stream-content {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+
+    .stream-header {
+      margin-bottom: 8px;
+    }
+
+    .stream-text {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  .comparison-view {
+    margin-top: 16px;
+
+    .comparison-card {
+      height: 100%;
+
+      &.optimized {
+        border-color: #52c41a;
+      }
+
+      .comparison-item {
+        margin-bottom: 16px;
+
+        label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 8px;
+          color: #666;
+        }
+
+        div,
+        pre {
+          padding: 8px;
+          background: #fafafa;
+          border-radius: 4px;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+      }
+    }
+
+    .change-item {
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #fafafa;
+      border-radius: 4px;
+      border-left: 3px solid #1890ff;
+
+      .change-header {
+        margin-bottom: 8px;
+
+        .next-tag {
+          margin-right: 8px;
+        }
+      }
+
+      .change-description {
+        margin-bottom: 4px;
+        color: #333;
+      }
+
+      .change-reason {
+        font-size: 12px;
+        color: #999;
+      }
+    }
+
+    .quality-score {
+      text-align: center;
+      padding: 20px;
+
+      .score-value {
+        font-size: 48px;
+        font-weight: bold;
+        color: #1890ff;
+      }
+
+      .score-label {
+        font-size: 24px;
+        color: #999;
+        margin-left: 8px;
+      }
+    }
+
+    .explanation {
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 4px;
+      line-height: 1.6;
+      color: #333;
+    }
+  }
+}

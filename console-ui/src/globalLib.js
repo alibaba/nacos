@@ -530,10 +530,13 @@ const request = (function(_global) {
       accessTokenInHeader = accessToken;
     }
 
+    // Build final URL - only add ? if there are parameters
+    const finalUrl = params.length > 0 ? [url, params.join('&')].join('?') : url;
+
     return $.ajax(
       Object.assign({}, config, {
         type: config.type,
-        url: [url, params.join('&')].join('?'),
+        url: finalUrl,
         data: config.data || '',
         dataType: config.dataType || 'json',
         beforeSend(xhr) {

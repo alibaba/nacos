@@ -1,0 +1,593 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.copilot.service;
+
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
+import com.alibaba.nacos.copilot.config.CopilotAgentManager;
+import com.alibaba.nacos.copilot.capability.prompt.SkillOptimizationPrompt;
+import com.alibaba.nacos.copilot.model.SkillOptimizationRequest;
+import com.alibaba.nacos.copilot.model.SkillOptimizationResponse;
+import com.alibaba.nacos.copilot.model.StreamResponseType;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import io.agentscope.core.ReActAgent;
+import io.agentscope.core.agent.EventType;
+import io.agentscope.core.agent.StreamOptions;
+import io.agentscope.core.message.Msg;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Skill optimization service implementation.
+ *
+ * @author nacos
+ */
+@Service
+public class SkillOptimizationServiceImpl implements SkillOptimizationService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(SkillOptimizationServiceImpl.class);
+    
+    private final CopilotAgentManager agentManager;
+    
+    @Autowired
+    public SkillOptimizationServiceImpl(CopilotAgentManager agentManager) {
+        this.agentManager = agentManager;
+    }
+    
+    @Override
+    public void optimizeSkillStream(SkillOptimizationRequest request, 
+                                    StreamResponseCallback<SkillOptimizationResponse> callback) {
+        // 1. Validate request
+        Skill skill = request.getSkill();
+        if (skill == null) {
+            callback.onError(new NacosException(NacosException.INVALID_PARAM,
+                    "Skill object is required in request"));
+            return;
+        }
+        
+        // 2. Check if Copilot is enabled
+        if (!agentManager.isEnabled()) {
+            callback.onError(new NacosException(NacosException.INVALID_PARAM,
+                    "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
+            return;
+        }
+        
+        // 3. Get system prompt (hardcoded)
+        String systemPrompt = SkillOptimizationPrompt.SYSTEM_PROMPT;
+        
+        // 4. Build user message
+        String userMessage = buildUserMessage(skill, request);
+        
+        // 5. Create agent with system prompt
+        ReActAgent agent = agentManager.createAgent(systemPrompt);
+        if (agent == null) {
+            callback.onError(new NacosException(NacosException.INVALID_PARAM,
+                    "Failed to create Copilot agent. Please check configuration."));
+            return;
+        }
+        
+        // 6. Create user message
+        Msg userMsg = Msg.builder()
+                .textContent(userMessage)
+                .build();
+        
+        // 7. Configure streaming options
+        StreamOptions streamOptions = StreamOptions.builder()
+                .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
+                .incremental(true)
+                .build();
+        
+        // 8. Call agent with stream response
+        StringBuilder fullContent = new StringBuilder();
+        Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
+                .subscribeOn(Schedulers.boundedElastic());
+        
+        eventFlux.subscribe(new Subscriber<io.agentscope.core.agent.Event>() {
+            @Override
+            public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+            }
+            
+            @Override
+            public void onNext(io.agentscope.core.agent.Event event) {
+                try {
+                    Msg msg = event.getMessage();
+                    if (msg != null) {
+                        String content = getTextContent(msg);
+                        if (content != null && !content.isEmpty()) {
+                            fullContent.append(content);
+                            
+                            // Determine response type based on event type
+                            StreamResponseType type = StreamResponseType.CONTENT;
+                            if (event.getType() == EventType.TOOL_RESULT) {
+                                type = StreamResponseType.TOOL_CALL;
+                            } else if (event.getType() == EventType.REASONING) {
+                                type = StreamResponseType.THINKING;
+                            }
+                            
+                            // Convert to SkillOptimizationResponse
+                            SkillOptimizationResponse optResponse = new SkillOptimizationResponse();
+                            optResponse.setType(type);
+                            optResponse.setChunk(content);
+                            optResponse.setDone(false);
+                            
+                            callback.onNext(optResponse);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to process stream event", e);
+                }
+            }
+            
+            @Override
+            public void onError(Throwable t) {
+                LOGGER.error("Error in AgentScope stream response", t);
+                callback.onError(t);
+            }
+            
+            @Override
+            public void onComplete() {
+                // Parse final result
+                SkillOptimizationResponse finalResponse = new SkillOptimizationResponse();
+                finalResponse.setType(StreamResponseType.DONE);
+                finalResponse.setDone(true);
+                
+                parseFinalResult(fullContent.toString(), finalResponse);
+                callback.onNext(finalResponse);
+                callback.onComplete();
+            }
+        });
+    }
+    
+    private String buildUserMessage(Skill skill, SkillOptimizationRequest request) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("请优化以下 Claude Skill：\n\n");
+        sb.append("Skill 信息：\n");
+        sb.append("- 名称：").append(skill.getName()).append("\n");
+        sb.append("- 描述：").append(skill.getDescription()).append("\n");
+        sb.append("- 指令：\n").append(skill.getInstruction()).append("\n\n");
+        
+        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+            sb.append("资源列表：\n");
+            skill.getResource().forEach((key, resource) -> {
+                sb.append("- ").append(key).append(": ")
+                  .append(resource.getName()).append(" (type: ")
+                  .append(StringUtils.isNotBlank(resource.getType()) ? resource.getType() : "N/A")
+                  .append(")\n");
+            });
+            sb.append("\n");
+        }
+        
+        if (StringUtils.isNotBlank(request.getOptimizationGoal())) {
+            sb.append("优化目标：").append(request.getOptimizationGoal()).append("\n");
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Extract text content from Msg.
+     */
+    private String getTextContent(Msg msg) {
+        if (msg == null) {
+            return null;
+        }
+        
+        String textContent = msg.getTextContent();
+        if (textContent != null && !textContent.isEmpty()) {
+            return textContent;
+        }
+        
+        Object content = msg.getContent();
+        if (content instanceof String) {
+            return (String) content;
+        }
+        
+        return null;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void parseFinalResult(String fullContent, SkillOptimizationResponse response) {
+        try {
+            // Try to extract JSON from the content
+            String jsonContent = extractJsonFromContent(fullContent);
+            
+            Map<String, Object> result = JacksonUtils.toObj(jsonContent, Map.class);
+            
+            // Parse optimizedSkill
+            Map<String, Object> optimizedSkillMap = (Map<String, Object>) result.get("optimizedSkill");
+            if (optimizedSkillMap != null) {
+                // Normalize resource structure: handle nested resources (resources.scripts.xxx) to flat structure (resource.xxx)
+                normalizeResourceStructure(optimizedSkillMap);
+                
+                Skill optimizedSkill = JacksonUtils.toObj(JacksonUtils.toJson(optimizedSkillMap), Skill.class);
+                response.setOptimizedSkill(optimizedSkill);
+            }
+            
+            // Parse changes
+            List<Map<String, Object>> changesList = (List<Map<String, Object>>) result.get("changes");
+            if (changesList != null) {
+                List<com.alibaba.nacos.copilot.model.OptimizationChange> changes = new ArrayList<>();
+                for (Map<String, Object> changeMap : changesList) {
+                    com.alibaba.nacos.copilot.model.OptimizationChange change = new com.alibaba.nacos.copilot.model.OptimizationChange();
+                    change.setField((String) changeMap.get("field"));
+                    change.setType((String) changeMap.get("type"));
+                    change.setDescription((String) changeMap.get("description"));
+                    change.setReason((String) changeMap.get("reason"));
+                    changes.add(change);
+                }
+                response.setChanges(changes);
+            }
+            
+            // Parse qualityScore
+            Object qualityScoreObj = result.get("qualityScore");
+            if (qualityScoreObj != null) {
+                if (qualityScoreObj instanceof Number) {
+                    response.setQualityScore(((Number) qualityScoreObj).doubleValue());
+                } else if (qualityScoreObj instanceof String) {
+                    response.setQualityScore(Double.parseDouble((String) qualityScoreObj));
+                }
+            }
+            
+            // Parse explanation
+            String explanation = (String) result.get("explanation");
+            if (explanation != null) {
+                response.setExplanation(explanation);
+            }
+            
+            response.setDone(true);
+            
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse final result from LLM response: {}", fullContent, e);
+            // Set default values
+            response.setDone(true);
+            
+            // Try to extract a meaningful explanation from the content even if JSON parsing failed
+            String explanation = extractExplanationFromText(fullContent);
+            if (explanation == null || explanation.isEmpty()) {
+                // If we couldn't extract explanation, provide error message
+                String errorMsg = e.getMessage();
+                if (errorMsg != null && errorMsg.contains("Unexpected end-of-input")) {
+                    explanation = "优化完成，但响应格式不完整，无法解析JSON结果。";
+                } else {
+                    explanation = "优化完成，但解析响应时出现错误：" + errorMsg;
+                }
+            }
+            response.setExplanation(explanation);
+        }
+    }
+    
+    private String extractJsonFromContent(String content) {
+        if (content == null || content.isEmpty()) {
+            return content;
+        }
+        
+        // Try to extract JSON from markdown code blocks
+        if (content.contains("```json")) {
+            int start = content.indexOf("```json") + 7;
+            // Find the matching closing ```
+            int end = findMatchingCodeBlockEnd(content, start);
+            if (end > start) {
+                String extracted = content.substring(start, end).trim();
+                if (isValidJson(extracted)) {
+                    return extracted;
+                }
+            }
+        } else if (content.contains("```")) {
+            int start = content.indexOf("```") + 3;
+            // Find the matching closing ```
+            int end = findMatchingCodeBlockEnd(content, start);
+            if (end > start) {
+                String extracted = content.substring(start, end).trim();
+                if (isValidJson(extracted)) {
+                    return extracted;
+                }
+            }
+        }
+        
+        // Try to find JSON object by properly matching braces
+        String jsonObject = extractJsonObject(content);
+        if (jsonObject != null && isValidJson(jsonObject)) {
+            return jsonObject;
+        }
+        
+        // If no valid JSON found, return the original content
+        // The deserialization will fail gracefully in parseFinalResult
+        return content;
+    }
+    
+    /**
+     * Find the matching closing ``` for a code block.
+     */
+    private int findMatchingCodeBlockEnd(String content, int startPos) {
+        int pos = startPos;
+        while (pos < content.length()) {
+            int nextBacktick = content.indexOf("```", pos);
+            if (nextBacktick == -1) {
+                return -1;
+            }
+            // Check if this is a closing marker (not part of the content)
+            // Simple heuristic: if there's a newline before it, it's likely a closing marker
+            if (nextBacktick > startPos
+                    && (nextBacktick == 0
+                            || content.charAt(nextBacktick - 1) == '\n'
+                            || content.substring(Math.max(0, nextBacktick - 10), nextBacktick).trim().isEmpty())) {
+                return nextBacktick;
+            }
+            pos = nextBacktick + 3;
+        }
+        return -1;
+    }
+    
+    /**
+     * Extract JSON object by properly matching braces.
+     */
+    private String extractJsonObject(String content) {
+        int start = content.indexOf("{");
+        if (start < 0) {
+            return null;
+        }
+        
+        // Find the matching closing brace
+        int braceCount = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        
+        for (int i = start; i < content.length(); i++) {
+            char c = content.charAt(i);
+            
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
+            
+            if (c == '"') {
+                inString = !inString;
+                continue;
+            }
+            
+            if (inString) {
+                continue;
+            }
+            
+            if (c == '{') {
+                braceCount++;
+            } else if (c == '}') {
+                braceCount--;
+                if (braceCount == 0) {
+                    return content.substring(start, i + 1);
+                }
+            }
+        }
+        
+        // If we didn't find a matching closing brace, return null
+        return null;
+    }
+    
+    /**
+     * Check if a string is valid JSON by trying to parse it.
+     */
+    private boolean isValidJson(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            JacksonUtils.toObj(json);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Normalize resource structure from nested format to flat format.
+     * Handles cases where LLM returns nested resources like:
+     * {
+     *   "resources": {
+     *     "scripts": {
+     *       "check_permission": { "type": "script", "path": "/scripts/check_permission.sh" }
+     *     }
+     *   }
+     * }
+     * Converts to flat format:
+     * {
+     *   "resource": {
+     *     "check_permission": {
+     *       "resourceId": "",
+     *       "name": "check_permission.sh",
+     *       "type": "script",
+     *       "content": ""
+     *     }
+     *   }
+     * }
+     */
+    @SuppressWarnings("unchecked")
+    private void normalizeResourceStructure(Map<String, Object> skillMap) {
+        // Check if there's a nested "resources" structure
+        Object resourcesObj = skillMap.get("resources");
+        if (resourcesObj == null) {
+            // No nested resources, check if "resource" already exists
+            Object resourceObj = skillMap.get("resource");
+            if (resourceObj == null || !(resourceObj instanceof Map)) {
+                skillMap.put("resource", new HashMap<>());
+            }
+            return;
+        }
+        
+        // If resources is not a Map, skip normalization
+        if (!(resourcesObj instanceof Map)) {
+            return;
+        }
+        
+        Map<String, Object> resources = (Map<String, Object>) resourcesObj;
+        Map<String, Object> flatResourceMap = new HashMap<>();
+        
+        // Recursively flatten nested resource structure
+        flattenResources(resources, flatResourceMap, "");
+        
+        // Replace "resources" with "resource" (singular) and use flattened structure
+        skillMap.remove("resources");
+        skillMap.put("resource", flatResourceMap);
+    }
+    
+    /**
+     * Recursively flatten nested resource structure.
+     * 
+     * @param nestedResources nested resource structure
+     * @param flatMap output flat resource map
+     * @param prefix prefix for resource keys (currently unused, kept for API consistency)
+     */
+    @SuppressWarnings({"unchecked", "unused"})
+    private void flattenResources(Map<String, Object> nestedResources, Map<String, Object> flatMap, String prefix) {
+        for (Map.Entry<String, Object> entry : nestedResources.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            
+            if (value instanceof Map) {
+                Map<String, Object> valueMap = (Map<String, Object>) value;
+                
+                // Check if this is a resource object (has type, path, name, content, etc.)
+                // A resource object should have at least one of: type, path, name, content
+                boolean isResourceObject = valueMap.containsKey("type") 
+                        || valueMap.containsKey("path") 
+                        || valueMap.containsKey("name")
+                        || valueMap.containsKey("content");
+                
+                if (isResourceObject) {
+                    // This is a resource object, convert it to SkillResource format
+                    Map<String, Object> resourceObj = new HashMap<>();
+                    resourceObj.put("resourceId", valueMap.getOrDefault("resourceId", ""));
+                    
+                    // Extract name from path or use key
+                    String name = (String) valueMap.get("name");
+                    if (name == null || name.isEmpty()) {
+                        String path = (String) valueMap.get("path");
+                        if (path != null && !path.isEmpty()) {
+                            // Extract filename from path
+                            int lastSlash = path.lastIndexOf('/');
+                            name = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+                        } else {
+                            // Use key as name, add appropriate extension based on type
+                            String type = (String) valueMap.getOrDefault("type", "");
+                            if ("script".equals(type) || "sh".equals(type)) {
+                                name = key + ".sh";
+                            } else if ("template".equals(type) || "json".equals(type)) {
+                                name = key + ".json";
+                            } else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
+                                name = key + ".md";
+                            } else {
+                                name = key;
+                            }
+                        }
+                    }
+                    resourceObj.put("name", name);
+                    resourceObj.put("type", valueMap.getOrDefault("type", ""));
+                    resourceObj.put("content", valueMap.getOrDefault("content", ""));
+                    resourceObj.put("metadata", valueMap.getOrDefault("metadata", null));
+                    
+                    // Use the resource key (not prefix_key) as the map key
+                    // This ensures resources.scripts.check_permission becomes resource.check_permission
+                    flatMap.put(key, resourceObj);
+                } else {
+                    // This is a nested category (like "scripts", "documentation"), continue flattening
+                    // Don't add prefix for category names, just pass them through
+                    flattenResources(valueMap, flatMap, "");
+                }
+            } else {
+                // Not a Map, skip
+                LOGGER.warn("Unexpected resource value type for key {}: {}", key, value.getClass().getName());
+            }
+        }
+    }
+    
+    /**
+     * Try to extract explanation text from content when JSON parsing fails.
+     */
+    private String extractExplanationFromText(String content) {
+        if (content == null || content.isEmpty()) {
+            return null;
+        }
+        
+        // Look for common patterns that might contain explanation
+        String[] patterns = {
+                "explanation",
+                "说明",
+                "总结",
+                "优化结果"
+        };
+        
+        for (String pattern : patterns) {
+            int idx = content.toLowerCase().indexOf(pattern.toLowerCase());
+            if (idx >= 0) {
+                // Try to extract text after the pattern
+                int start = idx + pattern.length();
+                // Skip colon, space, etc.
+                while (start < content.length()
+                        && (content.charAt(start) == ':'
+                                || content.charAt(start) == ' '
+                                || content.charAt(start) == '\n')) {
+                    start++;
+                }
+                if (start < content.length()) {
+                    // Extract up to next section or end
+                    int end = content.length();
+                    for (String nextPattern : patterns) {
+                        if (!nextPattern.equals(pattern)) {
+                            int nextIdx = content.toLowerCase().indexOf(nextPattern.toLowerCase(), start);
+                            if (nextIdx > start && nextIdx < end) {
+                                end = nextIdx;
+                            }
+                        }
+                    }
+                    String extracted = content.substring(start, end).trim();
+                    if (!extracted.isEmpty() && extracted.length() > 10) {
+                        return extracted;
+                    }
+                }
+            }
+        }
+        
+        // If no pattern found, return first meaningful paragraph
+        String[] lines = content.split("\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.length() > 20 && !line.startsWith("{") && !line.startsWith("```")) {
+                return line;
+            }
+        }
+        
+        return null;
+    }
+}
