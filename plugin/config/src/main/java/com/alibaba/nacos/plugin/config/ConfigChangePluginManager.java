@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.config;
 
+import com.alibaba.nacos.api.plugin.PluginStateChecker;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -26,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
@@ -100,6 +104,11 @@ public class ConfigChangePluginManager {
      * @return
      */
     public Optional<ConfigChangePluginService> findPluginServiceImpl(String serviceType) {
+        Optional<PluginStateChecker> checker = PluginStateCheckerHolder.getInstance();
+        if (checker.isPresent() && !checker.get().isPluginEnabled(PluginType.CONFIG_CHANGE.getType(), serviceType)) {
+            LOGGER.debug("[ConfigChangePluginManager] Plugin CONFIG_CHANGE:{} is disabled", serviceType);
+            return Optional.empty();
+        }
         return Optional.ofNullable(CONFIG_CHANGE_PLUGIN_SERVICE_MAP.get(serviceType));
     }
     
@@ -152,5 +161,14 @@ public class ConfigChangePluginManager {
     public static synchronized void reset() {
         CONFIG_CHANGE_PLUGIN_SERVICE_MAP.clear();
         CONFIG_CHANGE_PLUGIN_SERVICES_MAP.clear();
+    }
+
+    /**
+     * Get all config change plugin services.
+     *
+     * @return unmodifiable map of all config change plugin services
+     */
+    public Map<String, ConfigChangePluginService> getAllPlugins() {
+        return Collections.unmodifiableMap(CONFIG_CHANGE_PLUGIN_SERVICE_MAP);
     }
 }

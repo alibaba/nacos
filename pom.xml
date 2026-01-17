@@ -129,14 +129,15 @@
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.4</nacos.logback.adapter.version>
-        <spring-boot-dependencies.version>3.4.9</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>3.4.10</spring-boot-dependencies.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
         <logback.version>1.5.12</logback.version>
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
+        <postgresql.version>42.7.2</postgresql.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.75.0</grpc-java.version>
@@ -146,7 +147,7 @@
         <hessian.version>4.0.63</hessian.version>
         <mockito.version>4.11.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.15.bugfix</jraft-core.version>
+        <jraft-core.version>1.4.0</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <!-- gson version should follow grcp-core dependency -->
         <!-- TODO try to remove direct dependency on gson -->
@@ -1005,6 +1006,11 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
             </dependency>
             
             <dependency>

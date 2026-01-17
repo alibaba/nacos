@@ -48,7 +48,6 @@ import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -137,7 +136,7 @@ public class ConsoleServiceController {
      * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+    @Secured(resource = Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX
             + "naming", action = ActionTypes.READ, apiType = ApiType.CONSOLE_API, tags = Constants.Tag.ONLY_IDENTITY)
     public Result<List<String>> getSelectorTypeList() throws NacosException {
         return Result.success(serviceProxy.getSelectorTypeList());

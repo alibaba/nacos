@@ -112,7 +112,7 @@
 .mcp-card {
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius-lg);
-  padding: 20px;
+  padding: 24px;
   background-color: var(--bg-light);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-xs);
