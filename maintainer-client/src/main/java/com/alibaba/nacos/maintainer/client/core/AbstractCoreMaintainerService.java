@@ -290,7 +290,74 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         });
         return result.getData() > 0;
     }
-    
+
+    @Override
+    public List<Map<String, Object>> listPlugins(String pluginType) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        if (pluginType != null && !pluginType.isEmpty()) {
+            params.put("pluginType", pluginType);
+        }
+
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/list").setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<List<Map<String, Object>>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<Map<String, Object>>>>() {
+                });
+        return result.getData();
+    }
+
+    @Override
+    public Map<String, Object> getPluginDetail(String pluginType, String pluginName) throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/" + pluginType + "/" + pluginName).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, Object>>>() {
+                });
+        return result.getData();
+    }
+
+    @Override
+    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("enabled", String.valueOf(enabled));
+
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/" + pluginType + "/" + pluginName + "/status")
+                .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        if (!httpRestResult.ok()) {
+            throw new NacosException(httpRestResult.getCode(),
+                    "Failed to update plugin status: " + httpRestResult.getMessage());
+        }
+    }
+
+    @Override
+    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
+            throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/" + pluginType + "/" + pluginName + "/config")
+                .setParamValue(config).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        if (!httpRestResult.ok()) {
+            throw new NacosException(httpRestResult.getCode(),
+                    "Failed to update plugin config: " + httpRestResult.getMessage());
+        }
+    }
+
+    @Override
+    public Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/" + pluginType + "/" + pluginName + "/availability")
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Map<String, Boolean>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, Boolean>>>() {
+                });
+        return result.getData();
+    }
+
     protected ClientHttpProxy getClientHttpProxy() {
         return this.clientHttpProxy;
     }

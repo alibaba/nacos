@@ -14,7 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl;
+package com.alibaba.nacos.console.handler.impl.inner.core;
+
+import com.alibaba.nacos.api.common.NodeState;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.plugin.PluginType;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.console.handler.core.PluginHandler;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.cluster.remote.request.PluginAvailabilityRequest;
+import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
+import com.alibaba.nacos.core.plugin.PluginManager;
+import com.alibaba.nacos.core.plugin.model.PluginInfo;
+import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
+import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,43 +48,24 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
-import com.alibaba.nacos.api.common.NodeState;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.api.plugin.PluginType;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.console.handler.core.PluginHandler;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
-import com.alibaba.nacos.core.cluster.remote.request.PluginAvailabilityRequest;
-import com.alibaba.nacos.core.cluster.remote.response.PluginAvailabilityResponse;
-import com.alibaba.nacos.core.plugin.PluginManager;
-import com.alibaba.nacos.core.plugin.model.PluginInfo;
-import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
-import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
-
 /**
- * Implementation of PluginHandler for handling plugin-related operations.
+ * Inner implementation of PluginHandler for handling plugin-related operations.
  *
  * @author WangzJi
  */
 @Service
-public class PluginHandlerImpl implements PluginHandler {
+@EnabledInnerHandler
+public class PluginInnerHandler implements PluginHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PluginHandlerImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginInnerHandler.class);
 
     private final PluginManager pluginManager;
+
     private final ServerMemberManager memberManager;
+
     private final ClusterRpcClientProxy rpcClientProxy;
 
-    public PluginHandlerImpl(PluginManager pluginManager, ServerMemberManager memberManager,
+    public PluginInnerHandler(PluginManager pluginManager, ServerMemberManager memberManager,
             ClusterRpcClientProxy rpcClientProxy) {
         this.pluginManager = pluginManager;
         this.memberManager = memberManager;
@@ -94,12 +97,12 @@ public class PluginHandlerImpl implements PluginHandler {
                 .collect(Collectors.toList());
 
         awaitCompletion(futures);
-
-        for (PluginInfoVO vo : localList) {
+        
+        localList.forEach(vo -> {
             vo.setTotalNodeCount(totalNodeCount);
             LongAdder adder = availableCountMap.get(vo.getPluginId());
             vo.setAvailableNodeCount(adder != null ? adder.intValue() : 0);
-        }
+        });
 
         return localList;
     }
@@ -120,6 +123,10 @@ public class PluginHandlerImpl implements PluginHandler {
 
             PluginAvailabilityResponse response = (PluginAvailabilityResponse) rpcClientProxy.sendRequest(
                     member, request);
+            if (response == null) {
+                LOGGER.warn("Received null response when querying plugin availability from node {}", member.getAddress());
+                return null;
+            }
             return response.getPluginAvailabilityMap();
         } catch (Exception e) {
             LOGGER.warn("Failed to query plugin availability from node {}", member.getAddress(), e);
@@ -188,10 +195,14 @@ public class PluginHandlerImpl implements PluginHandler {
 
             PluginAvailabilityResponse response = (PluginAvailabilityResponse) rpcClientProxy.sendRequest(
                     member, request);
-
+            if (response == null) {
+                LOGGER.warn("Received null response when querying plugin {} availability from node {}",
+                        pluginId, member.getAddress());
+                return false;
+            }
             return response.isAvailable();
         } catch (Exception e) {
-            LOGGER.debug("Failed to query plugin {} availability from node {}: {}",
+            LOGGER.warn("Failed to query plugin {} availability from node {}: {}",
                     pluginId, member.getAddress(), e.getMessage());
             return false;
         }
