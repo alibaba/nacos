@@ -47,7 +47,7 @@ const configurationMenu = {
   ],
 };
 
-export const McpServerManagementRoute = '/mcpServerManagement';
+const McpServerManagementRoute = '/mcpServerManagement';
 
 // AI Registry 菜单，包含 MCP Registry、Agent Registry、Skill Registry、Prompt Registry
 const aiRegistryMenu = {
@@ -111,6 +111,23 @@ const settingMenu = {
   url: '/settingCenter',
 };
 
+const pluginMenu = {
+  key: 'pluginManagement',
+  badge: 'new',
+  url: '/pluginManagement',
+};
+
+const agentManagementMenu = {
+  key: 'agentManagement',
+  badge: 'new',
+  url: '/agentManagement',
+  children: [
+    {
+      key: 'agentList',
+      url: '/agentManagement',
+    },
+  ],
+};
 
 export default function(model) {
   const { token = '{}' } = localStorage;
@@ -123,6 +140,7 @@ export default function(model) {
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
     result.push(aiRegistryMenu);
+    result.push(pluginMenu);
   }
   if (globalAdmin) {
     result.push(authorityControlMenu);
@@ -130,5 +148,5 @@ export default function(model) {
   result.push(namespaceMenu);
   result.push(clusterMenu);
   result.push(settingMenu);
-  return result.filter(item => item);
+  return result;
 }

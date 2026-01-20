@@ -425,12 +425,154 @@ class AbstractCoreMaintainerServiceTest {
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setCode(200);
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
+
         Boolean result = coreMaintainerService.readiness();
         assertTrue(result);
-        
+
         mockHttpRestResult.setCode(500);
         result = coreMaintainerService.readiness();
         assertFalse(result);
+    }
+
+    @Test
+    void testListPluginsTest() throws Exception {
+        List<Map<String, Object>> expectedPlugins = new ArrayList<>();
+        Map<String, Object> plugin = new HashMap<>();
+        plugin.put("pluginId", "auth:test");
+        plugin.put("pluginType", "auth");
+        plugin.put("pluginName", "test");
+        plugin.put("enabled", true);
+        expectedPlugins.add(plugin);
+
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPlugins)));
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        List<Map<String, Object>> result = coreMaintainerService.listPlugins(null);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("auth:test", result.get(0).get("pluginId"));
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+
+    @Test
+    void testListPluginsWithTypeTest() throws Exception {
+        List<Map<String, Object>> expectedPlugins = new ArrayList<>();
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPlugins)));
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        List<Map<String, Object>> result = coreMaintainerService.listPlugins("auth");
+
+        assertNotNull(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+
+    @Test
+    void testGetPluginDetailTest() throws Exception {
+        Map<String, Object> expectedDetail = new HashMap<>();
+        expectedDetail.put("pluginId", "auth:test");
+        expectedDetail.put("pluginType", "auth");
+        expectedDetail.put("pluginName", "test");
+        expectedDetail.put("enabled", true);
+        expectedDetail.put("configurable", true);
+
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedDetail)));
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        Map<String, Object> result = coreMaintainerService.getPluginDetail("auth", "test");
+
+        assertNotNull(result);
+        assertEquals("auth:test", result.get("pluginId"));
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+
+    @Test
+    void testUpdatePluginStatusTest() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setCode(200);
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        coreMaintainerService.updatePluginStatus("auth", "test", false);
+
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+
+    @Test
+    void testUpdatePluginStatusHttpErrorTest() throws Exception {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setCode(500);
+        mockHttpRestResult.setMessage("Internal Server Error");
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        try {
+            coreMaintainerService.updatePluginStatus("auth", "test", false);
+        } catch (NacosException e) {
+            assertEquals(500, e.getErrCode());
+            assertTrue(e.getMessage().contains("Failed to update plugin status"));
+        }
+    }
+
+    @Test
+    void testUpdatePluginConfigTest() throws Exception {
+        Map<String, String> config = new HashMap<>();
+        config.put("key1", "value1");
+
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setCode(200);
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        coreMaintainerService.updatePluginConfig("auth", "test", config);
+
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+
+    @Test
+    void testUpdatePluginConfigHttpErrorTest() throws Exception {
+        Map<String, String> config = new HashMap<>();
+        config.put("key1", "value1");
+
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setCode(500);
+        mockHttpRestResult.setMessage("Internal Server Error");
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        try {
+            coreMaintainerService.updatePluginConfig("auth", "test", config);
+        } catch (NacosException e) {
+            assertEquals(500, e.getErrCode());
+            assertTrue(e.getMessage().contains("Failed to update plugin config"));
+        }
+    }
+
+    @Test
+    void testGetPluginAvailabilityTest() throws Exception {
+        Map<String, Boolean> expectedAvailability = new HashMap<>();
+        expectedAvailability.put("127.0.0.1:8848", true);
+        expectedAvailability.put("127.0.0.2:8848", false);
+
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedAvailability)));
+
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+
+        Map<String, Boolean> result = coreMaintainerService.getPluginAvailability("auth", "test");
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertTrue(result.get("127.0.0.1:8848"));
+        assertFalse(result.get("127.0.0.2:8848"));
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
 }

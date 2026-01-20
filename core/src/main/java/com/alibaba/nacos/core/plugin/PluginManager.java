@@ -84,7 +84,7 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier, Ap
     /**
      * Default datasource platform.
      */
-    private static final String DATASOURCE_PLATFORM_DEFAULT = "mysql";
+    private static final String DATASOURCE_PLATFORM_DEFAULT = "derby";
 
     /**
      * Plugin registry: pluginId -> PluginInfo.
@@ -135,8 +135,19 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier, Ap
 
     @Override
     public boolean isPluginEnabled(String pluginType, String pluginName) {
-        String pluginId = pluginType + ":" + pluginName;
+        String pluginId = buildPluginId(pluginType, pluginName);
         return pluginStates.getOrDefault(pluginId, true);
+    }
+
+    /**
+     * Build plugin ID from type and name.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @return plugin ID in format "type:name"
+     */
+    private static String buildPluginId(String pluginType, String pluginName) {
+        return pluginType + ":" + pluginName;
     }
 
     /**
@@ -299,7 +310,7 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier, Ap
     }
 
     private void registerPlugin(PluginType type, String name, Object instance) {
-        String pluginId = type.getType() + ":" + name;
+        String pluginId = buildPluginId(type.getType(), name);
 
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
@@ -453,4 +464,5 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier, Ap
     public boolean isPluginAvailable(String pluginId) {
         return pluginRegistry.containsKey(pluginId);
     }
+
 }

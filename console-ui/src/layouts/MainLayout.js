@@ -21,7 +21,7 @@ import PropTypes from 'prop-types';
 import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
 import { getState, getNotice, getGuide } from '../reducers/base';
-import getMenuData, { McpServerManagementRoute } from './menu';
+import getMenuData from './menu';
 import './index.scss';
 
 const { SubMenu, Item } = Menu;
@@ -201,6 +201,23 @@ class MainLayout extends React.Component {
                               </SubMenu>
                             );
                           }
+                          const itemLabel = subMenu.badge ? (
+                            <span>
+                              <Badge
+                                content={subMenu.badge}
+                                style={{
+                                  backgroundColor: '#FC0E3D',
+                                  color: '#FFFFFF',
+                                  right: '-45px',
+                                  top: '-10px',
+                                }}
+                              >
+                                {locale[subMenu.key]}
+                              </Badge>
+                            </span>
+                          ) : (
+                            locale[subMenu.key]
+                          );
                           return (
                             <Item
                               key={String(idx)}
@@ -209,7 +226,7 @@ class MainLayout extends React.Component {
                                 .join(' ')}
                               onClick={() => this.navTo(subMenu.url)}
                             >
-                              {locale[subMenu.key]}
+                              {itemLabel}
                             </Item>
                           );
                         })}
