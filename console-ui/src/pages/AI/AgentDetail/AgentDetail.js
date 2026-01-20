@@ -69,12 +69,13 @@ class AgentDetail extends React.Component {
   }
 
   loadAgentDetail = () => {
+    const { locale = {} } = this.props;
     const agentName = getParams('name');
     const namespaceId = getParams('namespace') || 'public';
     const version = getParams('version'); // 获取URL中的版本参数
 
     if (!agentName) {
-      Message.error('Agent名称不能为空');
+      Message.error(locale.AgentDetail?.agentNameRequired || 'Agent name cannot be empty');
       return;
     }
 
@@ -106,12 +107,14 @@ class AgentDetail extends React.Component {
           );
         } else {
           console.log('Failed to load agent detail:', data);
-          Message.error(data?.message || '获取Agent详情失败');
+          const { locale = {} } = this.props;
+          Message.error(data?.message || locale.AgentDetail?.getAgentDetailFailed || 'Failed to get agent details');
         }
       },
       error: () => {
         this.setState({ loading: false });
-        Message.error('获取Agent详情失败');
+        const { locale = {} } = this.props;
+        Message.error(locale.AgentDetail?.getAgentDetailFailed || 'Failed to get agent details');
       },
     });
   };
@@ -137,11 +140,13 @@ class AgentDetail extends React.Component {
           });
         } else {
           console.log('Failed to load version list:', data);
-          Message.error(data?.message || '获取版本列表失败');
+          const { locale = {} } = this.props;
+          Message.error(data?.message || locale.AgentDetail?.getVersionListFailed || 'Failed to get version list');
         }
       },
       error: () => {
-        Message.error('获取版本列表失败');
+        const { locale = {} } = this.props;
+        Message.error(locale.AgentDetail?.getVersionListFailed || 'Failed to get version list');
       },
     });
   };
@@ -186,12 +191,13 @@ class AgentDetail extends React.Component {
   };
 
   formatCapabilities = capabilities => {
+    const { locale = {} } = this.props;
     if (!capabilities) return '--';
     if (typeof capabilities === 'object') {
       const caps = [];
-      if (capabilities.sampling) caps.push('采样');
+      if (capabilities.sampling) caps.push(locale.AgentDetail?.sampling || 'Sampling');
       if (capabilities.tools && Array.isArray(capabilities.tools)) {
-        caps.push(`工具: ${capabilities.tools.join(', ')}`);
+        caps.push(`${locale.AgentDetail?.tools || 'Tools'}: ${capabilities.tools.join(', ')}`);
       }
       return caps.length > 0 ? caps.join(', ') : JSON.stringify(capabilities, null, 2);
     }
@@ -207,9 +213,10 @@ class AgentDetail extends React.Component {
   };
 
   renderSkillsContent = skills => {
+    const { locale = {} } = this.props;
     if (!skills || (Array.isArray(skills) && skills.length === 0)) {
       return (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无技能配置</div>
+        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>{locale.AgentDetail?.noSkillsConfig || 'No skills configured'}</div>
       );
     }
 
@@ -223,15 +230,15 @@ class AgentDetail extends React.Component {
           }}
         >
           {skills.map((skill, index) => {
-            const name = (skill && skill.name) || `技能 ${index + 1}`;
+            const name = (skill && skill.name) || `${locale.AgentDetail?.skill || 'Skill'} ${index + 1}`;
             const id = (skill && skill.id) || '--';
             const desc = (skill && skill.description) || '--';
             const tags = skill && Array.isArray(skill.tags) ? skill.tags : [];
             const inputModes = skill && Array.isArray(skill.inputModes) ? skill.inputModes : [];
             const outputModes = skill && Array.isArray(skill.outputModes) ? skill.outputModes : [];
             const examples = skill && Array.isArray(skill.examples) ? skill.examples : [];
-            const examplesInline = examples.slice(0, 2).join('， ');
-            const moreSuffix = examples.length > 2 ? `，…等${examples.length}条` : '';
+            const examplesInline = examples.slice(0, 2).join(', ');
+            const moreSuffix = examples.length > 2 ? `, ...${locale.AgentDetail?.andMore || 'and'} ${examples.length} ${locale.AgentDetail?.items || 'items'}` : '';
 
             const Row = (label, content) => (
               <div style={{ display: 'flex', gap: 8, margin: '6px 0', alignItems: 'flex-start' }}>
@@ -250,10 +257,10 @@ class AgentDetail extends React.Component {
                   border: '1px solid #e8e8e8',
                 }}
               >
-                {Row('名称', <strong style={{ fontSize: 16, color: '#333' }}>{name}</strong>)}
+                {Row(locale.AgentDetail?.name || 'Name', <strong style={{ fontSize: 16, color: '#333' }}>{name}</strong>)}
                 {Row('ID', <span style={{}}>{id}</span>)}
                 {Row(
-                  '描述',
+                  locale.AgentDetail?.description || 'Description',
                   <span
                     title={desc}
                     style={{
@@ -268,7 +275,7 @@ class AgentDetail extends React.Component {
                   </span>
                 )}
                 {Row(
-                  '标签',
+                  locale.AgentDetail?.tags || 'Tags',
                   tags.length
                     ? tags.map((t, i) => (
                         <Tag key={i} size="small" style={{ marginRight: 4, marginBottom: 4 }}>
@@ -278,7 +285,7 @@ class AgentDetail extends React.Component {
                     : null
                 )}
                 {Row(
-                  '输入模式',
+                  locale.AgentDetail?.inputModes || 'Input Modes',
                   inputModes.length
                     ? inputModes.map((m, i) => (
                         <Tag key={i} size="small" style={{ marginRight: 4 }}>
@@ -288,7 +295,7 @@ class AgentDetail extends React.Component {
                     : null
                 )}
                 {Row(
-                  '输出模式',
+                  locale.AgentDetail?.outputModes || 'Output Modes',
                   outputModes.length
                     ? outputModes.map((m, i) => (
                         <Tag key={i} size="small" type="primary" style={{ marginRight: 4 }}>
@@ -298,7 +305,7 @@ class AgentDetail extends React.Component {
                     : null
                 )}
                 {Row(
-                  '示例',
+                  locale.AgentDetail?.examples || 'Examples',
                   examples.length ? (
                     <span style={{ whiteSpace: 'pre-wrap' }}>
                       {examplesInline}
@@ -335,9 +342,10 @@ class AgentDetail extends React.Component {
   };
 
   renderCapabilitiesContent = capabilities => {
+    const { locale = {} } = this.props;
     if (!capabilities) {
       return (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无能力配置</div>
+        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>{locale.AgentDetail?.noCapabilitiesConfig || 'No capabilities configured'}</div>
       );
     }
 
@@ -351,42 +359,42 @@ class AgentDetail extends React.Component {
         <div className="new-agent-container">
           <div className="capabilities-container">
             <div className="capability-item">
-              <div className="capability-label">流式传输</div>
+              <div className="capability-label">{locale.AgentDetail?.streaming || 'Streaming'}</div>
               <div className="capability-switch">
                 <Switch
                   checked={streaming}
                   disabled={true}
-                  checkedChildren="开启"
-                  unCheckedChildren="关闭"
+                  checkedChildren={locale.AgentDetail?.enabled || 'Enabled'}
+                  unCheckedChildren={locale.AgentDetail?.disabled || 'Disabled'}
                 />
               </div>
-              <div className="capability-description">是否支持流式数据传输</div>
+              <div className="capability-description">{locale.AgentDetail?.streamingHelp || 'Whether streaming data transfer is supported'}</div>
             </div>
 
             <div className="capability-item">
-              <div className="capability-label">推送通知</div>
+              <div className="capability-label">{locale.AgentDetail?.pushNotifications || 'Push Notifications'}</div>
               <div className="capability-switch">
                 <Switch
                   checked={pushNotifications}
                   disabled={true}
-                  checkedChildren="开启"
-                  unCheckedChildren="关闭"
+                  checkedChildren={locale.AgentDetail?.enabled || 'Enabled'}
+                  unCheckedChildren={locale.AgentDetail?.disabled || 'Disabled'}
                 />
               </div>
-              <div className="capability-description">是否支持推送通知功能</div>
+              <div className="capability-description">{locale.AgentDetail?.pushNotificationsHelp || 'Whether push notification functionality is supported'}</div>
             </div>
 
             <div className="capability-item">
-              <div className="capability-label">状态历史</div>
+              <div className="capability-label">{locale.AgentDetail?.stateTransitionHistory || 'State History'}</div>
               <div className="capability-switch">
                 <Switch
                   checked={stateTransitionHistory}
                   disabled={true}
-                  checkedChildren="开启"
-                  unCheckedChildren="关闭"
+                  checkedChildren={locale.AgentDetail?.enabled || 'Enabled'}
+                  unCheckedChildren={locale.AgentDetail?.disabled || 'Disabled'}
                 />
               </div>
-              <div className="capability-description">是否支持记录状态转换历史</div>
+              <div className="capability-description">{locale.AgentDetail?.stateTransitionHistoryHelp || 'Whether recording state transition history is supported'}</div>
             </div>
           </div>
         </div>
@@ -447,17 +455,18 @@ class AgentDetail extends React.Component {
   };
 
   renderVersionTable = () => {
+    const { locale = {} } = this.props;
     const { versionList, agentData } = this.state;
     const currentVersion = agentData?.version;
 
     if (!versionList || versionList.length === 0) {
-      return <div>暂无版本信息</div>;
+      return <div>{locale.AgentDetail?.noVersionInfo || 'No version information'}</div>;
     }
 
     return (
       <Table dataSource={versionList} size="small">
         <Table.Column
-          title="版本号"
+          title={locale.AgentDetail?.version || 'Version'}
           dataIndex="version"
           cell={(value, index, record) => {
             // 如果不是当前版本，则显示为可点击链接
@@ -472,21 +481,21 @@ class AgentDetail extends React.Component {
           }}
         />
         <Table.Column
-          title="是否最新"
+          title={locale.AgentDetail?.isLatest || 'Is Latest'}
           dataIndex="latest"
           cell={value => (
             <Tag type={value ? 'primary' : 'normal'} size="small">
-              {value ? '是' : '否'}
+              {value ? (locale.AgentDetail?.yes || 'Yes') : (locale.AgentDetail?.no || 'No')}
             </Tag>
           )}
         />
         <Table.Column
-          title="创建时间"
+          title={locale.AgentDetail?.createdAt || 'Created At'}
           dataIndex="createdAt"
           cell={value => this.formatTime(value)}
         />
         <Table.Column
-          title="更新时间"
+          title={locale.AgentDetail?.updatedAt || 'Updated At'}
           dataIndex="updatedAt"
           cell={value => this.formatTime(value)}
         />
@@ -517,9 +526,9 @@ class AgentDetail extends React.Component {
     if (!agentData) {
       return (
         <div>
-          <PageTitle title="Agent详情" />
+          <PageTitle title={locale.AgentDetail?.agentDetail || 'Agent Details'} />
           <Card style={{ marginTop: 16 }} contentHeight="auto">
-            <div style={{ textAlign: 'center', padding: 40 }}>Agent不存在或已被删除</div>
+            <div style={{ textAlign: 'center', padding: 40 }}>{locale.AgentDetail?.agentNotExist || 'Agent does not exist or has been deleted'}</div>
           </Card>
         </div>
       );
@@ -527,8 +536,8 @@ class AgentDetail extends React.Component {
 
     // 构造包含版本信息的标题
     const pageTitle = getParams('version')
-      ? `Agent详情 - ${agentData.name} (版本: ${getParams('version')})`
-      : `Agent详情 - ${agentData.name}`;
+      ? `${locale.AgentDetail?.agentDetail || 'Agent Details'} - ${agentData.name} (${locale.AgentDetail?.version || 'Version'}: ${getParams('version')})`
+      : `${locale.AgentDetail?.agentDetail || 'Agent Details'} - ${agentData.name}`;
 
     return (
       <div>
@@ -536,32 +545,32 @@ class AgentDetail extends React.Component {
 
         <div style={{ marginBottom: 16 }}>
           <Button onClick={this.handleGoBack} style={{ marginRight: 8 }}>
-            返回列表
+            {locale.AgentDetail?.backToList || 'Back to List'}
           </Button>
           <Button type="primary" onClick={this.handleEdit}>
-            编辑
+            {locale.AgentDetail?.edit || 'Edit'}
           </Button>
         </div>
 
-        <Card title="基本信息" style={{ marginBottom: 16 }} contentHeight="auto">
+        <Card title={locale.AgentDetail?.basicInfo || 'Basic Information'} style={{ marginBottom: 16 }} contentHeight="auto">
           <div style={{ display: 'flex', gap: '40px' }}>
             <div style={{ flex: 1 }}>
-              {this.renderDetailItem('Agent名称', agentData.name)}
-              {this.renderDetailItem('版本号', agentData.version)}
-              {this.renderDetailItem('服务地址', agentData.url)}
-              {this.renderDetailItem('描述信息', agentData.description)}
-              {this.renderDetailItem('协议版本', agentData.protocolVersion)}
-              {this.renderDetailItem('图标URL', agentData.iconUrl, 'url')}
-              {this.renderDetailItem('文档URL', agentData.documentationUrl, 'url')}
+              {this.renderDetailItem(locale.AgentDetail?.agentName || 'Agent Name', agentData.name)}
+              {this.renderDetailItem(locale.AgentDetail?.version || 'Version', agentData.version)}
+              {this.renderDetailItem(locale.AgentDetail?.url || 'Service URL', agentData.url)}
+              {this.renderDetailItem(locale.AgentDetail?.description || 'Description', agentData.description)}
+              {this.renderDetailItem(locale.AgentDetail?.protocolVersion || 'Protocol Version', agentData.protocolVersion)}
+              {this.renderDetailItem(locale.AgentDetail?.iconUrl || 'Icon URL', agentData.iconUrl, 'url')}
+              {this.renderDetailItem(locale.AgentDetail?.documentationUrl || 'Documentation URL', agentData.documentationUrl, 'url')}
             </div>
             <div style={{ flex: 1 }}>
-              {this.renderDetailItem('输入模式', this.formatModes(agentData.defaultInputModes))}
-              {this.renderDetailItem('输出模式', this.formatModes(agentData.defaultOutputModes))}
-              {this.renderDetailItem('提供商名称', agentData.provider?.organization)}
-              {this.renderDetailItem('提供商URL', agentData.provider?.url)}
-              {this.renderDetailItem('传输协议', agentData.preferredTransport)}
+              {this.renderDetailItem(locale.AgentDetail?.inputModes || 'Input Modes', this.formatModes(agentData.defaultInputModes))}
+              {this.renderDetailItem(locale.AgentDetail?.outputModes || 'Output Modes', this.formatModes(agentData.defaultOutputModes))}
+              {this.renderDetailItem(locale.AgentDetail?.providerOrganization || 'Provider Name', agentData.provider?.organization)}
+              {this.renderDetailItem(locale.AgentDetail?.providerUrl || 'Provider URL', agentData.provider?.url)}
+              {this.renderDetailItem(locale.AgentDetail?.preferredTransport || 'Preferred Transport', agentData.preferredTransport)}
               {this.renderDetailItem(
-                '支持认证扩展卡',
+                locale.AgentDetail?.supportsAuthenticatedExtendedCard || 'Extended Card Support',
                 agentData.supportsAuthenticatedExtendedCard,
                 'tag'
               )}
@@ -569,15 +578,15 @@ class AgentDetail extends React.Component {
           </div>
         </Card>
 
-        <Card title="技能列表" style={{ marginBottom: 16 }} contentHeight="auto">
+        <Card title={locale.AgentDetail?.skillsList || 'Skills List'} style={{ marginBottom: 16 }} contentHeight="auto">
           {this.renderSkillsContent(agentData.skills)}
         </Card>
 
-        <Card title="能力配置" style={{ marginBottom: 16 }} contentHeight="auto">
+        <Card title={locale.AgentDetail?.capabilities || 'Capabilities'} style={{ marginBottom: 16 }} contentHeight="auto">
           {this.renderCapabilitiesContent(agentData.capabilities)}
         </Card>
 
-        <Card title="安全方案" style={{ marginBottom: 16 }} contentHeight="auto">
+        <Card title={locale.AgentDetail?.securitySchemes || 'Security Schemes'} style={{ marginBottom: 16 }} contentHeight="auto">
           {agentData.securitySchemes ? (
             <pre
               style={{
@@ -595,12 +604,12 @@ class AgentDetail extends React.Component {
             </pre>
           ) : (
             <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-              暂无安全方案配置
+              {locale.AgentDetail?.noSecuritySchemesConfig || 'No security schemes configured'}
             </div>
           )}
         </Card>
 
-        <Card title="安全配置" style={{ marginBottom: 16 }} contentHeight="auto">
+        <Card title={locale.AgentDetail?.security || 'Security Configuration'} style={{ marginBottom: 16 }} contentHeight="auto">
           {agentData.security ? (
             <pre
               style={{
@@ -617,11 +626,11 @@ class AgentDetail extends React.Component {
               {JSON.stringify(agentData.security, null, 2)}
             </pre>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无安全配置</div>
+            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>{locale.AgentDetail?.noSecurityConfig || 'No security configuration'}</div>
           )}
         </Card>
 
-        <Card title="附加接口" style={{ marginBottom: 16 }} contentHeight="auto">
+        <Card title={locale.AgentDetail?.additionalInterfaces || 'Additional Interfaces'} style={{ marginBottom: 16 }} contentHeight="auto">
           {agentData.additionalInterfaces && agentData.additionalInterfaces.length > 0 ? (
             <div>
               {agentData.additionalInterfaces.map((interfaceItem, index) => (
@@ -636,25 +645,25 @@ class AgentDetail extends React.Component {
                   }}
                 >
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                    {interfaceItem.name || `接口 ${index + 1}`}
+                    {interfaceItem.name || `${locale.AgentDetail?.interface || 'Interface'} ${index + 1}`}
                   </div>
                   {interfaceItem.url && (
                     <div style={{ color: '#666', fontSize: '13px' }}>URL: {interfaceItem.url}</div>
                   )}
                   {interfaceItem.description && (
                     <div style={{ color: '#666', fontSize: '13px' }}>
-                      描述: {interfaceItem.description}
+                      {locale.AgentDetail?.description || 'Description'}: {interfaceItem.description}
                     </div>
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无附加接口</div>
+            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>{locale.AgentDetail?.noAdditionalInterfaces || 'No additional interfaces'}</div>
           )}
         </Card>
 
-        <Card title="版本信息" contentHeight="auto">
+        <Card title={locale.AgentDetail?.versionInfo || 'Version Information'} contentHeight="auto">
           {this.renderVersionTable()}
         </Card>
       </div>

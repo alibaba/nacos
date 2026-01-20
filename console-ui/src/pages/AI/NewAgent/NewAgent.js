@@ -187,7 +187,7 @@ class NewAgent extends React.Component {
             agentCard.skills = parsed;
           }
         } catch (e) {
-          Message.error('技能列表JSON格式错误: ' + e.message);
+          Message.error((locale.NewAgent?.skillsJsonError || 'Skills list JSON format error') + ': ' + e.message);
           this.setState({ loading: false });
           return;
         }
@@ -200,7 +200,7 @@ class NewAgent extends React.Component {
             agentCard.security = parsed;
           }
         } catch (e) {
-          Message.error('安全配置JSON格式错误: ' + e.message);
+          Message.error((locale.NewAgent?.securityJsonError || 'Security configuration JSON format error') + ': ' + e.message);
           this.setState({ loading: false });
           return;
         }
@@ -217,7 +217,7 @@ class NewAgent extends React.Component {
             agentCard.securitySchemes = parsed;
           }
         } catch (e) {
-          Message.error('安全模式配置JSON格式错误: ' + e.message);
+          Message.error((locale.NewAgent?.securitySchemesJsonError || 'Security schemes JSON format error') + ': ' + e.message);
           this.setState({ loading: false });
           return;
         }
@@ -234,7 +234,7 @@ class NewAgent extends React.Component {
             agentCard.additionalInterfaces = parsed;
           }
         } catch (e) {
-          Message.error('额外接口JSON格式错误: ' + e.message);
+          Message.error((locale.NewAgent?.additionalInterfacesJsonError || 'Additional interfaces JSON format error') + ': ' + e.message);
           this.setState({ loading: false });
           return;
         }
@@ -292,8 +292,8 @@ class NewAgent extends React.Component {
             const agentLocale = locale.AgentManagement || locale;
             Message.success(
               isEdit
-                ? agentLocale.updateSuccess || '更新成功'
-                : agentLocale.createSuccess || '创建成功'
+                ? agentLocale.updateSuccess || 'Update successful'
+                : agentLocale.createSuccess || 'Create successful'
             );
 
             setTimeout(() => {
@@ -304,8 +304,8 @@ class NewAgent extends React.Component {
             Message.error(
               data?.message ||
                 (isEdit
-                  ? agentLocale.updateFailed || '更新失败'
-                  : agentLocale.createFailed || '创建失败')
+                  ? agentLocale.updateFailed || 'Update failed'
+                  : agentLocale.createFailed || 'Create failed')
             );
           }
         },
@@ -314,7 +314,7 @@ class NewAgent extends React.Component {
           this.setState({ loading: false });
           const agentLocale = locale.AgentManagement || locale;
           Message.error(
-            isEdit ? agentLocale.updateFailed || '更新失败' : agentLocale.createFailed || '创建失败'
+            isEdit ? agentLocale.updateFailed || 'Update failed' : agentLocale.createFailed || 'Create failed'
           );
         },
       });
@@ -361,18 +361,18 @@ class NewAgent extends React.Component {
         !trimmedValue.startsWith('{') &&
         !trimmedValue.startsWith('[')
       ) {
-        callback('JSON格式错误：不能包含等号(=)字符，请使用冒号(:)');
+        callback(locale.NewAgent?.jsonErrorEqualSign || 'JSON format error: cannot contain equals sign (=), please use colon (:)');
         return;
       }
       try {
         const parsed = JSON.parse(trimmedValue);
         if (typeof parsed !== 'object') {
-          callback('JSON格式错误：必须是有效的JSON对象或数组');
+          callback(locale.NewAgent?.jsonErrorMustBeObject || 'JSON format error: must be a valid JSON object or array');
           return;
         }
         callback();
       } catch (e) {
-        callback('JSON格式错误：' + e.message);
+        callback((locale.NewAgent?.jsonError || 'JSON format error') + ': ' + e.message);
       }
     } else {
       callback();
@@ -392,7 +392,7 @@ class NewAgent extends React.Component {
       <div className="new-agent-container">
         <Row>
           <Col span={16}>
-            <h1>{isEdit ? '编辑Agent' : '新建Agent'}</h1>
+            <h1>{isEdit ? (locale.NewAgent?.editAgent || 'Edit Agent') : (locale.NewAgent?.newAgent || 'New Agent')}</h1>
           </Col>
           <Col span={8}>
             <div style={{ textAlign: 'right', marginTop: 10 }}>
@@ -402,69 +402,69 @@ class NewAgent extends React.Component {
                 loading={loading}
                 style={{ marginRight: 10 }}
               >
-                {isEdit ? '更新' : '创建'}
+                {isEdit ? (locale.NewAgent?.update || 'Update') : (locale.NewAgent?.create || 'Create')}
               </Button>
-              <Button onClick={this.handleGoBack}>取消</Button>
+              <Button onClick={this.handleGoBack}>{locale.NewAgent?.cancel || 'Cancel'}</Button>
             </div>
           </Col>
         </Row>
 
         <Form field={this.field} {...formItemLayout} className="new-agent-form">
-          <Form.Item label="命名空间">
+          <Form.Item label={locale.NewAgent?.namespace || 'Namespace'}>
             <p>{getParams('namespace') || 'public'}</p>
           </Form.Item>
 
           {/* 主要信息放在最上面 */}
           <Form.Item
-            label="Agent名称"
+            label={locale.NewAgent?.agentName || 'Agent Name'}
             required
             validator={this.validateRequired}
-            help="Agent的唯一标识符，创建后不可修改"
+            help={locale.NewAgent?.agentNameHelp || 'Unique identifier for the agent, cannot be modified after creation'}
           >
             <Input
               name="name"
-              placeholder="请输入Agent名称，如：weather-agent"
+              placeholder={locale.NewAgent?.agentNamePlaceholder || 'Enter agent name, e.g., weather-agent'}
               disabled={isEdit}
               maxLength={255}
             />
           </Form.Item>
 
           <Form.Item
-            label="版本号"
+            label={locale.NewAgent?.version || 'Version'}
             required
             validator={this.validateRequired}
-            help="遵循语义化版本规范，如：1.0.0"
+            help={locale.NewAgent?.versionHelp || 'Follow semantic versioning, e.g., 1.0.0'}
           >
             <Input name="version" placeholder="1.0.0" maxLength={50} />
           </Form.Item>
 
           <Form.Item
-            label="服务地址"
+            label={locale.NewAgent?.url || 'Service URL'}
             required
             validator={[this.validateRequired, this.validateUrl]}
-            help="Agent服务的完整URL地址"
+            help={locale.NewAgent?.urlHelp || 'Complete URL address of the agent service'}
           >
             <Input name="url" placeholder="https://api.example.com/agent" maxLength={500} />
           </Form.Item>
 
           <Form.Item
-            label="协议版本"
+            label={locale.NewAgent?.protocolVersion || 'Protocol Version'}
             required
             validator={this.validateRequired}
-            help="Agent协议版本，默认使用最新版本"
+            help={locale.NewAgent?.protocolVersionHelp || 'Agent protocol version, use latest by default'}
           >
             <Input name="protocolVersion" placeholder="0.3.0" maxLength={50} />
           </Form.Item>
 
           <Form.Item
-            label="传输协议"
+            label={locale.NewAgent?.preferredTransport || 'Preferred Transport'}
             required
             validator={this.validateRequired}
-            help="Agent通信使用的传输协议"
+            help={locale.NewAgent?.preferredTransportHelp || 'Transport protocol used for agent communication'}
           >
             <Select
               name="preferredTransport"
-              placeholder="请选择传输协议"
+              placeholder={locale.NewAgent?.preferredTransportPlaceholder || 'Select transport protocol'}
               dataSource={[
                 { value: 'JSONRPC', label: 'JSONRPC' },
                 { value: 'GRPC', label: 'GRPC' },
@@ -473,28 +473,28 @@ class NewAgent extends React.Component {
             />
           </Form.Item>
 
-          <Form.Item label="描述信息" help="简要描述Agent的功能和用途">
+          <Form.Item label={locale.NewAgent?.description || 'Description'} help={locale.NewAgent?.descriptionHelp || 'Brief description of the agent\'s functionality and purpose'}>
             <Input.TextArea
               name="description"
-              placeholder="请输入Agent的功能描述..."
+              placeholder={locale.NewAgent?.descriptionPlaceholder || 'Enter agent function description...'}
               rows={3}
               maxLength={1000}
             />
           </Form.Item>
 
-          <Form.Item label="输入模式" help="Agent支持的默认输入模式，用逗号分隔">
+          <Form.Item label={locale.NewAgent?.defaultInputModes || 'Input Modes'} help={locale.NewAgent?.defaultInputModesHelp || 'Default input modes supported by the agent, comma-separated'}>
             <Input name="defaultInputModes" placeholder="text,audio,image" maxLength={255} />
           </Form.Item>
 
-          <Form.Item label="输出模式" help="Agent支持的默认输出模式，用逗号分隔">
+          <Form.Item label={locale.NewAgent?.defaultOutputModes || 'Output Modes'} help={locale.NewAgent?.defaultOutputModesHelp || 'Default output modes supported by the agent, comma-separated'}>
             <Input name="defaultOutputModes" placeholder="text,audio,image" maxLength={255} />
           </Form.Item>
 
           {/* 将原来的capabilities JSON输入框替换为横向排列的三个独立开关 */}
-          <Form.Item label="能力配置" help="Agent支持的核心能力配置">
+          <Form.Item label={locale.NewAgent?.capabilities || 'Capabilities'} help={locale.NewAgent?.capabilitiesHelp || 'Core capabilities supported by the agent'}>
             <div className="capabilities-container">
               <div className="capability-item">
-                <div className="capability-label">流式传输</div>
+                <div className="capability-label">{locale.NewAgent?.streaming || 'Streaming'}</div>
                 <div className="capability-switch">
                   <Switch
                     {...this.field.init('streaming', {
@@ -504,11 +504,11 @@ class NewAgent extends React.Component {
                     name="streaming"
                   />
                 </div>
-                <div className="capability-description">是否支持流式数据传输</div>
+                <div className="capability-description">{locale.NewAgent?.streamingHelp || 'Whether streaming data transfer is supported'}</div>
               </div>
 
               <div className="capability-item">
-                <div className="capability-label">推送通知</div>
+                <div className="capability-label">{locale.NewAgent?.pushNotifications || 'Push Notifications'}</div>
                 <div className="capability-switch">
                   <Switch
                     {...this.field.init('pushNotifications', {
@@ -518,11 +518,11 @@ class NewAgent extends React.Component {
                     name="pushNotifications"
                   />
                 </div>
-                <div className="capability-description">是否支持推送通知功能</div>
+                <div className="capability-description">{locale.NewAgent?.pushNotificationsHelp || 'Whether push notification functionality is supported'}</div>
               </div>
 
               <div className="capability-item">
-                <div className="capability-label">状态历史</div>
+                <div className="capability-label">{locale.NewAgent?.stateTransitionHistory || 'State History'}</div>
                 <div className="capability-switch">
                   <Switch
                     {...this.field.init('stateTransitionHistory', {
@@ -532,24 +532,24 @@ class NewAgent extends React.Component {
                     name="stateTransitionHistory"
                   />
                 </div>
-                <div className="capability-description">是否支持记录状态转换历史</div>
+                <div className="capability-description">{locale.NewAgent?.stateTransitionHistoryHelp || 'Whether recording state transition history is supported'}</div>
               </div>
             </div>
           </Form.Item>
 
-          <Form.Item label="技能列表" validator={this.validateJson} help="Agent具备的技能清单">
+          <Form.Item label={locale.NewAgent?.skills || 'Skills'} validator={this.validateJson} help={locale.NewAgent?.skillsHelp || 'List of skills possessed by the agent'}>
             <Input.TextArea
               name="skills"
-              placeholder='[{"name": "weather_query", "description": "查询天气信息"}]'
+              placeholder={locale.NewAgent?.skillsPlaceholder || '[{"name": "weather_query", "description": "Query weather information"}]'}
               rows={4}
             />
           </Form.Item>
 
           {/* 高级配置 */}
           <Divider style={{ margin: '30px 0' }}>
-            <span>高级配置</span>
+            <span>{locale.NewAgent?.advancedConfig || 'Advanced Configuration'}</span>
             <Button text size="small" onClick={this.toggleAdvanced} style={{ marginLeft: 10 }}>
-              {showAdvanced ? '收起' : '展开'}
+              {showAdvanced ? (locale.NewAgent?.collapse || 'Collapse') : (locale.NewAgent?.expand || 'Expand')}
               <Icon type={showAdvanced ? 'arrow-up' : 'arrow-down'} style={{ marginLeft: 4 }} />
             </Button>
           </Divider>
@@ -557,14 +557,14 @@ class NewAgent extends React.Component {
           {showAdvanced && (
             <>
               <Form.Item
-                label="图标URL"
+                label={locale.NewAgent?.iconUrl || 'Icon URL'}
                 validator={this.validateUrl}
-                help="Agent的图标地址，用于界面展示"
+                help={locale.NewAgent?.iconUrlHelp || 'Icon URL of the agent for UI display'}
               >
                 <Input name="iconUrl" placeholder="https://example.com/icon.png" maxLength={500} />
               </Form.Item>
 
-              <Form.Item label="文档URL" validator={this.validateUrl} help="Agent的使用文档地址">
+              <Form.Item label={locale.NewAgent?.documentationUrl || 'Documentation URL'} validator={this.validateUrl} help={locale.NewAgent?.documentationUrlHelp || 'Documentation URL of the agent'}>
                 <Input
                   name="documentationUrl"
                   placeholder="https://docs.example.com/agent"
@@ -572,11 +572,11 @@ class NewAgent extends React.Component {
                 />
               </Form.Item>
 
-              <Form.Item label="提供商名称" help="Agent提供商的名称">
-                <Input name="organization" placeholder="请输入提供商名称" maxLength={255} />
+              <Form.Item label={locale.NewAgent?.organization || 'Provider Name'} help={locale.NewAgent?.organizationHelp || 'Name of the agent provider'}>
+                <Input name="organization" placeholder={locale.NewAgent?.organizationPlaceholder || 'Enter provider name'} maxLength={255} />
               </Form.Item>
 
-              <Form.Item label="提供商URL" validator={this.validateUrl} help="提供商的官方网站地址">
+              <Form.Item label={locale.NewAgent?.providerUrl || 'Provider URL'} validator={this.validateUrl} help={locale.NewAgent?.providerUrlHelp || 'Official website URL of the provider'}>
                 <Input
                   name="providerUrl"
                   placeholder="https://provider.example.com"
@@ -587,7 +587,7 @@ class NewAgent extends React.Component {
               <Form.Item
                 label="security"
                 validator={this.validateJson}
-                help="Agent的安全认证相关配置 (JSON格式)"
+                help={locale.NewAgent?.securityHelp || 'Security authentication configuration for the agent (JSON format)'}
               >
                 <Input.TextArea
                   name="security"
@@ -599,19 +599,19 @@ class NewAgent extends React.Component {
               <Form.Item
                 label="securitySchemes"
                 validator={this.validateJson}
-                help="Agent的安全模式配置 (JSON格式)"
+                help={locale.NewAgent?.securitySchemesHelp || 'Security schemes configuration for the agent (JSON format)'}
               >
                 <Input.TextArea
                   name="securitySchemes"
-                  placeholder='{"type": "apiKey", "description": "API密钥认证"}'
+                  placeholder={locale.NewAgent?.securitySchemesPlaceholder || '{"type": "apiKey", "description": "API key authentication"}'}
                   rows={3}
                 />
               </Form.Item>
 
               <Form.Item
-                label="额外接口"
+                label={locale.NewAgent?.additionalInterfaces || 'Additional Interfaces'}
                 validator={this.validateJson}
-                help="Agent的额外接口配置 (JSON格式)"
+                help={locale.NewAgent?.additionalInterfacesHelp || 'Additional interface configuration for the agent (JSON format)'}
               >
                 <Input.TextArea
                   name="additionalInterfaces"
@@ -620,7 +620,7 @@ class NewAgent extends React.Component {
                 />
               </Form.Item>
 
-              <Form.Item label="扩展卡片支持" help="是否支持认证扩展卡片功能">
+              <Form.Item label={locale.NewAgent?.supportsAuthenticatedExtendedCard || 'Extended Card Support'} help={locale.NewAgent?.supportsAuthenticatedExtendedCardHelp || 'Whether authenticated extended card functionality is supported'}>
                 <Switch name="supportsAuthenticatedExtendedCard" defaultChecked={false} />
               </Form.Item>
             </>
@@ -629,7 +629,7 @@ class NewAgent extends React.Component {
           {/* 版本设置 - 仅编辑模式显示 */}
           {isEdit && (
             <>
-              <Form.Item label="设为最新版本" help="开启后，此版本将成为发布版本">
+              <Form.Item label={locale.NewAgent?.setAsLatest || 'Set as Latest Version'} help={locale.NewAgent?.setAsLatestHelp || 'When enabled, this version will become the published version'}>
                 <Switch name="setAsLatest" defaultChecked={false} />
               </Form.Item>
             </>

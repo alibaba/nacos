@@ -74,7 +74,7 @@ class ConfigCompared extends React.Component {
         window.namespaceList = [
           {
             namespace: '',
-            namespaceShowName: '公共空间',
+            namespaceShowName: locale.Common?.publicNamespace || 'Public',
             type: 0,
           },
         ];

@@ -113,7 +113,7 @@ class ClusterNodeList extends React.Component {
           Message.success(locale.leaveSucc);
         } else {
           // const errorMessage = response.data.message || locale.leaveFail;
-          const errorMessage = '此操作暂不可用';
+          const errorMessage = locale.Common?.operationNotAvailable || 'This operation is temporarily unavailable';
           this.showErrorDialog(locale.leavePrompt, errorMessage);
         }
 

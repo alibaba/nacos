@@ -700,7 +700,7 @@ class NewMcpServer extends React.Component {
               });
             } catch (error) {
               console.error('Failed to parse MCP Server endpoint URL:', error);
-              return resolve({ errors: { mcpServerEndpoint: '无效的 URL 格式' } });
+              return resolve({ errors: { mcpServerEndpoint: locale.NewMcpServer?.invalidUrlFormat || 'Invalid URL format' } });
             }
           } else {
             // 原有的处理逻辑
@@ -1475,7 +1475,7 @@ class NewMcpServer extends React.Component {
                     });
                   }}
                 />
-                <span className="switch-label">{this.state.restToMcpSwitch ? '开启' : '关闭'}</span>
+                <span className="switch-label">{this.state.restToMcpSwitch ? (locale.Common?.enabled || 'Enabled') : (locale.Common?.disabled || 'Disabled')}</span>
               </FormItem>
               {/*{!isEdit && (*/}
 

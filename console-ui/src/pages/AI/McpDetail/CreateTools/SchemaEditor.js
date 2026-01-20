@@ -182,8 +182,8 @@ const SchemaEditor = ({
 
         // 显示确认对话框
         Dialog.confirm({
-            title: locale.confirmDelete || '确认删除',
-            content: locale.confirmDeleteMessage || '确定要删除此项及其所有子项吗？',
+            title: locale.confirmDelete || 'Confirm Delete',
+            content: locale.confirmDeleteMessage || 'Are you sure you want to delete this item and all its children?',
             onOk: () => {
                 // 执行删除操作
                 const performDelete = targetKey => {
@@ -259,7 +259,7 @@ const SchemaEditor = ({
 
     return (
         <div className="create-tools-card">
-            <Form.Item label={locale.ArgumentTree || '参数树'} style={{ margin: '16px 0 0' }}>
+            <Form.Item label={locale.ArgumentTree || 'Argument Tree'} style={{ margin: '16px 0 0' }}>
                 <div className="tree-wrapper">
                     <Row style={{ marginBottom: '16px' }}>
                         <Col style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -277,7 +277,7 @@ const SchemaEditor = ({
                                     gap: '6px',
                                 }}
                             >
-                                {locale.AddNewArg || '增加参数'}
+                                {locale.AddNewArg || 'Add Parameter'}
                             </Button>
 
                             {/* 为 object 类型节点添加属性按钮 */}
@@ -298,13 +298,13 @@ const SchemaEditor = ({
                                         gap: '6px',
                                     }}
                                 >
-                                    {locale.AddNewProperties || '增加属性'}
+                                    {locale.AddNewProperties || 'Add Property'}
                                 </Button>
                             )}
 
                             {readOnly && (
                                 <Tag color="orange" style={{ margin: 0 }}>
-                                    {locale.editExistVersionMessage || '只读模式不可编辑'}
+                                    {locale.editExistVersionMessage || 'Read-only mode, cannot edit'}
                                 </Tag>
                             )}
                         </Col>
@@ -400,7 +400,7 @@ const SchemaEditor = ({
             {currentNode.key !== '' && currentNode.key !== rootKey && (
                 <div className="detail-info-container">
                     <h3 className="detail-info-header">
-                        {locale.ArgumentInfo || '参数详情'}
+                        {locale.ArgumentInfo || 'Argument Details'}
                     </h3>
 
                     <Row gutter={24}>
@@ -419,7 +419,7 @@ const SchemaEditor = ({
                                     isPreview={readOnly}
                                     disabled={currentNode.key === rootKey || isArrayItemsNode(currentNode)}
                                     value={currentNode.label}
-                                    placeholder="请输入参数名称"
+                                    placeholder={locale.paramNamePlaceholder || 'Enter parameter name'}
                                     onChange={data => {
                                         if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                                             currentNode.label = data;
@@ -441,14 +441,14 @@ const SchemaEditor = ({
                                     isPreview={readOnly}
                                     disabled={currentNode.key === rootKey}
                                     value={currentNode.type}
-                                    placeholder="请选择参数类型"
+                                    placeholder={locale.selectParamType || 'Select parameter type'}
                                     dataSource={[
-                                        { label: '字符串类型 (string)', value: 'string' },
-                                        { label: '数字类型 (number)', value: 'number' },
-                                        { label: '整数类型 (integer)', value: 'integer' },
-                                        { label: '布尔类型 (boolean)', value: 'boolean' },
-                                        { label: '数组类型 (array)', value: 'array' },
-                                        { label: '对象类型 (object)', value: 'object' },
+                                        { label: locale.stringType || 'String Type (string)', value: 'string' },
+                                        { label: locale.numberType || 'Number Type (number)', value: 'number' },
+                                        { label: locale.integerType || 'Integer Type (integer)', value: 'integer' },
+                                        { label: locale.booleanType || 'Boolean Type (boolean)', value: 'boolean' },
+                                        { label: locale.arrayType || 'Array Type (array)', value: 'array' },
+                                        { label: locale.objectType || 'Object Type (object)', value: 'object' },
                                     ]}
                                     onChange={data => {
                                         if (currentNode.key !== '') {
@@ -528,7 +528,7 @@ const SchemaEditor = ({
                                         style={{ borderRadius: '6px', minHeight: '80px' }}
                                         disabled={currentNode.key === rootKey}
                                         value={currentNode.description}
-                                        placeholder="请输入参数描述信息"
+                                        placeholder={locale.paramDescriptionPlaceholder || 'Enter parameter description'}
                                         onChange={data => {
                                             if (currentNode.key !== '') {
                                                 currentNode.description = data;
@@ -548,7 +548,7 @@ const SchemaEditor = ({
                         <Row>
                             <Col span={24}>
                                 <Form.Item
-                                    label={locale.toolParamRequired || '是否必填'}
+                                    label={locale.toolParamRequired || 'Is Required'}
                                     name={`${bindingPrefix}.required`}
                                     asterisk={false}
                                     style={{ marginBottom: '12px' }}
@@ -564,13 +564,13 @@ const SchemaEditor = ({
                                                 }
                                             }}
                                             disabled={readOnly}
-                                            checkedChildren={locale.required || '必填'}
-                                            unCheckedChildren={locale.optional || '可选'}
+                                            checkedChildren={locale.required || 'Required'}
+                                            unCheckedChildren={locale.optional || 'Optional'}
                                         />
                                         <span style={{ marginLeft: 12, color: '#666', fontSize: 12 }}>
                                             {currentNode.required
-                                                ? locale.required || '必填'
-                                                : locale.optional || '可选'}
+                                                ? locale.required || 'Required'
+                                                : locale.optional || 'Optional'}
                                         </span>
                                     </div>
                                 </Form.Item>
@@ -586,7 +586,7 @@ const SchemaEditor = ({
                             <Row>
                                 <Col span={24}>
                                     <Form.Item
-                                        label={locale.toolParamDefaultValue || '默认值'}
+                                        label={locale.toolParamDefaultValue || 'Default Value'}
                                         name={`${bindingPrefix}.defaultValue`}
                                         asterisk={false}
                                         style={{ marginBottom: '0' }}
@@ -599,10 +599,10 @@ const SchemaEditor = ({
                                                 }}
                                             >
                                                 {currentNode.type === 'boolean'
-                                                    ? '布尔类型请输入 true 或 false'
+                                                    ? locale.booleanTypeHelp || 'For boolean type, please enter true or false'
                                                     : currentNode.type === 'number' || currentNode.type === 'integer'
-                                                        ? '请输入数字'
-                                                        : '可选：为此参数设置默认值'}
+                                                        ? locale.numberTypeHelp || 'Please enter a number'
+                                                        : locale.optionalDefaultValue || 'Optional: Set a default value for this parameter'}
                                             </div>
                                         }
                                     >
@@ -611,7 +611,7 @@ const SchemaEditor = ({
                                                 size="large"
                                                 style={{ borderRadius: '6px' }}
                                                 value={currentNode.defaultValue}
-                                                placeholder="请选择默认值"
+                                                placeholder={locale.selectDefaultValue || 'Select default value'}
                                                 allowClear
                                                 dataSource={[
                                                     { label: 'true', value: 'true' },
@@ -638,8 +638,8 @@ const SchemaEditor = ({
                                                 value={currentNode.defaultValue}
                                                 placeholder={
                                                     currentNode.type === 'number' || currentNode.type === 'integer'
-                                                        ? '请输入数字默认值'
-                                                        : '请输入默认值'
+                                                        ? locale.enterNumberDefaultValue || 'Enter number default value'
+                                                        : locale.enterDefaultValue || 'Enter default value'
                                                 }
                                                 onChange={data => {
                                                     if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {

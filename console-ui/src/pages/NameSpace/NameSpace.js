@@ -88,7 +88,7 @@ class NameSpace extends React.Component {
         window.namespaceList = [
           {
             namespace: '',
-            namespaceShowName: '公共空间',
+            namespaceShowName: locale.Common?.publicNamespace || 'Public',
             type: 0,
           },
         ];
@@ -222,7 +222,7 @@ class NameSpace extends React.Component {
         window.namespaceList = [
           {
             namespace: '',
-            namespaceShowName: '公共空间',
+            namespaceShowName: locale.Common?.publicNamespace || 'Public',
             type: 0,
           },
         ];

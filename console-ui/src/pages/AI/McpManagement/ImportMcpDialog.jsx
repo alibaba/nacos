@@ -164,7 +164,7 @@ class ImportMcpDialog extends React.Component {
         const { locale = {} } = this.props;
         const { importType, importData, importOverrideExisting, importAccumulatedServers, importRegistrySearch, importPage, importPageSize } = this.state;
         if (!importData) {
-            Message.warning(locale.pleaseEnterImportData || '请输入导入数据');
+            Message.warning(locale.ImportMcpDialog?.pleaseEnterImportData || 'Please enter import data');
             return;
         }
         this.setState({ importValidating: true });
@@ -215,7 +215,7 @@ class ImportMcpDialog extends React.Component {
                 setTimeout(() => this.setState({ importCardsReady: true }), 0);
             }
         } else {
-            Message.error(result?.message || '校验失败');
+            Message.error(result?.message || locale.ImportMcpDialog?.validationFailed || 'Validation failed');
         }
         this.setState({ importValidating: false });
     };
@@ -234,7 +234,7 @@ class ImportMcpDialog extends React.Component {
         const { importValidationResult, importSelectedServerIds } = this.state;
         const servers = (importValidationResult && importValidationResult.servers) || [];
         if (!servers.length) {
-            Message.notice(this.props.locale.noData || '暂无可导入的服务');
+            Message.notice(this.props.locale.ImportMcpDialog?.noImportableServices || 'No services available to import');
             return;
         }
         let targets = [];
@@ -251,7 +251,7 @@ class ImportMcpDialog extends React.Component {
             });
         }
         if (!targets.length) {
-            Message.warning(this.props.locale.pleaseSelect || '请先选择要导入的服务');
+            Message.warning(this.props.locale.ImportMcpDialog?.pleaseSelectServicesToImport || 'Please select services to import');
             return;
         }
 
@@ -321,7 +321,7 @@ class ImportMcpDialog extends React.Component {
             style: { width: 'clamp(420px, 86vw, 640px)' },
             content: (
                 <div>
-                    <div style={{ marginBottom: 8 }}>{`成功 ${success} 个，失败 ${failed} 个`}</div>
+                    <div style={{ marginBottom: 8 }}>{`${this.props.locale.ImportMcpDialog?.success || 'Success'} ${success}, ${this.props.locale.ImportMcpDialog?.failed || 'Failed'} ${failed}`}</div>
                     {failedItems && failedItems.length ? (
                         <div style={{ maxHeight: 260, overflow: 'auto', marginTop: 8 }}>
                             <Table
@@ -363,7 +363,7 @@ class ImportMcpDialog extends React.Component {
     const { importType, importData, importOverrideExisting, importUrlCursor, importRegistrySearch } = this.state;
         const { locale = {} } = this.props;
         if (!importData) {
-            Message.warning(locale.pleaseEnterImportData || '请输入导入数据');
+            Message.warning(locale.ImportMcpDialog?.pleaseEnterImportData || 'Please enter import data');
             return;
         }
         const namespaceId = getParams('namespace') || '';
@@ -420,7 +420,7 @@ class ImportMcpDialog extends React.Component {
                     style: { width: 'clamp(420px, 86vw, 640px)' },
                     content: (
                         <div>
-                            <div style={{ marginBottom: 8 }}>{`成功 ${successCount} 个，失败 ${failedCount} 个，跳过 ${skippedCount} 个`}</div>
+                            <div style={{ marginBottom: 8 }}>{`${locale.ImportMcpDialog?.success || 'Success'} ${successCount}, ${locale.ImportMcpDialog?.failed || 'Failed'} ${failedCount}, ${locale.ImportMcpDialog?.skipped || 'Skipped'} ${skippedCount}`}</div>
                             {Array.isArray(results) && results.length ? (
                                 <div style={{ maxHeight: 320, overflow: 'auto', marginTop: 8 }}>
                                     <Table
@@ -479,11 +479,11 @@ class ImportMcpDialog extends React.Component {
                 if (!failedCount) this.handleClose();
             } else {
                 this.setState({ importExecuting: false });
-                Message.error(result?.message || '导入执行失败');
+                Message.error(result?.message || locale.ImportMcpDialog?.importExecutionFailed || 'Import execution failed');
             }
         } catch (e) {
             this.setState({ importExecuting: false });
-            Message.error(e?.message || '导入执行异常');
+            Message.error(e?.message || locale.ImportMcpDialog?.importExecutionError || 'Import execution error');
         }
     };
 

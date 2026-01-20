@@ -70,7 +70,7 @@ copyText(locale, value) {
         {textNode || value}
         {showIcon && (
           <FaCopy
-            title={title || '复制'}
+            title={title || locale.Common?.copy || 'Copy'}
             className="copy-icon"
             type="copy"
             onClick={() => this.copyText(locale, value)}

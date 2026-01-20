@@ -76,7 +76,7 @@ const BasicInfo = ({ locale, field, type, serverConfig, isPreview }) => {
                             fontSize: '14px',
                         }}
                     >
-                        {getValue('enabled') ? locale.online || '上线' : locale.offline || '下线'}
+                        {getValue('enabled') ? locale.online || 'Online' : locale.offline || 'Offline'}
                     </span>
                 </div>
             </Form.Item>

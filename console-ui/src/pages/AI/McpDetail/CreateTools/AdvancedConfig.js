@@ -54,11 +54,11 @@ const AdvancedConfig = ({
             // 验证必填字段
             if (parsed.requestTemplate) {
                 if (!parsed.requestTemplate.url) {
-                    callback('requestTemplate.url 是必填字段');
+                    callback(locale.requestTemplateUrlRequired || 'requestTemplate.url is required');
                     return;
                 }
                 if (!parsed.requestTemplate.method) {
-                    callback('requestTemplate.method 是必填字段');
+                    callback(locale.requestTemplateMethodRequired || 'requestTemplate.method is required');
                     return;
                 }
 
@@ -66,7 +66,7 @@ const AdvancedConfig = ({
                 const mutexFields = ['body', 'argsToJsonBody', 'argsToUrlParam', 'argsToFormBody'];
                 const activeMutexFields = mutexFields.filter(field => parsed.requestTemplate[field]);
                 if (activeMutexFields.length > 1) {
-                    callback(`requestTemplate 中 ${activeMutexFields.join(', ')} 字段互斥，只能选择一个`);
+                    callback((locale.requestTemplateMutexFields || 'The following fields in requestTemplate are mutually exclusive, only one can be selected: {0}').replace('{0}', activeMutexFields.join(', ')));
                     return;
                 }
             }
@@ -74,7 +74,7 @@ const AdvancedConfig = ({
             // 验证 argsPosition 的有效值
             if (parsed.argsPosition) {
                 if (typeof parsed.argsPosition !== 'object' || Array.isArray(parsed.argsPosition)) {
-                    callback('argsPosition 必须是一个对象');
+                    callback(locale.argsPositionMustBeObject || 'argsPosition must be an object');
                     return;
                 }
 
@@ -85,9 +85,9 @@ const AdvancedConfig = ({
 
                 if (invalidPositions.length > 0) {
                     callback(
-                        `argsPosition 的值必须是以下之一: ${validPositions.join(
-                            ', '
-                        )}，发现无效值: ${invalidPositions.join(', ')}`
+                        (locale.argsPositionInvalidValues || 'argsPosition values must be one of: {0}, invalid values found: {1}')
+                            .replace('{0}', validPositions.join(', '))
+                            .replace('{1}', invalidPositions.join(', '))
                     );
                     return;
                 }
@@ -96,7 +96,7 @@ const AdvancedConfig = ({
             // 验证 mcpServers 数组长度（仅在 Local Server 配置时）
             if (parsed.mcpServers && Array.isArray(parsed.mcpServers)) {
                 if (parsed.mcpServers.length !== 1) {
-                    callback('mcpServers 只能包含一个元素');
+                    callback(locale.mcpServersOneElement || 'mcpServers can only contain one element');
                     return;
                 }
             }
@@ -110,14 +110,14 @@ const AdvancedConfig = ({
                 );
 
                 if (hasBody && hasPrependOrAppend) {
-                    callback('responseTemplate 中 body 与 prependBody/appendBody 互斥');
+                    callback(locale.responseTemplateMutexFields || 'body and prependBody/appendBody in responseTemplate are mutually exclusive');
                     return;
                 }
             }
 
             callback();
         } catch (jsonError) {
-            callback(locale.templateShouldBeJson || '模板格式错误，请输入有效的 JSON 格式');
+            callback(locale.templateShouldBeJson || 'Template format error, please enter valid JSON format');
         }
     };
 
@@ -328,7 +328,7 @@ const AdvancedConfig = ({
                         }}
                     >
                         <div style={{ marginBottom: '8px' }}>
-                            通过网关提供的协议转化模版进行协议转化，详情请见文档{' '}
+                            {locale.templateDocumentation || 'Protocol conversion through the gateway-provided template, see documentation'}{' '}
                             <a
                                 href="https://nacos.io/docs/v3.0/manual/user/mcp-template"
                                 target="_blank"
@@ -353,7 +353,7 @@ const AdvancedConfig = ({
                                 }}
                             >
                                 <span>{showTemplateHelp ? '▼' : '▶'}</span>
-                                📋 配置选项详细说明
+                                📋 {locale.configurationDetails || 'Configuration Options Details'}
                             </div>
 
                             {showTemplateHelp && (
@@ -371,12 +371,12 @@ const AdvancedConfig = ({
                                     }}
                                 >
                                     <div style={{ marginBottom: '4px', fontWeight: '500', color: '#333' }}>
-                                        请求体配置（以下选项互斥，只能选择一个）：
+                                        {locale.requestBodyConfig || 'Request Body Configuration (mutually exclusive, only one can be selected)'}:
                                     </div>
-                                    • <strong>argsToJsonBody</strong>: 参数作为JSON请求体
-                                    <br />• <strong>argsToUrlParam</strong>: 参数作为URL查询参数
-                                    <br />• <strong>argsToFormBody</strong>: 参数作为表单数据
-                                    <br />• <strong>body</strong>: 自定义请求体模板
+                                    • <strong>argsToJsonBody</strong>: {locale.argsAsJsonBody || 'Parameters as JSON request body'}
+                                    <br />• <strong>argsToUrlParam</strong>: {locale.argsAsUrlParams || 'Parameters as URL query parameters'}
+                                    <br />• <strong>argsToFormBody</strong>: {locale.argsAsFormData || 'Parameters as form data'}
+                                    <br />• <strong>body</strong>: {locale.customBodyTemplate || 'Custom request body template'}
                                     <br />
                                     <div
                                         style={{
@@ -386,10 +386,10 @@ const AdvancedConfig = ({
                                             color: '#333',
                                         }}
                                     >
-                                        参数位置配置：
+                                        {locale.argsPositionConfig || 'Arguments Position Configuration'}:
                                     </div>
                                     • <strong>argsPosition</strong>:
-                                    参数位置映射对象，用于指定每个参数在请求中的具体位置
+                                    {locale.argsPositionHelp || 'Parameter position mapping object to specify the location of each parameter in the request'}
                                     <br />
                                     <div
                                         style={{
@@ -399,11 +399,11 @@ const AdvancedConfig = ({
                                             color: '#333',
                                         }}
                                     >
-                                        响应处理配置（以下选项互斥）：
+                                        {locale.responseProcessingConfig || 'Response Processing Configuration (mutually exclusive)'}:
                                     </div>
-                                    • <strong>responseTemplate.body</strong>: 完整响应转换模板
+                                    • <strong>responseTemplate.body</strong>: {locale.fullResponseTemplate || 'Complete response transformation template'}
                                     <br />• <strong>responseTemplate.prependBody/appendBody</strong>:
-                                    响应前后缀文本
+                                    {locale.responsePrefixSuffix || 'Response prefix/suffix text'}
                                     <br />
                                     <div
                                         style={{
@@ -413,13 +413,13 @@ const AdvancedConfig = ({
                                             color: '#333',
                                         }}
                                     >
-                                        参数位置说明：
+                                        {locale.parameterPositionDescription || 'Parameter Position Description'}:
                                     </div>
-                                    • <strong>query</strong>: 参数作为URL查询字符串
-                                    <br />• <strong>path</strong>: 参数作为URL路径变量
-                                    <br />• <strong>header</strong>: 参数作为HTTP请求头
-                                    <br />• <strong>cookie</strong>: 参数作为Cookie值
-                                    <br />• <strong>body</strong>: 参数作为请求体内容
+                                    • <strong>query</strong>: {locale.paramAsQueryString || 'Parameter as URL query string'}
+                                    <br />• <strong>path</strong>: {locale.paramAsPathVariable || 'Parameter as URL path variable'}
+                                    <br />• <strong>header</strong>: {locale.paramAsHttpHeader || 'Parameter as HTTP request header'}
+                                    <br />• <strong>cookie</strong>: {locale.paramAsCookieValue || 'Parameter as Cookie value'}
+                                    <br />• <strong>body</strong>: {locale.paramAsBodyContent || 'Parameter as request body content'}
                                 </div>
                             )}
                         </div>
@@ -452,7 +452,7 @@ const AdvancedConfig = ({
                                     color: '#1976d2',
                                 }}
                             >
-                                JSON请求体
+                                {locale.jsonRequestBody || 'JSON Request Body'}
                             </Button>
                             <Button
                                 type="normal"
@@ -466,7 +466,7 @@ const AdvancedConfig = ({
                                     color: '#7b1fa2',
                                 }}
                             >
-                                URL参数
+                                {locale.urlParameters || 'URL Parameters'}
                             </Button>
                             <Button
                                 type="normal"
@@ -480,7 +480,7 @@ const AdvancedConfig = ({
                                     color: '#388e3c',
                                 }}
                             >
-                                表单数据
+                                {locale.formData || 'Form Data'}
                             </Button>
                             <Button
                                 type="normal"
@@ -494,7 +494,7 @@ const AdvancedConfig = ({
                                     color: '#f57c00',
                                 }}
                             >
-                                自定义请求体
+                                {locale.customRequestBody || 'Custom Request Body'}
                             </Button>
                             <Button
                                 type="normal"
@@ -508,7 +508,7 @@ const AdvancedConfig = ({
                                     color: '#c2185b',
                                 }}
                             >
-                                参数位置-Path
+                                {locale.argsPositionPath || 'Args Position - Path'}
                             </Button>
                         </div>
                         <div
@@ -519,10 +519,9 @@ const AdvancedConfig = ({
                                 lineHeight: '1.4',
                             }}
                         >
-                            💡 点击按钮快速生成对应类型的配置模板，包含完整的请求和响应配置
+                            💡 {locale.quickGenerateTemplate || 'Click buttons to quickly generate corresponding configuration templates, including complete request and response configuration'}
                             <br />
-                            🔹 参数位置模式：通过 argsPosition 对象指定每个参数在请求中的位置（支持
-                            query/path/header/cookie/body）
+                            🔹 {locale.argsPositionMode || 'Args Position Mode: Specify the location of each parameter in the request through argsPosition object (supports query/path/header/cookie/body)'}
                         </div>
                     </div>
                 )}
@@ -607,9 +606,9 @@ const AdvancedConfig = ({
             <Form.Item
                 label={
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{locale.transparentAuth || '启用透明认证'}</span>
+                        <span>{locale.transparentAuth || 'Enable Transparent Auth'}</span>
                         <Tag color="orange" style={{ margin: 0, fontSize: '12px' }}>
-                            安全
+                            {locale.security || 'Security'}
                         </Tag>
                     </div>
                 }
@@ -622,8 +621,8 @@ const AdvancedConfig = ({
                             valueName: 'checked',
                             initValue: false,
                         })}
-                        checkedChildren={locale.enable || '启用'}
-                        unCheckedChildren={locale.disable || '禁用'}
+                        checkedChildren={locale.enable || 'Enable'}
+                        unCheckedChildren={locale.disable || 'Disable'}
                         isPreview={onlyEditRuntimeInfo}
                     />
                     <span
@@ -633,7 +632,7 @@ const AdvancedConfig = ({
                             fontSize: '14px',
                         }}
                     >
-                        {getValue('transparentAuth') ? '认证信息将透明传递' : '使用默认认证方式'}
+                        {getValue('transparentAuth') ? (locale.authInfoTransparent || 'Authentication information will be transparently passed') : (locale.useDefaultAuth || 'Use default authentication method')}
                     </span>
                 </div>
             </Form.Item>
@@ -651,7 +650,7 @@ const AdvancedConfig = ({
                             gap: '8px',
                         }}
                     >
-                        {locale.securitySchemes || '认证方案配置'}
+                        {locale.securitySchemes || 'Security Schemes Configuration'}
                     </h4>
 
                     <Row gutter={24}>
@@ -659,7 +658,7 @@ const AdvancedConfig = ({
                             <Form.Item
                                 label={
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span>{locale.backendAuth || '后端认证方式'}</span>
+                                        <span>{locale.backendAuth || 'Backend Authentication'}</span>
                                     </div>
                                 }
                                 style={{ marginBottom: '16px' }}
@@ -671,7 +670,7 @@ const AdvancedConfig = ({
                                         rules: [
                                             {
                                                 required: true,
-                                                message: locale.pleaseSelectSecurityScheme || '请选择认证方案',
+                                                message: locale.pleaseSelectSecurityScheme || 'Please select security scheme',
                                             },
                                         ],
                                     })}
@@ -681,7 +680,7 @@ const AdvancedConfig = ({
                                             value: scheme.id,
                                         })) || []
                                     }
-                                    placeholder={locale.pleaseSelectSecurityScheme || '请选择认证方案'}
+                                    placeholder={locale.pleaseSelectSecurityScheme || 'Please select security scheme'}
                                     isPreview={onlyEditRuntimeInfo}
                                     onChange={value => {
                                         setValue('securitySchemeId', value);
@@ -697,7 +696,7 @@ const AdvancedConfig = ({
                             <Form.Item
                                 label={
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span>{locale.clientAuth || '客户端认证方式'}</span>
+                                        <span>{locale.clientAuth || 'Client Authentication'}</span>
                                     </div>
                                 }
                                 style={{ marginBottom: '16px' }}
@@ -709,7 +708,7 @@ const AdvancedConfig = ({
                                         rules: [
                                             {
                                                 required: true,
-                                                message: locale.pleaseSelectSecurityScheme || '请选择认证方案',
+                                                message: locale.pleaseSelectSecurityScheme || 'Please select security scheme',
                                             },
                                         ],
                                     })}
@@ -719,7 +718,7 @@ const AdvancedConfig = ({
                                             value: scheme.id,
                                         })) || []
                                     }
-                                    placeholder={locale.pleaseSelectSecurityScheme || '请选择认证方案'}
+                                    placeholder={locale.pleaseSelectSecurityScheme || 'Please select security scheme'}
                                     isPreview={onlyEditRuntimeInfo}
                                     onChange={value => {
                                         setValue('clientSecuritySchemeId', value);

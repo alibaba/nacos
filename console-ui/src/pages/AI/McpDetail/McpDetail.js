@@ -214,14 +214,14 @@ class McpDetail extends React.Component {
       if (paramDef.description) {
         const descKey = `${nodeKey}-desc`;
         this.parameterMap.set(descKey, {
-          name: '描述',
+          name: this.props.locale?.description || 'Description',
           type: 'info',
           description: paramDef.description,
           isInfoNode: true,
         });
         children.push({
           key: descKey,
-          label: `描述: ${paramDef.description}`,
+          label: `${this.props.locale?.description || 'Description'}: ${paramDef.description}`,
           isLeaf: true,
         });
       }
@@ -229,14 +229,14 @@ class McpDetail extends React.Component {
       if (hasDefault) {
         const defaultKey = `${nodeKey}-default`;
         this.parameterMap.set(defaultKey, {
-          name: '默认值',
+          name: this.props.locale?.defaultValue || 'Default',
           type: 'info',
           description: JSON.stringify(paramDef.default),
           isInfoNode: true,
         });
         children.push({
           key: defaultKey,
-          label: `默认值: ${JSON.stringify(paramDef.default)}`,
+          label: `${this.props.locale?.defaultValue || 'Default'}: ${JSON.stringify(paramDef.default)}`,
           isLeaf: true,
         });
       }
@@ -245,14 +245,14 @@ class McpDetail extends React.Component {
         const enumValue = Array.isArray(paramDef.enum) ? paramDef.enum.join(', ') : paramDef.enum;
         const enumKey = `${nodeKey}-enum`;
         this.parameterMap.set(enumKey, {
-          name: '可选值',
+          name: this.props.locale?.enum || 'Enum',
           type: 'info',
           description: enumValue,
           isInfoNode: true,
         });
         children.push({
           key: enumKey,
-          label: `可选值: ${enumValue}`,
+          label: `${this.props.locale?.enum || 'Enum'}: ${enumValue}`,
           isLeaf: true,
         });
       }
@@ -260,14 +260,14 @@ class McpDetail extends React.Component {
       if (paramDef.format) {
         const formatKey = `${nodeKey}-format`;
         this.parameterMap.set(formatKey, {
-          name: '格式',
+          name: this.props.locale?.format || 'Format',
           type: 'info',
           description: paramDef.format,
           isInfoNode: true,
         });
         children.push({
           key: formatKey,
-          label: `格式: ${paramDef.format}`,
+          label: `${this.props.locale?.format || 'Format'}: ${paramDef.format}`,
           isLeaf: true,
         });
       }
@@ -284,14 +284,14 @@ class McpDetail extends React.Component {
         if (objectChildren.length > 0) {
           const propsKey = `${nodeKey}-properties`;
           this.parameterMap.set(propsKey, {
-            name: '属性',
+            name: this.props.locale?.properties || 'Properties',
             type: 'group',
-            description: '对象属性',
+            description: this.props.locale?.objectProperties || 'Object properties',
             isGroupNode: true,
           });
           children.push({
             key: propsKey,
-            label: '属性',
+            label: this.props.locale?.properties || 'Properties',
             children: objectChildren,
             isLeaf: false,
           });
@@ -314,14 +314,14 @@ class McpDetail extends React.Component {
           if (itemChildren.length > 0) {
             const itemPropsKey = `${nodeKey}-item-properties`;
             this.parameterMap.set(itemPropsKey, {
-              name: '数组项属性',
+              name: this.props.locale?.arrayItemProperties || 'Array item properties',
               type: 'group',
-              description: '数组项的属性',
+              description: this.props.locale?.arrayItemPropertiesDesc || 'Properties of array items',
               isGroupNode: true,
             });
             arrayItemChildren.push({
               key: itemPropsKey,
-              label: '数组项属性',
+              label: this.props.locale?.arrayItemProperties || 'Array item properties',
               children: itemChildren,
               isLeaf: false,
             });
@@ -330,26 +330,26 @@ class McpDetail extends React.Component {
           // 基本类型的数组项
           const itemInfo = [];
           if (paramDef.items.type) {
-            itemInfo.push(`类型: ${paramDef.items.type}`);
+            itemInfo.push(`${this.props.locale?.type || 'Type'}: ${paramDef.items.type}`);
           }
           if (paramDef.items.description) {
-            itemInfo.push(`描述: ${paramDef.items.description}`);
+            itemInfo.push(`${this.props.locale?.description || 'Description'}: ${paramDef.items.description}`);
           }
           if (paramDef.items.format) {
-            itemInfo.push(`格式: ${paramDef.items.format}`);
+            itemInfo.push(`${this.props.locale?.format || 'Format'}: ${paramDef.items.format}`);
           }
 
           if (itemInfo.length > 0) {
             const itemInfoKey = `${nodeKey}-item-info`;
             this.parameterMap.set(itemInfoKey, {
-              name: '数组项信息',
+              name: this.props.locale?.arrayItemInfo || 'Array item info',
               type: 'info',
               description: itemInfo.join(', '),
               isInfoNode: true,
             });
             arrayItemChildren.push({
               key: itemInfoKey,
-              label: `数组项信息: ${itemInfo.join(', ')}`,
+              label: `${this.props.locale?.arrayItemInfo || 'Array item info'}: ${itemInfo.join(', ')}`,
               isLeaf: true,
             });
           }
@@ -358,14 +358,14 @@ class McpDetail extends React.Component {
         if (arrayItemChildren.length > 0) {
           const itemsKey = `${nodeKey}-items`;
           this.parameterMap.set(itemsKey, {
-            name: '数组项定义',
+            name: this.props.locale?.arrayItemDefinition || 'Array item definition',
             type: 'group',
-            description: '数组项的定义',
+            description: this.props.locale?.arrayItemDefinitionDesc || 'Definition of array items',
             isGroupNode: true,
           });
           children.push({
             key: itemsKey,
-            label: '数组项定义',
+            label: this.props.locale?.arrayItemDefinition || 'Array item definition',
             children: arrayItemChildren,
             isLeaf: false,
           });
@@ -403,10 +403,10 @@ class McpDetail extends React.Component {
         document.body.removeChild(textArea);
       }
 
-      Message.success('配置已复制到剪贴板');
+      Message.success(this.props.locale?.Common?.configCopiedToClipboard || 'Configuration copied to clipboard');
     } catch (err) {
-      console.error('复制失败:', err);
-      Message.error('复制失败，请手动复制');
+      console.error('Copy failed:', err);
+      Message.error(this.props.locale?.Common?.copyFailedManual || 'Copy failed, please copy manually');
     }
   };
 
@@ -720,14 +720,14 @@ class McpDetail extends React.Component {
                     >
                       <div className="mcp-param-toggle-label">
                         <span className="mcp-param-toggle-label-runtime">
-                          {locale.runtimeArguments || '运行时参数'}
+                          {locale.runtimeArguments || 'Runtime Arguments'}
                         </span>
                         <span className="mcp-param-toggle-count">({runtimeArgsCount})</span>
                       </div>
                       <span className="mcp-param-toggle-arrow-runtime">
                         {this.state.parameterContainersExpanded[index]?.runtime
-                          ? '收起 ▲'
-                          : '展开 ▼'}
+                          ? (locale.collapse || 'Collapse') + ' ▲'
+                          : (locale.expand || 'Expand') + ' ▼'}
                       </span>
                     </div>
                     {this.state.parameterContainersExpanded[index]?.runtime && (
@@ -743,13 +743,13 @@ class McpDetail extends React.Component {
                           >
                             <div className="mcp-param-row">
                               <span className={`mcp-param-type-badge mcp-param-type-${arg.type}`}>
-                                {arg.type === 'positional' ? '位置参数' : '命名参数'}
+                                {arg.type === 'positional' ? (locale.positionalArg || 'Positional') : (locale.namedArg || 'Named')}
                               </span>
                               <span className="mcp-monospace-min-width">
                                 {arg.value || arg.default || '<未设置>'}
                               </span>
                               <span className="mcp-description-small">
-                                {arg.description || '无描述'}
+                                {arg.description || locale.noDescription || 'No description'}
                               </span>
                             </div>
                           </div>
@@ -768,14 +768,14 @@ class McpDetail extends React.Component {
                     >
                       <div className="mcp-param-toggle-label">
                         <span className="mcp-param-toggle-label-package">
-                          {locale.packageArguments || '包参数'}
+                          {locale.packageArguments || 'Package Arguments'}
                         </span>
                         <span className="mcp-param-toggle-count">({packageArgsCount})</span>
                       </div>
                       <span className="mcp-param-toggle-arrow-package">
                         {this.state.parameterContainersExpanded[index]?.package
-                          ? '收起 ▲'
-                          : '展开 ▼'}
+                          ? (locale.collapse || 'Collapse') + ' ▲'
+                          : (locale.expand || 'Expand') + ' ▼'}
                       </span>
                     </div>
                     {this.state.parameterContainersExpanded[index]?.package && (
@@ -791,7 +791,7 @@ class McpDetail extends React.Component {
                           >
                             <div className="mcp-param-row">
                               <span className={`mcp-param-type-badge mcp-param-type-${arg.type}`}>
-                                {arg.type === 'positional' ? '位置参数' : '命名参数'}
+                                {arg.type === 'positional' ? (locale.positionalArg || 'Positional') : (locale.namedArg || 'Named')}
                               </span>
                               <span className="mcp-monospace-min-width">
                                 {arg.name
@@ -799,7 +799,7 @@ class McpDetail extends React.Component {
                                   : arg.value || arg.default || '<未设置>'}
                               </span>
                               <span className="mcp-description-small">
-                                {arg.description || '无描述'}
+                                {arg.description || locale.noDescription || 'No description'}
                               </span>
                             </div>
                           </div>
@@ -818,12 +818,12 @@ class McpDetail extends React.Component {
                     >
                       <div className="mcp-param-toggle-label">
                         <span className="mcp-param-toggle-label-env">
-                          {locale.environmentVariables || '环境变量'}
+                          {locale.environmentVariables || 'Environment Variables'}
                         </span>
                         <span className="mcp-param-toggle-count">({envVarsCount})</span>
                       </div>
                       <span className="mcp-param-toggle-arrow-env">
-                        {this.state.parameterContainersExpanded[index]?.env ? '收起 ▲' : '展开 ▼'}
+                        {this.state.parameterContainersExpanded[index]?.env ? (locale.collapse || 'Collapse') + ' ▲' : (locale.expand || 'Expand') + ' ▼'}
                       </span>
                     </div>
                     {this.state.parameterContainersExpanded[index]?.env && (
@@ -831,39 +831,39 @@ class McpDetail extends React.Component {
                         {environmentVariables.map((envVar, envIndex) => (
                           <div key={envIndex} className="mcp-env-grid">
                             {/* 变量名标签 */}
-                            <span className="mcp-env-label">变量名:</span>
+                            <span className="mcp-env-label">{locale.variableName || 'Name'}:</span>
                             {/* 变量名值 */}
                             <span className="mcp-monospace-value">{envVar.name}</span>
 
                             {/* 变量值标签 */}
-                            <span className="mcp-env-label">变量值:</span>
+                            <span className="mcp-env-label">{locale.variableValue || 'Value'}:</span>
                             {/* 变量值 */}
                             <span className="mcp-monospace-lighter">
-                              {envVar.value || envVar.default || '<未设置>'}
+                              {envVar.value || envVar.default || '<' + (locale.notSet || 'Not set') + '>'}
                             </span>
 
                             {/* 标签标签 */}
-                            <span className="mcp-env-label">标签:</span>
+                            <span className="mcp-env-label">{locale.tags || 'Tags'}:</span>
                             {/* 标签值 */}
                             <div className="mcp-env-tags">
                               {(envVar.isRequired || envVar.is_required) && (
-                                <span className="mcp-badge-required">必填</span>
+                                <span className="mcp-badge-required">{locale.required || 'Required'}</span>
                               )}
                               {(envVar.isSecret || envVar.is_secret) && (
-                                <span className="mcp-badge-secret">敏感</span>
+                                <span className="mcp-badge-secret">{locale.secret || 'Secret'}</span>
                               )}
                               {!(
                                 envVar.isRequired ||
                                 envVar.is_required ||
                                 envVar.isSecret ||
                                 envVar.is_secret
-                              ) && <span className="mcp-badge-no-label">无标签</span>}
+                              ) && <span className="mcp-badge-no-label">{locale.noTags || 'No tags'}</span>}
                             </div>
 
                             {/* 描述标签 */}
                             {envVar.description && (
                               <>
-                                <span className="mcp-env-label">描述:</span>
+                                <span className="mcp-env-label">{locale.description || 'Description'}:</span>
                                 {/* 描述值 */}
                                 <span className="mcp-env-description">{envVar.description}</span>
                               </>
@@ -1478,7 +1478,7 @@ class McpDetail extends React.Component {
 
                                   {/* 依赖详情 */}
                                   <div>
-                                    <h4 className="mcp-header-title">依赖详情</h4>
+                                    <h4 className="mcp-header-title">{locale.dependencyDetails || 'Dependency Details'}</h4>
                                     {this.renderPackageDetails(packageDef, index)}
                                   </div>
                                 </div>

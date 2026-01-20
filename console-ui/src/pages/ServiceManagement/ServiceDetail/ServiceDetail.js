@@ -90,7 +90,7 @@ class ServiceDetail extends React.Component {
             clusters: Array.isArray(clusters) ? clusters : [],
           });
         } else {
-          Message.error(res.message || '请求失败');
+          Message.error(res.message || locale.Common?.requestFailed || 'Request failed');
         }
       },
       error: e => Message.error(e.responseText || 'error'),

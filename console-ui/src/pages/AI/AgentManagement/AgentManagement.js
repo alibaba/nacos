@@ -421,19 +421,19 @@ class AgentManagement extends React.Component {
             )}
           />
           <Table.Column
-            title="能力列表"
+            title={locale.capabilities || 'Capabilities'}
             dataIndex="capabilities"
             cell={(value, index, record) => {
               const capabilities = [];
               if (record.capabilities) {
                 if (record.capabilities.streaming) {
-                  capabilities.push('流式传输');
+                  capabilities.push(locale.streaming || 'Streaming');
                 }
                 if (record.capabilities.stateTransitionHistory) {
-                  capabilities.push('状态历史');
+                  capabilities.push(locale.stateTransitionHistory || 'State History');
                 }
                 if (record.capabilities.pushNotifications) {
-                  capabilities.push('推送通知');
+                  capabilities.push(locale.pushNotifications || 'Push Notifications');
                 }
               }
               return capabilities.length > 0 ? (
@@ -450,7 +450,7 @@ class AgentManagement extends React.Component {
             }}
           />
           <Table.Column
-            title="技能列表"
+            title={locale.skillsList || 'Skills'}
             dataIndex="skills"
             cell={(value, index, record) => {
               if (!record.skills || !Array.isArray(record.skills) || record.skills.length === 0) {

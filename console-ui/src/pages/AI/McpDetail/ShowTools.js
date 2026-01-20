@@ -89,14 +89,14 @@ const ShowTools = props => {
       if (paramDef.description) {
         const descKey = `${nodeKey}-desc`;
         targetMapRef.current.set(descKey, {
-          name: '描述',
+          name: locale?.description || 'Description',
           type: 'info',
           description: paramDef.description,
           isInfoNode: true,
         });
         children.push({
           key: descKey,
-          label: `描述: ${truncateText(paramDef.description, 64)}`,
+          label: `${locale?.description || 'Description'}: ${truncateText(paramDef.description, 64)}`,
           isLeaf: true,
         });
       }
@@ -104,14 +104,14 @@ const ShowTools = props => {
       if (hasDefault) {
         const defaultKey = `${nodeKey}-default`;
         targetMapRef.current.set(defaultKey, {
-          name: '默认值',
+          name: locale?.defaultValue || 'Default',
           type: 'info',
           description: JSON.stringify(paramDef.default),
           isInfoNode: true,
         });
         children.push({
           key: defaultKey,
-          label: `默认值: ${JSON.stringify(paramDef.default)}`,
+          label: `${locale?.defaultValue || 'Default'}: ${JSON.stringify(paramDef.default)}`,
           isLeaf: true,
         });
       }
@@ -120,14 +120,14 @@ const ShowTools = props => {
         const enumValue = Array.isArray(paramDef.enum) ? paramDef.enum.join(', ') : paramDef.enum;
         const enumKey = `${nodeKey}-enum`;
         targetMapRef.current.set(enumKey, {
-          name: '可选值',
+          name: locale?.enum || 'Enum',
           type: 'info',
           description: enumValue,
           isInfoNode: true,
         });
         children.push({
           key: enumKey,
-          label: `可选值: ${enumValue}`,
+          label: `${locale?.enum || 'Enum'}: ${enumValue}`,
           isLeaf: true,
         });
       }
@@ -135,14 +135,14 @@ const ShowTools = props => {
       if (paramDef.format) {
         const formatKey = `${nodeKey}-format`;
         targetMapRef.current.set(formatKey, {
-          name: '格式',
+          name: locale?.format || 'Format',
           type: 'info',
           description: paramDef.format,
           isInfoNode: true,
         });
         children.push({
           key: formatKey,
-          label: `格式: ${paramDef.format}`,
+          label: `${locale?.format || 'Format'}: ${paramDef.format}`,
           isLeaf: true,
         });
       }
@@ -160,14 +160,14 @@ const ShowTools = props => {
         if (objectChildren.length > 0) {
           const propsKey = `${nodeKey}-properties`;
           targetMapRef.current.set(propsKey, {
-            name: '属性',
+            name: locale?.properties || 'Properties',
             type: 'group',
-            description: '对象属性',
+            description: locale?.objectProperties || 'Object properties',
             isGroupNode: true,
           });
           children.push({
             key: propsKey,
-            label: '属性',
+            label: locale?.properties || 'Properties',
             children: objectChildren,
             isLeaf: false,
           });
@@ -216,21 +216,21 @@ const ShowTools = props => {
           // 如果数组项是基本类型
           else {
             const itemInfo = [];
-            if (itemDef.type) itemInfo.push(`类型: ${itemDef.type}`);
-            if (itemDef.description) itemInfo.push(`描述: ${itemDef.description}`);
-            if (itemDef.format) itemInfo.push(`格式: ${itemDef.format}`);
+            if (itemDef.type) itemInfo.push(`${locale?.type || 'Type'}: ${itemDef.type}`);
+            if (itemDef.description) itemInfo.push(`${locale?.description || 'Description'}: ${itemDef.description}`);
+            if (itemDef.format) itemInfo.push(`${locale?.format || 'Format'}: ${itemDef.format}`);
 
             if (itemInfo.length > 0) {
               const itemInfoKey = `${itemKey}-info`;
               targetMapRef.current.set(itemInfoKey, {
-                name: '数组项信息',
+                name: locale?.arrayItemInfo || 'Array item info',
                 type: 'info',
                 description: itemInfo.join(', '),
                 isInfoNode: true,
               });
               subChildren.push({
                 key: itemInfoKey,
-                label: `数组项信息: ${itemInfo.join(', ')}`,
+                label: `${locale?.arrayItemInfo || 'Array item info'}: ${itemInfo.join(', ')}`,
                 isLeaf: true,
               });
             }
@@ -349,7 +349,7 @@ const ShowTools = props => {
       setOpenApiDialogVisible(false);
     } catch (error) {
       Message.error(locale.fileInvalidFormat + ': ' + error.message);
-      console.error('导入失败:', error);
+      console.error('Import failed:', error);
     }
   };
 
@@ -507,11 +507,11 @@ const ShowTools = props => {
                           <span
                             className={`tool-status-badge ${isOnline ? 'enabled' : 'disabled'}`}
                           >
-                            {isOnline ? '启用' : '禁用'}
+                            {isOnline ? (locale?.enabled || 'Enabled') : (locale?.disabled || 'Disabled')}
                           </span>
                           {tool.inputSchema?.properties && (
                             <span className="tool-param-count">
-                              {Object.keys(tool.inputSchema.properties).length} 个参数
+                              {Object.keys(tool.inputSchema.properties).length} {locale?.parameters || 'parameters'}
                             </span>
                           )}
                         </div>
@@ -855,18 +855,18 @@ const ShowTools = props => {
                                     </h4>
                                     <div className="content-box">
                                       <div className="kv-row">
-                                        <span className="kv-label">启用状态: </span>
+                                        <span className="kv-label">{locale?.enableStatus || 'Enable Status'}: </span>
                                         <span
                                           className={`kv-value ${
                                             templateData.security.passthrough ? 'green' : ''
                                           }`}
                                         >
-                                          {templateData.security.passthrough ? '已启用' : '未启用'}
+                                          {templateData.security.passthrough ? (locale?.enabled || 'Enabled') : (locale?.disabled || 'Disabled')}
                                         </span>
                                       </div>
                                       {templateData.security.id && (
                                         <div className="kv-row">
-                                          <span className="kv-label">客户端认证方式: </span>
+                                          <span className="kv-label">{locale?.clientAuthMethod || 'Client Auth Method'}: </span>
                                           <span className="kv-value blue">
                                             {templateData.security.id}
                                           </span>
@@ -874,7 +874,7 @@ const ShowTools = props => {
                                       )}
                                       {templateData.security.type && (
                                         <div className="kv-row">
-                                          <span className="kv-label">认证类型: </span>
+                                          <span className="kv-label">{locale?.authType || 'Auth Type'}: </span>
                                           <span className="kv-value">
                                             {templateData.security.type}
                                           </span>
@@ -893,7 +893,7 @@ const ShowTools = props => {
                                     <div className="content-box light-blue">
                                       {templateData.requestTemplate.method && (
                                         <div className="kv-row">
-                                          <span className="kv-label">HTTP 方法: </span>
+                                          <span className="kv-label">{locale?.httpMethod || 'HTTP Method'}: </span>
                                           <span
                                             className={`http-method-badge ${
                                               String(
@@ -921,7 +921,7 @@ const ShowTools = props => {
                                       )}
                                       {templateData.requestTemplate.url && (
                                         <div className="kv-row">
-                                          <span className="kv-label">请求路径: </span>
+                                          <span className="kv-label">{locale?.requestPath || 'Request Path'}: </span>
                                           <span className="url-chip">
                                             {templateData.requestTemplate.url}
                                           </span>
@@ -929,7 +929,7 @@ const ShowTools = props => {
                                       )}
                                       {templateData.requestTemplate.security && (
                                         <div className="kv-row">
-                                          <span className="kv-label">后端认证方式: </span>
+                                          <span className="kv-label">{locale?.backendAuthMethod || 'Backend Auth Method'}: </span>
                                           <span className="kv-value orange">
                                             {templateData.requestTemplate.security.id}
                                           </span>
@@ -1033,7 +1033,7 @@ const ShowTools = props => {
                                         if (otherFields.length > 0) {
                                           return (
                                             <div>
-                                              <div className="other-config-title">其他配置:</div>
+                                              <div className="other-config-title">{locale?.otherConfig || 'Other Config'}:</div>
                                               {otherFields.map(field => (
                                                 <div key={field} className="show-tools-mb-6">
                                                   <span className="other-config-key">
@@ -1061,7 +1061,7 @@ const ShowTools = props => {
                                         !templateData.responseTemplate.prependBody &&
                                         !templateData.responseTemplate.appendBody &&
                                         Object.keys(templateData.responseTemplate).length === 0 && (
-                                          <div className="empty-tip">暂无响应模板配置</div>
+                                          <div className="empty-tip">{locale?.noResponseTemplateConfig || 'No response template configuration'}</div>
                                         )}
                                     </div>
                                   </div>
