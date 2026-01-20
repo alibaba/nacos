@@ -115,7 +115,7 @@ class ServiceList extends React.Component {
         this.setState({
           dataSource: [],
           total: 0,
-          currentPage: 0,
+          currentPage: 1,
           loading: false,
         }),
     });
