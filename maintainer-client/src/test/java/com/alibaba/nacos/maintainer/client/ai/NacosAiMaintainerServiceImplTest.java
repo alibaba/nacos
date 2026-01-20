@@ -284,7 +284,7 @@ public class NacosAiMaintainerServiceImplTest {
         mockRestResult.setData(JacksonUtils.toJson(Result.success(expected)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         
-        AgentCardDetailInfo actual = aiMaintainerService.getAgentCard("testAgent", "public", "url");
+        AgentCardDetailInfo actual = aiMaintainerService.getAgentCard("testAgent", "public", "url", "");
         assertNotNull(actual);
         assertEquals("testAgent", actual.getName());
         assertEquals("1.0.0", actual.getVersion());

@@ -101,7 +101,23 @@ public interface A2aMaintainerService {
      * @return agent card
      * @throws NacosException if the agent get fails due to invalid input or internal error
      */
-    AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType)
+    default AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType)
+            throws NacosException {
+        return getAgentCard(agentName, namespaceId, registrationType, StringUtils.EMPTY);
+    }
+    
+    
+    /**
+     * Gets agent card.
+     *
+     * @param agentName        the agent name
+     * @param namespaceId      the namespace id
+     * @param registrationType the registration type
+     * @param version          the version
+     * @return the agent card
+     * @throws NacosException the nacos exception
+     */
+    AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType, String version)
             throws NacosException;
     
     /**
