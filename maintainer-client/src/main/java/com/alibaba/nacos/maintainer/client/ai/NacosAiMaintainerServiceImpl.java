@@ -228,7 +228,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType)
+    public AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType, String version)
             throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
@@ -236,6 +236,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         params.put("agentName", agentName);
         params.put("namespaceId", namespaceId);
         params.put("registrationType", registrationType);
+        params.put("version", version);
         
         HttpRequest request = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET).setParamValue(params)
                 .setPath(Constants.AdminApiPath.AI_AGENT_ADMIN_PATH).build();
