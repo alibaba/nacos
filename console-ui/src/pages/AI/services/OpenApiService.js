@@ -2,29 +2,29 @@
 import swagger2openapi from 'swagger2openapi';
 import YAML from 'js-yaml';
 
-// 解析 $ref 引用的辅助函数
+// Helper function to resolve $ref references
 const resolveRefs = (obj, root, visited = new Set()) => {
     if (!obj || typeof obj !== 'object') {
         return obj;
     }
 
-    // 处理数组
+    // Handle arrays
     if (Array.isArray(obj)) {
         return obj.map(item => resolveRefs(item, root, visited));
     }
 
-    // 处理 $ref 引用
+    // Handle $ref references
     if (obj.$ref && typeof obj.$ref === 'string') {
-        // 检查循环引用
+        // Check for circular references
         if (visited.has(obj.$ref)) {
-            console.warn('检测到循环引用:', obj.$ref);
+            console.warn('Circular reference detected:', obj.$ref);
             return { error: 'Circular reference detected' };
         }
 
-        // 解析引用路径
+        // Parse reference path
         const refPath = obj.$ref;
 
-        // 处理内部引用 (#/components/schemas/xxx)
+        // Handle internal references (#/components/schemas/xxx)
         if (refPath.startsWith('#/')) {
             const pathParts = refPath.substring(2).split('/');
             let refObj = root;
@@ -33,24 +33,24 @@ const resolveRefs = (obj, root, visited = new Set()) => {
                 if (refObj && typeof refObj === 'object' && refObj[part] !== undefined) {
                     refObj = refObj[part];
                 } else {
-                    console.warn('无法解析引用路径:', refPath);
-                    return obj; // 返回原始引用，避免破坏数据
+                    console.warn('Unable to resolve reference path:', refPath);
+                    return obj; // Return original reference to avoid data corruption
                 }
             }
 
-            // 递归解析引用的对象，添加到访问记录中
+            // Recursively resolve referenced object, add to visited set
             visited.add(refPath);
             const resolved = resolveRefs(refObj, root, new Set(visited));
             visited.delete(refPath);
             return resolved;
         }
 
-        // 其他类型的引用暂时返回原始对象
-        console.warn('不支持的引用类型:', refPath);
+        // For other types of references, temporarily return original object
+        console.warn('Unsupported reference type:', refPath);
         return obj;
     }
 
-    // 递归处理对象的所有属性
+    // Recursively process all properties of object
     const result = {};
     for (const [key, value] of Object.entries(obj)) {
         result[key] = resolveRefs(value, root, visited);
@@ -58,15 +58,15 @@ const resolveRefs = (obj, root, visited = new Set()) => {
     return result;
 };
 
-// 校验格式并解析 OpenAPI
+// Validate format and parse OpenAPI
 export const parseOpenAPI = async content => {
     try {
-        // 自动识别 JSON/YAML 格式
+        // Automatically detect JSON/YAML format
         let parsedContent;
         try {
             parsedContent = JSON.parse(content);
         } catch (jsonError) {
-            // 尝试 YAML 解析
+            // Try YAML parsing
             try {
                 parsedContent = YAML.load(content);
             } catch (yamlError) {
@@ -79,21 +79,21 @@ export const parseOpenAPI = async content => {
             return converted.openapi;
         }
 
-        // 验证 OpenAPI 3.x 文档
+        // Validate OpenAPI 3.x document
         if (parsedContent.openapi) {
-            // 可以添加更多验证逻辑
+            // More validation logic can be added
             return parsedContent;
         }
     } catch (e) {
-        console.error('解析失败:', e);
+        console.error('Parse failed:', e);
         throw new Error('File format invalid');
     }
 };
 
-// 从 OpenAPI 提取工具逻辑 (之前在 Swagger2Tools.js 中, 但 ShowTools.js 也有部分转换逻辑)
-// 这里的逻辑主要是 ShowTools.js 中 handleConfirm 部分的复杂转换
+// Extract tools logic from OpenAPI (previously in Swagger2Tools.js, but ShowTools.js also has partial conversion logic)
+// The logic here is mainly the complex conversion part of handleConfirm in ShowTools.js
 export const transformToolsFromConfig = (config) => {
-    // 提取 OpenAPI 顶层的 securitySchemes
+    // Extract top-level securitySchemes from OpenAPI
     const securitySchemes = Array.isArray(config?.server?.securitySchemes)
         ? config.server.securitySchemes
         : [];
@@ -133,16 +133,16 @@ export const transformToolsFromConfig = (config) => {
         },
     }));
 
-    // 在生成最终 specification 之前：将 argsPosition 合并进 requestTemplate
+    // Before generating final specification: merge argsPosition into requestTemplate
     try {
-        // 建立一个快速索引：toolName -> args 数组（含类型、position）
+        // Build a quick index: toolName -> args array (with type, position)
         const toolArgsByName = config.tools.reduce((acc, t) => {
             acc[t.name] = t.args || [];
             return acc;
         }, {});
 
         const ensureHeadersArray = headers => {
-            // 规范化 headers 为数组 [{key, value}, ...]
+            // Normalize headers to array format [{key, value}, ...]
             if (!headers) return [];
             if (Array.isArray(headers)) return headers;
             if (typeof headers === 'object') {
@@ -168,9 +168,9 @@ export const transformToolsFromConfig = (config) => {
             const argsPos = tmpl.argsPosition || {};
             let url = tmpl.requestTemplate.url || '';
             let headers = ensureHeadersArray(tmpl.requestTemplate.headers);
-            let body = tmpl.requestTemplate.body; // 可能为字符串或对象，保留原样优先
+            let body = tmpl.requestTemplate.body; // May be string or object, keep as is priority
 
-            // 收集各类参数名
+            // Collect parameter names by type
             const allArgs = toolArgsByName[toolName] || [];
             const byName = allArgs.reduce((acc, a) => {
                 acc[a.name] = a;
@@ -184,45 +184,45 @@ export const transformToolsFromConfig = (config) => {
             const cookieArgs = entries.filter(([, pos]) => pos === 'cookie').map(([n]) => n);
             const bodyArgs = entries.filter(([, pos]) => pos === 'body').map(([n]) => n);
 
-            // 标记是否需要保留 argsPosition（当依赖 argsTo* flags 时需要）
+            // Mark whether to keep argsPosition (needed when depending on argsTo* flags)
             let shouldKeepArgsPosition = false;
 
-            // 1) 处理 path 占位：将 {name} 替换为 {{urlqueryescape .args.name}}
+            // 1) Handle path placeholders: replace {name} with {{urlqueryescape .args.name}}
             pathArgs.forEach(name => {
                 const re = new RegExp(
                     '\\{' + name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&') + '\\}',
                     'g'
                 );
-                // 不使用模板函数，直接插入占位 {{.args.name}}
+                // Don't use template function, directly insert placeholder {{.args.name}}
                 url = url.replace(re, `{{.args.${name}}}`);
             });
 
-            // 统计总体位置
+            // Count overall positions
             const totalArgsCount = entries.length;
             const allInQuery = totalArgsCount > 0 && queryArgs.length === totalArgsCount;
             const allInBody = totalArgsCount > 0 && bodyArgs.length === totalArgsCount;
 
-            // 2) 处理 query：当全部在 query 时，使用 argsToUrlParam 标记，不拼接到 URL
+            // 2) Handle query: when all in query, use argsToUrlParam flag, don't append to URL
             if (allInQuery) {
                 tmpl.requestTemplate.argsToUrlParam = true;
             } else if (queryArgs.length > 0) {
-                // 混合场景下仍然把 query 参数拼接到 URL
+                // In mixed scenarios, still append query parameters to URL
                 const pairs = queryArgs.map(name => `${name}={{.args.${name}}}`);
                 const connector = url.includes('?') ? '&' : '?';
                 url = url + (pairs.length > 0 ? connector + pairs.join('&') : '');
             }
 
-            // 3) 处理 header：为每个 header 参数添加 header 条目
+            // 3) Handle header: add header entry for each header parameter
             if (headerArgs.length > 0) {
                 headerArgs.forEach(name => {
                     if (!hasHeaderKey(headers, name)) {
-                        // 不使用 toString，直接占位
+                        // Don't use toString, directly use placeholder
                         headers.push({ key: name, value: `{{.args.${name}}}` });
                     }
                 });
             }
 
-            // 4) 处理 cookie：将所有 cookie 参数合并为一个 Cookie 头
+            // 4) Handle cookie: merge all cookie parameters into one Cookie header
             if (cookieArgs.length > 0) {
                 const cookiePairs = cookieArgs.map(name => `${name}={{.args.${name}}}`);
                 const cookieValue = cookiePairs.join('; ');
@@ -236,9 +236,9 @@ export const transformToolsFromConfig = (config) => {
                 }
             }
 
-            // 5) 处理 body：
-            //    - 如果全部在 body：根据 Content-Type 设置 argsToJsonBody/argsToFormBody，不直接生成 body
-            //    - 否则（混合场景）：若未显式提供 body/argsTo*，再根据 Content-Type 生成
+            // 5) Handle body:
+            //    - If all in body: set argsToJsonBody/argsToFormBody based on Content-Type, don't generate body directly
+            //    - Otherwise (mixed scenario): if body/argsTo* not explicitly provided, generate based on Content-Type
             const hasExplicit =
                 body !== undefined ||
                 tmpl.requestTemplate.argsToJsonBody === true ||
@@ -248,7 +248,7 @@ export const transformToolsFromConfig = (config) => {
             if (bodyArgs.length > 0) {
                 const ct = getContentType(headers);
                 if (allInBody) {
-                    // 全部在 body：通过标记控制
+                    // All in body: control through flags
                     if (
                         ct.includes('application/x-www-form-urlencoded') ||
                         ct.includes('multipart/form-data')
@@ -261,7 +261,7 @@ export const transformToolsFromConfig = (config) => {
                         }
                     }
                 } else if (!hasExplicit) {
-                    // 混合场景且未显式指定：保持原有自动生成策略
+                    // Mixed scenario and not explicitly specified: maintain original auto-generation strategy
                     if (ct.includes('application/x-www-form-urlencoded')) {
                         const formPairs = bodyArgs.map(name => `${name}={{.args.${name}}}`);
                         body = formPairs.join('&');
@@ -295,19 +295,19 @@ export const transformToolsFromConfig = (config) => {
                 }
             }
 
-            // 写回模板，并移除 argsPosition 字段
+            // Write back to template and remove argsPosition field
             tmpl.requestTemplate.url = url;
             if (headers.length > 0) {
                 tmpl.requestTemplate.headers = headers;
             }
             if (body !== undefined) {
                 tmpl.requestTemplate.body = body;
-                // 当生成了明确的 body 时，移除 flags（避免冲突）
+                // When explicit body is generated, remove flags (avoid conflicts)
                 delete tmpl.requestTemplate.argsToJsonBody;
                 delete tmpl.requestTemplate.argsToUrlParam;
                 delete tmpl.requestTemplate.argsToFormBody;
             } else {
-                // 未生成明确 body，但存在 bodyArgs 且 Content-Type 为表单时，设置表单标记
+                // No explicit body generated, but bodyArgs exist and Content-Type is form, set form flag
                 const ct2 = getContentType(headers);
                 if (!allInBody) {
                     if (bodyArgs.length > 0 && ct2.includes('application/x-www-form-urlencoded')) {
@@ -316,14 +316,14 @@ export const transformToolsFromConfig = (config) => {
                     }
                 }
             }
-            // 仅在不依赖 flags 的情况下删除 argsPosition；
-            // 若全部在 query/body 已由 flags 控制，也可删除
+            // Only delete argsPosition when not depending on flags;
+            // If all in query/body already controlled by flags, can also delete
             if (!shouldKeepArgsPosition || allInQuery || allInBody) {
                 delete tmpl.argsPosition;
             }
         });
     } catch (e) {
-        // 转换失败不影响导入流程，仅记录日志
+        // Conversion failure does not affect import process, only log
         console.warn('argsPosition to requestTemplate transform failed:', e);
     }
 

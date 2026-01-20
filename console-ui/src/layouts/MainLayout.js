@@ -67,7 +67,7 @@ class MainLayout extends React.Component {
   }
 
   navTo(url) {
-    // 为不同页面定义需要保留的参数
+    // Define parameters to preserve for different pages
     const pageParamMap = {
       '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
       '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
@@ -75,13 +75,13 @@ class MainLayout extends React.Component {
       '/serviceManagement': ['namespace', 'namespaceShowName'],
     };
 
-    // 获取当前页面需要保留的参数
+    // Get parameters to preserve for current page
     const allowedParams = pageParamMap[url] || ['namespace', 'namespaceShowName'];
 
-    // 创建新的URL参数
+    // Create new URL parameters
     let urlSearchParams = new URLSearchParams();
 
-    // 只保留允许的参数
+    // Only keep allowed parameters
     const currentParams = new URLSearchParams(this.props.location.search);
     allowedParams.forEach(param => {
       if (param === 'namespace') {

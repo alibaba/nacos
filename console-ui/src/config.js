@@ -21,11 +21,11 @@ module.exports = {
   TIMEDURINT: 2000,
   is_preview: process.env.NODE_ENV === 'development',
   projectName: 'nacos',
-  defaultLanguage: 'zh-cn',
+  defaultLanguage: 'en-us',
   'en-us': {
     pageMenu: [
       {
-        key: 'home', // 用作顶部菜单的选中
+        key: 'home', // Used for top menu selection
         text: 'HOME',
         link: 'https://https://nacos.io/en/',
       },

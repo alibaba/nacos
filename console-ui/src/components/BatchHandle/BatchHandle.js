@@ -125,7 +125,7 @@ class BatchHandle extends React.Component {
         onCancel={this.closeDialog.bind(this)}
         onClose={this.closeDialog.bind(this)}
         onOk={this.onSubmit.bind(this)}
-        title={'批量操作'}
+        title={'Batch Operations'}
       >
         <div>
           <Transfer

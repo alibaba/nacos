@@ -60,7 +60,7 @@ const AiControlMenu = {
 };
 
 /**
- * 权限控制相关
+ * Authority control related
  */
 const authorityControlMenu = {
   key: 'authorityControl',

@@ -15,7 +15,7 @@
  */
 import { getParams, request } from './globalLib';
 
-window.edasprefix = 'acm'; // 固定的edas网关需要的项目名
+window.edasprefix = 'acm'; // Fixed project name required by EDAS gateway
 
 export const isParentEdas = () =>
   window.parent && window.parent.location.host.indexOf('edas') !== -1;
@@ -32,7 +32,7 @@ request.middleWare((_config = {}) => {
   if (!namespace) {
     namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
   }
-  // 如果url中已经有 namespaceId, 不在data中添加namespaceId
+  // If namespaceId already exists in url, don't add it to data
   config.data =
     url.indexOf('namespaceId=') === -1
       ? Object.assign({}, config.data, { namespaceId: namespace })
@@ -53,7 +53,7 @@ request.middleWare((_config = {}) => {
 });
 
 /**
- * 配置 monaco
+ * Configure Monaco editor
  */
 window.require.config({
   paths: { vs: process.env.NODE_ENV === 'production' ? 'console-ui/public/js/vs' : 'js/vs' },
@@ -187,7 +187,7 @@ window.importEditor = callback => {
   });
 };
 
-// 同步获取命名空间地址
+// Synchronously get namespace address
 
 window._getLink = (function() {
   const _linkObj = {};
@@ -218,7 +218,7 @@ window.addEventListener('resize', () => {
     }, 500);
   } catch (e) {}
 });
-// 判断是否是国际站国际用户
+// Determine if user is an international user on international site
 window.isIntel = function() {
   const { host } = window.location;
   return host.indexOf('alibabacloud.com') !== -1;

@@ -31,19 +31,19 @@ const initialState = {
 };
 
 /**
- * 用户登录
+ * User login
  * @param {*} param0
  */
 const login = user => request.post('v3/auth/user/login', user);
 const admin = user => request.post('v3/auth/user/admin', user);
 
 /**
- * 单独在login处调用 获取提示信息
+ * Called separately at login to get prompt information
  */
 const guide = () => request.get('v3/console/server/guide');
 
 /**
- * 单独在login调用 判断是否可以登陆
+ * Called separately at login to determine if login is allowed
  */
 const state = () => request.get('v3/console/server/state');
 

@@ -47,8 +47,8 @@ function generateRandomPassword(length) {
 const global = window;
 
 /**
- * 获取cookie值
- * @param {*String} keyName cookie名
+ * Get cookie value
+ * @param {*String} keyName cookie name
  */
 const aliwareGetCookieByKeyName = function(keyName) {
   let result = '';
@@ -64,20 +64,20 @@ const aliwareGetCookieByKeyName = function(keyName) {
 };
 
 /**
- * 监听事件对象
+ * Event listener object
  */
 const nacosEvent = (function(_global) {
   const eventListObj = {};
   const ignoreEventListObj = {};
   return {
     /**
-     * 只监听一次
+     * Listen only once
      */
     once(eventName, callback) {
       this.listen.call(this, eventName, callback, true);
     },
     /**
-     * 监听事件<eventName: String 监听事件名, callback: function 回调函数, once: boolean 是否监听一次>
+     * Listen to event <eventName: String event name, callback: function callback function, once: boolean whether to listen only once>
      */
     listen(eventName, callback, once = false) {
       if (!eventName || !callback) {
@@ -90,7 +90,7 @@ const nacosEvent = (function(_global) {
       });
     },
     /**
-     * 监听事件, 之前未消费的消息也会进行触发<eventName: String 监听事件名, callback: function 回调函数, once: boolean 是否监听一次>
+     * Listen to event, previously unconsumed messages will also be triggered <eventName: String event name, callback: function callback function, once: boolean whether to listen only once>
      */
     listenAllTask(...args) {
       const self = this;
@@ -100,23 +100,23 @@ const nacosEvent = (function(_global) {
       if (!eventName) {
         return;
       }
-      // 监听事件
+      // Listen to event
       self.listen(...argsList);
 
-      // 判断是否有未消费的消息
+      // Check if there are unconsumed messages
       if (ignoreEventListObj[eventName] && ignoreEventListObj[eventName].length > 0) {
         const eventObj = ignoreEventListObj[eventName].pop();
         self.trigger.apply(eventObj.self, eventObj.argsList);
       }
     },
     /**
-     * 触发事件
+     * Trigger event
      */
     trigger(...args) {
       const self = this;
       const argsList = Array.prototype.slice.call(args);
       const eventName = argsList.shift();
-      // 如果还没有订阅消息, 将其放到未消费队列里
+      // If no subscription yet, put it in the unconsumed queue
       if (!eventListObj[eventName]) {
         !ignoreEventListObj[eventName] && (ignoreEventListObj[eventName] = []);
         ignoreEventListObj[eventName].push({
@@ -132,7 +132,7 @@ const nacosEvent = (function(_global) {
           return;
         }
         _obj.callback.apply(self, argsList);
-        // 删除只触发一次的事件
+        // Remove events that only trigger once
         if (!_obj.once) {
           newList.push(_obj);
         }
@@ -140,7 +140,7 @@ const nacosEvent = (function(_global) {
       eventListObj[eventName] = newList;
     },
     /**
-     * 删除监听事件
+     * Remove event listener
      */
     remove(eventName, callback) {
       if (!eventName || !eventListObj[eventName]) {
@@ -162,7 +162,7 @@ const nacosEvent = (function(_global) {
 })(global);
 
 /**
- * nacos的工具类
+ * Nacos utility class
  */
 const nacosUtils = (function(_global) {
   let loadingCount = 0;
@@ -183,7 +183,7 @@ const nacosUtils = (function(_global) {
       }
     },
     /**
-     * 打开loading效果
+     * Open loading effect
      */
     openLoading() {
       loadingCount++;
@@ -196,7 +196,7 @@ const nacosUtils = (function(_global) {
       );
     },
     /**
-     * 尝试关闭loading, 只有当loadingCount小于0时才会关闭loading效果
+     * Attempt to close loading, only close when loadingCount is less than 0
      */
     closeLoading() {
       loadingCount--;
@@ -212,7 +212,7 @@ const nacosUtils = (function(_global) {
       }
     },
     /**
-     * 关闭loading效果
+     * Close loading effect
      */
     closeAllLoading() {
       loadingCount = 0;
@@ -225,7 +225,7 @@ const nacosUtils = (function(_global) {
       );
     },
     /**
-     * 获取资源地址, 如果资源需要静态化输出 请调用此方法
+     * Get resource address, call this method if resource needs static output
      */
     getURISource(url) {
       return url;
@@ -234,14 +234,14 @@ const nacosUtils = (function(_global) {
 })(global);
 
 /**
- * 获取url中的参数
+ * Get parameters from url
  */
 const getParams = (function(_global) {
   return function(name) {
     const reg = new RegExp(`(^|&)${name}=([^&]*)(&|$)`, 'i');
     let result = [];
     if (_global.location.hash !== '') {
-      result = _global.location.hash.split('?'); // 优先判别hash
+      result = _global.location.hash.split('?'); // Prioritize hash
     } else {
       result = _global.location.href.split('?');
     }
@@ -262,7 +262,7 @@ const getParams = (function(_global) {
 })(global);
 
 /**
- * 设置参数
+ * Set parameters
  */
 const setParams = (function(global) {
   let _global = global;
@@ -312,14 +312,14 @@ const setParams = (function(global) {
 })(global);
 
 /**
- * 设置参数
+ * Set parameter
  */
 const setParam = function(...args) {
   return setParams.apply(this, args);
 };
 
 /**
- * 删除参数
+ * Remove parameters
  */
 const removeParams = (function(global) {
   let _global = global;
@@ -363,7 +363,7 @@ const removeParams = (function(global) {
 })(global);
 
 /**
- * 封装的ajax请求
+ * Wrapped ajax request
  */
 const request = (function(_global) {
   const middlewareList = [];
@@ -372,7 +372,7 @@ const request = (function(_global) {
   const serviceList = [];
   const methodList = [];
   /**
-   * 获取真实url信息
+   * Get real url information
    */
   const NacosRealUrlMapper = (function() {
     serviceList.forEach(obj => {
@@ -383,15 +383,15 @@ const request = (function(_global) {
       if (!serviceObj) {
         return null;
       }
-      // 获取正确请求方式
+      // Get correct request method
       serviceObj.methodType = methodList[serviceObj.method];
       return serviceObj;
     };
   })();
 
   /**
-   * 添加中间件函数
-   * @param {*function} callback 回调函数
+   * Add middleware function
+   * @param {*function} callback callback function
    */
   function middleWare(callback, isBack = true) {
     if (isBack) {
@@ -403,13 +403,13 @@ const request = (function(_global) {
   }
 
   /**
-   * 处理中间件
-   * @param {*Object} config ajax请求配置信息
+   * Handle middleware
+   * @param {*Object} config ajax request configuration
    */
   function handleMiddleWare(...allArgs) {
-    // 获取除config外传入的参数
+    // Get parameters passed except config
     let [config, ...args] = allArgs;
-    // 最后一个参数为middlewareList
+    // Last parameter is middlewareList
     const middlewareList = args.pop() || [];
     if (middlewareList && middlewareList.length > 0) {
       config = middlewareList.reduce((config, callback) => {
@@ -423,17 +423,17 @@ const request = (function(_global) {
   }
 
   /**
-   * 处理自定义url
-   * @param {*Object} config ajax请求配置信息
+   * Handle custom url
+   * @param {*Object} config ajax request configuration
    */
   function handleCustomService(...args) {
     let [config] = args;
-    // 只处理com.alibaba.开头的url
+    // Only process urls starting with com.alibaba.
     if (config && config.url && config.url.indexOf('com.alibaba.') === 0) {
       const registerName = config.url;
       const serviceObj = NacosRealUrlMapper(registerName);
       if (serviceObj && serviceObj.url && serviceObj.url.replace) {
-        // 有mock数据 直接返回 生产环境失效
+        // Has mock data, return directly, invalid in production
         if (projectConfig.is_preview && serviceObj.is_mock && config.success) {
           let code = null;
           try {
@@ -442,19 +442,19 @@ const request = (function(_global) {
           config.success(code);
           return;
         }
-        // 替换url中的占位符
+        // Replace placeholders in url
         config.url = serviceObj.url.replace(/{([^\}]+)}/g, ($1, $2) => config.$data[$2]);
         try {
-          // 添加静态参数
+          // Add static parameters
           if (serviceObj.is_param && typeof config.data === 'object') {
             config.data = Object.assign({}, JSON.parse(serviceObj.params), config.data);
           }
         } catch (e) {}
-        // 替换请求方式
+        // Replace request method
         if (serviceObj.method && !config.type) {
           config.type = serviceObj.methodType;
         }
-        // 将请求参数变为json格式
+        // Convert request parameters to JSON format
         if (serviceObj.isJsonData && typeof config.data === 'object') {
           config.data = JSON.stringify(config.data);
           config.processData = false;
@@ -462,7 +462,7 @@ const request = (function(_global) {
           config.contentType = 'application/json';
         }
         try {
-          // 设置临时代理 生产环境失效
+          // Set temporary proxy, invalid in production
           if (projectConfig.is_preview && serviceObj.is_proxy) {
             const { beforeSend } = config;
             config.beforeSend = function(xhr) {
@@ -473,7 +473,7 @@ const request = (function(_global) {
             };
           }
         } catch (e) {}
-        // 设置自动loading效果
+        // Set auto loading effect
         if (serviceObj.autoLoading) {
           // nacosUtils.openLoading();
           const prevComplete = config.complete;
@@ -490,11 +490,11 @@ const request = (function(_global) {
   }
 
   async function Request(...allArgs) {
-    // 除了config外的传参
+    // Parameters other than config
     let [config, ...args] = allArgs;
-    // 处理前置中间件
+    // Handle pre-middleware
     config = handleMiddleWare.apply(this, [config, ...args, middlewareList]);
-    // 处理自定义url
+    // Handle custom url
     config = handleCustomService.apply(this, [config, ...args]);
     if (!config) return;
     // xsrf
@@ -509,7 +509,7 @@ const request = (function(_global) {
       sec_token && (config.data.sec_token = sec_token);
     }
 
-    // 处理后置中间件
+    // Handle post-middleware
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
 
     const [url, paramsStr] = config.url.split('?');
@@ -549,7 +549,7 @@ const request = (function(_global) {
         return success;
       },
       error => {
-        // 处理403 forbidden
+        // Handle 403 forbidden
         const { status, responseJSON = {} } = error || {};
         if (responseJSON.message) {
           const _errorcontent = responseJSON?.data ? ` : ${responseJSON.data}` : '';
@@ -567,7 +567,7 @@ const request = (function(_global) {
     );
   }
 
-  // 暴露方法
+  // Expose methods
   Request.handleCustomService = handleCustomService;
   Request.handleMiddleWare = handleMiddleWare;
   Request.NacosRealUrlMapper = NacosRealUrlMapper;

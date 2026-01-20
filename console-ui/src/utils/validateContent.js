@@ -18,7 +18,7 @@ import * as yaml from 'js-yaml';
 import * as toml from '@iarna/toml';
 
 /**
- * 校验一个配置项
+ * Validate a configuration item
  */
 function validateProperty(property) {
   let { length } = property;
@@ -27,7 +27,7 @@ function validateProperty(property) {
   let hasSep = false;
   let precedingBackslash = false;
   let c;
-  // 解析 key
+  // Parse key
   while (keyLen < length) {
     c = property[keyLen];
     if ((c === '=' || c === ':') && !precedingBackslash) {
@@ -48,7 +48,7 @@ function validateProperty(property) {
     }
     keyLen++;
   }
-  // 解析 value
+  // Parse value
   while (valueStart < length) {
     c = property[valueStart];
     if (c !== ' ' && c !== '\t' && c !== '\f') {
@@ -105,7 +105,7 @@ function isPropertyEscape(c = '') {
 
 export default {
   /**
-   * 检测json是否合法
+   * Validate if JSON is valid
    */
   validateJson(str) {
     try {
@@ -116,7 +116,7 @@ export default {
   },
 
   /**
-   * 检测xml和html是否合法
+   * Validate if XML and HTML are valid
    */
   validateXml(str) {
     try {
@@ -138,7 +138,7 @@ export default {
   },
 
   /**
-   * 检测yaml是否合法
+   * Validate if YAML is valid
    */
   validateYaml(str) {
     try {
@@ -149,7 +149,7 @@ export default {
   },
 
   /**
-   * 检测属性是否正确
+   * Validate if properties are correct
    */
   validateProperties(str = '') {
     let isNewLine = true;
@@ -169,7 +169,7 @@ export default {
           continue;
         }
       }
-      // 跳过行首空白字符
+      // Skip leading whitespace
       if (isSkipWhiteSpace) {
         if (c === ' ' || c === '\t' || c === '\f') {
           continue;
@@ -181,7 +181,7 @@ export default {
         isSkipWhiteSpace = false;
       }
 
-      // 判断注释行
+      // Check for comment line
       if (isNewLine) {
         isNewLine = false;
         if (c === '#' || c === '!') {
@@ -200,7 +200,7 @@ export default {
         continue;
       }
 
-      // 跳过注释行
+      // Skip comment line
       if (isCommentLine || property.length === 0) {
         isNewLine = true;
         isCommentLine = false;
@@ -209,7 +209,7 @@ export default {
         continue;
       }
 
-      // 处理转移字符
+      // Handle escape characters
       if (precedingBackslash) {
         property.pop();
         precedingBackslash = false;
@@ -220,8 +220,8 @@ export default {
         }
         continue;
       }
-      // 解析出配置项
-      // 进行校验
+      // Parse configuration item
+      // Perform validation
       if (!validateProperty(property)) {
         return false;
       }
@@ -231,7 +231,7 @@ export default {
       isSkipWhiteSpace = true;
     }
 
-    // 校验最后一行
+    // Validate last line
     if (property.length > 0 && !isCommentLine) {
       return validateProperty(property);
     }
@@ -240,11 +240,11 @@ export default {
   },
 
   /**
-   * 检测toml是否合法
+   * Validate if TOML is valid
    */
   validateToml(str) {
     try {
-      // 如果不加这里的 replace 的话在 toml 的注释换行可能会出现以下错误：
+      // Without the replace, TOML comment line breaks may cause the following error:
       // TomlError: Control characters (codes < 0x1f and 0x7f) are not allowed in comments
       return toml.parse(str.replace(/\r\n/g, '\n'));
     } catch (e) {
@@ -253,7 +253,7 @@ export default {
   },
 
   /**
-   * 根据类型验证类型
+   * Validate by type
    */
   validate({ content, type }) {
     let validateObj = {

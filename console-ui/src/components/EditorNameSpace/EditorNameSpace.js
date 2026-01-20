@@ -113,7 +113,7 @@ class EditorNameSpace extends React.Component {
           if (res.data === true) {
             this.closeDialog();
             this.props.getNameSpaces();
-            this.refreshNameSpace(); // 刷新全局namespace
+            this.refreshNameSpace(); // Refresh global namespace
           } else {
             Dialog.alert({
               title: locale.notice,

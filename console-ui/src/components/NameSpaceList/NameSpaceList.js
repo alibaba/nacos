@@ -23,7 +23,7 @@ import './index.scss';
 import { NAME_SHOW } from '../../constants';
 
 /**
- * 命名空间列表
+ * Namespace list
  */
 @ConfigProvider.config
 class NameSpaceList extends React.Component {
@@ -85,7 +85,7 @@ class NameSpaceList extends React.Component {
   // }
 
   /**
-   切换namespace
+   Switch namespace
    * */
   changeNameSpace(ns, nsName, nsDesc) {
     localStorage.setItem('namespace', ns);

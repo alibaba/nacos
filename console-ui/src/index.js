@@ -15,7 +15,7 @@
  */
 
 /**
- * 入口页
+ * Entry page
  */
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -72,7 +72,7 @@ import NewMcpServer from './pages/AI/NewMcpServer';
 module.hot && module.hot.accept();
 
 if (!localStorage.getItem(LANGUAGE_KEY)) {
-  localStorage.setItem(LANGUAGE_KEY, navigator.language === 'zh-CN' ? 'zh-CN' : 'en-US');
+  localStorage.setItem(LANGUAGE_KEY, 'en-US');
 }
 
 const reducer = combineReducers({

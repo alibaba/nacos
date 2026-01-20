@@ -47,7 +47,7 @@ const successMsg = res => {
 };
 
 /**
- * 用户列表
+ * User list
  * @param {*} params
  */
 const getUsers = params => dispatch =>
@@ -56,35 +56,35 @@ const getUsers = params => dispatch =>
     .then(data => dispatch({ type: USER_LIST, data: data.data }));
 
 /**
- * 创建用户
+ * Create user
  * @param {*} param0
  */
 const createUser = ([username, password]) =>
   request.post('v3/auth/user', { username, password }).then(res => successMsg(res));
 
 /**
- * 通过username 模糊匹配
+ * Fuzzy search by username
  * @param {*} param0
  */
 const searchUsers = username =>
   request.get('v3/auth/user/search', { params: { username } }).then(res => successMsg(res.data));
 
 /**
- * 删除用户
+ * Delete user
  * @param {*} username
  */
 const deleteUser = username =>
   request.delete('v3/auth/user', { params: { username } }).then(res => successMsg(res));
 
 /**
- * 重置密码
+ * Reset password
  * @param {*} param0
  */
 const passwordReset = ([username, newPassword]) =>
   request.put('v3/auth/user', { username, newPassword });
 
 /**
- * 角色列表
+ * Role list
  * @param {*} params
  */
 
@@ -94,28 +94,28 @@ const getRoles = params => dispatch =>
     .then(data => dispatch({ type: ROLE_LIST, data: data.data }));
 
 /**
- * 通过username 模糊匹配
+ * Fuzzy search by role
  * @param {*} param0
  */
 const searchRoles = role =>
   request.get('v3/auth/role/search', { params: { role } }).then(res => successMsg(res.data));
 
 /**
- * 创建角色
+ * Create role
  * @param {*} param0
  */
 const createRole = ([role, username]) =>
   request.post('v3/auth/role', { role, username }).then(res => successMsg(res));
 
 /**
- * 删除角色
+ * Delete role
  * @param {*} param0
  */
 const deleteRole = role =>
   request.delete('v3/auth/role', { params: role }).then(res => successMsg(res));
 
 /**
- * 权限列表
+ * Permission list
  * @param {*} params
  */
 const getPermissions = params => dispatch =>
@@ -124,7 +124,7 @@ const getPermissions = params => dispatch =>
     .then(data => dispatch({ type: PERMISSIONS_LIST, data: data.data }));
 
 /**
- * 添加权限前置校验
+ * Pre-validation before adding permission
  * @param {*} param0
  */
 const checkPermission = ([role, resource, action]) => {
@@ -133,14 +133,14 @@ const checkPermission = ([role, resource, action]) => {
 };
 
 /**
- * 给角色添加权限
+ * Add permission to role
  * @param {*} param0
  */
 const createPermission = ([role, resource, action]) =>
   request.post('v3/auth/permission', { role, resource, action }).then(res => successMsg(res));
 
 /**
- * 删除权限
+ * Delete permission
  * @param {*} param0
  */
 const deletePermission = permission =>

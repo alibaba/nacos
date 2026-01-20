@@ -10,7 +10,7 @@ export const convertPropertiesToTreeData = (properties, prefix, store, requiredL
         const arg = properties[element];
         let children = [];
         if (arg.type === 'object') {
-            // 嵌套对象暂不处理其 required 列表（当前仅支持根级 required）
+            // Nested objects don't process their required list for now (currently only supports root-level required)
             children = convertPropertiesToTreeData(arg.properties, `${prefix}@@${element}`, store);
         } else if (arg.type === 'array') {
             children = convertPropertiesToTreeData(
@@ -27,7 +27,7 @@ export const convertPropertiesToTreeData = (properties, prefix, store, requiredL
             arg: arg,
             description: arg.description ? arg.description : '',
             defaultValue: arg.default || '',
-            // 仅根级 required 使用 inputSchema.required 进行标记
+            // Only root-level required uses inputSchema.required for marking
             required: Array.isArray(requiredList) ? requiredList.includes(element) : false,
             children,
             key: `${prefix}@@${element}`,
@@ -49,7 +49,7 @@ export const rawDataToFiledValue = rawData => {
             ...element.arg,
             type: element.type,
         };
-        // items 节点不需要描述
+        // items node doesn't need description
         if (!String(element.key || '').endsWith('@@items')) {
             arg.description = element.description;
         } else if (arg && arg.description !== undefined) {
@@ -61,7 +61,7 @@ export const rawDataToFiledValue = rawData => {
             element.defaultValue !== '' &&
             !String(element.key || '').endsWith('@@items')
         ) {
-            // 根据类型设置默认值
+            // Set default value based on type
             if (element.type === 'boolean') {
                 arg.default = element.defaultValue === 'true';
             } else if (element.type === 'number') {
