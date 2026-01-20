@@ -82,8 +82,6 @@ const I18N_CONF = {
     mcpList: 'MCP List',
     agentManagement: 'Agent Management',
     agentList: 'Agent List',
-    mcpServerManagement: 'MCP Management',
-    credentialManagement: 'Credential Management',
     pluginManagementVirtual: 'Plugin Management',
     pluginManagement: 'Plugin Management',
   },

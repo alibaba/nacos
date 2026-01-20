@@ -141,6 +141,7 @@ export default function(model) {
     result.push(configurationMenu, serviceDiscoveryMenu);
     result.push(aiRegistryMenu);
     result.push(pluginMenu);
+    result.push(pluginMenu);
   }
   if (globalAdmin) {
     result.push(authorityControlMenu);
