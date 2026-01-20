@@ -39,6 +39,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -270,10 +271,38 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
     
     private String buildUserMessage(SkillGenerationRequest request) {
         StringBuilder sb = new StringBuilder();
-        sb.append("请根据以下背景信息生成一个 Claude Skill：\n\n");
+        sb.append("请根据以下背景信息生成一个 Agent Skill：\n\n");
         sb.append("背景信息：\n");
         sb.append(request.getBackgroundInfo()).append("\n\n");
-        sb.append("请根据 Claude Skill 的最佳实践，生成一个完整的 Skill。");
+        
+        // Add MCP tools information if provided
+        if (request.getSelectedMcpTools() != null && !request.getSelectedMcpTools().isEmpty()) {
+            sb.append("可用的 MCP 工具（可根据 Skill 功能需求合理选择使用）：\n");
+            for (Map<String, Object> tool : request.getSelectedMcpTools()) {
+                sb.append("- 工具名称：").append(tool.get("name")).append("\n");
+                if (tool.get("description") != null) {
+                    sb.append("  描述：").append(tool.get("description")).append("\n");
+                }
+                if (tool.get("inputSchema") != null) {
+                    sb.append("  输入参数：").append(tool.get("inputSchema")).append("\n");
+                }
+                sb.append("\n");
+            }
+            sb.append("工具使用说明：\n");
+            sb.append("1. 请根据 Skill 的功能需求和上下文，合理判断是否需要使用这些工具\n");
+            sb.append("2. 如果工具对实现 Skill 功能有帮助，则在 instruction 中详细说明如何调用这些工具，包括：\n");
+            sb.append("   - 工具名称和用途\n");
+            sb.append("   - 调用时机（在什么情况下调用该工具）\n");
+            sb.append("   - 输入参数说明（每个参数的含义、类型、是否必需、如何获取）\n");
+            sb.append("   - 输出结果处理（如何处理工具返回的结果，如何解析和使用返回数据）\n");
+            sb.append("   - 错误处理（工具调用失败时的处理方式和备选方案）\n");
+            sb.append("3. 如果工具对实现 Skill 功能没有帮助，则不需要在 instruction 中提及这些工具\n");
+            sb.append("4. 如果使用了工具，确保工具调用逻辑清晰、可执行，工具应该与 Skill 功能紧密结合\n");
+            sb.append("5. 如果使用了多个工具，在 instruction 中明确说明工具调用的步骤和流程，包括工具调用的顺序\n");
+            sb.append("6. 如果使用了工具，提供具体的工具调用示例，说明如何构造参数、调用工具、处理结果\n\n");
+        }
+        
+        sb.append("请根据 Agent Skill 的最佳实践，生成一个完整、高质量、可直接使用的 Skill。");
         
         return sb.toString();
     }
@@ -307,28 +336,43 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             
             Map<String, Object> result = JacksonUtils.toObj(jsonContent, Map.class);
             
-            // Parse skill
+            // Parse skill (only field required)
             Map<String, Object> skillMap = (Map<String, Object>) result.get("skill");
             if (skillMap != null) {
+                // Normalize resource structure: handle nested resources (resources.scripts.xxx) to flat structure (resource.xxx)
+                normalizeResourceStructure(skillMap);
+                
                 Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
+                response.setSkill(skill);
+            } else {
+                // If skill is not found, try to parse the entire result as skill
+                normalizeResourceStructure(result);
+                Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(result), Skill.class);
                 response.setSkill(skill);
             }
             
-            // Parse explanation
-            String explanation = (String) result.get("explanation");
-            if (explanation != null) {
-                response.setExplanation(explanation);
-            } else {
-                response.setExplanation("Skill 已生成完成。");
-            }
+            response.setDone(true);
             
         } catch (Exception e) {
             LOGGER.warn("Failed to parse generation result from LLM response: {}", fullContent, e);
+            // Set done flag even if parsing failed
+            response.setDone(true);
+            
+            // Try to extract skill from the content even if JSON parsing failed
             try {
-                throw new NacosException(NacosException.SERVER_ERROR,
-                        "Failed to parse generated skill: " + e.getMessage());
-            } catch (NacosException nacosException) {
-                throw new RuntimeException(nacosException);
+                // Try to extract JSON from markdown code blocks or find JSON object
+                String jsonContent = extractJsonFromContent(fullContent);
+                if (jsonContent != null && !jsonContent.isEmpty()) {
+                    Map<String, Object> result = JacksonUtils.toObj(jsonContent, Map.class);
+                    Map<String, Object> skillMap = (Map<String, Object>) result.get("skill");
+                    if (skillMap != null) {
+                        normalizeResourceStructure(skillMap);
+                        Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
+                        response.setSkill(skill);
+                    }
+                }
+            } catch (Exception parseException) {
+                LOGGER.warn("Failed to extract skill from content", parseException);
             }
         }
     }
@@ -451,6 +495,136 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+    
+    /**
+     * Normalize resource structure from nested format to flat format.
+     * Handles cases where LLM returns nested resources like:
+     * {
+     *   "resources": {
+     *     "scripts": {
+     *       "check_permission": { "type": "script", "path": "/scripts/check_permission.sh" }
+     *     }
+     *   }
+     * }
+     * Converts to flat format:
+     * {
+     *   "resource": {
+     *     "check_permission": {
+     *       "name": "check_permission.sh",
+     *       "type": "script",
+     *       "content": ""
+     *     }
+     *   }
+     * }
+     */
+    @SuppressWarnings("unchecked")
+    private void normalizeResourceStructure(Map<String, Object> skillMap) {
+        // Check if there's a nested "resources" structure
+        Object resourcesObj = skillMap.get("resources");
+        if (resourcesObj == null) {
+            // No nested resources, check if "resource" already exists
+            Object resourceObj = skillMap.get("resource");
+            if (resourceObj == null || !(resourceObj instanceof Map)) {
+                skillMap.put("resource", new HashMap<>());
+            }
+            return;
+        }
+        
+        // If resources is not a Map, skip normalization
+        if (!(resourcesObj instanceof Map)) {
+            return;
+        }
+        
+        Map<String, Object> resources = (Map<String, Object>) resourcesObj;
+        Map<String, Object> flatResourceMap = new HashMap<>();
+        
+        // Recursively flatten nested resource structure
+        flattenResources(resources, flatResourceMap, "");
+        
+        // Replace "resources" with "resource" (singular) and use flattened structure
+        skillMap.remove("resources");
+        skillMap.put("resource", flatResourceMap);
+    }
+    
+    /**
+     * Recursively flatten nested resource structure.
+     *
+     * @param nestedResources nested resource structure
+     * @param flatMap output flat resource map
+     * @param prefix prefix for resource keys (currently unused, kept for API consistency)
+     */
+    @SuppressWarnings({"unchecked", "unused"})
+    private void flattenResources(Map<String, Object> nestedResources, Map<String, Object> flatMap, String prefix) {
+        for (Map.Entry<String, Object> entry : nestedResources.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            
+            if (value instanceof Map) {
+                Map<String, Object> valueMap = (Map<String, Object>) value;
+                
+                // Check if this is a resource object (has type, path, name, content, etc.)
+                // A resource object should have at least one of: type, path, name, content
+                boolean isResourceObject = valueMap.containsKey("type")
+                        || valueMap.containsKey("path")
+                        || valueMap.containsKey("name")
+                        || valueMap.containsKey("content");
+                
+                if (isResourceObject) {
+                    // This is a resource object, convert it to SkillResource format
+                    Map<String, Object> resourceObj = new HashMap<>();
+                    
+                    // Extract name from path or use key
+                    String name = (String) valueMap.get("name");
+                    if (name == null || name.isEmpty()) {
+                        String path = (String) valueMap.get("path");
+                        if (path != null && !path.isEmpty()) {
+                            // Extract filename from path
+                            int lastSlash = path.lastIndexOf('/');
+                            name = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+                        } else {
+                            // Use key as name, add appropriate extension based on type
+                            String type = (String) valueMap.getOrDefault("type", "");
+                            if ("script".equals(type) || "sh".equals(type)) {
+                                name = key + ".sh";
+                            } else if ("template".equals(type) || "json".equals(type)) {
+                                name = key + ".json";
+                            } else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
+                                name = key + ".md";
+                            } else {
+                                name = key;
+                            }
+                        }
+                    }
+                    resourceObj.put("name", name);
+                    resourceObj.put("type", valueMap.getOrDefault("type", ""));
+                    // Try to get content from multiple possible fields
+                    String content = (String) valueMap.get("content");
+                    if (content == null || content.isEmpty()) {
+                        content = (String) valueMap.get("text");
+                    }
+                    if (content == null || content.isEmpty()) {
+                        content = (String) valueMap.get("body");
+                    }
+                    if (content == null || content.isEmpty()) {
+                        content = (String) valueMap.get("data");
+                    }
+                    resourceObj.put("content", content != null ? content : "");
+                    resourceObj.put("metadata", valueMap.getOrDefault("metadata", null));
+                    
+                    // Use the resource key (not prefix_key) as the map key
+                    // This ensures resources.scripts.check_permission becomes resource.check_permission
+                    flatMap.put(key, resourceObj);
+                } else {
+                    // This is a nested category (like "scripts", "documentation"), continue flattening
+                    // Don't add prefix for category names, just pass them through
+                    flattenResources(valueMap, flatMap, "");
+                }
+            } else {
+                // Not a Map, skip
+                LOGGER.warn("Unexpected resource value type for key {}: {}", key, value.getClass().getName());
+            }
         }
     }
 }

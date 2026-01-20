@@ -1,4 +1,41 @@
 .skill-optimize-dialog {
+  .next-dialog-body {
+    padding: 20px;
+  }
+
+  .next-form-item {
+    margin-bottom: 16px;
+  }
+
+  .next-form-item-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .next-input-textarea {
+    width: 100% !important;
+  }
+
+  .thinking-section {
+    .thinking-content {
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #333;
+      }
+    }
+  }
+
   .stream-content {
     margin-top: 16px;
     padding: 12px;
@@ -38,66 +75,39 @@
           color: #666;
         }
 
-        div,
-        pre {
+        div {
           padding: 8px;
           background: #fafafa;
           border-radius: 4px;
           white-space: pre-wrap;
           word-break: break-word;
+          min-height: 20px;
+
+          &.changed {
+            background: #e6f7ff;
+            border-left: 3px solid #1890ff;
+          }
+        }
+
+        .comparison-pre {
+          padding: 8px;
+          background: #fafafa;
+          border-radius: 4px;
+          white-space: pre-wrap;
+          word-break: break-word;
+          margin: 0;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 12px;
+          line-height: 1.5;
+          max-height: 200px;
+          overflow-y: auto;
+
+          &.changed {
+            background: #e6f7ff;
+            border-left: 3px solid #1890ff;
+          }
         }
       }
-    }
-
-    .change-item {
-      padding: 12px;
-      margin-bottom: 12px;
-      background: #fafafa;
-      border-radius: 4px;
-      border-left: 3px solid #1890ff;
-
-      .change-header {
-        margin-bottom: 8px;
-
-        .next-tag {
-          margin-right: 8px;
-        }
-      }
-
-      .change-description {
-        margin-bottom: 4px;
-        color: #333;
-      }
-
-      .change-reason {
-        font-size: 12px;
-        color: #999;
-      }
-    }
-
-    .quality-score {
-      text-align: center;
-      padding: 20px;
-
-      .score-value {
-        font-size: 48px;
-        font-weight: bold;
-        color: #1890ff;
-      }
-
-      .score-label {
-        font-size: 24px;
-        color: #999;
-        margin-left: 8px;
-      }
-    }
-
-    .explanation {
-      padding: 12px;
-      background: #f0f9ff;
-      border-radius: 4px;
-      line-height: 1.6;
-      color: #333;
     }
   }
 }

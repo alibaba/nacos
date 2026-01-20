@@ -72,8 +72,8 @@ public class SkillAdminController {
     public Result<String> registerSkill(SkillDetailForm form) throws NacosException {
         form.validate();
         Skill skill = SkillRequestUtil.parseSkill(form);
-        String skillId = skillOperationService.registerSkill(skill, form.getNamespaceId());
-        return Result.success(skillId);
+        String skillName = skillOperationService.registerSkill(skill, form.getNamespaceId());
+        return Result.success(skillName);
     }
     
     /**

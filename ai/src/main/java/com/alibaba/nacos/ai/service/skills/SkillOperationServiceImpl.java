@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 
@@ -77,9 +76,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public String registerSkill(Skill skill, String namespaceId) throws NacosException {
         try {
-            // 1. Generate skillId if not provided
-            if (StringUtils.isBlank(skill.getSkillId())) {
-                skill.setSkillId(UUID.randomUUID().toString().replace("-", ""));
+            // 1. Validate skill name (only allow English letters, underscore, hyphen)
+            if (StringUtils.isBlank(skill.getName())) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "Skill name is required");
+            }
+            if (!skill.getName().matches("^[a-zA-Z_-]+$")) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "Skill name can only contain English letters, underscore, and hyphen");
             }
             
             // 2. Build main config (main.json)
@@ -106,7 +110,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             long startOperationTime = System.currentTimeMillis();
             syncEffectService.toSync(mainConfigForm, startOperationTime);
             
-            return skill.getSkillId();
+            return skill.getName();
         } catch (ConfigAlreadyExistsException e) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     String.format("Skill name %s already exists", skill.getName()));
@@ -132,7 +136,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // 3. Build Skill object
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
-        skill.setSkillId(mainConfig.getSkillId());
         skill.setName(mainConfig.getName());
         skill.setDescription(mainConfig.getDescription());
         skill.setInstruction(mainConfig.getInstruction());
@@ -250,7 +253,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 SkillMainConfig mainConfig = JacksonUtils.toObj(configInfo.getContent(), SkillMainConfig.class);
                 SkillBasicInfo basicInfo = new SkillBasicInfo();
                 basicInfo.setNamespaceId(namespaceId);
-                basicInfo.setSkillId(mainConfig.getSkillId());
                 basicInfo.setName(mainConfig.getName());
                 basicInfo.setDescription(mainConfig.getDescription());
                 // ConfigInfo doesn't have modifyTime field, set to null or use current time
@@ -277,7 +279,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private ConfigForm buildMainConfigForm(Skill skill, String namespaceId, String skillGroup) {
         // Build main config (only references, no content)
         SkillMainConfig mainConfig = new SkillMainConfig();
-        mainConfig.setSkillId(skill.getSkillId());
         mainConfig.setName(skill.getName());
         mainConfig.setDescription(skill.getDescription());
         mainConfig.setInstruction(skill.getInstruction());
@@ -288,7 +289,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
                 SkillResourceRef ref = new SkillResourceRef();
-                ref.setResourceId(resource.getResourceId());
                 ref.setName(resource.getName());
                 ref.setType(resource.getType());
                 resourceRefs.put(entry.getKey(), ref);
@@ -331,19 +331,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * Skill main config (from main.json).
      */
     private static class SkillMainConfig {
-        private String skillId;
         private String name;
         private String description;
         private String instruction;
         private Map<String, SkillResourceRef> resource;
-        
-        public String getSkillId() {
-            return skillId;
-        }
-        
-        public void setSkillId(String skillId) {
-            this.skillId = skillId;
-        }
         
         public String getName() {
             return name;
@@ -382,17 +373,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * Skill resource reference (in main.json).
      */
     private static class SkillResourceRef {
-        private String resourceId;
         private String name;
         private String type;
-        
-        public String getResourceId() {
-            return resourceId;
-        }
-        
-        public void setResourceId(String resourceId) {
-            this.resourceId = resourceId;
-        }
         
         public String getName() {
             return name;

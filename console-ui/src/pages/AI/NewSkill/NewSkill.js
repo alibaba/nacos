@@ -19,6 +19,7 @@ import PropTypes from 'prop-types';
 import {
   Button,
   Card,
+  Collapse,
   ConfigProvider,
   Field,
   Form,
@@ -27,17 +28,27 @@ import {
   Grid,
   Icon,
   Dialog,
+  Select,
+  Checkbox,
+  Loading,
+  Balloon,
+  Tag,
 } from '@alifd/next';
 import PageTitle from 'components/PageTitle';
 import SkillOptimizeDialog from '../SkillManagement/SkillOptimizeDialog';
+import MonacoEditor from '../../../components/MonacoEditor/MonacoEditor';
+import MarkdownRenderer from '../../../components/MarkdownRenderer/MarkdownRenderer';
+import MagicWandIcon from '../../../components/MagicWandIcon/MagicWandIcon';
+import { getLanguageFromFileName } from '../../../utils/languageDetector';
 import { getParams, request } from '@/globalLib';
 import './NewSkill.scss';
 
 const { Row, Col } = Grid;
+const { Panel } = Collapse;
 
 @ConfigProvider.config
 class NewSkill extends React.Component {
-  static displayName = 'NewSkill';
+  static displayName = 'SkillManagement';
 
   static propTypes = {
     locale: PropTypes.object,
@@ -57,23 +68,49 @@ class NewSkill extends React.Component {
       generating: false,
       streaming: false,
       streamContent: '',
+      thinkingContent: '', // 思考内容
+      thinkingCollapsed: false, // 思考内容是否折叠
+      showInputCollapsed: false, // 用户输入是否折叠
+      inputTooltipVisible: false, // 用户输入tooltip显示状态
+      inputTooltipPosition: { x: 0, y: 0 }, // 用户输入tooltip位置
+      thinkingTooltipVisible: false, // 思考内容tooltip显示状态
+      thinkingTooltipPosition: { x: 0, y: 0 }, // 思考内容tooltip位置
+      parsingResult: false, // 是否正在解析结果
       isEdit: isEdit,
       skillName,
       backgroundInfo: '',
       showAiGenerateDialog: false, // 控制是否显示AI生成弹窗
       generatedSkill: null, // 存储生成的Skill数据
+      mcpServers: [], // MCP服务器列表
+      selectedMcpServer: null, // 选中的MCP服务器
+      mcpTools: [], // MCP工具列表
+      selectedMcpTools: [], // 选中的MCP工具
+      loadingMcpServers: false, // 加载MCP服务器列表
+      loadingMcpTools: false, // 加载MCP工具列表
+      mcpToolSearchKeyword: '', // MCP工具搜索关键词
       optimizeDialogVisible: false, // 控制是否显示AI优化弹窗
       currentSkillData: null, // 存储当前Skill数据用于优化
+      showPreviewDialog: false, // 控制是否显示预览弹窗
+      previewData: null, // 存储预览数据
+      selectedFile: null, // 当前选中的文件
+      fileTree: null, // 文件树结构
       // 创建模式下默认添加一个空的资源项
       resources: isEdit ? [] : [
         {
-          resourceId: '',
           name: '',
           type: '',
           content: '',
           metadata: null,
         },
       ],
+      // 资源面板展开状态，创建模式下默认展开第一个
+      expandedKeys: isEdit ? [] : ['0'],
+      // 正在编辑的资源索引（用于标题编辑）
+      editingResourceIndex: null,
+      // 鼠标位置和tooltip显示状态
+      tooltipVisible: false,
+      tooltipPosition: { x: 0, y: 0 },
+      tooltipResourceIndex: null,
     };
     this.streamReader = null;
   }
@@ -88,7 +125,34 @@ class NewSkill extends React.Component {
         this.loadSkillData();
       }
     }
+    // Add click listener to handle clicking outside edit area
+    // Use capture phase to handle before other click handlers
+    document.addEventListener('click', this.handleDocumentClick, true);
   }
+
+  componentWillUnmount() {
+    // Remove click listener
+    document.removeEventListener('click', this.handleDocumentClick, true);
+  }
+
+  handleDocumentClick = (e) => {
+    // Skip if clicking on resource title text (which should enter edit mode)
+    if (e.target.closest('.resource-title-text')) {
+      return;
+    }
+    
+    // If editing resource title, check if click is outside the editor
+    if (this.state.editingResourceIndex !== null) {
+      // Find the editor element for the current editing resource
+      const editorElements = document.querySelectorAll('.resource-title-editor');
+      const currentEditor = editorElements[this.state.editingResourceIndex];
+      
+      if (currentEditor && !currentEditor.contains(e.target)) {
+        // Click is outside the editor, exit edit mode
+        this.setState({ editingResourceIndex: null });
+      }
+    }
+  };
 
   loadOptimizedSkillData = () => {
     try {
@@ -97,8 +161,10 @@ class NewSkill extends React.Component {
         const optimizedSkill = JSON.parse(optimizedSkillStr);
         
         // Fill form with optimized skill data
+        // Important: Keep original skill name, don't use optimized name
+        const originalName = this.state.skillName || '';
         this.field.setValues({
-          name: optimizedSkill.name || '',
+          name: originalName, // Always use original skill name
           description: optimizedSkill.description || '',
           instruction: optimizedSkill.instruction || '',
         });
@@ -106,15 +172,17 @@ class NewSkill extends React.Component {
         // Fill resources if any
         if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
           const resources = Object.values(optimizedSkill.resource).map(resource => ({
-            resourceId: resource.resourceId || '',
             name: resource.name || '',
             type: resource.type || '',
             content: resource.content || '',
             metadata: resource.metadata || null,
           }));
-          this.setState({ resources });
+          this.setState({
+            resources,
+            expandedKeys: resources.map((_, index) => String(index)),
+          });
         } else {
-          this.setState({ resources: [] });
+          this.setState({ resources: [], expandedKeys: [] });
         }
 
         // Clear the stored data
@@ -160,6 +228,7 @@ class NewSkill extends React.Component {
           // 保存skill数据用于AI优化
           this.setState({ 
             resources,
+            expandedKeys: resources.map((_, index) => String(index)),
             currentSkillData: skillData 
           });
         } else {
@@ -202,7 +271,6 @@ class NewSkill extends React.Component {
           if (resource.name && resource.name.trim() !== '') {
             const key = resource.name.trim();
             resourceMap[key] = {
-              resourceId: resource.resourceId || '',
               name: resource.name.trim(),
               type: resource.type || '',
               content: resource.content || '',
@@ -275,13 +343,20 @@ class NewSkill extends React.Component {
   handleAddResource = () => {
     const { resources } = this.state;
     const newResource = {
-      resourceId: '',
       name: '',
       type: '',
       content: '',
       metadata: null,
     };
-    this.setState({ resources: [...resources, newResource] });
+    const newIndex = resources.length;
+    this.setState({
+      resources: [...resources, newResource],
+      expandedKeys: [String(newIndex)], // 只展开新添加的资源
+    });
+  };
+
+  handleExpandChange = (expandedKeys) => {
+    this.setState({ expandedKeys });
   };
 
   handleRemoveResource = index => {
@@ -289,21 +364,78 @@ class NewSkill extends React.Component {
       title: this.getLocaleValue('deleteConfirm', 'Delete Confirmation'),
       content: this.getLocaleValue('deleteResourceConfirm', 'Are you sure you want to delete this resource?'),
       onOk: () => {
-        const { resources } = this.state;
+        const { resources, expandedKeys } = this.state;
         const newResources = resources.filter((_, i) => i !== index);
-        this.setState({ resources: newResources });
+        // 更新 expandedKeys，移除被删除的索引并重新计算后续索引
+        const newExpandedKeys = expandedKeys
+          .filter(key => key !== String(index))
+          .map(key => {
+            const keyNum = parseInt(key, 10);
+            return keyNum > index ? String(keyNum - 1) : key;
+          });
+        this.setState({ resources: newResources, expandedKeys: newExpandedKeys });
       },
     });
   };
 
   handleResourceChange = (index, field, value) => {
+    let filteredValue = value;
+    
+    // 资源名称：支持英文大小写、数字、点号、下划线、横杠，不能有空格
+    if (field === 'name') {
+      filteredValue = value.replace(/[^a-zA-Z0-9._-]/g, '');
+    }
+    // 资源类型：只支持英文大小写、横杠、点号
+    if (field === 'type') {
+      filteredValue = value.replace(/[^a-zA-Z.-]/g, '');
+    }
+    
     const { resources } = this.state;
     const newResources = [...resources];
     newResources[index] = {
       ...newResources[index],
-      [field]: value,
+      [field]: filteredValue,
     };
+    
     this.setState({ resources: newResources });
+  };
+
+  handleResourceTitleClick = (index, e) => {
+    e.stopPropagation();
+    this.setState({ editingResourceIndex: index });
+  };
+
+  handleResourceTitleMouseEnter = (index, e) => {
+    this.setState({
+      tooltipVisible: true,
+      tooltipPosition: { x: e.clientX, y: e.clientY },
+      tooltipResourceIndex: index,
+    });
+  };
+
+  handleResourceTitleMouseMove = (e) => {
+    if (this.state.tooltipVisible) {
+      this.setState({
+        tooltipPosition: { x: e.clientX, y: e.clientY },
+      });
+    }
+  };
+
+  handleResourceTitleMouseLeave = () => {
+    this.setState({
+      tooltipVisible: false,
+      tooltipResourceIndex: null,
+    });
+  };
+
+  handleResourceTitleCancel = () => {
+    this.setState({ editingResourceIndex: null });
+  };
+
+  handleSkillNameChange = (value) => {
+    // Skill名称：只允许英文、下划线、横杠
+    const filteredValue = value.replace(/[^a-zA-Z_-]/g, '');
+    this.field.setValue('name', filteredValue);
   };
 
   validateRequired = (rule, value, callback) => {
@@ -326,12 +458,21 @@ class NewSkill extends React.Component {
       generating: true, 
       streaming: true,
       streamContent: '',
-      generatedSkill: null 
+      thinkingContent: '',
+      generatedSkill: null,
+      showInputCollapsed: true, // 折叠用户输入
+      thinkingCollapsed: false, // 展开思考内容
+      parsingResult: false,
     });
 
     // Build request payload
     const payload = {
       backgroundInfo: backgroundInfo.trim(),
+      selectedMcpTools: this.state.selectedMcpTools.map(tool => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      })),
     };
 
     // Use SSE stream
@@ -420,32 +561,50 @@ class NewSkill extends React.Component {
       return;
     }
 
+    const typeStr = data.type?.code || data.type || 'CONTENT';
+
     // Handle different response types
-    if (data.type === 'THINKING' || data.type === 'TOOL_CALL' || data.type === 'CONTENT') {
+    if (typeStr === 'THINKING' || data.type === 'THINKING') {
+      // Accumulate thinking content separately
+      this.setState(prevState => ({
+        thinkingContent: (prevState.thinkingContent || '') + (data.chunk || ''),
+        streamType: 'THINKING',
+      }));
+    } else if (typeStr === 'TOOL_CALL' || data.type === 'TOOL_CALL' || typeStr === 'CONTENT' || data.type === 'CONTENT') {
       // Accumulate stream content
       const currentContent = this.state.streamContent || '';
       this.setState({
         streamContent: currentContent + (data.chunk || ''),
+        streamType: typeStr === 'TOOL_CALL' ? 'TOOL_CALL' : 'CONTENT',
       });
-    } else if (data.type === 'DONE' || data.done) {
-      // Final response received
-      if (data.skill) {
-        this.setState({
-          generating: false,
-          streaming: false,
-          generatedSkill: {
-            skill: data.skill,
-            explanation: data.explanation || this.getLocaleValue('generateSuccess', 'Skill generated successfully')
-          }
-        });
-      } else {
-        Message.error(this.getLocaleValue('generateFailed', 'Failed to generate skill: no skill data returned'));
-        this.setState({ generating: false, streaming: false });
-      }
+    } else if (typeStr === 'DONE' || data.done) {
+      // Final response received - start parsing
+      this.setState({
+        streaming: false,
+        thinkingCollapsed: true, // 折叠思考内容
+        parsingResult: true, // 开始解析结果
+      });
+      
+      // Parse result after a short delay
+      setTimeout(() => {
+        if (data.skill) {
+          this.setState({
+            generating: false,
+            parsingResult: false,
+            generatedSkill: {
+              skill: data.skill,
+              explanation: this.getLocaleValue('generateSuccess', 'Skill generated successfully')
+            }
+          });
+        } else {
+          Message.error(this.getLocaleValue('generateFailed', 'Failed to generate skill: no skill data returned'));
+          this.setState({ generating: false, parsingResult: false });
+        }
+      }, 500);
     } else if (data.explanation && data.explanation.includes('失败')) {
       // Error response
       Message.error(data.explanation);
-      this.setState({ generating: false, streaming: false });
+      this.setState({ generating: false, streaming: false, parsingResult: false });
     }
   };
 
@@ -468,13 +627,15 @@ class NewSkill extends React.Component {
     // Fill resources if any
     if (skill.resource && Object.keys(skill.resource).length > 0) {
       const resources = Object.values(skill.resource).map(resource => ({
-        resourceId: resource.resourceId || '',
         name: resource.name || '',
         type: resource.type || '',
         content: resource.content || '',
         metadata: resource.metadata || null,
       }));
-      this.setState({ resources });
+      this.setState({
+        resources,
+        expandedKeys: resources.map((_, index) => String(index)),
+      });
     }
 
     Message.success(generatedSkill.explanation || this.getLocaleValue('generateSuccess', 'Skill generated successfully'));
@@ -492,15 +653,436 @@ class NewSkill extends React.Component {
   };
 
   handleShowAiGenerate = () => {
-    this.setState({ showAiGenerateDialog: true, backgroundInfo: '', generatedSkill: null });
+    this.setState({ 
+      showAiGenerateDialog: true, 
+      backgroundInfo: '', 
+      generatedSkill: null,
+      selectedMcpServer: null,
+      mcpTools: [],
+      selectedMcpTools: [],
+      mcpToolSearchKeyword: '',
+      thinkingContent: '',
+      thinkingCollapsed: false,
+      showInputCollapsed: false,
+      inputTooltipVisible: false,
+      thinkingTooltipVisible: false,
+      parsingResult: false,
+      streaming: false,
+      streamContent: '',
+    });
+    this.loadMcpServers();
   };
 
   handleCloseAiGenerateDialog = () => {
     this.setState({ 
       showAiGenerateDialog: false, 
       backgroundInfo: '', 
-      generatedSkill: null 
+      generatedSkill: null,
+      selectedMcpServer: null,
+      mcpTools: [],
+      selectedMcpTools: [],
+      mcpToolSearchKeyword: '',
+      thinkingContent: '',
+      thinkingCollapsed: false,
+      showInputCollapsed: false,
+      inputTooltipVisible: false,
+      thinkingTooltipVisible: false,
+      parsingResult: false,
     });
+  };
+
+  handleInputMouseEnter = (e) => {
+    this.setState({
+      inputTooltipVisible: true,
+      inputTooltipPosition: { x: e.clientX, y: e.clientY },
+    });
+  };
+
+  handleInputMouseMove = (e) => {
+    if (this.state.inputTooltipVisible) {
+      this.setState({
+        inputTooltipPosition: { x: e.clientX, y: e.clientY },
+      });
+    }
+  };
+
+  handleInputMouseLeave = () => {
+    this.setState({
+      inputTooltipVisible: false,
+    });
+  };
+
+  handleThinkingMouseEnter = (e) => {
+    this.setState({
+      thinkingTooltipVisible: true,
+      thinkingTooltipPosition: { x: e.clientX, y: e.clientY },
+    });
+  };
+
+  handleThinkingMouseMove = (e) => {
+    if (this.state.thinkingTooltipVisible) {
+      this.setState({
+        thinkingTooltipPosition: { x: e.clientX, y: e.clientY },
+      });
+    }
+  };
+
+  handleThinkingMouseLeave = () => {
+    this.setState({
+      thinkingTooltipVisible: false,
+    });
+  };
+
+  renderUserInput = () => {
+    const { backgroundInfo, selectedMcpTools, showInputCollapsed } = this.state;
+    
+    if (!showInputCollapsed) {
+      return null;
+    }
+
+    const selectedToolsText = selectedMcpTools.length > 0
+      ? selectedMcpTools.map(t => t.name).join(', ')
+      : this.getLocaleValue('noToolsSelected', 'No tools selected');
+
+    const fullContent = `${this.getLocaleValue('backgroundInfo', 'Background Information')}: ${backgroundInfo}\n\n${this.getLocaleValue('selectedTools', 'Selected Tools')}: ${selectedToolsText}`;
+
+    return (
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '12px 16px',
+          background: '#fafafa',
+          borderRadius: 4,
+          border: '1px solid #e6e6e6',
+          cursor: 'pointer',
+        }}
+        onMouseEnter={this.handleInputMouseEnter}
+        onMouseMove={this.handleInputMouseMove}
+        onMouseLeave={this.handleInputMouseLeave}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon type="info" size="small" style={{ color: '#1890ff' }} />
+            <span style={{ fontSize: '13px', color: '#666' }}>
+              {this.getLocaleValue('userInput', 'User Input')}
+            </span>
+          </div>
+          <Icon type="arrow-up" size="small" style={{ color: '#999' }} />
+        </div>
+        <div style={{ marginTop: 8, fontSize: '12px', color: '#999', maxHeight: 40, overflow: 'hidden' }}>
+          {backgroundInfo.substring(0, 100)}{backgroundInfo.length > 100 ? '...' : ''}
+        </div>
+      </div>
+    );
+  };
+
+  renderThinkingContent = () => {
+    const { thinkingContent, thinkingCollapsed, streaming } = this.state;
+
+    if (!streaming && !thinkingContent) {
+      return null;
+    }
+
+    if (thinkingCollapsed && thinkingContent) {
+      return (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            background: '#fafafa',
+            borderRadius: 4,
+            border: '1px solid #e6e6e6',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={this.handleThinkingMouseEnter}
+          onMouseMove={this.handleThinkingMouseMove}
+          onMouseLeave={this.handleThinkingMouseLeave}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Tag type="blue" size="small">
+                {this.getLocaleValue('thinking', 'Thinking')}
+              </Tag>
+              <span style={{ fontSize: '13px', color: '#666' }}>
+                {this.getLocaleValue('thinkingProcess', 'Thinking Process')}
+              </span>
+            </div>
+            <Icon type="arrow-up" size="small" style={{ color: '#999' }} />
+          </div>
+          <div style={{ marginTop: 8, fontSize: '12px', color: '#999', maxHeight: 40, overflow: 'hidden' }}>
+            {thinkingContent.substring(0, 100)}{thinkingContent.length > 100 ? '...' : ''}
+          </div>
+        </div>
+      );
+    }
+
+    if (!thinkingCollapsed && thinkingContent) {
+      return (
+        <div style={{ marginBottom: 16 }}>
+          <Collapse defaultExpanded={true} style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+            <Panel
+              title={
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Tag type="blue" size="small" style={{ marginRight: 8 }}>
+                    {this.getLocaleValue('thinking', 'Thinking')}
+                  </Tag>
+                  <span>{this.getLocaleValue('thinkingProcess', 'Thinking Process')}</span>
+                </div>
+              }
+            >
+              <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0, fontSize: '13px' }}>
+                {thinkingContent}
+              </div>
+            </Panel>
+          </Collapse>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  renderGeneratedSkill = () => {
+    const { generatedSkill } = this.state;
+    if (!generatedSkill || !generatedSkill.skill) {
+      return null;
+    }
+
+    const skill = generatedSkill.skill;
+    const resources = skill.resource ? Object.values(skill.resource) : [];
+
+    return (
+      <div>
+        <Message type="success" style={{ marginBottom: 16 }}>
+          {this.getLocaleValue('generateSuccess', 'Skill generated successfully')}
+        </Message>
+
+        <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #e6e6e6' }}>
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontSize: '14px', fontWeight: 500, color: '#333' }}>
+                  {this.getLocaleValue('skillName', 'Skill Name')}:
+                </label>
+                <span style={{ fontSize: '14px', color: '#666' }}>{skill.name || '--'}</span>
+              </div>
+            </Col>
+          </Row>
+          <Row gutter={16} style={{ marginBottom: 24 }}>
+            <Col span={24}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontSize: '14px', fontWeight: 500, color: '#333' }}>
+                  {this.getLocaleValue('description', 'Description')}:
+                </label>
+                <span style={{ fontSize: '14px', color: '#666' }}>{skill.description || '--'}</span>
+              </div>
+            </Col>
+          </Row>
+
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
+              {this.getLocaleValue('instruction', 'Instruction')}
+            </div>
+            <div style={{ minHeight: 200, padding: '12px', background: '#fafafa', borderRadius: 4, border: '1px solid #e6e6e6' }}>
+              <MarkdownRenderer content={skill.instruction || ''} />
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
+              {this.getLocaleValue('resources', 'Resources')}
+            </div>
+            {resources.length > 0 ? (
+              <div>
+                <Collapse>
+                  {resources.map((resource, index) => (
+                    <Panel
+                      key={String(index)}
+                      title={
+                        <div>
+                          <span>
+                            {resource.type && resource.name
+                              ? `${resource.type}/${resource.name}`
+                              : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`}
+                          </span>
+                        </div>
+                      }
+                    >
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <div style={{ marginBottom: 16 }}>
+                            <label style={{ display: 'block', marginBottom: 8, fontSize: '13px', color: '#666' }}>
+                              {this.getLocaleValue('resourceName', 'Resource Name')}:
+                            </label>
+                            <span style={{ fontSize: '13px', color: '#333' }}>{resource.name || '--'}</span>
+                          </div>
+                        </Col>
+                        <Col span={12}>
+                          <div style={{ marginBottom: 16 }}>
+                            <label style={{ display: 'block', marginBottom: 8, fontSize: '13px', color: '#666' }}>
+                              {this.getLocaleValue('resourceType', 'Resource Type')}:
+                            </label>
+                            <span>
+                              {resource.type ? (
+                                <Tag type="primary" size="small">
+                                  {resource.type}
+                                </Tag>
+                              ) : (
+                                '--'
+                              )}
+                            </span>
+                          </div>
+                        </Col>
+                      </Row>
+                      <Row gutter={16}>
+                        <Col span={24}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: 8, fontSize: '13px', color: '#666' }}>
+                              {this.getLocaleValue('resourceContent', 'Resource Content')}:
+                            </label>
+                            <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
+                              {resource.content ? (
+                                <MonacoEditor
+                                  language={getLanguageFromFileName(resource.name || '')}
+                                  width="100%"
+                                  height={300}
+                                  value={resource.content}
+                                  options={{
+                                    readOnly: true,
+                                    wordWrap: 'on',
+                                    minimap: { enabled: false },
+                                    lineNumbers: 'on',
+                                    scrollBeyondLastLine: false,
+                                  }}
+                                />
+                              ) : (
+                                <div style={{ padding: '12px', color: '#999', marginTop: '8px' }}>
+                                  {this.getLocaleValue('noContent', 'No content')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Col>
+                      </Row>
+                    </Panel>
+                  ))}
+                </Collapse>
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>
+                {this.getLocaleValue('noResources', 'No resources')}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ color: '#999', fontSize: '12px', marginTop: 16 }}>
+          {this.getLocaleValue('applyGeneratedSkillHint', 'Click "Apply" to fill the form with the generated Skill')}
+        </div>
+      </div>
+    );
+  };
+
+  loadMcpServers = async () => {
+    this.setState({ loadingMcpServers: true });
+    try {
+      const namespaceId = getParams('namespace') || 'public';
+      const result = await request({
+        url: 'v3/console/ai/mcp/list',
+        method: 'get',
+        data: {
+          namespaceId,
+          pageNo: 1,
+          pageSize: 100,
+        },
+      });
+      if (result.code === 0 && result.data) {
+        // Map items to ensure id field exists (use name as id if id is not available)
+        const servers = (result.data.pageItems || []).map(item => ({
+          ...item,
+          id: item.id || item.name,
+        }));
+        this.setState({
+          mcpServers: servers,
+          loadingMcpServers: false,
+        });
+      } else {
+        this.setState({ loadingMcpServers: false });
+      }
+    } catch (error) {
+      console.error('Failed to load MCP servers:', error);
+      this.setState({ loadingMcpServers: false });
+    }
+  };
+
+  handleMcpServerChange = async (value) => {
+    this.setState({ 
+      selectedMcpServer: value,
+      mcpTools: [],
+      selectedMcpTools: [],
+      mcpToolSearchKeyword: '', // 重置搜索关键词
+    });
+    
+    if (value) {
+      await this.loadMcpTools(value);
+    }
+  };
+
+  handleMcpToolSearchChange = (value) => {
+    this.setState({
+      mcpToolSearchKeyword: value,
+    });
+  };
+
+  getFilteredMcpTools = () => {
+    const { mcpTools, mcpToolSearchKeyword } = this.state;
+    if (!mcpToolSearchKeyword.trim()) {
+      return mcpTools;
+    }
+    const keyword = mcpToolSearchKeyword.toLowerCase();
+    return mcpTools.filter(tool => 
+      tool.name && tool.name.toLowerCase().includes(keyword)
+    );
+  };
+
+  loadMcpTools = async (mcpServerId) => {
+    this.setState({ loadingMcpTools: true });
+    try {
+      const namespaceId = getParams('namespace') || 'public';
+      const result = await request({
+        url: 'v3/console/ai/mcp',
+        method: 'get',
+        data: {
+          namespaceId,
+          mcpId: mcpServerId,
+        },
+      });
+      if (result.code === 0 && result.data && result.data.toolSpec) {
+        const tools = result.data.toolSpec.tools || [];
+        this.setState({
+          mcpTools: tools,
+          loadingMcpTools: false,
+        });
+      } else {
+        this.setState({ loadingMcpTools: false });
+      }
+    } catch (error) {
+      console.error('Failed to load MCP tools:', error);
+      this.setState({ loadingMcpTools: false });
+    }
+  };
+
+  handleMcpToolChange = (checked, tool) => {
+    const { selectedMcpTools } = this.state;
+    if (checked) {
+      this.setState({
+        selectedMcpTools: [...selectedMcpTools, tool],
+      });
+    } else {
+      this.setState({
+        selectedMcpTools: selectedMcpTools.filter(t => t.name !== tool.name),
+      });
+    }
   };
 
   handleShowOptimizeDialog = () => {
@@ -513,17 +1095,21 @@ class NewSkill extends React.Component {
 
   handleOptimizeSuccess = (optimizedSkill) => {
     const { locale = {} } = this.props;
+    console.log('handleOptimizeSuccess called with:', optimizedSkill);
+    
     // 优化成功后，将优化后的skill填充到表单中
     if (optimizedSkill) {
       // 处理资源数据，确保格式正确
       let resources = [];
-      if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
+      const resourceData = optimizedSkill.resource || optimizedSkill.resources || {};
+      console.log('Resource data:', resourceData);
+      
+      if (resourceData && Object.keys(resourceData).length > 0) {
         // 使用Object.entries来同时获取key和value，因为Map的key可能是资源名称
-        resources = Object.entries(optimizedSkill.resource).map(([resourceKey, resource]) => {
+        resources = Object.entries(resourceData).map(([resourceKey, resource]) => {
           // 确保资源对象包含所有必要字段
           // 如果resource对象没有name，使用resourceKey作为name
           const resourceObj = {
-            resourceId: resource.resourceId || '',
             name: resource.name || resourceKey || '',
             type: resource.type || '',
             content: resource.content || '',
@@ -533,20 +1119,26 @@ class NewSkill extends React.Component {
         });
       }
       
+      console.log('Processed resources:', resources);
+      
+      // Important: Keep original skill name, don't use optimized name
+      const originalName = this.field.getValue('name') || this.state.skillName;
       this.field.setValues({
-        name: optimizedSkill.name || this.field.getValue('name'),
+        name: originalName, // Always use original skill name
         description: optimizedSkill.description || this.field.getValue('description'),
         instruction: optimizedSkill.instruction || this.field.getValue('instruction'),
       });
 
       this.setState({ 
         resources,
+        expandedKeys: resources.map((_, index) => String(index)),
         currentSkillData: optimizedSkill 
       });
       
       // 如果添加了新资源，显示提示信息
       if (resources.length > 0) {
-        const newResourcesCount = resources.filter(r => !r.resourceId || r.resourceId === '').length;
+        // All resources are considered new when applied from optimization
+        const newResourcesCount = resources.length;
         if (newResourcesCount > 0) {
           Message.success(
             (locale.optimizeSuccess || 'Optimization applied successfully') + ` (${newResourcesCount} new resource(s) added)`
@@ -564,25 +1156,341 @@ class NewSkill extends React.Component {
     this.handleOptimizeDialogClose();
   };
 
-  // Helper function to get locale value, supporting both nested and flattened structures
+  // Helper function to get locale value with fallback
   getLocaleValue = (key, fallback) => {
     const { locale = {} } = this.props;
-    // Try nested structure first (locale.SkillManagement.key)
-    if (locale.SkillManagement && locale.SkillManagement[key]) {
-      return locale.SkillManagement[key];
+    return locale[key] || fallback;
+  };
+
+  // Generate resource unique identifier
+  // Format: "type::name" if type is not blank, otherwise "name"
+  // The separator "::" is used because it's not in the allowed character set for type and name
+  getResourceIdentifier = (resource) => {
+    if (resource.type && resource.type.trim() !== '') {
+      return `${resource.type}::${resource.name || ''}`;
     }
-    // Try flattened structure (locale.key)
-    if (locale[key]) {
-      return locale[key];
+    return resource.name || '';
+  };
+
+  // Build preview data from current form values
+  buildPreviewData = () => {
+    const values = this.field.getValues();
+    const { resources } = this.state;
+
+    // 构建 skillCard 对象（与 handleSubmit 中的逻辑一致）
+    const skillCard = {
+      name: values.name || '',
+      description: values.description || '',
+      instruction: values.instruction || '',
+    };
+
+    // 构建 resource Map，过滤掉无效的资源（没有 name 或 name 为空的资源）
+    if (resources && resources.length > 0) {
+      const resourceMap = {};
+      resources.forEach((resource, index) => {
+        // 只包含有效的资源（有 name 且 name 不为空）
+        if (resource.name && resource.name.trim() !== '') {
+          const key = resource.name.trim();
+          resourceMap[key] = {
+            name: resource.name.trim(),
+            type: resource.type || '',
+            content: resource.content || '',
+            metadata: resource.metadata || null,
+          };
+        }
+      });
+      skillCard.resource = resourceMap;
+    } else {
+      skillCard.resource = {};
     }
-    return fallback;
+
+    return skillCard;
+  };
+
+  // Build file tree structure
+  buildFileTree = (previewData) => {
+    if (!previewData || !previewData.name) {
+      return null;
+    }
+
+    const tree = {
+      name: previewData.name,
+      type: 'folder',
+      children: [
+        {
+          name: 'SKILL.md',
+          type: 'file',
+          fileType: 'skill-md',
+        },
+      ],
+    };
+
+    // Group resources by type
+    const resourcesByType = {};
+    const resourcesWithoutType = [];
+
+    if (previewData.resource && Object.keys(previewData.resource).length > 0) {
+      Object.entries(previewData.resource).forEach(([key, resource]) => {
+        if (resource.type && resource.type.trim() !== '') {
+          const type = resource.type.trim();
+          if (!resourcesByType[type]) {
+            resourcesByType[type] = [];
+          }
+          resourcesByType[type].push({
+            name: resource.name || key,
+            type: 'file',
+            fileType: 'resource',
+            resourceKey: key,
+            resource: resource,
+          });
+        } else {
+          resourcesWithoutType.push({
+            name: resource.name || key,
+            type: 'file',
+            fileType: 'resource',
+            resourceKey: key,
+            resource: resource,
+          });
+        }
+      });
+    }
+
+    // Add type folders
+    Object.entries(resourcesByType).forEach(([type, files]) => {
+      tree.children.push({
+        name: type,
+        type: 'folder',
+        children: files,
+      });
+    });
+
+    // Add resources without type (directly in skill folder)
+    tree.children.push(...resourcesWithoutType);
+
+    return tree;
+  };
+
+  // Escape YAML value (handle special characters)
+  escapeYamlValue = (value) => {
+    if (!value) {
+      return '';
+    }
+    // If value contains special characters, wrap in quotes
+    if (value.includes(':') || value.includes('"') || value.includes("'") || value.includes('\n')) {
+      return `"${value.replace(/"/g, '\\"')}"`;
+    }
+    return value;
+  };
+
+  // Build SKILL.md content
+  buildSkillMarkdown = (previewData) => {
+    if (!previewData) {
+      return '';
+    }
+
+    let markdown = '---\n';
+    markdown += `name: ${this.escapeYamlValue(previewData.name || '')}\n`;
+    markdown += `description: ${this.escapeYamlValue(previewData.description || '')}\n`;
+    markdown += '---\n\n';
+
+    // Instructions section
+    if (previewData.instruction && previewData.instruction.trim() !== '') {
+      markdown += `## Instructions\n\n${previewData.instruction}\n\n`;
+    }
+
+    // Resources section
+    if (previewData.resource && Object.keys(previewData.resource).length > 0) {
+      markdown += `## Resources\n\n`;
+      Object.entries(previewData.resource).forEach(([key, resource]) => {
+        const resourceName = resource.name || key;
+        markdown += `### ${resourceName}\n\n`;
+        const resourceId = this.getResourceIdentifier(resource);
+        markdown += `- **Resource ID**: ${resourceId}\n`;
+        if (resource.type && resource.type.trim() !== '') {
+          markdown += `- **Type**: ${resource.type}\n`;
+          markdown += `- **File**: \`${resource.type}/${resourceName}\`\n\n`;
+        } else {
+          markdown += `- **Type**: \n`;
+          markdown += `- **File**: \`${resourceName}\`\n\n`;
+        }
+      });
+    }
+
+    return markdown;
+  };
+
+  handleShowPreview = () => {
+    const previewData = this.buildPreviewData();
+    const fileTree = this.buildFileTree(previewData);
+    this.setState({
+      showPreviewDialog: true,
+      previewData,
+      fileTree,
+      selectedFile: fileTree ? { name: 'SKILL.md', type: 'file', fileType: 'skill-md' } : null,
+    });
+  };
+
+  handleClosePreview = () => {
+    this.setState({
+      showPreviewDialog: false,
+      previewData: null,
+      fileTree: null,
+      selectedFile: null,
+    });
+  };
+
+  handleFileClick = (file, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Also stop immediate propagation to prevent any other handlers
+      if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) {
+        e.nativeEvent.stopImmediatePropagation();
+      }
+    }
+    // Use setTimeout to ensure state update happens after event handling
+    setTimeout(() => {
+      this.setState({ selectedFile: file });
+    }, 0);
+  };
+
+  renderFileTree = (node, level = 0, parentKey = '') => {
+    if (!node) {
+      return null;
+    }
+
+    const nodeKey = parentKey ? `${parentKey}/${node.name}` : node.name;
+    const isSelected = this.state.selectedFile && 
+      this.state.selectedFile.name === node.name && 
+      this.state.selectedFile.fileType === node.fileType &&
+      this.state.selectedFile.resourceKey === node.resourceKey;
+
+    if (node.type === 'folder') {
+      return (
+        <div key={nodeKey} className="file-tree-folder">
+          <div 
+            className="file-tree-item file-tree-folder-item"
+            style={{ paddingLeft: `${level * 20 + 8}px` }}
+          >
+            <Icon type="folder" style={{ marginRight: 8 }} />
+            <span>{node.name}</span>
+          </div>
+          {node.children && node.children.map((child) => this.renderFileTree(child, level + 1, nodeKey))}
+        </div>
+      );
+    } else {
+      return (
+        <div
+          key={nodeKey}
+          className={`file-tree-item file-tree-file-item ${isSelected ? 'selected' : ''}`}
+          style={{ paddingLeft: `${level * 20 + 8}px`, cursor: 'pointer' }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleFileClick(node, e);
+          }}
+          onMouseDown={(e) => {
+            // Also prevent on mousedown to be extra safe
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <Icon type="file" style={{ marginRight: 8 }} />
+          <span 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            style={{ pointerEvents: 'none' }}
+          >
+            {node.name}
+          </span>
+        </div>
+      );
+    }
+  };
+
+  renderFileContent = () => {
+    const { selectedFile, previewData } = this.state;
+
+    if (!selectedFile || !previewData) {
+      return (
+        <div className="file-content-empty">
+          {this.getLocaleValue('selectFileToPreview', 'Select a file to preview')}
+        </div>
+      );
+    }
+
+    if (selectedFile.fileType === 'skill-md') {
+      const markdown = this.buildSkillMarkdown(previewData);
+      return (
+        <div className="file-content">
+          <div className="file-content-header">
+            <Icon type="file" style={{ marginRight: 8 }} />
+            <span>{selectedFile.name}</span>
+          </div>
+          <pre className="file-content-markdown">{markdown}</pre>
+        </div>
+      );
+    } else if (selectedFile.fileType === 'resource') {
+      const resource = selectedFile.resource;
+      return (
+        <div className="file-content">
+          <div className="file-content-header">
+            <Icon type="file" style={{ marginRight: 8 }} />
+            <span>{selectedFile.name}</span>
+          </div>
+          <div className="file-content-resource">
+            <div className="resource-info">
+              <div className="resource-info-item">
+                <strong>{this.getLocaleValue('resourceName', 'Resource Name')}:</strong> {resource.name || '--'}
+              </div>
+              {resource.type && (
+                <div className="resource-info-item">
+                  <strong>{this.getLocaleValue('resourceType', 'Resource Type')}:</strong> {resource.type}
+                </div>
+              )}
+              <div className="resource-info-item">
+                <strong>{this.getLocaleValue('resourceId', 'Resource ID')}:</strong> {this.getResourceIdentifier(resource)}
+              </div>
+            </div>
+            <div className="resource-content">
+              <div className="resource-content-label">
+                <strong>{this.getLocaleValue('resourceContent', 'Resource Content')}:</strong>
+              </div>
+              {resource.content ? (
+                <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
+                  <MonacoEditor
+                    language={getLanguageFromFileName(resource.name || '')}
+                    width="100%"
+                    height={300}
+                    value={resource.content}
+                    options={{
+                      readOnly: true,
+                      wordWrap: 'on',
+                      minimap: { enabled: false },
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                    }}
+                  />
+                </div>
+              ) : (
+                <div style={{ padding: '12px', color: '#999', marginTop: '8px' }}>
+                  {this.getLocaleValue('noContent', 'No content')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   render() {
     const { locale = {} } = this.props;
-    const { loading, generating, isEdit, resources, showAiGenerateInput } = this.state;
-    // Support both nested (locale.SkillManagement) and flattened (locale.skillName) structures
-    const skillLocale = locale.SkillManagement || locale;
+    const { loading, generating, isEdit, resources, expandedKeys, showAiGenerateInput } = this.state;
 
     const formItemLayout = {
       labelCol: { span: 3 },
@@ -602,7 +1510,7 @@ class NewSkill extends React.Component {
               onClick={this.handleShowAiGenerate}
               style={{ marginLeft: 16 }}
             >
-              <Icon type="magic-wand" /> {this.getLocaleValue('aiGenerate', 'AI Generate Skill')}
+              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} /> {this.getLocaleValue('aiGenerate', 'AI生成')}
             </Button>
           )}
           {isEdit && (
@@ -611,9 +1519,15 @@ class NewSkill extends React.Component {
               onClick={this.handleShowOptimizeDialog}
               style={{ marginLeft: 16 }}
             >
-              <Icon type="refresh" /> {this.getLocaleValue('aiOptimize', 'AI Optimize')}
+              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} /> {this.getLocaleValue('aiOptimize', 'AI 优化')}
             </Button>
           )}
+          <Button
+            onClick={this.handleShowPreview}
+            style={{ marginLeft: 16 }}
+          >
+            <Icon type="eye" /> {this.getLocaleValue('preview', 'Preview')}
+          </Button>
         </div>
 
         <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #e6e6e6' }}>
@@ -625,9 +1539,10 @@ class NewSkill extends React.Component {
             >
               <Input
                 name="name"
-                placeholder={this.getLocaleValue('skillNamePlaceholder', 'Please enter Skill name')}
+                placeholder={this.getLocaleValue('skillNamePlaceholder', 'Please enter Skill name (only English letters, underscore, hyphen)')}
                 disabled={isEdit}
                 maxLength={255}
+                onChange={this.handleSkillNameChange}
               />
             </Form.Item>
 
@@ -645,12 +1560,22 @@ class NewSkill extends React.Component {
               required
               validator={this.validateRequired}
             >
-              <Input.TextArea
-                name="instruction"
-                placeholder={this.getLocaleValue('instructionPlaceholder', 'Please enter Skill instruction')}
-                rows={8}
-                maxLength={10000}
-              />
+              <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', minHeight: '400px' }}>
+                <MonacoEditor
+                  language="markdown"
+                  width="100%"
+                  height={400}
+                  value={this.field.getValue('instruction') || ''}
+                  onChange={(value) => {
+                    this.field.setValue('instruction', value);
+                  }}
+                  options={{
+                    wordWrap: 'on',
+                    minimap: { enabled: false },
+                    lineNumbers: 'on',
+                  }}
+                />
+              </div>
             </Form.Item>
 
             <Form.Item label={this.getLocaleValue('resources', 'Resources')}>
@@ -659,54 +1584,105 @@ class NewSkill extends React.Component {
                   <Icon type="add" /> {this.getLocaleValue('addResource', 'Add Resource')}
                 </Button>
 
-                {resources.map((resource, index) => (
-                  <Card key={index} className="resource-card" style={{ marginBottom: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                      <h4>
-                        {this.getLocaleValue('resource', 'Resource')} {index + 1}
-                      </h4>
-                      <Button
-                        text
-                        warning
-                        onClick={() => this.handleRemoveResource(index)}
-                      >
-                        <Icon type="delete" /> {this.getLocaleValue('delete', 'Delete')}
-                      </Button>
-                    </div>
+                {resources.length > 0 && (
+                  <Collapse expandedKeys={expandedKeys} onExpand={this.handleExpandChange}>
+                    {resources.map((resource, index) => {
+                      const isEditing = this.state.editingResourceIndex === index;
+                      const displayText = resource.type && resource.name
+                        ? `${resource.type}/${resource.name}`
+                        : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`;
 
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <Form.Item label={this.getLocaleValue('resourceName', 'Resource Name')}>
-                          <Input
-                            value={resource.name}
-                            onChange={value => this.handleResourceChange(index, 'name', value)}
-                            placeholder={this.getLocaleValue('resourceNamePlaceholder', 'e.g., template.json')}
-                            maxLength={255}
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={12}>
-                        <Form.Item label={this.getLocaleValue('resourceType', 'Resource Type')}>
-                          <Input
-                            value={resource.type}
-                            onChange={value => this.handleResourceChange(index, 'type', value)}
-                            placeholder={this.getLocaleValue('resourceTypePlaceholder', 'e.g., template')}
-                            maxLength={100}
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    <Form.Item label={this.getLocaleValue('resourceContent', 'Resource Content')}>
-                      <Input.TextArea
-                        value={resource.content}
-                        onChange={value => this.handleResourceChange(index, 'content', value)}
-                        placeholder={this.getLocaleValue('resourceContentPlaceholder', 'Enter resource content')}
-                        rows={6}
-                      />
-                    </Form.Item>
-                  </Card>
-                ))}
+                      return (
+                        <Collapse.Panel
+                          key={String(index)}
+                          title={
+                            <div className="resource-panel-header">
+                              {isEditing ? (
+                                <div
+                                  className="resource-title-editor"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}
+                                >
+                                  <Input
+                                    size="small"
+                                    value={resource.type || ''}
+                                    onChange={(value) => {
+                                      const newResources = [...this.state.resources];
+                                      newResources[index] = { ...newResources[index], type: value };
+                                      this.setState({ resources: newResources });
+                                    }}
+                                    placeholder={this.getLocaleValue('resourceTypePlaceholder', 'Type')}
+                                    style={{ width: '120px' }}
+                                    onPressEnter={() => {
+                                      this.setState({ editingResourceIndex: null });
+                                    }}
+                                  />
+                                  <span>/</span>
+                                  <Input
+                                    size="small"
+                                    value={resource.name || ''}
+                                    onChange={(value) => {
+                                      const newResources = [...this.state.resources];
+                                      newResources[index] = { ...newResources[index], name: value };
+                                      this.setState({ resources: newResources });
+                                    }}
+                                    placeholder={this.getLocaleValue('resourceNamePlaceholder', 'Name')}
+                                    style={{ flex: 1 }}
+                                    onPressEnter={() => {
+                                      this.setState({ editingResourceIndex: null });
+                                    }}
+                                  />
+                                  <Button
+                                    text
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      this.handleResourceTitleCancel();
+                                    }}
+                                  >
+                                    <Icon type="close" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span
+                                    className="resource-title-text"
+                                    onClick={(e) => this.handleResourceTitleClick(index, e)}
+                                    onMouseEnter={(e) => this.handleResourceTitleMouseEnter(index, e)}
+                                    onMouseMove={this.handleResourceTitleMouseMove}
+                                    onMouseLeave={this.handleResourceTitleMouseLeave}
+                                    style={{ cursor: 'pointer', flex: 1 }}
+                                  >
+                                    {displayText}
+                                  </span>
+                                  <Button
+                                    text
+                                    warning
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      this.handleRemoveResource(index);
+                                    }}
+                                  >
+                                    <Icon type="delete" /> {this.getLocaleValue('delete', 'Delete')}
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          }
+                        >
+                          <Form.Item label={this.getLocaleValue('resourceContent', 'Resource Content')}>
+                            <Input.TextArea
+                              value={resource.content}
+                              onChange={value => this.handleResourceChange(index, 'content', value)}
+                              placeholder={this.getLocaleValue('resourceContentPlaceholder', 'Enter resource content')}
+                              rows={6}
+                            />
+                          </Form.Item>
+                        </Collapse.Panel>
+                      );
+                    })}
+                  </Collapse>
+                )}
 
                 {resources.length === 0 && (
                   <div className="empty-resources">
@@ -733,7 +1709,7 @@ class NewSkill extends React.Component {
         {!isEdit && (
           <Dialog
             visible={this.state.showAiGenerateDialog}
-            title={this.getLocaleValue('aiGenerate', 'AI Generate Skill')}
+            title={this.getLocaleValue('aiGenerate', 'AI生成')}
             onClose={this.handleCloseAiGenerateDialog}
             onCancel={this.handleCloseAiGenerateDialog}
             onOk={this.state.generatedSkill ? this.handleApplyGeneratedSkill : this.handleGenerateSkill}
@@ -746,46 +1722,191 @@ class NewSkill extends React.Component {
             cancelProps={{
               children: this.getLocaleValue('cancel', 'Cancel'),
             }}
-            style={{ width: 800 }}
+            style={{ width: 1000 }}
           >
             {!this.state.generatedSkill ? (
               <div>
-                <Form.Item label={this.getLocaleValue('backgroundInfo', 'Background Information')}>
-                  <Input.TextArea
-                    value={this.state.backgroundInfo}
-                    onChange={this.handleBackgroundInfoChange}
-                    placeholder={
-                      this.getLocaleValue('backgroundInfoPlaceholder',
-                        'Please describe what you want the Skill to do, e.g., "I need a Skill to check Nacos configuration status and provide solutions when issues are found"')
-                    }
-                    rows={6}
-                    maxLength={2000}
-                  />
-                </Form.Item>
-                <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
-                  {this.getLocaleValue('generateHint',
-                    'Enter background information and click to generate a Skill based on best practices')}
-                </div>
-              </div>
-            ) : (
-              <div>
-                <Message type="success" style={{ marginBottom: 16 }}>
-                  {this.state.generatedSkill.explanation || this.getLocaleValue('generateSuccess', 'Skill generated successfully')}
-                </Message>
-                <div style={{ marginBottom: 16 }}>
-                  <strong>{this.getLocaleValue('skillName', 'Skill Name')}:</strong> {this.state.generatedSkill.skill.name || '--'}
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <strong>{this.getLocaleValue('description', 'Description')}:</strong> {this.state.generatedSkill.skill.description || '--'}
-                </div>
-                {this.state.generatedSkill.skill.resource && Object.keys(this.state.generatedSkill.skill.resource).length > 0 && (
-                  <div style={{ marginBottom: 16 }}>
-                    <strong>{this.getLocaleValue('resources', 'Resources')}:</strong> {Object.keys(this.state.generatedSkill.skill.resource).length} {this.getLocaleValue('resource', 'resource(s)')}
+                {/* 用户输入区域 - 生成前显示完整，生成后折叠 */}
+                {!this.state.showInputCollapsed ? (
+                  <div>
+                    <Form.Item label={this.getLocaleValue('backgroundInfo', 'Background Information')}>
+                      <Input.TextArea
+                        value={this.state.backgroundInfo}
+                        onChange={this.handleBackgroundInfoChange}
+                        placeholder={
+                          this.getLocaleValue('backgroundInfoPlaceholder',
+                            'Please describe what you want the Skill to do, e.g., "I need a Skill to check Nacos configuration status and provide solutions when issues are found"')
+                        }
+                        rows={6}
+                        maxLength={2000}
+                      />
+                    </Form.Item>
+
+                    <Form.Item label={this.getLocaleValue('selectMcpTools', 'Select MCP Tools (Optional)')}>
+                      <Loading visible={this.state.loadingMcpServers} style={{ width: '100%' }}>
+                        <Select
+                          placeholder={this.getLocaleValue('selectMcpServer', 'Select MCP Server')}
+                          value={this.state.selectedMcpServer}
+                          onChange={this.handleMcpServerChange}
+                          style={{ width: '100%', marginBottom: 12 }}
+                          dataSource={this.state.mcpServers.map(server => ({
+                            label: server.name,
+                            value: server.id || server.name,
+                          }))}
+                        />
+                      </Loading>
+                      
+                      {this.state.selectedMcpServer && (
+                        <Loading visible={this.state.loadingMcpTools} style={{ width: '100%' }}>
+                          <Input
+                            placeholder={this.getLocaleValue('searchTools', 'Search tools by name...')}
+                            value={this.state.mcpToolSearchKeyword}
+                            onChange={this.handleMcpToolSearchChange}
+                            style={{ width: '100%', marginBottom: 12 }}
+                            hasClear
+                          />
+                          <div style={{ 
+                            border: '1px solid #e6e6e6', 
+                            borderRadius: 4, 
+                            padding: 12, 
+                            maxHeight: 200, 
+                            overflowY: 'auto',
+                            background: '#fafafa',
+                          }}>
+                            {this.getFilteredMcpTools().length > 0 ? (
+                              this.getFilteredMcpTools().map((tool, index) => (
+                                <Checkbox
+                                  key={index}
+                                  checked={this.state.selectedMcpTools.some(t => t.name === tool.name)}
+                                  onChange={checked => this.handleMcpToolChange(checked, tool)}
+                                  style={{ display: 'block', marginBottom: 8 }}
+                                >
+                                  <div>
+                                    <strong>{tool.name}</strong>
+                                    {tool.description && (
+                                      <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                                        {tool.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </Checkbox>
+                              ))
+                            ) : (
+                              <div style={{ color: '#999', fontSize: '12px' }}>
+                                {this.state.mcpToolSearchKeyword.trim()
+                                  ? this.getLocaleValue('noToolsFound', 'No tools found matching your search')
+                                  : this.getLocaleValue('noToolsAvailable', 'No tools available in this MCP server')}
+                              </div>
+                            )}
+                          </div>
+                        </Loading>
+                      )}
+                    </Form.Item>
+
+                    <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
+                      {this.getLocaleValue('generateHint',
+                        'Enter background information and click to generate a Skill based on best practices')}
+                    </div>
+                  </div>
+                ) : (
+                  this.renderUserInput()
+                )}
+
+                {/* 思考内容 - 流式接收时展开，完成后折叠 */}
+                {this.renderThinkingContent()}
+
+                {/* 结果解析中提示 */}
+                {this.state.parsingResult && (
+                  <div style={{ marginTop: 16, textAlign: 'center', padding: '20px' }}>
+                    <Loading visible={true} tip={this.getLocaleValue('parsingResult', 'Parsing result...')} />
                   </div>
                 )}
-                <div style={{ color: '#999', fontSize: '12px', marginTop: 16 }}>
-                  {this.getLocaleValue('applyGeneratedSkillHint', 'Click "Apply" to fill the form with the generated Skill')}
-                </div>
+
+                {/* 流式内容显示 */}
+                {this.state.streaming && this.state.streamContent && !this.state.thinkingContent && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <Tag type="green" size="small">
+                        {this.getLocaleValue('generating', 'Generating')}
+                      </Tag>
+                    </div>
+                    <div style={{ 
+                      padding: '12px', 
+                      background: '#fafafa', 
+                      borderRadius: 4, 
+                      border: '1px solid #e6e6e6',
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      fontSize: '13px',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}>
+                      {this.state.streamContent}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              this.renderGeneratedSkill()
+            )}
+
+            {/* Tooltip for user input */}
+            {this.state.inputTooltipVisible && (
+              <div
+                style={{
+                  position: 'fixed',
+                  left: `${this.state.inputTooltipPosition.x}px`,
+                  top: `${this.state.inputTooltipPosition.y - 10}px`,
+                  transform: 'translate(-50%, -100%)',
+                  background: '#333',
+                  color: '#fff',
+                  padding: '12px 16px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  maxWidth: '500px',
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  zIndex: 9999,
+                  pointerEvents: 'none',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {(() => {
+                  const { backgroundInfo, selectedMcpTools } = this.state;
+                  const selectedToolsText = selectedMcpTools.length > 0
+                    ? selectedMcpTools.map(t => t.name).join(', ')
+                    : this.getLocaleValue('noToolsSelected', 'No tools selected');
+                  return `${this.getLocaleValue('backgroundInfo', 'Background Information')}: ${backgroundInfo}\n\n${this.getLocaleValue('selectedTools', 'Selected Tools')}: ${selectedToolsText}`;
+                })()}
+              </div>
+            )}
+
+            {/* Tooltip for thinking content */}
+            {this.state.thinkingTooltipVisible && this.state.thinkingContent && (
+              <div
+                style={{
+                  position: 'fixed',
+                  left: `${this.state.thinkingTooltipPosition.x}px`,
+                  top: `${this.state.thinkingTooltipPosition.y - 10}px`,
+                  transform: 'translate(-50%, -100%)',
+                  background: '#333',
+                  color: '#fff',
+                  padding: '12px 16px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  maxWidth: '500px',
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  zIndex: 9999,
+                  pointerEvents: 'none',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {this.state.thinkingContent}
               </div>
             )}
           </Dialog>
@@ -800,6 +1921,69 @@ class NewSkill extends React.Component {
             locale={this.props.locale}
             history={this.props.history}
           />
+        )}
+
+        <Dialog
+          visible={this.state.showPreviewDialog}
+          title={this.getLocaleValue('previewSkill', 'Preview Skill')}
+          onClose={this.handleClosePreview}
+          onCancel={this.handleClosePreview}
+          onOk={this.handleClosePreview}
+          okProps={{
+            children: this.getLocaleValue('close', 'Close'),
+          }}
+          cancelProps={{
+            children: this.getLocaleValue('cancel', 'Cancel'),
+          }}
+          style={{ width: 1200 }}
+          className="skill-preview-dialog"
+        >
+          <div className="preview-container">
+            <div className="preview-sidebar">
+              <div className="preview-sidebar-header">
+                {this.getLocaleValue('fileStructure', 'File Structure')}
+              </div>
+              <div 
+                className="preview-file-tree"
+                onClick={(e) => {
+                  // Prevent clicks on the file tree container from bubbling
+                  e.stopPropagation();
+                }}
+              >
+                {this.state.fileTree ? this.renderFileTree(this.state.fileTree) : (
+                  <div className="file-tree-empty">
+                    {this.getLocaleValue('noPreviewData', 'No preview data available')}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="preview-content-area">
+              {this.renderFileContent()}
+            </div>
+          </div>
+        </Dialog>
+
+        {/* Custom Tooltip for resource title - follows mouse position */}
+        {this.state.tooltipVisible && this.state.tooltipResourceIndex !== null && (
+          <div
+            style={{
+              position: 'fixed',
+              left: `${this.state.tooltipPosition.x}px`,
+              top: `${this.state.tooltipPosition.y - 10}px`,
+              transform: 'translate(-50%, -100%)',
+              background: '#333',
+              color: '#fff',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              zIndex: 9999,
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {this.getLocaleValue('clickToEdit', '点击进行编辑')}
+          </div>
         )}
       </div>
     );

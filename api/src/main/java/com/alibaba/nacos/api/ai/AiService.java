@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -176,18 +177,18 @@ public interface AiService extends A2aService {
             throws NacosException;
     
     /**
-     * Load skill by skillId.
+     * Load skill by skill name.
      * 
      * <p>
      * This method will query the skill main configuration and all resource configurations,
      * then assemble them into a complete Skill object.
      * </p>
      *
-     * @param skillId skill unique ID (can be skill name)
+     * @param skillName skill name (unique identifier)
      * @return complete Skill object with all resources
      * @throws NacosException if skill not found or query error
      */
-    Skill loadSkill(String skillId) throws NacosException;
+    Skill loadSkill(String skillName) throws NacosException;
     
     /**
      * Export skill configuration to local directory structure.
@@ -218,6 +219,25 @@ public interface AiService extends A2aService {
      * @throws NacosException if export failed
      */
     void exportSkillToLocal(Skill skill, String basePath) throws NacosException;
+    
+    /**
+     * Subscribe skill.
+     *
+     * @param skillName       name of skill
+     * @param skillListener   listener of skill, callback when skill configuration is changed
+     * @return The skill object at current time, nullable if skill not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    Skill subscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
+    
+    /**
+     * Un-subscribe skill.
+     *
+     * @param skillName       name of skill
+     * @param skillListener   listener of skill
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

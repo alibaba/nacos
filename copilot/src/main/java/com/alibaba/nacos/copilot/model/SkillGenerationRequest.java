@@ -17,6 +17,7 @@
 package com.alibaba.nacos.copilot.model;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,6 +35,11 @@ public class SkillGenerationRequest implements Serializable {
     private String backgroundInfo;
     
     /**
+     * Selected MCP tools (optional).
+     */
+    private List<Map<String, Object>> selectedMcpTools;
+    
+    /**
      * Additional parameters.
      */
     private Map<String, Object> params;
@@ -47,6 +53,14 @@ public class SkillGenerationRequest implements Serializable {
     
     public void setBackgroundInfo(String backgroundInfo) {
         this.backgroundInfo = backgroundInfo;
+    }
+    
+    public List<Map<String, Object>> getSelectedMcpTools() {
+        return selectedMcpTools;
+    }
+    
+    public void setSelectedMcpTools(List<Map<String, Object>> selectedMcpTools) {
+        this.selectedMcpTools = selectedMcpTools;
     }
     
     public Map<String, Object> getParams() {

@@ -38,7 +38,7 @@ public class SkillListForm extends SkillForm {
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
-        // For list query, skillId and skillName are optional
+        // For list query, skillName is optional
         if (StringUtils.isNotBlank(search) 
                 && !Constants.Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)
                 && !Constants.Skills.SEARCH_BLUR.equalsIgnoreCase(search)) {

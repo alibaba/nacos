@@ -21,8 +21,10 @@ import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -41,8 +43,10 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosSkillCacheHolder;
 import com.alibaba.nacos.client.ai.event.AgentCardListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
+import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
@@ -84,6 +88,8 @@ public class NacosAiService implements AiService {
     
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
     
+    private final NacosSkillCacheHolder skillCacheHolder;
+    
     private final AiChangeNotifier aiChangeNotifier;
     
     private final ConfigService configService;
@@ -97,6 +103,7 @@ public class NacosAiService implements AiService {
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
+        this.skillCacheHolder = new NacosSkillCacheHolder(configService, this.namespaceId);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -340,14 +347,11 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public Skill loadSkill(String skillId) throws NacosException {
-        if (StringUtils.isBlank(skillId)) {
+    public Skill loadSkill(String skillName) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter `skillId` not present");
+                    "Required parameter `skillName` not present");
         }
-        
-        // skillId can be skill name
-        String skillName = skillId;
         
         // Build Group
         String skillGroup = "nacos-ai-skill-" + skillName;
@@ -358,12 +362,12 @@ public class NacosAiService implements AiService {
             mainConfigContent = configService.getConfig("main.json", skillGroup, 3000);
         } catch (NacosException e) {
             throw new NacosException(NacosException.NOT_FOUND,
-                    "Skill main configuration not found for skillId: " + skillId + ", error: " + e.getMessage());
+                    "Skill main configuration not found for skillName: " + skillName + ", error: " + e.getMessage());
         }
         
         if (StringUtils.isBlank(mainConfigContent)) {
             throw new NacosException(NacosException.NOT_FOUND,
-                    "Skill main configuration not found for skillId: " + skillId);
+                    "Skill main configuration not found for skillName: " + skillName);
         }
         
         // Parse main config
@@ -378,7 +382,6 @@ public class NacosAiService implements AiService {
         // Build Skill object
         Skill skill = new Skill();
         skill.setNamespaceId(this.namespaceId);
-        skill.setSkillId(mainConfig.getSkillId());
         skill.setName(mainConfig.getName());
         skill.setDescription(mainConfig.getDescription());
         skill.setInstruction(mainConfig.getInstruction());
@@ -488,7 +491,6 @@ public class NacosAiService implements AiService {
                     if (StringUtils.isBlank(content)) {
                         // If content is blank, create a JSON containing resource basic info
                         Map<String, Object> contentMap = new HashMap<>();
-                        contentMap.put("resourceId", resource.getResourceId());
                         contentMap.put("name", resource.getName());
                         contentMap.put("type", resource.getType());
                         if (resource.getMetadata() != null) {
@@ -546,9 +548,7 @@ public class NacosAiService implements AiService {
                 String resourceName = entry.getKey();
                 SkillResource resource = entry.getValue();
                 sb.append("### ").append(resource.getName()).append("\n\n");
-                if (StringUtils.isNotBlank(resource.getResourceId())) {
-                    sb.append("- **Resource ID**: ").append(resource.getResourceId()).append("\n");
-                }
+                sb.append("- **Resource ID**: ").append(resource.getResourceIdentifier()).append("\n");
                 sb.append("- **Type**: ").append(StringUtils.isNotBlank(resource.getType()) ? resource.getType() : "N/A").append("\n");
                 // File path: if type is not blank, then {type}/{name}; otherwise {name}
                 // Note: name field already includes file extension, no need to add
@@ -588,19 +588,10 @@ public class NacosAiService implements AiService {
      * Skill main config (from main.json).
      */
     private static class SkillMainConfig {
-        private String skillId;
         private String name;
         private String description;
         private String instruction;
         private Map<String, SkillResourceRef> resource;
-        
-        public String getSkillId() {
-            return skillId;
-        }
-        
-        public void setSkillId(String skillId) {
-            this.skillId = skillId;
-        }
         
         public String getName() {
             return name;
@@ -639,17 +630,8 @@ public class NacosAiService implements AiService {
      * Skill resource reference (in main.json).
      */
     private static class SkillResourceRef {
-        private String resourceId;
         private String name;
         private String type;
-        
-        public String getResourceId() {
-            return resourceId;
-        }
-        
-        public void setResourceId(String resourceId) {
-            this.resourceId = resourceId;
-        }
         
         public String getName() {
             return name;
@@ -669,9 +651,46 @@ public class NacosAiService implements AiService {
     }
     
     @Override
+    public Skill subscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `skillName` can't be empty or null");
+        }
+        if (null == skillListener) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `skillListener` can't be empty or null");
+        }
+        
+        SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
+        aiChangeNotifier.registerListener(skillName, listenerInvoker);
+        Skill result = skillCacheHolder.subscribeSkill(skillName);
+        if (null != result && !listenerInvoker.isInvoked()) {
+            listenerInvoker.invoke(new NacosSkillEvent(skillName, result));
+        }
+        return result;
+    }
+    
+    @Override
+    public void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `skillName` can't be empty or null");
+        }
+        if (null == skillListener) {
+            return;
+        }
+        SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
+        aiChangeNotifier.deregisterListener(skillName, listenerInvoker);
+        if (!aiChangeNotifier.isSkillSubscribed(skillName)) {
+            skillCacheHolder.unsubscribeSkill(skillName);
+        }
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
         this.mcpServerCacheHolder.shutdown();
+        this.skillCacheHolder.shutdown();
         // ConfigService will be closed automatically when client shuts down
     }
 }

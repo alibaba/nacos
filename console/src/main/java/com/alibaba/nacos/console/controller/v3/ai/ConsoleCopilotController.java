@@ -124,6 +124,13 @@ public class ConsoleCopilotController {
         request.setSkill(form.getSkill());
         request.setOptimizationGoal(form.getOptimizationGoal());
         
+        // Set selectedMcpTools to params if provided
+        if (form.getSelectedMcpTools() != null && !form.getSelectedMcpTools().isEmpty()) {
+            java.util.Map<String, Object> params = new java.util.HashMap<>();
+            params.put("selectedMcpTools", form.getSelectedMcpTools());
+            request.setParams(params);
+        }
+        
         // Call optimization service with stream callback
         skillOptimizationService.optimizeSkillStream(request, new StreamResponseCallback<SkillOptimizationResponse>() {
             @Override
@@ -229,6 +236,7 @@ public class ConsoleCopilotController {
         // Build request
         SkillGenerationRequest request = new SkillGenerationRequest();
         request.setBackgroundInfo(form.getBackgroundInfo());
+        request.setSelectedMcpTools(form.getSelectedMcpTools());
         
         // Call generation service with stream callback
         skillGenerationService.generateSkillStream(request, new StreamResponseCallback<SkillGenerationResponse>() {

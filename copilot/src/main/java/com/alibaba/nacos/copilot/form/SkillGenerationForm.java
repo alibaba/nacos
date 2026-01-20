@@ -18,6 +18,9 @@ package com.alibaba.nacos.copilot.form;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Skill generation form.
  *
@@ -29,6 +32,11 @@ public class SkillGenerationForm {
      * Background information provided by user (required).
      */
     private String backgroundInfo;
+    
+    /**
+     * Selected MCP tools (optional).
+     */
+    private List<Map<String, Object>> selectedMcpTools;
     
     /**
      * Validate form data.
@@ -45,5 +53,13 @@ public class SkillGenerationForm {
     
     public void setBackgroundInfo(String backgroundInfo) {
         this.backgroundInfo = backgroundInfo;
+    }
+    
+    public List<Map<String, Object>> getSelectedMcpTools() {
+        return selectedMcpTools;
+    }
+    
+    public void setSelectedMcpTools(List<Map<String, Object>> selectedMcpTools) {
+        this.selectedMcpTools = selectedMcpTools;
     }
 }

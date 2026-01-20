@@ -39,16 +39,14 @@ public class SkillForm implements NacosForm {
     
     private String skillName;
     
-    private String skillId;
-    
     private String version;
     
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
-        if (StringUtils.isEmpty(skillId) && StringUtils.isEmpty(skillName)) {
+        if (StringUtils.isEmpty(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'skillId' or 'skillName' type String at least one is not present");
+                    "Required parameter 'skillName' type String is not present");
         }
     }
     
@@ -72,14 +70,6 @@ public class SkillForm implements NacosForm {
     
     public void setSkillName(String skillName) {
         this.skillName = skillName;
-    }
-    
-    public String getSkillId() {
-        return skillId;
-    }
-    
-    public void setSkillId(String skillId) {
-        this.skillId = skillId;
     }
     
     public String getVersion() {

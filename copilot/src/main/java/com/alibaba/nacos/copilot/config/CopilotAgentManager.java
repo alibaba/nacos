@@ -121,6 +121,7 @@ public class CopilotAgentManager {
                 .apiKey(apiKey)
                 .modelName(config.getLlm().getModel().getModelName())
                 .stream(true)
+                .enableThinking(true)
                 .build();
         
         // Create agent

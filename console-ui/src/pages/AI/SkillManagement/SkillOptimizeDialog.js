@@ -19,15 +19,17 @@ import PropTypes from 'prop-types';
 import {
   Button,
   Dialog,
-  Form,
   Field,
+  Form,
   Input,
   Message,
-  Loading,
-  Icon,
   Tag,
-  Card,
+  Collapse,
   Grid,
+  Card,
+  Select,
+  Checkbox,
+  Loading,
 } from '@alifd/next';
 import { request, getParams } from '@/globalLib';
 import './SkillOptimizeDialog.scss';
@@ -59,13 +61,25 @@ class SkillOptimizeDialog extends React.Component {
       explanation: '',
       error: null,
       showComparison: false,
+      mcpServers: [], // MCP服务器列表
+      selectedMcpServer: null, // 选中的MCP服务器
+      mcpTools: [], // MCP工具列表
+      selectedMcpTools: [], // 选中的MCP工具
+      loadingMcpServers: false, // 加载MCP服务器列表
+      loadingMcpTools: false, // 加载MCP工具列表
+      mcpToolSearchKeyword: '', // MCP工具搜索关键词
     };
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.visible !== this.props.visible && !this.props.visible) {
-      // Dialog closed, cleanup
-      this.cleanup();
+    if (prevProps.visible !== this.props.visible) {
+      if (this.props.visible) {
+        // Dialog opened, load MCP servers
+        this.loadMcpServers();
+      } else {
+        // Dialog closed, cleanup
+        this.cleanup();
+      }
     }
   }
 
@@ -82,14 +96,119 @@ class SkillOptimizeDialog extends React.Component {
       loading: false,
       streaming: false,
       streamContent: '',
+      thinkingContent: '',
       streamType: null,
       optimizedSkill: null,
-      changes: [],
-      qualityScore: null,
       explanation: '',
       error: null,
-      showComparison: false,
+      thinkingCollapsed: false,
+      selectedMcpServer: null,
+      mcpTools: [],
+      selectedMcpTools: [],
+      mcpToolSearchKeyword: '',
     });
+  };
+
+  loadMcpServers = async () => {
+    this.setState({ loadingMcpServers: true });
+    try {
+      const namespaceId = getParams('namespace') || 'public';
+      const result = await request({
+        url: 'v3/console/ai/mcp/list',
+        method: 'get',
+        data: {
+          namespaceId,
+          pageNo: 1,
+          pageSize: 100,
+        },
+      });
+      if (result.code === 0 && result.data) {
+        // Map items to ensure id field exists (use name as id if id is not available)
+        const servers = (result.data.pageItems || []).map(item => ({
+          ...item,
+          id: item.id || item.name,
+        }));
+        this.setState({
+          mcpServers: servers,
+          loadingMcpServers: false,
+        });
+      } else {
+        this.setState({ loadingMcpServers: false });
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load MCP servers:', error);
+      this.setState({ loadingMcpServers: false });
+    }
+  };
+
+  handleMcpServerChange = async (value) => {
+    this.setState({
+      selectedMcpServer: value,
+      mcpTools: [],
+      selectedMcpTools: [],
+      mcpToolSearchKeyword: '', // 重置搜索关键词
+    });
+
+    if (value) {
+      await this.loadMcpTools(value);
+    }
+  };
+
+  handleMcpToolSearchChange = (value) => {
+    this.setState({
+      mcpToolSearchKeyword: value,
+    });
+  };
+
+  getFilteredMcpTools = () => {
+    const { mcpTools, mcpToolSearchKeyword } = this.state;
+    if (!mcpToolSearchKeyword.trim()) {
+      return mcpTools;
+    }
+    const keyword = mcpToolSearchKeyword.toLowerCase();
+    return mcpTools.filter(tool => tool.name && tool.name.toLowerCase().includes(keyword));
+  };
+
+  loadMcpTools = async (mcpServerId) => {
+    this.setState({ loadingMcpTools: true });
+    try {
+      const namespaceId = getParams('namespace') || 'public';
+      const result = await request({
+        url: 'v3/console/ai/mcp',
+        method: 'get',
+        data: {
+          namespaceId,
+          mcpId: mcpServerId,
+        },
+      });
+      if (result.code === 0 && result.data && result.data.toolSpec) {
+        const tools = result.data.toolSpec.tools || [];
+        this.setState({
+          mcpTools: tools,
+          loadingMcpTools: false,
+        });
+      } else {
+        this.setState({ loadingMcpTools: false });
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load MCP tools:', error);
+      this.setState({ loadingMcpTools: false });
+    }
+  };
+
+  handleMcpToolChange = (checked, tool) => {
+    const { selectedMcpTools } = this.state;
+    if (checked) {
+      this.setState({
+        selectedMcpTools: [...selectedMcpTools, tool],
+      });
+    } else {
+      this.setState({
+        selectedMcpTools: selectedMcpTools.filter(t => t.name !== tool.name),
+      });
+    }
   };
 
   handleOptimize = () => {
@@ -105,19 +224,23 @@ class SkillOptimizeDialog extends React.Component {
       loading: true,
       streaming: true,
       streamContent: '',
+      thinkingContent: '',
       streamType: null,
       optimizedSkill: null,
-      changes: [],
-      qualityScore: null,
       explanation: '',
       error: null,
-      showComparison: false,
+      thinkingCollapsed: false,
     });
 
     // Build request payload
     const payload = {
       skill,
       optimizationGoal,
+      selectedMcpTools: this.state.selectedMcpTools.map(tool => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      })),
     };
 
     // Use EventSource for SSE
@@ -202,31 +325,43 @@ class SkillOptimizeDialog extends React.Component {
   };
 
   handleSSEMessage = data => {
-    const { type, chunk, done, optimizedSkill, changes, qualityScore, explanation } = data;
+    const { type, chunk, done, optimizedSkill } = data;
+    const typeStr = type?.code || type || 'CONTENT';
 
-    if (type === 'THINKING' || type === 'TOOL_CALL' || type === 'CONTENT') {
-      // Accumulate stream content
+    if (typeStr === 'THINKING' || type === 'THINKING') {
+      // Accumulate thinking content separately
+      this.setState(prevState => ({
+        thinkingContent: prevState.thinkingContent + (chunk || ''),
+        streamType: 'THINKING',
+      }));
+    } else if (typeStr === 'TOOL_CALL' || type === 'TOOL_CALL') {
+      // Accumulate tool call content
       this.setState(prevState => ({
         streamContent: prevState.streamContent + (chunk || ''),
-        streamType: type,
+        streamType: 'TOOL_CALL',
       }));
-    } else if (type === 'DONE' || done) {
-      // Final result
+    } else if (typeStr === 'CONTENT' || type === 'CONTENT') {
+      // Accumulate general content
+      this.setState(prevState => ({
+        streamContent: prevState.streamContent + (chunk || ''),
+        streamType: 'CONTENT',
+      }));
+    } else if (typeStr === 'DONE' || type === 'DONE' || done) {
+      // Final result - collapse thinking section
+      // Support multiple field names: optimizedSkill, skill
+      const skillData = optimizedSkill || data.skill || data.optimizedSkill || null;
       this.setState({
         streaming: false,
         loading: false,
-        optimizedSkill: optimizedSkill || null,
-        changes: changes || [],
-        qualityScore: qualityScore || null,
-        explanation: explanation || '',
-        showComparison: true,
+        optimizedSkill: skillData,
+        thinkingCollapsed: true, // Collapse thinking section when done
       });
-    } else if (type === 'error' || explanation) {
+    } else if (typeStr === 'error' || type === 'error') {
       // Error case
       this.setState({
         streaming: false,
         loading: false,
-        error: explanation || 'Optimization failed',
+        error: data.explanation || data.message || 'Optimization failed',
       });
     }
   };
@@ -240,14 +375,16 @@ class SkillOptimizeDialog extends React.Component {
       return;
     }
 
-    // Merge optimized fields with original skill (preserve namespaceId, skillId, etc.)
+    // Merge optimized fields with original skill (preserve namespaceId, etc.)
     // Use optimized resources instead of original resources
+    // Important: Keep original skill name, don't use optimized name
     const mergedSkill = {
       ...skill,
-      name: optimizedSkill.name || skill.name,
+      name: skill.name, // Always use original skill name
       description: optimizedSkill.description || skill.description,
       instruction: optimizedSkill.instruction || skill.instruction,
-      resource: optimizedSkill.resource || {}, // Use optimized resources
+      // Use optimized resources
+      resource: optimizedSkill.resource || optimizedSkill.resources || {},
     };
 
     // If onSuccess is provided, call it directly (for in-page optimization)
@@ -352,161 +489,206 @@ class SkillOptimizeDialog extends React.Component {
   };
 
   renderStreamContent = () => {
-    const { streamContent, streamType } = this.state;
-    if (!streamContent && !streamType) {
-      return null;
-    }
+    const { streamContent, thinkingContent, streamType, thinkingCollapsed } = this.state;
+    const { locale = {} } = this.props;
 
     return (
-      <div className="stream-content">
-        <div className="stream-header">
-          <Tag type={this.getStreamTypeColor(streamType)} size="small">
-            {this.getStreamTypeLabel(streamType)}
-          </Tag>
-        </div>
-        <div className="stream-text">
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
-            {streamContent}
-          </pre>
-        </div>
+      <div>
+        {thinkingContent && (
+          <div className="thinking-section" style={{ marginBottom: 16 }}>
+            <Collapse
+              defaultExpanded={!thinkingCollapsed}
+              style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}
+            >
+              <Collapse.Panel
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Tag type="blue" size="small" style={{ marginRight: 8 }}>
+                      {locale.thinking || 'Thinking'}
+                    </Tag>
+                    <span>{locale.thinkingProcess || 'Optimization reasoning process'}</span>
+                  </div>
+                }
+              >
+                <div className="thinking-content">
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+                    {thinkingContent}
+                  </pre>
+                </div>
+              </Collapse.Panel>
+            </Collapse>
+          </div>
+        )}
+
+        {streamContent && streamType !== 'THINKING' && (
+          <div className="stream-content">
+            <div className="stream-header">
+              <Tag type={this.getStreamTypeColor(streamType)} size="small">
+                {this.getStreamTypeLabel(streamType)}
+              </Tag>
+            </div>
+            <div className="stream-text">
+              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+                {streamContent}
+              </pre>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
-  renderComparison = () => {
+  renderOptimizedPreview = () => {
     const { skill, locale = {} } = this.props;
-    const { optimizedSkill, changes, qualityScore, explanation } = this.state;
+    const { optimizedSkill, thinkingContent } = this.state;
 
-    if (!optimizedSkill) {
+    if (!optimizedSkill || !skill) {
       return null;
     }
 
-    const originalResources = skill.resource ? Object.keys(skill.resource) : [];
-    const optimizedResources = optimizedSkill.resource ? Object.keys(optimizedSkill.resource) : [];
-    const removedResources = originalResources.filter(name => !optimizedResources.includes(name));
+    const optimizedResources = optimizedSkill.resource
+      ? Object.keys(optimizedSkill.resource)
+      : [];
+    const originalResources = skill?.resource
+      ? Object.keys(skill.resource)
+      : [];
 
     return (
-      <div className="comparison-view">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Card title={locale.originalContent || '原始内容'} className="comparison-card">
-              <div className="comparison-item">
-                <label>{locale.skillName || '名称'}:</label>
-                <div>{skill.name || '--'}</div>
-              </div>
-              <div className="comparison-item">
-                <label>{locale.description || '描述'}:</label>
-                <div>{skill.description || '--'}</div>
-              </div>
-              <div className="comparison-item">
-                <label>{locale.instruction || '指令'}:</label>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {skill.instruction || '--'}
-                </pre>
-              </div>
-              {originalResources.length > 0 && (
+      <div>
+        <Message type="success" style={{ marginBottom: 16 }}>
+          {locale.optimizeSuccess || 'Skill optimized successfully'}
+        </Message>
+
+        {thinkingContent && (
+          <div className="thinking-section" style={{ marginBottom: 16 }}>
+            <Collapse defaultExpanded={false} style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+              <Collapse.Panel
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Tag type="blue" size="small" style={{ marginRight: 8 }}>
+                      {locale.thinking || 'Thinking'}
+                    </Tag>
+                    <span>{locale.thinkingProcess || 'Optimization reasoning process'}</span>
+                  </div>
+                }
+              >
+                <div className="thinking-content">
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+                    {thinkingContent}
+                  </pre>
+                </div>
+              </Collapse.Panel>
+            </Collapse>
+          </div>
+        )}
+
+        <div className="comparison-view" style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Card title={locale.originalContent || 'Original Content'} className="comparison-card">
                 <div className="comparison-item">
-                  <label>{locale.resources || '资源'}:</label>
-                  <div>
-                    {originalResources.map((name, index) => (
-                      <Tag key={index} style={{ marginRight: 8, marginBottom: 4 }}>
-                        {name}
-                      </Tag>
-                    ))}
+                  <label>{locale.skillName || 'Skill Name'}:</label>
+                  <div>{skill.name || '--'}</div>
+                </div>
+                <div className="comparison-item">
+                  <label>{locale.description || 'Description'}:</label>
+                  <div>{skill.description || '--'}</div>
+                </div>
+                <div className="comparison-item">
+                  <label>{locale.instruction || 'Instruction'}:</label>
+                  <pre className="comparison-pre">{skill.instruction || '--'}</pre>
+                </div>
+                {originalResources.length > 0 && (
+                  <div className="comparison-item">
+                    <label>{locale.resources || 'Resources'}:</label>
+                    <div>
+                      {originalResources.map((name, index) => (
+                        <Tag key={index} style={{ marginRight: 8, marginBottom: 4 }}>
+                          {name}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </Col>
+            <Col span={12}>
+              <Card
+                title={locale.optimizedContent || 'Optimized Content'}
+                className="comparison-card optimized"
+              >
+                <div className="comparison-item">
+                  <label>{locale.skillName || 'Skill Name'}:</label>
+                  <div className={optimizedSkill.name !== skill.name ? 'changed' : ''}>
+                    {optimizedSkill.name || '--'}
                   </div>
                 </div>
-              )}
-            </Card>
-          </Col>
-          <Col span={12}>
-            <Card title={locale.optimizedContent || '优化后内容'} className="comparison-card optimized">
-              <div className="comparison-item">
-                <label>{locale.skillName || '名称'}:</label>
-                <div>{optimizedSkill.name || '--'}</div>
-              </div>
-              <div className="comparison-item">
-                <label>{locale.description || '描述'}:</label>
-                <div>{optimizedSkill.description || '--'}</div>
-              </div>
-              <div className="comparison-item">
-                <label>{locale.instruction || '指令'}:</label>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {optimizedSkill.instruction || '--'}
-                </pre>
-              </div>
-              {optimizedResources.length > 0 ? (
                 <div className="comparison-item">
-                  <label>{locale.resources || '资源'}:</label>
-                  <div>
-                    {optimizedResources.map((name, index) => (
-                      <Tag key={index} type="success" style={{ marginRight: 8, marginBottom: 4 }}>
-                        {name}
-                      </Tag>
-                    ))}
+                  <label>{locale.description || 'Description'}:</label>
+                  <div className={optimizedSkill.description !== skill.description ? 'changed' : ''}>
+                    {optimizedSkill.description || '--'}
                   </div>
                 </div>
-              ) : (
                 <div className="comparison-item">
-                  <label>{locale.resources || '资源'}:</label>
-                  <div>{locale.noResources || '暂无资源'}</div>
+                  <label>{locale.instruction || 'Instruction'}:</label>
+                  <pre className={`comparison-pre ${optimizedSkill.instruction !== skill.instruction ? 'changed' : ''}`}>
+                    {optimizedSkill.instruction || '--'}
+                  </pre>
                 </div>
-              )}
-            </Card>
-          </Col>
-        </Row>
+                {optimizedResources.length > 0 ? (
+                  <div className="comparison-item">
+                    <label>{locale.resources || 'Resources'}:</label>
+                    <div>
+                      {optimizedResources.map((name, index) => {
+                        const isNew = !originalResources.includes(name);
+                        return (
+                          <Tag
+                            key={index}
+                            type={isNew ? 'success' : 'normal'}
+                            style={{ marginRight: 8, marginBottom: 4 }}
+                          >
+                            {name}
+                            {isNew && ' (new)'}
+                          </Tag>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="comparison-item">
+                    <label>{locale.resources || 'Resources'}:</label>
+                    <div>{locale.noResources || 'No resources'}</div>
+                  </div>
+                )}
+              </Card>
+            </Col>
+          </Row>
 
-        {removedResources.length > 0 && (
-          <Card title={locale.removedResources || '已移除的资源'} style={{ marginTop: 16 }}>
-            <div>
-              {removedResources.map((name, index) => (
-                <Tag key={index} type="warning" style={{ marginRight: 8, marginBottom: 4 }}>
-                  {name}
-                </Tag>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {changes.length > 0 && (
-          <Card title="变更详情" style={{ marginTop: 16 }}>
-            {changes.map((change, index) => (
-              <div key={index} className="change-item">
-                <div className="change-header">
-                  <Tag type="primary" size="small">
-                    {change.field}
-                  </Tag>
-                  <Tag type={change.type === 'improvement' ? 'success' : 'normal'} size="small">
-                    {change.type}
-                  </Tag>
-                </div>
-                <div className="change-description">{change.description}</div>
-                <div className="change-reason">原因: {change.reason}</div>
+          {originalResources.some(name => !optimizedResources.includes(name)) && (
+            <Card title={locale.removedResources || 'Removed Resources'} style={{ marginTop: 16 }}>
+              <div>
+                {originalResources
+                  .filter(name => !optimizedResources.includes(name))
+                  .map((name, index) => (
+                    <Tag key={index} type="warning" style={{ marginRight: 8, marginBottom: 4 }}>
+                      {name}
+                    </Tag>
+                  ))}
               </div>
-            ))}
-          </Card>
-        )}
+            </Card>
+          )}
+        </div>
 
-        {qualityScore !== null && (
-          <Card title="质量评分" style={{ marginTop: 16 }}>
-            <div className="quality-score">
-              <span className="score-value">{qualityScore}</span>
-              <span className="score-label">/ 1.0</span>
-            </div>
-          </Card>
-        )}
-
-        {explanation && (
-          <Card title="优化说明" style={{ marginTop: 16 }}>
-            <div className="explanation">{explanation}</div>
-          </Card>
-        )}
+        <div style={{ color: '#999', fontSize: '12px', marginTop: 16 }}>
+          {locale.applyOptimizedSkillHint || 'Click "Apply" to fill the form with the optimized Skill'}
+        </div>
       </div>
     );
   };
 
   render() {
     const { visible, locale = {} } = this.props;
-    const { loading, streaming, showComparison, error } = this.state;
+    const { loading, streaming, optimizedSkill, error } = this.state;
 
     return (
       <Dialog
@@ -514,38 +696,109 @@ class SkillOptimizeDialog extends React.Component {
         title={locale.aiOptimize || 'AI 优化'}
         onClose={this.handleClose}
         onCancel={this.handleClose}
-        onOk={showComparison ? this.handleApply : this.handleOptimize}
+        onOk={optimizedSkill ? this.handleApply : this.handleOptimize}
         okProps={{
           loading: loading || streaming,
-          children: showComparison ? (locale.apply || '应用') : (locale.optimize || '开始优化'),
+          children: optimizedSkill
+            ? (locale.apply || 'Apply')
+            : (locale.optimize || 'Start Optimization'),
         }}
         cancelProps={{
-          children: locale.cancel || '取消',
+          children: locale.cancel || 'Cancel',
         }}
         style={{ width: 1000 }}
         className="skill-optimize-dialog"
       >
-        <Loading visible={loading && !streaming} tip={locale.optimizing || '优化中...'}>
-          <Form field={this.field}>
-            <Form.Item label={locale.optimizationGoal || '优化目标'} required={false}>
+        {!optimizedSkill ? (
+          <div>
+            <Form.Item label={locale.optimizationGoal || 'Optimization Goal'}>
               <Input.TextArea
-                name="optimizationGoal"
-                placeholder={locale.optimizationGoalPlaceholder || '请输入优化目标（可选）'}
-                rows={3}
+                value={this.field.getValue('optimizationGoal')}
+                onChange={value => this.field.setValue('optimizationGoal', value)}
+                placeholder={locale.optimizationGoalPlaceholder || 'Enter optimization goal (optional), e.g., improve instruction clarity, add error handling, add resource templates'}
+                rows={6}
+                maxLength={2000}
               />
             </Form.Item>
-          </Form>
 
-          {error && (
-            <Message type="error" style={{ marginTop: 16 }}>
-              {error}
-            </Message>
-          )}
+            <Form.Item label={locale.selectMcpTools || 'Select MCP Tools (Optional)'}>
+              <Loading visible={this.state.loadingMcpServers} style={{ width: '100%' }}>
+                <Select
+                  placeholder={locale.selectMcpServer || 'Select MCP Server'}
+                  value={this.state.selectedMcpServer}
+                  onChange={this.handleMcpServerChange}
+                  style={{ width: '100%', marginBottom: 12 }}
+                  dataSource={this.state.mcpServers.map(server => ({
+                    label: server.name,
+                    value: server.id || server.name,
+                  }))}
+                />
+              </Loading>
 
-          {streaming && this.renderStreamContent()}
+              {this.state.selectedMcpServer && (
+                <Loading visible={this.state.loadingMcpTools} style={{ width: '100%' }}>
+                  <Input
+                    placeholder={locale.searchTools || 'Search tools by name...'}
+                    value={this.state.mcpToolSearchKeyword}
+                    onChange={this.handleMcpToolSearchChange}
+                    style={{ width: '100%', marginBottom: 12 }}
+                    hasClear
+                  />
+                  <div
+                    style={{
+                      border: '1px solid #e6e6e6',
+                      borderRadius: 4,
+                      padding: 12,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      background: '#fafafa',
+                    }}
+                  >
+                    {this.getFilteredMcpTools().length > 0 ? (
+                      this.getFilteredMcpTools().map((tool, index) => (
+                        <Checkbox
+                          key={index}
+                          checked={this.state.selectedMcpTools.some(t => t.name === tool.name)}
+                          onChange={checked => this.handleMcpToolChange(checked, tool)}
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          <div>
+                            <strong>{tool.name}</strong>
+                            {tool.description && (
+                              <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                                {tool.description}
+                              </div>
+                            )}
+                          </div>
+                        </Checkbox>
+                      ))
+                    ) : (
+                      <div style={{ color: '#999', fontSize: '12px' }}>
+                        {this.state.mcpToolSearchKeyword.trim()
+                          ? (locale.noToolsFound || 'No tools found matching your search')
+                          : (locale.noToolsAvailable || 'No tools available in this MCP server')}
+                      </div>
+                    )}
+                  </div>
+                </Loading>
+              )}
+            </Form.Item>
 
-          {showComparison && this.renderComparison()}
-        </Loading>
+            <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
+              {locale.optimizeHint || 'Enter optimization goal and click Start Optimization, AI will optimize the Skill content based on the goal'}
+            </div>
+
+            {error && (
+              <Message type="error" style={{ marginTop: 16 }}>
+                {error}
+              </Message>
+            )}
+
+            {streaming && this.renderStreamContent()}
+          </div>
+        ) : (
+          this.renderOptimizedPreview()
+        )}
       </Dialog>
     );
   }

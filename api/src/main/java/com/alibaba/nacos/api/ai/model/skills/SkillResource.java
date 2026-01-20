@@ -19,43 +19,44 @@ package com.alibaba.nacos.api.ai.model.skills;
 import java.util.Map;
 
 /**
- * Claude Skill Resource - 资源结构
+ * Claude Skill Resource structure.
  *
  * @author nacos
  */
 public class SkillResource {
     
     /**
-     * 资源唯一ID
-     */
-    private String resourceId;
-    
-    /**
-     * 资源名称（包含文件后缀，如：config_check_template.json）
+     * Resource name (includes file extension, e.g., config_check_template.json).
      */
     private String name;
     
     /**
-     * 资源类型：template, data, script, etc.
+     * Resource type: template, data, script, etc.
      */
     private String type;
     
     /**
-     * 资源内容（字符串格式，从独立配置中读取）
+     * Resource content (string format, read from independent configuration).
      */
     private String content;
     
     /**
-     * 资源元数据（可选）
+     * Resource metadata (optional).
      */
     private Map<String, Object> metadata;
     
-    public String getResourceId() {
-        return resourceId;
-    }
-    
-    public void setResourceId(String resourceId) {
-        this.resourceId = resourceId;
+    /**
+     * Get resource unique identifier.
+     * Format: "type::name" if type is not blank, otherwise "name".
+     * The separator "::" is used because it's not in the allowed character set for type and name.
+     *
+     * @return resource unique identifier
+     */
+    public String getResourceIdentifier() {
+        if (type != null && !type.trim().isEmpty()) {
+            return type + "::" + name;
+        }
+        return name;
     }
     
     public String getName() {

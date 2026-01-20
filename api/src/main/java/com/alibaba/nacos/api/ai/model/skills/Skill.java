@@ -27,32 +27,27 @@ import java.util.Map;
 public class Skill {
     
     /**
-     * 命名空间ID（Nacos 管理字段）
+     * Namespace ID (Nacos management field).
      */
     private String namespaceId;
     
     /**
-     * Skill 唯一ID（系统生成）
-     */
-    private String skillId;
-    
-    /**
-     * Skill 名称
+     * Skill name (unique identifier, only allows English letters, underscore, and hyphen).
      */
     private String name;
     
     /**
-     * Skill 描述
+     * Skill description.
      */
     private String description;
     
     /**
-     * Claude 指令（注意：单数 instruction）
+     * Claude instruction (note: singular instruction).
      */
     private String instruction;
     
     /**
-     * 资源映射（注意：单数 resource，key 为 resource name）
+     * Resource map (note: singular resource, key is resource name).
      */
     private Map<String, SkillResource> resource;
     
@@ -62,14 +57,6 @@ public class Skill {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
-    }
-    
-    public String getSkillId() {
-        return skillId;
-    }
-    
-    public void setSkillId(String skillId) {
-        this.skillId = skillId;
     }
     
     public String getName() {

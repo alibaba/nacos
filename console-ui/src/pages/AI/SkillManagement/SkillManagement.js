@@ -375,9 +375,6 @@ class SkillManagement extends React.Component {
         <a onClick={() => this.handleEditSkill(record)} style={{ marginRight: 8 }}>
           {locale.edit || 'Edit'}
         </a>
-        <a onClick={() => this.handleOptimizeSkill(record)} style={{ marginRight: 8, color: '#1890ff' }}>
-          <Icon type="ai" /> {locale.aiOptimize || 'AI 优化'}
-        </a>
         <a onClick={() => this.handleDeleteSkill(record)} style={{ color: '#ff4d4f' }}>
           {locale.delete || 'Delete'}
         </a>

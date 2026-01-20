@@ -48,7 +48,7 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
-    children: PropTypes.array,
+    children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
     getNotice: PropTypes.func,
     notice: PropTypes.string,
     consoleUiEnable: PropTypes.string,

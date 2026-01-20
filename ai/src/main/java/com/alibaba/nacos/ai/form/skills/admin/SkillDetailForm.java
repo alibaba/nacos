@@ -41,7 +41,7 @@ public class SkillDetailForm extends SkillForm {
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
-        // For create/detail, skillId and skillName are optional (can be in skillCard)
+        // For create/detail, skillName is optional (can be in skillCard)
         // Only skillCard is required
         if (StringUtils.isEmpty(skillCard)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,

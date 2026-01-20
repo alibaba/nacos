@@ -27,8 +27,6 @@ public class SkillBasicInfo {
     
     private String namespaceId;
     
-    private String skillId;
-    
     private String name;
     
     private String description;
@@ -41,14 +39,6 @@ public class SkillBasicInfo {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
-    }
-    
-    public String getSkillId() {
-        return skillId;
-    }
-    
-    public void setSkillId(String skillId) {
-        this.skillId = skillId;
     }
     
     public String getName() {
@@ -84,13 +74,13 @@ public class SkillBasicInfo {
             return false;
         }
         SkillBasicInfo that = (SkillBasicInfo) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(skillId, that.skillId)
+        return Objects.equals(namespaceId, that.namespaceId)
                 && Objects.equals(name, that.name) && Objects.equals(description, that.description)
                 && Objects.equals(updateTime, that.updateTime);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, skillId, name, description, updateTime);
+        return Objects.hash(namespaceId, name, description, updateTime);
     }
 }

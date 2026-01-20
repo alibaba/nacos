@@ -17,15 +17,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import './index.scss';
-import { Button, ConfigProvider, Radio } from '@alifd/next';
+import { Button, ConfigProvider, Radio, Collapse } from '@alifd/next';
 import PageTitle from '../../components/PageTitle';
 import { changeLanguage } from '@/reducers/locale';
 import changeTheme from '../../theme';
 import changeNameShow from '../../components/NameSpaceList/show';
 import { connect } from 'react-redux';
 import { LANGUAGE_KEY, NAME_SHOW, THEME } from '../../constants';
+import CopilotConfig from './CopilotConfig';
 
 const { Group: RadioGroup } = Radio;
+const { Panel } = Collapse;
 
 @connect(state => ({ ...state.locale }), { changeLanguage, changeTheme, changeNameShow })
 @ConfigProvider.config
@@ -126,6 +128,13 @@ class SettingCenter extends React.Component {
           <Button type="primary" onClick={this.submit.bind(this)}>
             {locale.settingSubmit}
           </Button>
+          <div style={{ marginTop: '30px' }}>
+            <Collapse defaultExpandedKeys={[]}>
+              <Panel title={locale.copilotConfigSection || 'Nacos Copilot配置'}>
+                <CopilotConfig locale={locale} />
+              </Panel>
+            </Collapse>
+          </div>
         </div>
       </>
     );

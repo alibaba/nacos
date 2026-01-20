@@ -19,6 +19,9 @@ package com.alibaba.nacos.copilot.form;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Skill optimization form.
  *
@@ -35,6 +38,11 @@ public class SkillOptimizationForm {
      * Optimization goal (optional).
      */
     private String optimizationGoal;
+    
+    /**
+     * Selected MCP tools (optional).
+     */
+    private List<Map<String, Object>> selectedMcpTools;
     
     /**
      * Validate form data.
@@ -62,5 +70,13 @@ public class SkillOptimizationForm {
     
     public void setOptimizationGoal(String optimizationGoal) {
         this.optimizationGoal = optimizationGoal;
+    }
+    
+    public List<Map<String, Object>> getSelectedMcpTools() {
+        return selectedMcpTools;
+    }
+    
+    public void setSelectedMcpTools(List<Map<String, Object>> selectedMcpTools) {
+        this.selectedMcpTools = selectedMcpTools;
     }
 }
