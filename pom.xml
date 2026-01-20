@@ -147,7 +147,7 @@
         <hessian.version>4.0.63</hessian.version>
         <mockito.version>4.11.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.15.bugfix</jraft-core.version>
+        <jraft-core.version>1.4.0</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <!-- gson version should follow grcp-core dependency -->
         <!-- TODO try to remove direct dependency on gson -->

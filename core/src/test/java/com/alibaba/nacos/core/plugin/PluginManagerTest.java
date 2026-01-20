@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.plugin.PluginConfigSpec;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
+import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,20 +54,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * {@link UnifiedPluginManager} unit test.
+ * {@link PluginManager} unit test.
  *
  * @author WangzJi
  */
 @ExtendWith(MockitoExtension.class)
-class UnifiedPluginManagerTest {
+class PluginManagerTest {
 
     @Mock
     private PluginStatePersistenceService persistence;
 
     @Mock
+    private PluginStateSynchronizer synchronizer;
+
+    @Mock
     private ApplicationReadyEvent applicationReadyEvent;
 
-    private UnifiedPluginManager manager;
+    private PluginManager manager;
 
     @BeforeEach
     void setUp() {
@@ -75,7 +79,7 @@ class UnifiedPluginManagerTest {
         lenient().doNothing().when(persistence).saveState(any(), anyBoolean());
         lenient().doNothing().when(persistence).saveConfig(any(), anyMap());
 
-        manager = new UnifiedPluginManager(persistence);
+        manager = new PluginManager(persistence, synchronizer);
     }
 
     @Test
@@ -100,8 +104,7 @@ class UnifiedPluginManagerTest {
 
         manager.setPluginEnabled("trace:test", false);
 
-        assertFalse(manager.isPluginEnabled("trace", "test"));
-        verify(persistence, times(1)).saveState("trace:test", false);
+        verify(synchronizer, times(1)).syncStateChange("trace:test", false);
     }
 
     @Test
@@ -133,8 +136,7 @@ class UnifiedPluginManagerTest {
 
         manager.setPluginEnabled("auth:nacos", true);
 
-        assertTrue(manager.isPluginEnabled("auth", "nacos"));
-        verify(persistence, times(1)).saveState("auth:nacos", true);
+        verify(synchronizer, times(1)).syncStateChange("auth:nacos", true);
     }
 
     @Test
@@ -209,8 +211,7 @@ class UnifiedPluginManagerTest {
 
         manager.updatePluginConfig("trace:test", config);
 
-        verify(persistence, times(1)).saveConfig(eq("trace:test"), eq(config));
-        assertEquals("value", plugin.getCurrentConfig().get("requiredKey"));
+        verify(synchronizer, times(1)).syncConfigChange(eq("trace:test"), eq(config));
     }
 
     @Test
@@ -305,7 +306,7 @@ class UnifiedPluginManagerTest {
 
         manager.updatePluginConfig("trace:test", config);
 
-        verify(persistence, times(1)).saveConfig(eq("trace:test"), eq(config));
+        verify(synchronizer, times(1)).syncConfigChange(eq("trace:test"), eq(config));
     }
 
     @Test
@@ -344,7 +345,7 @@ class UnifiedPluginManagerTest {
 
         manager.updatePluginConfig("trace:configurable", config);
 
-        assertEquals("value", configurablePlugin.getCurrentConfig().get("key"));
+        verify(synchronizer, times(1)).syncConfigChange(eq("trace:configurable"), eq(config));
     }
 
     private void registerTestPlugin(String type, String name, boolean critical, boolean configurable,

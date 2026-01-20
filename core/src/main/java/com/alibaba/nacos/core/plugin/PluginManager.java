@@ -27,13 +27,16 @@ import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.storage.PluginStatePersistenceService;
+import com.alibaba.nacos.core.plugin.sync.PluginStateApplier;
+import com.alibaba.nacos.core.plugin.sync.PluginStateSynchronizer;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -54,9 +57,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 3.2.0
  */
 @Component
-public class UnifiedPluginManager implements PluginStateChecker, ApplicationListener<ApplicationReadyEvent> {
+public class PluginManager implements PluginStateChecker, PluginStateApplier, ApplicationListener<ApplicationReadyEvent> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UnifiedPluginManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
 
     /**
      * Configuration property for auth plugin type.
@@ -81,7 +84,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
     /**
      * Default datasource platform.
      */
-    private static final String DATASOURCE_PLATFORM_DEFAULT = "mysql";
+    private static final String DATASOURCE_PLATFORM_DEFAULT = "derby";
 
     /**
      * Plugin registry: pluginId -> PluginInfo.
@@ -105,8 +108,15 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
 
     private final PluginStatePersistenceService persistence;
 
-    public UnifiedPluginManager(PluginStatePersistenceService persistence) {
+    /**
+     * Plugin state synchronizer for cluster synchronization.
+     */
+    private final PluginStateSynchronizer synchronizer;
+
+    public PluginManager(PluginStatePersistenceService persistence,
+            @Lazy PluginStateSynchronizer synchronizer) {
         this.persistence = persistence;
+        this.synchronizer = synchronizer;
     }
 
     @Override
@@ -120,13 +130,24 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         // Load persisted states and configs
         loadPersistedData();
 
-        LOGGER.info("[UnifiedPluginManager] Initialized, {} plugins discovered", pluginRegistry.size());
+        LOGGER.info("[PluginManager] Initialized, {} plugins discovered", pluginRegistry.size());
     }
 
     @Override
     public boolean isPluginEnabled(String pluginType, String pluginName) {
-        String pluginId = pluginType + ":" + pluginName;
+        String pluginId = buildPluginId(pluginType, pluginName);
         return pluginStates.getOrDefault(pluginId, true);
+    }
+
+    /**
+     * Build plugin ID from type and name.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @return plugin ID in format "type:name"
+     */
+    private static String buildPluginId(String pluginType, String pluginName) {
+        return pluginType + ":" + pluginName;
     }
 
     /**
@@ -137,6 +158,18 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
      * @throws NacosApiException if plugin not found or is critical
      */
     public void setPluginEnabled(String pluginId, boolean enabled) throws NacosApiException {
+        setPluginEnabled(pluginId, enabled, false);
+    }
+
+    /**
+     * Set plugin enabled/disabled state.
+     *
+     * @param pluginId plugin ID
+     * @param enabled whether to enable
+     * @param localOnly if true, only update local node without Raft sync (for emergency use)
+     * @throws NacosApiException if plugin not found or is critical
+     */
+    public void setPluginEnabled(String pluginId, boolean enabled, boolean localOnly) throws NacosApiException {
         PluginInfo info = pluginRegistry.get(pluginId);
         if (info == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -149,11 +182,17 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
                     "Cannot disable critical plugin: " + pluginId);
         }
 
-        pluginStates.put(pluginId, enabled);
-        info.setEnabled(enabled);
-        persistence.saveState(pluginId, enabled);
+        // LocalOnly mode: only update local memory, skip cluster sync
+        if (localOnly) {
+            LOGGER.warn("[PluginManager] LocalOnly mode: applying state change to this node only, pluginId={}", pluginId);
+            applyStateChange(pluginId, enabled);
+            return;
+        }
 
-        LOGGER.info("[UnifiedPluginManager] Plugin {} status changed to {}", pluginId,
+        // Synchronize to cluster
+        synchronizer.syncStateChange(pluginId, enabled);
+
+        LOGGER.info("[PluginManager] Plugin {} status changed to {}", pluginId,
                 enabled ? "enabled" : "disabled");
     }
 
@@ -165,6 +204,19 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
      * @throws NacosApiException if plugin not found or not configurable
      */
     public void updatePluginConfig(String pluginId, Map<String, String> config) throws NacosApiException {
+        updatePluginConfig(pluginId, config, false);
+    }
+
+    /**
+     * Update plugin configuration.
+     *
+     * @param pluginId plugin ID
+     * @param config configuration
+     * @param localOnly if true, only update local node without Raft sync (for emergency use)
+     * @throws NacosApiException if plugin not found or not configurable
+     */
+    public void updatePluginConfig(String pluginId, Map<String, String> config, boolean localOnly)
+            throws NacosApiException {
         PluginInfo info = pluginRegistry.get(pluginId);
         if (info == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -179,15 +231,18 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         // Validate config
         validateConfig(info, config);
 
-        // Apply config to plugin instance
-        applyConfigToPlugin(pluginId, config);
+        // LocalOnly mode: only update local memory, skip cluster sync
+        if (localOnly) {
+            LOGGER.warn("[PluginManager] LocalOnly mode: applying config change to this node only, pluginId={}",
+                    pluginId);
+            applyConfigChange(pluginId, config);
+            return;
+        }
 
-        // Save config
-        pluginConfigs.put(pluginId, new HashMap<>(config));
-        info.setConfig(config);
-        persistence.saveConfig(pluginId, config);
+        // Synchronize to cluster
+        synchronizer.syncConfigChange(pluginId, config);
 
-        LOGGER.info("[UnifiedPluginManager] Plugin {} config updated", pluginId);
+        LOGGER.info("[PluginManager] Plugin {} config updated", pluginId);
     }
 
     /**
@@ -230,7 +285,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
             try {
                 discoverPluginsFromProvider(provider);
             } catch (Exception e) {
-                LOGGER.warn("[UnifiedPluginManager] Failed to discover plugins from provider: {}",
+                LOGGER.warn("[PluginManager] Failed to discover plugins from provider: {}",
                         provider.getClass().getName(), e);
             }
         }
@@ -246,16 +301,16 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         Map<String, ?> plugins = provider.getAllPlugins();
 
         if (plugins == null || plugins.isEmpty()) {
-            LOGGER.info("[UnifiedPluginManager] No plugins found for type: {}", pluginType.getType());
+            LOGGER.info("[PluginManager] No plugins found for type: {}", pluginType.getType());
             return;
         }
 
         plugins.forEach((name, instance) -> registerPlugin(pluginType, name, instance));
-        LOGGER.info("[UnifiedPluginManager] Discovered {} {} plugins", plugins.size(), pluginType.getType());
+        LOGGER.info("[PluginManager] Discovered {} {} plugins", plugins.size(), pluginType.getType());
     }
 
     private void registerPlugin(PluginType type, String name, Object instance) {
-        String pluginId = type.getType() + ":" + name;
+        String pluginId = buildPluginId(type.getType(), name);
 
         PluginInfo info = new PluginInfo();
         info.setPluginId(pluginId);
@@ -279,7 +334,7 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         pluginInstances.put(pluginId, instance);
         pluginStates.put(pluginId, defaultEnabled);
 
-        LOGGER.debug("[UnifiedPluginManager] Registered plugin {} with default enabled={}", pluginId, defaultEnabled);
+        LOGGER.debug("[PluginManager] Registered plugin {} with default enabled={}", pluginId, defaultEnabled);
     }
 
     private void loadPersistedData() {
@@ -325,7 +380,8 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
             try {
                 ((PluginConfigSpec) instance).applyConfig(config);
             } catch (Exception e) {
-                LOGGER.warn("[UnifiedPluginManager] Failed to apply config to plugin {}", pluginId, e);
+                LOGGER.error("[PluginManager] Failed to apply config to plugin {}", pluginId, e);
+                throw new RuntimeException("Failed to apply config to plugin: " + pluginId, e);
             }
         }
     }
@@ -365,4 +421,48 @@ public class UnifiedPluginManager implements PluginStateChecker, ApplicationList
         }
         return StringUtils.isBlank(platform) ? DATASOURCE_PLATFORM_DEFAULT : platform;
     }
+
+    /**
+     * Apply state change.
+     * Called by synchronizers after successful synchronization.
+     *
+     * @param pluginId plugin ID
+     * @param enabled whether enabled
+     */
+    @Override
+    public void applyStateChange(String pluginId, boolean enabled) {
+        pluginStates.put(pluginId, enabled);
+        PluginInfo info = pluginRegistry.get(pluginId);
+        if (info != null) {
+            info.setEnabled(enabled);
+        }
+    }
+
+    /**
+     * Apply config change.
+     * Called by synchronizers after successful synchronization.
+     *
+     * @param pluginId plugin ID
+     * @param config configuration
+     */
+    @Override
+    public void applyConfigChange(String pluginId, Map<String, String> config) {
+        pluginConfigs.put(pluginId, new HashMap<>(config));
+        PluginInfo info = pluginRegistry.get(pluginId);
+        if (info != null) {
+            info.setConfig(config);
+        }
+        applyConfigToPlugin(pluginId, config);
+    }
+
+    /**
+     * Check if plugin is available locally.
+     *
+     * @param pluginId plugin ID
+     * @return true if plugin exists in registry
+     */
+    public boolean isPluginAvailable(String pluginId) {
+        return pluginRegistry.containsKey(pluginId);
+    }
+
 }

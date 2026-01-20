@@ -341,7 +341,7 @@ public class ConfigMigrateService {
                             changedConfigInfoGrayWrapper.getGroup(), tenant, changedConfigInfoGrayWrapper.getGrayName(),
                             null, NAMESPACE_MIGRATE_SRC_USER);
                 } else if (!targetConfigInfoGrayWrapper.getMd5().equals(changedConfigInfoGrayWrapper.getMd5())
-                        || targetConfigInfoGrayWrapper.getGrayRule()
+                        || !targetConfigInfoGrayWrapper.getGrayRule()
                         .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
                     if (targetConfigInfoGrayWrapper.getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
                             || !StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(),
@@ -359,7 +359,7 @@ public class ConfigMigrateService {
                             changedConfigInfoGrayWrapper.getGrayName(), changedConfigInfoGrayWrapper.getGrayRule(),
                             null, NAMESPACE_MIGRATE_SRC_USER);
                 } else if (!targetConfigInfoGrayWrapper.getMd5().equals(changedConfigInfoGrayWrapper.getMd5())
-                        || targetConfigInfoGrayWrapper.getGrayRule()
+                        || !targetConfigInfoGrayWrapper.getGrayRule()
                         .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
                     if (targetConfigInfoGrayWrapper.getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
                             && !StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(),

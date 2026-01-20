@@ -35,10 +35,16 @@ public class PluginInfoVO {
 
     private Boolean configurable;
 
+    /**
+     * Whether this plugin type is exclusive (only one can be active at a time).
+     * Exclusive plugins (AUTH, DATASOURCE_DIALECT) cannot be switched via UI.
+     */
+    private Boolean exclusive;
+
     private Integer availableNodeCount;
 
     private Integer totalNodeCount;
-
+    
     public String getPluginId() {
         return pluginId;
     }
@@ -87,6 +93,14 @@ public class PluginInfoVO {
         this.configurable = configurable;
     }
 
+    public Boolean getExclusive() {
+        return exclusive;
+    }
+
+    public void setExclusive(Boolean exclusive) {
+        this.exclusive = exclusive;
+    }
+
     public Integer getAvailableNodeCount() {
         return availableNodeCount;
     }
@@ -102,12 +116,12 @@ public class PluginInfoVO {
     public void setTotalNodeCount(Integer totalNodeCount) {
         this.totalNodeCount = totalNodeCount;
     }
+    
 
     @Override
     public String toString() {
         return "PluginInfoVO{" + "pluginId='" + pluginId + '\'' + ", pluginType='" + pluginType + '\''
                 + ", pluginName='" + pluginName + '\'' + ", enabled=" + enabled + ", critical=" + critical
-                + ", configurable=" + configurable + ", availableNodeCount=" + availableNodeCount + ", totalNodeCount="
-                + totalNodeCount + '}';
+                + ", configurable=" + configurable + ", exclusive=" + exclusive + '}';
     }
 }

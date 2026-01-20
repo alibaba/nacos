@@ -31,6 +31,8 @@ public class PluginConfigForm {
 
     private Map<String, String> config;
 
+    private boolean localOnly = false;
+
     public String getPluginType() {
         return pluginType;
     }
@@ -53,5 +55,13 @@ public class PluginConfigForm {
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    public boolean isLocalOnly() {
+        return localOnly;
+    }
+
+    public void setLocalOnly(boolean localOnly) {
+        this.localOnly = localOnly;
     }
 }
