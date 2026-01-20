@@ -129,9 +129,4 @@ public class NacosAiService implements AiService {
     public com.alibaba.nacos.api.ai.model.skills.Skill loadSkill(String skillName) throws NacosException {
         return null;
     }
-    
-    @Override
-    public void exportSkillToLocal(com.alibaba.nacos.api.ai.model.skills.Skill skill, String basePath)
-            throws NacosException {
-    }
 }

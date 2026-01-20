@@ -191,36 +191,6 @@ public interface AiService extends A2aService {
     Skill loadSkill(String skillName) throws NacosException;
     
     /**
-     * Export skill configuration to local directory structure.
-     * 
-     * <p>
-     * This method will create a directory structure on local filesystem following Claude Skill format:
-     * <pre>
-     * {basePath}/
-     *   {skill_name}/
-     *     SKILL.md           (skill main configuration in Markdown format)
-     *     {type1}/           (resource type as subdirectory, if type is not blank)
-     *       {name1}         (resource name as filename with extension, content as file content)
-     *     {type2}/
-     *       {name2}
-     *     {name3}           (if type is blank, write directly to skill directory)
-     *     ...
-     * </pre>
-     * 
-     * <p>
-     * Resource localization rules:
-     * - type → subdirectory name (if type is not blank)
-     * - name → filename (including file extension)
-     * - content → file content
-     * </p>
-     *
-     * @param skill skill object to export
-     * @param basePath base directory path for export
-     * @throws NacosException if export failed
-     */
-    void exportSkillToLocal(Skill skill, String basePath) throws NacosException;
-    
-    /**
      * Subscribe skill.
      *
      * @param skillName       name of skill
