@@ -47,7 +47,7 @@ const configurationMenu = {
   ],
 };
 
-const McpServerManagementRoute = '/mcpServerManagement';
+export const McpServerManagementRoute = '/mcpServerManagement';
 
 // AI Registry 菜单，包含 MCP Registry、Agent Registry、Skill Registry、Prompt Registry
 const aiRegistryMenu = {
@@ -140,7 +140,6 @@ export default function(model) {
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
     result.push(aiRegistryMenu);
-    result.push(pluginMenu);
     result.push(pluginMenu);
   }
   if (globalAdmin) {
