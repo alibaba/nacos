@@ -48,3 +48,15 @@ com.alibaba.nacos.plugin.datasource.impl.postgresql.HistoryConfigInfoMapperByPos
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantCapacityMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantInfoMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigMigrateMapperByPostgresql
+
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigInfoAggrMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigInfoBetaMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigInfoMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigInfoTagMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigInfoGrayMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigTagsRelationMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.HistoryConfigInfoMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.TenantInfoMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.TenantCapacityMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.GroupCapacityMapperByXugu
+com.alibaba.nacos.plugin.datasource.impl.xugu.ConfigMigrateMapperByXugu
