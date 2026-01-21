@@ -128,7 +128,7 @@ class AddressServerClusterControllerTest {
         Mockito.doThrow(new NacosException(500, "remove service error")).when(instanceOperator)
                 .removeInstance(Mockito.eq(Constants.DEFAULT_NAMESPACE_ID), Mockito.eq(
                         Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default"),
-                        Mockito.any());
+                        Mockito.any(com.alibaba.nacos.api.naming.pojo.Instance.class));
         
         mockMvc.perform(delete("/nacos/v1/as/nodes").param("product", "default").param("cluster", "serverList")
                 .param("ips", "192.168.3.1,192.168.3.2")).andExpect(status().isInternalServerError());

@@ -133,12 +133,12 @@
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
-        <logback.version>1.5.12</logback.version>
+        <logback.version>1.5.19</logback.version>
         <log4j.version>2.25.3</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.2</postgresql.version>
-        <derby.version>10.14.2.0</derby.version>
+        <derby.version>10.17.1.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.75.0</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
@@ -156,6 +156,7 @@
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
         <mcp.version>0.14.1</mcp.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
 
         <!-- Maven Central Portal -->
         <central.publishing.maven.version>0.7.0</central.publishing.maven.version>
@@ -1030,6 +1031,10 @@
                         <artifactId>bolt</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>log4j-api</artifactId>
                     </exclusion>
@@ -1052,6 +1057,12 @@
                 <groupId>com.alipay.sofa</groupId>
                 <artifactId>rpc-grpc-impl</artifactId>
                 <version>${rpc-grpc-impl.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             
             <!-- Third-party libs -->
@@ -1165,12 +1176,31 @@
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java-api</artifactId>
                 <version>${kubernetes.client.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             
             <dependency>
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java</artifactId>
                 <version>${kubernetes.client.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            
+            <!-- Apache Commons Lang - upgraded to fix CVE-2025-48924 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

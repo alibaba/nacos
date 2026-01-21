@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.utils;
 
 import com.alibaba.nacos.plugin.auth.impl.SafeBcryptPasswordEncoder;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 

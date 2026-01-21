@@ -22,9 +22,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
-import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.persistence.repository.embedded.hook.EmbeddedApplyHook;
+import com.alibaba.nacos.persistence.repository.embedded.hook.WriteRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -46,7 +46,19 @@ public class EmbeddedConfigDumpApplyHook extends EmbeddedApplyHook {
     
     @Override
     public void afterApply(WriteRequest log) {
-        handleExtendInfo(log.getExtendInfoMap());
+        if (log != null && log.getExtendInfoMap() != null) {
+            handleExtendInfo(log.getExtendInfoMap());
+        }
+    }
+    
+    @Override
+    public void beforeApply(WriteRequest log) {
+        // No-op implementation
+    }
+
+    @Override
+    public String getName() {
+        return "EmbeddedConfigDumpApplyHook";
     }
     
     private void handleExtendInfo(Map<String, String> extendInfo) {
