@@ -49,6 +49,12 @@ import java.util.concurrent.TimeoutException;
 public class GrpcConnection extends Connection {
     
     /**
+     * Default timeout for gRPC requests when no timeout is specified.
+     * This prevents "end-of-stream mid-frame" errors that occur when requests hang indefinitely.
+     */
+    private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
+    
+    /**
      * grpc channel.
      */
     protected ManagedChannel channel;
@@ -70,14 +76,18 @@ public class GrpcConnection extends Connection {
     @Override
     public Response request(Request request, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
-        ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+        
+        // Use default timeout if none specified to avoid "end-of-stream mid-frame" errors
+        long effectiveTimeout = timeouts > 0 ? timeouts : DEFAULT_TIMEOUT_MILLS;
+        
+        // Always set a deadline on the stub to prevent hanging requests
+        RequestGrpc.RequestFutureStub stubToUse = grpcFutureServiceStub.withDeadlineAfter(effectiveTimeout, 
+                TimeUnit.MILLISECONDS);
+        
+        ListenableFuture<Payload> requestFuture = stubToUse.request(grpcRequest);
         Payload grpcResponse;
         try {
-            if (timeouts <= 0) {
-                grpcResponse = requestFuture.get();
-            } else {
-                grpcResponse = requestFuture.get(timeouts, TimeUnit.MILLISECONDS);
-            }
+            grpcResponse = requestFuture.get(effectiveTimeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
@@ -132,7 +142,16 @@ public class GrpcConnection extends Connection {
     @Override
     public void asyncRequest(Request request, final RequestCallBack requestCallBack) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
-        ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+        
+        // Use default timeout if none specified to avoid "end-of-stream mid-frame" errors
+        long timeout = requestCallBack.getTimeout();
+        long effectiveTimeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT_MILLS;
+        
+        // Always set a deadline on the stub to prevent hanging requests
+        RequestGrpc.RequestFutureStub stubToUse = grpcFutureServiceStub.withDeadlineAfter(effectiveTimeout, 
+                TimeUnit.MILLISECONDS);
+        
+        ListenableFuture<Payload> requestFuture = stubToUse.request(grpcRequest);
         
         //set callback .
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
@@ -155,7 +174,7 @@ public class GrpcConnection extends Connection {
             public void onFailure(Throwable throwable) {
                 if (throwable instanceof CancellationException) {
                     requestCallBack.onException(
-                            new TimeoutException("Timeout after " + requestCallBack.getTimeout() + " milliseconds."));
+                            new TimeoutException("Timeout after " + effectiveTimeout + " milliseconds."));
                 } else {
                     requestCallBack.onException(throwable);
                 }
@@ -163,7 +182,7 @@ public class GrpcConnection extends Connection {
         }, requestCallBack.getExecutor() != null ? requestCallBack.getExecutor() : this.executor);
         // set timeout future.
         ListenableFuture<Payload> payloadListenableFuture = Futures.withTimeout(requestFuture,
-                requestCallBack.getTimeout(), TimeUnit.MILLISECONDS, RpcScheduledExecutor.TIMEOUT_SCHEDULER);
+                effectiveTimeout, TimeUnit.MILLISECONDS, RpcScheduledExecutor.TIMEOUT_SCHEDULER);
         
     }
     
