@@ -40,6 +40,14 @@ public class SkillGenerationRequest implements Serializable {
     private List<Map<String, Object>> selectedMcpTools;
     
     /**
+     * Conversation history (optional).
+     * Contains user inputs, tool calls, and model responses.
+     * The system will analyze this history to determine if it's suitable
+     * for skill generation or optimization.
+     */
+    private ConversationHistory conversationHistory;
+    
+    /**
      * Additional parameters.
      */
     private Map<String, Object> params;
@@ -69,5 +77,13 @@ public class SkillGenerationRequest implements Serializable {
     
     public void setParams(Map<String, Object> params) {
         this.params = params;
+    }
+    
+    public ConversationHistory getConversationHistory() {
+        return conversationHistory;
+    }
+    
+    public void setConversationHistory(ConversationHistory conversationHistory) {
+        this.conversationHistory = conversationHistory;
     }
 }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.copilot.form;
 
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.copilot.model.ConversationHistory;
 
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,12 @@ public class SkillOptimizationForm {
      * Selected MCP tools (optional).
      */
     private List<Map<String, Object>> selectedMcpTools;
+    
+    /**
+     * Conversation history (optional).
+     * Contains user inputs, tool calls, and model responses.
+     */
+    private ConversationHistory conversationHistory;
     
     /**
      * Validate form data.
@@ -78,5 +85,13 @@ public class SkillOptimizationForm {
     
     public void setSelectedMcpTools(List<Map<String, Object>> selectedMcpTools) {
         this.selectedMcpTools = selectedMcpTools;
+    }
+    
+    public ConversationHistory getConversationHistory() {
+        return conversationHistory;
+    }
+    
+    public void setConversationHistory(ConversationHistory conversationHistory) {
+        this.conversationHistory = conversationHistory;
     }
 }

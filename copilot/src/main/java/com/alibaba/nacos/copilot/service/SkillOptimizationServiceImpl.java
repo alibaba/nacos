@@ -16,33 +16,32 @@
 
 package com.alibaba.nacos.copilot.service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
-import com.alibaba.nacos.copilot.config.CopilotAgentManager;
-import com.alibaba.nacos.copilot.capability.prompt.SkillOptimizationPrompt;
-import com.alibaba.nacos.copilot.model.SkillOptimizationRequest;
-import com.alibaba.nacos.copilot.model.SkillOptimizationResponse;
-import com.alibaba.nacos.copilot.model.StreamResponseType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
+import com.alibaba.nacos.copilot.capability.prompt.SkillOptimizationPrompt;
+import com.alibaba.nacos.copilot.config.CopilotAgentManager;
+import com.alibaba.nacos.copilot.model.ConversationHistory;
+import com.alibaba.nacos.copilot.model.ConversationMessage;
+import com.alibaba.nacos.copilot.model.SkillOptimizationRequest;
+import com.alibaba.nacos.copilot.model.SkillOptimizationResponse;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.EventType;
 import io.agentscope.core.agent.StreamOptions;
 import io.agentscope.core.message.Msg;
-import io.agentscope.core.message.ThinkingBlock;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * Skill optimization service implementation.
@@ -105,77 +104,19 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 .build();
         
         // 8. Call agent with stream response
-        StringBuilder fullContent = new StringBuilder();
+		// Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
         Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
                 .subscribeOn(Schedulers.boundedElastic());
         
-        eventFlux.subscribe(new Subscriber<io.agentscope.core.agent.Event>() {
-            @Override
-            public void onSubscribe(Subscription s) {
-                s.request(Long.MAX_VALUE);
-            }
-            
-            @Override
-            public void onNext(io.agentscope.core.agent.Event event) {
-                try {
-                    Msg msg = event.getMessage();
-                    if (msg == null) {
-                        return;
-                    }
-                    
-                    // First determine response type based on event type and message structure
-                            StreamResponseType type = StreamResponseType.CONTENT;
-                    String content = null;
-                    
-                            if (event.getType() == EventType.TOOL_RESULT) {
-                        // Tool call: get content from textContent
-                                type = StreamResponseType.TOOL_CALL;
-                        content = getTextContent(msg);
-                    } else if (event.getType() == EventType.REASONING && hasOnlyThinkBlock(msg)) {
-                        // Thinking: get content from thinkblock
-                                type = StreamResponseType.THINKING;
-                        content = getThinkingContent(msg);
-                    } else {
-                        // Final response or other content: get content from textContent
-                        type = StreamResponseType.CONTENT;
-                        content = getTextContent(msg);
-                            }
-                    
-                    // Only process if content is not empty
-                    if (content != null && !content.isEmpty()) {
-                        fullContent.append(content);
-                            
-                            // Convert to SkillOptimizationResponse
-                            SkillOptimizationResponse optResponse = new SkillOptimizationResponse();
-                            optResponse.setType(type);
-                            optResponse.setChunk(content);
-                            optResponse.setDone(false);
-                            
-                            callback.onNext(optResponse);
-                    }
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to process stream event", e);
-                }
-            }
-            
-            @Override
-            public void onError(Throwable t) {
-                LOGGER.error("Error in AgentScope stream response", t);
-                callback.onError(t);
-            }
-            
-            @Override
-            public void onComplete() {
-                // Parse final result
-                SkillOptimizationResponse finalResponse = new SkillOptimizationResponse();
-                finalResponse.setType(StreamResponseType.DONE);
-                finalResponse.setDone(true);
-                
-                parseFinalResult(fullContent.toString(), finalResponse);
-                callback.onNext(finalResponse);
-                callback.onComplete();
-            }
-        });
+		eventFlux.subscribe(StreamEventProcessor.createSubscriber(
+				(type, content, done) -> {
+					SkillOptimizationResponse response = new SkillOptimizationResponse();
+					response.setType(type);
+					response.setChunk(content);
+					response.setDone(done);
+					return response;
+				},
+				callback));
     }
     
     private String buildUserMessage(Skill skill, SkillOptimizationRequest request) {
@@ -200,18 +141,90 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             sb.append("\n");
         }
         
-        if (StringUtils.isNotBlank(request.getOptimizationGoal())) {
-            sb.append("优化目标：").append(request.getOptimizationGoal()).append("\n\n");
-        }
-        
-        // Add MCP tools information if provided
+		// Build optimization instructions based on user input
+		boolean hasOptimizationGoal = StringUtils.isNotBlank(request.getOptimizationGoal());
+		boolean hasSelectedTools = false;
+		List<Map<String, Object>> selectedMcpTools = null;
+		boolean hasConversationHistory = request.getConversationHistory() != null
+				&& request.getConversationHistory().getMessages() != null
+				&& !request.getConversationHistory().getMessages().isEmpty();
+
         if (request.getParams() != null) {
             Object selectedMcpToolsObj = request.getParams().get("selectedMcpTools");
             if (selectedMcpToolsObj instanceof List) {
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> selectedMcpTools = (List<Map<String, Object>>) selectedMcpToolsObj;
-                if (selectedMcpTools != null && !selectedMcpTools.isEmpty()) {
-                    sb.append("可用的 MCP 工具（可根据 Skill 功能需求合理选择使用）：\n");
+				List<Map<String, Object>> tools = (List<Map<String, Object>>) selectedMcpToolsObj;
+				if (tools != null && !tools.isEmpty()) {
+					hasSelectedTools = true;
+					selectedMcpTools = tools;
+				}
+			}
+		}
+
+		// Add conversation history analysis if provided
+		if (hasConversationHistory) {
+			sb.append("对话历史分析（请充分理解这段对话历史，判断是否适合对当前 Skill 进行优化）：\n\n");
+			ConversationHistory history = request.getConversationHistory();
+			if (StringUtils.isNotBlank(history.getTitle())) {
+				sb.append("对话主题：").append(history.getTitle()).append("\n");
+			}
+			if (StringUtils.isNotBlank(history.getContext())) {
+				sb.append("对话上下文：").append(history.getContext()).append("\n");
+			}
+			sb.append("\n对话内容：\n");
+			int messageIndex = 1;
+			for (ConversationMessage message : history.getMessages()) {
+				sb.append("[").append(messageIndex++).append("] ");
+				if ("user".equalsIgnoreCase(message.getType())) {
+					sb.append("用户输入：").append(message.getContent()).append("\n");
+				}
+				else if ("tool_call".equalsIgnoreCase(message.getType())) {
+					sb.append("工具调用：");
+					if (StringUtils.isNotBlank(message.getToolName())) {
+						sb.append(message.getToolName());
+					}
+					if (message.getToolInput() != null && !message.getToolInput().isEmpty()) {
+						sb.append("，输入参数：").append(message.getToolInput());
+					}
+					if (message.getToolOutput() != null) {
+						sb.append("，输出结果：").append(message.getToolOutput());
+					}
+					sb.append("\n");
+				}
+				else if ("model".equalsIgnoreCase(message.getType())) {
+					sb.append("模型回复：").append(message.getContent()).append("\n");
+				}
+				else {
+					sb.append(message.getType()).append("：");
+					if (StringUtils.isNotBlank(message.getContent())) {
+						sb.append(message.getContent());
+					}
+					sb.append("\n");
+				}
+			}
+			sb.append("\n对话历史分析要求：\n");
+			sb.append("1. 请充分理解这段对话历史，包括用户输入、工具调用、模型回复的完整流程\n");
+			sb.append("2. 分析这段对话历史是否适合对当前 Skill 进行优化\n");
+			sb.append("3. 如果适合优化，请识别对话历史中的关键信息：\n");
+			sb.append("   - 用户的实际需求和意图\n");
+			sb.append("   - 工具调用的模式和逻辑\n");
+			sb.append("   - 模型回复的策略和方式\n");
+			sb.append("   - 对话中体现出的 Skill 应该具备的能力\n");
+			sb.append("4. 基于对话历史分析，对当前 Skill 进行针对性优化，确保优化后的 Skill 能够更好地支持类似的对话场景\n");
+			sb.append("5. 如果对话历史中涉及工具调用，请确保优化后的 Skill 能够正确使用这些工具\n");
+			sb.append("6. 如果对话历史中体现了特定的处理逻辑或策略，请在优化后的 Skill instruction 中体现这些逻辑\n\n");
+		}
+
+		// Add optimization goal with emphasis
+		if (hasOptimizationGoal) {
+			sb.append("用户优化目标（请聚焦于此方向进行优化）：\n");
+			sb.append(request.getOptimizationGoal()).append("\n");
+			sb.append("重要提示：整体优化思路应该聚焦于用户的优化方向，所有优化建议和改动都应该围绕这个目标展开。\n\n");
+		}
+
+		// Add MCP tools information if provided
+		if (hasSelectedTools) {
+			sb.append("用户选择的 MCP 工具（用户希望在 Skill 中增加对这些工具的调用）：\n");
                     for (Map<String, Object> tool : selectedMcpTools) {
                         sb.append("- 工具名称：").append(tool.get("name")).append("\n");
                         if (tool.get("description") != null) {
@@ -222,180 +235,38 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                         }
                         sb.append("\n");
                     }
-                    sb.append("工具使用说明：\n");
-                    sb.append("1. 请根据 Skill 的功能需求和上下文，合理判断是否需要使用这些工具\n");
-                    sb.append("2. 如果工具对实现 Skill 功能有帮助，则在优化后的 instruction 中详细说明如何调用这些工具，包括：\n");
+			sb.append("工具集成要求：\n");
+			sb.append("1. 用户选择了这些工具，说明用户希望在优化后的 Skill 中增加对这些工具的调用\n");
+			sb.append("2. 请在优化后的 instruction 中详细说明如何调用这些工具，包括：\n");
                     sb.append("   - 工具名称和用途\n");
                     sb.append("   - 调用时机（在什么情况下调用该工具）\n");
                     sb.append("   - 输入参数说明（每个参数的含义、类型、是否必需、如何获取）\n");
                     sb.append("   - 输出结果处理（如何处理工具返回的结果，如何解析和使用返回数据）\n");
                     sb.append("   - 错误处理（工具调用失败时的处理方式和备选方案）\n");
-                    sb.append("3. 如果工具对实现 Skill 功能没有帮助，则不需要在 instruction 中提及这些工具\n");
-                    sb.append("4. 如果使用了工具，确保工具调用逻辑清晰、可执行，工具应该与 Skill 功能紧密结合\n");
-                    sb.append("5. 如果使用了多个工具，在 instruction 中明确说明工具调用的步骤和流程，包括工具调用的顺序\n");
-                    sb.append("6. 如果使用了工具，提供具体的工具调用示例，说明如何构造参数、调用工具、处理结果\n\n");
+			sb.append("3. 确保工具调用逻辑清晰、可执行，工具应该与 Skill 功能紧密结合\n");
+			if (selectedMcpTools.size() > 1) {
+				sb.append("4. 在 instruction 中明确说明工具调用的步骤和流程，包括工具调用的顺序\n");
+			}
+			sb.append("5. 提供具体的工具调用示例，说明如何构造参数、调用工具、处理结果\n\n");
                 }
-            }
-        }
-        
+
+		// Build final instruction
+		if (hasOptimizationGoal && hasSelectedTools) {
+			sb.append("请根据用户的优化目标和选择的工具，结合 Agent Skill 的最佳实践，优化这个 Skill。");
+		}
+		else if (hasOptimizationGoal) {
+			sb.append("请聚焦于用户的优化目标，结合 Agent Skill 的最佳实践，优化这个 Skill。");
+		}
+		else if (hasSelectedTools) {
+			sb.append("请根据用户选择的工具，结合 Agent Skill 的最佳实践，优化这个 Skill，确保在 Skill 中增加对这些工具的调用。");
+		}
+		else {
         sb.append("请根据 Agent Skill 的最佳实践，优化这个 Skill。");
+		}
         
         return sb.toString();
     }
     
-    /**
-     * Extract text content from Msg.
-     */
-    private String getTextContent(Msg msg) {
-        if (msg == null) {
-            return null;
-        }
-        
-        String textContent = msg.getTextContent();
-        if (textContent != null && !textContent.isEmpty()) {
-            return textContent;
-        }
-        
-        Object content = msg.getContent();
-        if (content instanceof String) {
-            return (String) content;
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Check if Msg contains only one thinkblock.
-     *
-     * @param msg message to check
-     * @return true if msg contains only one thinkblock, false otherwise
-     */
-    private boolean hasOnlyThinkBlock(Msg msg) {
-        if (msg == null) {
-            return false;
-        }
-        
-        try {
-            // Try to get thinkblocks from msg
-            // In agentscope, thinkblocks might be accessed via reflection or specific method
-            Object content = msg.getContent();
-            if (content == null) {
-                return false;
-            }
-            
-            // Check if content is a list/array with only one thinkblock element
-            if (content instanceof List) {
-                List<?> contentList = (List<?>) content;
-                if (contentList.size() == 1) {
-                    Object firstElement = contentList.get(0);
-                    // Check if the element is a thinkblock by checking class name or structure
-                    // This might need to be adjusted based on actual agentscope implementation
-                    String className = firstElement.getClass().getSimpleName().toLowerCase();
-                    return className.contains("think") || className.contains("reasoning");
-                }
-            }
-            
-            // Alternative: check via reflection if agentscope provides getThinkBlocks method
-            try {
-                java.lang.reflect.Method getThinkBlocksMethod = msg.getClass().getMethod("getThinkBlocks");
-                if (getThinkBlocksMethod != null) {
-                    Object thinkBlocks = getThinkBlocksMethod.invoke(msg);
-                    if (thinkBlocks instanceof List) {
-                        return ((List<?>) thinkBlocks).size() == 1;
-                    }
-                }
-            } catch (NoSuchMethodException e) {
-                // Method doesn't exist, try alternative approach
-            }
-            
-            // If we can't determine, return false to be safe
-            return false;
-        } catch (Exception e) {
-            LOGGER.debug("Failed to check thinkblock in msg", e);
-            return false;
-        }
-    }
-    
-    /**
-     * Extract thinking content from Msg (from thinkblock).
-     *
-     * @param msg message containing thinkblock
-     * @return thinking content, or null if not available
-     */
-    private String getThinkingContent(Msg msg) {
-        if (msg == null) {
-            return null;
-        }
-        
-        try {
-            // Get thinkblock from msg content
-            Object content = msg.getContent();
-            if (content instanceof List) {
-                List<?> contentList = (List<?>) content;
-                if (contentList.size() == 1) {
-                    Object element = contentList.get(0);
-                    if (element instanceof ThinkingBlock) {
-                        ThinkingBlock thinkBlock = (ThinkingBlock) element;
-                        return thinkBlock.getThinking();
-                    }
-                }
-            }
-            
-            return null;
-        } catch (Exception e) {
-            LOGGER.debug("Failed to extract thinking content from msg", e);
-            return null;
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    private void parseFinalResult(String fullContent, SkillOptimizationResponse response) {
-        try {
-            // Try to extract JSON from the content
-            String jsonContent = extractJsonFromContent(fullContent);
-            
-            Map<String, Object> result = JacksonUtils.toObj(jsonContent, Map.class);
-            
-            // Parse optimizedSkill (only field required)
-            Map<String, Object> optimizedSkillMap = (Map<String, Object>) result.get("optimizedSkill");
-            if (optimizedSkillMap != null) {
-                // Normalize resource structure: handle nested resources (resources.scripts.xxx) to flat structure (resource.xxx)
-                normalizeResourceStructure(optimizedSkillMap);
-                
-                Skill optimizedSkill = JacksonUtils.toObj(JacksonUtils.toJson(optimizedSkillMap), Skill.class);
-                response.setOptimizedSkill(optimizedSkill);
-            } else {
-                // If optimizedSkill is not found, try to parse the entire result as optimizedSkill
-                normalizeResourceStructure(result);
-                Skill optimizedSkill = JacksonUtils.toObj(JacksonUtils.toJson(result), Skill.class);
-                response.setOptimizedSkill(optimizedSkill);
-            }
-            
-            response.setDone(true);
-            
-        } catch (Exception e) {
-            LOGGER.warn("Failed to parse final result from LLM response: {}", fullContent, e);
-            // Set done flag even if parsing failed
-            response.setDone(true);
-            
-            // Try to extract optimizedSkill from the content even if JSON parsing failed
-            try {
-                // Try to extract JSON from markdown code blocks or find JSON object
-                String jsonContent = extractJsonFromContent(fullContent);
-                if (jsonContent != null && !jsonContent.isEmpty()) {
-                    Map<String, Object> result = JacksonUtils.toObj(jsonContent, Map.class);
-                    Map<String, Object> optimizedSkillMap = (Map<String, Object>) result.get("optimizedSkill");
-                    if (optimizedSkillMap != null) {
-                        normalizeResourceStructure(optimizedSkillMap);
-                        Skill optimizedSkill = JacksonUtils.toObj(JacksonUtils.toJson(optimizedSkillMap), Skill.class);
-                        response.setOptimizedSkill(optimizedSkill);
-                    }
-                }
-            } catch (Exception parseException) {
-                LOGGER.warn("Failed to extract optimizedSkill from content", parseException);
-            }
-        }
-    }
     
     private String extractJsonFromContent(String content) {
         if (content == null || content.isEmpty()) {
@@ -413,7 +284,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                     return extracted;
                 }
             }
-        } else if (content.contains("```")) {
+		}
+		else if (content.contains("```")) {
             int start = content.indexOf("```") + 3;
             // Find the matching closing ```
             int end = findMatchingCodeBlockEnd(content, start);
@@ -497,7 +369,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             
             if (c == '{') {
                 braceCount++;
-            } else if (c == '}') {
+			}
+			else if (c == '}') {
                 braceCount--;
                 if (braceCount == 0) {
                     return content.substring(start, i + 1);
@@ -519,7 +392,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         try {
             JacksonUtils.toObj(json);
             return true;
-        } catch (Exception e) {
+		}
+		catch (Exception e) {
             return false;
         }
     }
@@ -609,16 +483,20 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                             // Extract filename from path
                             int lastSlash = path.lastIndexOf('/');
                             name = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
-                        } else {
+						}
+						else {
                             // Use key as name, add appropriate extension based on type
                             String type = (String) valueMap.getOrDefault("type", "");
                             if ("script".equals(type) || "sh".equals(type)) {
                                 name = key + ".sh";
-                            } else if ("template".equals(type) || "json".equals(type)) {
+							}
+							else if ("template".equals(type) || "json".equals(type)) {
                                 name = key + ".json";
-                            } else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
+							}
+							else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
                                 name = key + ".md";
-                            } else {
+							}
+							else {
                                 name = key;
                             }
                         }
@@ -642,12 +520,14 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                     // Use the resource key (not prefix_key) as the map key
                     // This ensures resources.scripts.check_permission becomes resource.check_permission
                     flatMap.put(key, resourceObj);
-                } else {
+				}
+				else {
                     // This is a nested category (like "scripts", "documentation"), continue flattening
                     // Don't add prefix for category names, just pass them through
                     flattenResources(valueMap, flatMap, "");
                 }
-            } else {
+			}
+			else {
                 // Not a Map, skip
                 LOGGER.warn("Unexpected resource value type for key {}: {}", key, value.getClass().getName());
             }

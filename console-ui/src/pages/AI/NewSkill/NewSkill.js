@@ -71,6 +71,8 @@ class NewSkill extends React.Component {
       thinkingContent: '', // 思考内容
       thinkingCollapsed: false, // 思考内容是否折叠
       showInputCollapsed: false, // 用户输入是否折叠
+      inputSectionCollapsed: false, // 输入区域是否折叠（生成开始后折叠）
+      resultContentCollapsed: false, // 结果内容是否折叠
       inputTooltipVisible: false, // 用户输入tooltip显示状态
       inputTooltipPosition: { x: 0, y: 0 }, // 用户输入tooltip位置
       thinkingTooltipVisible: false, // 思考内容tooltip显示状态
@@ -79,6 +81,9 @@ class NewSkill extends React.Component {
       isEdit: isEdit,
       skillName,
       backgroundInfo: '',
+      conversationHistory: null, // 对话历史
+      conversationHistoryJson: '', // 对话历史 JSON 字符串（用于编辑）
+      showConversationHistory: false, // 是否显示对话历史输入
       showAiGenerateDialog: false, // 控制是否显示AI生成弹窗
       generatedSkill: null, // 存储生成的Skill数据
       mcpServers: [], // MCP服务器列表
@@ -170,20 +175,36 @@ class NewSkill extends React.Component {
         });
 
         // Fill resources if any
+        let resources = [];
+        let resourceMap = {};
         if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
-          const resources = Object.values(optimizedSkill.resource).map(resource => ({
+          resources = Object.values(optimizedSkill.resource).map(resource => ({
             name: resource.name || '',
             type: resource.type || '',
             content: resource.content || '',
             metadata: resource.metadata || null,
           }));
+          // Build resource map for currentSkillData
+          Object.entries(optimizedSkill.resource).forEach(([key, resource]) => {
+            resourceMap[key] = resource;
+          });
+        }
+
+        // Build currentSkillData for AI optimization feature
+        const namespaceId = optimizedSkill.namespaceId || getParams('namespace') || '';
+        const currentSkillData = {
+          name: originalName,
+          namespaceId: namespaceId,
+          description: optimizedSkill.description || '',
+          instruction: optimizedSkill.instruction || '',
+          resource: resourceMap,
+        };
+
           this.setState({
             resources,
             expandedKeys: resources.map((_, index) => String(index)),
+          currentSkillData, // Set currentSkillData so AI optimization can work
           });
-        } else {
-          this.setState({ resources: [], expandedKeys: [] });
-        }
 
         // Clear the stored data
         localStorage.removeItem('nacos_optimized_skill');
@@ -461,9 +482,25 @@ class NewSkill extends React.Component {
       thinkingContent: '',
       generatedSkill: null,
       showInputCollapsed: true, // 折叠用户输入
+      inputSectionCollapsed: true, // 折叠输入区域
       thinkingCollapsed: false, // 展开思考内容
+      resultContentCollapsed: false, // 展开结果内容
       parsingResult: false,
     });
+
+    // Parse conversation history if provided
+    let conversationHistory = null;
+    if (this.state.conversationHistoryJson && this.state.conversationHistoryJson.trim()) {
+      try {
+        conversationHistory = JSON.parse(this.state.conversationHistoryJson);
+      } catch (e) {
+        Message.error(this.getLocaleValue('conversationHistoryInvalid', 'Invalid conversation history JSON format'));
+        this.setState({ generating: false, streaming: false });
+        return;
+      }
+    } else if (this.state.conversationHistory) {
+      conversationHistory = this.state.conversationHistory;
+    }
 
     // Build request payload
     const payload = {
@@ -474,6 +511,10 @@ class NewSkill extends React.Component {
         inputSchema: tool.inputSchema,
       })),
     };
+
+    if (conversationHistory) {
+      payload.conversationHistory = conversationHistory;
+    }
 
     // Use SSE stream
     const baseUrl = window.location.origin;
@@ -502,6 +543,7 @@ class NewSkill extends React.Component {
         this.streamReader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let currentEventType = 'message'; // Default event type
 
         const readStream = () => {
           this.streamReader
@@ -517,19 +559,30 @@ class NewSkill extends React.Component {
               buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
               lines.forEach(line => {
-                if (line.startsWith('data:')) {
+                if (line.startsWith('event:')) {
+                  currentEventType = line.substring(6).trim();
+                } else if (line.startsWith('data:')) {
                   const dataStr = line.substring(5).trim();
                   if (dataStr) {
                     try {
                       const data = JSON.parse(dataStr);
+                      // Handle error event
+                      if (currentEventType === 'error') {
+                        const errorMessage = data.explanation || data.message || '生成失败';
+                        Message.error(errorMessage);
+                        this.setState({
+                          streaming: false,
+                          generating: false,
+                          error: errorMessage,
+                        });
+                      } else {
                       this.handleSSEMessage(data);
+                      }
                     } catch (e) {
                       // Failed to parse SSE data
+                      console.error('Failed to parse SSE data:', e, dataStr);
                     }
                   }
-                } else if (line.startsWith('event:')) {
-                  const eventType = line.substring(6).trim();
-                  // Handle event type if needed
                 }
               });
 
@@ -576,27 +629,85 @@ class NewSkill extends React.Component {
       this.setState({
         streamContent: currentContent + (data.chunk || ''),
         streamType: typeStr === 'TOOL_CALL' ? 'TOOL_CALL' : 'CONTENT',
+        thinkingCollapsed: true, // 折叠思考内容，开始显示结果
+        resultContentCollapsed: false, // 展开结果内容
       });
     } else if (typeStr === 'DONE' || data.done) {
       // Final response received - start parsing
       this.setState({
         streaming: false,
         thinkingCollapsed: true, // 折叠思考内容
+        resultContentCollapsed: true, // 折叠结果内容，显示生成的Skill
         parsingResult: true, // 开始解析结果
       });
       
       // Parse result after a short delay
       setTimeout(() => {
-        if (data.skill) {
+        // DONE event doesn't contain full content, must parse from accumulated streamContent
+        let skillData = null;
+
+        // Always try to parse from accumulated streamContent first
+        if (this.state.streamContent) {
+          try {
+            // Try to extract JSON from streamContent
+            const content = this.state.streamContent;
+            let jsonContent = content;
+
+            // Try to extract JSON from markdown code blocks
+            if (content.includes('```json')) {
+              const start = content.indexOf('```json') + 7;
+              const end = content.indexOf('```', start);
+              if (end > start) {
+                jsonContent = content.substring(start, end).trim();
+              }
+            } else if (content.includes('```')) {
+              const start = content.indexOf('```') + 3;
+              const end = content.indexOf('```', start);
+              if (end > start) {
+                jsonContent = content.substring(start, end).trim();
+              }
+            }
+
+            // Try to find JSON object by matching braces
+            if (!jsonContent.startsWith('{') && !jsonContent.startsWith('[')) {
+              const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                jsonContent = jsonMatch[0];
+              }
+            }
+
+            // Parse JSON
+            const parsed = JSON.parse(jsonContent);
+            // Support multiple formats: {skill: {...}} or direct skill object
+            skillData = parsed.skill || parsed;
+            
+            // eslint-disable-next-line no-console
+            console.log('Parsed skill from streamContent:', skillData);
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to parse skill from streamContent:', e, 'Content:', this.state.streamContent);
+          }
+        }
+
+        // Fallback: check if skill is directly in DONE event (unlikely but possible)
+        if (!skillData && data.skill) {
+          skillData = data.skill;
+          // eslint-disable-next-line no-console
+          console.log('Using skill from DONE event:', skillData);
+        }
+
+        if (skillData) {
           this.setState({
             generating: false,
             parsingResult: false,
             generatedSkill: {
-              skill: data.skill,
+              skill: skillData,
               explanation: this.getLocaleValue('generateSuccess', 'Skill generated successfully')
             }
           });
         } else {
+          // eslint-disable-next-line no-console
+          console.error('No skill found in DONE event or streamContent:', { data, streamContent: this.state.streamContent });
           Message.error(this.getLocaleValue('generateFailed', 'Failed to generate skill: no skill data returned'));
           this.setState({ generating: false, parsingResult: false });
         }
@@ -800,7 +911,7 @@ class NewSkill extends React.Component {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Tag type="blue" size="small">
+              <Tag type="normal" size="small">
                 {this.getLocaleValue('thinking', 'Thinking')}
               </Tag>
               <span style={{ fontSize: '13px', color: '#666' }}>
@@ -819,11 +930,12 @@ class NewSkill extends React.Component {
     if (!thinkingCollapsed && thinkingContent) {
       return (
         <div style={{ marginBottom: 16 }}>
-          <Collapse defaultExpanded={true} style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+          <Collapse defaultExpandedKeys={['0']} style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
             <Panel
+              key="0"
               title={
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Tag type="blue" size="small" style={{ marginRight: 8 }}>
+                  <Tag type="normal" size="small" style={{ marginRight: 8 }}>
                     {this.getLocaleValue('thinking', 'Thinking')}
                   </Tag>
                   <span>{this.getLocaleValue('thinkingProcess', 'Thinking Process')}</span>
@@ -842,21 +954,258 @@ class NewSkill extends React.Component {
     return null;
   };
 
+  // 获取文本的前N行预览
+  getPreviewLines = (text, lines = 2) => {
+    if (!text) return '';
+    const textLines = text.split('\n');
+    if (textLines.length <= lines) return text;
+    return `${textLines.slice(0, lines).join('\n')}\n...`;
+  };
+
+  // 渲染可折叠内容区域（参考 SkillOptimizeDialog）
+  renderCollapsibleSection = (
+    title,
+    content,
+    isCollapsed,
+    onToggle,
+    icon = null,
+    loading = false,
+    thinkingContentForIcon = null
+  ) => {
+    if (!content && !loading) {
+      return null;
+    }
+
+    const contentLines = content ? content.split('\n') : [];
+    const previewContent = isCollapsed && content ? this.getPreviewLines(content, 2) : content;
+    const hasMore = isCollapsed && contentLines.length > 2;
+
+    return (
+      <div
+        style={{
+          border: '1px solid #e6e6e6',
+          borderRadius: '4px',
+          marginBottom: 16,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            background: '#fafafa',
+            cursor: 'pointer',
+            borderBottom: (content || loading) ? '1px solid #e6e6e6' : 'none',
+          }}
+          onClick={onToggle}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            {icon && <div style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}>{icon}</div>}
+            <span style={{ fontWeight: 500 }}>{title}</span>
+            {thinkingContentForIcon && thinkingContentForIcon.trim() && (
+              <span
+                style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <Balloon
+                  trigger={
+                    <Icon
+                      type="info"
+                      size="small"
+                      style={{
+                        color: '#1890ff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                      }}
+                    />
+                  }
+                  triggerType="hover"
+                  align="t"
+                  style={{ maxWidth: '500px' }}
+                >
+                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                      {this.getLocaleValue('thinking', 'Thinking')}
+                    </div>
+                    <pre
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        margin: 0,
+                        fontSize: '12px',
+                        lineHeight: '1.6',
+                      }}
+                    >
+                      {thinkingContentForIcon}
+                    </pre>
+                  </div>
+                </Balloon>
+              </span>
+            )}
+            {loading && (
+              <Loading
+                size="medium"
+                style={{ marginLeft: 8 }}
+              />
+            )}
+          </div>
+          <Icon
+            type={isCollapsed ? 'arrow-down' : 'arrow-up'}
+            style={{ fontSize: 12, color: '#666' }}
+          />
+        </div>
+        {(content || loading) && (
+          <div
+            style={{
+              padding: '12px 16px',
+              maxHeight: isCollapsed ? '60px' : 'none',
+              overflow: isCollapsed ? 'hidden' : 'auto',
+              background: '#fff',
+              position: 'relative',
+            }}
+          >
+            {loading && !content ? (
+              <div style={{ display: 'flex', alignItems: 'center', color: '#999' }}>
+                <Loading size="medium" style={{ marginRight: 8 }} />
+                <span>{title}</span>
+              </div>
+            ) : (
+              <pre
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  margin: 0,
+                  fontSize: '13px',
+                  lineHeight: '1.6',
+                  color: '#333',
+                }}
+              >
+                {previewContent}
+              </pre>
+            )}
+            {isCollapsed && hasMore && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '20px',
+                  background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 渲染流式内容（参考 SkillOptimizeDialog）
+  renderStreamContent = () => {
+    const {
+      streamContent,
+      thinkingContent,
+      streamType,
+      thinkingCollapsed,
+      resultContentCollapsed,
+      streaming,
+    } = this.state;
+
+    return (
+      <div>
+        {/* 思考内容区域 - 仅在 THINKING 阶段显示 */}
+        {(thinkingContent && streamType === 'THINKING') && (
+          this.renderCollapsibleSection(
+            this.getLocaleValue('thinking', '思考') || '思考',
+            thinkingContent,
+            thinkingCollapsed,
+            () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
+            <Tag type="normal" size="small">{this.getLocaleValue('thinking', '思考') || '思考'}</Tag>,
+            streaming && streamType === 'THINKING' && !thinkingContent
+          )
+        )}
+
+        {/* 结果内容区域 - 当开始接收模型回复时显示，包含思考内容图标 */}
+        {streamContent && streamType !== 'THINKING' && (
+          this.renderCollapsibleSection(
+            this.getLocaleValue('generatingContent', '生成内容') || '生成内容',
+            streamContent,
+            resultContentCollapsed,
+            () => this.setState({ resultContentCollapsed: !resultContentCollapsed }),
+            <Tag type="primary" size="small">
+              {this.getLocaleValue('generatingContent', '生成内容') || '生成内容'}
+            </Tag>,
+            streaming && !streamContent,
+            this.state.thinkingContent
+          )
+        )}
+      </div>
+    );
+  };
+
   renderGeneratedSkill = () => {
-    const { generatedSkill } = this.state;
+    const { generatedSkill, backgroundInfo, selectedMcpTools, thinkingContent, streamContent,
+      inputSectionCollapsed, thinkingCollapsed, resultContentCollapsed } = this.state;
     if (!generatedSkill || !generatedSkill.skill) {
       return null;
     }
 
+    try {
     const skill = generatedSkill.skill;
     const resources = skill.resource ? Object.values(skill.resource) : [];
 
+    // 构建用户输入内容
+    const selectedToolsText = selectedMcpTools.length > 0
+      ? selectedMcpTools.map(t => t.name).join(', ')
+      : this.getLocaleValue('noToolsSelected', 'No tools selected');
+    const userInputContent = `${this.getLocaleValue('backgroundInfo', 'Background Information')}: ${backgroundInfo}\n\n${this.getLocaleValue('selectedTools', 'Selected Tools')}: ${selectedToolsText}`;
+    const userInputPreview = backgroundInfo ? backgroundInfo.substring(0, 100) + (backgroundInfo.length > 100 ? '...' : '') : '';
+
     return (
       <div>
-        <Message type="success" style={{ marginBottom: 16 }}>
-          {this.getLocaleValue('generateSuccess', 'Skill generated successfully')}
-        </Message>
+        {/* 显示用户输入 - 折叠状态，可展开查看 */}
+        {this.renderCollapsibleSection(
+          this.getLocaleValue('userInput', 'User Input') || '用户输入',
+          inputSectionCollapsed ? userInputPreview : userInputContent,
+          inputSectionCollapsed,
+          () => this.setState({ inputSectionCollapsed: !this.state.inputSectionCollapsed }),
+          null,
+          false
+        )}
 
+        {/* 思考内容 - 始终显示（如果存在） */}
+        {thinkingContent && (
+          this.renderCollapsibleSection(
+            this.getLocaleValue('thinking', '思考') || '思考',
+            thinkingContent,
+            thinkingCollapsed,
+            () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
+            <Tag type="normal" size="small">{this.getLocaleValue('thinking', '思考') || '思考'}</Tag>,
+            false
+          )
+        )}
+
+        {/* 结果内容 - 始终显示（如果存在） */}
+        {streamContent && (
+          this.renderCollapsibleSection(
+            this.getLocaleValue('generatingContent', '生成内容') || '生成内容',
+            streamContent,
+            resultContentCollapsed,
+            () => this.setState({ resultContentCollapsed: !resultContentCollapsed }),
+            <Tag type="primary" size="small">{this.getLocaleValue('generatingContent', '生成内容') || '生成内容'}</Tag>,
+            false,
+            thinkingContent
+          )
+        )}
+
+        {/* 生成的Skill预览 */}
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '2px solid #e6e6e6' }}>
         <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #e6e6e6' }}>
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={12}>
@@ -974,6 +1323,7 @@ class NewSkill extends React.Component {
               </div>
             )}
           </div>
+          </div>
         </div>
 
         <div style={{ color: '#999', fontSize: '12px', marginTop: 16 }}>
@@ -981,6 +1331,16 @@ class NewSkill extends React.Component {
         </div>
       </div>
     );
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error rendering generated skill:', error, generatedSkill);
+      return (
+        <div style={{ padding: '20px', color: '#f5222d', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: '4px' }}>
+          <div style={{ marginBottom: 8, fontWeight: 500 }}>渲染生成的 Skill 时出错</div>
+          <div style={{ fontSize: '12px' }}>{error.message || 'Unknown error'}</div>
+        </div>
+      );
+    }
   };
 
   loadMcpServers = async () => {
@@ -1123,16 +1483,29 @@ class NewSkill extends React.Component {
       
       // Important: Keep original skill name, don't use optimized name
       const originalName = this.field.getValue('name') || this.state.skillName;
+      
+      // Update form fields with optimized values
+      // Use optimized values directly, even if they're empty (to allow clearing fields)
       this.field.setValues({
         name: originalName, // Always use original skill name
-        description: optimizedSkill.description || this.field.getValue('description'),
-        instruction: optimizedSkill.instruction || this.field.getValue('instruction'),
+        description: optimizedSkill.description !== undefined ? optimizedSkill.description : this.field.getValue('description'),
+        instruction: optimizedSkill.instruction !== undefined ? optimizedSkill.instruction : this.field.getValue('instruction'),
       });
 
+      // Force form to re-render by updating state
       this.setState({ 
         resources,
         expandedKeys: resources.map((_, index) => String(index)),
         currentSkillData: optimizedSkill 
+      }, () => {
+        // After state update, ensure form fields are refreshed
+        // Force a re-render by calling setValue again if needed
+        if (optimizedSkill.description !== undefined) {
+          this.field.setValue('description', optimizedSkill.description);
+        }
+        if (optimizedSkill.instruction !== undefined) {
+          this.field.setValue('instruction', optimizedSkill.instruction);
+        }
       });
       
       // 如果添加了新资源，显示提示信息
@@ -1800,6 +2173,44 @@ class NewSkill extends React.Component {
                             )}
                           </div>
                         </Loading>
+                      )}
+                    </Form.Item>
+
+                    <Form.Item label={this.getLocaleValue('conversationHistory', 'Conversation History (Optional)')}>
+                      <div style={{ marginBottom: 8 }}>
+                        <Button
+                          text
+                          size="small"
+                          onClick={() => this.setState({ showConversationHistory: !this.state.showConversationHistory })}
+                        >
+                          {this.state.showConversationHistory
+                            ? this.getLocaleValue('hideConversationHistory', 'Hide Conversation History')
+                            : this.getLocaleValue('showConversationHistory', 'Show Conversation History')}
+                          <Icon
+                            type={this.state.showConversationHistory ? 'arrow-up' : 'arrow-down'}
+                            style={{ marginLeft: 4 }}
+                          />
+                        </Button>
+                      </div>
+                      {this.state.showConversationHistory && (
+                        <div>
+                          <Input.TextArea
+                            value={this.state.conversationHistoryJson}
+                            onChange={value => this.setState({ conversationHistoryJson: value })}
+                            placeholder={this.getLocaleValue(
+                              'conversationHistoryPlaceholder',
+                              'Enter conversation history in JSON format:\n{\n  "title": "Conversation Title",\n  "context": "Context description",\n  "messages": [\n    {\n      "type": "user",\n      "content": "User input"\n    },\n    {\n      "type": "tool_call",\n      "toolName": "tool_name",\n      "toolInput": {"param": "value"},\n      "toolOutput": "result"\n    },\n    {\n      "type": "model",\n      "content": "Model response"\n    }\n  ]\n}'
+                            )}
+                            rows={12}
+                            style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                          />
+                          <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
+                            {this.getLocaleValue(
+                              'conversationHistoryHint',
+                              'The system will analyze the conversation history to determine if it is suitable for skill generation. Include user inputs, tool calls, and model responses.'
+                            )}
+                          </div>
+                        </div>
                       )}
                     </Form.Item>
 

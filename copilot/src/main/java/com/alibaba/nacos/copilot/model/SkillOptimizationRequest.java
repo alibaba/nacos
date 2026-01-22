@@ -41,6 +41,14 @@ public class SkillOptimizationRequest implements Serializable {
     private String optimizationGoal;
     
     /**
+     * Conversation history (optional).
+     * Contains user inputs, tool calls, and model responses.
+     * The system will analyze this history to determine if it's suitable
+     * for skill optimization and what optimizations should be made.
+     */
+    private ConversationHistory conversationHistory;
+    
+    /**
      * Additional parameters.
      */
     private Map<String, Object> params;
@@ -70,5 +78,13 @@ public class SkillOptimizationRequest implements Serializable {
     
     public void setParams(Map<String, Object> params) {
         this.params = params;
+    }
+    
+    public ConversationHistory getConversationHistory() {
+        return conversationHistory;
+    }
+    
+    public void setConversationHistory(ConversationHistory conversationHistory) {
+        this.conversationHistory = conversationHistory;
     }
 }

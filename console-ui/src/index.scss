@@ -1264,7 +1264,7 @@ form.vertical-margin-lg .form-group {
 // 引用主题变量
 @import "~@alifd/theme-design-pro/variables.scss";
 
-$adv-icon-font-path: "http://at.alicdn.com/t/font_1533967_slipq25tezj.woff2" !default;
+$adv-icon-font-path: "/fonts/font_1533967_slipq25tezj" !default;
 $icon-font-path: $adv-icon-font-path;
 
 // 引用基础主题
