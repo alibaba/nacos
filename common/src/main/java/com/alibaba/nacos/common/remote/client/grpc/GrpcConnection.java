@@ -73,16 +73,35 @@ public class GrpcConnection extends Connection {
         this.executor = executor;
     }
     
+    /**
+     * Get effective timeout, using default timeout if none is specified.
+     *
+     * @param timeout specified timeout in milliseconds
+     * @return effective timeout to use
+     */
+    private long getEffectiveTimeout(long timeout) {
+        return timeout > 0 ? timeout : DEFAULT_TIMEOUT_MILLS;
+    }
+    
+    /**
+     * Create a stub with a deadline set.
+     *
+     * @param timeout timeout in milliseconds
+     * @return stub with deadline
+     */
+    private RequestGrpc.RequestFutureStub createStubWithDeadline(long timeout) {
+        long effectiveTimeout = getEffectiveTimeout(timeout);
+        return grpcFutureServiceStub.withDeadlineAfter(effectiveTimeout, TimeUnit.MILLISECONDS);
+    }
+    
     @Override
     public Response request(Request request, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
         
-        // Use default timeout if none specified to avoid "end-of-stream mid-frame" errors
-        long effectiveTimeout = timeouts > 0 ? timeouts : DEFAULT_TIMEOUT_MILLS;
+        long effectiveTimeout = getEffectiveTimeout(timeouts);
         
         // Always set a deadline on the stub to prevent hanging requests
-        RequestGrpc.RequestFutureStub stubToUse = grpcFutureServiceStub.withDeadlineAfter(effectiveTimeout, 
-                TimeUnit.MILLISECONDS);
+        RequestGrpc.RequestFutureStub stubToUse = createStubWithDeadline(timeouts);
         
         ListenableFuture<Payload> requestFuture = stubToUse.request(grpcRequest);
         Payload grpcResponse;
@@ -143,13 +162,11 @@ public class GrpcConnection extends Connection {
     public void asyncRequest(Request request, final RequestCallBack requestCallBack) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
         
-        // Use default timeout if none specified to avoid "end-of-stream mid-frame" errors
         long timeout = requestCallBack.getTimeout();
-        long effectiveTimeout = timeout > 0 ? timeout : DEFAULT_TIMEOUT_MILLS;
+        long effectiveTimeout = getEffectiveTimeout(timeout);
         
         // Always set a deadline on the stub to prevent hanging requests
-        RequestGrpc.RequestFutureStub stubToUse = grpcFutureServiceStub.withDeadlineAfter(effectiveTimeout, 
-                TimeUnit.MILLISECONDS);
+        RequestGrpc.RequestFutureStub stubToUse = createStubWithDeadline(timeout);
         
         ListenableFuture<Payload> requestFuture = stubToUse.request(grpcRequest);
         
