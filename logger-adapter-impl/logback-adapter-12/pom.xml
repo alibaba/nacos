@@ -54,7 +54,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.2.13</version>
+            <version>1.5.25</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
