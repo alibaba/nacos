@@ -61,7 +61,13 @@ class MainLayout extends React.Component {
     this.props.getNotice();
     this.props.getGuide();
   }
-
+  
+  componentDidUpdate(prevProps) {
+    if (prevProps.language !== this.props.language) {
+      this.props.getNotice();
+    }
+  }
+  
   goBack() {
     this.props.history.goBack();
   }
