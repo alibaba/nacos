@@ -623,7 +623,7 @@ class MultiTenantNamingITCase {
         List<Instance> instances = naming1.getAllInstances(serviceName, TEST_GROUP);
         verifyInstanceListForNaming(naming1, 0, serviceName);
         
-        assertEquals(0, naming1.getAllInstances(serviceName).size());   //defalut group
+        assertEquals(0, naming1.getAllInstances(serviceName).size());   //default group
         
         Instance instance = naming1.selectOneHealthyInstance(serviceName, TEST_GROUP, Arrays.asList("c1"));
         assertEquals("11.11.11.11", instance.getIp());
