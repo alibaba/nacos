@@ -124,4 +124,9 @@ public class NacosAiService implements AiService {
             throws NacosException {
         
     }
+    
+    @Override
+    public com.alibaba.nacos.api.ai.model.skills.Skill loadSkill(String skillName) throws NacosException {
+        return null;
+    }
 }

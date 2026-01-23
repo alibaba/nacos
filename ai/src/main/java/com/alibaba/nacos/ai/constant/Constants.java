@@ -109,4 +109,21 @@ public class Constants {
         
         public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
     }
+    
+    public static class Skills {
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/skills";
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/skills";
+        
+        public static final String SKILL_GROUP = "skill";
+        
+        public static final String SKILL_VERSION_GROUP = "skill-version";
+        
+        public static final String SEARCH_BLUR = "blur";
+        
+        public static final String SEARCH_ACCURATE = "accurate";
+        
+        public static final String SKILL_DEFAULT_NAMESPACE = "public";
+    }
 }
