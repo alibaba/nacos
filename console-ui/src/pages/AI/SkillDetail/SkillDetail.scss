@@ -1,0 +1,341 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// 全局覆盖Card样式，确保在skill-detail中生效
+.skill-detail {
+  padding: 20px;
+  overflow: visible;
+
+  // 基本信息和指令之间的间距 - 强制覆盖所有可能的margin
+  .skill-basic-info-card {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .skill-instruction-card {
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+    
+    // 确保指令内容区域有足够高度
+    .instruction-content {
+      min-height: 400px !important;
+      display: block !important;
+    }
+  }
+
+  // 确保Card组件不会裁剪内容，并且高度自适应
+  .next-card {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+
+    .next-card-body {
+      overflow: visible !important;
+      height: auto !important;
+      min-height: auto !important;
+      max-height: none !important;
+    }
+  }
+
+  // 资源Card特殊处理 - 确保展开时高度自适应
+  .skill-resources-card {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    display: block !important;
+
+    & > div {
+      overflow: visible !important;
+      height: auto !important;
+      max-height: none !important;
+    }
+
+    .next-card-body {
+      overflow: visible !important;
+      height: auto !important;
+      min-height: auto !important;
+      max-height: none !important;
+      padding-bottom: 16px !important;
+      display: block !important;
+    }
+  }
+
+  .info-item {
+    margin-bottom: 16px;
+
+    label {
+      display: inline-block;
+      width: 120px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    span {
+      color: #666;
+    }
+  }
+
+  .instruction-content {
+    padding: 16px;
+    background: #fff;
+    border-radius: 4px;
+    min-height: 400px;
+    max-height: 1000px;
+    overflow-y: auto;
+
+    .markdown-body {
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+  .resources-section {
+    overflow: visible !important;
+    position: relative;
+    z-index: 1;
+
+    .resource-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding-left: 20px;
+    }
+
+    .next-collapse {
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+      overflow: visible !important;
+      position: relative;
+      z-index: 2;
+
+      .next-collapse-panel {
+        border-bottom: 1px solid #e6e6e6;
+        overflow: visible !important;
+        position: relative;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .next-collapse-panel-title {
+          padding: 12px 16px;
+          background: #fafafa;
+        }
+
+        .next-collapse-panel-content {
+          padding: 16px;
+          overflow: visible !important;
+          position: relative;
+          z-index: 3;
+        }
+      }
+    }
+
+    .resource-content {
+      margin-top: 8px;
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+      overflow: hidden;
+
+      // Monaco Editor container
+      > div {
+        border: none;
+        border-radius: 0;
+      }
+    }
+
+    .resource-metadata {
+      padding: 12px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      margin-top: 8px;
+
+      pre {
+        margin: 0;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .empty-resources {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+  }
+}
+
+.skill-preview-dialog {
+  .next-dialog-body {
+    padding: 0;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .preview-sidebar {
+    width: 300px;
+    border-right: 1px solid #e6e6e6;
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+
+    .preview-sidebar-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e6e6e6;
+      font-weight: 500;
+      background: #fff;
+    }
+
+    .preview-file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .file-tree-folder {
+      .file-tree-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        font-size: 13px;
+        color: #333;
+        transition: background-color 0.2s;
+
+        &.file-tree-folder-item {
+          color: #666;
+          font-weight: 500;
+        }
+
+        &.file-tree-file-item {
+          cursor: pointer;
+
+          &:hover {
+            background-color: #f0f0f0;
+          }
+
+          &.selected {
+            background-color: #e6f7ff;
+            color: #1890ff;
+          }
+        }
+
+        .next-icon {
+          color: #666;
+        }
+      }
+    }
+
+    .file-tree-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+    }
+  }
+
+  .preview-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+
+    .file-content-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .file-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+
+      .file-content-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e6e6e6;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        background: #fafafa;
+      }
+
+      .file-content-markdown {
+        flex: 1;
+        padding: 16px;
+        margin: 0;
+        overflow-y: auto;
+        background: #fff;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #333;
+      }
+
+      .file-content-resource {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+
+        .resource-info {
+          margin-bottom: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e6e6e6;
+
+          .resource-info-item {
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #666;
+
+            strong {
+              color: #333;
+              margin-right: 8px;
+            }
+          }
+        }
+
+        .resource-content {
+          flex: 1;
+
+          .resource-content-label {
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #333;
+          }
+        }
+      }
+    }
+  }
+}

@@ -48,7 +48,7 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
-    children: PropTypes.array,
+    children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
     getNotice: PropTypes.func,
     notice: PropTypes.string,
     consoleUiEnable: PropTypes.string,
@@ -71,6 +71,8 @@ class MainLayout extends React.Component {
     const pageParamMap = {
       '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
       '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/skillManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/promptManagement': ['namespace', 'namespaceShowName', 'searchName'],
       '/mcpServerManagement': ['namespace', 'namespaceShowName'],
       '/serviceManagement': ['namespace', 'namespaceShowName'],
     };

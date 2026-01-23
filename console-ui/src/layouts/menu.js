@@ -47,14 +47,28 @@ const configurationMenu = {
   ],
 };
 
-const McpServerManagementRoute = '/mcpServerManagement';
-const AiControlMenu = {
-  key: 'AiManagementVirtual',
+export const McpServerManagementRoute = '/mcpServerManagement';
+
+// AI Registry 菜单，包含 MCP Registry、Agent Registry、Skill Registry、Prompt Registry
+const aiRegistryMenu = {
+  key: 'aiRegistry',
   badge: 'new',
   children: [
     {
-      key: 'mcpList',
+      key: 'mcpRegistry',
       url: McpServerManagementRoute,
+    },
+    {
+      key: 'agentRegistry',
+      url: '/agentManagement',
+    },
+    {
+      key: 'skillRegistry',
+      url: '/skillManagement',
+    },
+    {
+      key: 'promptRegistry',
+      url: '/promptManagement',
     },
   ],
 };
@@ -125,8 +139,7 @@ export default function(model) {
     result.push(configurationMenu);
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
-    result.push(AiControlMenu);
-    result.push(agentManagementMenu);
+    result.push(aiRegistryMenu);
     result.push(pluginMenu);
   }
   if (globalAdmin) {

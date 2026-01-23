@@ -58,6 +58,10 @@ import AgentManagement from './pages/AI/AgentManagement';
 import NewAgent from './pages/AI/NewAgent';
 import AgentDetail from './pages/AI/AgentDetail';
 import PluginList from './pages/PluginManagement/PluginList';
+import SkillManagement from './pages/AI/SkillManagement';
+import NewSkill from './pages/AI/NewSkill';
+import SkillDetail from './pages/AI/SkillDetail';
+import PromptManagement from './pages/AI/PromptManagement';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -112,6 +116,10 @@ const MENU = [
   { path: '/agentManagement', component: AgentManagement },
   { path: '/newAgent', component: NewAgent },
   { path: '/agentDetail', component: AgentDetail },
+  { path: '/skillManagement', component: SkillManagement },
+  { path: '/newSkill', component: NewSkill },
+  { path: '/skillDetail', component: SkillDetail },
+  { path: '/promptManagement', component: PromptManagement },
   { path: '/pluginManagement', component: PluginList },
 ];
 
