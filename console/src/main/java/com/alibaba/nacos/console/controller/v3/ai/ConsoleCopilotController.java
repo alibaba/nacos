@@ -79,6 +79,7 @@ public class ConsoleCopilotController {
      */
     @PostMapping(value = CopilotConstants.SKILL_OPTIMIZE_PATH, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public SseEmitter optimizeSkillStream(@RequestBody(required = false) SkillOptimizationForm form) {
         // Create SSE emitter with 60 seconds timeout
         SseEmitter emitter = new SseEmitter(60000L);
@@ -194,6 +195,7 @@ public class ConsoleCopilotController {
      */
     @PostMapping(value = CopilotConstants.SKILL_GENERATE_PATH, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public SseEmitter generateSkillStream(@RequestBody(required = false) SkillGenerationForm form) {
         // Create SSE emitter with 60 seconds timeout
         SseEmitter emitter = new SseEmitter(60000L);

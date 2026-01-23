@@ -56,6 +56,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
     
+    private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
+    
     private final ConfigQueryChainService configQueryChainService;
     
     private final ConfigOperationService configOperationService;
@@ -81,7 +83,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "Skill name is required");
             }
-            if (!skill.getName().matches("^[a-zA-Z_-]+$")) {
+            if (!skill.getName().matches(SKILL_NAME_PATTERN)) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "Skill name can only contain English letters, underscore, and hyphen");
             }
@@ -141,7 +143,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         skill.setInstruction(mainConfig.getInstruction());
         
         // 4. Query all resource configs
-        Map<String, SkillResource> resourceMap = new HashMap<>();
+        Map<String, SkillResource> resourceMap = new HashMap<>(
+                mainConfig.getResource() != null ? mainConfig.getResource().size() : 16);
         if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
             String resourceGroup = skillGroup + "_resource";
             for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {
@@ -284,7 +287,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         mainConfig.setInstruction(skill.getInstruction());
         
         // Build resource references (without content)
-        Map<String, SkillResourceRef> resourceRefs = new HashMap<>();
+        Map<String, SkillResourceRef> resourceRefs = new HashMap<>(
+                skill.getResource() != null ? skill.getResource().size() : 16);
         if (skill.getResource() != null) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();

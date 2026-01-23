@@ -71,6 +71,7 @@ public enum StreamResponseType {
                 return type;
             }
         }
-        return CONTENT; // Default to CONTENT if unknown
+        // Default to CONTENT if unknown
+        return CONTENT;
     }
 }

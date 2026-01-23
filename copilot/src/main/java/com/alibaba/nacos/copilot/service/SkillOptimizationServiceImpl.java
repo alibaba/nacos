@@ -53,6 +53,10 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOptimizationServiceImpl.class);
     
+    private static final String JSON_CODE_BLOCK = "```json";
+    
+    private static final String CODE_BLOCK = "```";
+    
     private final CopilotAgentManager agentManager;
     
     @Autowired
@@ -104,21 +108,22 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 .build();
         
         // 8. Call agent with stream response
-		// Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
+        // Frontend will accumulate and parse the content itself, so we don't need to accumulate fullContent
         Flux<io.agentscope.core.agent.Event> eventFlux = agent.stream(userMsg, streamOptions)
                 .subscribeOn(Schedulers.boundedElastic());
         
-		eventFlux.subscribe(StreamEventProcessor.createSubscriber(
-				(type, content, done) -> {
-					SkillOptimizationResponse response = new SkillOptimizationResponse();
-					response.setType(type);
-					response.setChunk(content);
-					response.setDone(done);
-					return response;
-				},
-				callback));
+        eventFlux.subscribe(StreamEventProcessor.createSubscriber(
+                (type, content, done) -> {
+                    SkillOptimizationResponse response = new SkillOptimizationResponse();
+                    response.setType(type);
+                    response.setChunk(content);
+                    response.setDone(done);
+                    return response;
+                },
+                callback));
     }
     
+    @SuppressWarnings("PMD.MethodTooLongRule")
     private String buildUserMessage(Skill skill, SkillOptimizationRequest request) {
         StringBuilder sb = new StringBuilder();
         sb.append("请优化以下 Agent Skill：\n\n");
@@ -141,128 +146,122 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             sb.append("\n");
         }
         
-		// Build optimization instructions based on user input
-		boolean hasOptimizationGoal = StringUtils.isNotBlank(request.getOptimizationGoal());
-		boolean hasSelectedTools = false;
-		List<Map<String, Object>> selectedMcpTools = null;
-		boolean hasConversationHistory = request.getConversationHistory() != null
-				&& request.getConversationHistory().getMessages() != null
-				&& !request.getConversationHistory().getMessages().isEmpty();
+        // Build optimization instructions based on user input
+        boolean hasOptimizationGoal = StringUtils.isNotBlank(request.getOptimizationGoal());
+        boolean hasSelectedTools = false;
+        List<Map<String, Object>> selectedMcpTools = null;
+        boolean hasConversationHistory = request.getConversationHistory() != null
+                && request.getConversationHistory().getMessages() != null
+                && !request.getConversationHistory().getMessages().isEmpty();
 
         if (request.getParams() != null) {
             Object selectedMcpToolsObj = request.getParams().get("selectedMcpTools");
             if (selectedMcpToolsObj instanceof List) {
                 @SuppressWarnings("unchecked")
-				List<Map<String, Object>> tools = (List<Map<String, Object>>) selectedMcpToolsObj;
-				if (tools != null && !tools.isEmpty()) {
-					hasSelectedTools = true;
-					selectedMcpTools = tools;
-				}
-			}
-		}
-
-		// Add conversation history analysis if provided
-		if (hasConversationHistory) {
-			sb.append("对话历史分析（请充分理解这段对话历史，判断是否适合对当前 Skill 进行优化）：\n\n");
-			ConversationHistory history = request.getConversationHistory();
-			if (StringUtils.isNotBlank(history.getTitle())) {
-				sb.append("对话主题：").append(history.getTitle()).append("\n");
-			}
-			if (StringUtils.isNotBlank(history.getContext())) {
-				sb.append("对话上下文：").append(history.getContext()).append("\n");
-			}
-			sb.append("\n对话内容：\n");
-			int messageIndex = 1;
-			for (ConversationMessage message : history.getMessages()) {
-				sb.append("[").append(messageIndex++).append("] ");
-				if ("user".equalsIgnoreCase(message.getType())) {
-					sb.append("用户输入：").append(message.getContent()).append("\n");
-				}
-				else if ("tool_call".equalsIgnoreCase(message.getType())) {
-					sb.append("工具调用：");
-					if (StringUtils.isNotBlank(message.getToolName())) {
-						sb.append(message.getToolName());
-					}
-					if (message.getToolInput() != null && !message.getToolInput().isEmpty()) {
-						sb.append("，输入参数：").append(message.getToolInput());
-					}
-					if (message.getToolOutput() != null) {
-						sb.append("，输出结果：").append(message.getToolOutput());
-					}
-					sb.append("\n");
-				}
-				else if ("model".equalsIgnoreCase(message.getType())) {
-					sb.append("模型回复：").append(message.getContent()).append("\n");
-				}
-				else {
-					sb.append(message.getType()).append("：");
-					if (StringUtils.isNotBlank(message.getContent())) {
-						sb.append(message.getContent());
-					}
-					sb.append("\n");
-				}
-			}
-			sb.append("\n对话历史分析要求：\n");
-			sb.append("1. 请充分理解这段对话历史，包括用户输入、工具调用、模型回复的完整流程\n");
-			sb.append("2. 分析这段对话历史是否适合对当前 Skill 进行优化\n");
-			sb.append("3. 如果适合优化，请识别对话历史中的关键信息：\n");
-			sb.append("   - 用户的实际需求和意图\n");
-			sb.append("   - 工具调用的模式和逻辑\n");
-			sb.append("   - 模型回复的策略和方式\n");
-			sb.append("   - 对话中体现出的 Skill 应该具备的能力\n");
-			sb.append("4. 基于对话历史分析，对当前 Skill 进行针对性优化，确保优化后的 Skill 能够更好地支持类似的对话场景\n");
-			sb.append("5. 如果对话历史中涉及工具调用，请确保优化后的 Skill 能够正确使用这些工具\n");
-			sb.append("6. 如果对话历史中体现了特定的处理逻辑或策略，请在优化后的 Skill instruction 中体现这些逻辑\n\n");
-		}
-
-		// Add optimization goal with emphasis
-		if (hasOptimizationGoal) {
-			sb.append("用户优化目标（请聚焦于此方向进行优化）：\n");
-			sb.append(request.getOptimizationGoal()).append("\n");
-			sb.append("重要提示：整体优化思路应该聚焦于用户的优化方向，所有优化建议和改动都应该围绕这个目标展开。\n\n");
-		}
-
-		// Add MCP tools information if provided
-		if (hasSelectedTools) {
-			sb.append("用户选择的 MCP 工具（用户希望在 Skill 中增加对这些工具的调用）：\n");
-                    for (Map<String, Object> tool : selectedMcpTools) {
-                        sb.append("- 工具名称：").append(tool.get("name")).append("\n");
-                        if (tool.get("description") != null) {
-                            sb.append("  描述：").append(tool.get("description")).append("\n");
-                        }
-                        if (tool.get("inputSchema") != null) {
-                            sb.append("  输入参数：").append(tool.get("inputSchema")).append("\n");
-                        }
-                        sb.append("\n");
-                    }
-			sb.append("工具集成要求：\n");
-			sb.append("1. 用户选择了这些工具，说明用户希望在优化后的 Skill 中增加对这些工具的调用\n");
-			sb.append("2. 请在优化后的 instruction 中详细说明如何调用这些工具，包括：\n");
-                    sb.append("   - 工具名称和用途\n");
-                    sb.append("   - 调用时机（在什么情况下调用该工具）\n");
-                    sb.append("   - 输入参数说明（每个参数的含义、类型、是否必需、如何获取）\n");
-                    sb.append("   - 输出结果处理（如何处理工具返回的结果，如何解析和使用返回数据）\n");
-                    sb.append("   - 错误处理（工具调用失败时的处理方式和备选方案）\n");
-			sb.append("3. 确保工具调用逻辑清晰、可执行，工具应该与 Skill 功能紧密结合\n");
-			if (selectedMcpTools.size() > 1) {
-				sb.append("4. 在 instruction 中明确说明工具调用的步骤和流程，包括工具调用的顺序\n");
-			}
-			sb.append("5. 提供具体的工具调用示例，说明如何构造参数、调用工具、处理结果\n\n");
+                List<Map<String, Object>> tools = (List<Map<String, Object>>) selectedMcpToolsObj;
+                if (tools != null && !tools.isEmpty()) {
+                    hasSelectedTools = true;
+                    selectedMcpTools = tools;
                 }
+            }
+        }
 
-		// Build final instruction
-		if (hasOptimizationGoal && hasSelectedTools) {
-			sb.append("请根据用户的优化目标和选择的工具，结合 Agent Skill 的最佳实践，优化这个 Skill。");
-		}
-		else if (hasOptimizationGoal) {
-			sb.append("请聚焦于用户的优化目标，结合 Agent Skill 的最佳实践，优化这个 Skill。");
-		}
-		else if (hasSelectedTools) {
-			sb.append("请根据用户选择的工具，结合 Agent Skill 的最佳实践，优化这个 Skill，确保在 Skill 中增加对这些工具的调用。");
-		}
-		else {
-        sb.append("请根据 Agent Skill 的最佳实践，优化这个 Skill。");
-		}
+        // Add conversation history analysis if provided
+        if (hasConversationHistory) {
+            sb.append("对话历史分析（请充分理解这段对话历史，判断是否适合对当前 Skill 进行优化）：\n\n");
+            ConversationHistory history = request.getConversationHistory();
+            if (StringUtils.isNotBlank(history.getTitle())) {
+                sb.append("对话主题：").append(history.getTitle()).append("\n");
+            }
+            if (StringUtils.isNotBlank(history.getContext())) {
+                sb.append("对话上下文：").append(history.getContext()).append("\n");
+            }
+            sb.append("\n对话内容：\n");
+            int messageIndex = 1;
+            for (ConversationMessage message : history.getMessages()) {
+                sb.append("[").append(messageIndex++).append("] ");
+                if ("user".equalsIgnoreCase(message.getType())) {
+                    sb.append("用户输入：").append(message.getContent()).append("\n");
+                } else if ("tool_call".equalsIgnoreCase(message.getType())) {
+                    sb.append("工具调用：");
+                    if (StringUtils.isNotBlank(message.getToolName())) {
+                        sb.append(message.getToolName());
+                    }
+                    if (message.getToolInput() != null && !message.getToolInput().isEmpty()) {
+                        sb.append("，输入参数：").append(message.getToolInput());
+                    }
+                    if (message.getToolOutput() != null) {
+                        sb.append("，输出结果：").append(message.getToolOutput());
+                    }
+                    sb.append("\n");
+                } else if ("model".equalsIgnoreCase(message.getType())) {
+                    sb.append("模型回复：").append(message.getContent()).append("\n");
+                } else {
+                    sb.append(message.getType()).append("：");
+                    if (StringUtils.isNotBlank(message.getContent())) {
+                        sb.append(message.getContent());
+                    }
+                    sb.append("\n");
+                }
+            }
+            sb.append("\n对话历史分析要求：\n");
+            sb.append("1. 请充分理解这段对话历史，包括用户输入、工具调用、模型回复的完整流程\n");
+            sb.append("2. 分析这段对话历史是否适合对当前 Skill 进行优化\n");
+            sb.append("3. 如果适合优化，请识别对话历史中的关键信息：\n");
+            sb.append("   - 用户的实际需求和意图\n");
+            sb.append("   - 工具调用的模式和逻辑\n");
+            sb.append("   - 模型回复的策略和方式\n");
+            sb.append("   - 对话中体现出的 Skill 应该具备的能力\n");
+            sb.append("4. 基于对话历史分析，对当前 Skill 进行针对性优化，确保优化后的 Skill 能够更好地支持类似的对话场景\n");
+            sb.append("5. 如果对话历史中涉及工具调用，请确保优化后的 Skill 能够正确使用这些工具\n");
+            sb.append("6. 如果对话历史中体现了特定的处理逻辑或策略，请在优化后的 Skill instruction 中体现这些逻辑\n\n");
+        }
+
+        // Add optimization goal with emphasis
+        if (hasOptimizationGoal) {
+            sb.append("用户优化目标（请聚焦于此方向进行优化）：\n");
+            sb.append(request.getOptimizationGoal()).append("\n");
+            sb.append("重要提示：整体优化思路应该聚焦于用户的优化方向，所有优化建议和改动都应该围绕这个目标展开。\n\n");
+        }
+
+        // Add MCP tools information if provided
+        if (hasSelectedTools) {
+            sb.append("用户选择的 MCP 工具（用户希望在 Skill 中增加对这些工具的调用）：\n");
+            for (Map<String, Object> tool : selectedMcpTools) {
+                sb.append("- 工具名称：").append(tool.get("name")).append("\n");
+                if (tool.get("description") != null) {
+                    sb.append("  描述：").append(tool.get("description")).append("\n");
+                }
+                if (tool.get("inputSchema") != null) {
+                    sb.append("  输入参数：").append(tool.get("inputSchema")).append("\n");
+                }
+                sb.append("\n");
+            }
+            sb.append("工具集成要求：\n");
+            sb.append("1. 用户选择了这些工具，说明用户希望在优化后的 Skill 中增加对这些工具的调用\n");
+            sb.append("2. 请在优化后的 instruction 中详细说明如何调用这些工具，包括：\n");
+            sb.append("   - 工具名称和用途\n");
+            sb.append("   - 调用时机（在什么情况下调用该工具）\n");
+            sb.append("   - 输入参数说明（每个参数的含义、类型、是否必需、如何获取）\n");
+            sb.append("   - 输出结果处理（如何处理工具返回的结果，如何解析和使用返回数据）\n");
+            sb.append("   - 错误处理（工具调用失败时的处理方式和备选方案）\n");
+            sb.append("3. 确保工具调用逻辑清晰、可执行，工具应该与 Skill 功能紧密结合\n");
+            if (selectedMcpTools.size() > 1) {
+                sb.append("4. 在 instruction 中明确说明工具调用的步骤和流程，包括工具调用的顺序\n");
+            }
+            sb.append("5. 提供具体的工具调用示例，说明如何构造参数、调用工具、处理结果\n\n");
+        }
+
+        // Build final instruction
+        if (hasOptimizationGoal && hasSelectedTools) {
+            sb.append("请根据用户的优化目标和选择的工具，结合 Agent Skill 的最佳实践，优化这个 Skill。");
+        } else if (hasOptimizationGoal) {
+            sb.append("请聚焦于用户的优化目标，结合 Agent Skill 的最佳实践，优化这个 Skill。");
+        } else if (hasSelectedTools) {
+            sb.append("请根据用户选择的工具，结合 Agent Skill 的最佳实践，优化这个 Skill，确保在 Skill 中增加对这些工具的调用。");
+        } else {
+            sb.append("请根据 Agent Skill 的最佳实践，优化这个 Skill。");
+        }
         
         return sb.toString();
     }
@@ -274,8 +273,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         }
         
         // Try to extract JSON from markdown code blocks
-        if (content.contains("```json")) {
-            int start = content.indexOf("```json") + 7;
+        if (content.contains(JSON_CODE_BLOCK)) {
+            int start = content.indexOf(JSON_CODE_BLOCK) + JSON_CODE_BLOCK.length();
             // Find the matching closing ```
             int end = findMatchingCodeBlockEnd(content, start);
             if (end > start) {
@@ -284,9 +283,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                     return extracted;
                 }
             }
-		}
-		else if (content.contains("```")) {
-            int start = content.indexOf("```") + 3;
+        } else if (content.contains(CODE_BLOCK)) {
+            int start = content.indexOf(CODE_BLOCK) + CODE_BLOCK.length();
             // Find the matching closing ```
             int end = findMatchingCodeBlockEnd(content, start);
             if (end > start) {
@@ -314,19 +312,21 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
     private int findMatchingCodeBlockEnd(String content, int startPos) {
         int pos = startPos;
         while (pos < content.length()) {
-            int nextBacktick = content.indexOf("```", pos);
+            int nextBacktick = content.indexOf(CODE_BLOCK, pos);
             if (nextBacktick == -1) {
                 return -1;
             }
             // Check if this is a closing marker (not part of the content)
             // Simple heuristic: if there's a newline before it, it's likely a closing marker
-            if (nextBacktick > startPos
+            @SuppressWarnings("PMD.AvoidComplexConditionRule")
+            boolean isClosingMarker = nextBacktick > startPos
                     && (nextBacktick == 0
                             || content.charAt(nextBacktick - 1) == '\n'
-                            || content.substring(Math.max(0, nextBacktick - 10), nextBacktick).trim().isEmpty())) {
+                            || content.substring(Math.max(0, nextBacktick - 10), nextBacktick).trim().isEmpty());
+            if (isClosingMarker) {
                 return nextBacktick;
             }
-            pos = nextBacktick + 3;
+            pos = nextBacktick + CODE_BLOCK.length();
         }
         return -1;
     }
@@ -369,8 +369,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             
             if (c == '{') {
                 braceCount++;
-			}
-			else if (c == '}') {
+            } else if (c == '}') {
                 braceCount--;
                 if (braceCount == 0) {
                     return content.substring(start, i + 1);
@@ -392,8 +391,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         try {
             JacksonUtils.toObj(json);
             return true;
-		}
-		catch (Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }
@@ -427,7 +425,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             // No nested resources, check if "resource" already exists
             Object resourceObj = skillMap.get("resource");
             if (resourceObj == null || !(resourceObj instanceof Map)) {
-                skillMap.put("resource", new HashMap<>());
+                skillMap.put("resource", new HashMap<>(16));
             }
             return;
         }
@@ -438,7 +436,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         }
         
         Map<String, Object> resources = (Map<String, Object>) resourcesObj;
-        Map<String, Object> flatResourceMap = new HashMap<>();
+        Map<String, Object> flatResourceMap = new HashMap<>(16);
         
         // Recursively flatten nested resource structure
         flattenResources(resources, flatResourceMap, "");
@@ -466,6 +464,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 
                 // Check if this is a resource object (has type, path, name, content, etc.)
                 // A resource object should have at least one of: type, path, name, content
+                @SuppressWarnings("PMD.AvoidComplexConditionRule")
                 boolean isResourceObject = valueMap.containsKey("type") 
                         || valueMap.containsKey("path") 
                         || valueMap.containsKey("name")
@@ -473,7 +472,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 
                 if (isResourceObject) {
                     // This is a resource object, convert it to SkillResource format
-                    Map<String, Object> resourceObj = new HashMap<>();
+                    Map<String, Object> resourceObj = new HashMap<>(8);
                     
                     // Extract name from path or use key
                     String name = (String) valueMap.get("name");
@@ -483,20 +482,16 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                             // Extract filename from path
                             int lastSlash = path.lastIndexOf('/');
                             name = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
-						}
-						else {
+                        } else {
                             // Use key as name, add appropriate extension based on type
                             String type = (String) valueMap.getOrDefault("type", "");
                             if ("script".equals(type) || "sh".equals(type)) {
                                 name = key + ".sh";
-							}
-							else if ("template".equals(type) || "json".equals(type)) {
+                            } else if ("template".equals(type) || "json".equals(type)) {
                                 name = key + ".json";
-							}
-							else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
+                            } else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
                                 name = key + ".md";
-							}
-							else {
+                            } else {
                                 name = key;
                             }
                         }
@@ -520,14 +515,12 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                     // Use the resource key (not prefix_key) as the map key
                     // This ensures resources.scripts.check_permission becomes resource.check_permission
                     flatMap.put(key, resourceObj);
-				}
-				else {
+                } else {
                     // This is a nested category (like "scripts", "documentation"), continue flattening
                     // Don't add prefix for category names, just pass them through
                     flattenResources(valueMap, flatMap, "");
                 }
-			}
-			else {
+            } else {
                 // Not a Map, skip
                 LOGGER.warn("Unexpected resource value type for key {}: {}", key, value.getClass().getName());
             }

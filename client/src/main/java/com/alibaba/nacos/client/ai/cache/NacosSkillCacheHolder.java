@@ -223,7 +223,8 @@ public class NacosSkillCacheHolder implements Closeable {
         skill.setInstruction(mainConfig.getInstruction());
         
         // Query all Resource configs
-        Map<String, SkillResource> resourceMap = new HashMap<>();
+        Map<String, SkillResource> resourceMap = new HashMap<>(
+                mainConfig.getResource() != null ? mainConfig.getResource().size() : 16);
         if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
             String resourceGroup = skillGroup + "_resource";
             for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {

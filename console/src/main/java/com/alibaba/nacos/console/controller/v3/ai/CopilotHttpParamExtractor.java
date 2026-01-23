@@ -35,12 +35,16 @@ import java.util.List;
  */
 public class CopilotHttpParamExtractor extends AbstractHttpParamExtractor {
     
+    private static final String HTTP_METHOD_POST = "POST";
+    
+    private static final String SKILL_JSON_KEY = "\"skill\"";
+    
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
         
         // Try to extract skill name from request body for optimization requests
-        if ("POST".equalsIgnoreCase(request.getMethod())) {
+        if (HTTP_METHOD_POST.equalsIgnoreCase(request.getMethod())) {
             try {
                 StringBuilder body = new StringBuilder();
                 try (BufferedReader reader = request.getReader()) {
@@ -53,7 +57,7 @@ public class CopilotHttpParamExtractor extends AbstractHttpParamExtractor {
                 if (body.length() > 0) {
                     // Parse JSON body to extract skill name
                     String bodyStr = body.toString();
-                    if (bodyStr.contains("\"skill\"")) {
+                    if (bodyStr.contains(SKILL_JSON_KEY)) {
                         // Extract skill from request body
                         try {
                             java.util.Map<String, Object> bodyMap = JacksonUtils.toObj(bodyStr, java.util.Map.class);
