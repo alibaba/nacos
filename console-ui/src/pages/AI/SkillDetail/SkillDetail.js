@@ -111,13 +111,6 @@ class SkillDetail extends React.Component {
     this.setState({ optimizeDialogVisible: true });
   };
 
-  handleOptimizeSuccess = optimizedSkill => {
-    const { locale = {} } = this.props;
-    Message.success(locale.optimizeSuccess || 'Optimization applied successfully');
-    this.loadSkillData();
-    this.handleOptimizeDialogClose();
-  };
-
   handleOptimizeDialogClose = () => {
     this.setState({ optimizeDialogVisible: false });
   };
@@ -380,51 +373,105 @@ class SkillDetail extends React.Component {
     }
 
     try {
-      const zip = new JSZip();
       const skillName = skillData.name || 'skill';
-      const folder = zip.folder(skillName);
-
-      // Add SKILL.md file
-      const markdown = this.buildSkillMarkdown(previewData);
-      folder.file('SKILL.md', markdown);
-
-      // Add resource files
-      if (previewData.resource && Object.keys(previewData.resource).length > 0) {
-        Object.entries(previewData.resource).forEach(([key, resource]) => {
-          const resourceName = resource.name || key;
-          const resourceContent = resource.content || '';
-          
-          if (resource.type && resource.type.trim() !== '') {
-            // Add to type folder
-            const typeFolder = folder.folder(resource.type.trim());
-            typeFolder.file(resourceName, resourceContent);
-          } else {
-            // Add directly to skill folder
-            folder.file(resourceName, resourceContent);
+      
+      // Check if browser supports File System Access API
+      if ('showDirectoryPicker' in window) {
+        // Use File System Access API to let user choose folder
+        try {
+          const directoryHandle = await window.showDirectoryPicker();
+          await this.saveToDirectory(directoryHandle, skillName, previewData);
+          Message.success(locale.exportSuccess || 'Export successful');
+        } catch (dirError) {
+          // User cancelled the directory picker
+          if (dirError.name !== 'AbortError') {
+            // eslint-disable-next-line no-console
+            console.error('Directory picker error:', dirError);
+            Message.error(locale.exportFailed || `Export failed: ${dirError.message || dirError}`);
           }
-        });
+          // If user cancelled, just return silently
+          return;
+        }
+      } else {
+        // Fallback to zip download for browsers that don't support File System Access API
+        const zip = new JSZip();
+        const folder = zip.folder(skillName);
+
+        // Add SKILL.md file
+        const markdown = this.buildSkillMarkdown(previewData);
+        folder.file('SKILL.md', markdown);
+
+        // Add resource files
+        if (previewData.resource && Object.keys(previewData.resource).length > 0) {
+          Object.entries(previewData.resource).forEach(([key, resource]) => {
+            const resourceName = resource.name || key;
+            const resourceContent = resource.content || '';
+            
+            if (resource.type && resource.type.trim() !== '') {
+              // Add to type folder
+              const typeFolder = folder.folder(resource.type.trim());
+              typeFolder.file(resourceName, resourceContent);
+            } else {
+              // Add directly to skill folder
+              folder.file(resourceName, resourceContent);
+            }
+          });
+        }
+
+        // Generate zip file
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+
+        // Create a temporary link element and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${skillName}.zip`;
+        document.body.appendChild(link);
+        link.click();
+
+        // Clean up
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        Message.success(locale.exportSuccess || 'Export successful');
       }
-
-      // Generate zip file
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(zipBlob);
-
-      // Create a temporary link element and trigger download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${skillName}.zip`;
-      document.body.appendChild(link);
-      link.click();
-
-      // Clean up
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      Message.success(locale.exportSuccess || 'Export successful');
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Export failed:', error);
       Message.error(locale.exportFailed || `Export failed: ${error.message || error}`);
+    }
+  };
+
+  saveToDirectory = async (directoryHandle, skillName, previewData) => {
+    // Create skill folder in the selected directory
+    const skillFolderHandle = await directoryHandle.getDirectoryHandle(skillName, { create: true });
+
+    // Save SKILL.md file
+    const markdown = this.buildSkillMarkdown(previewData);
+    const skillMdFileHandle = await skillFolderHandle.getFileHandle('SKILL.md', { create: true });
+    const skillMdWritable = await skillMdFileHandle.createWritable();
+    await skillMdWritable.write(markdown);
+    await skillMdWritable.close();
+
+    // Save resource files
+    if (previewData.resource && Object.keys(previewData.resource).length > 0) {
+      for (const [key, resource] of Object.entries(previewData.resource)) {
+        const resourceName = resource.name || key;
+        const resourceContent = resource.content || '';
+        
+        let targetFolderHandle = skillFolderHandle;
+        
+        if (resource.type && resource.type.trim() !== '') {
+          // Create type folder if needed
+          targetFolderHandle = await skillFolderHandle.getDirectoryHandle(resource.type.trim(), { create: true });
+        }
+        
+        // Save resource file
+        const resourceFileHandle = await targetFolderHandle.getFileHandle(resourceName, { create: true });
+        const resourceWritable = await resourceFileHandle.createWritable();
+        await resourceWritable.write(resourceContent);
+        await resourceWritable.close();
+      }
     }
   };
 
@@ -736,7 +783,6 @@ class SkillDetail extends React.Component {
           visible={this.state.optimizeDialogVisible}
           skill={this.state.skillData}
           onClose={this.handleOptimizeDialogClose}
-          onSuccess={this.handleOptimizeSuccess}
           locale={this.props.locale}
           history={this.props.history}
         />

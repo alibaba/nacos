@@ -16,7 +16,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Form, Input, NumberPicker, Switch, Select, Message, Field } from '@alifd/next';
+import { Form, Input, Message, Field, Select, Balloon, Icon } from '@alifd/next';
 import requestUtils from '../../utils/request';
 
 const FormItem = Form.Item;
@@ -24,6 +24,7 @@ const FormItem = Form.Item;
 class CopilotConfig extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
+    onSaveReady: PropTypes.func, // 回调函数，用于将保存方法暴露给父组件
   };
 
   constructor(props) {
@@ -37,6 +38,10 @@ class CopilotConfig extends React.Component {
 
   componentDidMount() {
     this.loadConfig();
+    // 将保存方法暴露给父组件
+    if (this.props.onSaveReady) {
+      this.props.onSaveReady(this.saveConfig);
+    }
   }
 
   loadConfig = async () => {
@@ -46,26 +51,17 @@ class CopilotConfig extends React.Component {
       // Result format: {code: 0, message: "...", data: {...}}
       const config = (response && response.data) ? response.data : (response || {});
       this.setState({ config });
-      // Set form values
+      // Process studioUrl: remove trailing slash if exists
+      let studioUrl = config.studioUrl || '';
+      if (studioUrl && studioUrl.endsWith('/')) {
+        studioUrl = studioUrl.slice(0, -1);
+      }
+      // Set form values - only apiKey, model, studioUrl and studioProject
       this.field.setValues({
-        enabled: config.enabled !== undefined ? config.enabled : true,
-        defaultNamespace: config.defaultNamespace || 'public',
-        // LLM config
-        llmProvider: config.llm?.provider || 'qwen',
-        llmApiKey: config.llm?.apiKey || '',
-        llmEndpoint: config.llm?.endpoint || '',
-        llmModelName: config.llm?.model?.modelName || 'qwen-turbo',
-        llmTemperature: config.llm?.model?.temperature || 0.7,
-        llmMaxTokens: config.llm?.model?.maxTokens || 4096,
-        // Stream config
-        streamEnabled: config.stream?.enabled !== undefined ? config.stream.enabled : true,
-        streamChunkSize: config.stream?.chunkSize || 1024,
-        // Retry config
-        retryMaxAttempts: config.retry?.maxAttempts || 3,
-        retryBackoffMs: config.retry?.backoffMs || 1000,
-        // Timeout config
-        timeoutConnectMs: config.timeout?.connectMs || 5000,
-        timeoutReadMs: config.timeout?.readMs || 60000,
+        apiKey: config.apiKey || '',
+        model: config.model || 'qwen-turbo',
+        studioUrl,
+        studioProject: config.studioProject || 'NacosCopilot',
       });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -81,36 +77,21 @@ class CopilotConfig extends React.Component {
     const values = this.field.getValues();
 
     try {
-      this.setState({ loading: true });
+      // Process studioUrl: remove trailing slash if exists
+      let studioUrl = values.studioUrl || '';
+      if (studioUrl && studioUrl.endsWith('/')) {
+        studioUrl = studioUrl.slice(0, -1);
+      }
+      // Only send apiKey, model, studioUrl and studioProject
       const config = {
-        enabled: values.enabled !== undefined ? values.enabled : true,
-        defaultNamespace: values.defaultNamespace || 'public',
-        llm: {
-          provider: values.llmProvider || 'qwen',
-          apiKey: values.llmApiKey || '',
-          endpoint: values.llmEndpoint || '',
-          model: {
-            modelName: values.llmModelName || 'qwen-turbo',
-            temperature: values.llmTemperature || 0.7,
-            maxTokens: values.llmMaxTokens || 4096,
-          },
-        },
-        stream: {
-          enabled: values.streamEnabled !== undefined ? values.streamEnabled : true,
-          chunkSize: values.streamChunkSize || 1024,
-        },
-        retry: {
-          maxAttempts: values.retryMaxAttempts || 3,
-          backoffMs: values.retryBackoffMs || 1000,
-        },
-        timeout: {
-          connectMs: values.timeoutConnectMs || 5000,
-          readMs: values.timeoutReadMs || 60000,
-        },
+        apiKey: values.apiKey || '',
+        model: values.model || 'qwen-turbo',
+        studioUrl,
+        studioProject: values.studioProject || 'NacosCopilot',
       };
 
       // Send as JSON by stringifying the data and setting Content-Type
-      const response = await requestUtils.put('v3/console/copilot/config', JSON.stringify(config), {
+      const response = await requestUtils.post('v3/console/copilot/config', JSON.stringify(config), {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -119,15 +100,17 @@ class CopilotConfig extends React.Component {
       if (response && (response.code === 0 || response.code === 200)) {
         Message.success(locale.copilotConfigSaveSuccess || '保存成功');
         this.loadConfig();
+        return true;
       } else if (response && response.message) {
         Message.error(response.message || locale.copilotConfigSaveFailed || '保存配置失败');
+        return false;
       }
+      return false;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to save Copilot config:', error);
       Message.error(locale.copilotConfigSaveFailed || '保存配置失败');
-    } finally {
-      this.setState({ loading: false });
+      return false;
     }
   };
 
@@ -135,201 +118,89 @@ class CopilotConfig extends React.Component {
     const { locale = {} } = this.props;
     const { init } = this.field;
 
+    // 千问系列常见文本模型列表
+    const qwenModels = [
+      { value: 'qwen-turbo', label: 'qwen-turbo (快速版)' },
+      { value: 'qwen-plus', label: 'qwen-plus (增强版)' },
+      { value: 'qwen-max', label: 'qwen-max (最强版)' },
+      { value: 'qwen-7b-chat', label: 'qwen-7b-chat' },
+      { value: 'qwen-14b-chat', label: 'qwen-14b-chat' },
+      { value: 'qwen-72b-chat', label: 'qwen-72b-chat' },
+      { value: 'qwen3-turbo', label: 'qwen3-turbo (千问3快速版)' },
+      { value: 'qwen3-plus', label: 'qwen3-plus (千问3增强版)' },
+      { value: 'qwen3-max', label: 'qwen3-max (千问3最强版)' },
+      { value: 'qwen3-7b-instruct', label: 'qwen3-7b-instruct' },
+      { value: 'qwen3-14b-instruct', label: 'qwen3-14b-instruct' },
+      { value: 'qwen3-32b-instruct', label: 'qwen3-32b-instruct' },
+      { value: 'qwen3-72b-instruct', label: 'qwen3-72b-instruct' },
+    ];
+
     return (
-      <div className="copilot-config-container">
-        <div className="setting-checkbox">
-          <div className="setting-span">{locale.copilotConfigTitle || 'Nacos Copilot配置'}</div>
-          <Form field={this.field} labelCol={{ span: 8 }} wrapperCol={{ span: 16 }}>
-            {/* Basic Config */}
-            <FormItem label={locale.copilotEnabled || '启用Copilot'}>
-              <Switch
-                {...init('enabled', {
-                  valueName: 'checked',
-                  initValue: true,
-                })}
-              />
-            </FormItem>
-
-            <FormItem label={locale.copilotDefaultNamespace || '默认命名空间'}>
-              <Input
-                {...init('defaultNamespace', {
-                  initValue: 'public',
-                })}
-                placeholder="public"
-              />
-            </FormItem>
-
-            {/* LLM Config */}
-            <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>
-                {locale.copilotLlmConfig || 'LLM配置'}
-              </div>
-
-              <FormItem label={locale.copilotLlmProvider || 'LLM提供者'}>
-                <Select
-                  {...init('llmProvider', {
-                    initValue: 'qwen',
-                  })}
-                  dataSource={[
-                    { value: 'qwen', label: 'Qwen' },
-                    { value: 'claude', label: 'Claude' },
-                    { value: 'openai', label: 'OpenAI' },
-                    { value: 'custom', label: 'Custom' },
-                  ]}
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotLlmApiKey || 'API Key'}>
-                <Input
-                  {...init('llmApiKey', {
-                    initValue: '',
-                  })}
-                  placeholder={locale.copilotLlmApiKeyPlaceholder || '请输入API Key'}
-                  htmlType="password"
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotLlmEndpoint || 'API Endpoint'}>
-                <Input
-                  {...init('llmEndpoint', {
-                    initValue: '',
-                  })}
-                  placeholder={locale.copilotLlmEndpointPlaceholder || '请输入API Endpoint'}
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotLlmModelName || '模型名称'}>
-                <Input
-                  {...init('llmModelName', {
-                    initValue: 'qwen-turbo',
-                  })}
-                  placeholder="qwen-turbo"
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotLlmTemperature || 'Temperature'}>
-                <NumberPicker
-                  {...init('llmTemperature', {
-                    initValue: 0.7,
-                  })}
-                  min={0}
-                  max={2}
-                  step={0.1}
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotLlmMaxTokens || 'Max Tokens'}>
-                <NumberPicker
-                  {...init('llmMaxTokens', {
-                    initValue: 4096,
-                  })}
-                  min={1}
-                  max={32768}
-                />
-              </FormItem>
-            </div>
-
-            {/* Stream Config */}
-            <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>
-                {locale.copilotStreamConfig || '流式配置'}
-              </div>
-
-              <FormItem label={locale.copilotStreamEnabled || '启用流式响应'}>
-                <Switch
-                  {...init('streamEnabled', {
-                    valueName: 'checked',
-                    initValue: true,
-                  })}
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotStreamChunkSize || 'Chunk Size'}>
-                <NumberPicker
-                  {...init('streamChunkSize', {
-                    initValue: 1024,
-                  })}
-                  min={1}
-                  max={8192}
-                />
-              </FormItem>
-            </div>
-
-            {/* Retry Config */}
-            <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>
-                {locale.copilotRetryConfig || '重试配置'}
-              </div>
-
-              <FormItem label={locale.copilotRetryMaxAttempts || '最大重试次数'}>
-                <NumberPicker
-                  {...init('retryMaxAttempts', {
-                    initValue: 3,
-                  })}
-                  min={0}
-                  max={10}
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotRetryBackoffMs || '重试间隔(ms)'}>
-                <NumberPicker
-                  {...init('retryBackoffMs', {
-                    initValue: 1000,
-                  })}
-                  min={0}
-                  max={60000}
-                />
-              </FormItem>
-            </div>
-
-            {/* Timeout Config */}
-            <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>
-                {locale.copilotTimeoutConfig || '超时配置'}
-              </div>
-
-              <FormItem label={locale.copilotTimeoutConnectMs || '连接超时(ms)'}>
-                <NumberPicker
-                  {...init('timeoutConnectMs', {
-                    initValue: 5000,
-                  })}
-                  min={1000}
-                  max={60000}
-                />
-              </FormItem>
-
-              <FormItem label={locale.copilotTimeoutReadMs || '读取超时(ms)'}>
-                <NumberPicker
-                  {...init('timeoutReadMs', {
-                    initValue: 60000,
-                  })}
-                  min={1000}
-                  max={300000}
-                />
-              </FormItem>
-            </div>
-
-            <div style={{ marginTop: '30px', textAlign: 'right' }}>
-              <button
-                type="button"
-                onClick={this.saveConfig}
-                disabled={this.state.loading}
-                style={{
-                  padding: '8px 24px',
-                  backgroundColor: '#1890ff',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: this.state.loading ? 'not-allowed' : 'pointer',
-                }}
+      <div style={{ width: '100%', maxWidth: '800px' }}>
+        <Form field={this.field} labelCol={{ span: 6 }} wrapperCol={{ span: 18 }}>
+        <FormItem
+          label={
+            <span>
+              {locale.copilotLlmApiKey || 'API Key'}
+              <Balloon
+                trigger={
+                  <Icon
+                    type="help"
+                    size="small"
+                    style={{
+                      color: '#1DC11D',
+                      marginLeft: '4px',
+                      verticalAlign: 'middle',
+                      cursor: 'help',
+                    }}
+                  />
+                }
+                triggerType="hover"
+                align="t"
               >
-                {this.state.loading
-                  ? locale.copilotConfigSaving || '保存中...'
-                  : locale.copilotConfigSave || '保存配置'}
-              </button>
-            </div>
-          </Form>
-        </div>
+                {locale.copilotLlmApiKeyHint || '建议通过环境变量 COPILOT_API_KEY 设置'}
+              </Balloon>
+            </span>
+          }
+        >
+          <Input
+            {...init('apiKey', {
+              initValue: '',
+            })}
+            placeholder={locale.copilotLlmApiKeyPlaceholder || '请输入API Key（建议通过环境变量设置）'}
+            htmlType="password"
+          />
+        </FormItem>
+
+        <FormItem label={locale.copilotLlmModelName || 'Model'}>
+          <Select
+            {...init('model', {
+              initValue: 'qwen-turbo',
+            })}
+            dataSource={qwenModels}
+            placeholder={locale.copilotLlmModelNamePlaceholder || '请选择模型'}
+            style={{ width: '100%' }}
+          />
+        </FormItem>
+
+        <FormItem label={locale.copilotStudioUrl || 'Studio URL'}>
+          <Input
+            {...init('studioUrl', {
+              initValue: '',
+            })}
+            placeholder={locale.copilotStudioUrlPlaceholder || '请输入 AgentScope Studio 地址，例如: http://localhost:3000'}
+          />
+        </FormItem>
+
+        <FormItem label={locale.copilotStudioProject || 'Studio Project'}>
+          <Input
+            {...init('studioProject', {
+              initValue: 'NacosCopilot',
+            })}
+            placeholder={locale.copilotStudioProjectPlaceholder || '请输入 Studio 项目名称，例如: NacosCopilot'}
+          />
+        </FormItem>
+        </Form>
       </div>
     );
   }

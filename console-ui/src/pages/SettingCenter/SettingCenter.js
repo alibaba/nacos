@@ -17,7 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import './index.scss';
-import { Button, ConfigProvider, Radio, Collapse } from '@alifd/next';
+import { Button, ConfigProvider, Radio } from '@alifd/next';
 import PageTitle from '../../components/PageTitle';
 import { changeLanguage } from '@/reducers/locale';
 import changeTheme from '../../theme';
@@ -27,7 +27,6 @@ import { LANGUAGE_KEY, NAME_SHOW, THEME } from '../../constants';
 import CopilotConfig from './CopilotConfig';
 
 const { Group: RadioGroup } = Radio;
-const { Panel } = Collapse;
 
 @connect(state => ({ ...state.locale }), { changeLanguage, changeTheme, changeNameShow })
 @ConfigProvider.config
@@ -51,6 +50,7 @@ class SettingCenter extends React.Component {
       language: defaultLanguage === 'en-US' ? 'en-US' : 'zh-CN',
       nameShow: defaultShow === 'select' ? 'select' : 'label',
     };
+    this.copilotSaveConfig = null; // 保存 Copilot 配置的方法
   }
 
   newTheme(value) {
@@ -71,15 +71,26 @@ class SettingCenter extends React.Component {
     });
   }
 
-  submit() {
+  submit = async () => {
     const { changeLanguage, changeTheme, changeNameShow } = this.props;
     const currentLanguage = this.state.language;
     const currentTheme = this.state.theme;
     const currentNameShow = this.state.nameShow;
+
+    // 保存 Copilot 配置
+    if (this.copilotSaveConfig) {
+      await this.copilotSaveConfig();
+    }
+
+    // 保存其他设置
     changeLanguage(currentLanguage);
     changeTheme(currentTheme);
     changeNameShow(currentNameShow);
-  }
+  };
+
+  handleCopilotSaveReady = (saveMethod) => {
+    this.copilotSaveConfig = saveMethod;
+  };
 
   render() {
     const { locale = {} } = this.props;
@@ -124,17 +135,14 @@ class SettingCenter extends React.Component {
                 onChange={this.newNameShow.bind(this)}
               />
             </div>
+            <div className="setting-checkbox" style={{ flex: '0 0 100%', height: 'auto' }}>
+              <div className="setting-span">{locale.copilotConfigSection || 'Copilot配置'}</div>
+              <CopilotConfig locale={locale} onSaveReady={this.handleCopilotSaveReady} />
+            </div>
           </div>
           <Button type="primary" onClick={this.submit.bind(this)}>
             {locale.settingSubmit}
           </Button>
-          <div style={{ marginTop: '30px' }}>
-            <Collapse defaultExpandedKeys={[]}>
-              <Panel title={locale.copilotConfigSection || 'Nacos Copilot配置'}>
-                <CopilotConfig locale={locale} />
-              </Panel>
-            </Collapse>
-          </div>
         </div>
       </>
     );

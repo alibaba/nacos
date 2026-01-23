@@ -2223,9 +2223,6 @@ class NewSkill extends React.Component {
                   this.renderUserInput()
                 )}
 
-                {/* 思考内容 - 流式接收时展开，完成后折叠 */}
-                {this.renderThinkingContent()}
-
                 {/* 结果解析中提示 */}
                 {this.state.parsingResult && (
                   <div style={{ marginTop: 16, textAlign: 'center', padding: '20px' }}>
@@ -2233,29 +2230,11 @@ class NewSkill extends React.Component {
                   </div>
                 )}
 
-                {/* 流式内容显示 */}
-                {this.state.streaming && this.state.streamContent && !this.state.thinkingContent && (
-                  <div style={{ marginTop: 16 }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <Tag type="green" size="small">
-                        {this.getLocaleValue('generating', 'Generating')}
-                      </Tag>
-                    </div>
-                    <div style={{ 
-                      padding: '12px', 
-                      background: '#fafafa', 
-                      borderRadius: 4, 
-                      border: '1px solid #e6e6e6',
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                      fontSize: '13px',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                    }}>
-                      {this.state.streamContent}
-                    </div>
-                  </div>
-                )}
+                {/* 流式内容 - 思考内容和结果内容 */}
+                {(this.state.streaming ||
+                  this.state.thinkingContent ||
+                  this.state.streamContent) &&
+                  this.renderStreamContent()}
               </div>
             ) : (
               this.renderGeneratedSkill()

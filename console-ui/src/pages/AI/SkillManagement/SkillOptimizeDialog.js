@@ -727,7 +727,7 @@ class SkillOptimizeDialog extends React.Component {
                   <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                     <div style={{ fontWeight: 500, marginBottom: 8 }}>
                       {locale.thinking || 'Thinking'}
-                  </div>
+                    </div>
                     <pre
                       style={{
                         whiteSpace: 'pre-wrap',
@@ -738,8 +738,8 @@ class SkillOptimizeDialog extends React.Component {
                       }}
                     >
                       {thinkingContentForIcon}
-                  </pre>
-                </div>
+                    </pre>
+                  </div>
                 </Balloon>
               </span>
             )}
@@ -869,9 +869,9 @@ class SkillOptimizeDialog extends React.Component {
                         {tool.description && (
                           <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
                             {tool.description}
-            </div>
+                          </div>
                         )}
-            </div>
+                      </div>
                     </Checkbox>
                   ))
                 ) : (
@@ -879,8 +879,8 @@ class SkillOptimizeDialog extends React.Component {
                     {this.state.mcpToolSearchKeyword.trim()
                       ? (locale.noToolsFound || 'No tools found matching your search')
                       : (locale.noToolsAvailable || 'No tools available in this MCP server')}
-          </div>
-        )}
+                  </div>
+                )}
               </div>
             </Loading>
           )}
@@ -1125,11 +1125,50 @@ class SkillOptimizeDialog extends React.Component {
           const hasDescriptionChange = optimizedSkill.description !== skill.description;
           const hasInstructionChange = optimizedSkill.instruction !== skill.instruction;
 
-          // 检查资源变化
+          // 检查资源变化 - 包括名称和内容
           const optimizedResourcesSorted = [...optimizedResources].sort();
           const originalResourcesSorted = [...originalResources].sort();
-          const resourceChanged = JSON.stringify(optimizedResourcesSorted) !==
+          const resourceNameChanged = JSON.stringify(optimizedResourcesSorted) !==
             JSON.stringify(originalResourcesSorted);
+
+          // 检查资源内容变化
+          const originalResourceMap = skill?.resource || {};
+          const optimizedResourceMap = optimizedSkill?.resource || {};
+          let resourceContentChanged = false;
+          const resourceChanges = [];
+
+          // 检查所有资源（包括新增、删除、修改）
+          const allResourceNames = new Set([...originalResources, ...optimizedResources]);
+          allResourceNames.forEach(resourceName => {
+            const originalResource = originalResourceMap[resourceName];
+            const optimizedResource = optimizedResourceMap[resourceName];
+            const originalContent = originalResource?.content || '';
+            const optimizedContent = optimizedResource?.content || '';
+            const originalType = originalResource?.type || '';
+            const optimizedType = optimizedResource?.type || '';
+
+            const isNew = !originalResource && optimizedResource;
+            const isRemoved = originalResource && !optimizedResource;
+            const isContentChanged = originalContent !== optimizedContent;
+            const isTypeChanged = originalType !== optimizedType;
+
+            if (isNew || isRemoved || isContentChanged || isTypeChanged) {
+              resourceContentChanged = true;
+              resourceChanges.push({
+                name: resourceName,
+                isNew,
+                isRemoved,
+                isContentChanged,
+                isTypeChanged,
+                originalContent,
+                optimizedContent,
+                originalType,
+                optimizedType,
+              });
+            }
+          });
+
+          const resourceChanged = resourceNameChanged || resourceContentChanged;
 
           const hasAnyChange = hasNameChange || hasDescriptionChange ||
             hasInstructionChange || resourceChanged;
@@ -1161,7 +1200,7 @@ class SkillOptimizeDialog extends React.Component {
                 }}
               >
                 {locale.optimizationItems || '优化项'}
-                </div>
+              </div>
           <Row gutter={16}>
             <Col span={12}>
               <Card
@@ -1189,31 +1228,41 @@ class SkillOptimizeDialog extends React.Component {
                   <pre className="comparison-pre">{skill.instruction || '--'}</pre>
                 </div>
                 )}
-                {resourceChanged && originalResources.length > 0 && (
+                {resourceChanged && resourceChanges.length > 0 && (
                   <div className="comparison-item comparison-resources">
                     <label>{locale.resources || 'Resources'}:</label>
-                    <div
-                      className="resources-tags-wrapper"
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '4px',
-                        minHeight: 'auto',
-                        maxHeight: 'none',
-                        overflow: 'visible',
-                        paddingBottom: '4px',
-                        width: '100%',
-                      }}
-                    >
-                      {originalResources.map((name, index) => {
-                        const isRemoved = !optimizedResources.includes(name);
-                        return (
-                          <Tag key={index} type="normal">
-                          {name}
-                            {isRemoved && ' (removed)'}
-                        </Tag>
-                        );
-                      })}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {resourceChanges
+                        .filter(change => !change.isNew) // 左侧只显示原始存在的资源（包括被删除和修改的）
+                        .map((change, index) => {
+                          if (change.isRemoved) {
+                            return (
+                              <div key={index} style={{ marginBottom: '8px' }}>
+                                <div style={{ marginBottom: '4px', fontWeight: 500 }}>
+                                  {change.name} {change.originalType && `(${change.originalType})`} <Tag size="small" type="normal">(removed)</Tag>
+                                </div>
+                                {change.originalContent && (
+                                  <pre className="comparison-pre" style={{ marginTop: '4px', fontSize: '12px' }}>
+                                    {change.originalContent}
+                                  </pre>
+                                )}
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={index} style={{ marginBottom: '8px' }}>
+                              <div style={{ marginBottom: '4px', fontWeight: 500 }}>
+                                {change.name} {change.originalType && `(${change.originalType})`}
+                                {(change.isContentChanged || change.isTypeChanged) && <Tag size="small" type="normal">(changed)</Tag>}
+                              </div>
+                              {change.originalContent && (
+                                <pre className="comparison-pre" style={{ marginTop: '4px', fontSize: '12px' }}>
+                                  {change.originalContent}
+                                </pre>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -1228,57 +1277,52 @@ class SkillOptimizeDialog extends React.Component {
               >
                 {/* 仅显示有变化的项 */}
                 {hasNameChange && (
-                <div className="comparison-item">
-                  <label>{locale.skillName || 'Skill Name'}:</label>
+                  <div className="comparison-item">
+                    <label>{locale.skillName || 'Skill Name'}:</label>
                     <div className="changed">
-                    {optimizedSkill.name || '--'}
+                      {optimizedSkill.name || '--'}
+                    </div>
                   </div>
-                </div>
                 )}
                 {hasDescriptionChange && (
-                <div className="comparison-item">
-                  <label>{locale.description || 'Description'}:</label>
+                  <div className="comparison-item">
+                    <label>{locale.description || 'Description'}:</label>
                     <div className="changed">
-                    {optimizedSkill.description || '--'}
+                      {optimizedSkill.description || '--'}
+                    </div>
                   </div>
-                </div>
                 )}
                 {hasInstructionChange && (
-                <div className="comparison-item">
-                  <label>{locale.instruction || 'Instruction'}:</label>
+                  <div className="comparison-item">
+                    <label>{locale.instruction || 'Instruction'}:</label>
                     <pre className="comparison-pre changed">
-                    {optimizedSkill.instruction || '--'}
-                  </pre>
-                </div>
+                      {optimizedSkill.instruction || '--'}
+                    </pre>
+                  </div>
                 )}
-                {resourceChanged && optimizedResources.length > 0 ? (
+                {resourceChanged && resourceChanges.length > 0 ? (
                   <div className="comparison-item comparison-resources">
                     <label>{locale.resources || 'Resources'}:</label>
-                    <div
-                      className="resources-tags-wrapper"
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '4px',
-                        minHeight: 'auto',
-                        maxHeight: 'none',
-                        overflow: 'visible',
-                        paddingBottom: '4px',
-                        width: '100%',
-                      }}
-                    >
-                      {optimizedResources.map((name, index) => {
-                        const isNew = !originalResources.includes(name);
-                        return (
-                          <Tag
-                            key={index}
-                            type="normal"
-                          >
-                            {name}
-                            {isNew && ' (new)'}
-                          </Tag>
-                        );
-                      })}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {resourceChanges
+                        .filter(change => !change.isRemoved) // 右侧只显示优化后的资源（新增和修改的）
+                        .map((change, index) => {
+                          const hasContentChange = change.isContentChanged || change.isTypeChanged;
+                          return (
+                            <div key={index} style={{ marginBottom: '8px' }}>
+                              <div style={{ marginBottom: '4px', fontWeight: 500 }}>
+                                {change.name} {change.optimizedType && `(${change.optimizedType})`}
+                                {change.isNew && <Tag size="small" type="normal">(new)</Tag>}
+                                {hasContentChange && <Tag size="small" type="normal">(changed)</Tag>}
+                              </div>
+                              {change.optimizedContent && (
+                                <pre className={`comparison-pre ${hasContentChange ? 'changed' : ''}`} style={{ marginTop: '4px', fontSize: '12px' }}>
+                                  {change.optimizedContent}
+                                </pre>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 ) : (
@@ -1290,7 +1334,7 @@ class SkillOptimizeDialog extends React.Component {
               </Card>
             </Col>
           </Row>
-              </div>
+            </div>
           );
         })()}
 

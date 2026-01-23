@@ -55,11 +55,38 @@ public class CopilotAgentManager {
         this.environment = environment;
     }
 
+    /**
+     * Initialize AgentScope Studio if studioUrl is configured.
+     * This method should be called without holding any locks.
+     */
     private void initStudio() {
+        CopilotProperties config = currentConfig;
+        if (config == null) {
+            return;
+        }
         
-        // Initialize Studio
-
-
+        String studioUrl = config.getStudioUrl();
+        if (StringUtils.isBlank(studioUrl)) {
+            LOGGER.debug("Studio URL is not configured, skipping Studio initialization");
+            return;
+        }
+        
+        try {
+            String studioProject = config.getStudioProject();
+            if (StringUtils.isBlank(studioProject)) {
+                studioProject = "NacosCopilot";
+            }
+            LOGGER.info("Initializing AgentScope Studio with URL: {}, Project: {}", studioUrl, studioProject);
+            StudioManager.init()
+                    .studioUrl(studioUrl)
+                    .project(studioProject)
+                    .runName("nacos_copilot_" + System.currentTimeMillis())
+                    .initialize()
+                    .block();
+            LOGGER.info("AgentScope Studio initialized successfully");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to initialize AgentScope Studio: {}", e.getMessage(), e);
+        }
     }
     
     @PostConstruct
@@ -94,6 +121,8 @@ public class CopilotAgentManager {
         } finally {
             lock.writeLock().unlock();
         }
+        // Re-initialize Studio if URL changed (outside lock to avoid blocking)
+        initStudio();
     }
     
     /**
@@ -119,7 +148,7 @@ public class CopilotAgentManager {
         // Create model
         DashScopeChatModel model = DashScopeChatModel.builder()
                 .apiKey(apiKey)
-                .modelName(config.getLlm().getModel().getModelName())
+                .modelName(config.getModel())
                 .stream(true)
                 .enableThinking(true)
                 .build();
@@ -185,8 +214,8 @@ public class CopilotAgentManager {
         }
         
         // Then try config property
-        if (config != null && config.getLlm() != null) {
-            return config.getLlm().getApiKey();
+        if (config != null) {
+            return config.getApiKey();
         }
         
         return null;
