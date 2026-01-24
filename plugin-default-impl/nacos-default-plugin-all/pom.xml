@@ -34,6 +34,11 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-oidc-auth-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>default-control-plugin</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -58,7 +63,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
-                            <includeArtifactIds>default-auth-plugin,default-control-plugin,default-datasource-plugin</includeArtifactIds>
+                            <includeArtifactIds>default-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,default-datasource-plugin</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>
