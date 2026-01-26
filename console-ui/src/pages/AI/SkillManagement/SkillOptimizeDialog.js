@@ -308,10 +308,13 @@ class SkillOptimizeDialog extends React.Component {
             .read()
             .then(({ done, value }) => {
               if (done) {
-                // When stream ends, try to parse optimizedSkill from accumulated content if not already set
+                // When stream ends, try to parse optimizedSkill from accumulated content
+                // if not already set
                 this.setState(prevState => {
                   if (!prevState.optimizedSkill && prevState.streamContent) {
-                    const parsedSkill = this.parseOptimizedSkillFromContent(prevState.streamContent);
+                    const parsedSkill = this.parseOptimizedSkillFromContent(
+                      prevState.streamContent
+                    );
                     if (parsedSkill) {
                       return {
                         streaming: false,
@@ -381,55 +384,69 @@ class SkillOptimizeDialog extends React.Component {
     }
 
     try {
-      // Try to extract JSON from streamContent
       let jsonContent = content.trim();
 
-      // Try to extract JSON from markdown code blocks
-      if (jsonContent.includes('```json')) {
-        const start = jsonContent.indexOf('```json') + 7;
-        const end = jsonContent.indexOf('```', start);
-        if (end > start) {
-          jsonContent = jsonContent.substring(start, end).trim();
-        }
-      } else if (jsonContent.includes('```')) {
-        const start = jsonContent.indexOf('```') + 3;
-        const end = jsonContent.indexOf('```', start);
-        if (end > start) {
-          jsonContent = jsonContent.substring(start, end).trim();
-        }
-      }
+      // Try to parse directly first
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonContent);
+      } catch (e) {
+        // If direct parse fails, try to extract JSON object by finding first { and matching }
+        const startIdx = jsonContent.indexOf('{');
+        if (startIdx >= 0) {
+          let braceCount = 0;
+          let endIdx = -1;
+          let inString = false;
+          let escapeNext = false;
 
-      // Try to find the outermost JSON object by finding matching braces
-      let startIdx = jsonContent.indexOf('{');
-      if (startIdx >= 0) {
-        let braceCount = 0;
-        let endIdx = -1;
-        for (let i = startIdx; i < jsonContent.length; i++) {
-          if (jsonContent[i] === '{') {
-            braceCount++;
-          } else if (jsonContent[i] === '}') {
-            braceCount--;
-            if (braceCount === 0) {
-              endIdx = i;
-              break;
+          for (let i = startIdx; i < jsonContent.length; i++) {
+            const char = jsonContent[i];
+
+            if (escapeNext) {
+              escapeNext = false;
+              continue;
+            }
+
+            if (char === '\\') {
+              escapeNext = true;
+              continue;
+            }
+
+            if (char === '"') {
+              inString = !inString;
+              continue;
+            }
+
+            if (!inString) {
+              if (char === '{') {
+                braceCount++;
+              } else if (char === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                  endIdx = i;
+                  break;
+                }
+              }
             }
           }
-        }
-        if (endIdx > startIdx) {
-          jsonContent = jsonContent.substring(startIdx, endIdx + 1);
+
+          if (endIdx > startIdx) {
+            jsonContent = jsonContent.substring(startIdx, endIdx + 1);
+            parsed = JSON.parse(jsonContent);
+          } else {
+            throw e;
+          }
+        } else {
+          throw e;
         }
       }
 
-      // Parse JSON
-      const parsed = JSON.parse(jsonContent);
-
-      // Try multiple ways to extract the skill data
+      // Extract optimizedSkill from parsed object
       if (parsed.optimizedSkill) {
         return parsed.optimizedSkill;
       } else if (parsed.skill) {
         return parsed.skill;
       } else if (parsed.name && (parsed.description || parsed.instruction)) {
-        // If the parsed object itself looks like a skill
         return parsed;
       }
     } catch (e) {
