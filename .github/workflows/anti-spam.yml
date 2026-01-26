@@ -27,10 +27,19 @@ jobs:
               return;
             }
 
-            // Calculate account age in days
-            const authorCreatedAt = new Date(issue.user.created_at);
-            const now = new Date();
-            const accountAgeDays = (now - authorCreatedAt) / (1000 * 60 * 60 * 24);
+            // Get user details via API to calculate account age
+            let accountAgeDays = 365; // Default to old account if API fails
+            try {
+              const { data: userData } = await github.rest.users.getByUsername({
+                username: author
+              });
+              const authorCreatedAt = new Date(userData.created_at);
+              const now = new Date();
+              accountAgeDays = (now - authorCreatedAt) / (1000 * 60 * 60 * 24);
+              console.log(`Account ${author} created at ${userData.created_at}, age: ${accountAgeDays.toFixed(1)} days`);
+            } catch (error) {
+              console.log(`Failed to get user info for ${author}: ${error.message}`);
+            }
 
             // Spam keywords - airlines and travel-related spam
             const spamKeywords = [
@@ -38,11 +47,18 @@ jobs:
               'lufthansa', 'emirates', 'klm', 'turkish airlines', 'singapore airlines',
               'aer lingus', 'sas airlines', 'qatar airways', 'british airways',
               'american airlines', 'united airlines', 'delta airlines', 'air france',
-              // Multi-language customer service terms
-              'telefono', 'kontakt', 'buchen', 'rimborso', 'volo', 'biglietto',
-              'prenotazione', 'annullare', 'cancellare', 'modifica', 'gestire',
-              'kundenservice', 'hotline', 'chiamare', 'numero di telefono',
-              'kundendienst', 'buchung', 'stornieren', 'umbuchung',
+              'swiss air', 'austrian airlines', 'tap portugal', 'air canada',
+              'air europa', 'ita airways',
+              // Italian terms
+              'telefono', 'rimborso', 'volo', 'biglietto', 'prenotazione',
+              'annullare', 'cancellare', 'modifica', 'gestire', 'chiamare',
+              'numero di telefono', 'contattare', 'assistenza clienti',
+              // German terms
+              'kontakt', 'buchen', 'kundenservice', 'hotline', 'kundendienst',
+              'buchung', 'stornieren', 'umbuchung', 'erreichen', 'telefonnummer',
+              // French terms
+              'billet', 'réservation', 'annuler', 'rembours', 'vol',
+              'contacter', 'numéro', 'téléphone', 'modifier', 'payer',
               // Common spam patterns
               'customer service number', 'booking number', 'flight cancel',
               'refund process', 'how to contact', 'toll free', 'helpline',
@@ -53,16 +69,31 @@ jobs:
             const contentToCheck = title + ' ' + body;
             const matchedKeywords = spamKeywords.filter(kw => contentToCheck.includes(kw));
 
+            // Check for phone number patterns (3+ phone numbers is suspicious)
+            const phonePatterns = [
+              /\+\d{1,3}[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,4}/g,  // International format
+              /\d{3}[\s.-]?\d{3}[\s.-]?\d{4}/g                       // US/common format
+            ];
+            let phoneCount = 0;
+            for (const pattern of phonePatterns) {
+              const matches = contentToCheck.match(pattern) || [];
+              phoneCount += matches.length;
+            }
+            const hasExcessivePhones = phoneCount >= 2;
+
             // Spam detection rules:
             // 1. Match 2+ spam keywords
             // 2. New account (< 7 days) + 1 spam keyword
+            // 3. 2+ phone numbers in content
             const isSpam = matchedKeywords.length >= 2 ||
-                          (accountAgeDays < 7 && matchedKeywords.length >= 1);
+                          (accountAgeDays < 7 && matchedKeywords.length >= 1) ||
+                          hasExcessivePhones;
 
             if (isSpam) {
               console.log(`Spam detected in issue #${issue.number}`);
               console.log(`Author: ${author}, Account age: ${accountAgeDays.toFixed(1)} days`);
               console.log(`Matched keywords: ${matchedKeywords.join(', ')}`);
+              console.log(`Phone numbers found: ${phoneCount}`);
 
               // Add spam label
               await github.rest.issues.addLabels({
@@ -103,4 +134,5 @@ jobs:
               console.log(`Issue #${issue.number} closed and locked as spam`);
             } else {
               console.log(`No spam detected in issue #${issue.number}`);
+              console.log(`Matched keywords: ${matchedKeywords.length}, Phone numbers: ${phoneCount}, Account age: ${accountAgeDays.toFixed(1)} days`);
             }
