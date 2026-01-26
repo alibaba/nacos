@@ -17,6 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
+  Balloon,
   Button,
   ConfigProvider,
   Dialog,
@@ -27,6 +28,7 @@ import {
   Message,
   Pagination,
   Table,
+  Upload,
 } from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import PageTitle from 'components/PageTitle';
@@ -352,6 +354,73 @@ class SkillManagement extends React.Component {
     });
   };
 
+  beforeUpload = (file) => {
+    const { locale = {} } = this.props;
+    const isZip = file.name.toLowerCase().endsWith('.zip');
+    if (!isZip) {
+      Message.error(locale.uploadSkillFormatError || 'Please upload a zip file');
+      return false;
+    }
+    return true;
+  };
+
+  uploadFormatter = (res) => {
+    // Format response for Upload component (similar to ImportDialog)
+    if (res && (res.code === 0 || res.code === 200)) {
+      return {
+        code: '0',
+        retData: res,
+      };
+    } else {
+      return {
+        code: '1',
+        error: {
+          message: res?.message || 'Upload failed',
+        },
+        retData: res,
+      };
+    }
+  };
+
+  handleUploadSuccess = (file, fileList) => {
+    const { locale = {} } = this.props;
+    // Upload component onSuccess: (file, fileList)
+    // The formatted response is stored in file.response (after formatter processing)
+    const formatted = file?.response || file;
+    const response = formatted?.retData || formatted?.response || formatted;
+    
+    // Check formatted code (formatter returns '0' for success, '1' for error)
+    if (formatted?.code === '0') {
+      Message.success(locale.uploadSkillSuccess || 'Skill uploaded successfully');
+      this.getData();
+    } else {
+      // Also check original response code as fallback
+      if (response && (response.code === 0 || response.code === 200)) {
+        Message.success(locale.uploadSkillSuccess || 'Skill uploaded successfully');
+        this.getData();
+      } else {
+        const errorMsg = formatted?.error?.message || response?.message || locale.uploadSkillFailed || 'Upload failed';
+        Message.error(errorMsg);
+      }
+    }
+  };
+
+  handleUploadError = (error) => {
+    const { locale = {} } = this.props;
+    // Upload component error format
+    // Check if it's actually a success response that was treated as error
+    const errorResponse = error?.response || error;
+    if (errorResponse && (errorResponse.code === 0 || errorResponse.code === 200)) {
+      Message.success(locale.uploadSkillSuccess || 'Skill uploaded successfully');
+      this.getData();
+      return;
+    }
+    
+    const errorData = error?.response?.data || error?.response || error;
+    const errorMessage = errorData?.message || error?.message || locale.uploadSkillFailed || 'Upload failed';
+    Message.error(errorMessage);
+  };
+
   handleOptimizeSuccess = optimizedSkill => {
     const { locale = {} } = this.props;
     Message.success(locale.optimizeSuccess || 'Optimization applied successfully');
@@ -402,7 +471,9 @@ class SkillManagement extends React.Component {
     const { loading, dataSource, total, pageSize, currentPage, selectedRowKeys } = this.state;
 
     return (
-      <div className="skill-management">
+      <>
+        <div>
+          <div style={{ position: 'relative' }}>
         <PageTitle
           title={locale.skillManagement || 'Skill Management'}
           desc={this.state.nownamespace_desc}
@@ -415,7 +486,14 @@ class SkillManagement extends React.Component {
           setNowNameSpace={this.setNowNameSpace.bind(this)}
         />
 
-        <div className="search-form">
+            <div
+              style={{
+                position: 'relative',
+                marginTop: 10,
+                height: 'auto',
+                overflow: 'visible',
+              }}
+            >
           <Form inline field={this.field}>
             <Form.Item label={`${locale.skillName || 'Skill Name'}：`}>
               <Input
@@ -426,18 +504,33 @@ class SkillManagement extends React.Component {
               />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" onClick={this.handleSearch} style={{ marginRight: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <Button type="primary" onClick={this.handleSearch}>
                 {locale.search || 'Search'}
               </Button>
-              <Button type="primary" onClick={this.handleCreateSkill}>
+                  <Button type="primary" onClick={this.handleCreateSkill}>
                 {locale.createSkill || 'Create Skill'}
               </Button>
+              <Upload
+                accept=".zip"
+                action={`v3/console/ai/skills/upload?namespaceId=${getParams('namespace') || ''}`}
+                beforeUpload={this.beforeUpload}
+                formatter={this.uploadFormatter}
+                onSuccess={this.handleUploadSuccess}
+                onError={this.handleUploadError}
+                showUploadList={false}
+              >
+                <Button type="normal">
+                  {locale.uploadSkill || 'Upload Skill'}
+                </Button>
+              </Upload>
+                </div>
             </Form.Item>
           </Form>
         </div>
 
         <Table
-          className="skill-table"
+              className="configuration-table"
           dataSource={dataSource}
           loading={loading}
           emptyContent={this.renderEmptyState()}
@@ -455,7 +548,40 @@ class SkillManagement extends React.Component {
           <Table.Column
             title={locale.description || 'Description'}
             dataIndex="description"
-            cell={value => <span>{value || '--'}</span>}
+                width={300}
+                cell={value => {
+                  const description = value || '--';
+                  const isEmpty = !value || value === '--';
+                  const cellStyle = {
+                    display: 'inline-block',
+                    width: '300px',
+                    maxWidth: '300px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    verticalAlign: 'middle',
+                  };
+                  
+                  const cellContent = (
+                    <span style={cellStyle}>
+                      {description}
+                    </span>
+                  );
+                  
+                  if (isEmpty) {
+                    return cellContent;
+                  }
+                  
+                  return (
+                    <Balloon
+                      trigger={cellContent}
+                      triggerType="hover"
+                      closable={false}
+                    >
+                      {description}
+                    </Balloon>
+                  );
+                }}
           />
           <Table.Column
             title={locale.updateTime || 'Update Time'}
@@ -470,29 +596,33 @@ class SkillManagement extends React.Component {
         </Table>
 
         {total > 0 && (
-          <div className="batch-operations">
-            <div>
+              <>
+                <div style={{ float: 'left' }}>
               <Button
                 warning
                 disabled={selectedRowKeys.length === 0}
+                    type="primary"
+                    style={{ marginRight: 10 }}
                 onClick={this.handleBatchDelete}
               >
-                {locale.delete || 'Delete'}{' '}
-                {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+                    {locale.delete || 'Delete'}
+                    {selectedRowKeys.length > 0 && ` (${selectedRowKeys.length})`}
               </Button>
             </div>
             <Pagination
-              current={currentPage}
-              total={total}
-              pageSize={pageSize}
+                  style={{ float: 'right' }}
               pageSizeList={GLOBAL_PAGE_SIZE_LIST}
               pageSizePosition="start"
               pageSizeSelector="dropdown"
+                  popupProps={{ align: 'bl tl' }}
+                  onPageSizeChange={this.handlePageSizeChange}
+                  current={currentPage}
+                  total={total}
               totalRender={totalCount => <TotalRender locale={locale} total={totalCount || 0} />}
+                  pageSize={pageSize}
               onChange={this.handlePageChange}
-              onPageSizeChange={this.handlePageSizeChange}
             />
-          </div>
+              </>
         )}
 
         <SkillOptimizeDialog
@@ -504,6 +634,8 @@ class SkillManagement extends React.Component {
           history={this.props.history}
         />
       </div>
+        </div>
+      </>
     );
   }
 }

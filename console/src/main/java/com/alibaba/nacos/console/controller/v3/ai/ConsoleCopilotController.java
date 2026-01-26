@@ -81,8 +81,8 @@ public class ConsoleCopilotController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @SuppressWarnings("PMD.MethodTooLongRule")
     public SseEmitter optimizeSkillStream(@RequestBody(required = false) SkillOptimizationForm form) {
-        // Create SSE emitter with 60 seconds timeout
-        SseEmitter emitter = new SseEmitter(60000L);
+        // Create SSE emitter with 5 minutes timeout
+        SseEmitter emitter = new SseEmitter(300000L);
         
         // Handle null form or missing request body
         if (form == null) {
@@ -197,8 +197,8 @@ public class ConsoleCopilotController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     @SuppressWarnings("PMD.MethodTooLongRule")
     public SseEmitter generateSkillStream(@RequestBody(required = false) SkillGenerationForm form) {
-        // Create SSE emitter with 60 seconds timeout
-        SseEmitter emitter = new SseEmitter(60000L);
+        // Create SSE emitter with 5 minutes timeout
+        SseEmitter emitter = new SseEmitter(300000L);
         
         // Handle null form or missing request body
         if (form == null) {

@@ -902,7 +902,11 @@ const I18N_CONF = {
   },
   SkillManagement: {
     skillManagement: 'Skill管理',
-    skillName: 'Skill名称',
+    uploadSkill: '上传Skill',
+    uploadSkillSuccess: 'Skill上传成功',
+    uploadSkillFailed: 'Skill上传失败',
+    uploadSkillFormatError: '请上传zip格式的文件',
+    skillName: '名称',
     skillId: 'Skill ID',
     search: '搜索',
     details: '详情',

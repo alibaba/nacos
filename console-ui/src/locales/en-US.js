@@ -911,7 +911,11 @@ const I18N_CONF = {
   },
   SkillManagement: {
     skillManagement: 'Skill Management',
-    skillName: 'Skill Name',
+    uploadSkill: 'Upload Skill',
+    uploadSkillSuccess: 'Skill uploaded successfully',
+    uploadSkillFailed: 'Failed to upload Skill',
+    uploadSkillFormatError: 'Please upload a zip file',
+    skillName: 'Name',
     skillId: 'Skill ID',
     search: 'Search',
     details: 'Details',

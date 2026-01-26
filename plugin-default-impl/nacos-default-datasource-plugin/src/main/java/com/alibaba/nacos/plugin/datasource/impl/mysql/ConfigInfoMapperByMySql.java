@@ -246,7 +246,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         
         // 性能优化：先 LIMIT 再 JOIN，减少 JOIN 和 GROUP BY 的数据量
         StringBuilder innerSql = new StringBuilder("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,"
-                + "encrypted_data_key,type,c_desc FROM config_info WHERE tenant_id LIKE ?");
+                + "encrypted_data_key,type,c_desc,gmt_modified FROM config_info WHERE tenant_id LIKE ?");
         paramList.add(tenant);
         
         if (StringUtils.isNotBlank(dataId)) {
@@ -281,10 +281,10 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         innerSql.append(" LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
         
         // 外层查询：对分页后的结果进行标签关联
-        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,"
+        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"
                           + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                           + "FROM (" + innerSql + ") a LEFT JOIN config_tags_relation b ON a.id=b.id "
-                          + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc";
+                          + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
         
         return new MapperResult(sql, paramList);
     }
