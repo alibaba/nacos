@@ -28,7 +28,6 @@ import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
@@ -132,12 +131,15 @@ public class JwtTokenValidator {
         } catch (JOSEException e) {
             LOGGER.warn("JWT processing error: {}", e.getMessage());
             throw new AccessException("Token processing error");
-        } catch (Exception e) { // Catch AccessException from validateClaims or other runtimes
-            if (e instanceof AccessException) {
-                throw (AccessException) e;
-            }
-            LOGGER.error("Unexpected error during token validation", e);
-            throw new AccessException("Token validation failed");
+        } catch (AccessException e) {
+            throw e;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            LOGGER.error("Invalid token data: {}", e.getMessage(), e);
+            throw new AccessException("Invalid token format: " + e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error during token validation: {} - {}",
+                    e.getClass().getSimpleName(), e.getMessage(), e);
+            throw new AccessException("Token validation failed: " + e.getClass().getSimpleName());
         }
     }
 
@@ -347,6 +349,10 @@ public class JwtTokenValidator {
             return (List<String>) groups;
         }
 
+        // Log warning when no roles found - helps diagnose IdP integration issues
+        LOGGER.warn("No roles found in JWT claims for user: {}. Checked claim paths: {}, realm_access.roles, "
+                + "resource_access.{}.roles, groups. Token may be missing role information.",
+                claims.getSubject(), rolesClaim, config.getClientId());
         return Collections.emptyList();
     }
 

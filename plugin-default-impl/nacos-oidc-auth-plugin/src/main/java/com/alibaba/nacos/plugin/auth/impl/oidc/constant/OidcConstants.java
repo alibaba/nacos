@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.constant;
 
 /**
- * OAuth2/OIDC authentication plugin constants.
+ * OIDC authentication plugin constants.
  *
  * @author WangzJi
  */
@@ -49,14 +49,14 @@ public final class OidcConstants {
     public static final String ACCESS_TOKEN_PARAM = "accessToken";
 
     /**
-     * OAuth2 user key in identity context.
+     * OIDC user key in identity context.
      */
     public static final String OAUTH2_USER_KEY = "oidc_user";
 
     // ==================== Configuration Keys ====================
 
     /**
-     * Configuration prefix for OAuth2 plugin.
+     * Configuration prefix for OIDC plugin.
      */
     public static final String CONFIG_PREFIX = "nacos.core.auth.plugin.oidc.";
 
@@ -66,17 +66,17 @@ public final class OidcConstants {
     public static final String CONFIG_ISSUER_URI = CONFIG_PREFIX + "issuer-uri";
 
     /**
-     * OAuth2 client ID.
+     * OIDC client ID.
      */
     public static final String CONFIG_CLIENT_ID = CONFIG_PREFIX + "client-id";
 
     /**
-     * OAuth2 client secret.
+     * OIDC client secret.
      */
     public static final String CONFIG_CLIENT_SECRET = CONFIG_PREFIX + "client-secret";
 
     /**
-     * OAuth2 scopes.
+     * OIDC scopes.
      */
     public static final String CONFIG_SCOPE = CONFIG_PREFIX + "scope";
 

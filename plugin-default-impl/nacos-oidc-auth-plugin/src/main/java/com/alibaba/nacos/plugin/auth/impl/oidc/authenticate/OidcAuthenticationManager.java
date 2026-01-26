@@ -60,7 +60,7 @@ public class OidcAuthenticationManager {
     /**
      * Get singleton instance.
      *
-     * @return OAuth2AuthenticationManager instance
+     * @return OidcAuthenticationManager instance
      */
     public static OidcAuthenticationManager getInstance() {
         if (instance == null) {

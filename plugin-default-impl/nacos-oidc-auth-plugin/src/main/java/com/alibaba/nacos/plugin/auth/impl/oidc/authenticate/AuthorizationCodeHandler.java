@@ -45,10 +45,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Handles OIDC Authorization Code flow for user login.
@@ -70,21 +71,20 @@ public class AuthorizationCodeHandler {
     private final SecureRandom secureRandom;
 
     /**
-     * Store state -> nonce mapping for CSRF protection.
-     */
-    private final Map<String, StateData> stateStore;
-
-    /**
      * State expiration time in milliseconds (10 minutes).
      */
-    private static final long STATE_EXPIRATION_MS = 10 * 60 * 1000;
+    private static final long STATE_EXPIRATION_MS = 10 * 60 * 1000L;
+
+    /**
+     * HMAC algorithm for state signing.
+     */
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
 
     private AuthorizationCodeHandler() {
         this.config = OidcAuthConfig.getInstance();
         this.tokenValidator = JwtTokenValidator.getInstance();
         this.userMapper = OidcUserMapper.getInstance();
         this.secureRandom = new SecureRandom();
-        this.stateStore = new ConcurrentHashMap<>();
     }
 
     /**
@@ -117,15 +117,13 @@ public class AuthorizationCodeHandler {
                 throw new AccessException("Authorization endpoint not configured");
             }
 
-            // Generate state and nonce for security
-            String state = generateSecureToken();
+            // Generate nonce for security
             String nonce = generateSecureToken();
+            long expirationTime = System.currentTimeMillis() + STATE_EXPIRATION_MS;
 
-            // Store state with nonce for later verification
-            stateStore.put(state, new StateData(nonce, System.currentTimeMillis()));
-
-            // Clean up expired states
-            cleanExpiredStates();
+            // Build self-contained signed state: base64(nonce.expTime.signature)
+            // This eliminates the need for server-side state storage (cluster-friendly)
+            String state = buildSignedState(nonce, expirationTime);
 
             // Build OIDC authentication request
             AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
@@ -142,6 +140,8 @@ public class AuthorizationCodeHandler {
             LOGGER.debug("Built authorization URL: {}", authUrl);
             return authUrl;
 
+        } catch (AccessException e) {
+            throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to build authorization URL", e);
             throw new AccessException("Failed to initiate login: " + e.getMessage());
@@ -161,14 +161,10 @@ public class AuthorizationCodeHandler {
      */
     public OidcUser exchangeCodeForUser(String code, String state, String redirectUri) throws AccessException {
         try {
-            // Verify state
-            StateData stateData = stateStore.remove(state);
+            // Verify and decode state (self-contained, no cache lookup needed)
+            StateData stateData = verifyAndDecodeState(state);
             if (stateData == null) {
                 throw new AccessException("Invalid or expired state parameter");
-            }
-
-            if (System.currentTimeMillis() - stateData.createdAt > STATE_EXPIRATION_MS) {
-                throw new AccessException("State has expired");
             }
 
             // Exchange code for tokens
@@ -185,7 +181,9 @@ public class AuthorizationCodeHandler {
                 String message = "Nonce not present in ID token";
                 if (config.isStrictNonceValidation()) {
                     LOGGER.error("{} - Strict validation enabled, rejecting authentication", message);
-                    throw new AccessException(message + ". Set 'nacos.core.auth.plugin.oidc.strict-nonce-validation=false' if your IdP doesn't support nonce.");
+                    throw new AccessException(message
+                            + ". Set 'nacos.core.auth.plugin.oidc.strict-nonce-validation=false' "
+                            + "if your IdP doesn't support nonce.");
                 } else {
                     LOGGER.warn("{} - Strict validation disabled, allowing authentication. "
                             + "This reduces protection against replay attacks.", message);
@@ -266,12 +264,110 @@ public class AuthorizationCodeHandler {
     }
 
     /**
-     * Clean up expired state entries.
+     * Build a signed self-contained state parameter.
+     * Format: base64(nonce.expirationTime.signature)
+     * This eliminates the need for server-side state storage (cluster-friendly).
+     *
+     * @param nonce          the nonce value
+     * @param expirationTime the expiration timestamp
+     * @return signed state string
      */
-    private void cleanExpiredStates() {
-        long now = System.currentTimeMillis();
-        stateStore.entrySet().removeIf(entry ->
-                now - entry.getValue().createdAt > STATE_EXPIRATION_MS);
+    private String buildSignedState(String nonce, long expirationTime) {
+        String payload = nonce + "." + expirationTime;
+        String signature = hmacSign(payload);
+        String stateContent = payload + "." + signature;
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(
+                stateContent.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Verify and decode a signed state parameter.
+     *
+     * @param state the state parameter from callback
+     * @return StateData if valid, null otherwise
+     */
+    private StateData verifyAndDecodeState(String state) {
+        try {
+            String decoded = new String(Base64.getUrlDecoder().decode(state), StandardCharsets.UTF_8);
+            String[] parts = decoded.split("\\.");
+            if (parts.length != 3) {
+                LOGGER.warn("Invalid state format: expected 3 parts, got {}", parts.length);
+                return null;
+            }
+
+            String nonce = parts[0];
+            long expTime = Long.parseLong(parts[1]);
+            String signature = parts[2];
+
+            // Verify signature
+            String payload = nonce + "." + expTime;
+            if (!hmacVerify(payload, signature)) {
+                LOGGER.warn("State signature verification failed");
+                return null;
+            }
+
+            // Verify expiration time
+            if (System.currentTimeMillis() > expTime) {
+                LOGGER.warn("State has expired");
+                return null;
+            }
+
+            return new StateData(nonce, expTime);
+        } catch (NumberFormatException e) {
+            LOGGER.warn("Invalid expiration time in state: {}", e.getMessage());
+            return null;
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid base64 encoding in state: {}", e.getMessage());
+            return null;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to decode state: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Sign a payload using HMAC-SHA256.
+     *
+     * @param payload the payload to sign
+     * @return base64-encoded signature
+     */
+    private String hmacSign(String payload) {
+        try {
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(
+                    getSigningKey().getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
+            mac.init(keySpec);
+            byte[] signature = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(signature);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to sign payload", e);
+        }
+    }
+
+    /**
+     * Verify HMAC signature.
+     *
+     * @param payload   the original payload
+     * @param signature the signature to verify
+     * @return true if signature is valid
+     */
+    private boolean hmacVerify(String payload, String signature) {
+        String expectedSignature = hmacSign(payload);
+        return expectedSignature.equals(signature);
+    }
+
+    /**
+     * Get the signing key for HMAC operations.
+     * Uses client secret as the signing key.
+     *
+     * @return signing key
+     */
+    private String getSigningKey() {
+        String clientSecret = config.getClientSecret();
+        if (StringUtils.isBlank(clientSecret)) {
+            throw new IllegalStateException("Client secret is required for state signing");
+        }
+        return clientSecret;
     }
 
     /**
@@ -314,11 +410,11 @@ public class AuthorizationCodeHandler {
 
         final String nonce;
 
-        final long createdAt;
+        final long expirationTime;
 
-        StateData(String nonce, long createdAt) {
+        StateData(String nonce, long expirationTime) {
             this.nonce = nonce;
-            this.createdAt = createdAt;
+            this.expirationTime = expirationTime;
         }
     }
 }

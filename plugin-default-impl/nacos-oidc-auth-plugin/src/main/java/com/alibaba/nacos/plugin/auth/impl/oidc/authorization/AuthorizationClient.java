@@ -79,8 +79,9 @@ public class AuthorizationClient {
         String authzEndpoint = config.getAuthorizationEvaluateEndpoint();
 
         if (StringUtils.isBlank(authzEndpoint)) {
-            LOGGER.warn("Authorization endpoint not configured, denying access");
-            return AuthorizationResponse.denied("Authorization endpoint not configured");
+            LOGGER.warn("Authorization endpoint not configured. DEFAULTING TO ALLOW ALL ACCESS. " +
+                    "Configure 'nacos.auth.oidc.authorization.endpoint' for external authorization.");
+            return AuthorizationResponse.allowed();
         }
 
         try {

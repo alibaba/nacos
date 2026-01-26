@@ -83,7 +83,7 @@ public class OidcAuthPluginService implements AuthPluginService {
 
     @Override
     public boolean isLoginEnabled() {
-        // Login is enabled - will be handled by OAuth2 login controller
+        // Login is enabled - will be handled by OIDC login controller
         return true;
     }
 

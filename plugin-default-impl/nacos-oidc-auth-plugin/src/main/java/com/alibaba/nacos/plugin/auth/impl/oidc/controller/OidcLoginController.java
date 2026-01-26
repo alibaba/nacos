@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.auth.impl.oidc.authenticate.AuthorizationCodeHan
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.identity.OidcUserMapper.OidcUser;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -37,14 +38,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * OIDC login controller.
@@ -59,19 +54,11 @@ public class OidcLoginController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcLoginController.class);
 
-    private static final int CODE_LENGTH = 32;
-
-    private static final long CODE_EXPIRATION_SECONDS = 60;
-
-    private static final SecureRandom RANDOM = new SecureRandom();
-
     /**
-     * One-time code store for secure token delivery.
+     * Cookie expiration time in seconds (60 seconds).
+     * Short-lived: frontend reads and syncs to localStorage, then clears cookies.
      */
-    private final Cache<String, OidcUser> oneTimeCodeStore = Caffeine.newBuilder()
-            .expireAfterWrite(CODE_EXPIRATION_SECONDS, TimeUnit.SECONDS)
-            .maximumSize(10000)
-            .build();
+    private static final int COOKIE_EXPIRATION_SECONDS = 60;
 
     private volatile AuthorizationCodeHandler authHandler;
 
@@ -106,7 +93,7 @@ public class OidcLoginController {
     }
 
     /**
-     * OAuth2 callback - handles the authorization code response from IdP.
+     * OIDC callback - handles the authorization code response from IdP.
      *
      * @param code     authorization code
      * @param state    state parameter for CSRF verification
@@ -160,13 +147,30 @@ public class OidcLoginController {
 
             LOGGER.info("OIDC authentication successful for user: {}", user.getUsername());
 
-            // Generate one-time code for secure token delivery
-            String oneTimeCode = generateSecureCode();
-            oneTimeCodeStore.put(oneTimeCode, user);
+            // Set cookies for token delivery (cluster-friendly, no server-side storage)
+            // Frontend will read cookies and sync to localStorage, then clear them
+            String contextPath = request.getContextPath();
+            String cookiePath = StringUtils.isBlank(contextPath) ? "/" : contextPath + "/";
 
-            // Redirect to Console with one-time code (not token) in URL
-            // Frontend will exchange this code for the actual token via /exchange endpoint
-            String successRedirectUrl = buildBaseUrl(request) + "/#/?code=" + oneTimeCode;
+            // Set accessToken cookie (frontend readable for sync to localStorage)
+            Cookie accessTokenCookie = new Cookie("accessToken", user.getToken());
+            accessTokenCookie.setHttpOnly(false);  // Allow frontend to read
+            accessTokenCookie.setSecure(isHttps(request));
+            accessTokenCookie.setPath(cookiePath);
+            accessTokenCookie.setMaxAge(COOKIE_EXPIRATION_SECONDS);
+            response.addCookie(accessTokenCookie);
+
+            // Set username cookie (URL encoded)
+            Cookie usernameCookie = new Cookie("username",
+                    URLEncoder.encode(user.getUsername(), StandardCharsets.UTF_8));
+            usernameCookie.setHttpOnly(false);
+            usernameCookie.setSecure(isHttps(request));
+            usernameCookie.setPath(cookiePath);
+            usernameCookie.setMaxAge(COOKIE_EXPIRATION_SECONDS);
+            response.addCookie(usernameCookie);
+
+            // Redirect to home page (no parameters in URL)
+            String successRedirectUrl = buildBaseUrl(request) + "/#/";
             response.sendRedirect(successRedirectUrl);
             return null;
 
@@ -255,42 +259,6 @@ public class OidcLoginController {
     }
 
     /**
-     * Exchange one-time code for access token.
-     * This endpoint is called by frontend to securely retrieve the token.
-     *
-     * @param code one-time authorization code
-     * @return token and username
-     */
-    @GetMapping("/exchange")
-    public Result<Map<String, String>> exchangeCode(@RequestParam String code) {
-        try {
-            if (StringUtils.isBlank(code)) {
-                return Result.failure(HttpStatus.BAD_REQUEST.value(), "Missing code parameter", null);
-            }
-
-            OidcUser user = oneTimeCodeStore.getIfPresent(code);
-            if (user == null) {
-                LOGGER.warn("Invalid or expired one-time code attempted");
-                return Result.failure(HttpStatus.BAD_REQUEST.value(), "Invalid or expired code", null);
-            }
-
-            // Invalidate the code immediately after use (one-time only)
-            oneTimeCodeStore.invalidate(code);
-
-            Map<String, String> result = new HashMap<>(4);
-            result.put("accessToken", user.getToken());
-            result.put("username", user.getUsername());
-
-            LOGGER.info("One-time code exchanged successfully for user: {}", user.getUsername());
-            return Result.success(result);
-
-        } catch (Exception e) {
-            LOGGER.error("Failed to exchange code", e);
-            return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to exchange code", null);
-        }
-    }
-
-    /**
      * Build the callback URL from the current request.
      *
      * @param request HTTP request
@@ -344,13 +312,12 @@ public class OidcLoginController {
     }
 
     /**
-     * Generate a secure random code for one-time token delivery.
+     * Check if the request is using HTTPS.
      *
-     * @return secure random code
+     * @param request HTTP request
+     * @return true if HTTPS
      */
-    private String generateSecureCode() {
-        byte[] bytes = new byte[CODE_LENGTH];
-        RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    private boolean isHttps(HttpServletRequest request) {
+        return OidcConstants.HTTPS_PROTOCOL.equals(request.getScheme());
     }
 }
