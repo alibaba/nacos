@@ -2034,13 +2034,24 @@ class NewSkill extends React.Component {
                             </div>
                           }
                         >
-                          <Form.Item label={this.getLocaleValue('resourceContent', 'Resource Content')}>
-                            <Input.TextArea
-                              value={resource.content}
-                              onChange={value => this.handleResourceChange(index, 'content', value)}
-                              placeholder={this.getLocaleValue('resourceContentPlaceholder', 'Enter resource content')}
-                              rows={6}
-                            />
+                          <Form.Item>
+                            <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+                              <MonacoEditor
+                                language={getLanguageFromFileName(resource.name || '')}
+                                width="100%"
+                                height={300}
+                                value={resource.content || ''}
+                                onChange={value => this.handleResourceChange(index, 'content', value)}
+                                options={{
+                                  readOnly: false,
+                                  wordWrap: 'on',
+                                  minimap: { enabled: false },
+                                  lineNumbers: 'on',
+                                  scrollBeyondLastLine: false,
+                                  theme: 'vs-dark-enhanced',
+                                }}
+                              />
+                            </div>
                           </Form.Item>
                         </Collapse.Panel>
                       );
