@@ -68,4 +68,8 @@ public class SkillProxy {
     public Page<SkillBasicInfo> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return skillHandler.listSkills(skillListForm, pageForm);
     }
+    
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes);
+    }
 }

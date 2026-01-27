@@ -14,30 +14,28 @@
  * limitations under the License.
  */
 
-.skill-management {
-  padding: 20px;
-
-  .search-form {
+// 使用configuration-table样式，与MCP管理页面一致
+.configuration-table {
     margin-bottom: 20px;
-    padding: 16px;
-    background: #fff;
-    border-radius: 4px;
+  
+  // 确保描述列宽度固定
+  :global {
+    .next-table {
+      table-layout: fixed;
   }
 
-  .skill-table {
-    background: #fff;
-    border-radius: 4px;
-    padding: 16px;
+    .next-table-col {
+      &:nth-child(2) {
+        width: 300px !important;
+        min-width: 300px !important;
+        max-width: 300px !important;
+      }
+    }
+    
+    .next-table-cell-wrapper {
+      overflow: hidden;
+    }
   }
-
-  .batch-operations {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
-    padding: 16px;
-    background: #fff;
-    border-radius: 4px;
   }
 
   .empty-state {
@@ -53,6 +51,5 @@
     .empty-text {
       color: #999;
       margin-bottom: 16px;
-    }
   }
 }

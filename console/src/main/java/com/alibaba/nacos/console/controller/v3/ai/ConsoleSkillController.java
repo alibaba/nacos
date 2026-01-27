@@ -41,7 +41,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Console skill controller.
@@ -136,5 +139,32 @@ public class ConsoleSkillController {
         skillListForm.validate();
         pageForm.validate();
         return Result.success(skillProxy.listSkills(skillListForm, pageForm));
+    }
+    
+    /**
+     * Upload skill from zip file.
+     *
+     * @param request HTTP servlet request
+     * @param namespaceId namespace ID
+     * @param file zip file containing skill
+     * @return result of the upload operation
+     * @throws NacosException if the upload fails
+     */
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
+    public Result<String> uploadSkill(HttpServletRequest request,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            @RequestParam("file") MultipartFile file) throws NacosException {
+        if (file == null || file.isEmpty()) {
+            return Result.failure(com.alibaba.nacos.api.model.v2.ErrorCode.DATA_EMPTY, "File is required");
+        }
+        try {
+            String skillName = skillProxy.uploadSkillFromZip(namespaceId, file.getBytes());
+            return Result.success(skillName);
+        } catch (java.io.IOException e) {
+            return Result.failure(com.alibaba.nacos.api.model.v2.ErrorCode.PARSING_DATA_FAILED,
+                    "Failed to read file: " + e.getMessage());
+        }
     }
 }

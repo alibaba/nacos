@@ -308,7 +308,29 @@ class SkillOptimizeDialog extends React.Component {
             .read()
             .then(({ done, value }) => {
               if (done) {
-                this.setState({ streaming: false, loading: false });
+                // When stream ends, try to parse optimizedSkill from accumulated content
+                // if not already set
+                this.setState(prevState => {
+                  if (!prevState.optimizedSkill && prevState.streamContent) {
+                    const parsedSkill = this.parseOptimizedSkillFromContent(
+                      prevState.streamContent
+                    );
+                    if (parsedSkill) {
+                      return {
+                        streaming: false,
+                        loading: false,
+                        optimizedSkill: parsedSkill,
+                        thinkingCollapsed: true,
+                        resultContentCollapsed: true,
+                        inputSectionCollapsed: true,
+                      };
+                    }
+                  }
+                  return {
+                    streaming: false,
+                    loading: false,
+                  };
+                });
                 return;
               }
 
@@ -355,6 +377,86 @@ class SkillOptimizeDialog extends React.Component {
       });
   };
 
+  // Helper method to parse optimizedSkill from accumulated content
+  parseOptimizedSkillFromContent = (content) => {
+    if (!content || !content.trim()) {
+      return null;
+    }
+
+    try {
+      let jsonContent = content.trim();
+
+      // Try to parse directly first
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonContent);
+      } catch (e) {
+        // If direct parse fails, try to extract JSON object by finding first { and matching }
+        const startIdx = jsonContent.indexOf('{');
+        if (startIdx >= 0) {
+          let braceCount = 0;
+          let endIdx = -1;
+          let inString = false;
+          let escapeNext = false;
+
+          for (let i = startIdx; i < jsonContent.length; i++) {
+            const char = jsonContent[i];
+
+            if (escapeNext) {
+              escapeNext = false;
+              continue;
+            }
+
+            if (char === '\\') {
+              escapeNext = true;
+              continue;
+            }
+
+            if (char === '"') {
+              inString = !inString;
+              continue;
+            }
+
+            if (!inString) {
+              if (char === '{') {
+                braceCount++;
+              } else if (char === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                  endIdx = i;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (endIdx > startIdx) {
+            jsonContent = jsonContent.substring(startIdx, endIdx + 1);
+            parsed = JSON.parse(jsonContent);
+          } else {
+            throw e;
+          }
+        } else {
+          throw e;
+        }
+      }
+
+      // Extract optimizedSkill from parsed object
+      if (parsed.optimizedSkill) {
+        return parsed.optimizedSkill;
+      } else if (parsed.skill) {
+        return parsed.skill;
+      } else if (parsed.name && (parsed.description || parsed.instruction)) {
+        return parsed;
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to parse optimizedSkill from content:', e);
+    }
+
+    return null;
+  };
+
   handleSSEMessage = data => {
     const { type, chunk, done, optimizedSkill } = data;
     const typeStr = type?.code || type || 'CONTENT';
@@ -384,62 +486,44 @@ class SkillOptimizeDialog extends React.Component {
       }));
     } else if (typeStr === 'DONE' || type === 'DONE' || done) {
       // Final result - collapse all streaming sections and show comparison
-      // Support multiple field names: optimizedSkill, skill
-      let skillData = optimizedSkill || data.skill || data.optimizedSkill || null;
+      // First, accumulate any chunk from DONE event to streamContent
+      this.setState(prevState => {
+        // Accumulate chunk if present in DONE event
+        const accumulatedContent = prevState.streamContent + (chunk || '');
 
-      // If optimizedSkill is not in DONE event, try to parse it from accumulated streamContent
-      if (!skillData && this.state.streamContent) {
-        try {
-          // Try to extract JSON from streamContent
-          const content = this.state.streamContent;
-          let jsonContent = content;
+        // Support multiple field names: optimizedSkill, skill
+        let skillData = optimizedSkill || data.skill || data.optimizedSkill || null;
 
-          // Try to extract JSON from markdown code blocks
-          if (content.includes('```json')) {
-            const start = content.indexOf('```json') + 7;
-            const end = content.indexOf('```', start);
-            if (end > start) {
-              jsonContent = content.substring(start, end).trim();
-            }
-          } else if (content.includes('```')) {
-            const start = content.indexOf('```') + 3;
-            const end = content.indexOf('```', start);
-            if (end > start) {
-              jsonContent = content.substring(start, end).trim();
-            }
+        // If optimizedSkill is not in DONE event, try to parse it from accumulated streamContent
+        if (!skillData && accumulatedContent) {
+          skillData = this.parseOptimizedSkillFromContent(accumulatedContent);
+          if (skillData) {
+            // eslint-disable-next-line no-console
+            console.log('Successfully parsed optimizedSkill from accumulated content');
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to parse optimizedSkill from accumulated content, length:', accumulatedContent.length);
           }
-
-          // Try to find JSON object
-          const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            jsonContent = jsonMatch[0];
-          }
-
-          // Parse JSON
-          const parsed = JSON.parse(jsonContent);
-          skillData = parsed.optimizedSkill || parsed.skill || parsed;
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn('Failed to parse optimizedSkill from streamContent:', e);
         }
-      }
 
-      // Debug: log the received data
-      // eslint-disable-next-line no-console
-      console.log('DONE event received:', { typeStr, done, skillData, data, streamContent: this.state.streamContent });
-
-      if (!skillData) {
+        // Debug: log the received data
         // eslint-disable-next-line no-console
-        console.warn('No optimizedSkill found in DONE event or streamContent:', data);
-      }
+        console.log('DONE event received:', { typeStr, done, skillData, data, streamContent: accumulatedContent });
 
-      this.setState({
-        streaming: false,
-        loading: false,
-        optimizedSkill: skillData,
-        thinkingCollapsed: true, // 折叠思考内容
-        resultContentCollapsed: true, // 折叠结果内容，显示对比表单
-        inputSectionCollapsed: true, // 保持输入区域折叠状态
+        if (!skillData) {
+          // eslint-disable-next-line no-console
+          console.warn('No optimizedSkill found in DONE event or streamContent:', data, 'Accumulated content:', accumulatedContent);
+        }
+
+        return {
+          streaming: false,
+          loading: false,
+          streamContent: accumulatedContent,
+          optimizedSkill: skillData,
+          thinkingCollapsed: true, // 折叠思考内容
+          resultContentCollapsed: true, // 折叠结果内容，显示对比表单
+          inputSectionCollapsed: true, // 保持输入区域折叠状态
+        };
       });
     } else if (typeStr === 'error' || type === 'error') {
       // Error case

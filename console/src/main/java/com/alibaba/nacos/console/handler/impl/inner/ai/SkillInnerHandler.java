@@ -75,4 +75,9 @@ public class SkillInnerHandler implements SkillHandler {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
                 skillListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize());
     }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
+    }
 }

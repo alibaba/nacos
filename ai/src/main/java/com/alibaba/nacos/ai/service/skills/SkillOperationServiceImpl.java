@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
@@ -32,8 +33,8 @@ import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
@@ -58,20 +59,81 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
     
+    /**
+     * Validate that name does not contain double underscores.
+     */
+    private void validateNoDoubleUnderscore(String name, String fieldName) throws NacosException {
+        if (StringUtils.isNotBlank(name) && name.contains("__")) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    String.format("%s cannot contain double underscores (__)", fieldName));
+        }
+    }
+    
+    /**
+     * Generate resource ID from resource type and name.
+     * Format: {type}_{resourcename}
+     * If resourcename ends with .xx, convert the last . to __
+     */
+    private String generateResourceId(String type, String resourceName) {
+        if (StringUtils.isBlank(resourceName)) {
+            return "";
+        }
+        
+        // If resourcename ends with .xx, convert the last . to __
+        String processedName = resourceName;
+        if (resourceName.matches(".*\\.[a-zA-Z0-9]+$")) {
+            // Replace only the last dot before the extension
+            int lastDotIndex = resourceName.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                processedName = resourceName.substring(0, lastDotIndex) + "__" + resourceName.substring(lastDotIndex + 1);
+            }
+        }
+        
+        if (StringUtils.isNotBlank(type)) {
+            return type + "_" + processedName;
+        } else {
+            return processedName;
+        }
+    }
+    
+    /**
+     * Parse resource ID to get type and resource name.
+     * Format: {type}_{resourcename} or {resourcename}
+     * If resourcename contains __, convert __ back to .
+     */
+    private String[] parseResourceId(String resourceId) {
+        if (StringUtils.isBlank(resourceId)) {
+            return new String[]{"", ""};
+        }
+        
+        int underscoreIndex = resourceId.indexOf('_');
+        if (underscoreIndex > 0) {
+            String type = resourceId.substring(0, underscoreIndex);
+            String resourceName = resourceId.substring(underscoreIndex + 1);
+            // Convert __ back to .
+            resourceName = resourceName.replace("__", ".");
+            return new String[]{type, resourceName};
+        } else {
+            // No type, just resource name
+            String resourceName = resourceId.replace("__", ".");
+            return new String[]{"", resourceName};
+        }
+    }
+    
     private final ConfigQueryChainService configQueryChainService;
     
     private final ConfigOperationService configOperationService;
     
-    private final ConfigDetailService configDetailService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
     private final SyncEffectService syncEffectService;
     
     public SkillOperationServiceImpl(ConfigQueryChainService configQueryChainService,
-            ConfigOperationService configOperationService, ConfigDetailService configDetailService,
-            SyncEffectService syncEffectService) {
+            ConfigOperationService configOperationService,
+            ConfigInfoPersistService configInfoPersistService, SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
-        this.configDetailService = configDetailService;
+        this.configInfoPersistService = configInfoPersistService;
         this.syncEffectService = syncEffectService;
     }
     
@@ -87,22 +149,32 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "Skill name can only contain English letters, underscore, and hyphen");
             }
+            validateNoDoubleUnderscore(skill.getName(), "Skill name");
             
-            // 2. Build main config (main.json)
-            String skillGroup = "nacos-ai-skill-" + skill.getName();
+            // 2. Validate resource names
+            if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+                for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
+                    SkillResource resource = entry.getValue();
+                    if (resource.getName() != null) {
+                        validateNoDoubleUnderscore(resource.getName(), "Resource name");
+                    }
+                }
+            }
+            
+            // 3. Build main config (skill.json)
+            String skillGroup = "skill_" + skill.getName();
             ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, skillGroup);
             ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
             mainConfigRequest.setUpdateForExist(Boolean.FALSE);
             configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
             
-            // 3. Build and publish resource configs
+            // 4. Build and publish resource configs
             if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-                String resourceGroup = skillGroup + "_resource";
                 for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                    String resourceName = entry.getKey();
                     SkillResource resource = entry.getValue();
+                    String resourceId = generateResourceId(resource.getType(), resource.getName());
                     
-                    ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, resourceGroup, resourceName);
+                    ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, skillGroup, resourceId);
                     ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
                     resourceConfigRequest.setUpdateForExist(Boolean.FALSE);
                     configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
@@ -122,8 +194,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill getSkillDetail(String namespaceId, String skillName) throws NacosException {
         // 1. Query main config
-        String skillGroup = "nacos-ai-skill-" + skillName;
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("main.json", skillGroup,
+        String skillGroup = "skill_" + skillName;
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("skill.json", skillGroup,
                 namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
@@ -146,22 +218,22 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         Map<String, SkillResource> resourceMap = new HashMap<>(
                 mainConfig.getResource() != null ? mainConfig.getResource().size() : 16);
         if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
-            String resourceGroup = skillGroup + "_resource";
             for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {
-                String resourceName = entry.getKey();
+                String resourceId = entry.getKey();
                 
                 // Query resource config
-                String resourceDataId = resourceName + ".json";
+                String resourceDataId = "resource_" + resourceId + ".json";
                 ConfigQueryChainRequest resourceRequest = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                        resourceDataId, resourceGroup, namespaceId);
+                        resourceDataId, skillGroup, namespaceId);
                 ConfigQueryChainResponse resourceResponse = configQueryChainService.handle(resourceRequest);
                 
                 if (resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL
                         || resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY) {
                     SkillResource resource = JacksonUtils.toObj(resourceResponse.getContent(), SkillResource.class);
-                    resourceMap.put(resourceName, resource);
+                    // Use resource name as key (from resource object, not resourceId)
+                    resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
                 } else {
-                    LOGGER.warn("Resource configuration not found: dataId={}, group={}", resourceDataId, resourceGroup);
+                    LOGGER.warn("Resource configuration not found: dataId={}, group={}", resourceDataId, skillGroup);
                 }
             }
         }
@@ -172,9 +244,20 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     @Override
     public void updateSkill(Skill skill, String namespaceId) throws NacosException {
-        // 1. Check if skill exists
-        String skillGroup = "nacos-ai-skill-" + skill.getName();
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("main.json", skillGroup,
+        // 1. Validate skill name and resource names
+        validateNoDoubleUnderscore(skill.getName(), "Skill name");
+        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
+                SkillResource resource = entry.getValue();
+                if (resource.getName() != null) {
+                    validateNoDoubleUnderscore(resource.getName(), "Resource name");
+                }
+            }
+        }
+        
+        // 2. Check if skill exists
+        String skillGroup = "skill_" + skill.getName();
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("skill.json", skillGroup,
                 namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
@@ -183,20 +266,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill not found: " + skill.getName());
         }
         
-        // 2. Update main config
+        // 3. Update main config
         ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, skillGroup);
         ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
         mainConfigRequest.setUpdateForExist(Boolean.TRUE);
         configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
         
-        // 3. Update resource configs
+        // 4. Update resource configs
         if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-            String resourceGroup = skillGroup + "_resource";
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                String resourceName = entry.getKey();
                 SkillResource resource = entry.getValue();
+                String resourceId = generateResourceId(resource.getType(), resource.getName());
                 
-                ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, resourceGroup, resourceName);
+                ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, skillGroup, resourceId);
                 ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
                 resourceConfigRequest.setUpdateForExist(Boolean.TRUE);
                 configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
@@ -210,8 +292,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void deleteSkill(String namespaceId, String skillName) throws NacosException {
         // 1. Query main config to get resource list
-        String skillGroup = "nacos-ai-skill-" + skillName;
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("main.json", skillGroup,
+        String skillGroup = "skill_" + skillName;
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("skill.json", skillGroup,
                 namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
@@ -222,58 +304,73 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // 2. Delete all resource configs
         SkillMainConfig mainConfig = JacksonUtils.toObj(response.getContent(), SkillMainConfig.class);
         if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
-            String resourceGroup = skillGroup + "_resource";
-            for (String resourceName : mainConfig.getResource().keySet()) {
-                String resourceDataId = resourceName + ".json";
-                configOperationService.deleteConfig(resourceDataId, resourceGroup, namespaceId, null, null, "nacos",
+            for (String resourceId : mainConfig.getResource().keySet()) {
+                String resourceDataId = "resource_" + resourceId + ".json";
+                configOperationService.deleteConfig(resourceDataId, skillGroup, namespaceId, null, null, "nacos",
                         null);
             }
         }
         
         // 3. Delete main config
-        configOperationService.deleteConfig("main.json", skillGroup, namespaceId, null, null, "nacos", null);
+        configOperationService.deleteConfig("skill.json", skillGroup, namespaceId, null, null, "nacos", null);
     }
     
     @Override
     public Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
-        String dataId;
-        if (StringUtils.isEmpty(skillName) || Skills.SEARCH_BLUR.equalsIgnoreCase(search)) {
-            search = Skills.SEARCH_BLUR;
-            dataId = Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN;
+        // Only query skill.json (main config), not resource_*.json
+        String dataId = "skill.json";
+        String groupPattern;
+        
+        if (StringUtils.isEmpty(skillName)) {
+            // Query all skills: group=skill_*
+            groupPattern = "skill_" + Constants.ALL_PATTERN;
+        } else if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
+            // Exact match: group=skill_{skillName}
+            groupPattern = "skill_" + skillName;
         } else {
-            search = Skills.SEARCH_ACCURATE;
-            dataId = skillName;
+            // Blur search: group=skill_*{skillName}*
+            groupPattern = "skill_" + Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN;
         }
         
-        // Search by group pattern: nacos-ai-skill-*
-        String groupPattern = "nacos-ai-skill-" + Constants.ALL_PATTERN;
-        Page<ConfigInfo> configInfoPage = configDetailService.findConfigInfoPage(search, pageNo, pageSize, "main.json",
+        // Use ConfigInfoPersistService to query config list (now includes gmt_modified)
+        Page<ConfigInfo> configInfoPage = configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId,
                 groupPattern, namespaceId, null);
-        
+       
+ 
         List<SkillBasicInfo> skillBasicInfos = configInfoPage.getPageItems().stream().map(configInfo -> {
             try {
                 SkillMainConfig mainConfig = JacksonUtils.toObj(configInfo.getContent(), SkillMainConfig.class);
+                
+               
                 SkillBasicInfo basicInfo = new SkillBasicInfo();
                 basicInfo.setNamespaceId(namespaceId);
                 basicInfo.setName(mainConfig.getName());
                 basicInfo.setDescription(mainConfig.getDescription());
-                // ConfigInfo doesn't have modifyTime field, set to null or use current time
-                basicInfo.setUpdateTime(System.currentTimeMillis());
+                // Get modify time directly from ConfigInfo
+                basicInfo.setUpdateTime(configInfo.getGmtModified());
                 return basicInfo;
             } catch (Exception e) {
-                LOGGER.warn("Failed to parse skill config: {}", configInfo.getDataId(), e);
+                LOGGER.warn("Failed to parse skill config: dataId={}, group={}", configInfo.getDataId(), configInfo.getGroup(), e);
                 return null;
             }
         }).filter(java.util.Objects::nonNull).toList();
         
         Page<SkillBasicInfo> result = new Page<>();
+        // For blur search with filtering, we need to adjust total count
+        // But for simplicity, use the original total count (may be slightly inaccurate for blur search)
         result.setPageItems(skillBasicInfos);
         result.setTotalCount(configInfoPage.getTotalCount());
         result.setPagesAvailable((int) Math.ceil((double) configInfoPage.getTotalCount() / (double) pageSize));
         result.setPageNumber(pageNo);
         
         return result;
+    }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
+        return registerSkill(skill, namespaceId);
     }
     
     /**
@@ -286,27 +383,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         mainConfig.setDescription(skill.getDescription());
         mainConfig.setInstruction(skill.getInstruction());
         
-        // Build resource references (without content)
+        // Build resource references (without content), use resourceId as key
         Map<String, SkillResourceRef> resourceRefs = new HashMap<>(
                 skill.getResource() != null ? skill.getResource().size() : 16);
         if (skill.getResource() != null) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
+                String resourceId = generateResourceId(resource.getType(), resource.getName());
                 SkillResourceRef ref = new SkillResourceRef();
                 ref.setName(resource.getName());
                 ref.setType(resource.getType());
-                resourceRefs.put(entry.getKey(), ref);
+                resourceRefs.put(resourceId, ref);
             }
         }
         mainConfig.setResource(resourceRefs);
         
         ConfigForm configForm = new ConfigForm();
-        configForm.setDataId("main.json");
+        configForm.setDataId("skill.json");
         configForm.setGroup(skillGroup);
         configForm.setNamespaceId(namespaceId);
         configForm.setContent(JacksonUtils.toJson(mainConfig));
         configForm.setConfigTags("nacos.internal.config=skill");
-        configForm.setAppName(skill.getName());
         configForm.setSrcUser("nacos");
         configForm.setType(ConfigType.JSON.getType());
         
@@ -316,15 +413,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     /**
      * Build resource config form.
      */
-    private ConfigForm buildResourceConfigForm(SkillResource resource, String namespaceId, String resourceGroup,
-            String resourceName) {
+    private ConfigForm buildResourceConfigForm(SkillResource resource, String namespaceId, String skillGroup,
+            String resourceId) {
         ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(resourceName + ".json");
-        configForm.setGroup(resourceGroup);
+        configForm.setDataId("resource_" + resourceId + ".json");
+        configForm.setGroup(skillGroup);
         configForm.setNamespaceId(namespaceId);
         configForm.setContent(JacksonUtils.toJson(resource));
         configForm.setConfigTags("nacos.internal.config=skill-resource");
-        configForm.setAppName(resource.getName());
         configForm.setSrcUser("nacos");
         configForm.setType(ConfigType.JSON.getType());
         

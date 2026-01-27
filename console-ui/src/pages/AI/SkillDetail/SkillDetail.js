@@ -66,6 +66,10 @@ class SkillDetail extends React.Component {
     this.loadSkillData();
   }
 
+  componentWillUnmount() {
+    // Cleanup
+  }
+
   handleExpandChange = (expandedKeys) => {
     this.setState({ expandedKeys });
   };
@@ -294,29 +298,9 @@ class SkillDetail extends React.Component {
     markdown += `description: ${this.escapeYamlValue(previewData.description || '')}\n`;
     markdown += '---\n\n';
 
-    // Instructions section
+    // Instructions section - directly show instruction content without "## Instructions" header
     if (previewData.instruction && previewData.instruction.trim() !== '') {
-      markdown += `## Instructions\n\n${previewData.instruction}\n\n`;
-    }
-
-    // Resources section
-    if (previewData.resource && Object.keys(previewData.resource).length > 0) {
-      markdown += `## Resources\n\n`;
-      Object.entries(previewData.resource).forEach(([key, resource]) => {
-        const resourceName = resource.name || key;
-        markdown += `### ${resourceName}\n\n`;
-        const resourceId = resource.type && resource.type.trim() !== ''
-          ? `${resource.type}::${resourceName}`
-          : resourceName;
-        markdown += `- **Resource ID**: ${resourceId}\n`;
-        if (resource.type && resource.type.trim() !== '') {
-          markdown += `- **Type**: ${resource.type}\n`;
-          markdown += `- **File**: \`${resource.type}/${resourceName}\`\n\n`;
-        } else {
-          markdown += `- **Type**: \n`;
-          markdown += `- **File**: \`${resourceName}\`\n\n`;
-        }
-      });
+      markdown += `${previewData.instruction}\n`;
     }
 
     return markdown;
@@ -346,15 +330,15 @@ class SkillDetail extends React.Component {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
-      // Also stop immediate propagation to prevent any other handlers
-      if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) {
-        e.nativeEvent.stopImmediatePropagation();
-      }
     }
-    // Use setTimeout to ensure state update happens after event handling
-    setTimeout(() => {
-      this.setState({ selectedFile: file });
-    }, 0);
+    // Clear selectedFile first to force MonacoEditor to unmount, then set new file
+    // This prevents errors when switching between files with different languages
+    this.setState({ selectedFile: null }, () => {
+      // Use setTimeout to ensure the previous editor is fully unmounted
+      setTimeout(() => {
+        this.setState({ selectedFile: file });
+      }, 0);
+    });
   };
 
   handleExport = async () => {
@@ -374,26 +358,9 @@ class SkillDetail extends React.Component {
 
     try {
       const skillName = skillData.name || 'skill';
+      const zipFileName = `${skillName}.zip`;
       
-      // Check if browser supports File System Access API
-      if ('showDirectoryPicker' in window) {
-        // Use File System Access API to let user choose folder
-        try {
-          const directoryHandle = await window.showDirectoryPicker();
-          await this.saveToDirectory(directoryHandle, skillName, previewData);
-          Message.success(locale.exportSuccess || 'Export successful');
-        } catch (dirError) {
-          // User cancelled the directory picker
-          if (dirError.name !== 'AbortError') {
-            // eslint-disable-next-line no-console
-            console.error('Directory picker error:', dirError);
-            Message.error(locale.exportFailed || `Export failed: ${dirError.message || dirError}`);
-          }
-          // If user cancelled, just return silently
-          return;
-        }
-      } else {
-        // Fallback to zip download for browsers that don't support File System Access API
+      // Always create zip package
         const zip = new JSZip();
         const folder = zip.folder(skillName);
 
@@ -420,12 +387,44 @@ class SkillDetail extends React.Component {
 
         // Generate zip file
         const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Check if browser supports File System Access API
+      if ('showSaveFilePicker' in window) {
+        // Use File System Access API to let user choose save location
+        try {
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName: zipFileName,
+            types: [{
+              description: 'ZIP files',
+              accept: {
+                'application/zip': ['.zip'],
+              },
+            }],
+          });
+          
+          const writable = await fileHandle.createWritable();
+          await writable.write(zipBlob);
+          await writable.close();
+          
+          Message.success(locale.exportSuccess || 'Export successful');
+        } catch (saveError) {
+          // User cancelled the file picker
+          if (saveError.name !== 'AbortError') {
+            // eslint-disable-next-line no-console
+            console.error('Save file error:', saveError);
+            Message.error(locale.exportFailed || `Export failed: ${saveError.message || saveError}`);
+          }
+          // If user cancelled, just return silently
+          return;
+        }
+      } else {
+        // Fallback to traditional download for browsers that don't support File System Access API
         const url = URL.createObjectURL(zipBlob);
 
         // Create a temporary link element and trigger download
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${skillName}.zip`;
+        link.download = zipFileName;
         document.body.appendChild(link);
         link.click();
 
@@ -442,45 +441,15 @@ class SkillDetail extends React.Component {
     }
   };
 
-  saveToDirectory = async (directoryHandle, skillName, previewData) => {
-    // Create skill folder in the selected directory
-    const skillFolderHandle = await directoryHandle.getDirectoryHandle(skillName, { create: true });
-
-    // Save SKILL.md file
-    const markdown = this.buildSkillMarkdown(previewData);
-    const skillMdFileHandle = await skillFolderHandle.getFileHandle('SKILL.md', { create: true });
-    const skillMdWritable = await skillMdFileHandle.createWritable();
-    await skillMdWritable.write(markdown);
-    await skillMdWritable.close();
-
-    // Save resource files
-    if (previewData.resource && Object.keys(previewData.resource).length > 0) {
-      for (const [key, resource] of Object.entries(previewData.resource)) {
-        const resourceName = resource.name || key;
-        const resourceContent = resource.content || '';
-        
-        let targetFolderHandle = skillFolderHandle;
-        
-        if (resource.type && resource.type.trim() !== '') {
-          // Create type folder if needed
-          targetFolderHandle = await skillFolderHandle.getDirectoryHandle(resource.type.trim(), { create: true });
-        }
-        
-        // Save resource file
-        const resourceFileHandle = await targetFolderHandle.getFileHandle(resourceName, { create: true });
-        const resourceWritable = await resourceFileHandle.createWritable();
-        await resourceWritable.write(resourceContent);
-        await resourceWritable.close();
-      }
-    }
-  };
-
   renderFileTree = (node, level = 0, parentKey = '') => {
     if (!node) {
       return null;
     }
 
-    const nodeKey = parentKey ? `${parentKey}/${node.name}` : node.name;
+    // Generate unique key: use resourceKey for resources, otherwise use path-based key
+    const nodeKey = node.resourceKey 
+      ? `${parentKey}/${node.resourceKey}` 
+      : (parentKey ? `${parentKey}/${node.name}` : node.name);
     const isSelected = this.state.selectedFile &&
       this.state.selectedFile.name === node.name &&
       this.state.selectedFile.fileType === node.fileType &&
@@ -510,18 +479,9 @@ class SkillDetail extends React.Component {
             e.stopPropagation();
             this.handleFileClick(node, e);
           }}
-          onMouseDown={(e) => {
-            // Also prevent on mousedown to be extra safe
-            e.preventDefault();
-            e.stopPropagation();
-          }}
         >
           <Icon type="file" style={{ marginRight: 8 }} />
           <span 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
             style={{ pointerEvents: 'none' }}
           >
             {node.name}
@@ -550,7 +510,21 @@ class SkillDetail extends React.Component {
             <Icon type="file" style={{ marginRight: 8 }} />
             <span>{selectedFile.name}</span>
           </div>
-          <pre className="file-content-markdown">{markdown}</pre>
+          <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px' }}>
+            <MonacoEditor
+              language="markdown"
+              width="100%"
+              height={500}
+              value={markdown}
+              options={{
+                readOnly: true,
+                wordWrap: 'on',
+                minimap: { enabled: false },
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+              }}
+            />
+          </div>
         </div>
       );
     } else if (selectedFile.fileType === 'resource') {
@@ -562,23 +536,10 @@ class SkillDetail extends React.Component {
             <span>{selectedFile.name}</span>
           </div>
           <div className="file-content-resource">
-            <div className="resource-info">
-              <div className="resource-info-item">
-                <strong>{this.props.locale?.resourceName || 'Resource Name'}:</strong> {resource.name || '--'}
-              </div>
-              {resource.type && (
-                <div className="resource-info-item">
-                  <strong>{this.props.locale?.resourceType || 'Resource Type'}:</strong> {resource.type}
-                </div>
-              )}
-            </div>
-            <div className="resource-content">
-              <div className="resource-content-label">
-                <strong>{this.props.locale?.resourceContent || 'Resource Content'}:</strong>
-              </div>
               {resource.content ? (
-                <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
+              <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
                   <MonacoEditor
+                    key={`${selectedFile.resourceKey || selectedFile.name}-${getLanguageFromFileName(resource.name || '')}`}
                     language={getLanguageFromFileName(resource.name || '')}
                     width="100%"
                     height={300}
@@ -593,11 +554,10 @@ class SkillDetail extends React.Component {
                   />
                 </div>
               ) : (
-                <div style={{ padding: '12px', color: '#999', marginTop: '8px' }}>
+              <div style={{ padding: '12px', color: '#999' }}>
                   {this.props.locale?.noContent || 'No content'}
                 </div>
               )}
-            </div>
           </div>
         </div>
       );
@@ -682,8 +642,19 @@ class SkillDetail extends React.Component {
             <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
               {locale.instruction || 'Instruction'}
             </div>
-            <div className="instruction-content">
-              <MarkdownRenderer content={skillData.instruction || ''} />
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', minHeight: '400px' }}>
+              <MonacoEditor
+                language="markdown"
+                width="100%"
+                height={400}
+                value={skillData.instruction || ''}
+                options={{
+                  readOnly: true,
+                  wordWrap: 'on',
+                  minimap: { enabled: false },
+                  lineNumbers: 'on',
+                }}
+              />
             </div>
           </div>
 
@@ -708,31 +679,7 @@ class SkillDetail extends React.Component {
                       }
                     >
                       <Row gutter={16}>
-                        <Col span={12}>
-                          <div className="info-item">
-                            <label>{locale.resourceName || 'Resource Name'}:</label>
-                            <span>{resource.name || '--'}</span>
-                          </div>
-                        </Col>
-                        <Col span={12}>
-                          <div className="info-item">
-                            <label>{locale.resourceType || 'Resource Type'}:</label>
-                            <span>
-                              {resource.type ? (
-                                <Tag type="primary" size="small">
-                                  {resource.type}
-                                </Tag>
-                              ) : (
-                                '--'
-                              )}
-                            </span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row gutter={16}>
                         <Col span={24}>
-                          <div className="info-item">
-                            <label>{locale.resourceContent || 'Resource Content'}:</label>
                             <div className="resource-content">
                               {resource.content ? (
                                 <MonacoEditor
@@ -751,7 +698,6 @@ class SkillDetail extends React.Component {
                               ) : (
                                 <div style={{ padding: '12px', color: '#999' }}>--</div>
                               )}
-                            </div>
                           </div>
                         </Col>
                       </Row>
@@ -791,29 +737,21 @@ class SkillDetail extends React.Component {
           visible={this.state.showPreviewDialog}
           title={locale.previewSkill || 'Preview Skill'}
           onClose={this.handleClosePreview}
-          onCancel={this.handleClosePreview}
-          onOk={this.handleClosePreview}
-          okProps={{
-            children: locale.close || 'Close',
-          }}
-          cancelProps={{
-            children: locale.cancel || 'Cancel',
-          }}
+          footer={[
+            <Button key="close" onClick={this.handleClosePreview}>
+              {locale.close || 'Close'}
+            </Button>
+          ]}
           style={{ width: 1200 }}
           className="skill-preview-dialog"
+          shouldUpdatePosition={false}
         >
           <div className="preview-container">
             <div className="preview-sidebar">
               <div className="preview-sidebar-header">
                 {locale.fileStructure || 'File Structure'}
               </div>
-              <div 
-                className="preview-file-tree"
-                onClick={(e) => {
-                  // Prevent clicks on the file tree container from bubbling
-                  e.stopPropagation();
-                }}
-              >
+              <div className="preview-file-tree">
                 {this.state.fileTree ? this.renderFileTree(this.state.fileTree) : (
                   <div className="file-tree-empty">
                     {locale.noPreviewData || 'No preview data available'}

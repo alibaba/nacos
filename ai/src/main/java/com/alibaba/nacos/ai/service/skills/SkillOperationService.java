@@ -78,4 +78,14 @@ public interface SkillOperationService {
      * @throws NacosException if query failed
      */
     Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
+    
+    /**
+     * Upload skill from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
 }

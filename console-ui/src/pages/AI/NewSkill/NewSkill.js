@@ -1666,27 +1666,9 @@ class NewSkill extends React.Component {
     markdown += `description: ${this.escapeYamlValue(previewData.description || '')}\n`;
     markdown += '---\n\n';
 
-    // Instructions section
+    // Instructions section - directly show instruction content without "## Instructions" header
     if (previewData.instruction && previewData.instruction.trim() !== '') {
-      markdown += `## Instructions\n\n${previewData.instruction}\n\n`;
-    }
-
-    // Resources section
-    if (previewData.resource && Object.keys(previewData.resource).length > 0) {
-      markdown += `## Resources\n\n`;
-      Object.entries(previewData.resource).forEach(([key, resource]) => {
-        const resourceName = resource.name || key;
-        markdown += `### ${resourceName}\n\n`;
-        const resourceId = this.getResourceIdentifier(resource);
-        markdown += `- **Resource ID**: ${resourceId}\n`;
-        if (resource.type && resource.type.trim() !== '') {
-          markdown += `- **Type**: ${resource.type}\n`;
-          markdown += `- **File**: \`${resource.type}/${resourceName}\`\n\n`;
-        } else {
-          markdown += `- **Type**: \n`;
-          markdown += `- **File**: \`${resourceName}\`\n\n`;
-        }
-      });
+      markdown += `${previewData.instruction}\n`;
     }
 
     return markdown;
@@ -1716,15 +1698,15 @@ class NewSkill extends React.Component {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
-      // Also stop immediate propagation to prevent any other handlers
-      if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) {
-        e.nativeEvent.stopImmediatePropagation();
-      }
     }
-    // Use setTimeout to ensure state update happens after event handling
-    setTimeout(() => {
-      this.setState({ selectedFile: file });
-    }, 0);
+    // Clear selectedFile first to force MonacoEditor to unmount, then set new file
+    // This prevents errors when switching between files with different languages
+    this.setState({ selectedFile: null }, () => {
+      // Use setTimeout to ensure the previous editor is fully unmounted
+      setTimeout(() => {
+        this.setState({ selectedFile: file });
+      }, 0);
+    });
   };
 
   renderFileTree = (node, level = 0, parentKey = '') => {
@@ -1732,7 +1714,10 @@ class NewSkill extends React.Component {
       return null;
     }
 
-    const nodeKey = parentKey ? `${parentKey}/${node.name}` : node.name;
+    // Generate unique key: use resourceKey for resources, otherwise use path-based key
+    const nodeKey = node.resourceKey 
+      ? `${parentKey}/${node.resourceKey}` 
+      : (parentKey ? `${parentKey}/${node.name}` : node.name);
     const isSelected = this.state.selectedFile && 
       this.state.selectedFile.name === node.name && 
       this.state.selectedFile.fileType === node.fileType &&
@@ -1762,18 +1747,9 @@ class NewSkill extends React.Component {
             e.stopPropagation();
             this.handleFileClick(node, e);
           }}
-          onMouseDown={(e) => {
-            // Also prevent on mousedown to be extra safe
-            e.preventDefault();
-            e.stopPropagation();
-          }}
         >
           <Icon type="file" style={{ marginRight: 8 }} />
           <span 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
             style={{ pointerEvents: 'none' }}
           >
             {node.name}
@@ -1802,7 +1778,21 @@ class NewSkill extends React.Component {
             <Icon type="file" style={{ marginRight: 8 }} />
             <span>{selectedFile.name}</span>
           </div>
-          <pre className="file-content-markdown">{markdown}</pre>
+          <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px' }}>
+            <MonacoEditor
+              language="markdown"
+              width="100%"
+              height={500}
+              value={markdown}
+              options={{
+                readOnly: true,
+                wordWrap: 'on',
+                minimap: { enabled: false },
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+              }}
+            />
+          </div>
         </div>
       );
     } else if (selectedFile.fileType === 'resource') {
@@ -1834,6 +1824,7 @@ class NewSkill extends React.Component {
               {resource.content ? (
                 <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
                   <MonacoEditor
+                    key={`${selectedFile.resourceKey || selectedFile.name}-${getLanguageFromFileName(resource.name || '')}`}
                     language={getLanguageFromFileName(resource.name || '')}
                     width="100%"
                     height={300}
@@ -2043,13 +2034,24 @@ class NewSkill extends React.Component {
                             </div>
                           }
                         >
-                          <Form.Item label={this.getLocaleValue('resourceContent', 'Resource Content')}>
-                            <Input.TextArea
-                              value={resource.content}
-                              onChange={value => this.handleResourceChange(index, 'content', value)}
-                              placeholder={this.getLocaleValue('resourceContentPlaceholder', 'Enter resource content')}
-                              rows={6}
-                            />
+                          <Form.Item>
+                            <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+                              <MonacoEditor
+                                language={getLanguageFromFileName(resource.name || '')}
+                                width="100%"
+                                height={300}
+                                value={resource.content || ''}
+                                onChange={value => this.handleResourceChange(index, 'content', value)}
+                                options={{
+                                  readOnly: false,
+                                  wordWrap: 'on',
+                                  minimap: { enabled: false },
+                                  lineNumbers: 'on',
+                                  scrollBeyondLastLine: false,
+                                  theme: 'vs-dark-enhanced',
+                                }}
+                              />
+                            </div>
                           </Form.Item>
                         </Collapse.Panel>
                       );
@@ -2317,14 +2319,11 @@ class NewSkill extends React.Component {
           visible={this.state.showPreviewDialog}
           title={this.getLocaleValue('previewSkill', 'Preview Skill')}
           onClose={this.handleClosePreview}
-          onCancel={this.handleClosePreview}
-          onOk={this.handleClosePreview}
-          okProps={{
-            children: this.getLocaleValue('close', 'Close'),
-          }}
-          cancelProps={{
-            children: this.getLocaleValue('cancel', 'Cancel'),
-          }}
+          footer={[
+            <Button key="close" onClick={this.handleClosePreview}>
+              {this.getLocaleValue('close', 'Close')}
+            </Button>
+          ]}
           style={{ width: 1200 }}
           className="skill-preview-dialog"
         >
@@ -2333,13 +2332,7 @@ class NewSkill extends React.Component {
               <div className="preview-sidebar-header">
                 {this.getLocaleValue('fileStructure', 'File Structure')}
               </div>
-              <div 
-                className="preview-file-tree"
-                onClick={(e) => {
-                  // Prevent clicks on the file tree container from bubbling
-                  e.stopPropagation();
-                }}
-              >
+              <div className="preview-file-tree">
                 {this.state.fileTree ? this.renderFileTree(this.state.fileTree) : (
                   <div className="file-tree-empty">
                     {this.getLocaleValue('noPreviewData', 'No preview data available')}
