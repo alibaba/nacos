@@ -41,6 +41,11 @@ public class SkillZipParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillZipParser.class);
     
     private static final String SKILL_MD_FILE = "SKILL.md";
+    private static final String INSTRUCTIONS_HEADER_WITH_SPACE = "## Instructions";
+    private static final String INSTRUCTIONS_HEADER_NO_SPACE = "##Instructions";
+    private static final String DOUBLE_QUOTE = "\"";
+    private static final String SINGLE_QUOTE = "'";
+    private static final String SLASH = "/";
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
             "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
@@ -63,8 +68,11 @@ public class SkillZipParser {
             for (ZipUtils.ZipItem item : zipItems) {
                 String itemName = item.getItemName();
                 // Handle both "SKILL.md" and "{skillName}/SKILL.md" formats
-                if (itemName.endsWith(SKILL_MD_FILE) && 
-                    (itemName.equals(SKILL_MD_FILE) || itemName.endsWith("/" + SKILL_MD_FILE))) {
+                boolean isSkillMdFile = SKILL_MD_FILE.equals(itemName);
+                boolean isSkillMdInSubdir = itemName.endsWith(SLASH + SKILL_MD_FILE);
+                boolean endsWithSkillMd = itemName.endsWith(SKILL_MD_FILE);
+                boolean isSkillMd = isSkillMdFile || isSkillMdInSubdir;
+                if (endsWithSkillMd && isSkillMd) {
                     skillMdContent = item.getItemData();
                     break;
                 }
@@ -155,8 +163,9 @@ public class SkillZipParser {
                 String key = line.substring(0, colonIndex).trim();
                 String value = line.substring(colonIndex + 1).trim();
                 // Remove quotes if present
-                if ((value.startsWith("\"") && value.endsWith("\"")) ||
-                    (value.startsWith("'") && value.endsWith("'"))) {
+                boolean hasDoubleQuotes = value.startsWith(DOUBLE_QUOTE) && value.endsWith(DOUBLE_QUOTE);
+                boolean hasSingleQuotes = value.startsWith(SINGLE_QUOTE) && value.endsWith(SINGLE_QUOTE);
+                if (hasDoubleQuotes || hasSingleQuotes) {
                     value = value.substring(1, value.length() - 1);
                 }
                 result.put(key, value);
@@ -172,7 +181,9 @@ public class SkillZipParser {
     private static String extractInstruction(String markdownContent) {
         // Remove "## Instructions" header if present
         String content = markdownContent.trim();
-        if (content.startsWith("## Instructions") || content.startsWith("##Instructions")) {
+        boolean hasHeaderWithSpace = content.startsWith(INSTRUCTIONS_HEADER_WITH_SPACE);
+        boolean hasHeaderNoSpace = content.startsWith(INSTRUCTIONS_HEADER_NO_SPACE);
+        if (hasHeaderWithSpace || hasHeaderNoSpace) {
             int headerEnd = content.indexOf('\n');
             if (headerEnd > 0) {
                 content = content.substring(headerEnd).trim();

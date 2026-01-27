@@ -281,10 +281,12 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         innerSql.append(" LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
         
         // 外层查询：对分页后的结果进行标签关联
-        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"
+        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
+                          + "a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"
                           + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                           + "FROM (" + innerSql + ") a LEFT JOIN config_tags_relation b ON a.id=b.id "
-                          + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
+                          + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
+                          + "a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
         
         return new MapperResult(sql, paramList);
     }

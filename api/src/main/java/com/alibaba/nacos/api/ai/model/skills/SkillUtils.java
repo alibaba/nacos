@@ -36,6 +36,13 @@ import java.util.Map;
  */
 public class SkillUtils {
     
+    private static final String NEWLINE = "\n";
+    private static final String EMPTY_STRING = "";
+    private static final String COLON = ":";
+    private static final String DOUBLE_QUOTE = "\"";
+    private static final String SINGLE_QUOTE = "'";
+    private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
+    
     /**
      * Strategy for handling existing skill directories.
      */
@@ -64,7 +71,7 @@ public class SkillUtils {
      */
     public static String toMarkdown(Skill skill) {
         if (skill == null) {
-            return "";
+            return EMPTY_STRING;
         }
         
         StringBuilder markdown = new StringBuilder();
@@ -80,8 +87,8 @@ public class SkillUtils {
             String instruction = skill.getInstruction().trim();
             markdown.append(instruction);
             // Ensure there's a newline at the end if instruction doesn't end with one
-            if (!instruction.isEmpty() && !instruction.endsWith("\n")) {
-                markdown.append("\n");
+            if (!instruction.isEmpty() && !instruction.endsWith(NEWLINE)) {
+                markdown.append(NEWLINE);
             }
         }
         
@@ -97,13 +104,14 @@ public class SkillUtils {
      */
     private static String escapeYamlValue(String value) {
         if (value == null) {
-            return "";
+            return EMPTY_STRING;
         }
         
         // If value contains special characters, wrap in double quotes
-        if (value.contains(":") || value.contains("\"") || value.contains("'") || value.contains("\n")) {
+        if (value.contains(COLON) || value.contains(DOUBLE_QUOTE) || value.contains(SINGLE_QUOTE)
+            || value.contains(NEWLINE)) {
             // Escape double quotes in the value
-            return "\"" + value.replace("\"", "\\\"") + "\"";
+            return DOUBLE_QUOTE + value.replace(DOUBLE_QUOTE, ESCAPED_DOUBLE_QUOTE) + DOUBLE_QUOTE;
         }
         
         return value;
@@ -355,8 +363,9 @@ public class SkillUtils {
             return;
         }
         
+        // Delete files before directories
         Files.walk(directory)
-                .sorted((a, b) -> b.compareTo(a)) // Delete files before directories
+                .sorted((a, b) -> b.compareTo(a))
                 .forEach(path -> {
                     try {
                         Files.delete(path);

@@ -58,12 +58,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
     
     private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
+    private static final String DOUBLE_UNDERSCORE = "__";
+    private static final String FILE_EXTENSION_PATTERN = ".*\\.[a-zA-Z0-9]+$";
     
     /**
      * Validate that name does not contain double underscores.
      */
     private void validateNoDoubleUnderscore(String name, String fieldName) throws NacosException {
-        if (StringUtils.isNotBlank(name) && name.contains("__")) {
+        if (StringUtils.isNotBlank(name) && name.contains(DOUBLE_UNDERSCORE)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     String.format("%s cannot contain double underscores (__)", fieldName));
         }
@@ -81,11 +83,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // If resourcename ends with .xx, convert the last . to __
         String processedName = resourceName;
-        if (resourceName.matches(".*\\.[a-zA-Z0-9]+$")) {
+        if (resourceName.matches(FILE_EXTENSION_PATTERN)) {
             // Replace only the last dot before the extension
             int lastDotIndex = resourceName.lastIndexOf('.');
             if (lastDotIndex > 0) {
-                processedName = resourceName.substring(0, lastDotIndex) + "__" + resourceName.substring(lastDotIndex + 1);
+                processedName = resourceName.substring(0, lastDotIndex) + DOUBLE_UNDERSCORE
+                    + resourceName.substring(lastDotIndex + 1);
             }
         }
         
