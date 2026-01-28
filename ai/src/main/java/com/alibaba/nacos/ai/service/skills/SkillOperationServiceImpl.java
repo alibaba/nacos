@@ -143,7 +143,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             long uniformId = System.currentTimeMillis();
             ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, mainConfigInfo.getGroup(), uniformId);
             ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
-            configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+            Boolean mainPublishResult = configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+            if (mainPublishResult == null || !mainPublishResult) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        String.format("Failed to publish main config for skill: %s", skill.getName()));
+            }
             
             // 4. Build and publish resource configs
             if (skill.getResource() != null && !skill.getResource().isEmpty()) {
@@ -155,7 +159,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, 
                             resourceConfigInfo.getGroup(), resourceConfigInfo.getDataId(), uniformId);
                     ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
-                    configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    Boolean resourcePublishResult = configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    if (resourcePublishResult == null || !resourcePublishResult) {
+                        throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                                String.format("Failed to publish resource config for skill: %s, resource: %s", 
+                                        skill.getName(), resource.getName()));
+                    }
                 }
             }
             
@@ -257,7 +266,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, mainConfigInfo.getGroup(), uniformId);
         ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
         mainConfigRequest.setUpdateForExist(Boolean.TRUE);
-        configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+        Boolean mainUpdateResult = configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+        if (mainUpdateResult == null || !mainUpdateResult) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                    String.format("Failed to update main config for skill: %s", skill.getName()));
+        }
         
         // 6. Update all existing resource configs with uniformId
         if (existingMainConfig.getResources() != null && !existingMainConfig.getResources().isEmpty()) {
@@ -277,7 +290,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                             resourceConfigInfo.getGroup(), resourceConfigInfo.getDataId(), uniformId);
                     ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
                     resourceConfigRequest.setUpdateForExist(Boolean.TRUE);
-                    configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    Boolean resourceUpdateResult = configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    if (resourceUpdateResult == null || !resourceUpdateResult) {
+                        throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                                String.format("Failed to update resource config for skill: %s, resource: %s", 
+                                        skill.getName(), existingResource.getName()));
+                    }
                 }
             }
         }
