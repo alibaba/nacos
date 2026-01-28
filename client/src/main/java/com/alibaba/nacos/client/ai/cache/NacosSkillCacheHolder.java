@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.concurrent.Executor;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.client.ai.event.SkillChangedEvent;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -39,6 +40,7 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,13 +99,13 @@ public class NacosSkillCacheHolder implements Closeable {
         SkillSubscriptionInfo subscriptionInfo = new SkillSubscriptionInfo(skillName);
         subscriptionInfo.setCurrentSkill(skill);
         
-        // Build Group
-        String skillGroup = "nacos-ai-skill-" + skillName;
+        // Build main config info
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
         
         // Add listener for main config
         Listener mainConfigListener = new SkillConfigListener(skillName, true, null);
         try {
-            configService.addListener("main.json", skillGroup, mainConfigListener);
+            configService.addListener(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), mainConfigListener);
             subscriptionInfo.setMainConfigListener(mainConfigListener);
         } catch (NacosException e) {
             LOGGER.warn("Failed to add listener for main config: skillName={}, error={}", skillName, e.getMessage());
@@ -111,16 +113,24 @@ public class NacosSkillCacheHolder implements Closeable {
         
         // Add listeners for all resource configs
         if (skill != null && skill.getResource() != null && !skill.getResource().isEmpty()) {
-            String resourceGroup = skillGroup + "_resource";
-            for (String resourceName : skill.getResource().keySet()) {
-                String resourceDataId = resourceName + ".json";
-                Listener resourceListener = new SkillConfigListener(skillName, false, resourceName);
-                try {
-                    configService.addListener(resourceDataId, resourceGroup, resourceListener);
-                    subscriptionInfo.getResourceListeners().put(resourceName, resourceListener);
-                } catch (NacosException e) {
-                    LOGGER.warn("Failed to add listener for resource config: skillName={}, resourceName={}, error={}",
-                            skillName, resourceName, e.getMessage());
+            // Load main config to get resourceId mapping
+            SkillMainConfig mainConfig = loadMainConfig(skillName, mainConfigInfo.getGroup());
+            if (mainConfig != null && mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
+                for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                    // Generate resourceId from type and name
+                    String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
+                    
+                    // Build resource config info using resourceRef
+                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                            skillName, resourceRef.getType(), resourceRef.getName());
+                    Listener resourceListener = new SkillConfigListener(skillName, false, resourceId);
+                    try {
+                        configService.addListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), resourceListener);
+                        subscriptionInfo.getResourceListeners().put(resourceId, resourceListener);
+                    } catch (NacosException e) {
+                        LOGGER.warn("Failed to add listener for resource config: skillName={}, resourceId={}, error={}",
+                                skillName, resourceId, e.getMessage());
+                    }
                 }
             }
         }
@@ -150,29 +160,43 @@ public class NacosSkillCacheHolder implements Closeable {
             return;
         }
         
-        // Build Group
-        String skillGroup = "nacos-ai-skill-" + skillName;
+        // Build main config info
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
         
         // Remove main config listener
         if (subscriptionInfo.getMainConfigListener() != null) {
             try {
-                configService.removeListener("main.json", skillGroup, subscriptionInfo.getMainConfigListener());
+                configService.removeListener(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), 
+                        subscriptionInfo.getMainConfigListener());
             } catch (Exception e) {
                 LOGGER.warn("Failed to remove listener for main config: skillName={}, error={}", skillName, e.getMessage());
             }
         }
         
         // Remove all resource config listeners
-        String resourceGroup = skillGroup + "_resource";
-        for (Map.Entry<String, Listener> entry : subscriptionInfo.getResourceListeners().entrySet()) {
-            String resourceName = entry.getKey();
-            Listener listener = entry.getValue();
-            String resourceDataId = resourceName + ".json";
-            try {
-                configService.removeListener(resourceDataId, resourceGroup, listener);
-            } catch (Exception e) {
-                LOGGER.warn("Failed to remove listener for resource config: skillName={}, resourceName={}, error={}",
-                        skillName, resourceName, e.getMessage());
+        // Note: We need to load mainConfig to get resourceRef info for building ConfigInfo
+        SkillMainConfig mainConfig = loadMainConfig(skillName, mainConfigInfo.getGroup());
+        if (mainConfig != null && mainConfig.getResources() != null) {
+            Map<String, SkillResourceRef> resourceRefMap = new HashMap<>(
+                    mainConfig.getResources().size() > 0 ? (int) (mainConfig.getResources().size() / 0.75f + 1) : 16);
+            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
+                resourceRefMap.put(resourceId, resourceRef);
+            }
+            for (Map.Entry<String, Listener> entry : subscriptionInfo.getResourceListeners().entrySet()) {
+                String resourceId = entry.getKey();
+                Listener listener = entry.getValue();
+                SkillResourceRef resourceRef = resourceRefMap.get(resourceId);
+                if (resourceRef != null) {
+                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                            skillName, resourceRef.getType(), resourceRef.getName());
+                    try {
+                        configService.removeListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), listener);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to remove listener for resource config: skillName={}, resourceId={}, error={}",
+                                skillName, resourceId, e.getMessage());
+                    }
+                }
             }
         }
         
@@ -189,29 +213,12 @@ public class NacosSkillCacheHolder implements Closeable {
      * @return Skill object, nullable if skill not found
      */
     private Skill loadSkill(String skillName) {
-        // Build Group
-        String skillGroup = "nacos-ai-skill-" + skillName;
+        // Build main config info
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
         
-        // Query main config (main.json)
-        String mainConfigContent;
-        try {
-            mainConfigContent = configService.getConfig("main.json", skillGroup, 3000);
-        } catch (NacosException e) {
-            LOGGER.warn("Skill main configuration not found: skillName={}, error={}", skillName, e.getMessage());
-            return null;
-        }
-        
-        if (StringUtils.isBlank(mainConfigContent)) {
-            LOGGER.warn("Skill main configuration is blank: skillName={}", skillName);
-            return null;
-        }
-        
-        // Parse main config
-        SkillMainConfig mainConfig;
-        try {
-            mainConfig = JacksonUtils.toObj(mainConfigContent, SkillMainConfig.class);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to parse skill main configuration: skillName={}, error={}", skillName, e.getMessage());
+        // Load main config
+        SkillMainConfig mainConfig = loadMainConfig(skillName, mainConfigInfo.getGroup());
+        if (mainConfig == null) {
             return null;
         }
         
@@ -224,31 +231,32 @@ public class NacosSkillCacheHolder implements Closeable {
         
         // Query all Resource configs
         Map<String, SkillResource> resourceMap = new HashMap<>(
-                mainConfig.getResource() != null ? mainConfig.getResource().size() : 16);
-        if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
-            String resourceGroup = skillGroup + "_resource";
-            for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {
-                String resourceName = entry.getKey();
-                SkillResourceRef resourceRef = entry.getValue();
+                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
+        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
+            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                // Generate resourceId from type and name
+                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
                 
-                // Query resource config
-                String resourceDataId = resourceName + ".json";
+                // Query resource config using resourceRef info
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skillName, resourceRef.getType(), resourceRef.getName());
                 String resourceContent;
                 try {
-                    resourceContent = configService.getConfig(resourceDataId, resourceGroup, 3000);
+                    resourceContent = configService.getConfig(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), 3000);
                 } catch (NacosException e) {
                     LOGGER.warn("Resource configuration not found: dataId={}, group={}, error={}",
-                            resourceDataId, resourceGroup, e.getMessage());
+                            resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
                     continue;
                 }
                 
                 if (StringUtils.isNotBlank(resourceContent)) {
                     try {
                         SkillResource resource = JacksonUtils.toObj(resourceContent, SkillResource.class);
-                        resourceMap.put(resourceName, resource);
+                        // Use resource name as key (from resource object, not resourceId)
+                        resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
                     } catch (Exception e) {
                         LOGGER.warn("Failed to parse resource configuration: dataId={}, group={}, error={}",
-                                resourceDataId, resourceGroup, e.getMessage());
+                                resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
                     }
                 }
             }
@@ -256,6 +264,38 @@ public class NacosSkillCacheHolder implements Closeable {
         skill.setResource(resourceMap);
         
         return skill;
+    }
+    
+    /**
+     * Load main config from configuration.
+     *
+     * @param skillName name of skill
+     * @param skillGroup group of skill
+     * @return SkillMainConfig object, nullable if not found
+     */
+    private SkillMainConfig loadMainConfig(String skillName, String skillGroup) {
+        // Query main config (skill.json)
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
+        String mainConfigContent;
+        try {
+            mainConfigContent = configService.getConfig(mainConfigInfo.getDataId(), skillGroup, 3000);
+        } catch (NacosException e) {
+            LOGGER.warn("Skill main configuration not found: skillName={}, error={}", skillName, e.getMessage());
+            return null;
+        }
+        
+        if (StringUtils.isBlank(mainConfigContent)) {
+            LOGGER.warn("Skill main configuration is blank: skillName={}", skillName);
+            return null;
+        }
+        
+        // Parse main config
+        try {
+            return JacksonUtils.toObj(mainConfigContent, SkillMainConfig.class);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse skill main configuration: skillName={}, error={}", skillName, e.getMessage());
+            return null;
+        }
     }
     
     /**
@@ -306,42 +346,74 @@ public class NacosSkillCacheHolder implements Closeable {
             return;
         }
         
-        Set<String> oldResourceNames = oldSkill != null && oldSkill.getResource() != null
-                ? new HashSet<>(oldSkill.getResource().keySet()) : new HashSet<>();
-        Set<String> newResourceNames = newSkill != null && newSkill.getResource() != null
-                ? new HashSet<>(newSkill.getResource().keySet()) : new HashSet<>();
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
         
-        String skillGroup = "nacos-ai-skill-" + skillName;
-        String resourceGroup = skillGroup + "_resource";
+        // Load main configs to get resourceId mappings
+        SkillMainConfig oldMainConfig = oldSkill != null ? loadMainConfig(skillName, mainConfigInfo.getGroup()) : null;
+        SkillMainConfig newMainConfig = newSkill != null ? loadMainConfig(skillName, mainConfigInfo.getGroup()) : null;
+        
+        int oldResourceSize = oldMainConfig != null && oldMainConfig.getResources() != null 
+                ? oldMainConfig.getResources().size() : 0;
+        int newResourceSize = newMainConfig != null && newMainConfig.getResources() != null 
+                ? newMainConfig.getResources().size() : 0;
+        
+        Set<String> oldResourceIds = new HashSet<>(oldResourceSize > 0 ? (int) (oldResourceSize / 0.75f + 1) : 16);
+        Map<String, SkillResourceRef> oldResourceRefMap = new HashMap<>(
+                oldResourceSize > 0 ? (int) (oldResourceSize / 0.75f + 1) : 16);
+        if (oldMainConfig != null && oldMainConfig.getResources() != null) {
+            for (SkillResourceRef ref : oldMainConfig.getResources()) {
+                String resourceId = SkillUtils.generateResourceId(ref.getType(), ref.getName());
+                oldResourceIds.add(resourceId);
+                oldResourceRefMap.put(resourceId, ref);
+            }
+        }
+        Set<String> newResourceIds = new HashSet<>(newResourceSize > 0 ? (int) (newResourceSize / 0.75f + 1) : 16);
+        Map<String, SkillResourceRef> newResourceRefMap = new HashMap<>(
+                newResourceSize > 0 ? (int) (newResourceSize / 0.75f + 1) : 16);
+        if (newMainConfig != null && newMainConfig.getResources() != null) {
+            for (SkillResourceRef ref : newMainConfig.getResources()) {
+                String resourceId = SkillUtils.generateResourceId(ref.getType(), ref.getName());
+                newResourceIds.add(resourceId);
+                newResourceRefMap.put(resourceId, ref);
+            }
+        }
         
         // Remove listeners for deleted resources
-        Set<String> toRemove = new HashSet<>(oldResourceNames);
-        toRemove.removeAll(newResourceNames);
-        for (String resourceName : toRemove) {
-            Listener listener = subscriptionInfo.getResourceListeners().remove(resourceName);
+        Set<String> toRemove = new HashSet<>(oldResourceIds);
+        toRemove.removeAll(newResourceIds);
+        for (String resourceId : toRemove) {
+            Listener listener = subscriptionInfo.getResourceListeners().remove(resourceId);
             if (listener != null) {
-                String resourceDataId = resourceName + ".json";
-                try {
-                    configService.removeListener(resourceDataId, resourceGroup, listener);
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to remove listener for deleted resource: skillName={}, resourceName={}, error={}",
-                            skillName, resourceName, e.getMessage());
+                SkillResourceRef resourceRef = oldResourceRefMap.get(resourceId);
+                if (resourceRef != null) {
+                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                            skillName, resourceRef.getType(), resourceRef.getName());
+                    try {
+                        configService.removeListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), listener);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to remove listener for deleted resource: skillName={}, resourceId={}, error={}",
+                                skillName, resourceId, e.getMessage());
+                    }
                 }
             }
         }
         
         // Add listeners for new resources
-        Set<String> toAdd = new HashSet<>(newResourceNames);
-        toAdd.removeAll(oldResourceNames);
-        for (String resourceName : toAdd) {
-            String resourceDataId = resourceName + ".json";
-            Listener resourceListener = new SkillConfigListener(skillName, false, resourceName);
-            try {
-                configService.addListener(resourceDataId, resourceGroup, resourceListener);
-                subscriptionInfo.getResourceListeners().put(resourceName, resourceListener);
-            } catch (NacosException e) {
-                LOGGER.warn("Failed to add listener for new resource: skillName={}, resourceName={}, error={}",
-                        skillName, resourceName, e.getMessage());
+        Set<String> toAdd = new HashSet<>(newResourceIds);
+        toAdd.removeAll(oldResourceIds);
+        for (String resourceId : toAdd) {
+            SkillResourceRef resourceRef = newResourceRefMap.get(resourceId);
+            if (resourceRef != null) {
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skillName, resourceRef.getType(), resourceRef.getName());
+                Listener resourceListener = new SkillConfigListener(skillName, false, resourceId);
+                try {
+                    configService.addListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), resourceListener);
+                    subscriptionInfo.getResourceListeners().put(resourceId, resourceListener);
+                } catch (NacosException e) {
+                    LOGGER.warn("Failed to add listener for new resource: skillName={}, resourceId={}, error={}",
+                            skillName, resourceId, e.getMessage());
+                }
             }
         }
     }
@@ -455,13 +527,13 @@ public class NacosSkillCacheHolder implements Closeable {
     }
     
     /**
-     * Skill main config (from main.json).
+     * Skill main config (from skill.json).
      */
     private static class SkillMainConfig {
         private String name;
         private String description;
         private String instruction;
-        private Map<String, SkillResourceRef> resource;
+        private List<SkillResourceRef> resources;
         
         public String getName() {
             return name;
@@ -487,17 +559,17 @@ public class NacosSkillCacheHolder implements Closeable {
             this.instruction = instruction;
         }
         
-        public Map<String, SkillResourceRef> getResource() {
-            return resource;
+        public List<SkillResourceRef> getResources() {
+            return resources;
         }
         
-        public void setResource(Map<String, SkillResourceRef> resource) {
-            this.resource = resource;
+        public void setResources(List<SkillResourceRef> resources) {
+            this.resources = resources;
         }
     }
     
     /**
-     * Skill resource reference (in main.json).
+     * Skill resource reference (in skill.json).
      */
     private static class SkillResourceRef {
         private String name;

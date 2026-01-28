@@ -34,6 +34,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -61,6 +62,7 @@ import org.slf4j.Logger;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -348,13 +350,13 @@ public class NacosAiService implements AiService {
                     "Required parameter `skillName` not present");
         }
         
-        // Build Group
-        String skillGroup = "nacos-ai-skill-" + skillName;
+        // Build main config info
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
         
-        // Query main config (main.json)
+        // Query main config (skill.json)
         String mainConfigContent;
         try {
-            mainConfigContent = configService.getConfig("main.json", skillGroup, 3000);
+            mainConfigContent = configService.getConfig(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), 3000);
         } catch (NacosException e) {
             throw new NacosException(NacosException.NOT_FOUND,
                     "Skill main configuration not found for skillName: " + skillName + ", error: " + e.getMessage());
@@ -383,31 +385,32 @@ public class NacosAiService implements AiService {
         
         // Query all Resource configs
         Map<String, SkillResource> resourceMap = new HashMap<>(
-                mainConfig.getResource() != null ? mainConfig.getResource().size() : 16);
-        if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
-            String resourceGroup = skillGroup + "_resource";
-            for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {
-                String resourceName = entry.getKey();
-                SkillResourceRef resourceRef = entry.getValue();
+                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
+        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
+            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                // Generate resourceId from type and name
+                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
                 
-                // Query resource config
-                String resourceDataId = resourceName + ".json";
+                // Query resource config using resourceRef info
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skillName, resourceRef.getType(), resourceRef.getName());
                 String resourceContent;
                 try {
-                    resourceContent = configService.getConfig(resourceDataId, resourceGroup, 3000);
+                    resourceContent = configService.getConfig(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), 3000);
                 } catch (NacosException e) {
                     LOGGER.warn("Resource configuration not found: dataId={}, group={}, error={}",
-                            resourceDataId, resourceGroup, e.getMessage());
+                            resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
                     continue;
                 }
                 
                 if (StringUtils.isNotBlank(resourceContent)) {
                     try {
                         SkillResource resource = JacksonUtils.toObj(resourceContent, SkillResource.class);
-                        resourceMap.put(resourceName, resource);
+                        // Use resource name as key (from resource object, not resourceId)
+                        resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
                     } catch (Exception e) {
                         LOGGER.warn("Failed to parse resource configuration: dataId={}, group={}, error={}",
-                                resourceDataId, resourceGroup, e.getMessage());
+                                resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
                     }
                 }
             }
@@ -418,13 +421,13 @@ public class NacosAiService implements AiService {
     }
     
     /**
-     * Skill main config (from main.json).
+     * Skill main config (from skill.json).
      */
     private static class SkillMainConfig {
         private String name;
         private String description;
         private String instruction;
-        private Map<String, SkillResourceRef> resource;
+        private List<SkillResourceRef> resources;
         
         public String getName() {
             return name;
@@ -450,17 +453,17 @@ public class NacosAiService implements AiService {
             this.instruction = instruction;
         }
         
-        public Map<String, SkillResourceRef> getResource() {
-            return resource;
+        public List<SkillResourceRef> getResources() {
+            return resources;
         }
         
-        public void setResource(Map<String, SkillResourceRef> resource) {
-            this.resource = resource;
+        public void setResources(List<SkillResourceRef> resources) {
+            this.resources = resources;
         }
     }
     
     /**
-     * Skill resource reference (in main.json).
+     * Skill resource reference (in skill.json).
      */
     private static class SkillResourceRef {
         private String name;
