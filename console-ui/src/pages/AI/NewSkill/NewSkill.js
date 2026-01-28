@@ -544,6 +544,7 @@ class NewSkill extends React.Component {
         const decoder = new TextDecoder();
         let buffer = '';
         let currentEventType = 'message'; // Default event type
+        let pendingData = null; // Store data when event type comes after data
 
         const readStream = () => {
           this.streamReader
@@ -560,23 +561,48 @@ class NewSkill extends React.Component {
 
               lines.forEach(line => {
                 if (line.startsWith('event:')) {
-                  currentEventType = line.substring(6).trim();
+                  const eventType = line.substring(6).trim();
+                  currentEventType = eventType;
+                  // If we have pending data and this is an error event, handle it now
+                  if (eventType === 'error' && pendingData) {
+                    const errorMessage = pendingData.explanation || pendingData.message || this.getLocaleValue('generateFailed', '生成失败');
+                    Message.error(errorMessage);
+                    this.setState({
+                      streaming: false,
+                      generating: false,
+                      error: errorMessage,
+                    });
+                    pendingData = null;
+                  }
                 } else if (line.startsWith('data:')) {
                   const dataStr = line.substring(5).trim();
                   if (dataStr) {
                     try {
                       const data = JSON.parse(dataStr);
-                      // Handle error event
+                      // Handle error event - check if current event type is error
                       if (currentEventType === 'error') {
-                        const errorMessage = data.explanation || data.message || '生成失败';
+                        const errorMessage = data.explanation || data.message || this.getLocaleValue('generateFailed', '生成失败');
                         Message.error(errorMessage);
                         this.setState({
                           streaming: false,
                           generating: false,
                           error: errorMessage,
                         });
+                      } else if (data.done && data.explanation && !data.skill) {
+                        // Handle case where error comes in data with done=true but no skill
+                        // This might be an error response
+                        const errorMessage = data.explanation || data.message || this.getLocaleValue('generateFailed', '生成失败');
+                        Message.error(errorMessage);
+                        this.setState({
+                          streaming: false,
+                          generating: false,
+                          error: errorMessage,
+                        });
+                        pendingData = null; // Clear pending data since we've handled the error
                       } else {
-                      this.handleSSEMessage(data);
+                        // Store data temporarily in case event:error comes after
+                        pendingData = data;
+                        this.handleSSEMessage(data);
                       }
                     } catch (e) {
                       // Failed to parse SSE data

@@ -302,6 +302,8 @@ class SkillOptimizeDialog extends React.Component {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let currentEventType = 'message'; // Default event type
+        let pendingData = null; // Store data when event type comes after data
 
         const readStream = () => {
           reader
@@ -339,19 +341,58 @@ class SkillOptimizeDialog extends React.Component {
               buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
               lines.forEach(line => {
-                if (line.startsWith('data:')) {
+                if (line.startsWith('event:')) {
+                  const eventType = line.substring(6).trim();
+                  currentEventType = eventType;
+                  // If we have pending data and this is an error event, handle it now
+                  if (eventType === 'error' && pendingData) {
+                    const { locale = {} } = this.props;
+                    const errorMessage = pendingData.explanation || pendingData.message || locale.optimizeFailed || '优化失败';
+                    Message.error(errorMessage);
+                    this.setState({
+                      streaming: false,
+                      loading: false,
+                      error: errorMessage,
+                    });
+                    pendingData = null;
+                  }
+                } else if (line.startsWith('data:')) {
                   const dataStr = line.substring(5).trim();
                   if (dataStr) {
                     try {
                       const data = JSON.parse(dataStr);
-                      this.handleSSEMessage(data);
+                      // Handle error event - check if current event type is error
+                      if (currentEventType === 'error') {
+                        const { locale = {} } = this.props;
+                        const errorMessage = data.explanation || data.message || locale.optimizeFailed || '优化失败';
+                        Message.error(errorMessage);
+                        this.setState({
+                          streaming: false,
+                          loading: false,
+                          error: errorMessage,
+                        });
+                      } else if (data.done && data.explanation && !data.optimizedSkill) {
+                        // Handle case where error comes in data with done=true but no optimizedSkill
+                        // This might be an error response
+                        const { locale = {} } = this.props;
+                        const errorMessage = data.explanation || data.message || locale.optimizeFailed || '优化失败';
+                        Message.error(errorMessage);
+                        this.setState({
+                          streaming: false,
+                          loading: false,
+                          error: errorMessage,
+                        });
+                        pendingData = null; // Clear pending data since we've handled the error
+                      } else {
+                        // Store data temporarily in case event:error comes after
+                        pendingData = data;
+                        this.handleSSEMessage(data);
+                      }
                     } catch (e) {
                       // Failed to parse SSE data
+                      console.error('Failed to parse SSE data:', e, dataStr);
                     }
                   }
-                } else if (line.startsWith('event:')) {
-                  const eventType = line.substring(6).trim();
-                  // Handle event type if needed
                 }
               });
 
