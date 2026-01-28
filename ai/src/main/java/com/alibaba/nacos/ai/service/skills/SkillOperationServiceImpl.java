@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -41,6 +42,7 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +61,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
     private static final String DOUBLE_UNDERSCORE = "__";
-    private static final String FILE_EXTENSION_PATTERN = ".*\\.[a-zA-Z0-9]+$";
     
     /**
      * Validate that name does not contain double underscores.
@@ -71,33 +72,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
     }
     
-    /**
-     * Generate resource ID from resource type and name.
-     * Format: {type}_{resourcename}
-     * If resourcename ends with .xx, convert the last . to __
-     */
-    private String generateResourceId(String type, String resourceName) {
-        if (StringUtils.isBlank(resourceName)) {
-            return "";
-        }
-        
-        // If resourcename ends with .xx, convert the last . to __
-        String processedName = resourceName;
-        if (resourceName.matches(FILE_EXTENSION_PATTERN)) {
-            // Replace only the last dot before the extension
-            int lastDotIndex = resourceName.lastIndexOf('.');
-            if (lastDotIndex > 0) {
-                processedName = resourceName.substring(0, lastDotIndex) + DOUBLE_UNDERSCORE
-                    + resourceName.substring(lastDotIndex + 1);
-            }
-        }
-        
-        if (StringUtils.isNotBlank(type)) {
-            return type + "_" + processedName;
-        } else {
-            return processedName;
-        }
-    }
     
     /**
      * Parse resource ID to get type and resource name.
@@ -165,22 +139,32 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
             
             // 3. Build main config (skill.json)
-            String skillGroup = "skill_" + skill.getName();
-            ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, skillGroup);
+            SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
+            long uniformId = System.currentTimeMillis();
+            ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, mainConfigInfo.getGroup(), uniformId);
             ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
-            mainConfigRequest.setUpdateForExist(Boolean.FALSE);
-            configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+            Boolean mainPublishResult = configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+            if (mainPublishResult == null || !mainPublishResult) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        String.format("Failed to publish main config for skill: %s", skill.getName()));
+            }
             
             // 4. Build and publish resource configs
             if (skill.getResource() != null && !skill.getResource().isEmpty()) {
                 for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                     SkillResource resource = entry.getValue();
-                    String resourceId = generateResourceId(resource.getType(), resource.getName());
+                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                            skill.getName(), resource.getType(), resource.getName());
                     
-                    ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, skillGroup, resourceId);
+                    ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, 
+                            resourceConfigInfo.getGroup(), resourceConfigInfo.getDataId(), uniformId);
                     ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
-                    resourceConfigRequest.setUpdateForExist(Boolean.FALSE);
-                    configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    Boolean resourcePublishResult = configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    if (resourcePublishResult == null || !resourcePublishResult) {
+                        throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                                String.format("Failed to publish resource config for skill: %s, resource: %s", 
+                                        skill.getName(), resource.getName()));
+                    }
                 }
             }
             
@@ -197,9 +181,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill getSkillDetail(String namespaceId, String skillName) throws NacosException {
         // 1. Query main config
-        String skillGroup = "skill_" + skillName;
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("skill.json", skillGroup,
-                namespaceId);
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
+                mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
@@ -219,15 +203,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // 4. Query all resource configs
         Map<String, SkillResource> resourceMap = new HashMap<>(
-                mainConfig.getResource() != null ? mainConfig.getResource().size() : 16);
-        if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
-            for (Map.Entry<String, SkillResourceRef> entry : mainConfig.getResource().entrySet()) {
-                String resourceId = entry.getKey();
+                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
+        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
+            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                // Generate resourceId from type and name
+                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
                 
-                // Query resource config
-                String resourceDataId = "resource_" + resourceId + ".json";
+                // Query resource config using resourceRef info
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skillName, resourceRef.getType(), resourceRef.getName());
                 ConfigQueryChainRequest resourceRequest = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                        resourceDataId, skillGroup, namespaceId);
+                        resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), namespaceId);
                 ConfigQueryChainResponse resourceResponse = configQueryChainService.handle(resourceRequest);
                 
                 if (resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL
@@ -236,7 +222,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     // Use resource name as key (from resource object, not resourceId)
                     resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
                 } else {
-                    LOGGER.warn("Resource configuration not found: dataId={}, group={}", resourceDataId, skillGroup);
+                    LOGGER.warn("Resource configuration not found: dataId={}, group={}", 
+                            resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup());
                 }
             }
         }
@@ -258,10 +245,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
         
-        // 2. Check if skill exists
-        String skillGroup = "skill_" + skill.getName();
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("skill.json", skillGroup,
-                namespaceId);
+        // 2. Check if skill exists and get existing main config
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
+                mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
@@ -269,22 +256,47 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill not found: " + skill.getName());
         }
         
-        // 3. Update main config
-        ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, skillGroup);
+        // 3. Parse existing main config to get all existing resources
+        SkillMainConfig existingMainConfig = JacksonUtils.toObj(response.getContent(), SkillMainConfig.class);
+        
+        // 4. Generate uniform timestamp for all configs in this update
+        long uniformId = System.currentTimeMillis();
+        
+        // 5. Update main config with uniformId
+        ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, mainConfigInfo.getGroup(), uniformId);
         ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
         mainConfigRequest.setUpdateForExist(Boolean.TRUE);
-        configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+        Boolean mainUpdateResult = configOperationService.publishConfig(mainConfigForm, mainConfigRequest, null);
+        if (mainUpdateResult == null || !mainUpdateResult) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                    String.format("Failed to update main config for skill: %s", skill.getName()));
+        }
         
-        // 4. Update resource configs
-        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                SkillResource resource = entry.getValue();
-                String resourceId = generateResourceId(resource.getType(), resource.getName());
+        // 6. Update all existing resource configs with uniformId
+        if (existingMainConfig.getResources() != null && !existingMainConfig.getResources().isEmpty()) {
+            for (SkillResourceRef resourceRef : existingMainConfig.getResources()) {
+                // Query existing resource config
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skill.getName(), resourceRef.getType(), resourceRef.getName());
+                ConfigQueryChainRequest resourceRequest = ConfigQueryChainRequest.buildConfigQueryChainRequest(
+                        resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), namespaceId);
+                ConfigQueryChainResponse resourceResponse = configQueryChainService.handle(resourceRequest);
                 
-                ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, skillGroup, resourceId);
-                ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
-                resourceConfigRequest.setUpdateForExist(Boolean.TRUE);
-                configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                if (resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL
+                        || resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY) {
+                    // Load existing resource and update with uniformId
+                    SkillResource existingResource = JacksonUtils.toObj(resourceResponse.getContent(), SkillResource.class);
+                    ConfigForm resourceConfigForm = buildResourceConfigForm(existingResource, namespaceId, 
+                            resourceConfigInfo.getGroup(), resourceConfigInfo.getDataId(), uniformId);
+                    ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
+                    resourceConfigRequest.setUpdateForExist(Boolean.TRUE);
+                    Boolean resourceUpdateResult = configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
+                    if (resourceUpdateResult == null || !resourceUpdateResult) {
+                        throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                                String.format("Failed to update resource config for skill: %s, resource: %s", 
+                                        skill.getName(), existingResource.getName()));
+                    }
+                }
             }
         }
         
@@ -295,9 +307,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void deleteSkill(String namespaceId, String skillName) throws NacosException {
         // 1. Query main config to get resource list
-        String skillGroup = "skill_" + skillName;
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest("skill.json", skillGroup,
-                namespaceId);
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
+                mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
@@ -306,34 +318,37 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // 2. Delete all resource configs
         SkillMainConfig mainConfig = JacksonUtils.toObj(response.getContent(), SkillMainConfig.class);
-        if (mainConfig.getResource() != null && !mainConfig.getResource().isEmpty()) {
-            for (String resourceId : mainConfig.getResource().keySet()) {
-                String resourceDataId = "resource_" + resourceId + ".json";
-                configOperationService.deleteConfig(resourceDataId, skillGroup, namespaceId, null, null, "nacos",
-                        null);
+        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
+            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skillName, resourceRef.getType(), resourceRef.getName());
+                configOperationService.deleteConfig(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), 
+                        namespaceId, null, null, "nacos", null);
             }
         }
         
         // 3. Delete main config
-        configOperationService.deleteConfig("skill.json", skillGroup, namespaceId, null, null, "nacos", null);
+        configOperationService.deleteConfig(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), 
+                namespaceId, null, null, "nacos", null);
     }
     
     @Override
     public Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
         // Only query skill.json (main config), not resource_*.json
-        String dataId = "skill.json";
+        String dataId = SkillUtils.SKILL_MAIN_DATA_ID;
         String groupPattern;
         
         if (StringUtils.isEmpty(skillName)) {
             // Query all skills: group=skill_*
-            groupPattern = "skill_" + Constants.ALL_PATTERN;
+            groupPattern = SkillUtils.SKILL_GROUP_PREFIX + Constants.ALL_PATTERN;
         } else if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
             // Exact match: group=skill_{skillName}
-            groupPattern = "skill_" + skillName;
+            SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
+            groupPattern = mainConfigInfo.getGroup();
         } else {
             // Blur search: group=skill_*{skillName}*
-            groupPattern = "skill_" + Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN;
+            groupPattern = SkillUtils.SKILL_GROUP_PREFIX + Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN;
         }
         
         // Use ConfigInfoPersistService to query config list (now includes gmt_modified)
@@ -379,31 +394,32 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     /**
      * Build main config form.
      */
-    private ConfigForm buildMainConfigForm(Skill skill, String namespaceId, String skillGroup) {
+    private ConfigForm buildMainConfigForm(Skill skill, String namespaceId, String skillGroup, long uniformId) {
         // Build main config (only references, no content)
         SkillMainConfig mainConfig = new SkillMainConfig();
         mainConfig.setName(skill.getName());
         mainConfig.setDescription(skill.getDescription());
         mainConfig.setInstruction(skill.getInstruction());
+        mainConfig.setUniformId(uniformId);
         
-        // Build resource references (without content), use resourceId as key
-        Map<String, SkillResourceRef> resourceRefs = new HashMap<>(
+        // Build resource references (without content)
+        List<SkillResourceRef> resourceRefs = new ArrayList<>(
                 skill.getResource() != null ? skill.getResource().size() : 16);
         if (skill.getResource() != null) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
-                String resourceId = generateResourceId(resource.getType(), resource.getName());
                 SkillResourceRef ref = new SkillResourceRef();
                 ref.setName(resource.getName());
                 ref.setType(resource.getType());
-                resourceRefs.put(resourceId, ref);
+                resourceRefs.add(ref);
             }
         }
-        mainConfig.setResource(resourceRefs);
+        mainConfig.setResources(resourceRefs);
         
+        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
         ConfigForm configForm = new ConfigForm();
-        configForm.setDataId("skill.json");
-        configForm.setGroup(skillGroup);
+        configForm.setDataId(mainConfigInfo.getDataId());
+        configForm.setGroup(mainConfigInfo.getGroup());
         configForm.setNamespaceId(namespaceId);
         configForm.setContent(JacksonUtils.toJson(mainConfig));
         configForm.setConfigTags("nacos.internal.config=skill");
@@ -417,9 +433,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * Build resource config form.
      */
     private ConfigForm buildResourceConfigForm(SkillResource resource, String namespaceId, String skillGroup,
-            String resourceId) {
+            String resourceDataId, long uniformId) {
+        // Add uniformId to resource metadata
+        Map<String, Object> metadata = resource.getMetadata();
+        if (metadata == null) {
+            metadata = new HashMap<>(4);
+            resource.setMetadata(metadata);
+        }
+        metadata.put("uniformId", uniformId);
+        
         ConfigForm configForm = new ConfigForm();
-        configForm.setDataId("resource_" + resourceId + ".json");
+        configForm.setDataId(resourceDataId);
         configForm.setGroup(skillGroup);
         configForm.setNamespaceId(namespaceId);
         configForm.setContent(JacksonUtils.toJson(resource));
@@ -431,13 +455,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Skill main config (from main.json).
+     * Skill main config (from skill.json).
      */
     private static class SkillMainConfig {
         private String name;
         private String description;
         private String instruction;
-        private Map<String, SkillResourceRef> resource;
+        private Long uniformId;
+        private List<SkillResourceRef> resources;
         
         public String getName() {
             return name;
@@ -463,17 +488,25 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             this.instruction = instruction;
         }
         
-        public Map<String, SkillResourceRef> getResource() {
-            return resource;
+        public Long getUniformId() {
+            return uniformId;
         }
         
-        public void setResource(Map<String, SkillResourceRef> resource) {
-            this.resource = resource;
+        public void setUniformId(Long uniformId) {
+            this.uniformId = uniformId;
+        }
+        
+        public List<SkillResourceRef> getResources() {
+            return resources;
+        }
+        
+        public void setResources(List<SkillResourceRef> resources) {
+            this.resources = resources;
         }
     }
     
     /**
-     * Skill resource reference (in main.json).
+     * Skill resource reference (in skill.json).
      */
     private static class SkillResourceRef {
         private String name;

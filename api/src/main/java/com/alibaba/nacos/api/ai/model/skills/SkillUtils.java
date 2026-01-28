@@ -374,4 +374,120 @@ public class SkillUtils {
                     }
                 });
     }
+    
+    /**
+     * Main config dataId for skill.
+     */
+    public static final String SKILL_MAIN_DATA_ID = "skill.json";
+    
+    /**
+     * Resource config dataId prefix.
+     */
+    public static final String RESOURCE_DATA_ID_PREFIX = "resource_";
+    
+    /**
+     * Resource config dataId suffix.
+     */
+    public static final String RESOURCE_DATA_ID_SUFFIX = ".json";
+    
+    /**
+     * Skill group prefix.
+     */
+    public static final String SKILL_GROUP_PREFIX = "skill_";
+    
+    private static final String DOUBLE_UNDERSCORE = "__";
+    private static final String FILE_EXTENSION_PATTERN = ".*\\.[a-zA-Z0-9]+$";
+    
+    /**
+     * Configuration info containing dataId and group.
+     */
+    public static class ConfigInfo {
+        private final String dataId;
+        private final String group;
+        
+        public ConfigInfo(String dataId, String group) {
+            this.dataId = dataId;
+            this.group = group;
+        }
+        
+        public String getDataId() {
+            return dataId;
+        }
+        
+        public String getGroup() {
+            return group;
+        }
+    }
+    
+    /**
+     * Generate resource ID from resource type and name.
+     * Format: {type}_{resourcename}
+     * If resourcename ends with .xx, convert the last . to __
+     *
+     * @param type resource type (can be null or empty)
+     * @param resourceName resource name
+     * @return resource ID
+     */
+    public static String generateResourceId(String type, String resourceName) {
+        if (resourceName == null || resourceName.trim().isEmpty()) {
+            return "";
+        }
+        
+        // If resourcename ends with .xx, convert the last . to __
+        String processedName = resourceName;
+        if (resourceName.matches(FILE_EXTENSION_PATTERN)) {
+            // Replace only the last dot before the extension
+            int lastDotIndex = resourceName.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                processedName = resourceName.substring(0, lastDotIndex) + DOUBLE_UNDERSCORE
+                    + resourceName.substring(lastDotIndex + 1);
+            }
+        }
+        
+        if (type != null && !type.trim().isEmpty()) {
+            return type + "_" + processedName;
+        } else {
+            return processedName;
+        }
+    }
+    
+    /**
+     * Build skill main config info (dataId and group).
+     * This is the unified method for building main config mapping.
+     *
+     * @param skillName name of skill
+     * @return ConfigInfo containing dataId and group
+     * @throws IllegalArgumentException if skillName is blank
+     */
+    public static ConfigInfo buildSkillMainConfigInfo(String skillName) {
+        if (StringUtils.isBlank(skillName)) {
+            throw new IllegalArgumentException("Skill name cannot be blank");
+        }
+        return new ConfigInfo(SKILL_MAIN_DATA_ID, SKILL_GROUP_PREFIX + skillName);
+    }
+    
+    /**
+     * Build skill resource config info (dataId and group).
+     * This is the unified method for building resource config mapping.
+     *
+     * @param skillName name of skill
+     * @param type resource type (can be null or empty)
+     * @param resourceName resource name
+     * @return ConfigInfo containing dataId and group
+     * @throws IllegalArgumentException if skillName or resourceName is blank
+     */
+    public static ConfigInfo buildSkillResourceConfigInfo(String skillName, String type, String resourceName) {
+        if (StringUtils.isBlank(skillName)) {
+            throw new IllegalArgumentException("Skill name cannot be blank");
+        }
+        if (StringUtils.isBlank(resourceName)) {
+            throw new IllegalArgumentException("Resource name cannot be blank");
+        }
+        
+        String resourceId = generateResourceId(type, resourceName);
+        String dataId = RESOURCE_DATA_ID_PREFIX + resourceId + RESOURCE_DATA_ID_SUFFIX;
+        String group = SKILL_GROUP_PREFIX + skillName;
+        
+        return new ConfigInfo(dataId, group);
+    }
 }
