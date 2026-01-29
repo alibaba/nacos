@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.ai;
+package com.alibaba.nacos.api.ai.listener;
 
 /**
- * Nacos AI module maintainer service.
+ * Nacos AI module prompt event listener.
  *
- * @author xiweng.yy
+ * <p>Extend this class to receive prompt change notifications.</p>
+ *
+ * @author nacos
  */
-public interface AiMaintainerService extends McpMaintainerService, A2aMaintainerService, PromptMaintainerService {
-
+public abstract class AbstractNacosPromptListener implements NacosAiListener<NacosPromptEvent> {
 }

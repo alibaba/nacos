@@ -59,6 +59,16 @@ public class CacheKeyUtils {
         return skillName;
     }
     
+    /**
+     * Build prompt key.
+     *
+     * @param promptKey prompt key
+     * @return prompt key for cache
+     */
+    public static String buildPromptKey(String promptKey) {
+        return promptKey;
+    }
+    
     private static String buildVersionedKey(String name, String version) {
         if (StringUtils.isBlank(version)) {
             version = LATEST_VERSION;

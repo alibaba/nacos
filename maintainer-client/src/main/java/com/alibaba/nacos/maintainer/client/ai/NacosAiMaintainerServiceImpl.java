@@ -25,6 +25,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
+import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -330,5 +333,153 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 new TypeReference<Result<Page<AgentCardVersionInfo>>>() {
                 });
         return result.getData();
+    }
+    
+    // ========== Prompt Maintainer Service Implementation ==========
+    
+    @Override
+    public Page<PromptBasicInfo> listPrompts(String namespaceId, String promptKey, String search, int pageNo,
+            int pageSize) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        params.put("search", search);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_LIST_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Page<PromptBasicInfo>> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Page<PromptBasicInfo>>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public PromptDetail getPromptDetail(String namespaceId, String promptKey) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<PromptDetail> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<PromptDetail>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
+            String commitMsg, String description) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        params.put("version", version);
+        params.put("template", template);
+        if (StringUtils.isNotBlank(commitMsg)) {
+            params.put("commitMsg", commitMsg);
+        }
+        if (StringUtils.isNotBlank(description)) {
+            params.put("description", description);
+        }
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return Boolean.TRUE.equals(result.getData());
+    }
+    
+    @Override
+    public boolean deletePrompt(String namespaceId, String promptKey) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return Boolean.TRUE.equals(result.getData());
+    }
+    
+    @Override
+    public Page<PromptHistoryItem> listPromptHistory(String namespaceId, String promptKey, int pageNo, int pageSize)
+            throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_HISTORY_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Page<PromptHistoryItem>> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Page<PromptHistoryItem>>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public PromptDetail getPromptHistoryDetail(String namespaceId, String promptKey, Long historyId)
+            throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        params.put("historyId", String.valueOf(historyId));
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_HISTORY_DETAIL_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<PromptDetail> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<PromptDetail>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description)
+            throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("promptKey", promptKey);
+        params.put("description", description);
+        RequestResource resource = buildRequestResource(namespaceId, promptKey);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.AI_PROMPT_METADATA_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return Boolean.TRUE.equals(result.getData());
     }
 }

@@ -126,4 +126,71 @@ public class Constants {
         
         public static final String SKILL_DEFAULT_NAMESPACE = "public";
     }
+    
+    public static class Prompt {
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/prompt";
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/prompt";
+        
+        /**
+         * Fixed group for all prompt configurations.
+         */
+        public static final String PROMPT_GROUP = "nacos-ai-prompt";
+        
+        /**
+         * DataId suffix for prompt configurations.
+         */
+        public static final String PROMPT_DATA_ID_SUFFIX = ".json";
+        
+        /**
+         * Key for prompt version in extInfo.
+         */
+        public static final String EXT_PROMPT_VERSION = "prompt_version";
+        
+        /**
+         * Key for prompt commit message in extInfo.
+         */
+        public static final String EXT_PROMPT_COMMIT_MSG = "prompt_commit_msg";
+        
+        /**
+         * Search mode: blur search.
+         */
+        public static final String SEARCH_BLUR = "blur";
+        
+        /**
+         * Search mode: accurate search.
+         */
+        public static final String SEARCH_ACCURATE = "accurate";
+        
+        /**
+         * Default namespace for prompt.
+         */
+        public static final String PROMPT_DEFAULT_NAMESPACE = "public";
+        
+        /**
+         * Config type for prompt.
+         */
+        public static final String PROMPT_CONFIG_TYPE = "json";
+        
+        /**
+         * JSON field: promptKey.
+         */
+        public static final String FIELD_PROMPT_KEY = "promptKey";
+        
+        /**
+         * JSON field: version.
+         */
+        public static final String FIELD_VERSION = "version";
+        
+        /**
+         * JSON field: template.
+         */
+        public static final String FIELD_TEMPLATE = "template";
+        
+        /**
+         * JSON field: commitMsg.
+         */
+        public static final String FIELD_COMMIT_MSG = "commitMsg";
+    }
 }

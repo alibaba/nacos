@@ -14,13 +14,32 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.ai;
+package com.alibaba.nacos.ai.form.prompt;
+
+import java.io.Serial;
 
 /**
- * Nacos AI module maintainer service.
+ * Prompt metadata update form.
  *
- * @author xiweng.yy
+ * <p>Used for updating prompt description without changing version.</p>
+ *
+ * @author nacos
  */
-public interface AiMaintainerService extends McpMaintainerService, A2aMaintainerService, PromptMaintainerService {
-
+public class PromptMetadataForm extends PromptForm {
+    
+    @Serial
+    private static final long serialVersionUID = 1L;
+    
+    /**
+     * New description for the prompt.
+     */
+    private String description;
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }
