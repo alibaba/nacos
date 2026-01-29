@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.model.prompt;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Prompt entity for AI Prompt management.
@@ -128,6 +129,44 @@ public class Prompt implements Serializable {
     
     public void setMd5(String md5) {
         this.md5 = md5;
+    }
+    
+    /**
+     * Render the prompt template by replacing variables with provided values.
+     *
+     * <p>Variables in the template are specified using {{variableName}} syntax.
+     * This method replaces each {{variableName}} with the corresponding value
+     * from the provided map.</p>
+     *
+     * <p>Example:
+     * <pre>
+     * Prompt prompt = new Prompt("greeting", "1.0.0", "Hello {{name}}, welcome to {{place}}!");
+     * Map&lt;String, String&gt; variables = new HashMap&lt;&gt;();
+     * variables.put("name", "Alice");
+     * variables.put("place", "Nacos");
+     * String result = prompt.render(variables);
+     * // Result: "Hello Alice, welcome to Nacos!"
+     * </pre>
+     * </p>
+     *
+     * @param variables map of variable names to their values (key: variable name, value: replacement value)
+     * @return rendered prompt content with variables replaced, or the original template if variables is null
+     */
+    public String render(Map<String, String> variables) {
+        if (template == null) {
+            return null;
+        }
+        if (variables == null || variables.isEmpty()) {
+            return template;
+        }
+        
+        String result = template;
+        for (Map.Entry<String, String> entry : variables.entrySet()) {
+            String placeholder = "{{" + entry.getKey() + "}}";
+            String value = entry.getValue() != null ? entry.getValue() : "";
+            result = result.replace(placeholder, value);
+        }
+        return result;
     }
     
     @Override
