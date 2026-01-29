@@ -32,8 +32,8 @@ public class NacosConsoleAuthFilter extends AbstractWebAuthFilter {
     
     private final NacosAuthConfig authConfig;
     
-    public NacosConsoleAuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
-        super(authConfig, methodsCache);
+    public NacosConsoleAuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache, long maxFormSize) {
+        super(authConfig, methodsCache, maxFormSize);
         this.authConfig = authConfig;
     }
     

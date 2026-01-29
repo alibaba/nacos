@@ -43,7 +43,7 @@ class NacosConsoleAuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        consoleAuthFilter = new NacosConsoleAuthFilter(authConfig, methodsCache);
+        consoleAuthFilter = new NacosConsoleAuthFilter(authConfig, methodsCache, 2L * 1024 * 1024 * 1024);
     }
     
     @Test

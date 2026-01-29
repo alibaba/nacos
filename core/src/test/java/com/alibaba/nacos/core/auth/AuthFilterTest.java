@@ -83,7 +83,7 @@ class AuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        authFilter = new AuthFilter(authConfig, methodsCache, innerApiAuthEnabled);
+        authFilter = new AuthFilter(authConfig, methodsCache, innerApiAuthEnabled, 2L * 1024 * 1024 * 1024);
     }
     
     @AfterEach

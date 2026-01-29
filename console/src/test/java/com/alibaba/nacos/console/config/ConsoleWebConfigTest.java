@@ -39,6 +39,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.util.unit.DataSize;
 
 import java.time.ZoneId;
 import java.util.Iterator;
@@ -104,7 +105,7 @@ class ConsoleWebConfigTest {
     @Test
     void authFilterRegistration() {
         FilterRegistrationBean<NacosConsoleAuthFilter> registration = consoleWebConfig.authFilterRegistration(
-                consoleWebConfig.consoleAuthFilter(methodsCache));
+                consoleWebConfig.consoleAuthFilter(methodsCache, DataSize.ofBytes(2L * 1024 * 1024 * 1024)));
         assertInstanceOf(NacosConsoleAuthFilter.class, registration.getFilter());
         assertEquals("consoleAuthFilter", registration.getFilterName());
         assertEquals(6, registration.getOrder());

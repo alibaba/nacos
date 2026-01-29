@@ -19,9 +19,11 @@ package com.alibaba.nacos.core.auth;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.web.NacosWebBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.unit.DataSize;
 
 /**
  * auth filter config.
@@ -31,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @NacosWebBean
 public class AuthConfig {
-    
+
     @Bean
     public FilterRegistrationBean<AuthFilter> authFilterRegistration(AuthFilter authFilter) {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
@@ -41,7 +43,7 @@ public class AuthConfig {
         registration.setOrder(6);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<AuthAdminFilter> authAdminFilterRegistration(AuthAdminFilter authAdminFilter) {
         FilterRegistrationBean<AuthAdminFilter> registration = new FilterRegistrationBean<>();
@@ -51,17 +53,22 @@ public class AuthConfig {
         registration.setOrder(6);
         return registration;
     }
-    
+
     @Bean
-    public AuthFilter authFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled) {
-        return new AuthFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache,
-                innerApiAuthEnabled);
+    public AuthFilter authFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled,
+                                 @Value("${server.tomcat.max-http-form-post-size}") DataSize formSize) {
+        return new AuthFilter(
+                NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE),
+                methodsCache, innerApiAuthEnabled, formSize.toBytes()
+        );
     }
-    
+
     @Bean
-    public AuthAdminFilter authAdminFilter(ControllerMethodsCache methodsCache) {
-        return new AuthAdminFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE), methodsCache);
+    public AuthAdminFilter authAdminFilter(ControllerMethodsCache methodsCache,
+                                           @Value("${server.tomcat.max-http-form-post-size}") DataSize formSize) {
+        return new AuthAdminFilter(
+                NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE),
+                methodsCache, formSize.toBytes()
+        );
     }
 }

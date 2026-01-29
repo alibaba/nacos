@@ -36,8 +36,8 @@ public class AuthFilter extends AbstractWebAuthFilter {
     private final InnerApiAuthEnabled innerApiAuthEnabled;
     
     public AuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache,
-            InnerApiAuthEnabled innerApiAuthEnabled) {
-        super(authConfig, methodsCache);
+            InnerApiAuthEnabled innerApiAuthEnabled, long maxFormSize) {
+        super(authConfig, methodsCache, maxFormSize);
         this.authConfig = authConfig;
         this.innerApiAuthEnabled = innerApiAuthEnabled;
     }

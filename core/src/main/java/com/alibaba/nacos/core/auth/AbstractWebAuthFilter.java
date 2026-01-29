@@ -38,6 +38,7 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -52,11 +53,13 @@ public abstract class AbstractWebAuthFilter implements Filter {
     private final ControllerMethodsCache methodsCache;
     
     private final HttpProtocolAuthService protocolAuthService;
-    
-    protected AbstractWebAuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
+    private final long maxFormSize;
+
+    protected AbstractWebAuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache, long maxFormSize) {
         this.methodsCache = methodsCache;
         this.protocolAuthService = new HttpProtocolAuthService(authConfig);
         this.protocolAuthService.initialize();
+        this.maxFormSize = maxFormSize;
     }
     
     @Override
@@ -68,6 +71,7 @@ public abstract class AbstractWebAuthFilter implements Filter {
         }
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
+        this.checkFormSize(req);
         Method method = methodsCache.getMethod(req);
         if (method == null) {
             chain.doFilter(request, response);
@@ -169,4 +173,18 @@ public abstract class AbstractWebAuthFilter implements Filter {
      * @return get value from {@link NacosAuthConfig#isAuthEnabled()}
      */
     protected abstract boolean isAuthEnabled();
+
+    /**
+     * Check the size of form parameters, see: <a href="https://github.com/alibaba/nacos/issues/14423">14423</a>
+     * @param request HttpServletRequest
+     */
+    private void checkFormSize(HttpServletRequest request) {
+        if (!MediaType.APPLICATION_FORM_URLENCODED.equals(MediaType.valueOf(request.getContentType()))) {
+            return;
+        }
+        int contentLength = request.getContentLength();
+        if ((maxFormSize >= 0) && (contentLength > maxFormSize)) {
+            throw new IllegalArgumentException("Request Entity Too Large!");
+        }
+    }
 }

@@ -31,8 +31,8 @@ public class AuthAdminFilter extends AbstractWebAuthFilter {
     
     private final NacosAuthConfig authConfig;
     
-    public AuthAdminFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
-        super(authConfig, methodsCache);
+    public AuthAdminFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache, long maxFormSize) {
+        super(authConfig, methodsCache, maxFormSize);
         this.authConfig = authConfig;
     }
     

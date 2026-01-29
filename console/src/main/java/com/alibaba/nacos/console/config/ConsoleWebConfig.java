@@ -23,6 +23,7 @@ import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -31,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -104,9 +106,13 @@ public class ConsoleWebConfig {
     }
     
     @Bean
-    public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache) {
-        return new NacosConsoleAuthFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE), methodsCache);
+    public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache,
+                                                    @Value("${server.tomcat.max-http-form-post-size}") DataSize formSize) {
+        return new NacosConsoleAuthFilter(
+                NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE),
+                methodsCache,
+                formSize.toBytes()
+        );
     }
     
     @Bean
