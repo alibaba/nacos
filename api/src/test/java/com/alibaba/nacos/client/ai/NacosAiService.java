@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -123,5 +124,21 @@ public class NacosAiService implements AiService {
     public void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
             throws NacosException {
         
+    }
+    
+    @Override
+    public com.alibaba.nacos.api.ai.model.skills.Skill loadSkill(String skillName) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public com.alibaba.nacos.api.ai.model.skills.Skill subscribeSkill(String skillName,
+            AbstractNacosSkillListener skillListener) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener)
+            throws NacosException {
     }
 }

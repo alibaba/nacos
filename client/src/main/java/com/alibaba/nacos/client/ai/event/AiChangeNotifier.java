@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.ai.event;
 
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -41,9 +42,12 @@ public class AiChangeNotifier extends SmartSubscriber {
     
     private final Map<String, Set<AgentCardListenerInvoker>> agentCardListenerInvokers;
     
+    private final Map<String, Set<SkillListenerInvoker>> skillListenerInvokers;
+    
     public AiChangeNotifier() {
         this.mcpServerListenerInvokers = new ConcurrentHashMap<>(2);
         this.agentCardListenerInvokers = new ConcurrentHashMap<>(2);
+        this.skillListenerInvokers = new ConcurrentHashMap<>(2);
     }
     
     @Override
@@ -52,6 +56,8 @@ public class AiChangeNotifier extends SmartSubscriber {
             handleMcpServerChangedEvent((McpServerChangedEvent) event);
         } else if (event instanceof AgentCardChangedEvent) {
             handleAgentCardChangedEvent((AgentCardChangedEvent) event);
+        } else if (event instanceof SkillChangedEvent) {
+            handleSkillChangedEvent((SkillChangedEvent) event);
         }
     }
     
@@ -77,11 +83,23 @@ public class AiChangeNotifier extends SmartSubscriber {
         }
     }
     
+    private void handleSkillChangedEvent(SkillChangedEvent event) {
+        String skillKey = CacheKeyUtils.buildSkillKey(event.getSkillName());
+        if (!isSubscribed(skillKey, skillListenerInvokers)) {
+            return;
+        }
+        NacosSkillEvent notifiedEvent = new NacosSkillEvent(event.getSkillName(), event.getSkill());
+        for (SkillListenerInvoker each : skillListenerInvokers.get(skillKey)) {
+            each.invoke(notifiedEvent);
+        }
+    }
+    
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> listenedEventTypes = new LinkedList<>();
         listenedEventTypes.add(McpServerChangedEvent.class);
         listenedEventTypes.add(AgentCardChangedEvent.class);
+        listenedEventTypes.add(SkillChangedEvent.class);
         return listenedEventTypes;
     }
     
@@ -128,6 +146,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * register skill listener.
+     *
+     * @param skillName         name of skill
+     * @param listenerInvoker   listener invoker
+     */
+    public void registerListener(String skillName, SkillListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String skillKey = CacheKeyUtils.buildSkillKey(skillName);
+        skillListenerInvokers.compute(skillKey, (key, skillListenerInvokers) -> {
+            if (null == skillListenerInvokers) {
+                skillListenerInvokers = new ConcurrentHashSet<>();
+            }
+            skillListenerInvokers.add(listenerInvoker);
+            return skillListenerInvokers;
+        });
+    }
+    
+    /**
      * deregister mcp server listener.
      *
      * @param mcpName           name of mcp server
@@ -170,6 +208,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * deregister skill listener.
+     *
+     * @param skillName         name of skill
+     * @param listenerInvoker   listener invoker
+     */
+    public void deregisterListener(String skillName, SkillListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String skillKey = CacheKeyUtils.buildSkillKey(skillName);
+        skillListenerInvokers.compute(skillKey, (key, skillListenerInvokers) -> {
+            if (null == skillListenerInvokers) {
+                return null;
+            }
+            skillListenerInvokers.remove(listenerInvoker);
+            return skillListenerInvokers.isEmpty() ? null : skillListenerInvokers;
+        });
+    }
+    
+    /**
      * check mcp server is subscribed.
      *
      * @param mcpName name of mcp server
@@ -191,6 +249,17 @@ public class AiChangeNotifier extends SmartSubscriber {
     public boolean isAgentCardSubscribed(String agentName, String version) {
         String agentCardKey = CacheKeyUtils.buildAgentCardKey(agentName, version);
         return isSubscribed(agentCardKey, agentCardListenerInvokers);
+    }
+    
+    /**
+     * check skill is subscribed.
+     *
+     * @param skillName name of skill
+     * @return is skill subscribed
+     */
+    public boolean isSkillSubscribed(String skillName) {
+        String skillKey = CacheKeyUtils.buildSkillKey(skillName);
+        return isSubscribed(skillKey, skillListenerInvokers);
     }
     
     private <T extends AbstractAiListenerInvoker> boolean isSubscribed(String key,

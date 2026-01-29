@@ -49,6 +49,16 @@ public class CacheKeyUtils {
         return buildVersionedKey(agentName, version);
     }
     
+    /**
+     * Build skill key.
+     *
+     * @param skillName name of skill
+     * @return skill key, pattern ${skillName}
+     */
+    public static String buildSkillKey(String skillName) {
+        return skillName;
+    }
+    
     private static String buildVersionedKey(String name, String version) {
         if (StringUtils.isBlank(version)) {
             version = LATEST_VERSION;
