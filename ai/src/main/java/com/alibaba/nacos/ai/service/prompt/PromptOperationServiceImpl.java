@@ -29,11 +29,13 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.HistoryService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
@@ -78,13 +80,16 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final HistoryService historyService;
     
+    private final ConfigInfoPersistService configInfoPersistService;
+    
     public PromptOperationServiceImpl(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, ConfigDetailService configDetailService,
-            HistoryService historyService) {
+            HistoryService historyService, ConfigInfoPersistService configInfoPersistService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.historyService = historyService;
+        this.configInfoPersistService = configInfoPersistService;
     }
     
     @Override
@@ -165,29 +170,24 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public PromptDetail getPromptDetail(String namespaceId, String promptKey) throws NacosException {
         String dataId = PromptVersionUtils.buildDataId(promptKey);
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, PROMPT_GROUP, namespaceId);
-        ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
-        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+        // Direct query using configInfoPersistService.findConfigAllInfo to get all fields including desc
+        ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, PROMPT_GROUP, namespaceId);
+        if (configAllInfo == null) {
             return null;
         }
         
-        PromptDetail detail = buildPromptDetail(namespaceId, promptKey, response.getContent(), response.getMd5(), 
-                null, null);
+        PromptDetail detail = buildPromptDetail(namespaceId, promptKey, configAllInfo.getContent(), 
+                configAllInfo.getMd5(), null, null);
         
-        // Get description from ConfigInfo (c_desc field)
-        // ConfigQueryChainResponse doesn't include description, so we fetch it separately
-        try {
-            Page<ConfigInfo> configPage = configDetailService.findConfigInfoPage(
-                    Constants.Prompt.SEARCH_ACCURATE, 1, 1, dataId, PROMPT_GROUP, namespaceId, null);
-            if (configPage != null && configPage.getPageItems() != null && !configPage.getPageItems().isEmpty()) {
-                ConfigInfo configInfo = configPage.getPageItems().get(0);
-                if (StringUtils.isNotBlank(configInfo.getDesc())) {
-                    detail.setDescription(configInfo.getDesc());
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.warn("Failed to get description for prompt: {}", promptKey, e);
+        // Set description
+        if (StringUtils.isNotBlank(configAllInfo.getDesc())) {
+            detail.setDescription(configAllInfo.getDesc());
+        }
+        
+        // Set update time from modifyTime
+        if (configAllInfo.getModifyTime() > 0) {
+            detail.setUpdateTime(configAllInfo.getModifyTime());
         }
         
         return detail;
@@ -233,8 +233,15 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                             }
                         }
                         
-                        // Description is stored in config metadata (c_desc)
-                        // ConfigInfo may not have desc field, so we skip it here
+                        // Set description from config metadata (c_desc)
+                        if (StringUtils.isNotBlank(configInfo.getDesc())) {
+                            basicInfo.setDescription(configInfo.getDesc());
+                        }
+                        
+                        // Set update time from gmtModified
+                        if (configInfo.getGmtModified() != null) {
+                            basicInfo.setUpdateTime(configInfo.getGmtModified());
+                        }
                         
                         return basicInfo;
                     } catch (Exception e) {
