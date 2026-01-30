@@ -48,6 +48,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -265,16 +266,16 @@ public class PromptOperationServiceImpl implements PromptOperationService {
      * Maximum number of history versions to return per Prompt.
      * This limit helps control performance since we need to fetch content for each record.
      */
-    private static final int MAX_HISTORY_VERSIONS = 20;
+    private static final int MAX_HISTORY_VERSIONS = 10;
     
     @Override
     public Page<PromptHistoryItem> listPromptHistory(String namespaceId, String promptKey, int pageNo, int pageSize)
             throws NacosException {
         String dataId = PromptVersionUtils.buildDataId(promptKey);
         
-        // Fetch enough records to account for filtering (Insert/Delete exclusion)
-        // We limit to MAX_HISTORY_VERSIONS to control performance
-        int fetchSize = MAX_HISTORY_VERSIONS + 10;
+        // Fetch more records to account for filtering and deduplication
+        // Fetch extra records because same version may have multiple history records
+        int fetchSize = MAX_HISTORY_VERSIONS * 2;
         Page<ConfigHistoryInfo> historyPage = historyService.listConfigHistory(dataId, PROMPT_GROUP, namespaceId, 
                 1, fetchSize);
         
@@ -283,25 +284,40 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Filter records according to Prompt history version semantics:
         // 1. Exclude opType = "I" (Insert) - first creation is not a history version
         // 2. Exclude records at and before the most recent Delete operation
-        // 3. Limit to MAX_HISTORY_VERSIONS (20)
         List<ConfigHistoryInfo> filteredRecords = filterPromptHistoryRecords(allRecords);
         
-        // Apply pagination on filtered records
-        int totalCount = filteredRecords.size();
-        int startIndex = (pageNo - 1) * pageSize;
-        int endIndex = Math.min(startIndex + pageSize, totalCount);
-        
-        List<ConfigHistoryInfo> pagedRecords = startIndex < totalCount 
-                ? filteredRecords.subList(startIndex, endIndex) 
-                : Collections.emptyList();
-        
-        List<PromptHistoryItem> historyItems = pagedRecords.stream()
+        // Build history items from all filtered records
+        List<PromptHistoryItem> historyItems = filteredRecords.stream()
                 .map(historyInfo -> buildPromptHistoryItem(namespaceId, promptKey, dataId, historyInfo))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         
+        // Deduplicate by version - keep only the first occurrence of each version (most recent)
+        LinkedHashMap<String, PromptHistoryItem> versionMap = new LinkedHashMap<>();
+        for (PromptHistoryItem item : historyItems) {
+            String version = item.getVersion();
+            if (StringUtils.isNotBlank(version) && !versionMap.containsKey(version)) {
+                versionMap.put(version, item);
+            }
+        }
+        List<PromptHistoryItem> deduplicatedItems = new ArrayList<>(versionMap.values());
+        
+        // Limit to MAX_HISTORY_VERSIONS after deduplication
+        if (deduplicatedItems.size() > MAX_HISTORY_VERSIONS) {
+            deduplicatedItems = deduplicatedItems.subList(0, MAX_HISTORY_VERSIONS);
+        }
+        
+        // Apply pagination on deduplicated results
+        int totalCount = deduplicatedItems.size();
+        int startIndex = (pageNo - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalCount);
+        
+        List<PromptHistoryItem> pagedItems = startIndex < totalCount 
+                ? deduplicatedItems.subList(startIndex, endIndex) 
+                : Collections.emptyList();
+        
         Page<PromptHistoryItem> result = new Page<>();
-        result.setPageItems(historyItems);
+        result.setPageItems(pagedItems);
         result.setTotalCount(totalCount);
         result.setPagesAvailable((int) Math.ceil((double) totalCount / (double) pageSize));
         result.setPageNumber(pageNo);

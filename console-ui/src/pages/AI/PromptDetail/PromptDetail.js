@@ -16,8 +16,9 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, ConfigProvider, Dialog, Icon, Loading, Message, Select } from '@alifd/next';
+import { Button, ConfigProvider, Dialog, Icon, Input, Loading, Message, Select } from '@alifd/next';
 import MonacoEditor from '../../../components/MonacoEditor/MonacoEditor';
+import PromptOptimizeDialog from '../PromptOptimizeDialog';
 import { getParams, request } from '@/globalLib';
 import './PromptDetail.scss';
 
@@ -53,7 +54,17 @@ class PromptDetail extends React.Component {
       savingDescription: false,
       // History versions loading
       loadingHistory: false,
+      // AI optimize dialog
+      optimizeDialogVisible: false,
+      // Debug functionality
+      variableValues: {},
+      userInput: '',
+      debugging: false,
+      debugThinking: '',
+      debugContent: '',
+      debugError: null,
     };
+    this.debugResultRef = React.createRef();
   }
 
   componentDidMount() {
@@ -325,6 +336,199 @@ class PromptDetail extends React.Component {
     this.props.history.push(`/promptManagement?namespace=${namespaceId || 'public'}`);
   };
 
+  // Open AI optimize dialog
+  handleOpenOptimizeDialog = () => {
+    this.setState({ optimizeDialogVisible: true });
+  };
+
+  // Close AI optimize dialog
+  handleCloseOptimizeDialog = () => {
+    this.setState({ optimizeDialogVisible: false });
+  };
+
+  // Apply optimized prompt
+  handleApplyOptimizedPrompt = optimizedPrompt => {
+    const variables = this.extractVariables(optimizedPrompt);
+    this.setState({
+      template: optimizedPrompt,
+      variables,
+      optimizeDialogVisible: false,
+    });
+    Message.success(this.props.locale?.optimizeApplied || '优化结果已应用到编辑器');
+  };
+
+  // Handle variable value change
+  handleVariableChange = (variable, value) => {
+    this.setState(prevState => ({
+      variableValues: {
+        ...prevState.variableValues,
+        [variable]: value,
+      },
+    }));
+  };
+
+  // Handle user input change
+  handleUserInputChange = value => {
+    this.setState({ userInput: value });
+  };
+
+  // Render prompt with variable values
+  renderPromptWithVariables = () => {
+    const { template, variableValues } = this.state;
+    let renderedPrompt = template;
+    Object.keys(variableValues).forEach(variable => {
+      const regex = new RegExp(`\\{\\{${variable}\\}\\}`, 'g');
+      renderedPrompt = renderedPrompt.replace(regex, variableValues[variable] || '');
+    });
+    return renderedPrompt;
+  };
+
+  // Start debugging
+  handleStartDebug = () => {
+    const { userInput } = this.state;
+    const { locale = {} } = this.props;
+
+    if (!userInput || !userInput.trim()) {
+      Message.error(locale.userInputRequired || '请输入用户输入内容');
+      return;
+    }
+
+    const renderedPrompt = this.renderPromptWithVariables();
+
+    this.setState({
+      debugging: true,
+      debugThinking: '',
+      debugContent: '',
+      debugError: null,
+    });
+
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/v3/console/copilot/prompt/debug`;
+    const token = localStorage.getItem('token');
+
+    const payload = {
+      prompt: renderedPrompt,
+      userInput,
+    };
+
+    this.startDebugStream(url, payload, token);
+  };
+
+  // Start SSE stream for debugging
+  startDebugStream = (url, payload, token) => {
+    let accessToken = '';
+    try {
+      const tokenObj = JSON.parse(token);
+      accessToken = tokenObj.accessToken || '';
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse token:', e);
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        ...(token ? { Authorization: token } : {}),
+        ...(accessToken ? { AccessToken: accessToken } : {}),
+      },
+      body: JSON.stringify(payload),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        const readStream = () => {
+          reader
+            .read()
+            .then(({ done, value }) => {
+              if (done) {
+                this.setState({ debugging: false });
+                return;
+              }
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              lines.forEach(line => {
+                if (line.startsWith('data:')) {
+                  const dataStr = line.substring(5).trim();
+                  if (dataStr) {
+                    try {
+                      const data = JSON.parse(dataStr);
+                      this.handleDebugMessage(data);
+                    } catch (e) {
+                      // eslint-disable-next-line no-console
+                      console.error('Failed to parse SSE data:', e, dataStr);
+                    }
+                  }
+                }
+              });
+
+              readStream();
+            })
+            .catch(error => {
+              this.setState({
+                debugging: false,
+                debugError: error.message || 'Stream read failed',
+              });
+            });
+        };
+
+        readStream();
+      })
+      .catch(error => {
+        this.setState({
+          debugging: false,
+          debugError: error.message || 'Request failed',
+        });
+      });
+  };
+
+  // Handle debug SSE message
+  handleDebugMessage = data => {
+    const { type, chunk, done } = data;
+    const typeStr = type?.code || type || 'CONTENT';
+
+    if (typeStr === 'THINKING') {
+      this.setState(prevState => ({
+        debugThinking: prevState.debugThinking + (chunk || ''),
+      }));
+    } else if (typeStr === 'CONTENT') {
+      this.setState(prevState => ({
+        debugContent: prevState.debugContent + (chunk || ''),
+      }));
+    } else if (typeStr === 'DONE' || done) {
+      this.setState({ debugging: false });
+    } else if (typeStr === 'error') {
+      this.setState({
+        debugging: false,
+        debugError: data.message || 'Debug failed',
+      });
+    }
+
+    // Auto scroll
+    if (this.debugResultRef.current) {
+      this.debugResultRef.current.scrollTop = this.debugResultRef.current.scrollHeight;
+    }
+  };
+
+  // Clear debug results
+  handleClearDebug = () => {
+    this.setState({
+      debugThinking: '',
+      debugContent: '',
+      debugError: null,
+    });
+  };
+
   // Format time
   formatTime = time => {
     if (!time) return '--';
@@ -405,6 +609,13 @@ class PromptDetail extends React.Component {
       editingDescription,
       descriptionValue,
       savingDescription,
+      optimizeDialogVisible,
+      variableValues,
+      userInput,
+      debugging,
+      debugThinking,
+      debugContent,
+      debugError,
     } = this.state;
 
     if (loading && !promptData) {
@@ -538,12 +749,14 @@ class PromptDetail extends React.Component {
 
         <div className="detail-container">
           <div className="detail-left">
-            <div className="section-label">{locale.promptTemplate || 'Prompt 模板'}</div>
+            <div className="section-header">
+              <div className="section-label">{locale.promptTemplate || 'Prompt 模板'}</div>
+            </div>
             <div className="editor-container">
               <MonacoEditor
                 language="plaintext"
                 width="100%"
-                height={400}
+                height="100%"
                 value={template}
                 onChange={this.handleTemplateChange}
                 options={{
@@ -555,45 +768,146 @@ class PromptDetail extends React.Component {
               />
             </div>
             <div className="action-buttons">
-              <Button warning onClick={this.handleDeletePrompt}>
-                {locale.deletePrompt || '删除 Prompt'}
+              <Button
+                type="primary"
+                onClick={this.handleOpenOptimizeDialog}
+                disabled={!template || !template.trim()}
+              >
+                <Icon type="magic" style={{ marginRight: 4 }} />
+                {locale.aiOptimize || 'AI 优化'}
               </Button>
             </div>
           </div>
 
           <div className="detail-right">
-            <div className="variables-card">
-              <div className="variables-title">
-                {locale.templateVariables || '模板参数'}
-                {variables.length > 0 && (
-                  <span className="variables-count">{variables.length}</span>
-                )}
+            <div className="debug-card">
+              <div className="debug-title">
+                <Icon type="bug" style={{ marginRight: 8 }} />
+                {locale.promptDebug || 'Prompt 调试'}
               </div>
 
-              {variables.length > 0 ? (
-                <div className="variables-list">
-                  {variables.map((variable, index) => (
-                    <div key={index} className="variable-item">
-                      <Icon type="success" size="small" className="variable-icon" />
-                      {`{{${variable}}}`}
+              {/* Input Section - 包含模板参数和用户输入 */}
+              <div className="debug-input-section">
+                {/* Variable Inputs */}
+                {variables.length > 0 && (
+                  <div className="variable-inputs">
+                    <div className="section-subtitle">
+                      {locale.templateVariables || '模板参数'}
+                      <span className="variables-count">{variables.length}</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="no-variables">
-                  <div className="no-variables-icon">
-                    <Icon type="prompt" size="large" />
+                    <div className="variable-list">
+                      {variables.map((variable, index) => (
+                        <div key={index} className="variable-input-item">
+                          <label className="variable-label">{`{{${variable}}}`}</label>
+                          <Input
+                            size="small"
+                            placeholder={`${locale.enterValue || '输入'} ${variable}`}
+                            value={variableValues[variable] || ''}
+                            onChange={value => this.handleVariableChange(variable, value)}
+                            disabled={debugging}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div>{locale.noVariables || '暂无模板参数'}</div>
-                </div>
-              )}
+                )}
 
-              <div className="variables-hint">
-                {locale.variablesHint || '使用 {{变量名}} 格式定义模板参数'}
+                {/* Divider between variables and user input */}
+                {variables.length > 0 && <div className="input-divider"></div>}
+
+                {/* User Input */}
+                <div className="user-input-wrapper">
+                  <div className="section-subtitle">
+                    {locale.userInputLabel || '用户输入'}
+                    <span className="required">*</span>
+                  </div>
+                  <Input.TextArea
+                    placeholder={locale.userInputPlaceholder || '输入要发送给模型的用户消息...'}
+                    value={userInput}
+                    onChange={this.handleUserInputChange}
+                    disabled={debugging}
+                    style={{ width: '100%', flex: 1, resize: 'none' }}
+                  />
+                </div>
+
+                {/* Debug Button */}
+                <div className="debug-actions">
+                  <Button
+                    type="primary"
+                    onClick={this.handleStartDebug}
+                    loading={debugging}
+                    disabled={!userInput || !userInput.trim()}
+                  >
+                    <Icon type="play" style={{ marginRight: 4 }} />
+                    {debugging ? locale.debugging || '调试中...' : locale.startDebug || '开始调试'}
+                  </Button>
+                  {(debugThinking || debugContent) && (
+                    <Button onClick={this.handleClearDebug} disabled={debugging}>
+                      {locale.clearResult || '清除结果'}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Debug Error */}
+                {debugError && (
+                  <div className="debug-error">
+                    <Icon type="warning" style={{ marginRight: 8, color: '#ff4d4f' }} />
+                    {debugError}
+                  </div>
+                )}
+
+                {/* Model Response Section */}
+                <div className="response-divider"></div>
+                <div className="section-subtitle">
+                  {locale.modelResponse || '模型响应'}
+                  {debugging && <Loading size="small" style={{ marginLeft: 8 }} />}
+                </div>
+                <div className="model-response-box" ref={this.debugResultRef}>
+                  {!debugThinking && !debugContent && !debugging && (
+                    <div className="response-placeholder">
+                      {locale.responsePlaceholder || '点击"开始调试"后，模型响应将显示在这里...'}
+                    </div>
+                  )}
+                  {/* Thinking Section */}
+                  {debugThinking && (
+                    <div className="result-section thinking-section">
+                      <div className="result-label">
+                        <Icon type="eye" style={{ marginRight: 4 }} />
+                        {locale.thinkingProcess || '思考过程'}
+                      </div>
+                      <div className="result-content thinking-content">{debugThinking}</div>
+                    </div>
+                  )}
+                  {/* Content Section */}
+                  {debugContent && (
+                    <div className="result-section content-section">
+                      <div className="result-label">
+                        <Icon type="success" style={{ marginRight: 4, color: '#52c41a' }} />
+                        {locale.modelOutput || '模型输出'}
+                      </div>
+                      <div className="result-content output-content">{debugContent}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Hint */}
+                <div className="debug-hint">
+                  {locale.debugHint ||
+                    '调试时会将 Prompt 模板中的变量替换后作为系统提示词发送给模型'}
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* AI Optimize Dialog */}
+        <PromptOptimizeDialog
+          visible={optimizeDialogVisible}
+          prompt={template}
+          onClose={this.handleCloseOptimizeDialog}
+          onApply={this.handleApplyOptimizedPrompt}
+          locale={locale}
+        />
       </div>
     );
   }

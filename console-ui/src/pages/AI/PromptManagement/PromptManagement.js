@@ -434,19 +434,18 @@ class PromptManagement extends React.Component {
               <Table.Column
                 title={locale.promptKey || 'Prompt Key'}
                 dataIndex="promptKey"
+                width={200}
                 cell={value => <strong className="prompt-key-cell">{value || '--'}</strong>}
               />
               <Table.Column
                 title={locale.description || 'Description'}
                 dataIndex="description"
-                width={300}
                 cell={value => {
                   const description = value || '--';
                   const isEmpty = !value || value === '--';
                   const cellStyle = {
                     display: 'inline-block',
-                    width: '300px',
-                    maxWidth: '300px',
+                    maxWidth: '100%',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',

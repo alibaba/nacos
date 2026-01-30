@@ -19,6 +19,7 @@ import PropTypes from 'prop-types';
 import { Button, ConfigProvider, Field, Form, Input, Message, Icon } from '@alifd/next';
 import PageTitle from 'components/PageTitle';
 import MonacoEditor from '../../../components/MonacoEditor/MonacoEditor';
+import PromptOptimizeDialog from '../PromptOptimizeDialog';
 import { getParams, request } from '@/globalLib';
 import './NewPrompt.scss';
 
@@ -39,6 +40,7 @@ class NewPrompt extends React.Component {
       loading: false,
       template: '',
       variables: [],
+      optimizeDialogVisible: false,
     };
   }
 
@@ -136,9 +138,30 @@ class NewPrompt extends React.Component {
     this.props.history.push(`/promptManagement?namespace=${namespaceId}`);
   };
 
+  // Open AI optimize dialog
+  handleOpenOptimizeDialog = () => {
+    this.setState({ optimizeDialogVisible: true });
+  };
+
+  // Close AI optimize dialog
+  handleCloseOptimizeDialog = () => {
+    this.setState({ optimizeDialogVisible: false });
+  };
+
+  // Apply optimized prompt
+  handleApplyOptimizedPrompt = optimizedPrompt => {
+    const variables = this.extractVariables(optimizedPrompt);
+    this.setState({
+      template: optimizedPrompt,
+      variables,
+      optimizeDialogVisible: false,
+    });
+    Message.success(this.props.locale?.optimizeApplied || '优化结果已应用');
+  };
+
   render() {
     const { locale = {} } = this.props;
-    const { loading, template, variables } = this.state;
+    const { loading, template, variables, optimizeDialogVisible } = this.state;
     const { init } = this.field;
 
     return (
@@ -217,6 +240,17 @@ class NewPrompt extends React.Component {
                   }
                 >
                   <div className="editor-container">
+                    <div className="editor-toolbar">
+                      <Button
+                        type="secondary"
+                        size="small"
+                        onClick={this.handleOpenOptimizeDialog}
+                        disabled={!template || !template.trim()}
+                      >
+                        <Icon type="magic" style={{ marginRight: 4 }} />
+                        {locale.aiOptimize || 'AI 优化'}
+                      </Button>
+                    </div>
                     <MonacoEditor
                       language="plaintext"
                       width="100%"
@@ -276,6 +310,15 @@ class NewPrompt extends React.Component {
             </div>
           </div>
         </div>
+
+        {/* AI Optimize Dialog */}
+        <PromptOptimizeDialog
+          visible={optimizeDialogVisible}
+          prompt={template}
+          onClose={this.handleCloseOptimizeDialog}
+          onApply={this.handleApplyOptimizedPrompt}
+          locale={locale}
+        />
       </div>
     );
   }

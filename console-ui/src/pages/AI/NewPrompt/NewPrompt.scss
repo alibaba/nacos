@@ -23,6 +23,14 @@
         border: 1px solid #e8e8e8;
         border-radius: 4px;
         overflow: hidden;
+
+        .editor-toolbar {
+          display: flex;
+          justify-content: flex-end;
+          padding: 8px 12px;
+          background: #fafafa;
+          border-bottom: 1px solid #e8e8e8;
+        }
       }
 
       .form-item-full {
