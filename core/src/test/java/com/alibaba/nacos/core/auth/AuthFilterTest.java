@@ -33,6 +33,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.unit.DataSize;
+import org.springframework.util.unit.DataUnit;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -78,7 +80,7 @@ class AuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        authFilter = new AuthFilter(authConfigs, methodsCache);
+        authFilter = new AuthFilter(authConfigs, methodsCache, DataSize.of(2, DataUnit.MEGABYTES));
     }
     
     @AfterEach
