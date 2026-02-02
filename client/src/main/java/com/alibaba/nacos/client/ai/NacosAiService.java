@@ -639,7 +639,7 @@ public class NacosAiService implements AiService {
             // Exponential backoff before retry
             try {
                 Thread.sleep(100L * (1L << retry));
-            } catch (InterruptedException ie) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                         "Interrupted while retrying publish");

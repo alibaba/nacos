@@ -28,6 +28,8 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
 import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -481,5 +483,119 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 new TypeReference<Result<Boolean>>() {
                 });
         return Boolean.TRUE.equals(result.getData());
+    }
+    
+    // ========== Skill Maintainer Service Implementation ==========
+    
+    @Override
+    public String registerSkill(String namespaceId, Skill skill) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("skillCard", JacksonUtils.toJson(skill));
+        RequestResource resource = buildRequestResource(namespaceId, skill.getName());
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Skill getSkillDetail(String namespaceId, String skillName) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Skill> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Skill>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public boolean updateSkill(String namespaceId, Skill skill) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("skillCard", JacksonUtils.toJson(skill));
+        RequestResource resource = buildRequestResource(namespaceId, skill.getName());
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
+    public boolean deleteSkill(String namespaceId, String skillName) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
+    public Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo,
+            int pageSize) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("search", search);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_SKILL_LIST_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Page<SkillBasicInfo>> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Page<SkillBasicInfo>>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        RequestResource resource = buildRequestResource(namespaceId, null);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_ADMIN_PATH).setParamValue(params)
+                .setBody(java.util.Base64.getEncoder().encodeToString(zipBytes)).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
 }

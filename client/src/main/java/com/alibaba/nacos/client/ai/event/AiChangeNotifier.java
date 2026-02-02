@@ -184,6 +184,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * register prompt listener.
+     *
+     * @param promptKey       prompt key
+     * @param listenerInvoker listener invoker
+     */
+    public void registerListener(String promptKey, PromptListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
+            if (null == promptListenerInvokers) {
+                promptListenerInvokers = new ConcurrentHashSet<>();
+            }
+            promptListenerInvokers.add(listenerInvoker);
+            return promptListenerInvokers;
+        });
+    }
+    
+    /**
      * deregister mcp server listener.
      *
      * @param mcpName           name of mcp server
@@ -246,6 +266,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * deregister prompt listener.
+     *
+     * @param promptKey       prompt key
+     * @param listenerInvoker listener invoker
+     */
+    public void deregisterListener(String promptKey, PromptListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
+            if (null == promptListenerInvokers) {
+                return null;
+            }
+            promptListenerInvokers.remove(listenerInvoker);
+            return promptListenerInvokers.isEmpty() ? null : promptListenerInvokers;
+        });
+    }
+    
+    /**
      * check mcp server is subscribed.
      *
      * @param mcpName name of mcp server
@@ -278,46 +318,6 @@ public class AiChangeNotifier extends SmartSubscriber {
     public boolean isSkillSubscribed(String skillName) {
         String skillKey = CacheKeyUtils.buildSkillKey(skillName);
         return isSubscribed(skillKey, skillListenerInvokers);
-    }
-    
-    /**
-     * register prompt listener.
-     *
-     * @param promptKey       prompt key
-     * @param listenerInvoker listener invoker
-     */
-    public void registerListener(String promptKey, PromptListenerInvoker listenerInvoker) {
-        if (listenerInvoker == null) {
-            return;
-        }
-        String key = CacheKeyUtils.buildPromptKey(promptKey);
-        promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
-            if (null == promptListenerInvokers) {
-                promptListenerInvokers = new ConcurrentHashSet<>();
-            }
-            promptListenerInvokers.add(listenerInvoker);
-            return promptListenerInvokers;
-        });
-    }
-    
-    /**
-     * deregister prompt listener.
-     *
-     * @param promptKey       prompt key
-     * @param listenerInvoker listener invoker
-     */
-    public void deregisterListener(String promptKey, PromptListenerInvoker listenerInvoker) {
-        if (listenerInvoker == null) {
-            return;
-        }
-        String key = CacheKeyUtils.buildPromptKey(promptKey);
-        promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
-            if (null == promptListenerInvokers) {
-                return null;
-            }
-            promptListenerInvokers.remove(listenerInvoker);
-            return promptListenerInvokers.isEmpty() ? null : promptListenerInvokers;
-        });
     }
     
     /**
