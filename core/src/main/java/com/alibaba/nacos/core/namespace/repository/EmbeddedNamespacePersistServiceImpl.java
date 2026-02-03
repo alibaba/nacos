@@ -151,6 +151,10 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
