@@ -100,6 +100,11 @@ public class NacosAiService implements AiService {
      */
     private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
     
+    /**
+     * Number of parts in semantic version (major.minor.patch).
+     */
+    private static final int VERSION_PARTS_COUNT = 3;
+    
     private final String namespaceId;
     
     private final AiGrpcClient grpcClient;
@@ -667,7 +672,7 @@ public class NacosAiService implements AiService {
         String[] newParts = newVersion.split("\\.");
         String[] currentParts = currentVersion.split("\\.");
         
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < VERSION_PARTS_COUNT; i++) {
             int newPart = Integer.parseInt(newParts[i]);
             int currentPart = Integer.parseInt(currentParts[i]);
             if (newPart > currentPart) {

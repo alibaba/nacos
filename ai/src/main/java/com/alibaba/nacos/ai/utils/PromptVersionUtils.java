@@ -34,6 +34,16 @@ public class PromptVersionUtils {
      */
     private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
     
+    /**
+     * Number of parts in semantic version (major.minor.patch).
+     */
+    private static final int VERSION_PARTS_COUNT = 3;
+    
+    /**
+     * JSON file extension suffix.
+     */
+    private static final String JSON_SUFFIX = ".json";
+    
     private PromptVersionUtils() {
     }
     
@@ -69,7 +79,7 @@ public class PromptVersionUtils {
         String[] parts1 = version1.split("\\.");
         String[] parts2 = version2.split("\\.");
         
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < VERSION_PARTS_COUNT; i++) {
             int num1 = Integer.parseInt(parts1[i]);
             int num2 = Integer.parseInt(parts2[i]);
             if (num1 != num2) {
@@ -108,7 +118,7 @@ public class PromptVersionUtils {
      * @return dataId (promptKey.json)
      */
     public static String buildDataId(String promptKey) {
-        return promptKey + ".json";
+        return promptKey + JSON_SUFFIX;
     }
     
     /**
@@ -121,8 +131,8 @@ public class PromptVersionUtils {
         if (StringUtils.isBlank(dataId)) {
             return null;
         }
-        if (dataId.endsWith(".json")) {
-            return dataId.substring(0, dataId.length() - 5);
+        if (dataId.endsWith(JSON_SUFFIX)) {
+            return dataId.substring(0, dataId.length() - JSON_SUFFIX.length());
         }
         return dataId;
     }

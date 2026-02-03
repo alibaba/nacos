@@ -47,6 +47,21 @@ public class NacosPromptCacheHolder implements Closeable {
      */
     private static final String PROMPT_GROUP = "nacos-ai-prompt";
     
+    /**
+     * JSON field name for version.
+     */
+    private static final String FIELD_VERSION = "version";
+    
+    /**
+     * JSON field name for template.
+     */
+    private static final String FIELD_TEMPLATE = "template";
+    
+    /**
+     * JSON field name for commit message.
+     */
+    private static final String FIELD_COMMIT_MSG = "commitMsg";
+    
     private final ConfigService configService;
     
     private final String namespaceId;
@@ -167,14 +182,14 @@ public class NacosPromptCacheHolder implements Closeable {
             Prompt prompt = new Prompt();
             prompt.setNamespaceId(namespaceId);
             prompt.setPromptKey(promptKey);
-            if (node.has("version")) {
-                prompt.setVersion(node.get("version").asText());
+            if (node.has(FIELD_VERSION)) {
+                prompt.setVersion(node.get(FIELD_VERSION).asText());
             }
-            if (node.has("template")) {
-                prompt.setTemplate(node.get("template").asText());
+            if (node.has(FIELD_TEMPLATE)) {
+                prompt.setTemplate(node.get(FIELD_TEMPLATE).asText());
             }
-            if (node.has("commitMsg")) {
-                prompt.setCommitMsg(node.get("commitMsg").asText());
+            if (node.has(FIELD_COMMIT_MSG)) {
+                prompt.setCommitMsg(node.get(FIELD_COMMIT_MSG).asText());
             }
             return prompt;
         } catch (Exception e) {
