@@ -1,0 +1,180 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.maintainer.client.ai;
+
+import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
+import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
+
+/**
+ * Nacos AI module Prompt relative maintainer service.
+ *
+ * @author nacos
+ */
+public interface PromptMaintainerService {
+    
+    /**
+     * List prompts with pagination.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key pattern for filtering
+     * @param search      search mode: "accurate" or "blur"
+     * @param pageNo      page number
+     * @param pageSize    page size
+     * @return paged prompt list
+     * @throws NacosException if fail to list prompts
+     */
+    Page<PromptBasicInfo> listPrompts(String namespaceId, String promptKey, String search, int pageNo, int pageSize)
+            throws NacosException;
+    
+    /**
+     * List prompts with default namespace.
+     *
+     * @param promptKey prompt key pattern for filtering
+     * @param pageNo    page number
+     * @param pageSize  page size
+     * @return paged prompt list
+     * @throws NacosException if fail to list prompts
+     */
+    default Page<PromptBasicInfo> listPrompts(String promptKey, int pageNo, int pageSize) throws NacosException {
+        return listPrompts(Constants.DEFAULT_NAMESPACE_ID, promptKey, "blur", pageNo, pageSize);
+    }
+    
+    /**
+     * Get prompt detail.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @return prompt detail
+     * @throws NacosException if fail to get prompt
+     */
+    PromptDetail getPromptDetail(String namespaceId, String promptKey) throws NacosException;
+    
+    /**
+     * Get prompt detail with default namespace.
+     *
+     * @param promptKey prompt key
+     * @return prompt detail
+     * @throws NacosException if fail to get prompt
+     */
+    default PromptDetail getPromptDetail(String promptKey) throws NacosException {
+        return getPromptDetail(Constants.DEFAULT_NAMESPACE_ID, promptKey);
+    }
+    
+    /**
+     * Publish a new version of prompt.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version (must be greater than current version)
+     * @param template    prompt template content
+     * @param commitMsg   commit message
+     * @param description prompt description
+     * @return true if publish success
+     * @throws NacosException if fail to publish prompt
+     */
+    boolean publishPrompt(String namespaceId, String promptKey, String version, String template, 
+            String commitMsg, String description) throws NacosException;
+    
+    /**
+     * Publish prompt with default namespace.
+     *
+     * @param promptKey   prompt key
+     * @param version     version
+     * @param template    prompt template content
+     * @param commitMsg   commit message
+     * @return true if publish success
+     * @throws NacosException if fail to publish prompt
+     */
+    default boolean publishPrompt(String promptKey, String version, String template, String commitMsg) 
+            throws NacosException {
+        return publishPrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey, version, template, commitMsg, null);
+    }
+    
+    /**
+     * Delete prompt.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @return true if delete success
+     * @throws NacosException if fail to delete prompt
+     */
+    boolean deletePrompt(String namespaceId, String promptKey) throws NacosException;
+    
+    /**
+     * Delete prompt with default namespace.
+     *
+     * @param promptKey prompt key
+     * @return true if delete success
+     * @throws NacosException if fail to delete prompt
+     */
+    default boolean deletePrompt(String promptKey) throws NacosException {
+        return deletePrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey);
+    }
+    
+    /**
+     * List prompt history versions.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param pageNo      page number
+     * @param pageSize    page size
+     * @return paged history list
+     * @throws NacosException if fail to list history
+     */
+    Page<PromptHistoryItem> listPromptHistory(String namespaceId, String promptKey, int pageNo, int pageSize)
+            throws NacosException;
+    
+    /**
+     * List prompt history with default namespace.
+     *
+     * @param promptKey prompt key
+     * @param pageNo    page number
+     * @param pageSize  page size
+     * @return paged history list
+     * @throws NacosException if fail to list history
+     */
+    default Page<PromptHistoryItem> listPromptHistory(String promptKey, int pageNo, int pageSize) 
+            throws NacosException {
+        return listPromptHistory(Constants.DEFAULT_NAMESPACE_ID, promptKey, pageNo, pageSize);
+    }
+    
+    /**
+     * Get prompt history detail.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param historyId   history record ID
+     * @return prompt detail of the history version
+     * @throws NacosException if fail to get history detail
+     */
+    PromptDetail getPromptHistoryDetail(String namespaceId, String promptKey, Long historyId) throws NacosException;
+    
+    /**
+     * Update prompt metadata (description only).
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param description new description
+     * @return true if update success
+     * @throws NacosException if fail to update metadata
+     */
+    boolean updatePromptMetadata(String namespaceId, String promptKey, String description) throws NacosException;
+}

@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.Collection;
@@ -140,5 +142,24 @@ public class NacosAiService implements AiService {
     @Override
     public void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener)
             throws NacosException {
+    }
+    
+    @Override
+    public Prompt getPrompt(String promptKey) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public boolean publishPrompt(Prompt prompt) throws NacosException {
+        return false;
+    }
+    
+    @Override
+    public Prompt subscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void unsubscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException {
     }
 }

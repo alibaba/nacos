@@ -17,11 +17,13 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -208,6 +210,50 @@ public interface AiService extends A2aService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
+    
+    // ==================== Prompt Management APIs ====================
+    
+    /**
+     * Get prompt by prompt key.
+     *
+     * @param promptKey prompt key (unique identifier)
+     * @return prompt object with current version
+     * @throws NacosException if prompt not found or query error
+     */
+    Prompt getPrompt(String promptKey) throws NacosException;
+    
+    /**
+     * Publish a new version of prompt.
+     *
+     * <p>
+     * This method uses CAS (Compare-And-Swap) mechanism to ensure version consistency.
+     * The new version must be greater than the current version.
+     * </p>
+     *
+     * @param prompt prompt object containing promptKey, version, template, and optional commitMsg
+     * @return true if publish success
+     * @throws NacosException if version validation fails or CAS conflict after retries
+     */
+    boolean publishPrompt(Prompt prompt) throws NacosException;
+    
+    /**
+     * Subscribe prompt changes.
+     *
+     * @param promptKey      prompt key
+     * @param promptListener listener for prompt changes
+     * @return current prompt object, may be null if prompt not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    Prompt subscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException;
+    
+    /**
+     * Un-subscribe prompt changes.
+     *
+     * @param promptKey      prompt key
+     * @param promptListener listener for prompt changes
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

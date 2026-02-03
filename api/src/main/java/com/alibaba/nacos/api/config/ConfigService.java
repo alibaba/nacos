@@ -43,6 +43,26 @@ public interface ConfigService {
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
     
     /**
+     * Get config with full result including MD5.
+     *
+     * <p>This method returns a {@link ConfigQueryResult} containing both
+     * the configuration content and its MD5 hash, which can be used for
+     * CAS (Compare-And-Swap) operations.</p>
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @return config query result containing content and md5
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    default ConfigQueryResult getConfigWithResult(String dataId, String group, long timeoutMs) throws NacosException {
+        // Default implementation returns content only, without MD5
+        String content = getConfig(dataId, group, timeoutMs);
+        return new ConfigQueryResult(content, null);
+    }
+    
+    /**
      * Get config and register Listener.
      *
      * <p>If you want to pull it yourself when the program starts to get the configuration for the first time, and the

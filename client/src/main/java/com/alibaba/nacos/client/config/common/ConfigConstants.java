@@ -36,4 +36,6 @@ public class ConfigConstants {
     public static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
     
     public static final String TYPE = "type";
+    
+    public static final String MD5 = "md5";
 }

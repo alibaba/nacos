@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.ai.event;
 
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
 import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
 import com.alibaba.nacos.common.notify.Event;
@@ -44,10 +45,13 @@ public class AiChangeNotifier extends SmartSubscriber {
     
     private final Map<String, Set<SkillListenerInvoker>> skillListenerInvokers;
     
+    private final Map<String, Set<PromptListenerInvoker>> promptListenerInvokers;
+    
     public AiChangeNotifier() {
         this.mcpServerListenerInvokers = new ConcurrentHashMap<>(2);
         this.agentCardListenerInvokers = new ConcurrentHashMap<>(2);
         this.skillListenerInvokers = new ConcurrentHashMap<>(2);
+        this.promptListenerInvokers = new ConcurrentHashMap<>(2);
     }
     
     @Override
@@ -58,6 +62,8 @@ public class AiChangeNotifier extends SmartSubscriber {
             handleAgentCardChangedEvent((AgentCardChangedEvent) event);
         } else if (event instanceof SkillChangedEvent) {
             handleSkillChangedEvent((SkillChangedEvent) event);
+        } else if (event instanceof PromptChangedEvent) {
+            handlePromptChangedEvent((PromptChangedEvent) event);
         }
     }
     
@@ -94,12 +100,24 @@ public class AiChangeNotifier extends SmartSubscriber {
         }
     }
     
+    private void handlePromptChangedEvent(PromptChangedEvent event) {
+        String promptKey = CacheKeyUtils.buildPromptKey(event.getPromptKey());
+        if (!isSubscribed(promptKey, promptListenerInvokers)) {
+            return;
+        }
+        NacosPromptEvent notifiedEvent = new NacosPromptEvent(event.getPromptKey(), event.getPrompt());
+        for (PromptListenerInvoker each : promptListenerInvokers.get(promptKey)) {
+            each.invoke(notifiedEvent);
+        }
+    }
+    
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> listenedEventTypes = new LinkedList<>();
         listenedEventTypes.add(McpServerChangedEvent.class);
         listenedEventTypes.add(AgentCardChangedEvent.class);
         listenedEventTypes.add(SkillChangedEvent.class);
+        listenedEventTypes.add(PromptChangedEvent.class);
         return listenedEventTypes;
     }
     
@@ -166,6 +184,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * register prompt listener.
+     *
+     * @param promptKey       prompt key
+     * @param listenerInvoker listener invoker
+     */
+    public void registerListener(String promptKey, PromptListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
+            if (null == promptListenerInvokers) {
+                promptListenerInvokers = new ConcurrentHashSet<>();
+            }
+            promptListenerInvokers.add(listenerInvoker);
+            return promptListenerInvokers;
+        });
+    }
+    
+    /**
      * deregister mcp server listener.
      *
      * @param mcpName           name of mcp server
@@ -228,6 +266,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * deregister prompt listener.
+     *
+     * @param promptKey       prompt key
+     * @param listenerInvoker listener invoker
+     */
+    public void deregisterListener(String promptKey, PromptListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
+            if (null == promptListenerInvokers) {
+                return null;
+            }
+            promptListenerInvokers.remove(listenerInvoker);
+            return promptListenerInvokers.isEmpty() ? null : promptListenerInvokers;
+        });
+    }
+    
+    /**
      * check mcp server is subscribed.
      *
      * @param mcpName name of mcp server
@@ -260,6 +318,17 @@ public class AiChangeNotifier extends SmartSubscriber {
     public boolean isSkillSubscribed(String skillName) {
         String skillKey = CacheKeyUtils.buildSkillKey(skillName);
         return isSubscribed(skillKey, skillListenerInvokers);
+    }
+    
+    /**
+     * check prompt is subscribed.
+     *
+     * @param promptKey prompt key
+     * @return is prompt subscribed
+     */
+    public boolean isPromptSubscribed(String promptKey) {
+        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        return isSubscribed(key, promptListenerInvokers);
     }
     
     private <T extends AbstractAiListenerInvoker> boolean isSubscribed(String key,
