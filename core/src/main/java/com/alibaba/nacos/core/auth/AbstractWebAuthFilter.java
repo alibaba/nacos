@@ -65,13 +65,13 @@ public abstract class AbstractWebAuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+        HttpServletRequest req = (HttpServletRequest) request;
+        this.checkFormSize(req);
         if (!isAuthEnabled()) {
             chain.doFilter(request, response);
             return;
         }
-        HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
-        this.checkFormSize(req);
         Method method = methodsCache.getMethod(req);
         if (method == null) {
             chain.doFilter(request, response);
