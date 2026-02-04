@@ -33,6 +33,8 @@ public class CopilotConstants {
     
     public static final String PROMPT_OPTIMIZE_PATH = "/prompt/optimize";
     
+    public static final String PROMPT_DEBUG_PATH = "/prompt/debug";
+    
     public static final String CHAT_PATH = "/chat";
     
     public static final String CHAT_HISTORY_PATH = "/chat/history";

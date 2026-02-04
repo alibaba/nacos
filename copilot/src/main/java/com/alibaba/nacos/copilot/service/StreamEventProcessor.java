@@ -203,7 +203,10 @@ public class StreamEventProcessor {
                     EventProcessResult result = processEvent(event);
                     if (result != null) {
                         T response = responseBuilder.build(result.getType(), result.getContent(), false);
-                        callback.onNext(response);
+                        // Skip if response is null (e.g., filtered out by builder)
+                        if (response != null) {
+                            callback.onNext(response);
+                        }
                     }
                 } catch (Exception e) {
                     LOGGER.warn("Failed to process stream event", e);

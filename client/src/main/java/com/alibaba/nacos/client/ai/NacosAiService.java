@@ -21,9 +21,11 @@ import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
 import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -32,10 +34,12 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigQueryResult;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.NacosFactory;
@@ -44,12 +48,15 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosPromptCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosSkillCacheHolder;
 import com.alibaba.nacos.client.ai.event.AgentCardListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
-import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
+import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
+import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
+import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
@@ -66,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Nacos AI client service implementation.
@@ -77,6 +85,26 @@ public class NacosAiService implements AiService {
     
     private static final Logger LOGGER = LogUtils.logger(NacosAiService.class);
     
+    /**
+     * Fixed group for all prompt configurations.
+     */
+    private static final String PROMPT_GROUP = "nacos-ai-prompt";
+    
+    /**
+     * CAS retry count for prompt publish.
+     */
+    private static final int CAS_RETRY_COUNT = 3;
+    
+    /**
+     * Version format pattern: major.minor.patch.
+     */
+    private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
+    
+    /**
+     * Number of parts in semantic version (major.minor.patch).
+     */
+    private static final int VERSION_PARTS_COUNT = 3;
+    
     private final String namespaceId;
     
     private final AiGrpcClient grpcClient;
@@ -86,6 +114,8 @@ public class NacosAiService implements AiService {
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
     
     private final NacosSkillCacheHolder skillCacheHolder;
+    
+    private final NacosPromptCacheHolder promptCacheHolder;
     
     private final AiChangeNotifier aiChangeNotifier;
     
@@ -101,6 +131,7 @@ public class NacosAiService implements AiService {
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.skillCacheHolder = new NacosSkillCacheHolder(configService, this.namespaceId);
+        this.promptCacheHolder = new NacosPromptCacheHolder(configService, this.namespaceId);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -116,6 +147,7 @@ public class NacosAiService implements AiService {
     private void start() throws NacosException {
         this.grpcClient.start(this.mcpServerCacheHolder, this.agentCardCacheHolder);
         NotifyCenter.registerToPublisher(McpServerChangedEvent.class, 16384);
+        NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
         NotifyCenter.registerSubscriber(this.aiChangeNotifier);
     }
     
@@ -373,7 +405,7 @@ public class NacosAiService implements AiService {
             mainConfig = JacksonUtils.toObj(mainConfigContent, SkillMainConfig.class);
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                    "Failed to parse skill main configuration: " + e.getMessage(), e);
+                    "Failed to parse  skill main configuration: " + e.getMessage(), e);
         }
         
         // Build Skill object
@@ -522,11 +554,190 @@ public class NacosAiService implements AiService {
         }
     }
     
+    // ==================== Prompt Methods ====================
+    
+    @Override
+    public Prompt getPrompt(String promptKey) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        return promptCacheHolder.getPrompt(promptKey);
+    }
+    
+    @Override
+    public boolean publishPrompt(Prompt prompt) throws NacosException {
+        if (prompt == null) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `prompt` can't be null");
+        }
+        if (StringUtils.isBlank(prompt.getPromptKey())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `prompt.promptKey` can't be empty or null");
+        }
+        if (StringUtils.isBlank(prompt.getVersion())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `prompt.version` can't be empty or null");
+        }
+        
+        // 1. Validate version format (must be major.minor.patch)
+        validateVersionFormat(prompt.getVersion());
+        
+        String dataId = prompt.getPromptKey() + ".json";
+        
+        for (int retry = 0; retry < CAS_RETRY_COUNT; retry++) {
+            // 2. Get current prompt with MD5 (for version check and CAS)
+            ConfigQueryResult queryResult = configService.getConfigWithResult(dataId, PROMPT_GROUP, 3000);
+            String currentContent = queryResult.getContent();
+            String currentMd5 = queryResult.getMd5();
+            
+            // 3. Version validation - new version must be greater than current
+            if (StringUtils.isNotBlank(currentContent)) {
+                Prompt currentPrompt = parsePromptFromContent(prompt.getPromptKey(), currentContent);
+                if (currentPrompt != null && StringUtils.isNotBlank(currentPrompt.getVersion())) {
+                    if (!isVersionGreater(prompt.getVersion(), currentPrompt.getVersion())) {
+                        throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                                "New version " + prompt.getVersion() + " must be greater than current version " 
+                                        + currentPrompt.getVersion());
+                    }
+                }
+            }
+            
+            // 4. Build new content
+            Map<String, Object> contentMap = new HashMap<>(4);
+            contentMap.put("promptKey", prompt.getPromptKey());
+            contentMap.put("version", prompt.getVersion());
+            if (StringUtils.isNotBlank(prompt.getTemplate())) {
+                contentMap.put("template", prompt.getTemplate());
+            }
+            if (StringUtils.isNotBlank(prompt.getCommitMsg())) {
+                contentMap.put("commitMsg", prompt.getCommitMsg());
+            }
+            String newContent = JacksonUtils.toJson(contentMap);
+            
+            // 5. Publish with CAS
+            try {
+                boolean success;
+                if (currentMd5 != null) {
+                    // CAS publish with MD5 check
+                    success = configService.publishConfigCas(dataId, PROMPT_GROUP, newContent, currentMd5, "json");
+                } else {
+                    // First publish (no existing config)
+                    success = configService.publishConfig(dataId, PROMPT_GROUP, newContent, "json");
+                }
+                
+                if (success) {
+                    LOGGER.info("[publishPrompt] Successfully published prompt: promptKey={}, version={}", 
+                            prompt.getPromptKey(), prompt.getVersion());
+                    return true;
+                }
+            } catch (NacosException e) {
+                LOGGER.warn("[publishPrompt] Publish failed, retry {}/{}, error: {}", 
+                        retry + 1, CAS_RETRY_COUNT, e.getMessage());
+                // Continue to retry
+            }
+            
+            // CAS conflict or other failure, retry
+            LOGGER.warn("[publishPrompt] CAS conflict for prompt {}, retry {}/{}", 
+                    prompt.getPromptKey(), retry + 1, CAS_RETRY_COUNT);
+            
+            // Exponential backoff before retry
+            try {
+                Thread.sleep(100L * (1L << retry));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        "Interrupted while retrying publish");
+            }
+        }
+        
+        throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                "Failed to publish prompt after " + CAS_RETRY_COUNT + " retries due to CAS conflict");
+    }
+    
+    /**
+     * Validate version format (must be major.minor.patch).
+     */
+    private void validateVersionFormat(String version) throws NacosException {
+        if (!VERSION_PATTERN.matcher(version).matches()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Version must be in format major.minor.patch (e.g., 1.0.0), got: " + version);
+        }
+    }
+    
+    /**
+     * Check if newVersion is greater than currentVersion.
+     */
+    private boolean isVersionGreater(String newVersion, String currentVersion) {
+        String[] newParts = newVersion.split("\\.");
+        String[] currentParts = currentVersion.split("\\.");
+        
+        for (int i = 0; i < VERSION_PARTS_COUNT; i++) {
+            int newPart = Integer.parseInt(newParts[i]);
+            int currentPart = Integer.parseInt(currentParts[i]);
+            if (newPart > currentPart) {
+                return true;
+            } else if (newPart < currentPart) {
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Parse Prompt from JSON content.
+     */
+    private Prompt parsePromptFromContent(String promptKey, String content) {
+        try {
+            return promptCacheHolder.parsePromptContent(promptKey, content);
+        } catch (Exception e) {
+            LOGGER.warn("[publishPrompt] Failed to parse current prompt content: {}", e.getMessage());
+            return null;
+        }
+    }
+    
+    @Override
+    public Prompt subscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        if (null == promptListener) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptListener` can't be null");
+        }
+        
+        PromptListenerInvoker listenerInvoker = new PromptListenerInvoker(promptListener);
+        aiChangeNotifier.registerListener(promptKey, listenerInvoker);
+        Prompt result = promptCacheHolder.subscribePrompt(promptKey);
+        if (null != result && !listenerInvoker.isInvoked()) {
+            listenerInvoker.invoke(new NacosPromptEvent(promptKey, result));
+        }
+        return result;
+    }
+    
+    @Override
+    public void unsubscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        if (null == promptListener) {
+            return;
+        }
+        PromptListenerInvoker listenerInvoker = new PromptListenerInvoker(promptListener);
+        aiChangeNotifier.deregisterListener(promptKey, listenerInvoker);
+        if (!aiChangeNotifier.isPromptSubscribed(promptKey)) {
+            promptCacheHolder.unsubscribePrompt(promptKey);
+        }
+    }
+    
     @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
         this.mcpServerCacheHolder.shutdown();
         this.skillCacheHolder.shutdown();
+        this.promptCacheHolder.shutdown();
         // ConfigService will be closed automatically when client shuts down
     }
 }

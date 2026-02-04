@@ -62,6 +62,9 @@ import SkillManagement from './pages/AI/SkillManagement';
 import NewSkill from './pages/AI/NewSkill';
 import SkillDetail from './pages/AI/SkillDetail';
 import PromptManagement from './pages/AI/PromptManagement';
+import NewPrompt from './pages/AI/NewPrompt';
+import PromptDetail from './pages/AI/PromptDetail';
+import PublishPromptVersion from './pages/AI/PublishPromptVersion';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -120,6 +123,9 @@ const MENU = [
   { path: '/newSkill', component: NewSkill },
   { path: '/skillDetail', component: SkillDetail },
   { path: '/promptManagement', component: PromptManagement },
+  { path: '/newPrompt', component: NewPrompt },
+  { path: '/promptDetail', component: PromptDetail },
+  { path: '/publishPromptVersion', component: PublishPromptVersion },
   { path: '/pluginManagement', component: PluginList },
 ];
 

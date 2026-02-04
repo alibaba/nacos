@@ -1,0 +1,360 @@
+.prompt-detail {
+  padding: 0 20px 20px 20px;
+  margin-top: -30px;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+
+  // 隐藏页面顶部的分隔线
+  & > hr,
+  & > .next-divider {
+    display: none !important;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    border-bottom: none !important;
+    padding-bottom: 0;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .prompt-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0;
+        color: #333;
+        line-height: 32px;
+      }
+
+      .version-select {
+        min-width: 240px;
+        
+        .next-select-inner {
+          height: 32px;
+          line-height: 32px;
+        }
+      }
+    }
+  }
+
+  .prompt-meta {
+    margin-bottom: 12px;
+
+    .meta-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .meta-label {
+        color: #666;
+        min-width: 80px;
+        flex-shrink: 0;
+      }
+
+      .meta-value {
+        color: #333;
+      }
+    }
+  }
+
+  .header-divider {
+    border-bottom: 1px solid #e8e8e8;
+    margin-bottom: 16px;
+  }
+
+  .detail-container {
+    flex: 1;
+    display: flex;
+    gap: 24px;
+
+    .detail-left {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .section-label {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .editor-container {
+        flex: 1;
+        min-height: 300px;
+        border: 1px solid #e8e8e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .action-buttons {
+        margin-top: 16px;
+        display: flex;
+        justify-content: flex-end;
+      }
+    }
+
+    .detail-right {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+
+      .debug-card {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        .debug-title {
+          font-weight: 600;
+          font-size: 16px;
+          color: #333;
+          margin-bottom: 16px;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        .section-subtitle {
+          font-weight: 600;
+          font-size: 14px;
+          color: #333;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+
+          .variables-count {
+            background: #1890ff;
+            color: #fff;
+            font-size: 11px;
+            padding: 0 6px;
+            border-radius: 10px;
+            font-weight: normal;
+          }
+
+          .required {
+            color: #ff4d4f;
+            font-weight: normal;
+          }
+        }
+
+        .debug-input-section {
+          flex: 1;
+          padding: 16px;
+          background: #fafafa;
+          border-radius: 4px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          max-height: calc(100vh - 280px);
+
+          .variable-inputs {
+            flex: 0 0 30%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 12px;
+
+            .variable-list {
+              flex: 1;
+              overflow-y: auto;
+              padding-right: 8px;
+
+              .variable-input-item {
+                margin-bottom: 12px;
+
+                &:last-child {
+                  margin-bottom: 0;
+                }
+
+                .variable-label {
+                  display: block;
+                  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+                  font-size: 12px;
+                  color: #1890ff;
+                  margin-bottom: 6px;
+                }
+
+                .next-input {
+                  width: 100% !important;
+                }
+              }
+            }
+          }
+
+          .next-input {
+            width: 100% !important;
+          }
+
+          .input-divider {
+            height: 1px;
+            background: #e8e8e8;
+            margin: 12px 0;
+            flex-shrink: 0;
+          }
+
+          .user-input-wrapper {
+            flex: 3;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+
+            .next-input-textarea {
+              flex: 1;
+              min-height: 60px;
+            }
+          }
+
+          .debug-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin: 8px 0;
+            flex-shrink: 0;
+          }
+
+          .debug-error {
+            padding: 8px 12px;
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            border-radius: 4px;
+            color: #ff4d4f;
+            font-size: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+          }
+
+          .response-divider {
+            height: 1px;
+            background: #e8e8e8;
+            margin: 12px 0;
+            flex-shrink: 0;
+          }
+
+          .model-response-box {
+            flex: 4;
+            min-height: 0;
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            overflow-y: auto;
+            padding: 12px;
+
+            .response-placeholder {
+              color: #bfbfbf;
+              font-size: 13px;
+            }
+
+            .result-section {
+              &:not(:last-child) {
+                margin-bottom: 12px;
+                padding-bottom: 12px;
+                border-bottom: 1px dashed #e8e8e8;
+              }
+
+              .result-label {
+                font-size: 12px;
+                font-weight: 500;
+                margin-bottom: 6px;
+                display: flex;
+                align-items: center;
+              }
+
+              .result-content {
+                font-size: 13px;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-break: break-word;
+              }
+
+              &.thinking-section {
+                .result-label {
+                  color: #faad14;
+                }
+                .thinking-content {
+                  color: #8c8c8c;
+                  font-style: italic;
+                }
+              }
+
+              &.content-section {
+                .result-label {
+                  color: #52c41a;
+                }
+                .output-content {
+                  color: #333;
+                }
+              }
+            }
+          }
+
+          .debug-hint {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #999;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+  }
+}
+
+// 下拉框弹出层样式（需要放在 .prompt-detail 外面，因为弹出层挂载在 body 下）
+.version-select-popup {
+  min-width: 360px !important;
+
+  .next-menu-item {
+    padding: 10px 12px !important;
+    line-height: normal !important;
+    height: auto !important;
+    white-space: normal !important;
+    
+    .next-menu-item-inner {
+      height: auto !important;
+      line-height: normal !important;
+      white-space: normal !important;
+      overflow: visible !important;
+    }
+    
+    // 隐藏原有勾号
+    .next-menu-icon-selected {
+      display: none !important;
+    }
+  }
+}

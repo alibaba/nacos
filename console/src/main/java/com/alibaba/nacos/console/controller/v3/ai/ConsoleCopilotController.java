@@ -20,12 +20,20 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
+import com.alibaba.nacos.copilot.form.PromptDebugForm;
+import com.alibaba.nacos.copilot.form.PromptOptimizationForm;
 import com.alibaba.nacos.copilot.form.SkillGenerationForm;
 import com.alibaba.nacos.copilot.form.SkillOptimizationForm;
+import com.alibaba.nacos.copilot.model.PromptDebugRequest;
+import com.alibaba.nacos.copilot.model.PromptDebugResponse;
+import com.alibaba.nacos.copilot.model.PromptOptimizationRequest;
+import com.alibaba.nacos.copilot.model.PromptOptimizationResponse;
 import com.alibaba.nacos.copilot.model.SkillGenerationRequest;
 import com.alibaba.nacos.copilot.model.SkillGenerationResponse;
 import com.alibaba.nacos.copilot.model.SkillOptimizationRequest;
 import com.alibaba.nacos.copilot.model.SkillOptimizationResponse;
+import com.alibaba.nacos.copilot.service.PromptDebugService;
+import com.alibaba.nacos.copilot.service.PromptOptimizationService;
 import com.alibaba.nacos.copilot.service.SkillGenerationService;
 import com.alibaba.nacos.copilot.service.SkillOptimizationService;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -63,11 +71,19 @@ public class ConsoleCopilotController {
     
     private final SkillGenerationService skillGenerationService;
     
+    private final PromptOptimizationService promptOptimizationService;
+    
+    private final PromptDebugService promptDebugService;
+    
     @Autowired
     public ConsoleCopilotController(SkillOptimizationService skillOptimizationService,
-                                    SkillGenerationService skillGenerationService) {
+                                    SkillGenerationService skillGenerationService,
+                                    PromptOptimizationService promptOptimizationService,
+                                    PromptDebugService promptDebugService) {
         this.skillOptimizationService = skillOptimizationService;
         this.skillGenerationService = skillGenerationService;
+        this.promptOptimizationService = promptOptimizationService;
+        this.promptDebugService = promptDebugService;
     }
     
     /**
@@ -276,6 +292,219 @@ public class ConsoleCopilotController {
                     SkillGenerationResponse errorResponse = new SkillGenerationResponse();
                     errorResponse.setDone(true);
                     errorResponse.setExplanation("生成失败：" + t.getMessage());
+                    emitter.send(SseEmitter.event()
+                            .data(JacksonUtils.toJson(errorResponse))
+                            .name("error"));
+                    emitter.complete();
+                } catch (IOException e) {
+                    LOGGER.error("Failed to send error SSE event", e);
+                    emitter.complete();
+                }
+            }
+            
+            @Override
+            public void onComplete() {
+                emitter.complete();
+            }
+        });
+        
+        return emitter;
+    }
+    
+    /**
+     * Optimize prompt with stream response (SSE).
+     *
+     * @param form prompt optimization form
+     * @return SSE emitter for stream response
+     * @throws NacosException if validation fails
+     */
+    @PostMapping(value = CopilotConstants.PROMPT_OPTIMIZE_PATH, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @SuppressWarnings("PMD.MethodTooLongRule")
+    public SseEmitter optimizePromptStream(@RequestBody(required = false) PromptOptimizationForm form) {
+        // Create SSE emitter with 5 minutes timeout
+        SseEmitter emitter = new SseEmitter(300000L);
+        
+        // Handle null form or missing request body
+        if (form == null) {
+            try {
+                PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
+                errorResponse.setDone(true);
+                errorResponse.setExplanation("请求体不能为空");
+                emitter.send(SseEmitter.event()
+                        .data(JacksonUtils.toJson(errorResponse))
+                        .name("error"));
+                emitter.complete();
+            } catch (IOException ioException) {
+                LOGGER.error("Failed to send error SSE event", ioException);
+                emitter.completeWithError(ioException);
+            }
+            return emitter;
+        }
+        
+        try {
+            form.validate();
+        } catch (Exception e) {
+            LOGGER.error("Form validation failed", e);
+            try {
+                PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
+                errorResponse.setDone(true);
+                errorResponse.setExplanation("请求验证失败：" + e.getMessage());
+                emitter.send(SseEmitter.event()
+                        .data(JacksonUtils.toJson(errorResponse))
+                        .name("error"));
+                emitter.complete();
+            } catch (IOException ioException) {
+                LOGGER.error("Failed to send validation error SSE event", ioException);
+                emitter.complete();
+            }
+            return emitter;
+        }
+        
+        // Build request
+        PromptOptimizationRequest request = new PromptOptimizationRequest();
+        request.setPrompt(form.getPrompt());
+        request.setOptimizationGoal(form.getOptimizationGoal());
+        
+        // Call optimization service with stream callback
+        promptOptimizationService.optimizePromptStream(request, new StreamResponseCallback<PromptOptimizationResponse>() {
+            @Override
+            public void onNext(PromptOptimizationResponse response) {
+                try {
+                    // Send SSE event
+                    emitter.send(SseEmitter.event()
+                            .data(JacksonUtils.toJson(response))
+                            .name("message"));
+                } catch (IOException e) {
+                    LOGGER.error("Failed to send SSE event", e);
+                    try {
+                        PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
+                        errorResponse.setDone(true);
+                        errorResponse.setExplanation("流式响应发送失败：" + e.getMessage());
+                        emitter.send(SseEmitter.event()
+                                .data(JacksonUtils.toJson(errorResponse))
+                                .name("error"));
+                        emitter.complete();
+                    } catch (IOException ioException) {
+                        LOGGER.error("Failed to send error SSE event", ioException);
+                        emitter.complete();
+                    }
+                }
+            }
+            
+            @Override
+            public void onError(Throwable t) {
+                LOGGER.error("Error in prompt optimization stream", t);
+                try {
+                    // Send error response
+                    PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
+                    errorResponse.setDone(true);
+                    errorResponse.setExplanation("优化失败：" + t.getMessage());
+                    emitter.send(SseEmitter.event()
+                            .data(JacksonUtils.toJson(errorResponse))
+                            .name("error"));
+                    emitter.complete();
+                } catch (IOException e) {
+                    LOGGER.error("Failed to send error SSE event", e);
+                    emitter.complete();
+                }
+            }
+            
+            @Override
+            public void onComplete() {
+                emitter.complete();
+            }
+        });
+        
+        return emitter;
+    }
+    
+    /**
+     * Debug prompt with stream response (SSE).
+     * This allows testing a prompt with user input and returns the model's response including thinking.
+     *
+     * @param form prompt debug form containing prompt and user input
+     * @return SSE emitter for stream response
+     * @throws NacosException if validation fails
+     */
+    @PostMapping(value = CopilotConstants.PROMPT_DEBUG_PATH, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @SuppressWarnings("PMD.MethodTooLongRule")
+    public SseEmitter debugPromptStream(@RequestBody(required = false) PromptDebugForm form) {
+        // Create SSE emitter with 5 minutes timeout
+        SseEmitter emitter = new SseEmitter(300000L);
+        
+        // Handle null form or missing request body
+        if (form == null) {
+            try {
+                PromptDebugResponse errorResponse = new PromptDebugResponse();
+                errorResponse.setDone(true);
+                emitter.send(SseEmitter.event()
+                        .data(JacksonUtils.toJson(errorResponse))
+                        .name("error"));
+                emitter.complete();
+            } catch (IOException ioException) {
+                LOGGER.error("Failed to send error SSE event", ioException);
+                emitter.completeWithError(ioException);
+            }
+            return emitter;
+        }
+        
+        try {
+            form.validate();
+        } catch (Exception e) {
+            LOGGER.error("Form validation failed", e);
+            try {
+                PromptDebugResponse errorResponse = new PromptDebugResponse();
+                errorResponse.setDone(true);
+                emitter.send(SseEmitter.event()
+                        .data(JacksonUtils.toJson(errorResponse))
+                        .name("error"));
+                emitter.complete();
+            } catch (IOException ioException) {
+                LOGGER.error("Failed to send validation error SSE event", ioException);
+                emitter.complete();
+            }
+            return emitter;
+        }
+        
+        // Build request
+        PromptDebugRequest request = new PromptDebugRequest();
+        request.setPrompt(form.getPrompt());
+        request.setUserInput(form.getUserInput());
+        
+        // Call debug service with stream callback
+        promptDebugService.debugPromptStream(request, new StreamResponseCallback<PromptDebugResponse>() {
+            @Override
+            public void onNext(PromptDebugResponse response) {
+                try {
+                    // Send SSE event
+                    emitter.send(SseEmitter.event()
+                            .data(JacksonUtils.toJson(response))
+                            .name("message"));
+                } catch (IOException e) {
+                    LOGGER.error("Failed to send SSE event", e);
+                    try {
+                        PromptDebugResponse errorResponse = new PromptDebugResponse();
+                        errorResponse.setDone(true);
+                        emitter.send(SseEmitter.event()
+                                .data(JacksonUtils.toJson(errorResponse))
+                                .name("error"));
+                        emitter.complete();
+                    } catch (IOException ioException) {
+                        LOGGER.error("Failed to send error SSE event", ioException);
+                        emitter.complete();
+                    }
+                }
+            }
+            
+            @Override
+            public void onError(Throwable t) {
+                LOGGER.error("Error in prompt debug stream", t);
+                try {
+                    // Send error response
+                    PromptDebugResponse errorResponse = new PromptDebugResponse();
+                    errorResponse.setDone(true);
                     emitter.send(SseEmitter.event()
                             .data(JacksonUtils.toJson(errorResponse))
                             .name("error"));
