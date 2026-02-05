@@ -100,14 +100,16 @@ class NewSkill extends React.Component {
       selectedFile: null, // 当前选中的文件
       fileTree: null, // 文件树结构
       // 创建模式下默认添加一个空的资源项
-      resources: isEdit ? [] : [
-        {
-          name: '',
-          type: '',
-          content: '',
-          metadata: null,
-        },
-      ],
+      resources: isEdit
+        ? []
+        : [
+            {
+              name: '',
+              type: '',
+              content: '',
+              metadata: null,
+            },
+          ],
       // 资源面板展开状态，创建模式下默认展开第一个
       expandedKeys: isEdit ? [] : ['0'],
       // 正在编辑的资源索引（用于标题编辑）
@@ -140,18 +142,18 @@ class NewSkill extends React.Component {
     document.removeEventListener('click', this.handleDocumentClick, true);
   }
 
-  handleDocumentClick = (e) => {
+  handleDocumentClick = e => {
     // Skip if clicking on resource title text (which should enter edit mode)
     if (e.target.closest('.resource-title-text')) {
       return;
     }
-    
+
     // If editing resource title, check if click is outside the editor
     if (this.state.editingResourceIndex !== null) {
       // Find the editor element for the current editing resource
       const editorElements = document.querySelectorAll('.resource-title-editor');
       const currentEditor = editorElements[this.state.editingResourceIndex];
-      
+
       if (currentEditor && !currentEditor.contains(e.target)) {
         // Click is outside the editor, exit edit mode
         this.setState({ editingResourceIndex: null });
@@ -164,7 +166,7 @@ class NewSkill extends React.Component {
       const optimizedSkillStr = localStorage.getItem('nacos_optimized_skill');
       if (optimizedSkillStr) {
         const optimizedSkill = JSON.parse(optimizedSkillStr);
-        
+
         // Fill form with optimized skill data
         // Important: Keep original skill name, don't use optimized name
         const originalName = this.state.skillName || '';
@@ -200,17 +202,19 @@ class NewSkill extends React.Component {
           resource: resourceMap,
         };
 
-          this.setState({
-            resources,
-            expandedKeys: resources.map((_, index) => String(index)),
+        this.setState({
+          resources,
+          expandedKeys: resources.map((_, index) => String(index)),
           currentSkillData, // Set currentSkillData so AI optimization can work
-          });
+        });
 
         // Clear the stored data
         localStorage.removeItem('nacos_optimized_skill');
-        
+
         const { locale = {} } = this.props;
-        Message.success(this.getLocaleValue('optimizedSkillLoaded', 'Optimized skill data loaded successfully'));
+        Message.success(
+          this.getLocaleValue('optimizedSkillLoaded', 'Optimized skill data loaded successfully')
+        );
       } else {
         // Fallback to normal load
         this.loadSkillData();
@@ -220,7 +224,7 @@ class NewSkill extends React.Component {
       // Fallback to normal load
       this.loadSkillData();
     }
-  }
+  };
 
   loadSkillData = () => {
     const { skillName } = this.state;
@@ -247,14 +251,15 @@ class NewSkill extends React.Component {
           });
 
           // 保存skill数据用于AI优化
-          this.setState({ 
+          this.setState({
             resources,
             expandedKeys: resources.map((_, index) => String(index)),
-            currentSkillData: skillData 
+            currentSkillData: skillData,
           });
         } else {
           Message.error(
-            data?.message || this.getLocaleValue('getSkillInfoFailed', 'Failed to get Skill information')
+            data?.message ||
+              this.getLocaleValue('getSkillInfoFailed', 'Failed to get Skill information')
           );
         }
       },
@@ -349,7 +354,9 @@ class NewSkill extends React.Component {
           console.error('Request failed:', error);
           this.setState({ loading: false });
           Message.error(
-            isEdit ? this.getLocaleValue('updateFailed', 'Update failed') : this.getLocaleValue('createFailed', 'Create failed')
+            isEdit
+              ? this.getLocaleValue('updateFailed', 'Update failed')
+              : this.getLocaleValue('createFailed', 'Create failed')
           );
         },
       });
@@ -376,14 +383,17 @@ class NewSkill extends React.Component {
     });
   };
 
-  handleExpandChange = (expandedKeys) => {
+  handleExpandChange = expandedKeys => {
     this.setState({ expandedKeys });
   };
 
   handleRemoveResource = index => {
     Dialog.confirm({
       title: this.getLocaleValue('deleteConfirm', 'Delete Confirmation'),
-      content: this.getLocaleValue('deleteResourceConfirm', 'Are you sure you want to delete this resource?'),
+      content: this.getLocaleValue(
+        'deleteResourceConfirm',
+        'Are you sure you want to delete this resource?'
+      ),
       onOk: () => {
         const { resources, expandedKeys } = this.state;
         const newResources = resources.filter((_, i) => i !== index);
@@ -401,7 +411,7 @@ class NewSkill extends React.Component {
 
   handleResourceChange = (index, field, value) => {
     let filteredValue = value;
-    
+
     // 资源名称：支持英文大小写、数字、点号、下划线、横杠，不能有空格
     if (field === 'name') {
       filteredValue = value.replace(/[^a-zA-Z0-9._-]/g, '');
@@ -410,14 +420,14 @@ class NewSkill extends React.Component {
     if (field === 'type') {
       filteredValue = value.replace(/[^a-zA-Z.-]/g, '');
     }
-    
+
     const { resources } = this.state;
     const newResources = [...resources];
     newResources[index] = {
       ...newResources[index],
       [field]: filteredValue,
     };
-    
+
     this.setState({ resources: newResources });
   };
 
@@ -434,7 +444,7 @@ class NewSkill extends React.Component {
     });
   };
 
-  handleResourceTitleMouseMove = (e) => {
+  handleResourceTitleMouseMove = e => {
     if (this.state.tooltipVisible) {
       this.setState({
         tooltipPosition: { x: e.clientX, y: e.clientY },
@@ -453,7 +463,7 @@ class NewSkill extends React.Component {
     this.setState({ editingResourceIndex: null });
   };
 
-  handleSkillNameChange = (value) => {
+  handleSkillNameChange = value => {
     // Skill名称：只允许英文、下划线、横杠
     const filteredValue = value.replace(/[^a-zA-Z_-]/g, '');
     this.field.setValue('name', filteredValue);
@@ -471,12 +481,14 @@ class NewSkill extends React.Component {
     const { backgroundInfo } = this.state;
 
     if (!backgroundInfo || backgroundInfo.trim() === '') {
-      Message.warning(this.getLocaleValue('backgroundInfoRequired', 'Please enter background information'));
+      Message.warning(
+        this.getLocaleValue('backgroundInfoRequired', 'Please enter background information')
+      );
       return;
     }
 
-    this.setState({ 
-      generating: true, 
+    this.setState({
+      generating: true,
       streaming: true,
       streamContent: '',
       thinkingContent: '',
@@ -494,7 +506,12 @@ class NewSkill extends React.Component {
       try {
         conversationHistory = JSON.parse(this.state.conversationHistoryJson);
       } catch (e) {
-        Message.error(this.getLocaleValue('conversationHistoryInvalid', 'Invalid conversation history JSON format'));
+        Message.error(
+          this.getLocaleValue(
+            'conversationHistoryInvalid',
+            'Invalid conversation history JSON format'
+          )
+        );
         this.setState({ generating: false, streaming: false });
         return;
       }
@@ -565,7 +582,10 @@ class NewSkill extends React.Component {
                   currentEventType = eventType;
                   // If we have pending data and this is an error event, handle it now
                   if (eventType === 'error' && pendingData) {
-                    const errorMessage = pendingData.explanation || pendingData.message || this.getLocaleValue('generateFailed', '生成失败');
+                    const errorMessage =
+                      pendingData.explanation ||
+                      pendingData.message ||
+                      this.getLocaleValue('generateFailed', '生成失败');
                     Message.error(errorMessage);
                     this.setState({
                       streaming: false,
@@ -581,7 +601,10 @@ class NewSkill extends React.Component {
                       const data = JSON.parse(dataStr);
                       // Handle error event - check if current event type is error
                       if (currentEventType === 'error') {
-                        const errorMessage = data.explanation || data.message || this.getLocaleValue('generateFailed', '生成失败');
+                        const errorMessage =
+                          data.explanation ||
+                          data.message ||
+                          this.getLocaleValue('generateFailed', '生成失败');
                         Message.error(errorMessage);
                         this.setState({
                           streaming: false,
@@ -591,7 +614,10 @@ class NewSkill extends React.Component {
                       } else if (data.done && data.explanation && !data.skill) {
                         // Handle case where error comes in data with done=true but no skill
                         // This might be an error response
-                        const errorMessage = data.explanation || data.message || this.getLocaleValue('generateFailed', '生成失败');
+                        const errorMessage =
+                          data.explanation ||
+                          data.message ||
+                          this.getLocaleValue('generateFailed', '生成失败');
                         Message.error(errorMessage);
                         this.setState({
                           streaming: false,
@@ -635,7 +661,7 @@ class NewSkill extends React.Component {
       });
   };
 
-  handleSSEMessage = (data) => {
+  handleSSEMessage = data => {
     if (!data) {
       return;
     }
@@ -649,7 +675,12 @@ class NewSkill extends React.Component {
         thinkingContent: (prevState.thinkingContent || '') + (data.chunk || ''),
         streamType: 'THINKING',
       }));
-    } else if (typeStr === 'TOOL_CALL' || data.type === 'TOOL_CALL' || typeStr === 'CONTENT' || data.type === 'CONTENT') {
+    } else if (
+      typeStr === 'TOOL_CALL' ||
+      data.type === 'TOOL_CALL' ||
+      typeStr === 'CONTENT' ||
+      data.type === 'CONTENT'
+    ) {
       // Accumulate stream content
       const currentContent = this.state.streamContent || '';
       this.setState({
@@ -666,7 +697,7 @@ class NewSkill extends React.Component {
         resultContentCollapsed: true, // 折叠结果内容，显示生成的Skill
         parsingResult: true, // 开始解析结果
       });
-      
+
       // Parse result after a short delay
       setTimeout(() => {
         // DONE event doesn't contain full content, must parse from accumulated streamContent
@@ -706,12 +737,17 @@ class NewSkill extends React.Component {
             const parsed = JSON.parse(jsonContent);
             // Support multiple formats: {skill: {...}} or direct skill object
             skillData = parsed.skill || parsed;
-            
+
             // eslint-disable-next-line no-console
             console.log('Parsed skill from streamContent:', skillData);
           } catch (e) {
             // eslint-disable-next-line no-console
-            console.error('Failed to parse skill from streamContent:', e, 'Content:', this.state.streamContent);
+            console.error(
+              'Failed to parse skill from streamContent:',
+              e,
+              'Content:',
+              this.state.streamContent
+            );
           }
         }
 
@@ -728,13 +764,21 @@ class NewSkill extends React.Component {
             parsingResult: false,
             generatedSkill: {
               skill: skillData,
-              explanation: this.getLocaleValue('generateSuccess', 'Skill generated successfully')
-            }
+              explanation: this.getLocaleValue('generateSuccess', 'Skill generated successfully'),
+            },
           });
         } else {
           // eslint-disable-next-line no-console
-          console.error('No skill found in DONE event or streamContent:', { data, streamContent: this.state.streamContent });
-          Message.error(this.getLocaleValue('generateFailed', 'Failed to generate skill: no skill data returned'));
+          console.error('No skill found in DONE event or streamContent:', {
+            data,
+            streamContent: this.state.streamContent,
+          });
+          Message.error(
+            this.getLocaleValue(
+              'generateFailed',
+              'Failed to generate skill: no skill data returned'
+            )
+          );
           this.setState({ generating: false, parsingResult: false });
         }
       }, 500);
@@ -746,43 +790,69 @@ class NewSkill extends React.Component {
   };
 
   handleApplyGeneratedSkill = () => {
-    const { generatedSkill } = this.state;
-    
-    if (!generatedSkill || !generatedSkill.skill) {
-      return;
-    }
+    try {
+      const { generatedSkill } = this.state;
 
-    const skill = generatedSkill.skill;
+      if (!generatedSkill || !generatedSkill.skill) {
+        Message.warning(this.getLocaleValue('noGeneratedSkill', 'No generated skill to apply'));
+        return;
+      }
 
-    // Fill form with generated skill
-    this.field.setValues({
-      name: skill.name || '',
-      description: skill.description || '',
-      instruction: skill.instruction || '',
-    });
+      const skill = generatedSkill.skill;
+      const successMessage =
+        generatedSkill.explanation ||
+        this.getLocaleValue('generateSuccess', 'Skill generated successfully');
 
-    // Fill resources if any
-    if (skill.resource && Object.keys(skill.resource).length > 0) {
-      const resources = Object.values(skill.resource).map(resource => ({
-        name: resource.name || '',
-        type: resource.type || '',
-        content: resource.content || '',
-        metadata: resource.metadata || null,
-      }));
-      this.setState({
-        resources,
-        expandedKeys: resources.map((_, index) => String(index)),
+      // Prepare resources data
+      let resources = [];
+      let expandedKeys = [];
+      if (skill.resource && Object.keys(skill.resource).length > 0) {
+        resources = Object.values(skill.resource).map(resource => ({
+          name: resource.name || '',
+          type: resource.type || '',
+          content: resource.content || '',
+          metadata: resource.metadata || null,
+        }));
+        expandedKeys = resources.map((_, index) => String(index));
+      }
+
+      // Fill form with generated skill
+      this.field.setValues({
+        name: skill.name || '',
+        description: skill.description || '',
+        instruction: skill.instruction || '',
       });
-    }
 
-    Message.success(generatedSkill.explanation || this.getLocaleValue('generateSuccess', 'Skill generated successfully'));
-    
-    // Close dialog and reset
-    this.setState({ 
-      showAiGenerateDialog: false, 
-      backgroundInfo: '',
-      generatedSkill: null 
-    });
+      // Update all state in a single call to avoid multiple re-renders
+      // Close dialog and reset all related state
+      this.setState(
+        {
+          resources,
+          expandedKeys,
+          showAiGenerateDialog: false,
+          backgroundInfo: '',
+          generatedSkill: null,
+          thinkingContent: '',
+          streamContent: '',
+          streaming: false,
+          parsingResult: false,
+          inputSectionCollapsed: false,
+          thinkingCollapsed: false,
+          resultContentCollapsed: false,
+          showInputCollapsed: false,
+        },
+        () => {
+          // Show success message after state update completes and component re-renders
+          Message.success(successMessage);
+        }
+      );
+    } catch (error) {
+      console.error('Error applying generated skill:', error);
+      Message.error(
+        this.getLocaleValue('applyFailed', 'Failed to apply generated skill: ') +
+          (error.message || 'Unknown error')
+      );
+    }
   };
 
   handleBackgroundInfoChange = value => {
@@ -790,9 +860,9 @@ class NewSkill extends React.Component {
   };
 
   handleShowAiGenerate = () => {
-    this.setState({ 
-      showAiGenerateDialog: true, 
-      backgroundInfo: '', 
+    this.setState({
+      showAiGenerateDialog: true,
+      backgroundInfo: '',
       generatedSkill: null,
       selectedMcpServer: null,
       mcpTools: [],
@@ -811,9 +881,9 @@ class NewSkill extends React.Component {
   };
 
   handleCloseAiGenerateDialog = () => {
-    this.setState({ 
-      showAiGenerateDialog: false, 
-      backgroundInfo: '', 
+    this.setState({
+      showAiGenerateDialog: false,
+      backgroundInfo: '',
       generatedSkill: null,
       selectedMcpServer: null,
       mcpTools: [],
@@ -828,14 +898,14 @@ class NewSkill extends React.Component {
     });
   };
 
-  handleInputMouseEnter = (e) => {
+  handleInputMouseEnter = e => {
     this.setState({
       inputTooltipVisible: true,
       inputTooltipPosition: { x: e.clientX, y: e.clientY },
     });
   };
 
-  handleInputMouseMove = (e) => {
+  handleInputMouseMove = e => {
     if (this.state.inputTooltipVisible) {
       this.setState({
         inputTooltipPosition: { x: e.clientX, y: e.clientY },
@@ -849,14 +919,14 @@ class NewSkill extends React.Component {
     });
   };
 
-  handleThinkingMouseEnter = (e) => {
+  handleThinkingMouseEnter = e => {
     this.setState({
       thinkingTooltipVisible: true,
       thinkingTooltipPosition: { x: e.clientX, y: e.clientY },
     });
   };
 
-  handleThinkingMouseMove = (e) => {
+  handleThinkingMouseMove = e => {
     if (this.state.thinkingTooltipVisible) {
       this.setState({
         thinkingTooltipPosition: { x: e.clientX, y: e.clientY },
@@ -872,16 +942,23 @@ class NewSkill extends React.Component {
 
   renderUserInput = () => {
     const { backgroundInfo, selectedMcpTools, showInputCollapsed } = this.state;
-    
+
     if (!showInputCollapsed) {
       return null;
     }
 
-    const selectedToolsText = selectedMcpTools.length > 0
-      ? selectedMcpTools.map(t => t.name).join(', ')
-      : this.getLocaleValue('noToolsSelected', 'No tools selected');
+    const selectedToolsText =
+      selectedMcpTools.length > 0
+        ? selectedMcpTools.map(t => t.name).join(', ')
+        : this.getLocaleValue('noToolsSelected', 'No tools selected');
 
-    const fullContent = `${this.getLocaleValue('backgroundInfo', 'Background Information')}: ${backgroundInfo}\n\n${this.getLocaleValue('selectedTools', 'Selected Tools')}: ${selectedToolsText}`;
+    const fullContent = `${this.getLocaleValue(
+      'backgroundInfo',
+      'Background Information'
+    )}: ${backgroundInfo}\n\n${this.getLocaleValue(
+      'selectedTools',
+      'Selected Tools'
+    )}: ${selectedToolsText}`;
 
     return (
       <div
@@ -906,8 +983,17 @@ class NewSkill extends React.Component {
           </div>
           <Icon type="arrow-up" size="small" style={{ color: '#999' }} />
         </div>
-        <div style={{ marginTop: 8, fontSize: '12px', color: '#999', maxHeight: 40, overflow: 'hidden' }}>
-          {backgroundInfo.substring(0, 100)}{backgroundInfo.length > 100 ? '...' : ''}
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: '12px',
+            color: '#999',
+            maxHeight: 40,
+            overflow: 'hidden',
+          }}
+        >
+          {backgroundInfo.substring(0, 100)}
+          {backgroundInfo.length > 100 ? '...' : ''}
         </div>
       </div>
     );
@@ -946,8 +1032,17 @@ class NewSkill extends React.Component {
             </div>
             <Icon type="arrow-up" size="small" style={{ color: '#999' }} />
           </div>
-          <div style={{ marginTop: 8, fontSize: '12px', color: '#999', maxHeight: 40, overflow: 'hidden' }}>
-            {thinkingContent.substring(0, 100)}{thinkingContent.length > 100 ? '...' : ''}
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: '12px',
+              color: '#999',
+              maxHeight: 40,
+              overflow: 'hidden',
+            }}
+          >
+            {thinkingContent.substring(0, 100)}
+            {thinkingContent.length > 100 ? '...' : ''}
           </div>
         </div>
       );
@@ -956,7 +1051,10 @@ class NewSkill extends React.Component {
     if (!thinkingCollapsed && thinkingContent) {
       return (
         <div style={{ marginBottom: 16 }}>
-          <Collapse defaultExpandedKeys={['0']} style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+          <Collapse
+            defaultExpandedKeys={['0']}
+            style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}
+          >
             <Panel
               key="0"
               title={
@@ -968,7 +1066,14 @@ class NewSkill extends React.Component {
                 </div>
               }
             >
-              <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0, fontSize: '13px' }}>
+              <div
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  margin: 0,
+                  fontSize: '13px',
+                }}
+              >
                 {thinkingContent}
               </div>
             </Panel>
@@ -1023,17 +1128,19 @@ class NewSkill extends React.Component {
             padding: '12px 16px',
             background: '#fafafa',
             cursor: 'pointer',
-            borderBottom: (content || loading) ? '1px solid #e6e6e6' : 'none',
+            borderBottom: content || loading ? '1px solid #e6e6e6' : 'none',
           }}
           onClick={onToggle}
         >
           <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-            {icon && <div style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}>{icon}</div>}
+            {icon && (
+              <div style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}>{icon}</div>
+            )}
             <span style={{ fontWeight: 500 }}>{title}</span>
             {thinkingContentForIcon && thinkingContentForIcon.trim() && (
               <span
                 style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center' }}
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                 }}
               >
@@ -1072,12 +1179,7 @@ class NewSkill extends React.Component {
                 </Balloon>
               </span>
             )}
-            {loading && (
-              <Loading
-                size="medium"
-                style={{ marginLeft: 8 }}
-              />
-            )}
+            {loading && <Loading size="medium" style={{ marginLeft: 8 }} />}
           </div>
           <Icon
             type={isCollapsed ? 'arrow-down' : 'arrow-up'}
@@ -1121,7 +1223,8 @@ class NewSkill extends React.Component {
                   left: 0,
                   right: 0,
                   height: '20px',
-                  background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
+                  background:
+                    'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
                   pointerEvents: 'none',
                 }}
               />
@@ -1146,19 +1249,22 @@ class NewSkill extends React.Component {
     return (
       <div>
         {/* 思考内容区域 - 仅在 THINKING 阶段显示 */}
-        {(thinkingContent && streamType === 'THINKING') && (
+        {thinkingContent &&
+          streamType === 'THINKING' &&
           this.renderCollapsibleSection(
             this.getLocaleValue('thinking', '思考') || '思考',
             thinkingContent,
             thinkingCollapsed,
             () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
-            <Tag type="normal" size="small">{this.getLocaleValue('thinking', '思考') || '思考'}</Tag>,
+            <Tag type="normal" size="small">
+              {this.getLocaleValue('thinking', '思考') || '思考'}
+            </Tag>,
             streaming && streamType === 'THINKING' && !thinkingContent
-          )
-        )}
+          )}
 
         {/* 结果内容区域 - 当开始接收模型回复时显示，包含思考内容图标 */}
-        {streamContent && streamType !== 'THINKING' && (
+        {streamContent &&
+          streamType !== 'THINKING' &&
           this.renderCollapsibleSection(
             this.getLocaleValue('generatingContent', '生成内容') || '生成内容',
             streamContent,
@@ -1169,199 +1275,303 @@ class NewSkill extends React.Component {
             </Tag>,
             streaming && !streamContent,
             this.state.thinkingContent
-          )
-        )}
+          )}
       </div>
     );
   };
 
   renderGeneratedSkill = () => {
-    const { generatedSkill, backgroundInfo, selectedMcpTools, thinkingContent, streamContent,
-      inputSectionCollapsed, thinkingCollapsed, resultContentCollapsed } = this.state;
+    const {
+      generatedSkill,
+      backgroundInfo,
+      selectedMcpTools,
+      thinkingContent,
+      streamContent,
+      inputSectionCollapsed,
+      thinkingCollapsed,
+      resultContentCollapsed,
+    } = this.state;
     if (!generatedSkill || !generatedSkill.skill) {
       return null;
     }
 
     try {
-    const skill = generatedSkill.skill;
-    const resources = skill.resource ? Object.values(skill.resource) : [];
+      const skill = generatedSkill.skill;
+      const resources = skill.resource ? Object.values(skill.resource) : [];
 
-    // 构建用户输入内容
-    const selectedToolsText = selectedMcpTools.length > 0
-      ? selectedMcpTools.map(t => t.name).join(', ')
-      : this.getLocaleValue('noToolsSelected', 'No tools selected');
-    const userInputContent = `${this.getLocaleValue('backgroundInfo', 'Background Information')}: ${backgroundInfo}\n\n${this.getLocaleValue('selectedTools', 'Selected Tools')}: ${selectedToolsText}`;
-    const userInputPreview = backgroundInfo ? backgroundInfo.substring(0, 100) + (backgroundInfo.length > 100 ? '...' : '') : '';
+      // 构建用户输入内容
+      const selectedToolsText =
+        selectedMcpTools.length > 0
+          ? selectedMcpTools.map(t => t.name).join(', ')
+          : this.getLocaleValue('noToolsSelected', 'No tools selected');
+      const userInputContent = `${this.getLocaleValue(
+        'backgroundInfo',
+        'Background Information'
+      )}: ${backgroundInfo}\n\n${this.getLocaleValue(
+        'selectedTools',
+        'Selected Tools'
+      )}: ${selectedToolsText}`;
+      const userInputPreview = backgroundInfo
+        ? backgroundInfo.substring(0, 100) + (backgroundInfo.length > 100 ? '...' : '')
+        : '';
 
-    return (
-      <div>
-        {/* 显示用户输入 - 折叠状态，可展开查看 */}
-        {this.renderCollapsibleSection(
-          this.getLocaleValue('userInput', 'User Input') || '用户输入',
-          inputSectionCollapsed ? userInputPreview : userInputContent,
-          inputSectionCollapsed,
-          () => this.setState({ inputSectionCollapsed: !this.state.inputSectionCollapsed }),
-          null,
-          false
-        )}
-
-        {/* 思考内容 - 始终显示（如果存在） */}
-        {thinkingContent && (
-          this.renderCollapsibleSection(
-            this.getLocaleValue('thinking', '思考') || '思考',
-            thinkingContent,
-            thinkingCollapsed,
-            () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
-            <Tag type="normal" size="small">{this.getLocaleValue('thinking', '思考') || '思考'}</Tag>,
+      return (
+        <div>
+          {/* 显示用户输入 - 折叠状态，可展开查看 */}
+          {this.renderCollapsibleSection(
+            this.getLocaleValue('userInput', 'User Input') || '用户输入',
+            inputSectionCollapsed ? userInputPreview : userInputContent,
+            inputSectionCollapsed,
+            () => this.setState({ inputSectionCollapsed: !this.state.inputSectionCollapsed }),
+            null,
             false
-          )
-        )}
+          )}
 
-        {/* 结果内容 - 始终显示（如果存在） */}
-        {streamContent && (
-          this.renderCollapsibleSection(
-            this.getLocaleValue('generatingContent', '生成内容') || '生成内容',
-            streamContent,
-            resultContentCollapsed,
-            () => this.setState({ resultContentCollapsed: !resultContentCollapsed }),
-            <Tag type="primary" size="small">{this.getLocaleValue('generatingContent', '生成内容') || '生成内容'}</Tag>,
-            false,
-            thinkingContent
-          )
-        )}
+          {/* 思考内容 - 始终显示（如果存在） */}
+          {thinkingContent &&
+            this.renderCollapsibleSection(
+              this.getLocaleValue('thinking', '思考') || '思考',
+              thinkingContent,
+              thinkingCollapsed,
+              () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
+              <Tag type="normal" size="small">
+                {this.getLocaleValue('thinking', '思考') || '思考'}
+              </Tag>,
+              false
+            )}
 
-        {/* 生成的Skill预览 */}
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '2px solid #e6e6e6' }}>
-        <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #e6e6e6' }}>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={12}>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: '14px', fontWeight: 500, color: '#333' }}>
-                  {this.getLocaleValue('skillName', 'Skill Name')}:
-                </label>
-                <span style={{ fontSize: '14px', color: '#666' }}>{skill.name || '--'}</span>
+          {/* 结果内容 - 始终显示（如果存在） */}
+          {streamContent &&
+            this.renderCollapsibleSection(
+              this.getLocaleValue('generatingContent', '生成内容') || '生成内容',
+              streamContent,
+              resultContentCollapsed,
+              () => this.setState({ resultContentCollapsed: !resultContentCollapsed }),
+              <Tag type="primary" size="small">
+                {this.getLocaleValue('generatingContent', '生成内容') || '生成内容'}
+              </Tag>,
+              false,
+              thinkingContent
+            )}
+
+          {/* 生成的Skill预览 */}
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '2px solid #e6e6e6' }}>
+            <div
+              style={{
+                background: '#fff',
+                padding: '20px',
+                borderRadius: '4px',
+                border: '1px solid #e6e6e6',
+              }}
+            >
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={12}>
+                  <div style={{ marginBottom: 16 }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 8,
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#333',
+                      }}
+                    >
+                      {this.getLocaleValue('skillName', 'Skill Name')}:
+                    </label>
+                    <span style={{ fontSize: '14px', color: '#666' }}>{skill.name || '--'}</span>
+                  </div>
+                </Col>
+              </Row>
+              <Row gutter={16} style={{ marginBottom: 24 }}>
+                <Col span={24}>
+                  <div style={{ marginBottom: 16 }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 8,
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#333',
+                      }}
+                    >
+                      {this.getLocaleValue('description', 'Description')}:
+                    </label>
+                    <span style={{ fontSize: '14px', color: '#666' }}>
+                      {skill.description || '--'}
+                    </span>
+                  </div>
+                </Col>
+              </Row>
+
+              <div style={{ marginBottom: 24 }}>
+                <div
+                  style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}
+                >
+                  {this.getLocaleValue('instruction', 'Instruction')}
+                </div>
+                <div
+                  style={{
+                    minHeight: 200,
+                    padding: '12px',
+                    background: '#fafafa',
+                    borderRadius: 4,
+                    border: '1px solid #e6e6e6',
+                  }}
+                >
+                  <MarkdownRenderer content={skill.instruction || ''} />
+                </div>
               </div>
-            </Col>
-          </Row>
-          <Row gutter={16} style={{ marginBottom: 24 }}>
-            <Col span={24}>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: '14px', fontWeight: 500, color: '#333' }}>
-                  {this.getLocaleValue('description', 'Description')}:
-                </label>
-                <span style={{ fontSize: '14px', color: '#666' }}>{skill.description || '--'}</span>
-              </div>
-            </Col>
-          </Row>
 
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
-              {this.getLocaleValue('instruction', 'Instruction')}
-            </div>
-            <div style={{ minHeight: 200, padding: '12px', background: '#fafafa', borderRadius: 4, border: '1px solid #e6e6e6' }}>
-              <MarkdownRenderer content={skill.instruction || ''} />
+              <div>
+                <div
+                  style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}
+                >
+                  {this.getLocaleValue('resources', 'Resources')}
+                </div>
+                {resources.length > 0 ? (
+                  <div>
+                    <Collapse>
+                      {resources.map((resource, index) => (
+                        <Panel
+                          key={String(index)}
+                          title={
+                            <div>
+                              <span>
+                                {resource.type && resource.name
+                                  ? `${resource.type}/${resource.name}`
+                                  : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`}
+                              </span>
+                            </div>
+                          }
+                        >
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <div style={{ marginBottom: 16 }}>
+                                <label
+                                  style={{
+                                    display: 'block',
+                                    marginBottom: 8,
+                                    fontSize: '13px',
+                                    color: '#666',
+                                  }}
+                                >
+                                  {this.getLocaleValue('resourceName', 'Resource Name')}:
+                                </label>
+                                <span style={{ fontSize: '13px', color: '#333' }}>
+                                  {resource.name || '--'}
+                                </span>
+                              </div>
+                            </Col>
+                            <Col span={12}>
+                              <div style={{ marginBottom: 16 }}>
+                                <label
+                                  style={{
+                                    display: 'block',
+                                    marginBottom: 8,
+                                    fontSize: '13px',
+                                    color: '#666',
+                                  }}
+                                >
+                                  {this.getLocaleValue('resourceType', 'Resource Type')}:
+                                </label>
+                                <span>
+                                  {resource.type ? (
+                                    <Tag type="primary" size="small">
+                                      {resource.type}
+                                    </Tag>
+                                  ) : (
+                                    '--'
+                                  )}
+                                </span>
+                              </div>
+                            </Col>
+                          </Row>
+                          <Row gutter={16}>
+                            <Col span={24}>
+                              <div>
+                                <label
+                                  style={{
+                                    display: 'block',
+                                    marginBottom: 8,
+                                    fontSize: '13px',
+                                    color: '#666',
+                                  }}
+                                >
+                                  {this.getLocaleValue('resourceContent', 'Resource Content')}:
+                                </label>
+                                <div
+                                  style={{
+                                    border: '1px solid #e6e6e6',
+                                    borderRadius: '4px',
+                                    marginTop: '8px',
+                                  }}
+                                >
+                                  {resource.content ? (
+                                    <MonacoEditor
+                                      language={getLanguageFromFileName(resource.name || '')}
+                                      width="100%"
+                                      height={300}
+                                      value={resource.content}
+                                      options={{
+                                        readOnly: true,
+                                        wordWrap: 'on',
+                                        minimap: { enabled: false },
+                                        lineNumbers: 'on',
+                                        scrollBeyondLastLine: false,
+                                      }}
+                                    />
+                                  ) : (
+                                    <div
+                                      style={{ padding: '12px', color: '#999', marginTop: '8px' }}
+                                    >
+                                      {this.getLocaleValue('noContent', 'No content')}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Col>
+                          </Row>
+                        </Panel>
+                      ))}
+                    </Collapse>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      color: '#999',
+                      fontSize: '13px',
+                    }}
+                  >
+                    {this.getLocaleValue('noResources', 'No resources')}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
-              {this.getLocaleValue('resources', 'Resources')}
-            </div>
-            {resources.length > 0 ? (
-              <div>
-                <Collapse>
-                  {resources.map((resource, index) => (
-                    <Panel
-                      key={String(index)}
-                      title={
-                        <div>
-                          <span>
-                            {resource.type && resource.name
-                              ? `${resource.type}/${resource.name}`
-                              : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`}
-                          </span>
-                        </div>
-                      }
-                    >
-                      <Row gutter={16}>
-                        <Col span={12}>
-                          <div style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 8, fontSize: '13px', color: '#666' }}>
-                              {this.getLocaleValue('resourceName', 'Resource Name')}:
-                            </label>
-                            <span style={{ fontSize: '13px', color: '#333' }}>{resource.name || '--'}</span>
-                          </div>
-                        </Col>
-                        <Col span={12}>
-                          <div style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', marginBottom: 8, fontSize: '13px', color: '#666' }}>
-                              {this.getLocaleValue('resourceType', 'Resource Type')}:
-                            </label>
-                            <span>
-                              {resource.type ? (
-                                <Tag type="primary" size="small">
-                                  {resource.type}
-                                </Tag>
-                              ) : (
-                                '--'
-                              )}
-                            </span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row gutter={16}>
-                        <Col span={24}>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: 8, fontSize: '13px', color: '#666' }}>
-                              {this.getLocaleValue('resourceContent', 'Resource Content')}:
-                            </label>
-                            <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
-                              {resource.content ? (
-                                <MonacoEditor
-                                  language={getLanguageFromFileName(resource.name || '')}
-                                  width="100%"
-                                  height={300}
-                                  value={resource.content}
-                                  options={{
-                                    readOnly: true,
-                                    wordWrap: 'on',
-                                    minimap: { enabled: false },
-                                    lineNumbers: 'on',
-                                    scrollBeyondLastLine: false,
-                                  }}
-                                />
-                              ) : (
-                                <div style={{ padding: '12px', color: '#999', marginTop: '8px' }}>
-                                  {this.getLocaleValue('noContent', 'No content')}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </Col>
-                      </Row>
-                    </Panel>
-                  ))}
-                </Collapse>
-              </div>
-            ) : (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>
-                {this.getLocaleValue('noResources', 'No resources')}
-              </div>
+          <div style={{ color: '#999', fontSize: '12px', marginTop: 16 }}>
+            {this.getLocaleValue(
+              'applyGeneratedSkillHint',
+              'Click "Apply" to fill the form with the generated Skill'
             )}
           </div>
-          </div>
         </div>
-
-        <div style={{ color: '#999', fontSize: '12px', marginTop: 16 }}>
-          {this.getLocaleValue('applyGeneratedSkillHint', 'Click "Apply" to fill the form with the generated Skill')}
-        </div>
-      </div>
-    );
+      );
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error rendering generated skill:', error, generatedSkill);
       return (
-        <div style={{ padding: '20px', color: '#f5222d', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: '4px' }}>
+        <div
+          style={{
+            padding: '20px',
+            color: '#f5222d',
+            background: '#fff2f0',
+            border: '1px solid #ffccc7',
+            borderRadius: '4px',
+          }}
+        >
           <div style={{ marginBottom: 8, fontWeight: 500 }}>渲染生成的 Skill 时出错</div>
           <div style={{ fontSize: '12px' }}>{error.message || 'Unknown error'}</div>
         </div>
@@ -1401,20 +1611,20 @@ class NewSkill extends React.Component {
     }
   };
 
-  handleMcpServerChange = async (value) => {
-    this.setState({ 
+  handleMcpServerChange = async value => {
+    this.setState({
       selectedMcpServer: value,
       mcpTools: [],
       selectedMcpTools: [],
       mcpToolSearchKeyword: '', // 重置搜索关键词
     });
-    
+
     if (value) {
       await this.loadMcpTools(value);
     }
   };
 
-  handleMcpToolSearchChange = (value) => {
+  handleMcpToolSearchChange = value => {
     this.setState({
       mcpToolSearchKeyword: value,
     });
@@ -1426,12 +1636,10 @@ class NewSkill extends React.Component {
       return mcpTools;
     }
     const keyword = mcpToolSearchKeyword.toLowerCase();
-    return mcpTools.filter(tool => 
-      tool.name && tool.name.toLowerCase().includes(keyword)
-    );
+    return mcpTools.filter(tool => tool.name && tool.name.toLowerCase().includes(keyword));
   };
 
-  loadMcpTools = async (mcpServerId) => {
+  loadMcpTools = async mcpServerId => {
     this.setState({ loadingMcpTools: true });
     try {
       const namespaceId = getParams('namespace') || 'public';
@@ -1479,17 +1687,17 @@ class NewSkill extends React.Component {
     this.setState({ optimizeDialogVisible: false });
   };
 
-  handleOptimizeSuccess = (optimizedSkill) => {
+  handleOptimizeSuccess = optimizedSkill => {
     const { locale = {} } = this.props;
     console.log('handleOptimizeSuccess called with:', optimizedSkill);
-    
+
     // 优化成功后，将优化后的skill填充到表单中
     if (optimizedSkill) {
       // 处理资源数据，确保格式正确
       let resources = [];
       const resourceData = optimizedSkill.resource || optimizedSkill.resources || {};
       console.log('Resource data:', resourceData);
-      
+
       if (resourceData && Object.keys(resourceData).length > 0) {
         // 使用Object.entries来同时获取key和value，因为Map的key可能是资源名称
         resources = Object.entries(resourceData).map(([resourceKey, resource]) => {
@@ -1504,43 +1712,53 @@ class NewSkill extends React.Component {
           return resourceObj;
         });
       }
-      
+
       console.log('Processed resources:', resources);
-      
+
       // Important: Keep original skill name, don't use optimized name
       const originalName = this.field.getValue('name') || this.state.skillName;
-      
+
       // Update form fields with optimized values
       // Use optimized values directly, even if they're empty (to allow clearing fields)
       this.field.setValues({
         name: originalName, // Always use original skill name
-        description: optimizedSkill.description !== undefined ? optimizedSkill.description : this.field.getValue('description'),
-        instruction: optimizedSkill.instruction !== undefined ? optimizedSkill.instruction : this.field.getValue('instruction'),
+        description:
+          optimizedSkill.description !== undefined
+            ? optimizedSkill.description
+            : this.field.getValue('description'),
+        instruction:
+          optimizedSkill.instruction !== undefined
+            ? optimizedSkill.instruction
+            : this.field.getValue('instruction'),
       });
 
       // Force form to re-render by updating state
-      this.setState({ 
-        resources,
-        expandedKeys: resources.map((_, index) => String(index)),
-        currentSkillData: optimizedSkill 
-      }, () => {
-        // After state update, ensure form fields are refreshed
-        // Force a re-render by calling setValue again if needed
-        if (optimizedSkill.description !== undefined) {
-          this.field.setValue('description', optimizedSkill.description);
+      this.setState(
+        {
+          resources,
+          expandedKeys: resources.map((_, index) => String(index)),
+          currentSkillData: optimizedSkill,
+        },
+        () => {
+          // After state update, ensure form fields are refreshed
+          // Force a re-render by calling setValue again if needed
+          if (optimizedSkill.description !== undefined) {
+            this.field.setValue('description', optimizedSkill.description);
+          }
+          if (optimizedSkill.instruction !== undefined) {
+            this.field.setValue('instruction', optimizedSkill.instruction);
+          }
         }
-        if (optimizedSkill.instruction !== undefined) {
-          this.field.setValue('instruction', optimizedSkill.instruction);
-        }
-      });
-      
+      );
+
       // 如果添加了新资源，显示提示信息
       if (resources.length > 0) {
         // All resources are considered new when applied from optimization
         const newResourcesCount = resources.length;
         if (newResourcesCount > 0) {
           Message.success(
-            (locale.optimizeSuccess || 'Optimization applied successfully') + ` (${newResourcesCount} new resource(s) added)`
+            (locale.optimizeSuccess || 'Optimization applied successfully') +
+              ` (${newResourcesCount} new resource(s) added)`
           );
         } else {
           Message.success(locale.optimizeSuccess || 'Optimization applied successfully');
@@ -1551,7 +1769,7 @@ class NewSkill extends React.Component {
     } else {
       Message.success(locale.optimizeSuccess || 'Optimization applied successfully');
     }
-    
+
     this.handleOptimizeDialogClose();
   };
 
@@ -1564,7 +1782,7 @@ class NewSkill extends React.Component {
   // Generate resource unique identifier
   // Format: "type::name" if type is not blank, otherwise "name"
   // The separator "::" is used because it's not in the allowed character set for type and name
-  getResourceIdentifier = (resource) => {
+  getResourceIdentifier = resource => {
     if (resource.type && resource.type.trim() !== '') {
       return `${resource.type}::${resource.name || ''}`;
     }
@@ -1607,7 +1825,7 @@ class NewSkill extends React.Component {
   };
 
   // Build file tree structure
-  buildFileTree = (previewData) => {
+  buildFileTree = previewData => {
     if (!previewData || !previewData.name) {
       return null;
     }
@@ -1670,7 +1888,7 @@ class NewSkill extends React.Component {
   };
 
   // Escape YAML value (handle special characters)
-  escapeYamlValue = (value) => {
+  escapeYamlValue = value => {
     if (!value) {
       return '';
     }
@@ -1682,7 +1900,7 @@ class NewSkill extends React.Component {
   };
 
   // Build SKILL.md content
-  buildSkillMarkdown = (previewData) => {
+  buildSkillMarkdown = previewData => {
     if (!previewData) {
       return '';
     }
@@ -1741,25 +1959,29 @@ class NewSkill extends React.Component {
     }
 
     // Generate unique key: use resourceKey for resources, otherwise use path-based key
-    const nodeKey = node.resourceKey 
-      ? `${parentKey}/${node.resourceKey}` 
-      : (parentKey ? `${parentKey}/${node.name}` : node.name);
-    const isSelected = this.state.selectedFile && 
-      this.state.selectedFile.name === node.name && 
+    const nodeKey = node.resourceKey
+      ? `${parentKey}/${node.resourceKey}`
+      : parentKey
+      ? `${parentKey}/${node.name}`
+      : node.name;
+    const isSelected =
+      this.state.selectedFile &&
+      this.state.selectedFile.name === node.name &&
       this.state.selectedFile.fileType === node.fileType &&
       this.state.selectedFile.resourceKey === node.resourceKey;
 
     if (node.type === 'folder') {
       return (
         <div key={nodeKey} className="file-tree-folder">
-          <div 
+          <div
             className="file-tree-item file-tree-folder-item"
             style={{ paddingLeft: `${level * 20 + 8}px` }}
           >
             <Icon type="folder" style={{ marginRight: 8 }} />
             <span>{node.name}</span>
           </div>
-          {node.children && node.children.map((child) => this.renderFileTree(child, level + 1, nodeKey))}
+          {node.children &&
+            node.children.map(child => this.renderFileTree(child, level + 1, nodeKey))}
         </div>
       );
     } else {
@@ -1768,18 +1990,14 @@ class NewSkill extends React.Component {
           key={nodeKey}
           className={`file-tree-item file-tree-file-item ${isSelected ? 'selected' : ''}`}
           style={{ paddingLeft: `${level * 20 + 8}px`, cursor: 'pointer' }}
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             e.stopPropagation();
             this.handleFileClick(node, e);
           }}
         >
           <Icon type="file" style={{ marginRight: 8 }} />
-          <span 
-            style={{ pointerEvents: 'none' }}
-          >
-            {node.name}
-          </span>
+          <span style={{ pointerEvents: 'none' }}>{node.name}</span>
         </div>
       );
     }
@@ -1832,15 +2050,18 @@ class NewSkill extends React.Component {
           <div className="file-content-resource">
             <div className="resource-info">
               <div className="resource-info-item">
-                <strong>{this.getLocaleValue('resourceName', 'Resource Name')}:</strong> {resource.name || '--'}
+                <strong>{this.getLocaleValue('resourceName', 'Resource Name')}:</strong>{' '}
+                {resource.name || '--'}
               </div>
               {resource.type && (
                 <div className="resource-info-item">
-                  <strong>{this.getLocaleValue('resourceType', 'Resource Type')}:</strong> {resource.type}
+                  <strong>{this.getLocaleValue('resourceType', 'Resource Type')}:</strong>{' '}
+                  {resource.type}
                 </div>
               )}
               <div className="resource-info-item">
-                <strong>{this.getLocaleValue('resourceId', 'Resource ID')}:</strong> {this.getResourceIdentifier(resource)}
+                <strong>{this.getLocaleValue('resourceId', 'Resource ID')}:</strong>{' '}
+                {this.getResourceIdentifier(resource)}
               </div>
             </div>
             <div className="resource-content">
@@ -1850,7 +2071,8 @@ class NewSkill extends React.Component {
               {resource.content ? (
                 <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
                   <MonacoEditor
-                    key={`${selectedFile.resourceKey || selectedFile.name}-${getLanguageFromFileName(resource.name || '')}`}
+                    key={`${selectedFile.resourceKey ||
+                      selectedFile.name}-${getLanguageFromFileName(resource.name || '')}`}
                     language={getLanguageFromFileName(resource.name || '')}
                     width="100%"
                     height={300}
@@ -1880,7 +2102,14 @@ class NewSkill extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { loading, generating, isEdit, resources, expandedKeys, showAiGenerateInput } = this.state;
+    const {
+      loading,
+      generating,
+      isEdit,
+      resources,
+      expandedKeys,
+      showAiGenerateInput,
+    } = this.state;
 
     const formItemLayout = {
       labelCol: { span: 3 },
@@ -1891,16 +2120,17 @@ class NewSkill extends React.Component {
       <div className="new-skill-container">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
           <PageTitle
-            title={isEdit ? this.getLocaleValue('editSkill', 'Edit Skill') : this.getLocaleValue('createSkill', 'Create Skill')}
+            title={
+              isEdit
+                ? this.getLocaleValue('editSkill', 'Edit Skill')
+                : this.getLocaleValue('createSkill', 'Create Skill')
+            }
             namespaceId={getParams('namespace') || 'public'}
           />
           {!isEdit && (
-            <Button
-              type="primary"
-              onClick={this.handleShowAiGenerate}
-              style={{ marginLeft: 16 }}
-            >
-              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} /> {this.getLocaleValue('aiGenerate', 'AI生成')}
+            <Button type="primary" onClick={this.handleShowAiGenerate} style={{ marginLeft: 16 }}>
+              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
+              {this.getLocaleValue('aiGenerate', 'AI生成')}
             </Button>
           )}
           {isEdit && (
@@ -1909,18 +2139,23 @@ class NewSkill extends React.Component {
               onClick={this.handleShowOptimizeDialog}
               style={{ marginLeft: 16 }}
             >
-              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} /> {this.getLocaleValue('aiOptimize', 'AI 优化')}
+              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
+              {this.getLocaleValue('aiOptimize', 'AI 优化')}
             </Button>
           )}
-          <Button
-            onClick={this.handleShowPreview}
-            style={{ marginLeft: 16 }}
-          >
+          <Button onClick={this.handleShowPreview} style={{ marginLeft: 16 }}>
             <Icon type="eye" /> {this.getLocaleValue('preview', 'Preview')}
           </Button>
         </div>
 
-        <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #e6e6e6' }}>
+        <div
+          style={{
+            background: '#fff',
+            padding: '20px',
+            borderRadius: '4px',
+            border: '1px solid #e6e6e6',
+          }}
+        >
           <Form field={this.field} {...formItemLayout} className="new-skill-form">
             <Form.Item
               label={this.getLocaleValue('skillName', 'Skill Name')}
@@ -1929,7 +2164,10 @@ class NewSkill extends React.Component {
             >
               <Input
                 name="name"
-                placeholder={this.getLocaleValue('skillNamePlaceholder', 'Please enter Skill name (only English letters, underscore, hyphen)')}
+                placeholder={this.getLocaleValue(
+                  'skillNamePlaceholder',
+                  'Please enter Skill name (only English letters, underscore, hyphen)'
+                )}
                 disabled={isEdit}
                 maxLength={255}
                 onChange={this.handleSkillNameChange}
@@ -1939,7 +2177,10 @@ class NewSkill extends React.Component {
             <Form.Item label={this.getLocaleValue('description', 'Description')}>
               <Input.TextArea
                 name="description"
-                placeholder={this.getLocaleValue('descriptionPlaceholder', 'Please enter Skill description')}
+                placeholder={this.getLocaleValue(
+                  'descriptionPlaceholder',
+                  'Please enter Skill description'
+                )}
                 rows={3}
                 maxLength={1000}
               />
@@ -1956,7 +2197,7 @@ class NewSkill extends React.Component {
                   width="100%"
                   height={400}
                   value={this.field.getValue('instruction') || ''}
-                  onChange={(value) => {
+                  onChange={value => {
                     this.field.setValue('instruction', value);
                   }}
                   options={{
@@ -1970,7 +2211,11 @@ class NewSkill extends React.Component {
 
             <Form.Item label={this.getLocaleValue('resources', 'Resources')}>
               <div className="resources-section">
-                <Button type="primary" onClick={this.handleAddResource} style={{ marginBottom: 16 }}>
+                <Button
+                  type="primary"
+                  onClick={this.handleAddResource}
+                  style={{ marginBottom: 16 }}
+                >
                   <Icon type="add" /> {this.getLocaleValue('addResource', 'Add Resource')}
                 </Button>
 
@@ -1978,9 +2223,10 @@ class NewSkill extends React.Component {
                   <Collapse expandedKeys={expandedKeys} onExpand={this.handleExpandChange}>
                     {resources.map((resource, index) => {
                       const isEditing = this.state.editingResourceIndex === index;
-                      const displayText = resource.type && resource.name
-                        ? `${resource.type}/${resource.name}`
-                        : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`;
+                      const displayText =
+                        resource.type && resource.name
+                          ? `${resource.type}/${resource.name}`
+                          : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`;
 
                       return (
                         <Collapse.Panel
@@ -1990,18 +2236,26 @@ class NewSkill extends React.Component {
                               {isEditing ? (
                                 <div
                                   className="resource-title-editor"
-                                  onClick={(e) => e.stopPropagation()}
-                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}
+                                  onClick={e => e.stopPropagation()}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    flex: 1,
+                                  }}
                                 >
                                   <Input
                                     size="small"
                                     value={resource.type || ''}
-                                    onChange={(value) => {
+                                    onChange={value => {
                                       const newResources = [...this.state.resources];
                                       newResources[index] = { ...newResources[index], type: value };
                                       this.setState({ resources: newResources });
                                     }}
-                                    placeholder={this.getLocaleValue('resourceTypePlaceholder', 'Type')}
+                                    placeholder={this.getLocaleValue(
+                                      'resourceTypePlaceholder',
+                                      'Type'
+                                    )}
                                     style={{ width: '120px' }}
                                     onPressEnter={() => {
                                       this.setState({ editingResourceIndex: null });
@@ -2011,12 +2265,15 @@ class NewSkill extends React.Component {
                                   <Input
                                     size="small"
                                     value={resource.name || ''}
-                                    onChange={(value) => {
+                                    onChange={value => {
                                       const newResources = [...this.state.resources];
                                       newResources[index] = { ...newResources[index], name: value };
                                       this.setState({ resources: newResources });
                                     }}
-                                    placeholder={this.getLocaleValue('resourceNamePlaceholder', 'Name')}
+                                    placeholder={this.getLocaleValue(
+                                      'resourceNamePlaceholder',
+                                      'Name'
+                                    )}
                                     style={{ flex: 1 }}
                                     onPressEnter={() => {
                                       this.setState({ editingResourceIndex: null });
@@ -2025,7 +2282,7 @@ class NewSkill extends React.Component {
                                   <Button
                                     text
                                     size="small"
-                                    onClick={(e) => {
+                                    onClick={e => {
                                       e.stopPropagation();
                                       this.handleResourceTitleCancel();
                                     }}
@@ -2037,8 +2294,8 @@ class NewSkill extends React.Component {
                                 <>
                                   <span
                                     className="resource-title-text"
-                                    onClick={(e) => this.handleResourceTitleClick(index, e)}
-                                    onMouseEnter={(e) => this.handleResourceTitleMouseEnter(index, e)}
+                                    onClick={e => this.handleResourceTitleClick(index, e)}
+                                    onMouseEnter={e => this.handleResourceTitleMouseEnter(index, e)}
                                     onMouseMove={this.handleResourceTitleMouseMove}
                                     onMouseLeave={this.handleResourceTitleMouseLeave}
                                     style={{ cursor: 'pointer', flex: 1 }}
@@ -2048,7 +2305,7 @@ class NewSkill extends React.Component {
                                   <Button
                                     text
                                     warning
-                                    onClick={(e) => {
+                                    onClick={e => {
                                       e.stopPropagation();
                                       this.handleRemoveResource(index);
                                     }}
@@ -2063,11 +2320,15 @@ class NewSkill extends React.Component {
                           <Form.Item>
                             <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
                               <MonacoEditor
+                                key={`resource-${index}-${resource.name || ''}-${resource.type ||
+                                  ''}`}
                                 language={getLanguageFromFileName(resource.name || '')}
                                 width="100%"
                                 height={300}
                                 value={resource.content || ''}
-                                onChange={value => this.handleResourceChange(index, 'content', value)}
+                                onChange={value =>
+                                  this.handleResourceChange(index, 'content', value)
+                                }
                                 options={{
                                   readOnly: false,
                                   wordWrap: 'on',
@@ -2087,7 +2348,10 @@ class NewSkill extends React.Component {
 
                 {resources.length === 0 && (
                   <div className="empty-resources">
-                    {this.getLocaleValue('noResources', 'No resources added yet. Click "Add Resource" to add one.')}
+                    {this.getLocaleValue(
+                      'noResources',
+                      'No resources added yet. Click "Add Resource" to add one.'
+                    )}
                   </div>
                 )}
               </div>
@@ -2100,7 +2364,9 @@ class NewSkill extends React.Component {
                 loading={loading}
                 style={{ marginRight: 10 }}
               >
-                {isEdit ? this.getLocaleValue('update', 'Update') : this.getLocaleValue('create', 'Create')}
+                {isEdit
+                  ? this.getLocaleValue('update', 'Update')
+                  : this.getLocaleValue('create', 'Create')}
               </Button>
               <Button onClick={this.handleGoBack}>{this.getLocaleValue('cancel', 'Cancel')}</Button>
             </Form.Item>
@@ -2113,11 +2379,13 @@ class NewSkill extends React.Component {
             title={this.getLocaleValue('aiGenerate', 'AI生成')}
             onClose={this.handleCloseAiGenerateDialog}
             onCancel={this.handleCloseAiGenerateDialog}
-            onOk={this.state.generatedSkill ? this.handleApplyGeneratedSkill : this.handleGenerateSkill}
+            onOk={
+              this.state.generatedSkill ? this.handleApplyGeneratedSkill : this.handleGenerateSkill
+            }
             okProps={{
               loading: this.state.generating,
-              children: this.state.generatedSkill 
-                ? this.getLocaleValue('apply', 'Apply') 
+              children: this.state.generatedSkill
+                ? this.getLocaleValue('apply', 'Apply')
                 : this.getLocaleValue('generateSkill', 'Generate Skill'),
             }}
             cancelProps={{
@@ -2130,20 +2398,24 @@ class NewSkill extends React.Component {
                 {/* 用户输入区域 - 生成前显示完整，生成后折叠 */}
                 {!this.state.showInputCollapsed ? (
                   <div>
-                    <Form.Item label={this.getLocaleValue('backgroundInfo', 'Background Information')}>
+                    <Form.Item
+                      label={this.getLocaleValue('backgroundInfo', 'Background Information')}
+                    >
                       <Input.TextArea
                         value={this.state.backgroundInfo}
                         onChange={this.handleBackgroundInfoChange}
-                        placeholder={
-                          this.getLocaleValue('backgroundInfoPlaceholder',
-                            'Please describe what you want the Skill to do, e.g., "I need a Skill to check Nacos configuration status and provide solutions when issues are found"')
-                        }
+                        placeholder={this.getLocaleValue(
+                          'backgroundInfoPlaceholder',
+                          'Please describe what you want the Skill to do, e.g., "I need a Skill to check Nacos configuration status and provide solutions when issues are found"'
+                        )}
                         rows={6}
                         maxLength={2000}
                       />
                     </Form.Item>
 
-                    <Form.Item label={this.getLocaleValue('selectMcpTools', 'Select MCP Tools (Optional)')}>
+                    <Form.Item
+                      label={this.getLocaleValue('selectMcpTools', 'Select MCP Tools (Optional)')}
+                    >
                       <Loading visible={this.state.loadingMcpServers} style={{ width: '100%' }}>
                         <Select
                           placeholder={this.getLocaleValue('selectMcpServer', 'Select MCP Server')}
@@ -2156,36 +2428,45 @@ class NewSkill extends React.Component {
                           }))}
                         />
                       </Loading>
-                      
+
                       {this.state.selectedMcpServer && (
                         <Loading visible={this.state.loadingMcpTools} style={{ width: '100%' }}>
                           <Input
-                            placeholder={this.getLocaleValue('searchTools', 'Search tools by name...')}
+                            placeholder={this.getLocaleValue(
+                              'searchTools',
+                              'Search tools by name...'
+                            )}
                             value={this.state.mcpToolSearchKeyword}
                             onChange={this.handleMcpToolSearchChange}
                             style={{ width: '100%', marginBottom: 12 }}
                             hasClear
                           />
-                          <div style={{ 
-                            border: '1px solid #e6e6e6', 
-                            borderRadius: 4, 
-                            padding: 12, 
-                            maxHeight: 200, 
-                            overflowY: 'auto',
-                            background: '#fafafa',
-                          }}>
+                          <div
+                            style={{
+                              border: '1px solid #e6e6e6',
+                              borderRadius: 4,
+                              padding: 12,
+                              maxHeight: 200,
+                              overflowY: 'auto',
+                              background: '#fafafa',
+                            }}
+                          >
                             {this.getFilteredMcpTools().length > 0 ? (
                               this.getFilteredMcpTools().map((tool, index) => (
                                 <Checkbox
                                   key={index}
-                                  checked={this.state.selectedMcpTools.some(t => t.name === tool.name)}
+                                  checked={this.state.selectedMcpTools.some(
+                                    t => t.name === tool.name
+                                  )}
                                   onChange={checked => this.handleMcpToolChange(checked, tool)}
                                   style={{ display: 'block', marginBottom: 8 }}
                                 >
                                   <div>
                                     <strong>{tool.name}</strong>
                                     {tool.description && (
-                                      <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                                      <div
+                                        style={{ fontSize: '12px', color: '#666', marginTop: 4 }}
+                                      >
                                         {tool.description}
                                       </div>
                                     )}
@@ -2195,8 +2476,14 @@ class NewSkill extends React.Component {
                             ) : (
                               <div style={{ color: '#999', fontSize: '12px' }}>
                                 {this.state.mcpToolSearchKeyword.trim()
-                                  ? this.getLocaleValue('noToolsFound', 'No tools found matching your search')
-                                  : this.getLocaleValue('noToolsAvailable', 'No tools available in this MCP server')}
+                                  ? this.getLocaleValue(
+                                      'noToolsFound',
+                                      'No tools found matching your search'
+                                    )
+                                  : this.getLocaleValue(
+                                      'noToolsAvailable',
+                                      'No tools available in this MCP server'
+                                    )}
                               </div>
                             )}
                           </div>
@@ -2204,16 +2491,31 @@ class NewSkill extends React.Component {
                       )}
                     </Form.Item>
 
-                    <Form.Item label={this.getLocaleValue('conversationHistory', 'Conversation History (Optional)')}>
+                    <Form.Item
+                      label={this.getLocaleValue(
+                        'conversationHistory',
+                        'Conversation History (Optional)'
+                      )}
+                    >
                       <div style={{ marginBottom: 8 }}>
                         <Button
                           text
                           size="small"
-                          onClick={() => this.setState({ showConversationHistory: !this.state.showConversationHistory })}
+                          onClick={() =>
+                            this.setState({
+                              showConversationHistory: !this.state.showConversationHistory,
+                            })
+                          }
                         >
                           {this.state.showConversationHistory
-                            ? this.getLocaleValue('hideConversationHistory', 'Hide Conversation History')
-                            : this.getLocaleValue('showConversationHistory', 'Show Conversation History')}
+                            ? this.getLocaleValue(
+                                'hideConversationHistory',
+                                'Hide Conversation History'
+                              )
+                            : this.getLocaleValue(
+                                'showConversationHistory',
+                                'Show Conversation History'
+                              )}
                           <Icon
                             type={this.state.showConversationHistory ? 'arrow-up' : 'arrow-down'}
                             style={{ marginLeft: 4 }}
@@ -2243,8 +2545,10 @@ class NewSkill extends React.Component {
                     </Form.Item>
 
                     <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
-                      {this.getLocaleValue('generateHint',
-                        'Enter background information and click to generate a Skill based on best practices')}
+                      {this.getLocaleValue(
+                        'generateHint',
+                        'Enter background information and click to generate a Skill based on best practices'
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -2254,14 +2558,15 @@ class NewSkill extends React.Component {
                 {/* 结果解析中提示 */}
                 {this.state.parsingResult && (
                   <div style={{ marginTop: 16, textAlign: 'center', padding: '20px' }}>
-                    <Loading visible={true} tip={this.getLocaleValue('parsingResult', 'Parsing result...')} />
+                    <Loading
+                      visible={true}
+                      tip={this.getLocaleValue('parsingResult', 'Parsing result...')}
+                    />
                   </div>
                 )}
 
                 {/* 流式内容 - 思考内容和结果内容 */}
-                {(this.state.streaming ||
-                  this.state.thinkingContent ||
-                  this.state.streamContent) &&
+                {(this.state.streaming || this.state.thinkingContent || this.state.streamContent) &&
                   this.renderStreamContent()}
               </div>
             ) : (
@@ -2293,10 +2598,17 @@ class NewSkill extends React.Component {
               >
                 {(() => {
                   const { backgroundInfo, selectedMcpTools } = this.state;
-                  const selectedToolsText = selectedMcpTools.length > 0
-                    ? selectedMcpTools.map(t => t.name).join(', ')
-                    : this.getLocaleValue('noToolsSelected', 'No tools selected');
-                  return `${this.getLocaleValue('backgroundInfo', 'Background Information')}: ${backgroundInfo}\n\n${this.getLocaleValue('selectedTools', 'Selected Tools')}: ${selectedToolsText}`;
+                  const selectedToolsText =
+                    selectedMcpTools.length > 0
+                      ? selectedMcpTools.map(t => t.name).join(', ')
+                      : this.getLocaleValue('noToolsSelected', 'No tools selected');
+                  return `${this.getLocaleValue(
+                    'backgroundInfo',
+                    'Background Information'
+                  )}: ${backgroundInfo}\n\n${this.getLocaleValue(
+                    'selectedTools',
+                    'Selected Tools'
+                  )}: ${selectedToolsText}`;
                 })()}
               </div>
             )}
@@ -2348,7 +2660,7 @@ class NewSkill extends React.Component {
           footer={[
             <Button key="close" onClick={this.handleClosePreview}>
               {this.getLocaleValue('close', 'Close')}
-            </Button>
+            </Button>,
           ]}
           style={{ width: 1200 }}
           className="skill-preview-dialog"
@@ -2359,16 +2671,16 @@ class NewSkill extends React.Component {
                 {this.getLocaleValue('fileStructure', 'File Structure')}
               </div>
               <div className="preview-file-tree">
-                {this.state.fileTree ? this.renderFileTree(this.state.fileTree) : (
+                {this.state.fileTree ? (
+                  this.renderFileTree(this.state.fileTree)
+                ) : (
                   <div className="file-tree-empty">
                     {this.getLocaleValue('noPreviewData', 'No preview data available')}
                   </div>
                 )}
               </div>
             </div>
-            <div className="preview-content-area">
-              {this.renderFileContent()}
-            </div>
+            <div className="preview-content-area">{this.renderFileContent()}</div>
           </div>
         </Dialog>
 
