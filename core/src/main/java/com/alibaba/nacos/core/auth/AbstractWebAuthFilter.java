@@ -38,6 +38,7 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
@@ -188,6 +189,6 @@ public abstract class AbstractWebAuthFilter implements Filter {
             return false;
         }
         int contentLength = request.getContentLength();
-        return(maxPostSize >= 0) && (contentLength > maxPostSize);
+        return(maxFormSize >= 0) && (contentLength > maxFormSize);
     }
 }
