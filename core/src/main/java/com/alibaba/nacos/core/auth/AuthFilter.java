@@ -29,6 +29,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
 
@@ -69,13 +70,17 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
-        checkFormSize(req);
+        HttpServletResponse resp = (HttpServletResponse) response;
+        if (checkFormSize(req, resp)) {
+            // see: org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE
+            resp.sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Payload Too Large");
+            return;
+        }
         if (!authConfigs.isAuthEnabled()) {
             chain.doFilter(request, response);
             return;
         }
 
-        HttpServletResponse resp = (HttpServletResponse) response;
         try {
             
             Method method = methodsCache.getMethod(req);
@@ -148,13 +153,11 @@ public class AuthFilter implements Filter {
      * Check the size of form parameters, see: <a href="https://github.com/alibaba/nacos/issues/14423">14423</a>
      * @param request HttpServletRequest
      */
-    private void checkFormSize(HttpServletRequest request) {
+    private boolean checkFormSize(HttpServletRequest request, HttpServletResponse resp) throws IOException {
         if (!MediaType.APPLICATION_FORM_URLENCODED.equals(MediaType.valueOf(request.getContentType()))) {
-            return;
+            return false;
         }
         int contentLength = request.getContentLength();
-        if ((maxFormSize >= 0) && (contentLength > maxFormSize)) {
-            throw new IllegalArgumentException("Request Entity Too Large!");
-        }
+        return(maxFormSize >= 0) && (contentLength > maxFormSize);
     }
 }
