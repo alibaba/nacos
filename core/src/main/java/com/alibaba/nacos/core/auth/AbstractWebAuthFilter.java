@@ -66,12 +66,17 @@ public abstract class AbstractWebAuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
-        this.checkFormSize(req);
+        HttpServletResponse resp = (HttpServletResponse) response;
+        if (checkFormSize(req, resp)) {
+            // see: org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE
+            resp.sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Payload Too Large");
+            return;
+        }
         if (!isAuthEnabled()) {
             chain.doFilter(request, response);
             return;
         }
-        HttpServletResponse resp = (HttpServletResponse) response;
+
         Method method = methodsCache.getMethod(req);
         if (method == null) {
             chain.doFilter(request, response);
@@ -178,13 +183,11 @@ public abstract class AbstractWebAuthFilter implements Filter {
      * Check the size of form parameters, see: <a href="https://github.com/alibaba/nacos/issues/14423">14423</a>
      * @param request HttpServletRequest
      */
-    private void checkFormSize(HttpServletRequest request) {
+    private boolean checkFormSize(HttpServletRequest request, HttpServletResponse resp) throws IOException {
         if (!MediaType.APPLICATION_FORM_URLENCODED.equals(MediaType.valueOf(request.getContentType()))) {
-            return;
+            return false;
         }
         int contentLength = request.getContentLength();
-        if ((maxFormSize >= 0) && (contentLength > maxFormSize)) {
-            throw new IllegalArgumentException("Request Entity Too Large!");
-        }
+        return(maxPostSize >= 0) && (contentLength > maxPostSize);
     }
 }
