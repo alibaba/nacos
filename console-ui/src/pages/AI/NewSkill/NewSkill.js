@@ -203,59 +203,175 @@ class NewSkill extends React.Component {
       if (optimizedSkillStr) {
         const optimizedSkill = JSON.parse(optimizedSkillStr);
 
-        // Fill form with optimized skill data
-        // Important: Keep original skill name, don't use optimized name
-        const originalName = this.state.skillName || '';
-        this.field.setValues({
-          name: originalName, // Always use original skill name
-          description: optimizedSkill.description || '',
-          instruction: optimizedSkill.instruction || '',
-        });
-
-        // Fill resources if any
-        let resources = [];
-        let resourceMap = {};
-        if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
-          resources = Object.values(optimizedSkill.resource).map(resource => ({
-            name: resource.name || '',
-            type: resource.type || '',
-            content: resource.content || '',
-            metadata: resource.metadata || null,
-          }));
-          // Build resource map for currentSkillData
-          Object.entries(optimizedSkill.resource).forEach(([key, resource]) => {
-            resourceMap[key] = resource;
-          });
-        }
-
-        // Build currentSkillData for AI optimization feature
+        // 先加载原始数据作为基准，用于比较变化
+        const { skillName } = this.state;
         const namespaceId = optimizedSkill.namespaceId || getParams('namespace') || '';
-        const currentSkillData = {
-          name: originalName,
-          namespaceId: namespaceId,
-          description: optimizedSkill.description || '',
-          instruction: optimizedSkill.instruction || '',
-          resource: resourceMap,
-        };
 
-        this.setState({
-          resources,
-          expandedKeys: resources.map((_, index) => String(index)),
-          currentSkillData, // Set currentSkillData so AI optimization can work
+        this.setState({ loading: true });
+
+        const params = new URLSearchParams();
+        params.append('skillName', skillName);
+        params.append('namespaceId', namespaceId);
+
+        request({
+          url: `v3/console/ai/skills?${params.toString()}`,
+          success: data => {
+            this.setState({ loading: false });
+            if (data && (data.code === 0 || data.code === 200) && data.data) {
+              const originalSkillData = data.data;
+              const originalResources = originalSkillData.resource
+                ? Object.values(originalSkillData.resource)
+                : [];
+
+              // 保存原始数据用于比较
+              const originalFormData = {
+                name: originalSkillData.name,
+                description: originalSkillData.description || '',
+                instruction: originalSkillData.instruction || '',
+              };
+
+              // Fill form with optimized skill data
+              // Important: Keep original skill name, don't use optimized name
+              const originalName = this.state.skillName || '';
+              this.field.setValues({
+                name: originalName, // Always use original skill name
+                description: optimizedSkill.description || '',
+                instruction: optimizedSkill.instruction || '',
+              });
+
+              // Fill resources if any
+              let resources = [];
+              let resourceMap = {};
+              if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
+                resources = Object.values(optimizedSkill.resource).map(resource => ({
+                  name: resource.name || '',
+                  type: resource.type || '',
+                  content: resource.content || '',
+                  metadata: resource.metadata || null,
+                }));
+                // Build resource map for currentSkillData
+                Object.entries(optimizedSkill.resource).forEach(([key, resource]) => {
+                  resourceMap[key] = resource;
+                });
+              }
+
+              // Build currentSkillData for AI optimization feature
+              const currentSkillData = {
+                name: originalName,
+                namespaceId: namespaceId,
+                description: optimizedSkill.description || '',
+                instruction: optimizedSkill.instruction || '',
+                resource: resourceMap,
+              };
+
+              // 获取被优化的文件名
+              const targetFileName = optimizedSkill.targetFileName;
+
+              // 比较优化后的数据与原始数据，判断是否有变化
+              const formChanged =
+                (optimizedSkill.description || '') !== (originalSkillData.description || '') ||
+                (optimizedSkill.instruction || '') !== (originalSkillData.instruction || '');
+              const resourcesChanged =
+                JSON.stringify(resources) !== JSON.stringify(originalResources);
+              const hasChanges = formChanged || resourcesChanged;
+
+              this.setState(
+                {
+                  resources,
+                  expandedKeys: resources.map((_, index) => String(index)),
+                  currentSkillData, // Set currentSkillData so AI optimization can work
+                  originalFormData, // 保存原始表单数据用于比较
+                  originalResources: JSON.parse(JSON.stringify(originalResources)), // 深拷贝原始资源
+                  hasChanges, // 设置变化状态
+                },
+                () => {
+                  // 在 resources 更新后构建文件树
+                  const previewData = this.buildPreviewData();
+                  const fileTree = this.buildFileTree(previewData);
+
+                  // 根据 targetFileName 查找并选中对应的文件
+                  let selectedFile = null;
+                  if (targetFileName && fileTree && Array.isArray(fileTree)) {
+                    // 递归查找文件
+                    const findFileInTree = tree => {
+                      if (Array.isArray(tree)) {
+                        for (const node of tree) {
+                          if (node.type === 'file') {
+                            // 检查是否匹配
+                            let fileIdentifier = node.name;
+                            if (node.fileType === 'resource' && node.resourceKey) {
+                              fileIdentifier = node.resourceKey;
+                            }
+                            if (fileIdentifier === targetFileName) {
+                              return node;
+                            }
+                          }
+                          if (node.type === 'folder' && node.children) {
+                            const found = findFileInTree(node.children);
+                            if (found) {
+                              return found;
+                            }
+                          }
+                        }
+                      } else if (tree.type === 'file') {
+                        let fileIdentifier = tree.name;
+                        if (tree.fileType === 'resource' && tree.resourceKey) {
+                          fileIdentifier = tree.resourceKey;
+                        }
+                        if (fileIdentifier === targetFileName) {
+                          return tree;
+                        }
+                      } else if (tree.type === 'folder' && tree.children) {
+                        return findFileInTree(tree.children);
+                      }
+                      return null;
+                    };
+
+                    selectedFile = findFileInTree(fileTree);
+                  }
+
+                  // 如果没有找到目标文件，默认选中 SKILL.md 或第一个文件
+                  if (!selectedFile && fileTree && Array.isArray(fileTree)) {
+                    selectedFile =
+                      fileTree.find(
+                        file => file.name === 'SKILL.md' && file.fileType === 'skill-md'
+                      ) || (fileTree.length > 0 ? fileTree[0] : null);
+                  }
+
+                  this.setState({
+                    editModeFileTree: fileTree,
+                    editModeSelectedFile: selectedFile,
+                  });
+
+                  // Clear the stored data
+                  localStorage.removeItem('nacos_optimized_skill');
+
+                  const { locale = {} } = this.props;
+                  Message.success(
+                    this.getLocaleValue(
+                      'optimizedSkillLoaded',
+                      'Optimized skill data loaded successfully'
+                    )
+                  );
+                }
+              );
+            } else {
+              // 如果加载原始数据失败，fallback 到正常加载
+              this.loadSkillData();
+            }
+          },
+          error: () => {
+            this.setState({ loading: false });
+            // 如果加载原始数据失败，fallback 到正常加载
+            this.loadSkillData();
+          },
         });
-
-        // Clear the stored data
-        localStorage.removeItem('nacos_optimized_skill');
-
-        const { locale = {} } = this.props;
-        Message.success(
-          this.getLocaleValue('optimizedSkillLoaded', 'Optimized skill data loaded successfully')
-        );
       } else {
         // Fallback to normal load
         this.loadSkillData();
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Failed to load optimized skill data', e);
       // Fallback to normal load
       this.loadSkillData();
@@ -1945,43 +2061,50 @@ class NewSkill extends React.Component {
       // Important: Keep original skill name, don't use optimized name
       const originalName = this.field.getValue('name') || this.state.skillName;
 
+      // 获取当前的原始数据用于比较（不要更新原始数据）
+      const { originalFormData, originalResources } = this.state;
+
       // Update form fields with optimized values
       // Use optimized values directly, even if they're empty (to allow clearing fields)
+      const optimizedDescription =
+        optimizedSkill.description !== undefined
+          ? optimizedSkill.description
+          : this.field.getValue('description');
+      const optimizedInstruction =
+        optimizedSkill.instruction !== undefined
+          ? optimizedSkill.instruction
+          : this.field.getValue('instruction');
+
       this.field.setValues({
         name: originalName, // Always use original skill name
-        description:
-          optimizedSkill.description !== undefined
-            ? optimizedSkill.description
-            : this.field.getValue('description'),
-        instruction:
-          optimizedSkill.instruction !== undefined
-            ? optimizedSkill.instruction
-            : this.field.getValue('instruction'),
+        description: optimizedDescription,
+        instruction: optimizedInstruction,
       });
 
-      // 更新原始数据，因为优化后的数据是新的原始数据
-      const newOriginalFormData = {
-        name: originalName,
-        description:
-          optimizedSkill.description !== undefined
-            ? optimizedSkill.description
-            : this.field.getValue('description'),
-        instruction:
-          optimizedSkill.instruction !== undefined
-            ? optimizedSkill.instruction
-            : this.field.getValue('instruction'),
-      };
-      const newOriginalResources = JSON.parse(JSON.stringify(resources)); // 深拷贝
+      // 比较优化后的数据与原始数据，判断是否有变化
+      // 如果 originalFormData 或 originalResources 不存在，说明是新建模式，不需要比较
+      let hasChanges = false;
+      if (originalFormData && originalResources) {
+        const formChanged =
+          optimizedDescription !== (originalFormData.description || '') ||
+          optimizedInstruction !== (originalFormData.instruction || '');
+        const resourcesChanged = JSON.stringify(resources) !== JSON.stringify(originalResources);
+        hasChanges = formChanged || resourcesChanged;
+      } else {
+        // 新建模式：如果有任何内容，就认为有变化
+        hasChanges =
+          optimizedDescription !== '' || optimizedInstruction !== '' || resources.length > 0;
+      }
 
       // Force form to re-render by updating state
+      // 重要：不要更新 originalFormData 和 originalResources，保持它们作为比较基准
       this.setState(
         {
           resources,
           expandedKeys: resources.map((_, index) => String(index)),
           currentSkillData: optimizedSkill,
-          originalFormData: newOriginalFormData,
-          originalResources: newOriginalResources,
-          hasChanges: false, // 优化后的数据作为新的原始数据，没有变化
+          // 保持 originalFormData 和 originalResources 不变，用于后续比较
+          hasChanges, // 根据比较结果设置变化状态
         },
         () => {
           // After state update, ensure form fields are refreshed
@@ -3537,6 +3660,8 @@ class NewSkill extends React.Component {
           <SkillOptimizeDialog
             visible={this.state.optimizeDialogVisible}
             skill={this.state.currentSkillData}
+            fileTree={this.state.editModeFileTree}
+            selectedFile={this.state.editModeSelectedFile}
             onClose={this.handleOptimizeDialogClose}
             onSuccess={this.handleOptimizeSuccess}
             locale={this.props.locale}

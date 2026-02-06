@@ -88,6 +88,15 @@ public class SkillOptimizationPrompt {
            - 只在必要时添加资源
            - 资源类型应该明确（template, data, script 等）
            - 资源名称应该包含文件后缀（如 .json, .yaml 等）
+           - **【绝对禁止】SKILL.md 是特殊的元数据文件，绝对不能作为资源（resource）处理**
+           - **【绝对禁止】严格禁止以下行为**：
+             * 将 SKILL.md 放在 resource 字段中
+             * 创建名为 SKILL.md 的资源文件
+             * 在 resource 中添加任何与 SKILL.md 相关的资源
+             * 将 SKILL.md 放在任何资源类型（template、data、script 等）下
+             * 创建任何包含 "SKILL.md" 的资源
+           - SKILL.md 的内容由 Skill 的 name、description 和 instruction 字段自动生成，不需要也不应该在 resource 中定义
+           - **如果用户要求"增加资源"或"添加资源"，只能添加真正的资源文件（如 .json、.yaml、.txt 等），绝对不能添加 SKILL.md**
         
         5. **MCP 工具使用**：
            - **重要：如果用户选择了工具，说明用户想要将这些工具整合到当前的 Skill 中**

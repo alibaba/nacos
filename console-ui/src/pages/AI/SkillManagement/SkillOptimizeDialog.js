@@ -42,6 +42,8 @@ class SkillOptimizeDialog extends React.Component {
   static propTypes = {
     visible: PropTypes.bool,
     skill: PropTypes.object,
+    selectedFile: PropTypes.object, // 当前选中的文件
+    fileTree: PropTypes.array, // 文件树结构
     onClose: PropTypes.func,
     onSuccess: PropTypes.func,
     locale: PropTypes.object,
@@ -117,6 +119,7 @@ class SkillOptimizeDialog extends React.Component {
       conversationHistory: null, // 对话历史
       conversationHistoryJson: '', // 对话历史 JSON 字符串（用于编辑）
       showConversationHistory: false, // 是否显示对话历史输入
+      selectedTargetFile: null, // 重置选中的目标文件
     });
   };
 
@@ -153,7 +156,7 @@ class SkillOptimizeDialog extends React.Component {
     }
   };
 
-  handleMcpServerChange = async (value) => {
+  handleMcpServerChange = async value => {
     this.setState({
       selectedMcpServer: value,
       mcpTools: [],
@@ -166,7 +169,7 @@ class SkillOptimizeDialog extends React.Component {
     }
   };
 
-  handleMcpToolSearchChange = (value) => {
+  handleMcpToolSearchChange = value => {
     this.setState({
       mcpToolSearchKeyword: value,
     });
@@ -181,7 +184,7 @@ class SkillOptimizeDialog extends React.Component {
     return mcpTools.filter(tool => tool.name && tool.name.toLowerCase().includes(keyword));
   };
 
-  loadMcpTools = async (mcpServerId) => {
+  loadMcpTools = async mcpServerId => {
     this.setState({ loadingMcpTools: true });
     try {
       const namespaceId = getParams('namespace') || 'public';
@@ -222,12 +225,82 @@ class SkillOptimizeDialog extends React.Component {
     }
   };
 
+  // 构建文件列表（扁平化 fileTree）
+  buildFileList = fileTree => {
+    if (!fileTree || !Array.isArray(fileTree)) {
+      return [];
+    }
+
+    const fileList = [];
+
+    const traverse = nodes => {
+      if (!nodes) {
+        return;
+      }
+
+      if (Array.isArray(nodes)) {
+        nodes.forEach(node => traverse(node));
+      } else {
+        const node = nodes;
+        if (node.type === 'file') {
+          // 构建文件标识符
+          let fileIdentifier = node.name;
+          if (node.fileType === 'resource' && node.resourceKey) {
+            fileIdentifier = node.resourceKey;
+          }
+          fileList.push({
+            name: node.name,
+            fileType: node.fileType,
+            resourceKey: node.resourceKey,
+            identifier: fileIdentifier, // 用于标识文件的唯一值
+            displayName: node.name, // 显示名称
+          });
+        } else if (node.type === 'folder' && node.children) {
+          // 递归处理文件夹中的文件
+          traverse(node.children);
+        }
+      }
+    };
+
+    traverse(fileTree);
+    return fileList;
+  };
+
+  handleTargetFileChange = value => {
+    const { fileTree } = this.props;
+    const fileList = this.buildFileList(fileTree);
+    const selectedFile = fileList.find(f => f.identifier === value);
+    this.setState({ selectedTargetFile: selectedFile || null });
+  };
+
   handleOptimize = () => {
-    const { skill, locale = {} } = this.props;
+    const { skill, locale = {}, fileTree, selectedFile } = this.props;
     const optimizationGoal = this.field.getValue('optimizationGoal') || '';
 
     if (!skill) {
       Message.error('Skill data is required');
+      return;
+    }
+
+    // 必须选择一个文件才能优化
+    const fileList = fileTree ? this.buildFileList(fileTree) : [];
+    let targetFile = this.state.selectedTargetFile;
+
+    // 如果没有手动选择，使用默认选中的文件
+    if (!targetFile && selectedFile) {
+      let defaultIdentifier = '';
+      if (selectedFile.fileType === 'resource' && selectedFile.resourceKey) {
+        defaultIdentifier = selectedFile.resourceKey;
+      } else if (selectedFile.name) {
+        defaultIdentifier = selectedFile.name;
+      }
+      if (defaultIdentifier) {
+        targetFile = fileList.find(f => f.identifier === defaultIdentifier);
+      }
+    }
+
+    if (!targetFile) {
+      Message.error(locale.selectTargetFileRequired || '请先选择一个文件进行优化');
       return;
     }
 
@@ -251,7 +324,9 @@ class SkillOptimizeDialog extends React.Component {
       try {
         conversationHistory = JSON.parse(this.state.conversationHistoryJson);
       } catch (e) {
-        Message.error(locale.conversationHistoryInvalid || 'Invalid conversation history JSON format');
+        Message.error(
+          locale.conversationHistoryInvalid || 'Invalid conversation history JSON format'
+        );
         this.setState({ loading: false, streaming: false });
         return;
       }
@@ -268,6 +343,7 @@ class SkillOptimizeDialog extends React.Component {
         description: tool.description,
         inputSchema: tool.inputSchema,
       })),
+      targetFileName: targetFile.identifier, // 必须指定文件
     };
 
     if (conversationHistory) {
@@ -314,9 +390,11 @@ class SkillOptimizeDialog extends React.Component {
                 // if not already set
                 this.setState(prevState => {
                   if (!prevState.optimizedSkill && prevState.streamContent) {
-                    const parsedSkill = this.parseOptimizedSkillFromContent(
-                      prevState.streamContent
-                    );
+                    let parsedSkill = this.parseOptimizedSkillFromContent(prevState.streamContent);
+                    // Filter out SKILL.md from resources
+                    if (parsedSkill) {
+                      parsedSkill = this.filterSkillMdFromResources(parsedSkill);
+                    }
                     if (parsedSkill) {
                       return {
                         streaming: false,
@@ -347,7 +425,11 @@ class SkillOptimizeDialog extends React.Component {
                   // If we have pending data and this is an error event, handle it now
                   if (eventType === 'error' && pendingData) {
                     const { locale = {} } = this.props;
-                    const errorMessage = pendingData.explanation || pendingData.message || locale.optimizeFailed || '优化失败';
+                    const errorMessage =
+                      pendingData.explanation ||
+                      pendingData.message ||
+                      locale.optimizeFailed ||
+                      '优化失败';
                     Message.error(errorMessage);
                     this.setState({
                       streaming: false,
@@ -364,7 +446,8 @@ class SkillOptimizeDialog extends React.Component {
                       // Handle error event - check if current event type is error
                       if (currentEventType === 'error') {
                         const { locale = {} } = this.props;
-                        const errorMessage = data.explanation || data.message || locale.optimizeFailed || '优化失败';
+                        const errorMessage =
+                          data.explanation || data.message || locale.optimizeFailed || '优化失败';
                         Message.error(errorMessage);
                         this.setState({
                           streaming: false,
@@ -372,10 +455,10 @@ class SkillOptimizeDialog extends React.Component {
                           error: errorMessage,
                         });
                       } else if (data.done && data.explanation && !data.optimizedSkill) {
-                        // Handle case where error comes in data with done=true but no optimizedSkill
-                        // This might be an error response
+                        // Handle error case: done=true but no optimizedSkill
                         const { locale = {} } = this.props;
-                        const errorMessage = data.explanation || data.message || locale.optimizeFailed || '优化失败';
+                        const errorMessage =
+                          data.explanation || data.message || locale.optimizeFailed || '优化失败';
                         Message.error(errorMessage);
                         this.setState({
                           streaming: false,
@@ -390,6 +473,7 @@ class SkillOptimizeDialog extends React.Component {
                       }
                     } catch (e) {
                       // Failed to parse SSE data
+                      // eslint-disable-next-line no-console
                       console.error('Failed to parse SSE data:', e, dataStr);
                     }
                   }
@@ -419,7 +503,53 @@ class SkillOptimizeDialog extends React.Component {
   };
 
   // Helper method to parse optimizedSkill from accumulated content
-  parseOptimizedSkillFromContent = (content) => {
+  /**
+   * Filter out SKILL.md from resources
+   * @param {Object} skill - Skill object to filter
+   * @returns {Object} Filtered skill object
+   */
+  filterSkillMdFromResources = skill => {
+    if (!skill || !skill.resource) {
+      return skill;
+    }
+
+    const filteredResource = {};
+    let hasFiltered = false;
+
+    // Filter out SKILL.md resources
+    Object.keys(skill.resource).forEach(key => {
+      const resource = skill.resource[key];
+      // Check if resource name or key is SKILL.md
+      const resourceName = resource?.name || '';
+      const resourceKey = key || '';
+
+      // Skip if name or key contains SKILL.md (case-insensitive)
+      if (
+        resourceName.toUpperCase() === 'SKILL.MD' ||
+        resourceKey.toUpperCase() === 'SKILL.MD' ||
+        resourceName.toUpperCase().includes('SKILL.MD') ||
+        resourceKey.toUpperCase().includes('SKILL.MD')
+      ) {
+        hasFiltered = true;
+        // eslint-disable-next-line no-console
+        console.warn('Filtered out SKILL.md resource:', { key, resourceName });
+        return;
+      }
+
+      filteredResource[key] = resource;
+    });
+
+    if (hasFiltered) {
+      return {
+        ...skill,
+        resource: filteredResource,
+      };
+    }
+
+    return skill;
+  };
+
+  parseOptimizedSkillFromContent = content => {
     if (!content || !content.trim()) {
       return null;
     }
@@ -483,13 +613,21 @@ class SkillOptimizeDialog extends React.Component {
       }
 
       // Extract optimizedSkill from parsed object
+      let skillData = null;
       if (parsed.optimizedSkill) {
-        return parsed.optimizedSkill;
+        skillData = parsed.optimizedSkill;
       } else if (parsed.skill) {
-        return parsed.skill;
+        skillData = parsed.skill;
       } else if (parsed.name && (parsed.description || parsed.instruction)) {
-        return parsed;
+        skillData = parsed;
       }
+
+      // Filter out SKILL.md from resources before returning
+      if (skillData) {
+        skillData = this.filterSkillMdFromResources(skillData);
+      }
+
+      return skillData;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.warn('Failed to parse optimizedSkill from content:', e);
@@ -543,17 +681,36 @@ class SkillOptimizeDialog extends React.Component {
             console.log('Successfully parsed optimizedSkill from accumulated content');
           } else {
             // eslint-disable-next-line no-console
-            console.warn('Failed to parse optimizedSkill from accumulated content, length:', accumulatedContent.length);
+            console.warn(
+              'Failed to parse optimizedSkill from accumulated content, length:',
+              accumulatedContent.length
+            );
           }
+        }
+
+        // Filter out SKILL.md from resources (even if skillData came from DONE event)
+        if (skillData) {
+          skillData = this.filterSkillMdFromResources(skillData);
         }
 
         // Debug: log the received data
         // eslint-disable-next-line no-console
-        console.log('DONE event received:', { typeStr, done, skillData, data, streamContent: accumulatedContent });
+        console.log('DONE event received:', {
+          typeStr,
+          done,
+          skillData,
+          data,
+          streamContent: accumulatedContent,
+        });
 
         if (!skillData) {
           // eslint-disable-next-line no-console
-          console.warn('No optimizedSkill found in DONE event or streamContent:', data, 'Accumulated content:', accumulatedContent);
+          console.warn(
+            'No optimizedSkill found in DONE event or streamContent:',
+            data,
+            'Accumulated content:',
+            accumulatedContent
+          );
         }
 
         return {
@@ -614,17 +771,34 @@ class SkillOptimizeDialog extends React.Component {
     // If history is provided but no onSuccess, navigate to edit page (for detail page)
     // This allows jumping to edit page and auto-filling the form
     if (history) {
-    // Store optimized skill data to localStorage for editing page to pick up
-    const namespaceId = skill.namespaceId || getParams('namespace') || 'public';
-    const optimizedSkillData = {
-      ...mergedSkill,
+      // Store optimized skill data to localStorage for editing page to pick up
+      const namespaceId = skill.namespaceId || getParams('namespace') || 'public';
+
+      // 获取被优化的文件名（targetFileName）
+      const { fileTree, selectedFile } = this.props;
+      let targetFileName = null;
+      if (this.state.selectedTargetFile) {
+        targetFileName = this.state.selectedTargetFile.identifier;
+      } else if (selectedFile) {
+        if (selectedFile.fileType === 'resource' && selectedFile.resourceKey) {
+          targetFileName = selectedFile.resourceKey;
+        } else if (selectedFile.name) {
+          targetFileName = selectedFile.name;
+        }
+      }
+
+      const optimizedSkillData = {
+        ...mergedSkill,
         namespaceId, // Ensure namespaceId is included
-      optimized: true, // Flag to indicate this is from optimization
-    };
-    localStorage.setItem('nacos_optimized_skill', JSON.stringify(optimizedSkillData));
+        optimized: true, // Flag to indicate this is from optimization
+        targetFileName, // 存储被优化的文件名，用于在编辑页面自动选中
+      };
+      localStorage.setItem('nacos_optimized_skill', JSON.stringify(optimizedSkillData));
 
       const skillName = mergedSkill.name || skill.name;
-      const editUrl = `/newSkill?namespace=${namespaceId}&name=${encodeURIComponent(skillName)}&mode=edit&optimized=true`;
+      const editUrl = `/newSkill?namespace=${namespaceId}&name=${encodeURIComponent(
+        skillName
+      )}&mode=edit&optimized=true`;
       history.push(editUrl);
       this.handleClose();
       return;
@@ -701,7 +875,7 @@ class SkillOptimizeDialog extends React.Component {
 
   // 检查内容是否完全是 JSON（用于判断是否应该显示原始内容）
   // 更严谨的判断：内容必须完全是有效的 JSON，且包含 optimizedSkill 字段
-  isPureJsonContent = (content) => {
+  isPureJsonContent = content => {
     if (!content || !content.trim()) {
       return false;
     }
@@ -726,8 +900,10 @@ class SkillOptimizeDialog extends React.Component {
         // 2. 检查是否直接是 JSON（没有代码块包装）
         // 需要确保整个内容都是 JSON，没有其他文本
         // 通过检查是否以 { 或 [ 开头，且以 } 或 ] 结尾
-        if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-            (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        if (
+          (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+          (trimmed.startsWith('[') && trimmed.endsWith(']'))
+        ) {
           jsonContent = trimmed;
         } else {
           // 如果只是部分 JSON，不算纯 JSON
@@ -753,8 +929,11 @@ class SkillOptimizeDialog extends React.Component {
 
       // 6. 如果解析出的对象本身看起来像 Skill 对象（有 name, description, instruction 等字段）
       // 也可以认为是纯 JSON 内容
-      if (parsed && typeof parsed === 'object' &&
-          ('name' in parsed || 'description' in parsed || 'instruction' in parsed)) {
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        ('name' in parsed || 'description' in parsed || 'instruction' in parsed)
+      ) {
         return true;
       }
 
@@ -819,17 +998,19 @@ class SkillOptimizeDialog extends React.Component {
             padding: '12px 16px',
             background: '#fafafa',
             cursor: 'pointer',
-            borderBottom: (content || loading) ? '1px solid #e6e6e6' : 'none',
+            borderBottom: content || loading ? '1px solid #e6e6e6' : 'none',
           }}
           onClick={onToggle}
         >
           <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-            {icon && <div style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}>{icon}</div>}
+            {icon && (
+              <div style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}>{icon}</div>
+            )}
             <span style={{ fontWeight: 500 }}>{title}</span>
             {thinkingContentForIcon && thinkingContentForIcon.trim() && (
               <span
                 style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center' }}
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation(); // 阻止触发折叠/展开
                 }}
               >
@@ -868,12 +1049,7 @@ class SkillOptimizeDialog extends React.Component {
                 </Balloon>
               </span>
             )}
-            {loading && (
-              <Loading
-                size="medium"
-                style={{ marginLeft: 8 }}
-              />
-            )}
+            {loading && <Loading size="medium" style={{ marginLeft: 8 }} />}
           </div>
           <Icon
             type={isCollapsed ? 'arrow-down' : 'arrow-up'}
@@ -917,7 +1093,8 @@ class SkillOptimizeDialog extends React.Component {
                   left: 0,
                   right: 0,
                   height: '20px',
-                  background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
+                  background:
+                    'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
                   pointerEvents: 'none',
                 }}
               />
@@ -929,16 +1106,63 @@ class SkillOptimizeDialog extends React.Component {
   };
 
   renderInputSection = () => {
-    const { locale = {} } = this.props;
-    const { inputSectionCollapsed, loading, streaming } = this.state;
+    const { locale = {}, fileTree, selectedFile } = this.props;
+    const { inputSectionCollapsed, loading, streaming, selectedTargetFile } = this.state;
+
+    // 构建文件列表（如果 fileTree 不存在，返回空数组）
+    const fileList = fileTree ? this.buildFileList(fileTree) : [];
+    const hasFiles = fileList.length > 0;
+
+    // 调试信息：检查 fileTree 和 fileList
+    if (this.props.visible && !hasFiles && fileTree) {
+      // eslint-disable-next-line no-console
+      console.warn('File tree exists but fileList is empty:', { fileTree, fileList });
+    }
+
+    // 计算当前下拉框选中的文件标识：
+    // 1. 如果用户在弹窗中手动选择过文件，优先使用 state 中的 selectedTargetFile
+    // 2. 否则使用详情页当前选中的文件（selectedFile）
+    let defaultIdentifier = '';
+    if (selectedFile) {
+      if (selectedFile.fileType === 'resource' && selectedFile.resourceKey) {
+        defaultIdentifier = selectedFile.resourceKey;
+      } else if (selectedFile.name) {
+        defaultIdentifier = selectedFile.name;
+      }
+    }
+    const currentIdentifier =
+      (selectedTargetFile && selectedTargetFile.identifier) || defaultIdentifier || '';
 
     const inputContent = (
       <div>
+        {/* 文件选择（只要有文件就显示） */}
+        {hasFiles && (
+          <Form.Item label={locale.selectTargetFile || '选择优化文件'}>
+            <Select
+              placeholder={locale.selectTargetFilePlaceholder || '请选择需要优化的文件'}
+              value={currentIdentifier}
+              onChange={this.handleTargetFileChange}
+              style={{ width: '100%' }}
+              dataSource={fileList.map(file => ({
+                label: file.displayName,
+                value: file.identifier,
+              }))}
+              disabled={streaming || loading}
+            />
+            <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
+              {locale.selectTargetFileHint || '请选择一个文件进行优化'}
+            </div>
+          </Form.Item>
+        )}
+
         <Form.Item label={locale.optimizationGoal || 'Optimization Goal'}>
           <Input.TextArea
             value={this.field.getValue('optimizationGoal')}
             onChange={value => this.field.setValue('optimizationGoal', value)}
-            placeholder={locale.optimizationGoalPlaceholder || 'Enter optimization goal (optional), e.g., improve instruction clarity, add error handling, add resource templates'}
+            placeholder={
+              locale.optimizationGoalPlaceholder ||
+              'Enter optimization goal (optional), e.g., improve instruction clarity, add error handling, add resource templates'
+            }
             rows={6}
             maxLength={2000}
             disabled={streaming || loading}
@@ -1002,8 +1226,8 @@ class SkillOptimizeDialog extends React.Component {
                 ) : (
                   <div style={{ color: '#999', fontSize: '12px' }}>
                     {this.state.mcpToolSearchKeyword.trim()
-                      ? (locale.noToolsFound || 'No tools found matching your search')
-                      : (locale.noToolsAvailable || 'No tools available in this MCP server')}
+                      ? locale.noToolsFound || 'No tools found matching your search'
+                      : locale.noToolsAvailable || 'No tools available in this MCP server'}
                   </div>
                 )}
               </div>
@@ -1022,8 +1246,8 @@ class SkillOptimizeDialog extends React.Component {
               disabled={streaming || loading}
             >
               {this.state.showConversationHistory
-                ? (locale.hideConversationHistory || 'Hide Conversation History')
-                : (locale.showConversationHistory || 'Show Conversation History')}
+                ? locale.hideConversationHistory || 'Hide Conversation History'
+                : locale.showConversationHistory || 'Show Conversation History'}
               <Icon
                 type={this.state.showConversationHistory ? 'arrow-up' : 'arrow-down'}
                 style={{ marginLeft: 4 }}
@@ -1035,7 +1259,9 @@ class SkillOptimizeDialog extends React.Component {
               <Input.TextArea
                 value={this.state.conversationHistoryJson}
                 onChange={value => this.setState({ conversationHistoryJson: value })}
-                placeholder={locale.conversationHistoryPlaceholder || `Enter conversation history in JSON format:
+                placeholder={
+                  locale.conversationHistoryPlaceholder ||
+                  `Enter conversation history in JSON format:
 {
   "title": "Conversation Title",
   "context": "Context description",
@@ -1055,7 +1281,8 @@ class SkillOptimizeDialog extends React.Component {
       "content": "Model response"
     }
   ]
-}`}
+}`
+                }
                 rows={12}
                 style={{ fontFamily: 'monospace', fontSize: '12px' }}
                 disabled={streaming || loading}
@@ -1087,9 +1314,7 @@ class SkillOptimizeDialog extends React.Component {
         previewText,
         true,
         () => this.setState({ inputSectionCollapsed: false }),
-        (loading || streaming) ? (
-          <Loading size="medium" style={{ marginRight: 4 }} />
-        ) : null,
+        loading || streaming ? <Loading size="medium" style={{ marginRight: 4 }} /> : null,
         loading || streaming
       );
     }
@@ -1112,19 +1337,22 @@ class SkillOptimizeDialog extends React.Component {
     return (
       <div>
         {/* 思考内容区域 - 仅在 THINKING 阶段显示 */}
-        {(thinkingContent && streamType === 'THINKING') && (
+        {thinkingContent &&
+          streamType === 'THINKING' &&
           this.renderCollapsibleSection(
             locale.thinking || 'Thinking',
             thinkingContent,
             thinkingCollapsed,
             () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
-            <Tag type="primary" size="small">{locale.thinking || 'Thinking'}</Tag>,
+            <Tag type="primary" size="small">
+              {locale.thinking || 'Thinking'}
+            </Tag>,
             streaming && streamType === 'THINKING' && !thinkingContent
-          )
-        )}
+          )}
 
         {/* 结果内容区域 - 当开始接收模型回复时显示，包含思考内容图标 */}
-        {streamContent && streamType !== 'THINKING' && (
+        {streamContent &&
+          streamType !== 'THINKING' &&
           this.renderCollapsibleSection(
             locale.generatingContent || '生成内容',
             streamContent,
@@ -1135,8 +1363,7 @@ class SkillOptimizeDialog extends React.Component {
             </Tag>,
             streaming && !streamContent,
             this.state.thinkingContent // 直接使用 state 中的 thinkingContent
-          )
-        )}
+          )}
       </div>
     );
   };
@@ -1165,12 +1392,8 @@ class SkillOptimizeDialog extends React.Component {
       );
     }
 
-    const optimizedResources = optimizedSkill.resource
-      ? Object.keys(optimizedSkill.resource)
-      : [];
-    const originalResources = skill?.resource
-      ? Object.keys(skill.resource)
-      : [];
+    const optimizedResources = optimizedSkill.resource ? Object.keys(optimizedSkill.resource) : [];
+    const originalResources = skill?.resource ? Object.keys(skill.resource) : [];
 
     // 构建优化目标和工具信息的预览文本
     const optimizationGoal = this.field.getValue('optimizationGoal') || '';
@@ -1219,29 +1442,31 @@ class SkillOptimizeDialog extends React.Component {
         )}
 
         {/* 思考内容 - 始终显示（如果存在） */}
-        {thinkingContent && (
+        {thinkingContent &&
           this.renderCollapsibleSection(
             locale.thinking || '思考',
             thinkingContent,
             thinkingCollapsed,
             () => this.setState({ thinkingCollapsed: !thinkingCollapsed }),
-            <Tag type="normal" size="small">{locale.thinking || '思考'}</Tag>,
+            <Tag type="normal" size="small">
+              {locale.thinking || '思考'}
+            </Tag>,
             false
-          )
-        )}
+          )}
 
         {/* 结果内容 - 始终显示（如果存在） */}
-        {streamContent && (
+        {streamContent &&
           this.renderCollapsibleSection(
             locale.generatingContent || '生成内容',
             streamContent,
             resultContentCollapsed,
             () => this.setState({ resultContentCollapsed: !resultContentCollapsed }),
-            <Tag type="primary" size="small">{locale.generatingContent || '生成内容'}</Tag>,
+            <Tag type="primary" size="small">
+              {locale.generatingContent || '生成内容'}
+            </Tag>,
             false,
             thinkingContent // 直接使用 state 中的 thinkingContent
-          )
-        )}
+          )}
 
         {/* 对比表单 - 仅在有变化时显示 */}
         {(() => {
@@ -1253,8 +1478,8 @@ class SkillOptimizeDialog extends React.Component {
           // 检查资源变化 - 包括名称和内容
           const optimizedResourcesSorted = [...optimizedResources].sort();
           const originalResourcesSorted = [...originalResources].sort();
-          const resourceNameChanged = JSON.stringify(optimizedResourcesSorted) !==
-            JSON.stringify(originalResourcesSorted);
+          const resourceNameChanged =
+            JSON.stringify(optimizedResourcesSorted) !== JSON.stringify(originalResourcesSorted);
 
           // 检查资源内容变化
           const originalResourceMap = skill?.resource || {};
@@ -1295,8 +1520,8 @@ class SkillOptimizeDialog extends React.Component {
 
           const resourceChanged = resourceNameChanged || resourceContentChanged;
 
-          const hasAnyChange = hasNameChange || hasDescriptionChange ||
-            hasInstructionChange || resourceChanged;
+          const hasAnyChange =
+            hasNameChange || hasDescriptionChange || hasInstructionChange || resourceChanged;
 
           if (!hasAnyChange) {
             return null; // 没有变化，不显示对比
@@ -1326,145 +1551,182 @@ class SkillOptimizeDialog extends React.Component {
               >
                 {locale.optimizationItems || '优化项'}
               </div>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Card
-                title={locale.originalContent || 'Original Content'}
-                className="comparison-card"
-                style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}
-                bodyStyle={{ height: 'auto', minHeight: 'auto', maxHeight: 'none', overflow: 'visible' }}
-              >
-                {/* 仅显示有变化的项 */}
-                {hasNameChange && (
-                <div className="comparison-item">
-                  <label>{locale.skillName || 'Skill Name'}:</label>
-                  <div>{skill.name || '--'}</div>
-                </div>
-                )}
-                {hasDescriptionChange && (
-                <div className="comparison-item">
-                  <label>{locale.description || 'Description'}:</label>
-                  <div>{skill.description || '--'}</div>
-                </div>
-                )}
-                {hasInstructionChange && (
-                <div className="comparison-item">
-                  <label>{locale.instruction || 'Instruction'}:</label>
-                  <pre className="comparison-pre">{skill.instruction || '--'}</pre>
-                </div>
-                )}
-                {resourceChanged && resourceChanges.length > 0 && (
-                  <div className="comparison-item comparison-resources">
-                    <label>{locale.resources || 'Resources'}:</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {resourceChanges
-                        .filter(change => !change.isNew) // 左侧只显示原始存在的资源（包括被删除和修改的）
-                        .map((change, index) => {
-                          if (change.isRemoved) {
-                            return (
-                              <div key={index} style={{ marginBottom: '8px' }}>
-                                <div style={{ marginBottom: '4px', fontWeight: 500 }}>
-                                  {change.name} {change.originalType && `(${change.originalType})`} <Tag size="small" type="normal">(removed)</Tag>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Card
+                    title={locale.originalContent || 'Original Content'}
+                    className="comparison-card"
+                    style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}
+                    bodyStyle={{
+                      height: 'auto',
+                      minHeight: 'auto',
+                      maxHeight: 'none',
+                      overflow: 'visible',
+                    }}
+                  >
+                    {/* 仅显示有变化的项 */}
+                    {hasNameChange && (
+                      <div className="comparison-item">
+                        <label>{locale.skillName || 'Skill Name'}:</label>
+                        <div>{skill.name || '--'}</div>
+                      </div>
+                    )}
+                    {hasDescriptionChange && (
+                      <div className="comparison-item">
+                        <label>{locale.description || 'Description'}:</label>
+                        <div>{skill.description || '--'}</div>
+                      </div>
+                    )}
+                    {hasInstructionChange && (
+                      <div className="comparison-item">
+                        <label>{locale.instruction || 'Instruction'}:</label>
+                        <pre className="comparison-pre">{skill.instruction || '--'}</pre>
+                      </div>
+                    )}
+                    {resourceChanged && resourceChanges.length > 0 && (
+                      <div className="comparison-item comparison-resources">
+                        <label>{locale.resources || 'Resources'}:</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {resourceChanges
+                            .filter(change => !change.isNew) // 左侧只显示原始存在的资源（包括被删除和修改的）
+                            .map((change, index) => {
+                              if (change.isRemoved) {
+                                return (
+                                  <div key={index} style={{ marginBottom: '8px' }}>
+                                    <div style={{ marginBottom: '4px', fontWeight: 500 }}>
+                                      {change.name}{' '}
+                                      {change.originalType && `(${change.originalType})`}{' '}
+                                      <Tag size="small" type="normal">
+                                        (removed)
+                                      </Tag>
+                                    </div>
+                                    {change.originalContent && (
+                                      <pre
+                                        className="comparison-pre"
+                                        style={{ marginTop: '4px', fontSize: '12px' }}
+                                      >
+                                        {change.originalContent}
+                                      </pre>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div key={index} style={{ marginBottom: '8px' }}>
+                                  <div style={{ marginBottom: '4px', fontWeight: 500 }}>
+                                    {change.name}{' '}
+                                    {change.originalType && `(${change.originalType})`}
+                                    {(change.isContentChanged || change.isTypeChanged) && (
+                                      <Tag size="small" type="normal">
+                                        (changed)
+                                      </Tag>
+                                    )}
+                                  </div>
+                                  {change.originalContent && (
+                                    <pre
+                                      className="comparison-pre"
+                                      style={{ marginTop: '4px', fontSize: '12px' }}
+                                    >
+                                      {change.originalContent}
+                                    </pre>
+                                  )}
                                 </div>
-                                {change.originalContent && (
-                                  <pre className="comparison-pre" style={{ marginTop: '4px', fontSize: '12px' }}>
-                                    {change.originalContent}
-                                  </pre>
-                                )}
-                              </div>
-                            );
-                          }
-                          return (
-                            <div key={index} style={{ marginBottom: '8px' }}>
-                              <div style={{ marginBottom: '4px', fontWeight: 500 }}>
-                                {change.name} {change.originalType && `(${change.originalType})`}
-                                {(change.isContentChanged || change.isTypeChanged) && <Tag size="small" type="normal">(changed)</Tag>}
-                              </div>
-                              {change.originalContent && (
-                                <pre className="comparison-pre" style={{ marginTop: '4px', fontSize: '12px' }}>
-                                  {change.originalContent}
-                                </pre>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </Col>
-            <Col span={12}>
-              <Card
-                title={locale.optimizedContent || 'Optimized Content'}
-                className="comparison-card optimized"
-                style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}
-                bodyStyle={{ height: 'auto', minHeight: 'auto', maxHeight: 'none', overflow: 'visible' }}
-              >
-                {/* 仅显示有变化的项 */}
-                {hasNameChange && (
-                  <div className="comparison-item">
-                    <label>{locale.skillName || 'Skill Name'}:</label>
-                    <div className="changed">
-                      {optimizedSkill.name || '--'}
-                    </div>
-                  </div>
-                )}
-                {hasDescriptionChange && (
-                  <div className="comparison-item">
-                    <label>{locale.description || 'Description'}:</label>
-                    <div className="changed">
-                      {optimizedSkill.description || '--'}
-                    </div>
-                  </div>
-                )}
-                {hasInstructionChange && (
-                  <div className="comparison-item">
-                    <label>{locale.instruction || 'Instruction'}:</label>
-                    <pre className="comparison-pre changed">
-                      {optimizedSkill.instruction || '--'}
-                    </pre>
-                  </div>
-                )}
-                {resourceChanged && resourceChanges.length > 0 ? (
-                  <div className="comparison-item comparison-resources">
-                    <label>{locale.resources || 'Resources'}:</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {resourceChanges
-                        .filter(change => !change.isRemoved) // 右侧只显示优化后的资源（新增和修改的）
-                        .map((change, index) => {
-                          const hasContentChange = change.isContentChanged || change.isTypeChanged;
-                          return (
-                            <div key={index} style={{ marginBottom: '8px' }}>
-                              <div style={{ marginBottom: '4px', fontWeight: 500 }}>
-                                {change.name} {change.optimizedType && `(${change.optimizedType})`}
-                                {change.isNew && <Tag size="small" type="normal">(new)</Tag>}
-                                {hasContentChange && <Tag size="small" type="normal">(changed)</Tag>}
-                              </div>
-                              {change.optimizedContent && (
-                                <pre className={`comparison-pre ${hasContentChange ? 'changed' : ''}`} style={{ marginTop: '4px', fontSize: '12px' }}>
-                                  {change.optimizedContent}
-                                </pre>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="comparison-item">
-                    <label>{locale.resources || 'Resources'}:</label>
-                    <div>{locale.noResources || 'No resources'}</div>
-                  </div>
-                )}
-              </Card>
-            </Col>
-          </Row>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  <Card
+                    title={locale.optimizedContent || 'Optimized Content'}
+                    className="comparison-card optimized"
+                    style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}
+                    bodyStyle={{
+                      height: 'auto',
+                      minHeight: 'auto',
+                      maxHeight: 'none',
+                      overflow: 'visible',
+                    }}
+                  >
+                    {/* 仅显示有变化的项 */}
+                    {hasNameChange && (
+                      <div className="comparison-item">
+                        <label>{locale.skillName || 'Skill Name'}:</label>
+                        <div className="changed">{optimizedSkill.name || '--'}</div>
+                      </div>
+                    )}
+                    {hasDescriptionChange && (
+                      <div className="comparison-item">
+                        <label>{locale.description || 'Description'}:</label>
+                        <div className="changed">{optimizedSkill.description || '--'}</div>
+                      </div>
+                    )}
+                    {hasInstructionChange && (
+                      <div className="comparison-item">
+                        <label>{locale.instruction || 'Instruction'}:</label>
+                        <pre className="comparison-pre changed">
+                          {optimizedSkill.instruction || '--'}
+                        </pre>
+                      </div>
+                    )}
+                    {resourceChanged && resourceChanges.length > 0 ? (
+                      <div className="comparison-item comparison-resources">
+                        <label>{locale.resources || 'Resources'}:</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {resourceChanges
+                            .filter(change => !change.isRemoved) // 右侧只显示优化后的资源（新增和修改的）
+                            .map((change, index) => {
+                              const hasContentChange =
+                                change.isContentChanged || change.isTypeChanged;
+                              return (
+                                <div key={index} style={{ marginBottom: '8px' }}>
+                                  <div style={{ marginBottom: '4px', fontWeight: 500 }}>
+                                    {change.name}{' '}
+                                    {change.optimizedType && `(${change.optimizedType})`}
+                                    {change.isNew && (
+                                      <Tag size="small" type="normal">
+                                        (new)
+                                      </Tag>
+                                    )}
+                                    {hasContentChange && (
+                                      <Tag size="small" type="normal">
+                                        (changed)
+                                      </Tag>
+                                    )}
+                                  </div>
+                                  {change.optimizedContent && (
+                                    <pre
+                                      className={`comparison-pre ${
+                                        hasContentChange ? 'changed' : ''
+                                      }`}
+                                      style={{ marginTop: '4px', fontSize: '12px' }}
+                                    >
+                                      {change.optimizedContent}
+                                    </pre>
+                                  )}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="comparison-item">
+                        <label>{locale.resources || 'Resources'}:</label>
+                        <div>{locale.noResources || 'No resources'}</div>
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+              </Row>
             </div>
           );
         })()}
 
         <div style={{ color: '#999', fontSize: '12px', marginTop: 16, paddingBottom: 16 }}>
-          {locale.applyOptimizedSkillHint || 'Click "Apply" to fill the form with the optimized Skill'}
+          {locale.applyOptimizedSkillHint ||
+            'Click "Apply" to fill the form with the optimized Skill'}
         </div>
       </div>
     );
@@ -1484,8 +1746,8 @@ class SkillOptimizeDialog extends React.Component {
         okProps={{
           loading: loading || streaming,
           children: optimizedSkill
-            ? (locale.apply || 'Apply')
-            : (locale.optimize || 'Start Optimization'),
+            ? locale.apply || 'Apply'
+            : locale.optimize || 'Start Optimization',
         }}
         cancelProps={{
           children: locale.cancel || 'Cancel',
@@ -1500,9 +1762,10 @@ class SkillOptimizeDialog extends React.Component {
 
             {/* 提示信息 - 仅在未开始优化时显示 */}
             {!inputSectionCollapsed && (
-            <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
-              {locale.optimizeHint || 'Enter optimization goal and click Start Optimization, AI will optimize the Skill content based on the goal'}
-            </div>
+              <div style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
+                {locale.optimizeHint ||
+                  'Enter optimization goal and click Start Optimization, AI will optimize the Skill content based on the goal'}
+              </div>
             )}
 
             {/* 错误信息 */}
@@ -1513,15 +1776,11 @@ class SkillOptimizeDialog extends React.Component {
             )}
 
             {/* 流式内容 - 思考内容和结果内容 */}
-            {(streaming ||
-              this.state.thinkingContent ||
-              this.state.streamContent) &&
+            {(streaming || this.state.thinkingContent || this.state.streamContent) &&
               this.renderStreamContent()}
           </div>
         ) : (
-          <div>
-            {this.renderOptimizedPreview()}
-          </div>
+          <div>{this.renderOptimizedPreview()}</div>
         )}
       </Dialog>
     );

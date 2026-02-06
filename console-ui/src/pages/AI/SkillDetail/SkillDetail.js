@@ -1248,6 +1248,8 @@ class SkillDetail extends React.Component {
         <SkillOptimizeDialog
           visible={this.state.optimizeDialogVisible}
           skill={this.state.skillData}
+          selectedFile={this.state.selectedFile}
+          fileTree={this.state.fileTree}
           onClose={this.handleOptimizeDialogClose}
           locale={this.props.locale}
           history={this.props.history}
