@@ -50,6 +50,14 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosMaintainerClientHolder.class);
     
+    private static final String REMOTE_SERVER_CONTEXT_PATH_KEY = "nacos.console.remote.server.context-path";
+    
+    private static final String DEFAULT_REMOTE_SERVER_CONTEXT_PATH = "/nacos";
+    
+    private static final String PATH_SEPARATOR = "/";
+    
+    private static final int ROOT_PATH_LENGTH = 1;
+    
     private final RemoteServerMemberManager memberManager;
     
     private volatile NamingMaintainerService namingMaintainerService;
@@ -69,16 +77,21 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
         String memberAddressString = StringUtils.join(memberAddress, ",");
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
-        String remoteContextPath = EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
-        remoteContextPath = StringUtils.trim(remoteContextPath);
-        remoteContextPath = ContextPathUtil.normalizeContextPath(remoteContextPath);
-        while (remoteContextPath.endsWith("/") && remoteContextPath.length() > 1) {
-            remoteContextPath = remoteContextPath.substring(0, remoteContextPath.length() - 1);
-        }
+        String remoteContextPath = resolveRemoteContextPath();
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, remoteContextPath);
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
         aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
+    }
+    
+    static String resolveRemoteContextPath() {
+        String remoteContextPath = EnvUtil.getProperty(REMOTE_SERVER_CONTEXT_PATH_KEY, DEFAULT_REMOTE_SERVER_CONTEXT_PATH);
+        remoteContextPath = StringUtils.trim(remoteContextPath);
+        remoteContextPath = ContextPathUtil.normalizeContextPath(remoteContextPath);
+        while (remoteContextPath.endsWith(PATH_SEPARATOR) && remoteContextPath.length() > ROOT_PATH_LENGTH) {
+            remoteContextPath = remoteContextPath.substring(0, remoteContextPath.length() - 1);
+        }
+        return remoteContextPath;
     }
     
     public NamingMaintainerService getNamingMaintainerService() {
