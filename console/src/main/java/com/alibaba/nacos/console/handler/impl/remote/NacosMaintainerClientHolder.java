@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.handler.impl.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -67,6 +69,13 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
         String memberAddressString = StringUtils.join(memberAddress, ",");
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
+        String remoteContextPath = EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
+        remoteContextPath = StringUtils.trim(remoteContextPath);
+        remoteContextPath = ContextPathUtil.normalizeContextPath(remoteContextPath);
+        while (remoteContextPath.endsWith("/") && remoteContextPath.length() > 1) {
+            remoteContextPath = remoteContextPath.substring(0, remoteContextPath.length() - 1);
+        }
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, remoteContextPath);
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
         aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
