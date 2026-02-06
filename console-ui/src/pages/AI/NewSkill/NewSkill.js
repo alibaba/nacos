@@ -95,10 +95,16 @@ class NewSkill extends React.Component {
       mcpToolSearchKeyword: '', // MCP工具搜索关键词
       optimizeDialogVisible: false, // 控制是否显示AI优化弹窗
       currentSkillData: null, // 存储当前Skill数据用于优化
-      showPreviewDialog: false, // 控制是否显示预览弹窗
-      previewData: null, // 存储预览数据
-      selectedFile: null, // 当前选中的文件
-      fileTree: null, // 文件树结构
+      editModeFileTree: null, // 编辑模式下的文件树
+      editModeSelectedFile: null, // 编辑模式下选中的文件
+      editingFileName: null, // 正在编辑的文件名（格式：{nodeKey, oldName, type}）
+      editingFileNameValue: '', // 正在编辑的文件名的临时值
+      draggingFile: null, // 正在拖拽的文件（格式：{resourceKey, name, type}）
+      dragOverFolder: null, // 当前拖拽悬停的文件夹名称
+      prevFormValues: {}, // 上一次的表单值，用于检测变化
+      originalFormData: null, // 原始表单数据（用于比较是否有修改）
+      originalResources: [], // 原始资源数据（用于比较是否有修改）
+      hasChanges: false, // 是否有数据变化
       // 创建模式下默认添加一个空的资源项
       resources: isEdit
         ? []
@@ -140,6 +146,36 @@ class NewSkill extends React.Component {
   componentWillUnmount() {
     // Remove click listener
     document.removeEventListener('click', this.handleDocumentClick, true);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    // 在编辑模式下，当表单值或资源变化时更新文件树和变化状态
+    if (this.state.isEdit) {
+      const values = this.field.getValues();
+      const prevValues = prevState.prevFormValues || {};
+
+      // 检查表单值是否变化
+      const formChanged =
+        values.name !== prevValues.name ||
+        values.description !== prevValues.description ||
+        values.instruction !== prevValues.instruction;
+
+      // 检查资源是否变化
+      const resourcesChanged =
+        JSON.stringify(this.state.resources) !== JSON.stringify(prevState.resources);
+
+      if (formChanged || resourcesChanged) {
+        this.updateEditModeFileTree();
+        // 保存当前表单值用于下次比较
+        this.setState({ prevFormValues: values });
+      }
+
+      // 检查是否有数据变化并更新状态
+      const hasChanged = this.hasDataChanged();
+      if (hasChanged !== this.state.hasChanges) {
+        this.setState({ hasChanges: hasChanged });
+      }
+    }
   }
 
   handleDocumentClick = e => {
@@ -226,7 +262,7 @@ class NewSkill extends React.Component {
     }
   };
 
-  loadSkillData = () => {
+  loadSkillData = callback => {
     const { skillName } = this.state;
     const namespaceId = getParams('namespace') || '';
 
@@ -250,12 +286,51 @@ class NewSkill extends React.Component {
             instruction: skillData.instruction || '',
           });
 
-          // 保存skill数据用于AI优化
-          this.setState({
-            resources,
-            expandedKeys: resources.map((_, index) => String(index)),
-            currentSkillData: skillData,
-          });
+          // 保存原始数据用于比较
+          const originalFormData = {
+            name: skillData.name,
+            description: skillData.description || '',
+            instruction: skillData.instruction || '',
+          };
+          const originalResources = JSON.parse(JSON.stringify(resources)); // 深拷贝
+
+          // 先更新 resources，然后再构建文件树，确保使用最新的数据
+          this.setState(
+            {
+              resources,
+              expandedKeys: resources.map((_, index) => String(index)),
+              currentSkillData: skillData,
+              prevFormValues: originalFormData,
+              originalFormData,
+              originalResources,
+              hasChanges: false, // 初始状态没有变化
+            },
+            () => {
+              // 在 resources 更新后构建文件树
+              const previewData = this.buildPreviewData();
+              const fileTree = this.buildFileTree(previewData);
+              // Find SKILL.md file in the file list
+              const skillMdFile =
+                fileTree && Array.isArray(fileTree)
+                  ? fileTree.find(file => file.name === 'SKILL.md' && file.fileType === 'skill-md')
+                  : null;
+
+              // 更新文件树和选中的文件
+              this.setState(
+                {
+                  editModeFileTree: fileTree,
+                  editModeSelectedFile:
+                    skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
+                },
+                () => {
+                  // 执行回调，允许调用方在数据加载完成后执行额外操作
+                  if (callback && typeof callback === 'function') {
+                    callback();
+                  }
+                }
+              );
+            }
+          );
         } else {
           Message.error(
             data?.message ||
@@ -272,6 +347,72 @@ class NewSkill extends React.Component {
 
   handleSubmit = () => {
     const { locale = {} } = this.props;
+
+    // 如果有正在编辑的文件名，先保存它
+    const { editingFileName, editingFileNameValue, resources } = this.state;
+    if (editingFileName && editingFileNameValue) {
+      const nameToSave = editingFileNameValue.trim();
+      if (nameToSave && nameToSave !== editingFileName.oldName) {
+        // 同步保存文件名
+        const filteredName = nameToSave.replace(/[^a-zA-Z0-9._-]/g, '');
+
+        if (filteredName && filteredName !== editingFileName.oldName) {
+          // 检查是否重名
+          const isDuplicate = resources.some(
+            r =>
+              r.name === filteredName &&
+              r.type === editingFileName.type &&
+              r.name !== editingFileName.oldName
+          );
+
+          if (isDuplicate) {
+            Message.warning(locale.fileNameDuplicate || 'File name already exists');
+            return;
+          }
+
+          const resourceIndex = resources.findIndex(
+            r => r.name === editingFileName.oldName && r.type === editingFileName.type
+          );
+
+          if (resourceIndex !== -1) {
+            const newResources = [...resources];
+            newResources[resourceIndex] = {
+              ...newResources[resourceIndex],
+              name: filteredName,
+            };
+            // 更新 resources，然后继续提交
+            this.setState(
+              {
+                resources: newResources,
+                editingFileName: null,
+                editingFileNameValue: '',
+              },
+              () => {
+                // 继续提交
+                this.doSubmit(newResources);
+              }
+            );
+            return;
+          }
+        }
+      }
+      // 如果文件名没有变化或无效，取消编辑状态后继续提交
+      this.setState({ editingFileName: null, editingFileNameValue: '' }, () => {
+        this.doSubmit();
+      });
+      return;
+    }
+
+    this.doSubmit();
+  };
+
+  doSubmit = (resourcesToUse = null) => {
+    const { locale = {} } = this.props;
+
+    // 在 validate 之前获取 resources，避免闭包问题
+    const resourcesSnapshot = resourcesToUse || [...this.state.resources];
+    console.log('[doSubmit] resources snapshot:', JSON.stringify(resourcesSnapshot));
+
     this.field.validate((errors, values) => {
       if (errors) {
         return;
@@ -279,8 +420,11 @@ class NewSkill extends React.Component {
 
       this.setState({ loading: true });
 
+      // 使用快照的 resources
+      const resources = resourcesSnapshot;
+
       const namespaceId = getParams('namespace') || '';
-      const { isEdit, resources } = this.state;
+      const { isEdit } = this.state;
 
       // 构建 skillCard 对象
       const skillCard = {
@@ -292,22 +436,44 @@ class NewSkill extends React.Component {
       // 构建 resource Map，过滤掉无效的资源（没有 name 或 name 为空的资源）
       if (resources && resources.length > 0) {
         const resourceMap = {};
+        const duplicateNames = new Set();
         resources.forEach((resource, index) => {
           // 只包含有效的资源（有 name 且 name 不为空）
           if (resource.name && resource.name.trim() !== '') {
             const key = resource.name.trim();
+            // 检查是否有重复的文件名
+            if (resourceMap[key]) {
+              duplicateNames.add(key);
+              console.warn(
+                `Duplicate resource name detected: ${key}. Previous content will be overwritten.`
+              );
+            }
             resourceMap[key] = {
               name: resource.name.trim(),
               type: resource.type || '',
               content: resource.content || '',
               metadata: resource.metadata || null,
             };
+          } else {
+            console.warn(
+              `Skipping resource at index ${index} because name is empty or invalid:`,
+              resource
+            );
           }
         });
+        if (duplicateNames.size > 0) {
+          console.warn(
+            `Found ${duplicateNames.size} duplicate resource name(s):`,
+            Array.from(duplicateNames)
+          );
+        }
         skillCard.resource = resourceMap;
+        console.log('[doSubmit] Built resourceMap:', JSON.stringify(resourceMap));
       } else {
         skillCard.resource = {};
       }
+
+      console.log('[doSubmit] Final skillCard:', JSON.stringify(skillCard));
 
       // 准备请求数据
       const requestData = {
@@ -338,9 +504,51 @@ class NewSkill extends React.Component {
                 : this.getLocaleValue('createSuccess', 'Create successful')
             );
 
-            setTimeout(() => {
-              this.handleGoBack();
-            }, 1000);
+            if (isEdit) {
+              // 更新成功后，重新加载数据并重置变化状态
+              // 保存当前选中的文件信息，以便在重新加载后恢复选中状态
+              const { editModeSelectedFile } = this.state;
+              const selectedFileName = editModeSelectedFile?.name;
+              const selectedFileType = editModeSelectedFile?.fileType;
+              const selectedResourceKey = editModeSelectedFile?.resourceKey;
+
+              this.loadSkillData(() => {
+                // 在数据加载完成后，尝试恢复之前选中的文件
+                if (selectedFileName && selectedFileType === 'resource') {
+                  const { editModeFileTree } = this.state;
+                  if (editModeFileTree && Array.isArray(editModeFileTree)) {
+                    // 递归查找文件
+                    const findFileInTree = tree => {
+                      if (Array.isArray(tree)) {
+                        for (const node of tree) {
+                          if (
+                            node.fileType === 'resource' &&
+                            (node.resourceKey === selectedResourceKey ||
+                              node.name === selectedFileName)
+                          ) {
+                            return node;
+                          }
+                          if (node.children) {
+                            const found = findFileInTree(node.children);
+                            if (found) return found;
+                          }
+                        }
+                      }
+                      return null;
+                    };
+
+                    const restoredFile = findFileInTree(editModeFileTree);
+                    if (restoredFile) {
+                      this.setState({ editModeSelectedFile: restoredFile });
+                    }
+                  }
+                }
+              });
+            } else {
+              setTimeout(() => {
+                this.handleGoBack();
+              }, 1000);
+            }
           } else {
             Message.error(
               data?.message ||
@@ -377,10 +585,23 @@ class NewSkill extends React.Component {
       metadata: null,
     };
     const newIndex = resources.length;
-    this.setState({
-      resources: [...resources, newResource],
-      expandedKeys: [String(newIndex)], // 只展开新添加的资源
-    });
+    this.setState(
+      {
+        resources: [...resources, newResource],
+        expandedKeys: [String(newIndex)], // 只展开新添加的资源
+      },
+      () => {
+        // 更新文件树和变化状态
+        if (this.state.isEdit) {
+          this.updateEditModeFileTree();
+          // 检查是否有变化
+          const hasChanged = this.hasDataChanged();
+          if (hasChanged !== this.state.hasChanges) {
+            this.setState({ hasChanges: hasChanged });
+          }
+        }
+      }
+    );
   };
 
   handleExpandChange = expandedKeys => {
@@ -404,7 +625,17 @@ class NewSkill extends React.Component {
             const keyNum = parseInt(key, 10);
             return keyNum > index ? String(keyNum - 1) : key;
           });
-        this.setState({ resources: newResources, expandedKeys: newExpandedKeys });
+        this.setState({ resources: newResources, expandedKeys: newExpandedKeys }, () => {
+          // 更新文件树和变化状态
+          if (this.state.isEdit) {
+            this.updateEditModeFileTree();
+            // 检查是否有变化
+            const hasChanged = this.hasDataChanged();
+            if (hasChanged !== this.state.hasChanges) {
+              this.setState({ hasChanges: hasChanged });
+            }
+          }
+        });
       },
     });
   };
@@ -428,7 +659,17 @@ class NewSkill extends React.Component {
       [field]: filteredValue,
     };
 
-    this.setState({ resources: newResources });
+    this.setState({ resources: newResources }, () => {
+      // 更新文件树和变化状态
+      if (this.state.isEdit) {
+        this.updateEditModeFileTree();
+        // 检查是否有变化
+        const hasChanged = this.hasDataChanged();
+        if (hasChanged !== this.state.hasChanges) {
+          this.setState({ hasChanges: hasChanged });
+        }
+      }
+    });
   };
 
   handleResourceTitleClick = (index, e) => {
@@ -467,6 +708,15 @@ class NewSkill extends React.Component {
     // Skill名称：只允许英文、下划线、横杠
     const filteredValue = value.replace(/[^a-zA-Z_-]/g, '');
     this.field.setValue('name', filteredValue);
+    // 检查是否有变化
+    if (this.state.isEdit) {
+      setTimeout(() => {
+        const hasChanged = this.hasDataChanged();
+        if (hasChanged !== this.state.hasChanges) {
+          this.setState({ hasChanges: hasChanged });
+        }
+      }, 0);
+    }
   };
 
   validateRequired = (rule, value, callback) => {
@@ -790,69 +1040,46 @@ class NewSkill extends React.Component {
   };
 
   handleApplyGeneratedSkill = () => {
-    try {
-      const { generatedSkill } = this.state;
+    const { generatedSkill } = this.state;
 
-      if (!generatedSkill || !generatedSkill.skill) {
-        Message.warning(this.getLocaleValue('noGeneratedSkill', 'No generated skill to apply'));
-        return;
-      }
-
-      const skill = generatedSkill.skill;
-      const successMessage =
-        generatedSkill.explanation ||
-        this.getLocaleValue('generateSuccess', 'Skill generated successfully');
-
-      // Prepare resources data
-      let resources = [];
-      let expandedKeys = [];
-      if (skill.resource && Object.keys(skill.resource).length > 0) {
-        resources = Object.values(skill.resource).map(resource => ({
-          name: resource.name || '',
-          type: resource.type || '',
-          content: resource.content || '',
-          metadata: resource.metadata || null,
-        }));
-        expandedKeys = resources.map((_, index) => String(index));
-      }
-
-      // Fill form with generated skill
-      this.field.setValues({
-        name: skill.name || '',
-        description: skill.description || '',
-        instruction: skill.instruction || '',
-      });
-
-      // Update all state in a single call to avoid multiple re-renders
-      // Close dialog and reset all related state
-      this.setState(
-        {
-          resources,
-          expandedKeys,
-          showAiGenerateDialog: false,
-          backgroundInfo: '',
-          generatedSkill: null,
-          thinkingContent: '',
-          streamContent: '',
-          streaming: false,
-          parsingResult: false,
-          inputSectionCollapsed: false,
-          thinkingCollapsed: false,
-          resultContentCollapsed: false,
-          showInputCollapsed: false,
-        },
-        () => {
-          // Show success message after state update completes and component re-renders
-          Message.success(successMessage);
-        }
-      );
-    } catch (error) {
-      console.error('Error applying generated skill:', error);
-      Message.error(
-        this.getLocaleValue('applyFailed', 'Failed to apply generated skill: ') +
-          (error.message || 'Unknown error')
-      );
+    if (!generatedSkill || !generatedSkill.skill) {
+      return;
     }
+
+    const skill = generatedSkill.skill;
+
+    // Fill form with generated skill
+    this.field.setValues({
+      name: skill.name || '',
+      description: skill.description || '',
+      instruction: skill.instruction || '',
+    });
+
+    // Fill resources if any
+    if (skill.resource && Object.keys(skill.resource).length > 0) {
+      const resources = Object.values(skill.resource).map(resource => ({
+        name: resource.name || '',
+        type: resource.type || '',
+        content: resource.content || '',
+        metadata: resource.metadata || null,
+      }));
+      this.setState({
+        resources,
+        expandedKeys: resources.map((_, index) => String(index)),
+      });
+    }
+
+    Message.success(
+      generatedSkill.explanation ||
+        this.getLocaleValue('generateSuccess', 'Skill generated successfully')
+    );
+
+    // Close dialog and reset
+    this.setState({
+      showAiGenerateDialog: false,
+      backgroundInfo: '',
+      generatedSkill: null,
+    });
   };
 
   handleBackgroundInfoChange = value => {
@@ -1732,12 +1959,29 @@ class NewSkill extends React.Component {
             : this.field.getValue('instruction'),
       });
 
+      // 更新原始数据，因为优化后的数据是新的原始数据
+      const newOriginalFormData = {
+        name: originalName,
+        description:
+          optimizedSkill.description !== undefined
+            ? optimizedSkill.description
+            : this.field.getValue('description'),
+        instruction:
+          optimizedSkill.instruction !== undefined
+            ? optimizedSkill.instruction
+            : this.field.getValue('instruction'),
+      };
+      const newOriginalResources = JSON.parse(JSON.stringify(resources)); // 深拷贝
+
       // Force form to re-render by updating state
       this.setState(
         {
           resources,
           expandedKeys: resources.map((_, index) => String(index)),
           currentSkillData: optimizedSkill,
+          originalFormData: newOriginalFormData,
+          originalResources: newOriginalResources,
+          hasChanges: false, // 优化后的数据作为新的原始数据，没有变化
         },
         () => {
           // After state update, ensure form fields are refreshed
@@ -1824,23 +2068,53 @@ class NewSkill extends React.Component {
     return skillCard;
   };
 
-  // Build file tree structure
+  // Update file tree when resources change
+  updateEditModeFileTree = callback => {
+    const previewData = this.buildPreviewData();
+    const fileTree = this.buildFileTree(previewData);
+    this.setState({ editModeFileTree: fileTree }, () => {
+      if (callback && typeof callback === 'function') {
+        callback(fileTree);
+      }
+    });
+  };
+
+  // Check if data has been modified
+  hasDataChanged = () => {
+    const { originalFormData, originalResources } = this.state;
+    if (!originalFormData || !originalResources) {
+      return false;
+    }
+
+    const currentValues = this.field.getValues();
+
+    // Check form data changes
+    const formChanged =
+      currentValues.name !== originalFormData.name ||
+      currentValues.description !== originalFormData.description ||
+      currentValues.instruction !== originalFormData.instruction;
+
+    // Check resources changes
+    const currentResources = this.state.resources || [];
+    const resourcesChanged = JSON.stringify(currentResources) !== JSON.stringify(originalResources);
+
+    return formChanged || resourcesChanged;
+  };
+
+  // Build file tree structure (only files, no project name folder)
   buildFileTree = previewData => {
     if (!previewData || !previewData.name) {
       return null;
     }
 
-    const tree = {
-      name: previewData.name,
-      type: 'folder',
-      children: [
-        {
-          name: 'SKILL.md',
-          type: 'file',
-          fileType: 'skill-md',
-        },
-      ],
-    };
+    // Build file list directly (no project name folder)
+    const fileList = [
+      {
+        name: 'SKILL.md',
+        type: 'file',
+        fileType: 'skill-md',
+      },
+    ];
 
     // Group resources by type
     const resourcesByType = {};
@@ -1874,17 +2148,17 @@ class NewSkill extends React.Component {
 
     // Add type folders
     Object.entries(resourcesByType).forEach(([type, files]) => {
-      tree.children.push({
+      fileList.push({
         name: type,
         type: 'folder',
         children: files,
       });
     });
 
-    // Add resources without type (directly in skill folder)
-    tree.children.push(...resourcesWithoutType);
+    // Add resources without type (directly in file list)
+    fileList.push(...resourcesWithoutType);
 
-    return tree;
+    return fileList;
   };
 
   // Escape YAML value (handle special characters)
@@ -1918,179 +2192,624 @@ class NewSkill extends React.Component {
     return markdown;
   };
 
-  handleShowPreview = () => {
-    const previewData = this.buildPreviewData();
-    const fileTree = this.buildFileTree(previewData);
-    this.setState({
-      showPreviewDialog: true,
-      previewData,
-      fileTree,
-      selectedFile: fileTree ? { name: 'SKILL.md', type: 'file', fileType: 'skill-md' } : null,
-    });
-  };
-
-  handleClosePreview = () => {
-    this.setState({
-      showPreviewDialog: false,
-      previewData: null,
-      fileTree: null,
-      selectedFile: null,
-    });
-  };
-
-  handleFileClick = (file, e) => {
+  handleEditModeFileClick = (file, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    // Clear selectedFile first to force MonacoEditor to unmount, then set new file
-    // This prevents errors when switching between files with different languages
-    this.setState({ selectedFile: null }, () => {
-      // Use setTimeout to ensure the previous editor is fully unmounted
+    // Clear editModeSelectedFile first to force MonacoEditor to unmount, then set new file
+    this.setState({ editModeSelectedFile: null }, () => {
       setTimeout(() => {
-        this.setState({ selectedFile: file });
+        this.setState({ editModeSelectedFile: file });
       }, 0);
     });
   };
 
-  renderFileTree = (node, level = 0, parentKey = '') => {
-    if (!node) {
+  // 开始编辑文件名
+  handleStartEditFileName = (node, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // SKILL.md 不能被编辑
+    if (node.fileType === 'skill-md' || node.name === 'SKILL.md') {
+      return;
+    }
+    // 只有资源文件可以编辑
+    if (node.fileType === 'resource') {
+      this.setState({
+        editingFileName: {
+          nodeKey: node.resourceKey || node.name,
+          oldName: node.name,
+          type: node.resource?.type || '',
+        },
+        editingFileNameValue: node.name, // 初始化编辑值
+      });
+    }
+  };
+
+  // 更新正在编辑的文件名临时值
+  handleEditingFileNameChange = value => {
+    // 过滤文件名：只允许英文大小写、数字、点号、下划线、横杠
+    const filteredValue = value.replace(/[^a-zA-Z0-9._-]/g, '');
+    this.setState({ editingFileNameValue: filteredValue });
+  };
+
+  // 保存文件名修改
+  handleSaveFileName = newName => {
+    const { editingFileName, resources } = this.state;
+    if (!editingFileName) {
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+      return;
+    }
+
+    // 使用传入的 newName 或当前编辑值
+    const nameToSave = newName || this.state.editingFileNameValue || editingFileName.oldName;
+    if (!nameToSave || nameToSave.trim() === '') {
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+      return;
+    }
+
+    // 过滤文件名：只允许英文大小写、数字、点号、下划线、横杠
+    const filteredName = nameToSave.replace(/[^a-zA-Z0-9._-]/g, '');
+
+    if (filteredName === editingFileName.oldName) {
+      // 没有变化，取消编辑
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+      return;
+    }
+
+    // 检查是否重名
+    const isDuplicate = resources.some(
+      r =>
+        r.name === filteredName &&
+        r.type === editingFileName.type &&
+        r.name !== editingFileName.oldName
+    );
+
+    if (isDuplicate) {
+      const { locale = {} } = this.props;
+      Message.warning(locale.fileNameDuplicate || 'File name already exists');
+      return;
+    }
+
+    // 更新资源名称
+    const resourceIndex = resources.findIndex(
+      r => r.name === editingFileName.oldName && r.type === editingFileName.type
+    );
+
+    if (resourceIndex !== -1) {
+      const newResources = [...resources];
+      newResources[resourceIndex] = {
+        ...newResources[resourceIndex],
+        name: filteredName,
+      };
+      this.setState(
+        {
+          resources: newResources,
+          editingFileName: null,
+          editingFileNameValue: '',
+        },
+        () => {
+          // 更新文件树和变化状态
+          if (this.state.isEdit) {
+            // 使用 callback 确保文件树更新完成后再查找新文件
+            this.updateEditModeFileTree(fileTree => {
+              // 更新选中的文件，使其指向新的文件名
+              const { editModeSelectedFile } = this.state;
+              if (
+                editModeSelectedFile &&
+                editModeSelectedFile.fileType === 'resource' &&
+                editModeSelectedFile.resourceKey === editingFileName.oldName
+              ) {
+                if (fileTree && Array.isArray(fileTree)) {
+                  // 递归查找文件
+                  const findFileInTree = tree => {
+                    if (Array.isArray(tree)) {
+                      for (const node of tree) {
+                        if (
+                          node.fileType === 'resource' &&
+                          node.resourceKey === filteredName &&
+                          node.resource?.type === editingFileName.type
+                        ) {
+                          return node;
+                        }
+                        if (node.children) {
+                          const found = findFileInTree(node.children);
+                          if (found) return found;
+                        }
+                      }
+                    }
+                    return null;
+                  };
+
+                  const newFile = findFileInTree(fileTree);
+                  if (newFile) {
+                    this.setState({ editModeSelectedFile: newFile });
+                  } else {
+                    // 如果找不到，清空选中状态
+                    this.setState({ editModeSelectedFile: null });
+                  }
+                }
+              }
+
+              const hasChanged = this.hasDataChanged();
+              if (hasChanged !== this.state.hasChanges) {
+                this.setState({ hasChanges: hasChanged });
+              }
+            });
+          }
+        }
+      );
+    } else {
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+    }
+  };
+
+  // 取消编辑文件名
+  handleCancelEditFileName = () => {
+    this.setState({ editingFileName: null, editingFileNameValue: '' });
+  };
+
+  // 在文件树中新增文件
+  handleAddFileInTree = () => {
+    const newResource = {
+      name: `new_file_${Date.now()}`,
+      type: '',
+      content: '',
+      metadata: null,
+    };
+    console.log('[handleAddFileInTree] Adding new resource:', newResource);
+    console.log(
+      '[handleAddFileInTree] Current resources before add:',
+      JSON.stringify(this.state.resources)
+    );
+
+    const newResources = [...this.state.resources, newResource];
+    console.log('[handleAddFileInTree] New resources after add:', JSON.stringify(newResources));
+
+    this.setState(
+      {
+        resources: newResources,
+      },
+      () => {
+        console.log(
+          '[handleAddFileInTree] State updated, resources:',
+          JSON.stringify(this.state.resources)
+        );
+        // 更新文件树
+        if (this.state.isEdit) {
+          // 使用 callback 确保文件树更新完成后再查找新文件
+          this.updateEditModeFileTree(fileTree => {
+            // 选中新文件并进入编辑模式
+            if (fileTree && Array.isArray(fileTree)) {
+              const newFile = fileTree.find(
+                file => file.fileType === 'resource' && file.resourceKey === newResource.name
+              );
+              if (newFile) {
+                this.setState({ editModeSelectedFile: newFile });
+                // 自动开始编辑文件名
+                setTimeout(() => {
+                  this.setState({
+                    editingFileName: {
+                      nodeKey: newResource.name,
+                      oldName: newResource.name,
+                      type: '',
+                    },
+                    editingFileNameValue: newResource.name, // 初始化编辑值
+                  });
+                }, 100);
+              }
+            }
+            const hasChanged = this.hasDataChanged();
+            if (hasChanged !== this.state.hasChanges) {
+              this.setState({ hasChanges: hasChanged });
+            }
+          });
+        }
+      }
+    );
+  };
+
+  // 拖拽开始
+  handleDragStart = (node, e) => {
+    if (node.fileType === 'resource' && node.name !== 'SKILL.md') {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData(
+        'text/plain',
+        JSON.stringify({
+          resourceKey: node.resourceKey || node.name,
+          name: node.name,
+          type: node.resource?.type || '',
+        })
+      );
+      this.setState({
+        draggingFile: {
+          resourceKey: node.resourceKey || node.name,
+          name: node.name,
+          type: node.resource?.type || '',
+        },
+      });
+    } else {
+      e.preventDefault();
+    }
+  };
+
+  // 拖拽结束
+  handleDragEnd = () => {
+    this.setState({
+      draggingFile: null,
+      dragOverFolder: null,
+    });
+  };
+
+  // 拖拽悬停在文件夹上
+  handleDragOver = (folderName, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    if (this.state.dragOverFolder !== folderName) {
+      this.setState({ dragOverFolder: folderName });
+    }
+  };
+
+  // 拖拽离开文件夹
+  handleDragLeave = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 只有当真正离开文件夹区域时才清除状态
+    const relatedTarget = e.relatedTarget;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      this.setState({ dragOverFolder: null });
+    }
+  };
+
+  // 文件拖放到文件夹
+  handleDrop = (folderName, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const { draggingFile, resources } = this.state;
+    if (!draggingFile) {
+      this.setState({ dragOverFolder: null });
+      return;
+    }
+
+    // 找到要移动的资源
+    const resourceIndex = resources.findIndex(
+      r => r.name === draggingFile.name && r.type === draggingFile.type
+    );
+
+    if (resourceIndex !== -1) {
+      const newResources = [...resources];
+      // 更新资源的 type 为文件夹名称
+      newResources[resourceIndex] = {
+        ...newResources[resourceIndex],
+        type: folderName,
+      };
+
+      this.setState(
+        {
+          resources: newResources,
+          draggingFile: null,
+          dragOverFolder: null,
+        },
+        () => {
+          // 更新文件树和变化状态
+          if (this.state.isEdit) {
+            this.updateEditModeFileTree();
+            const hasChanged = this.hasDataChanged();
+            if (hasChanged !== this.state.hasChanges) {
+              this.setState({ hasChanges: hasChanged });
+            }
+          }
+        }
+      );
+    } else {
+      this.setState({ draggingFile: null, dragOverFolder: null });
+    }
+  };
+
+  renderFileTree = (fileList, level = 0, parentKey = '', isEditMode = false) => {
+    if (!fileList) {
       return null;
     }
 
-    // Generate unique key: use resourceKey for resources, otherwise use path-based key
+    // If fileList is an array, render each item
+    if (Array.isArray(fileList)) {
+      return fileList.map(node => this.renderFileTree(node, level, parentKey, isEditMode));
+    }
+
+    // If it's a single node
+    const node = fileList;
     const nodeKey = node.resourceKey
       ? `${parentKey}/${node.resourceKey}`
       : parentKey
       ? `${parentKey}/${node.name}`
       : node.name;
+
+    const selectedFile = this.state.editModeSelectedFile;
     const isSelected =
-      this.state.selectedFile &&
-      this.state.selectedFile.name === node.name &&
-      this.state.selectedFile.fileType === node.fileType &&
-      this.state.selectedFile.resourceKey === node.resourceKey;
+      selectedFile &&
+      selectedFile.name === node.name &&
+      selectedFile.fileType === node.fileType &&
+      selectedFile.resourceKey === node.resourceKey;
 
     if (node.type === 'folder') {
+      const { dragOverFolder, draggingFile } = this.state;
+      const isDragOver = dragOverFolder === node.name && draggingFile;
+      const folderStyle = {
+        paddingLeft: level === 0 ? '8px' : `${level * 20 + 8}px`,
+        paddingTop: '8px',
+        paddingBottom: '6px',
+        paddingRight: '12px',
+        marginTop: level === 0 ? '8px' : '12px',
+        marginBottom: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        fontWeight: 600,
+        color: '#666',
+        fontSize: '13px',
+        backgroundColor: isDragOver ? '#e6f7ff' : 'transparent',
+        borderRadius: 4,
+        transition: 'background-color 0.2s',
+      };
+
       return (
         <div key={nodeKey} className="file-tree-folder">
           <div
             className="file-tree-item file-tree-folder-item"
-            style={{ paddingLeft: `${level * 20 + 8}px` }}
+            style={folderStyle}
+            onDragOver={isEditMode ? e => this.handleDragOver(node.name, e) : undefined}
+            onDragLeave={isEditMode ? this.handleDragLeave : undefined}
+            onDrop={isEditMode ? e => this.handleDrop(node.name, e) : undefined}
           >
-            <Icon type="folder" style={{ marginRight: 8 }} />
-            <span>{node.name}</span>
+            <Icon type="folder" style={{ marginRight: 8, color: '#666' }} />
+            <span style={{ fontWeight: 600 }}>{node.name}</span>
           </div>
           {node.children &&
-            node.children.map(child => this.renderFileTree(child, level + 1, nodeKey))}
+            node.children.map(child => this.renderFileTree(child, level + 1, nodeKey, isEditMode))}
         </div>
       );
     } else {
+      const itemStyle = {
+        paddingLeft: level === 0 ? '8px' : `${level * 20 + 8}px`,
+        paddingTop: '10px',
+        paddingBottom: '10px',
+        paddingRight: '12px',
+        cursor: 'pointer',
+        backgroundColor: isSelected ? '#e6f7ff' : 'transparent',
+        color: isSelected ? '#1890ff' : '#333',
+        fontWeight: isSelected ? 500 : 'normal',
+        borderRadius: 4,
+        margin: '2px 4px',
+        display: 'flex',
+        alignItems: 'center',
+      };
+
+      const { editingFileName, draggingFile } = this.state;
+      const isEditing =
+        editingFileName &&
+        editingFileName.nodeKey === (node.resourceKey || node.name) &&
+        editingFileName.oldName === node.name;
+      const canEdit = isEditMode && node.fileType === 'resource' && node.name !== 'SKILL.md';
+      const isDragging =
+        draggingFile &&
+        draggingFile.resourceKey === (node.resourceKey || node.name) &&
+        draggingFile.name === node.name;
+
       return (
         <div
           key={nodeKey}
           className={`file-tree-item file-tree-file-item ${isSelected ? 'selected' : ''}`}
-          style={{ paddingLeft: `${level * 20 + 8}px`, cursor: 'pointer' }}
+          style={{
+            ...itemStyle,
+            opacity: isDragging ? 0.5 : 1,
+            cursor: canEdit ? 'move' : 'pointer',
+          }}
+          draggable={canEdit && !isEditing}
+          onDragStart={canEdit && !isEditing ? e => this.handleDragStart(node, e) : undefined}
+          onDragEnd={canEdit ? this.handleDragEnd : undefined}
           onClick={e => {
             e.preventDefault();
             e.stopPropagation();
-            this.handleFileClick(node, e);
+            if (isEditMode && !isEditing) {
+              this.handleEditModeFileClick(node, e);
+            }
+          }}
+          onDoubleClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (canEdit) {
+              this.handleStartEditFileName(node, e);
+            }
           }}
         >
           <Icon type="file" style={{ marginRight: 8 }} />
-          <span style={{ pointerEvents: 'none' }}>{node.name}</span>
+          {isEditing ? (
+            <Input
+              size="small"
+              value={this.state.editingFileNameValue}
+              autoFocus
+              style={{ flex: 1, marginRight: 4 }}
+              onChange={value => {
+                this.handleEditingFileNameChange(value);
+              }}
+              onBlur={e => {
+                this.handleSaveFileName(e.target.value);
+              }}
+              onPressEnter={e => {
+                this.handleSaveFileName(e.target.value);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Escape') {
+                  this.handleCancelEditFileName();
+                }
+              }}
+              onClick={e => {
+                e.stopPropagation();
+              }}
+            />
+          ) : (
+            <span
+              style={{ pointerEvents: 'none', flex: 1 }}
+              title={
+                canEdit ? this.getLocaleValue('doubleClickToRename', 'Double click to rename') : ''
+              }
+            >
+              {node.name}
+            </span>
+          )}
         </div>
       );
     }
   };
 
-  renderFileContent = () => {
-    const { selectedFile, previewData } = this.state;
+  renderEditModeFileContent = () => {
+    const { editModeSelectedFile } = this.state;
+    const values = this.field.getValues();
+    const { resources } = this.state;
 
-    if (!selectedFile || !previewData) {
+    if (!editModeSelectedFile) {
       return (
-        <div className="file-content-empty">
-          {this.getLocaleValue('selectFileToPreview', 'Select a file to preview')}
+        <div
+          className="file-content-empty"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#999',
+            fontSize: '14px',
+          }}
+        >
+          {this.getLocaleValue('selectFileToEdit', 'Select a file to edit')}
         </div>
       );
     }
 
-    if (selectedFile.fileType === 'skill-md') {
-      const markdown = this.buildSkillMarkdown(previewData);
+    if (editModeSelectedFile.fileType === 'skill-md') {
+      const markdown = this.buildSkillMarkdown(this.buildPreviewData());
       return (
-        <div className="file-content">
-          <div className="file-content-header">
+        <div
+          className="file-content"
+          style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+        >
+          <div
+            className="file-content-header"
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #e6e6e6',
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 500,
+              background: '#fafafa',
+            }}
+          >
             <Icon type="file" style={{ marginRight: 8 }} />
-            <span>{selectedFile.name}</span>
+            <span>{editModeSelectedFile.name}</span>
           </div>
-          <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px' }}>
-            <MonacoEditor
-              language="markdown"
-              width="100%"
-              height={500}
-              value={markdown}
-              options={{
-                readOnly: true,
-                wordWrap: 'on',
-                minimap: { enabled: false },
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-              }}
-            />
+          <div style={{ flex: 1, overflow: 'hidden', padding: '16px' }}>
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', height: '100%' }}>
+              <MonacoEditor
+                language="markdown"
+                width="100%"
+                height="100%"
+                value={values.instruction || ''}
+                onChange={value => {
+                  this.field.setValue('instruction', value);
+                  // 更新文件树和变化状态
+                  setTimeout(() => {
+                    if (this.state.isEdit) {
+                      this.updateEditModeFileTree();
+                      // 检查是否有变化
+                      const hasChanged = this.hasDataChanged();
+                      if (hasChanged !== this.state.hasChanges) {
+                        this.setState({ hasChanges: hasChanged });
+                      }
+                    }
+                  }, 0);
+                }}
+                options={{
+                  wordWrap: 'on',
+                  minimap: { enabled: false },
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            </div>
           </div>
         </div>
       );
-    } else if (selectedFile.fileType === 'resource') {
-      const resource = selectedFile.resource;
-      return (
-        <div className="file-content">
-          <div className="file-content-header">
-            <Icon type="file" style={{ marginRight: 8 }} />
-            <span>{selectedFile.name}</span>
+    } else if (editModeSelectedFile.fileType === 'resource') {
+      const resource = editModeSelectedFile.resource;
+      // 找到对应的资源索引
+      const resourceIndex = resources.findIndex(r => {
+        if (editModeSelectedFile.resourceKey) {
+          return r.name === editModeSelectedFile.resourceKey;
+        }
+        return r.name === resource.name && r.type === resource.type;
+      });
+
+      if (resourceIndex === -1) {
+        return (
+          <div
+            className="file-content-empty"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#999',
+              fontSize: '14px',
+            }}
+          >
+            {this.getLocaleValue('resourceNotFound', 'Resource not found')}
           </div>
-          <div className="file-content-resource">
-            <div className="resource-info">
-              <div className="resource-info-item">
-                <strong>{this.getLocaleValue('resourceName', 'Resource Name')}:</strong>{' '}
-                {resource.name || '--'}
-              </div>
-              {resource.type && (
-                <div className="resource-info-item">
-                  <strong>{this.getLocaleValue('resourceType', 'Resource Type')}:</strong>{' '}
-                  {resource.type}
-                </div>
-              )}
-              <div className="resource-info-item">
-                <strong>{this.getLocaleValue('resourceId', 'Resource ID')}:</strong>{' '}
-                {this.getResourceIdentifier(resource)}
-              </div>
-            </div>
-            <div className="resource-content">
-              <div className="resource-content-label">
-                <strong>{this.getLocaleValue('resourceContent', 'Resource Content')}:</strong>
-              </div>
-              {resource.content ? (
-                <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px', marginTop: '8px' }}>
-                  <MonacoEditor
-                    key={`${selectedFile.resourceKey ||
-                      selectedFile.name}-${getLanguageFromFileName(resource.name || '')}`}
-                    language={getLanguageFromFileName(resource.name || '')}
-                    width="100%"
-                    height={300}
-                    value={resource.content}
-                    options={{
-                      readOnly: true,
-                      wordWrap: 'on',
-                      minimap: { enabled: false },
-                      lineNumbers: 'on',
-                      scrollBeyondLastLine: false,
-                    }}
-                  />
-                </div>
-              ) : (
-                <div style={{ padding: '12px', color: '#999', marginTop: '8px' }}>
-                  {this.getLocaleValue('noContent', 'No content')}
-                </div>
-              )}
+        );
+      }
+
+      const currentResource = resources[resourceIndex];
+      return (
+        <div
+          className="file-content"
+          style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+        >
+          <div
+            className="file-content-header"
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #e6e6e6',
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 500,
+              background: '#fafafa',
+            }}
+          >
+            <Icon type="file" style={{ marginRight: 8 }} />
+            <span>{editModeSelectedFile.name}</span>
+          </div>
+          <div style={{ flex: 1, overflow: 'hidden', padding: '16px' }}>
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', height: '100%' }}>
+              <MonacoEditor
+                key={`${editModeSelectedFile.resourceKey ||
+                  editModeSelectedFile.name}-${getLanguageFromFileName(
+                  currentResource.name || ''
+                )}`}
+                language={getLanguageFromFileName(currentResource.name || '')}
+                width="100%"
+                height="100%"
+                value={currentResource.content || ''}
+                onChange={value => {
+                  this.handleResourceChange(resourceIndex, 'content', value);
+                }}
+                options={{
+                  wordWrap: 'on',
+                  minimap: { enabled: false },
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                }}
+              />
             </div>
           </div>
         </div>
@@ -2116,262 +2835,434 @@ class NewSkill extends React.Component {
       wrapperCol: { span: 20 },
     };
 
+    // 检查是否有数据变化（使用state中的值，避免每次render都计算）
+    const hasChanged = isEdit ? this.state.hasChanges : false;
+
     return (
       <div className="new-skill-container">
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-          <PageTitle
-            title={
-              isEdit
-                ? this.getLocaleValue('editSkill', 'Edit Skill')
-                : this.getLocaleValue('createSkill', 'Create Skill')
-            }
-            namespaceId={getParams('namespace') || 'public'}
-          />
-          {!isEdit && (
-            <Button type="primary" onClick={this.handleShowAiGenerate} style={{ marginLeft: 16 }}>
-              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
-              {this.getLocaleValue('aiGenerate', 'AI生成')}
-            </Button>
-          )}
-          {isEdit && (
-            <Button
-              type="primary"
-              onClick={this.handleShowOptimizeDialog}
-              style={{ marginLeft: 16 }}
-            >
-              <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
-              {this.getLocaleValue('aiOptimize', 'AI 优化')}
-            </Button>
-          )}
-          <Button onClick={this.handleShowPreview} style={{ marginLeft: 16 }}>
-            <Icon type="eye" /> {this.getLocaleValue('preview', 'Preview')}
-          </Button>
-        </div>
-
         <div
+          className="page-title"
           style={{
-            background: '#fff',
-            padding: '20px',
-            borderRadius: '4px',
-            border: '1px solid #e6e6e6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+            marginTop: 8,
           }}
         >
-          <Form field={this.field} {...formItemLayout} className="new-skill-form">
-            <Form.Item
-              label={this.getLocaleValue('skillName', 'Skill Name')}
-              required
-              validator={this.validateRequired}
-            >
-              <Input
-                name="name"
-                placeholder={this.getLocaleValue(
-                  'skillNamePlaceholder',
-                  'Please enter Skill name (only English letters, underscore, hyphen)'
-                )}
-                disabled={isEdit}
-                maxLength={255}
-                onChange={this.handleSkillNameChange}
-              />
-            </Form.Item>
-
-            <Form.Item label={this.getLocaleValue('description', 'Description')}>
-              <Input.TextArea
-                name="description"
-                placeholder={this.getLocaleValue(
-                  'descriptionPlaceholder',
-                  'Please enter Skill description'
-                )}
-                rows={3}
-                maxLength={1000}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label={this.getLocaleValue('instruction', 'Instruction')}
-              required
-              validator={this.validateRequired}
-            >
-              <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', minHeight: '400px' }}>
-                <MonacoEditor
-                  language="markdown"
-                  width="100%"
-                  height={400}
-                  value={this.field.getValue('instruction') || ''}
-                  onChange={value => {
-                    this.field.setValue('instruction', value);
-                  }}
-                  options={{
-                    wordWrap: 'on',
-                    minimap: { enabled: false },
-                    lineNumbers: 'on',
-                  }}
-                />
-              </div>
-            </Form.Item>
-
-            <Form.Item label={this.getLocaleValue('resources', 'Resources')}>
-              <div className="resources-section">
-                <Button
-                  type="primary"
-                  onClick={this.handleAddResource}
-                  style={{ marginBottom: 16 }}
-                >
-                  <Icon type="add" /> {this.getLocaleValue('addResource', 'Add Resource')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>
+              {isEdit
+                ? this.getLocaleValue('editSkill', 'Edit Skill')
+                : this.getLocaleValue('createSkill', 'Create Skill')}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {!isEdit && (
+                <Button type="primary" onClick={this.handleShowAiGenerate}>
+                  <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
+                  {this.getLocaleValue('aiGenerate', 'AI生成')}
                 </Button>
+              )}
+              {isEdit && (
+                <Button onClick={this.handleShowOptimizeDialog}>
+                  <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
+                  {this.getLocaleValue('aiOptimize', 'AI 优化')}
+                </Button>
+              )}
+              {isEdit && (
+                <>
+                  <Button
+                    type="primary"
+                    onClick={this.handleSubmit}
+                    loading={loading}
+                    disabled={!hasChanged}
+                  >
+                    {this.getLocaleValue('update', 'Update')}
+                  </Button>
+                  <Button warning onClick={this.handleGoBack} disabled={!hasChanged}>
+                    {this.getLocaleValue('cancel', 'Cancel')}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          {!isEdit && (
+            <div>
+              <Button onClick={this.handleGoBack}>{this.getLocaleValue('cancel', 'Cancel')}</Button>
+            </div>
+          )}
+        </div>
 
-                {resources.length > 0 && (
-                  <Collapse expandedKeys={expandedKeys} onExpand={this.handleExpandChange}>
-                    {resources.map((resource, index) => {
-                      const isEditing = this.state.editingResourceIndex === index;
-                      const displayText =
-                        resource.type && resource.name
-                          ? `${resource.type}/${resource.name}`
-                          : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`;
+        {isEdit ? (
+          // 编辑模式：使用文件目录形式展示（与查看详情页面一致）
+          <div
+            className="skill-detail-container"
+            style={{
+              background: '#fff',
+              borderRadius: '4px',
+              border: '1px solid #e6e6e6',
+              height: 'calc(100vh - 200px)',
+              display: 'flex',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="skill-detail-sidebar"
+              style={{
+                width: '300px',
+                borderRight: '1px solid #e6e6e6',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#fafafa',
+              }}
+            >
+              <div
+                className="skill-detail-sidebar-header"
+                style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid #e6e6e6',
+                  fontWeight: 500,
+                  background: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>
+                  {this.field.getValue('name') || this.getLocaleValue('projectFiles', '项目文件')}
+                </span>
+                <Button
+                  size="small"
+                  type="primary"
+                  text
+                  onClick={this.handleAddFileInTree}
+                  style={{ padding: '0 4px' }}
+                  title={this.getLocaleValue('addFile', 'Add File')}
+                >
+                  <Icon type="add" size="small" />
+                </Button>
+              </div>
+              <div
+                className="skill-detail-file-tree"
+                style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}
+                onDragOver={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (this.state.draggingFile) {
+                    e.dataTransfer.dropEffect = 'move';
+                    if (this.state.dragOverFolder !== '') {
+                      this.setState({ dragOverFolder: '' });
+                    }
+                  }
+                }}
+                onDrop={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const { draggingFile, resources } = this.state;
+                  if (!draggingFile) return;
 
-                      return (
-                        <Collapse.Panel
-                          key={String(index)}
-                          title={
-                            <div className="resource-panel-header">
-                              {isEditing ? (
-                                <div
-                                  className="resource-title-editor"
-                                  onClick={e => e.stopPropagation()}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    flex: 1,
-                                  }}
-                                >
-                                  <Input
-                                    size="small"
-                                    value={resource.type || ''}
-                                    onChange={value => {
-                                      const newResources = [...this.state.resources];
-                                      newResources[index] = { ...newResources[index], type: value };
-                                      this.setState({ resources: newResources });
-                                    }}
-                                    placeholder={this.getLocaleValue(
-                                      'resourceTypePlaceholder',
-                                      'Type'
-                                    )}
-                                    style={{ width: '120px' }}
-                                    onPressEnter={() => {
-                                      this.setState({ editingResourceIndex: null });
-                                    }}
-                                  />
-                                  <span>/</span>
-                                  <Input
-                                    size="small"
-                                    value={resource.name || ''}
-                                    onChange={value => {
-                                      const newResources = [...this.state.resources];
-                                      newResources[index] = { ...newResources[index], name: value };
-                                      this.setState({ resources: newResources });
-                                    }}
-                                    placeholder={this.getLocaleValue(
-                                      'resourceNamePlaceholder',
-                                      'Name'
-                                    )}
-                                    style={{ flex: 1 }}
-                                    onPressEnter={() => {
-                                      this.setState({ editingResourceIndex: null });
-                                    }}
-                                  />
-                                  <Button
-                                    text
-                                    size="small"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      this.handleResourceTitleCancel();
-                                    }}
-                                  >
-                                    <Icon type="close" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <>
-                                  <span
-                                    className="resource-title-text"
-                                    onClick={e => this.handleResourceTitleClick(index, e)}
-                                    onMouseEnter={e => this.handleResourceTitleMouseEnter(index, e)}
-                                    onMouseMove={this.handleResourceTitleMouseMove}
-                                    onMouseLeave={this.handleResourceTitleMouseLeave}
-                                    style={{ cursor: 'pointer', flex: 1 }}
-                                  >
-                                    {displayText}
-                                  </span>
-                                  <Button
-                                    text
-                                    warning
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      this.handleRemoveResource(index);
-                                    }}
-                                  >
-                                    <Icon type="delete" /> {this.getLocaleValue('delete', 'Delete')}
-                                  </Button>
-                                </>
-                              )}
-                            </div>
+                  const resourceIndex = resources.findIndex(
+                    r => r.name === draggingFile.name && r.type === draggingFile.type
+                  );
+
+                  if (resourceIndex !== -1) {
+                    const newResources = [...resources];
+                    newResources[resourceIndex] = {
+                      ...newResources[resourceIndex],
+                      type: '', // 拖到根目录，清空 type
+                    };
+                    this.setState(
+                      {
+                        resources: newResources,
+                        draggingFile: null,
+                        dragOverFolder: null,
+                      },
+                      () => {
+                        if (this.state.isEdit) {
+                          this.updateEditModeFileTree();
+                          const hasChanged = this.hasDataChanged();
+                          if (hasChanged !== this.state.hasChanges) {
+                            this.setState({ hasChanges: hasChanged });
                           }
-                        >
-                          <Form.Item>
-                            <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
-                              <MonacoEditor
-                                key={`resource-${index}-${resource.name || ''}-${resource.type ||
-                                  ''}`}
-                                language={getLanguageFromFileName(resource.name || '')}
-                                width="100%"
-                                height={300}
-                                value={resource.content || ''}
-                                onChange={value =>
-                                  this.handleResourceChange(index, 'content', value)
-                                }
-                                options={{
-                                  readOnly: false,
-                                  wordWrap: 'on',
-                                  minimap: { enabled: false },
-                                  lineNumbers: 'on',
-                                  scrollBeyondLastLine: false,
-                                  theme: 'vs-dark-enhanced',
-                                }}
-                              />
-                            </div>
-                          </Form.Item>
-                        </Collapse.Panel>
-                      );
-                    })}
-                  </Collapse>
-                )}
-
-                {resources.length === 0 && (
-                  <div className="empty-resources">
-                    {this.getLocaleValue(
-                      'noResources',
-                      'No resources added yet. Click "Add Resource" to add one.'
-                    )}
+                        }
+                      }
+                    );
+                  }
+                }}
+              >
+                {this.state.editModeFileTree ? (
+                  this.renderFileTree(this.state.editModeFileTree, 0, '', true)
+                ) : (
+                  <div
+                    className="file-tree-empty"
+                    style={{
+                      padding: '40px 20px',
+                      textAlign: 'center',
+                      color: '#999',
+                      fontSize: '13px',
+                    }}
+                  >
+                    {this.getLocaleValue('noPreviewData', 'No preview data available')}
                   </div>
                 )}
               </div>
-            </Form.Item>
-
-            <Form.Item wrapperCol={{ offset: 3, span: 20 }}>
-              <Button
-                type="primary"
-                onClick={this.handleSubmit}
-                loading={loading}
-                style={{ marginRight: 10 }}
+            </div>
+            <div
+              className="skill-detail-content-area"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                background: '#fff',
+              }}
+            >
+              {this.renderEditModeFileContent()}
+            </div>
+          </div>
+        ) : (
+          // 创建模式：使用传统表单形式
+          <div
+            style={{
+              background: '#fff',
+              padding: '20px',
+              borderRadius: '4px',
+              border: '1px solid #e6e6e6',
+            }}
+          >
+            <Form field={this.field} {...formItemLayout} className="new-skill-form">
+              <Form.Item
+                label={this.getLocaleValue('skillName', 'Skill Name')}
+                required
+                validator={this.validateRequired}
               >
-                {isEdit
-                  ? this.getLocaleValue('update', 'Update')
-                  : this.getLocaleValue('create', 'Create')}
-              </Button>
-              <Button onClick={this.handleGoBack}>{this.getLocaleValue('cancel', 'Cancel')}</Button>
-            </Form.Item>
-          </Form>
-        </div>
+                <Input
+                  name="name"
+                  placeholder={this.getLocaleValue(
+                    'skillNamePlaceholder',
+                    'Please enter Skill name (only English letters, underscore, hyphen)'
+                  )}
+                  disabled={isEdit}
+                  maxLength={255}
+                  onChange={this.handleSkillNameChange}
+                />
+              </Form.Item>
+
+              <Form.Item label={this.getLocaleValue('description', 'Description')}>
+                <Input.TextArea
+                  name="description"
+                  placeholder={this.getLocaleValue(
+                    'descriptionPlaceholder',
+                    'Please enter Skill description'
+                  )}
+                  rows={3}
+                  maxLength={1000}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={this.getLocaleValue('instruction', 'Instruction')}
+                required
+                validator={this.validateRequired}
+              >
+                <div
+                  style={{ border: '1px solid #d9d9d9', borderRadius: '4px', minHeight: '400px' }}
+                >
+                  <MonacoEditor
+                    language="markdown"
+                    width="100%"
+                    height={400}
+                    value={this.field.getValue('instruction') || ''}
+                    onChange={value => {
+                      this.field.setValue('instruction', value);
+                    }}
+                    options={{
+                      wordWrap: 'on',
+                      minimap: { enabled: false },
+                      lineNumbers: 'on',
+                    }}
+                  />
+                </div>
+              </Form.Item>
+
+              <Form.Item label={this.getLocaleValue('resources', 'Resources')}>
+                <div className="resources-section">
+                  <Button
+                    type="primary"
+                    onClick={this.handleAddResource}
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Icon type="add" /> {this.getLocaleValue('addResource', 'Add Resource')}
+                  </Button>
+
+                  {resources.length > 0 && (
+                    <Collapse expandedKeys={expandedKeys} onExpand={this.handleExpandChange}>
+                      {resources.map((resource, index) => {
+                        const isEditing = this.state.editingResourceIndex === index;
+                        const displayText =
+                          resource.type && resource.name
+                            ? `${resource.type}/${resource.name}`
+                            : `${this.getLocaleValue('resource', 'Resource')} ${index + 1}`;
+
+                        return (
+                          <Collapse.Panel
+                            key={String(index)}
+                            title={
+                              <div className="resource-panel-header">
+                                {isEditing ? (
+                                  <div
+                                    className="resource-title-editor"
+                                    onClick={e => e.stopPropagation()}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      flex: 1,
+                                    }}
+                                  >
+                                    <Input
+                                      size="small"
+                                      value={resource.type || ''}
+                                      onChange={value => {
+                                        const filteredValue = value.replace(/[^a-zA-Z.-]/g, '');
+                                        const newResources = [...this.state.resources];
+                                        newResources[index] = {
+                                          ...newResources[index],
+                                          type: filteredValue,
+                                        };
+                                        this.setState({ resources: newResources }, () => {
+                                          if (this.state.isEdit) {
+                                            this.updateEditModeFileTree();
+                                          }
+                                        });
+                                      }}
+                                      placeholder={this.getLocaleValue(
+                                        'resourceTypePlaceholder',
+                                        'Type'
+                                      )}
+                                      style={{ width: '120px' }}
+                                      onPressEnter={() => {
+                                        this.setState({ editingResourceIndex: null });
+                                      }}
+                                    />
+                                    <span>/</span>
+                                    <Input
+                                      size="small"
+                                      value={resource.name || ''}
+                                      onChange={value => {
+                                        const filteredValue = value.replace(/[^a-zA-Z0-9._-]/g, '');
+                                        const newResources = [...this.state.resources];
+                                        newResources[index] = {
+                                          ...newResources[index],
+                                          name: filteredValue,
+                                        };
+                                        this.setState({ resources: newResources }, () => {
+                                          if (this.state.isEdit) {
+                                            this.updateEditModeFileTree();
+                                          }
+                                        });
+                                      }}
+                                      placeholder={this.getLocaleValue(
+                                        'resourceNamePlaceholder',
+                                        'Name'
+                                      )}
+                                      style={{ flex: 1 }}
+                                      onPressEnter={() => {
+                                        this.setState({ editingResourceIndex: null });
+                                      }}
+                                    />
+                                    <Button
+                                      text
+                                      size="small"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        this.handleResourceTitleCancel();
+                                      }}
+                                    >
+                                      <Icon type="close" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span
+                                      className="resource-title-text"
+                                      onClick={e => this.handleResourceTitleClick(index, e)}
+                                      onMouseEnter={e =>
+                                        this.handleResourceTitleMouseEnter(index, e)
+                                      }
+                                      onMouseMove={this.handleResourceTitleMouseMove}
+                                      onMouseLeave={this.handleResourceTitleMouseLeave}
+                                      style={{ cursor: 'pointer', flex: 1 }}
+                                    >
+                                      {displayText}
+                                    </span>
+                                    <Button
+                                      text
+                                      warning
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        this.handleRemoveResource(index);
+                                      }}
+                                    >
+                                      <Icon type="delete" />{' '}
+                                      {this.getLocaleValue('delete', 'Delete')}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            }
+                          >
+                            <Form.Item>
+                              <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
+                                <MonacoEditor
+                                  language={getLanguageFromFileName(resource.name || '')}
+                                  width="100%"
+                                  height={300}
+                                  value={resource.content || ''}
+                                  onChange={value =>
+                                    this.handleResourceChange(index, 'content', value)
+                                  }
+                                  options={{
+                                    readOnly: false,
+                                    wordWrap: 'on',
+                                    minimap: { enabled: false },
+                                    lineNumbers: 'on',
+                                    scrollBeyondLastLine: false,
+                                    theme: 'vs-dark-enhanced',
+                                  }}
+                                />
+                              </div>
+                            </Form.Item>
+                          </Collapse.Panel>
+                        );
+                      })}
+                    </Collapse>
+                  )}
+
+                  {resources.length === 0 && (
+                    <div className="empty-resources">
+                      {this.getLocaleValue(
+                        'noResources',
+                        'No resources added yet. Click "Add Resource" to add one.'
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Form.Item>
+
+              <Form.Item wrapperCol={{ offset: 3, span: 20 }}>
+                <Button
+                  type="primary"
+                  onClick={this.handleSubmit}
+                  loading={loading}
+                  style={{ marginRight: 10 }}
+                >
+                  {this.getLocaleValue('create', 'Create')}
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
+        )}
 
         {!isEdit && (
           <Dialog
@@ -2652,37 +3543,6 @@ class NewSkill extends React.Component {
             history={this.props.history}
           />
         )}
-
-        <Dialog
-          visible={this.state.showPreviewDialog}
-          title={this.getLocaleValue('previewSkill', 'Preview Skill')}
-          onClose={this.handleClosePreview}
-          footer={[
-            <Button key="close" onClick={this.handleClosePreview}>
-              {this.getLocaleValue('close', 'Close')}
-            </Button>,
-          ]}
-          style={{ width: 1200 }}
-          className="skill-preview-dialog"
-        >
-          <div className="preview-container">
-            <div className="preview-sidebar">
-              <div className="preview-sidebar-header">
-                {this.getLocaleValue('fileStructure', 'File Structure')}
-              </div>
-              <div className="preview-file-tree">
-                {this.state.fileTree ? (
-                  this.renderFileTree(this.state.fileTree)
-                ) : (
-                  <div className="file-tree-empty">
-                    {this.getLocaleValue('noPreviewData', 'No preview data available')}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="preview-content-area">{this.renderFileContent()}</div>
-          </div>
-        </Dialog>
 
         {/* Custom Tooltip for resource title - follows mouse position */}
         {this.state.tooltipVisible && this.state.tooltipResourceIndex !== null && (
