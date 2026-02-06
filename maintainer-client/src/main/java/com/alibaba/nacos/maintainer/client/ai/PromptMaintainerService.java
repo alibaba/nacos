@@ -87,11 +87,29 @@ public interface PromptMaintainerService {
      * @param template    prompt template content
      * @param commitMsg   commit message
      * @param description prompt description
+     * @param promptTags  prompt tags (comma-separated)
      * @return true if publish success
      * @throws NacosException if fail to publish prompt
      */
     boolean publishPrompt(String namespaceId, String promptKey, String version, String template, 
-            String commitMsg, String description) throws NacosException;
+            String commitMsg, String description, String promptTags) throws NacosException;
+    
+    /**
+     * Publish a new version of prompt without tags.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version (must be greater than current version)
+     * @param template    prompt template content
+     * @param commitMsg   commit message
+     * @param description prompt description
+     * @return true if publish success
+     * @throws NacosException if fail to publish prompt
+     */
+    default boolean publishPrompt(String namespaceId, String promptKey, String version, String template, 
+            String commitMsg, String description) throws NacosException {
+        return publishPrompt(namespaceId, promptKey, version, template, commitMsg, description, null);
+    }
     
     /**
      * Publish prompt with default namespace.
@@ -105,7 +123,7 @@ public interface PromptMaintainerService {
      */
     default boolean publishPrompt(String promptKey, String version, String template, String commitMsg) 
             throws NacosException {
-        return publishPrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey, version, template, commitMsg, null);
+        return publishPrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey, version, template, commitMsg, null, null);
     }
     
     /**
@@ -168,6 +186,19 @@ public interface PromptMaintainerService {
     PromptDetail getPromptHistoryDetail(String namespaceId, String promptKey, Long historyId) throws NacosException;
     
     /**
+     * Update prompt metadata (description and tags).
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param description new description
+     * @param promptTags  new prompt tags (comma-separated)
+     * @return true if update success
+     * @throws NacosException if fail to update metadata
+     */
+    boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String promptTags) 
+            throws NacosException;
+    
+    /**
      * Update prompt metadata (description only).
      *
      * @param namespaceId namespace ID
@@ -176,5 +207,8 @@ public interface PromptMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update metadata
      */
-    boolean updatePromptMetadata(String namespaceId, String promptKey, String description) throws NacosException;
+    default boolean updatePromptMetadata(String namespaceId, String promptKey, String description) 
+            throws NacosException {
+        return updatePromptMetadata(namespaceId, promptKey, description, null);
+    }
 }
