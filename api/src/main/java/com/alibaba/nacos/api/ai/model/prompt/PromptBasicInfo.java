@@ -36,6 +36,8 @@ public class PromptBasicInfo implements Serializable {
     
     private String version;
     
+    private String promptTags;
+    
     private Long createTime;
     
     private Long updateTime;
@@ -70,6 +72,14 @@ public class PromptBasicInfo implements Serializable {
     
     public void setVersion(String version) {
         this.version = version;
+    }
+    
+    public String getPromptTags() {
+        return promptTags;
+    }
+    
+    public void setPromptTags(String promptTags) {
+        this.promptTags = promptTags;
     }
     
     public Long getCreateTime() {

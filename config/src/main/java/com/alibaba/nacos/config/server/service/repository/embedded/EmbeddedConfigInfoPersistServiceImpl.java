@@ -657,15 +657,16 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
-        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
         context.putUpdateParameter(FieldConstant.MD5, md5Tmp);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
-        context.putUpdateParameter(FieldConstant.C_DESC, desc);
+        // Only update c_desc when desc is not null (empty string will also update)
+        if (desc != null) {
+            context.putUpdateParameter(FieldConstant.C_DESC, desc);
+        }
         context.putUpdateParameter(FieldConstant.C_USE, use);
         context.putUpdateParameter(FieldConstant.EFFECT, effect);
         context.putUpdateParameter(FieldConstant.TYPE, type);
@@ -675,6 +676,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
         context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
+        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.CONFIG_INFO);
         MapperResult mapperResult = configInfoMapper.updateConfigInfoAtomicCas(context);
         
         EmbeddedStorageContextHolder.addSqlContext(Boolean.TRUE, mapperResult.getSql(),
@@ -699,15 +702,27 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-        final String sql = configInfoMapper.update(
-                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
-                        "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
-                Arrays.asList("data_id", "group_id", "tenant_id"));
         
-        final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc, use,
-                effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
+        // Build update columns and parameters dynamically
+        List<String> updateColumns = new ArrayList<>(Arrays.asList("content", "md5", "src_ip", "src_user", 
+                "gmt_modified@NOW()", "app_name"));
+        List<Object> updateParams = new ArrayList<>(Arrays.asList(configInfo.getContent(), md5Tmp, srcIp, 
+                srcUser, appNameTmp));
         
-        EmbeddedStorageContextHolder.addSqlContext(sql, args);
+        // Only update c_desc when desc is not null (empty string will also update)
+        if (desc != null) {
+            updateColumns.add("c_desc");
+            updateParams.add(desc);
+        }
+        updateColumns.addAll(Arrays.asList("c_use", "effect", "type", "c_schema", "encrypted_data_key"));
+        updateParams.addAll(Arrays.asList(use, effect, type, schema, encryptedDataKey));
+        
+        // Add where parameters
+        updateParams.addAll(Arrays.asList(configInfo.getDataId(), configInfo.getGroup(), tenantTmp));
+        
+        final String sql = configInfoMapper.update(updateColumns, Arrays.asList("data_id", "group_id", "tenant_id"));
+        
+        EmbeddedStorageContextHolder.addSqlContext(sql, updateParams.toArray());
     }
     
     @Override
