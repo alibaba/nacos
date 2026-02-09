@@ -2260,13 +2260,12 @@ class NewSkill extends React.Component {
     return formChanged || resourcesChanged;
   };
 
-  // Build file tree structure (only files, no project name folder)
+  // Build file tree structure; type may contain "/" for multi-level folders (e.g. folder1/folder2)
   buildFileTree = previewData => {
     if (!previewData || !previewData.name) {
       return null;
     }
 
-    // Build file list directly (no project name folder)
     const fileList = [
       {
         name: 'SKILL.md',
@@ -2275,55 +2274,60 @@ class NewSkill extends React.Component {
       },
     ];
 
-    // Group resources by type
-    const resourcesByType = {};
+    const rootChildren = [];
     const resourcesWithoutType = [];
+
+    const getOrCreateFolder = (children, folderName, level = 0) => {
+      let folder = children.find(n => n.type === 'folder' && n.name === folderName);
+      if (!folder) {
+        // Default expand folders up to level 2 (0-indexed: 0, 1, 2 = 3 levels)
+        folder = { name: folderName, type: 'folder', children: [], expanded: level < 3 };
+        children.push(folder);
+      }
+      return { children: folder.children, level: level + 1 };
+    };
+
+    const sortNodeChildren = nodes => {
+      nodes.sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+      );
+      nodes.forEach(n => {
+        if (n.type === 'folder' && n.children && n.children.length) {
+          sortNodeChildren(n.children);
+        }
+      });
+    };
 
     if (previewData.resource && Object.keys(previewData.resource).length > 0) {
       Object.entries(previewData.resource).forEach(([key, resource]) => {
-        if (resource.type && resource.type.trim() !== '') {
-          const type = resource.type.trim();
-          if (!resourcesByType[type]) {
-            resourcesByType[type] = [];
-          }
-          resourcesByType[type].push({
-            name: resource.name || key,
-            type: 'file',
-            fileType: 'resource',
-            resourceKey: key,
-            resource: resource,
-          });
+        const fileNode = {
+          name: resource.name || key,
+          type: 'file',
+          fileType: 'resource',
+          resourceKey: key,
+          resource: resource,
+        };
+        if (!resource.type || resource.type.trim() === '') {
+          resourcesWithoutType.push(fileNode);
         } else {
-          resourcesWithoutType.push({
-            name: resource.name || key,
-            type: 'file',
-            fileType: 'resource',
-            resourceKey: key,
-            resource: resource,
-          });
+          const pathSegments = resource.type
+            .trim()
+            .split('/')
+            .filter(Boolean);
+          let target = { children: rootChildren, level: 0 };
+          for (const seg of pathSegments) {
+            target = getOrCreateFolder(target.children, seg, target.level);
+          }
+          target.children.push(fileNode);
         }
       });
     }
 
-    // Sort files inside each type folder by name (A-Z)
-    Object.keys(resourcesByType).forEach(type => {
-      resourcesByType[type].sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-      );
-    });
-
-    // Build type folders and root files, merge and sort by name: SKILL.md first, then all else A-Z
-    const typeFolders = Object.entries(resourcesByType)
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }))
-      .map(([type, files]) => ({
-        name: type,
-        type: 'folder',
-        children: files,
-      }));
+    sortNodeChildren(rootChildren);
     const sortedRootFiles = resourcesWithoutType.sort((a, b) =>
       (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
     );
-    const afterSkill = [...typeFolders, ...sortedRootFiles].sort((a, b) =>
+    const afterSkill = [...rootChildren, ...sortedRootFiles].sort((a, b) =>
       (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
     );
     fileList.push(...afterSkill);
@@ -2680,6 +2684,37 @@ class NewSkill extends React.Component {
     }
   };
 
+  toggleFolderExpanded = (fileTree, targetKey) => {
+    if (!fileTree || !Array.isArray(fileTree)) {
+      return fileTree;
+    }
+
+    const toggleNode = (nodes, currentKey = '') => {
+      return nodes.map(node => {
+        const nodeKey = node.resourceKey
+          ? `${currentKey}/${node.resourceKey}`
+          : currentKey
+          ? `${currentKey}/${node.name}`
+          : node.name;
+
+        if (nodeKey === targetKey && node.type === 'folder') {
+          return { ...node, expanded: !node.expanded };
+        }
+
+        if (node.type === 'folder' && node.children) {
+          return {
+            ...node,
+            children: toggleNode(node.children, nodeKey),
+          };
+        }
+
+        return node;
+      });
+    };
+
+    return toggleNode(fileTree);
+  };
+
   renderFileTree = (fileList, level = 0, parentKey = '', isEditMode = false) => {
     if (!fileList) {
       return null;
@@ -2708,6 +2743,7 @@ class NewSkill extends React.Component {
     if (node.type === 'folder') {
       const { dragOverFolder, draggingFile } = this.state;
       const isDragOver = dragOverFolder === node.name && draggingFile;
+      const isExpanded = node.expanded !== false; // Default to true if not set
       const folderStyle = {
         paddingLeft: level === 0 ? '8px' : `${level * 20 + 8}px`,
         paddingTop: '8px',
@@ -2723,6 +2759,20 @@ class NewSkill extends React.Component {
         backgroundColor: isDragOver ? '#e6f7ff' : 'transparent',
         borderRadius: 4,
         transition: 'background-color 0.2s',
+        cursor: 'pointer',
+      };
+
+      const toggleExpand = e => {
+        e.stopPropagation();
+        const updatedTree = this.toggleFolderExpanded(
+          isEditMode ? this.state.editModeFileTree : this.state.fileTree,
+          nodeKey
+        );
+        if (isEditMode) {
+          this.setState({ editModeFileTree: updatedTree });
+        } else {
+          this.setState({ fileTree: updatedTree });
+        }
       };
 
       return (
@@ -2730,14 +2780,20 @@ class NewSkill extends React.Component {
           <div
             className="file-tree-item file-tree-folder-item"
             style={folderStyle}
+            onClick={toggleExpand}
             onDragOver={isEditMode ? e => this.handleDragOver(node.name, e) : undefined}
             onDragLeave={isEditMode ? this.handleDragLeave : undefined}
             onDrop={isEditMode ? e => this.handleDrop(node.name, e) : undefined}
           >
+            <Icon
+              type={isExpanded ? 'arrow-down' : 'arrow-right'}
+              style={{ marginRight: 4, fontSize: 12, color: '#999' }}
+            />
             <Icon type="folder" style={{ marginRight: 8, color: '#666' }} />
             <span style={{ fontWeight: 600 }}>{node.name}</span>
           </div>
-          {node.children &&
+          {isExpanded &&
+            node.children &&
             node.children.map(child => this.renderFileTree(child, level + 1, nodeKey, isEditMode))}
         </div>
       );

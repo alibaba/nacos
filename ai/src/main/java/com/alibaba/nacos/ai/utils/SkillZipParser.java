@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -38,8 +39,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
 /**
  * Skill zip parser utility. Supports both text and binary resources:
@@ -144,11 +145,14 @@ public class SkillZipParser {
     
     /**
      * Unzip to list of (name, raw bytes). Does not decode as text so binary files are preserved.
+     * Uses Apache Commons Compress to support zip files with STORED entries that have data descriptor
+     * (e.g. created on macOS or by some tools), which JDK ZipInputStream rejects.
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         List<ZipEntryData> result = new ArrayList<>();
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
-            ZipEntry entry;
+        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
+                StandardCharsets.UTF_8.name(), true, true)) {
+            ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.isDirectory()) {
@@ -164,7 +168,6 @@ public class SkillZipParser {
                     out.write(buffer, 0, n);
                 }
                 result.add(new ZipEntryData(name, out.toByteArray()));
-                zis.closeEntry();
             }
         }
         return result;
@@ -192,10 +195,25 @@ public class SkillZipParser {
                 type = "";
                 resourceName = parts[1];
             } else if (parts.length >= 3 && parts[0].equals(skillName)) {
-                type = parts[1];
+                // Preserve full path as type so multi-level folders (e.g. folder1/folder2) are kept
+                StringBuilder typeSb = new StringBuilder();
+                for (int i = 1; i < parts.length - 1; i++) {
+                    if (typeSb.length() > 0) {
+                        typeSb.append('/');
+                    }
+                    typeSb.append(parts[i]);
+                }
+                type = typeSb.toString();
                 resourceName = parts[parts.length - 1];
             } else if (parts.length >= 2) {
-                type = parts[parts.length - 2];
+                StringBuilder typeSb = new StringBuilder();
+                for (int i = 0; i < parts.length - 1; i++) {
+                    if (typeSb.length() > 0) {
+                        typeSb.append('/');
+                    }
+                    typeSb.append(parts[i]);
+                }
+                type = typeSb.toString();
                 resourceName = parts[parts.length - 1];
             } else {
                 continue;
@@ -216,11 +234,8 @@ public class SkillZipParser {
             resource.setType(type);
             resource.setContent(content);
             resource.setMetadata(metadata.isEmpty() ? null : metadata);
-            
-            String key = resourceName;
-            if (key.contains(".")) {
-                key = key.substring(0, key.lastIndexOf('.'));
-            }
+            // Use same key as getSkillDetail so resource map is consistent when skill is read back
+            String key = SkillUtils.generateResourceId(type, resourceName);
             resources.put(key, resource);
         }
         

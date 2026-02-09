@@ -63,7 +63,9 @@ class SkillDetail extends React.Component {
       resources: [], // 资源列表（用于编辑）
       draggingFile: null, // 正在拖拽的文件（格式：{resourceKey, name, type}）
       dragOverFolder: null, // 当前拖拽悬停的文件夹名称
+      showOptimizeSuccess: false, // 是否显示优化成功提示
     };
+    this.optimizeSuccessTimer = null; // 优化成功提示的定时器
   }
 
   componentDidMount() {
@@ -86,6 +88,10 @@ class SkillDetail extends React.Component {
 
   componentWillUnmount() {
     // Cleanup
+    if (this.optimizeSuccessTimer) {
+      clearTimeout(this.optimizeSuccessTimer);
+      this.optimizeSuccessTimer = null;
+    }
   }
 
   handleExpandChange = expandedKeys => {
@@ -157,6 +163,74 @@ class SkillDetail extends React.Component {
 
   handleOptimizeDialogClose = () => {
     this.setState({ optimizeDialogVisible: false });
+  };
+
+  handleOptimizeSuccess = optimizedSkill => {
+    const { locale = {} } = this.props;
+    const { skillData } = this.state;
+
+    if (!optimizedSkill || !skillData) {
+      return;
+    }
+
+    // 构建 skillCard 对象用于更新
+    const skillCard = {
+      name: optimizedSkill.name || skillData.name,
+      description: optimizedSkill.description || skillData.description || '',
+      instruction: optimizedSkill.instruction || skillData.instruction || '',
+    };
+
+    // 使用优化后的资源
+    if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
+      skillCard.resource = optimizedSkill.resource;
+    } else {
+      skillCard.resource = {};
+    }
+
+    // 准备请求数据
+    const namespaceId = getParams('namespace') || '';
+    const skillName = skillData.name;
+    const params = new URLSearchParams();
+    params.append('skillName', skillName);
+    if (namespaceId) {
+      params.append('namespaceId', namespaceId);
+    }
+
+    // 调用更新 API
+    request({
+      url: 'v3/console/ai/skills',
+      method: 'PUT',
+      data: {
+        namespaceId,
+        skillName,
+        skillCard: JSON.stringify(skillCard),
+      },
+      success: data => {
+        if (data && data.code === 0) {
+          // 显示优化成功提示
+          this.setState({ showOptimizeSuccess: true });
+
+          // 清除之前的定时器
+          if (this.optimizeSuccessTimer) {
+            clearTimeout(this.optimizeSuccessTimer);
+          }
+
+          // 重新加载数据
+          this.loadSkillData();
+
+          // 3秒后自动隐藏提示
+          this.optimizeSuccessTimer = setTimeout(() => {
+            this.setState({ showOptimizeSuccess: false });
+            this.optimizeSuccessTimer = null;
+          }, 3000);
+        } else {
+          Message.error(data?.message || locale.optimizeFailed || 'Failed to apply optimization');
+        }
+      },
+      error: () => {
+        Message.error(locale.optimizeFailed || 'Failed to apply optimization');
+      },
+    });
   };
 
   handleDelete = () => {
@@ -265,13 +339,12 @@ class SkillDetail extends React.Component {
     };
   };
 
-  // Build file tree structure (only files, no project name folder)
+  // Build file tree structure; type may contain "/" for multi-level folders (e.g. folder1/folder2)
   buildFileTree = previewData => {
     if (!previewData || !previewData.name) {
       return null;
     }
 
-    // Build file list directly (no project name folder)
     const fileList = [
       {
         name: 'SKILL.md',
@@ -280,55 +353,60 @@ class SkillDetail extends React.Component {
       },
     ];
 
-    // Group resources by type
-    const resourcesByType = {};
+    const rootChildren = [];
     const resourcesWithoutType = [];
+
+    const getOrCreateFolder = (children, folderName, level = 0) => {
+      let folder = children.find(n => n.type === 'folder' && n.name === folderName);
+      if (!folder) {
+        // Default expand folders up to level 2 (0-indexed: 0, 1, 2 = 3 levels)
+        folder = { name: folderName, type: 'folder', children: [], expanded: level < 3 };
+        children.push(folder);
+      }
+      return { children: folder.children, level: level + 1 };
+    };
+
+    const sortNodeChildren = nodes => {
+      nodes.sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+      );
+      nodes.forEach(n => {
+        if (n.type === 'folder' && n.children && n.children.length) {
+          sortNodeChildren(n.children);
+        }
+      });
+    };
 
     if (previewData.resource && Object.keys(previewData.resource).length > 0) {
       Object.entries(previewData.resource).forEach(([key, resource]) => {
-        if (resource.type && resource.type.trim() !== '') {
-          const type = resource.type.trim();
-          if (!resourcesByType[type]) {
-            resourcesByType[type] = [];
-          }
-          resourcesByType[type].push({
-            name: resource.name || key,
-            type: 'file',
-            fileType: 'resource',
-            resourceKey: key,
-            resource: resource,
-          });
+        const fileNode = {
+          name: resource.name || key,
+          type: 'file',
+          fileType: 'resource',
+          resourceKey: key,
+          resource: resource,
+        };
+        if (!resource.type || resource.type.trim() === '') {
+          resourcesWithoutType.push(fileNode);
         } else {
-          resourcesWithoutType.push({
-            name: resource.name || key,
-            type: 'file',
-            fileType: 'resource',
-            resourceKey: key,
-            resource: resource,
-          });
+          const pathSegments = resource.type
+            .trim()
+            .split('/')
+            .filter(Boolean);
+          let target = { children: rootChildren, level: 0 };
+          for (const seg of pathSegments) {
+            target = getOrCreateFolder(target.children, seg, target.level);
+          }
+          target.children.push(fileNode);
         }
       });
     }
 
-    // Sort files inside each type folder by name (A-Z)
-    Object.keys(resourcesByType).forEach(type => {
-      resourcesByType[type].sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-      );
-    });
-
-    // Build type folders and root files, merge and sort by name: SKILL.md first, then all else A-Z
-    const typeFolders = Object.entries(resourcesByType)
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }))
-      .map(([type, files]) => ({
-        name: type,
-        type: 'folder',
-        children: files,
-      }));
+    sortNodeChildren(rootChildren);
     const sortedRootFiles = resourcesWithoutType.sort((a, b) =>
       (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
     );
-    const afterSkill = [...typeFolders, ...sortedRootFiles].sort((a, b) =>
+    const afterSkill = [...rootChildren, ...sortedRootFiles].sort((a, b) =>
       (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
     );
     fileList.push(...afterSkill);
@@ -758,6 +836,37 @@ class SkillDetail extends React.Component {
     }
   };
 
+  toggleFolderExpanded = (fileTree, targetKey) => {
+    if (!fileTree || !Array.isArray(fileTree)) {
+      return fileTree;
+    }
+
+    const toggleNode = (nodes, currentKey = '') => {
+      return nodes.map(node => {
+        const nodeKey = node.resourceKey
+          ? `${currentKey}/${node.resourceKey}`
+          : currentKey
+          ? `${currentKey}/${node.name}`
+          : node.name;
+
+        if (nodeKey === targetKey && node.type === 'folder') {
+          return { ...node, expanded: !node.expanded };
+        }
+
+        if (node.type === 'folder' && node.children) {
+          return {
+            ...node,
+            children: toggleNode(node.children, nodeKey),
+          };
+        }
+
+        return node;
+      });
+    };
+
+    return toggleNode(fileTree);
+  };
+
   renderFileTree = (fileList, level = 0, parentKey = '') => {
     if (!fileList) {
       return null;
@@ -784,6 +893,7 @@ class SkillDetail extends React.Component {
     if (node.type === 'folder') {
       const { dragOverFolder, draggingFile } = this.state;
       const isDragOver = dragOverFolder === node.name && draggingFile;
+      const isExpanded = node.expanded !== false; // Default to true if not set
       const folderStyle = {
         paddingLeft: level === 0 ? '8px' : `${level * 20 + 8}px`,
         paddingTop: '8px',
@@ -799,6 +909,13 @@ class SkillDetail extends React.Component {
         backgroundColor: isDragOver ? '#e6f7ff' : 'transparent',
         borderRadius: 4,
         transition: 'background-color 0.2s',
+        cursor: 'pointer',
+      };
+
+      const toggleExpand = e => {
+        e.stopPropagation();
+        const updatedTree = this.toggleFolderExpanded(this.state.fileTree, nodeKey);
+        this.setState({ fileTree: updatedTree });
       };
 
       return (
@@ -806,14 +923,20 @@ class SkillDetail extends React.Component {
           <div
             className="file-tree-item file-tree-folder-item"
             style={folderStyle}
+            onClick={toggleExpand}
             onDragOver={e => this.handleDragOver(node.name, e)}
             onDragLeave={this.handleDragLeave}
             onDrop={e => this.handleDrop(node.name, e)}
           >
+            <Icon
+              type={isExpanded ? 'arrow-down' : 'arrow-right'}
+              style={{ marginRight: 4, fontSize: 12, color: '#999' }}
+            />
             <Icon type="folder" style={{ marginRight: 8, color: '#666' }} />
             <span style={{ fontWeight: 600 }}>{node.name}</span>
           </div>
-          {node.children &&
+          {isExpanded &&
+            node.children &&
             node.children.map(child => this.renderFileTree(child, level + 1, nodeKey))}
         </div>
       );
@@ -1077,6 +1200,40 @@ class SkillDetail extends React.Component {
 
     return (
       <div className="skill-detail">
+        {/* 优化成功提示条 */}
+        {this.state.showOptimizeSuccess && (
+          <div
+            style={{
+              backgroundColor: '#e6f7ff',
+              border: '1px solid #91d5ff',
+              borderRadius: '4px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon type="success" style={{ color: '#1890ff', fontSize: '16px' }} />
+              <span style={{ color: '#1890ff', fontSize: '14px' }}>
+                {locale.optimizeSuccess || '优化完成'}
+              </span>
+            </div>
+            <Icon
+              type="close"
+              style={{ color: '#1890ff', cursor: 'pointer', fontSize: '14px' }}
+              onClick={() => {
+                this.setState({ showOptimizeSuccess: false });
+                if (this.optimizeSuccessTimer) {
+                  clearTimeout(this.optimizeSuccessTimer);
+                  this.optimizeSuccessTimer = null;
+                }
+              }}
+            />
+          </div>
+        )}
+
         <div
           className="page-title"
           style={{
@@ -1262,6 +1419,7 @@ class SkillDetail extends React.Component {
           selectedFile={this.state.selectedFile}
           fileTree={this.state.fileTree}
           onClose={this.handleOptimizeDialogClose}
+          onSuccess={this.handleOptimizeSuccess}
           locale={this.props.locale}
           history={this.props.history}
         />

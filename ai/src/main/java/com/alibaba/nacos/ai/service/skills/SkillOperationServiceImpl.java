@@ -60,18 +60,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
     
     private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
-    private static final String DOUBLE_UNDERSCORE = "__";
-    
-    /**
-     * Validate that name does not contain double underscores.
-     */
-    private void validateNoDoubleUnderscore(String name, String fieldName) throws NacosException {
-        if (StringUtils.isNotBlank(name) && name.contains(DOUBLE_UNDERSCORE)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    String.format("%s cannot contain double underscores (__)", fieldName));
-        }
-    }
-    
     
     /**
      * Parse resource ID to get type and resource name.
@@ -126,19 +114,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "Skill name can only contain English letters, underscore, and hyphen");
             }
-            validateNoDoubleUnderscore(skill.getName(), "Skill name");
             
-            // 2. Validate resource names
-            if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-                for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                    SkillResource resource = entry.getValue();
-                    if (resource.getName() != null) {
-                        validateNoDoubleUnderscore(resource.getName(), "Resource name");
-                    }
-                }
-            }
-            
-            // 3. Build main config (skill.json)
+            // 2. Build main config (skill.json)
             SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
             long uniformId = System.currentTimeMillis();
             ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, mainConfigInfo.getGroup(), uniformId);
@@ -149,7 +126,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                         String.format("Failed to publish main config for skill: %s", skill.getName()));
             }
             
-            // 4. Build and publish resource configs
+            // 3. Build and publish resource configs
             if (skill.getResource() != null && !skill.getResource().isEmpty()) {
                 for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                     SkillResource resource = entry.getValue();
@@ -219,8 +196,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 if (resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL
                         || resourceResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY) {
                     SkillResource resource = JacksonUtils.toObj(resourceResponse.getContent(), SkillResource.class);
-                    // Use resource name as key (from resource object, not resourceId)
-                    resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
+                    // Use resourceId as key so multi-level paths and same filename in different folders are unique
+                    resourceMap.put(resourceId, resource);
                 } else {
                     LOGGER.warn("Resource configuration not found: dataId={}, group={}", 
                             resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup());
@@ -234,18 +211,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     @Override
     public void updateSkill(Skill skill, String namespaceId) throws NacosException {
-        // 1. Validate skill name and resource names
-        validateNoDoubleUnderscore(skill.getName(), "Skill name");
-        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                SkillResource resource = entry.getValue();
-                if (resource.getName() != null) {
-                    validateNoDoubleUnderscore(resource.getName(), "Resource name");
-                }
-            }
-        }
-        
-        // 2. Check if skill exists and get existing main config
+        // 1. Check if skill exists and get existing main config
         SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
                 mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), namespaceId);

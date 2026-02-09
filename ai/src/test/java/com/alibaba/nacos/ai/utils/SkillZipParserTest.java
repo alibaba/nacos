@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
 
@@ -150,11 +151,12 @@ class SkillZipParserTest {
         // When
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
         
-        // Then: binary resource is Base64-encoded and has metadata encoding=base64
+        // Then: binary resource is Base64-encoded and has metadata encoding=base64 (key = generateResourceId("canvas-fonts", "font.ttf"))
+        String fontKey = SkillUtils.generateResourceId("canvas-fonts", "font.ttf");
         assertNotNull(skill);
         assertNotNull(skill.getResource());
-        assertTrue(skill.getResource().containsKey("font"));
-        SkillResource font = skill.getResource().get("font");
+        assertTrue(skill.getResource().containsKey(fontKey));
+        SkillResource font = skill.getResource().get(fontKey);
         assertEquals("font.ttf", font.getName());
         assertNotNull(font.getContent());
         assertTrue(font.getContent().length() > 0);
@@ -191,11 +193,12 @@ class SkillZipParserTest {
         // When
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
 
-        // Then: skill parses OK and ._* files are not in resources
+        // Then: skill parses OK and ._* files are not in resources (key = generateResourceId("references", "readme.md"))
+        String readmeKey = SkillUtils.generateResourceId("references", "readme.md");
         assertNotNull(skill);
         assertNotNull(skill.getResource());
         assertEquals(1, skill.getResource().size());
-        assertTrue(skill.getResource().containsKey("readme"));
+        assertTrue(skill.getResource().containsKey(readmeKey));
         assertFalse(skill.getResource().containsKey("._LICENSE"));
         assertFalse(skill.getResource().keySet().stream().anyMatch(k -> k.startsWith("._")));
     }
@@ -208,13 +211,14 @@ class SkillZipParserTest {
         // When
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
 
-        // Then: LICENSE.txt is included as resource with empty type
+        // Then: LICENSE.txt is included as resource with empty type (key = generateResourceId("", "LICENSE.txt"))
+        String licenseKey = SkillUtils.generateResourceId("", "LICENSE.txt");
         assertNotNull(skill);
         assertNotNull(skill.getResource());
-        assertTrue(skill.getResource().containsKey("LICENSE"));
-        assertEquals("LICENSE.txt", skill.getResource().get("LICENSE").getName());
-        assertEquals("", skill.getResource().get("LICENSE").getType() == null ? "" : skill.getResource().get("LICENSE").getType());
-        assertTrue(skill.getResource().get("LICENSE").getContent().contains("MIT License"));
+        assertTrue(skill.getResource().containsKey(licenseKey));
+        assertEquals("LICENSE.txt", skill.getResource().get(licenseKey).getName());
+        assertEquals("", skill.getResource().get(licenseKey).getType() == null ? "" : skill.getResource().get(licenseKey).getType());
+        assertTrue(skill.getResource().get(licenseKey).getContent().contains("MIT License"));
     }
     
     /**
