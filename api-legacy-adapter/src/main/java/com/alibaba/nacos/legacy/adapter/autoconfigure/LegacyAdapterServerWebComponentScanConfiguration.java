@@ -20,12 +20,22 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Component scan for all legacy adapter packages (naming, config, core, console).
+ * Component scan for legacy adapter packages (naming, config, core, console, compatibility).
  * Used only when running under NacosServerWebApplication.
+ * Auth package ({@code com.alibaba.nacos.legacy.adapter.auth}) is intentionally omitted so
+ * legacy auth controllers are only loaded by {@link LegacyAdapterAuthAutoConfiguration} when
+ * the auth plugin is present. Do not add a single basePackage covering the whole adapter and
+ * rely on REGEX exclude: Spring's REGEX filter has known issues with subpackage exclusion.
  *
  * @author xiweng.yy
  */
 @Configuration
-@ComponentScan(basePackages = "com.alibaba.nacos.legacy.adapter")
+@ComponentScan(basePackages = {
+        "com.alibaba.nacos.legacy.adapter.config",
+        "com.alibaba.nacos.legacy.adapter.console",
+        "com.alibaba.nacos.legacy.adapter.core",
+        "com.alibaba.nacos.legacy.adapter.naming",
+        "com.alibaba.nacos.legacy.adapter.compatibility"})
 public class LegacyAdapterServerWebComponentScanConfiguration {
+
 }

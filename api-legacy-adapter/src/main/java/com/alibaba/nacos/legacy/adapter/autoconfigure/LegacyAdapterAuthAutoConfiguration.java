@@ -17,9 +17,11 @@
 package com.alibaba.nacos.legacy.adapter.autoconfigure;
 
 import com.alibaba.nacos.legacy.adapter.auth.LegacyAdapterWebConfigForAuth;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 
 /**
  * Auto-configuration for legacy v1 auth APIs (user CRUD, role, permission).
@@ -31,6 +33,7 @@ import org.springframework.context.annotation.Import;
  * @author xiweng.yy
  */
 @Configuration
+@AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE)
 @Conditional(ConditionOnLegacyAuthPluginNewVersion.class)
 @Import({LegacyAdapterAuthComponentScanConfiguration.class, LegacyAdapterWebConfigForAuth.class})
 public class LegacyAdapterAuthAutoConfiguration {

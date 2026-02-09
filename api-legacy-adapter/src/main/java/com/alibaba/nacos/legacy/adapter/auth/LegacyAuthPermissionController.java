@@ -44,13 +44,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/auth/permissions")
 @Deprecated
 public class LegacyAuthPermissionController {
-
+    
     private final NacosRoleService nacosRoleService;
-
+    
     public LegacyAuthPermissionController(NacosRoleService nacosRoleService) {
         this.nacosRoleService = nacosRoleService;
     }
-
+    
     /**
      * Get permissions of a role (v1 API).
      */
@@ -61,7 +61,7 @@ public class LegacyAuthPermissionController {
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.getPermissions(role, pageNo, pageSize);
     }
-
+    
     /**
      * Fuzzy search permissions (v1 API).
      */
@@ -72,7 +72,7 @@ public class LegacyAuthPermissionController {
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.findPermissions(role, pageNo, pageSize);
     }
-
+    
     /**
      * Add permission to role (v1 API).
      */
@@ -83,7 +83,7 @@ public class LegacyAuthPermissionController {
         nacosRoleService.addPermission(role, resource, action);
         return RestResultUtils.success("add permission ok!");
     }
-
+    
     /**
      * Delete permission from role (v1 API).
      */
@@ -95,7 +95,7 @@ public class LegacyAuthPermissionController {
         nacosRoleService.deletePermission(role, resource, action);
         return RestResultUtils.success("delete permission ok!");
     }
-
+    
     /**
      * Check if permission already exists (v1 API).
      */

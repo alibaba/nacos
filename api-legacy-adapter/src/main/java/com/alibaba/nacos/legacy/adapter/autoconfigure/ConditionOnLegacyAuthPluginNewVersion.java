@@ -46,16 +46,17 @@ public class ConditionOnLegacyAuthPluginNewVersion implements Condition {
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         if (!isClassPresent(NACOS_ROLE_SERVICE)) {
-            LOGGER.debug("Legacy auth API in adapter not loaded: auth plugin not on classpath ({} not found)",
+            LOGGER.info("Legacy auth API in adapter not loaded: auth plugin not on classpath ({} not found)",
                     NACOS_ROLE_SERVICE);
             return false;
         }
         if (isClassPresent(PLUGIN_ROLE_CONTROLLER) || isClassPresent(PLUGIN_PERMISSION_CONTROLLER)) {
-            LOGGER.debug(
+            LOGGER.info(
                     "Legacy auth API in adapter not loaded: old default-auth-plugin version detected (v1 "
                             + "RoleController or PermissionController still present). Upgrade the plugin or omit it.");
             return false;
         }
+        LOGGER.info("Legacy auth API in adapter loaded: auth plugin on classpath ({})", NACOS_ROLE_SERVICE);
         return true;
     }
 
