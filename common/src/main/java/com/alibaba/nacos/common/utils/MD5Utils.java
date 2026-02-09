@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Utils {
 
     private MD5Utils() {

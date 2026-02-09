@@ -84,7 +84,6 @@ public class ConfigOperationService {
      *
      * @throws NacosException NacosException.
      */
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey) throws NacosException {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);

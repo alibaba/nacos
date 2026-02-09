@@ -94,7 +94,7 @@ import static com.alibaba.nacos.config.server.utils.PropertyUtil.CONFIG_MIGRATE_
  *
  * @author lixiaoshuang
  */
-@SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service("externalConfigInfoPersistServiceImpl")
 public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistService {
@@ -205,7 +205,6 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             }
         });
     }
-    
     
     /**
      * insert or update config.

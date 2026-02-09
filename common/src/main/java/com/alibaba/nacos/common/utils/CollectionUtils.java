@@ -311,7 +311,6 @@ public final class CollectionUtils {
         throw new IllegalArgumentException(buildExceptionMessage(iterator, first));
     }
     
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private static <T> String buildExceptionMessage(Iterator<T> iterator, T first) {
         StringBuilder msg = new StringBuilder();
         msg.append("expected one element but was: <");

@@ -416,7 +416,6 @@ public class CacheData {
         return stringBuilder.toString();
     }
     
-    @SuppressWarnings("PMD.MethodTooLongRule")
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
@@ -510,7 +509,6 @@ public class CacheData {
         }
     }
     
-    @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
     abstract class NotifyTask implements Runnable {
         
         boolean async = false;

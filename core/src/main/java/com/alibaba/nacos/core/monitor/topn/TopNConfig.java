@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class TopNConfig extends AbstractDynamicConfig {
     
     private static final String TOP_N = "topN";

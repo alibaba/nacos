@@ -80,7 +80,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     }
     
     @Override
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
         
         traceIfNecessary(grpcRequest, true);

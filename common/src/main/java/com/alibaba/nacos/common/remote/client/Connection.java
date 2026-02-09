@@ -28,7 +28,6 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: Connection.java, v 0.1 2020年08月09日 1:32 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
     private String connectionId;

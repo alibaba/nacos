@@ -66,7 +66,6 @@ public class CapacityService {
      * Init.
      */
     @PostConstruct
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // All servers have jobs that modify usage, idempotent.
         ConfigExecutor.scheduleCorrectUsageTask(() -> {

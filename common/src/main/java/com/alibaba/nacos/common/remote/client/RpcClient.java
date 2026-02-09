@@ -66,7 +66,6 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  * @author liuzunfei
  * @version $Id: RpcClient.java, v 0.1 2020年07月13日 9:15 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RpcClient implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
@@ -236,7 +235,6 @@ public abstract class RpcClient implements Closeable {
     /**
      * Start this client.
      */
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public final void start() throws NacosException {
         
         boolean success = rpcClientStatus.compareAndSet(RpcClientStatus.INITIALIZED, RpcClientStatus.STARTING);
@@ -471,7 +469,6 @@ public abstract class RpcClient implements Closeable {
     /**
      * switch server .
      */
-    @SuppressWarnings("PMD.MethodTooLongRule")
     protected void reconnect(final ServerInfo recommendServerInfo, boolean onRequestFail) {
         
         try {
@@ -898,7 +895,6 @@ public abstract class RpcClient implements Closeable {
      * @param serverAddress address.
      * @return
      */
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private ServerInfo resolveServerInfo(String serverAddress) {
         Matcher matcher = EXCLUDE_PROTOCOL_PATTERN.matcher(serverAddress);
         if (matcher.find()) {

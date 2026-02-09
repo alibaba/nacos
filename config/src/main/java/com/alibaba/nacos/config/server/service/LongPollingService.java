@@ -227,7 +227,6 @@ public class LongPollingService {
         return null != req.getHeader(LONG_POLLING_HEADER);
     }
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<>();
         

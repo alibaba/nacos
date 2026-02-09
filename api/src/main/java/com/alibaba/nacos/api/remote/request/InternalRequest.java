@@ -24,7 +24,6 @@ import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
  * @author liuzunfei
  * @version $Id: InternalRequest.java, v 0.1 2020年07月22日 8:33 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class InternalRequest extends Request {
     
     @Override

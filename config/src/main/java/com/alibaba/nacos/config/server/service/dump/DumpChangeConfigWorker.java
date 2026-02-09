@@ -70,7 +70,6 @@ public class DumpChangeConfigWorker implements Runnable {
      * do check change.
      */
     @Override
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public void run() {
         try {
             if (!PropertyUtil.isDumpChangeOn()) {
