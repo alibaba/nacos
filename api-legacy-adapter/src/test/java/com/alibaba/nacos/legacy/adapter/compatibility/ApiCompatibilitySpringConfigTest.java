@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.compatibility;
+package com.alibaba.nacos.legacy.adapter.compatibility;
 
 import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
@@ -30,22 +30,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class ApiCompatibilitySpringConfigTest {
-    
+
     @Mock
     ControllerMethodsCache controllerMethodsCache;
-    
+
     @Mock
     InnerApiAuthEnabled innerApiAuthEnabled;
-    
+
     ApiCompatibilitySpringConfig apiCompatibilitySpringConfig;
-    
+
     @BeforeEach
     void setUp() {
         apiCompatibilitySpringConfig = new ApiCompatibilitySpringConfig();
     }
-    
+
     @Test
-    public void testApiCompatibilityFilterRegistration() {
+    void testApiCompatibilityFilterRegistration() {
         ApiCompatibilityFilter apiCompatibilityFilter = apiCompatibilitySpringConfig.apiCompatibilityFilter(
                 controllerMethodsCache, innerApiAuthEnabled);
         FilterRegistrationBean<ApiCompatibilityFilter> registrationBean = apiCompatibilitySpringConfig.apiCompatibilityFilterRegistration(

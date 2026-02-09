@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.compatibility;
+package com.alibaba.nacos.legacy.adapter.compatibility;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import jakarta.servlet.Filter;
@@ -36,28 +37,28 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 /**
- * HTTP Filter for API Compatibility.
+ * HTTP Filter for legacy v1/v2 API compatibility (deprecation hint).
  *
  * @author xiweng.yy
  */
 public class ApiCompatibilityFilter implements Filter {
-    
+
     private static final String MESSAGE_NO_REPLACED_API = "Current API will be deprecated, If wanted continue to use, "
             + "please set `%s=true` in application.properties.";
-    
+
     private static final String MESSAGE_REPLACED_API =
             "Current API will be deprecated, please use API(s) `%s` instead, "
                     + "or set `%s=true` in application.properties.";
-    
+
     private final ControllerMethodsCache methodsCache;
-    
+
     private final InnerApiAuthEnabled innerApiAuthEnabled;
-    
+
     public ApiCompatibilityFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled) {
         this.methodsCache = methodsCache;
         this.innerApiAuthEnabled = innerApiAuthEnabled;
     }
-    
+
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
@@ -95,7 +96,7 @@ public class ApiCompatibilityFilter implements Filter {
                     }
                     break;
                 case INNER_API:
-                    if (innerApiAuthEnabled.isEnabled()) {
+                    if (innerApiAuthEnabled != null && innerApiAuthEnabled.isEnabled()) {
                         Result<String> result = Result.failure(ErrorCode.API_DEPRECATED.getCode(),
                                 String.format("Old Inner API %s is deprecated", request.getRequestURI()), null);
                         response.sendError(HttpServletResponse.SC_GONE, JacksonUtils.toJson(result));
@@ -113,7 +114,7 @@ public class ApiCompatibilityFilter implements Filter {
                     "Handle API Compatibility failed, please see log for detail.");
         }
     }
-    
+
     private void responseReject(HttpServletResponse response, Compatibility compatibility, String switchName)
             throws IOException {
         String message;

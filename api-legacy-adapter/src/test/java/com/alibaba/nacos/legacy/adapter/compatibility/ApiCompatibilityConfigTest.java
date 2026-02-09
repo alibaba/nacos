@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.compatibility;
+package com.alibaba.nacos.legacy.adapter.compatibility;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -27,12 +27,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ApiCompatibilityConfigTest {
-    
+
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
-    
+
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
@@ -41,14 +41,14 @@ class ApiCompatibilityConfigTest {
         config.setClientApiCompatibility(true);
         config.setAdminApiCompatibility(true);
     }
-    
+
     @Test
     void testGetInstance() {
         ApiCompatibilityConfig instance1 = ApiCompatibilityConfig.getInstance();
         ApiCompatibilityConfig instance2 = ApiCompatibilityConfig.getInstance();
         assertEquals(instance1, instance2);
     }
-    
+
     @Test
     void testGetConfigWithDefaultValues() {
         ApiCompatibilityConfig config = ApiCompatibilityConfig.getInstance();
@@ -60,7 +60,7 @@ class ApiCompatibilityConfigTest {
                 "ApiCompatibilityConfig{clientApiCompatibility=true, consoleApiCompatibility=false, adminApiCompatibility=false}",
                 config.printConfig());
     }
-    
+
     @Test
     void testGetConfigWithCustomValues() {
         MockEnvironment properties = new MockEnvironment();
@@ -68,10 +68,10 @@ class ApiCompatibilityConfigTest {
         properties.setProperty(ApiCompatibilityConfig.CONSOLE_API_COMPATIBILITY_KEY, "true");
         properties.setProperty(ApiCompatibilityConfig.ADMIN_API_COMPATIBILITY_KEY, "true");
         EnvUtil.setEnvironment(properties);
-        
+
         ApiCompatibilityConfig config = ApiCompatibilityConfig.getInstance();
         config.getConfigFromEnv();
-        
+
         assertFalse(config.isClientApiCompatibility());
         assertTrue(config.isConsoleApiCompatibility());
         assertTrue(config.isAdminApiCompatibility());

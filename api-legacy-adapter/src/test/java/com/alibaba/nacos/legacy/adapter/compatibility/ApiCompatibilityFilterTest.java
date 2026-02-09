@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.compatibility;
+package com.alibaba.nacos.legacy.adapter.compatibility;
 
 import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.FilterChain;
@@ -46,30 +47,30 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ApiCompatibilityFilterTest {
-    
+
     @Mock
     ControllerMethodsCache methodsCache;
-    
+
     @Mock
     HttpServletRequest servletRequest;
-    
+
     @Mock
     HttpServletResponse servletResponse;
-    
+
     @Mock
     InnerApiAuthEnabled innerApiAuthEnabled;
-    
+
     @Mock
     FilterChain filterChain;
-    
+
     ApiCompatibilityFilter filter;
-    
+
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         filter = new ApiCompatibilityFilter(methodsCache, innerApiAuthEnabled);
     }
-    
+
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
@@ -78,14 +79,14 @@ class ApiCompatibilityFilterTest {
         config.setClientApiCompatibility(true);
         config.setAdminApiCompatibility(true);
     }
-    
+
     @Test
     void testDoFilterWithoutMethod() throws ServletException, IOException {
         filter.doFilter(servletRequest, servletResponse, filterChain);
         verify(filterChain).doFilter(servletRequest, servletResponse);
         verify(servletResponse, never()).sendError(anyInt(), anyString());
     }
-    
+
     @Test
     void testDoFilterWithoutCompatibility() throws ServletException, IOException, NoSuchMethodException {
         Method method = ApiCompatibilityFilterTest.class.getDeclaredMethod("testDoFilterWithoutCompatibility");
@@ -94,7 +95,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain).doFilter(servletRequest, servletResponse);
         verify(servletResponse, never()).sendError(anyInt(), anyString());
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.ADMIN_API)
     void testDoFilterWithAdminApiAndCompatibilityEnabled() throws ServletException, IOException, NoSuchMethodException {
@@ -106,7 +107,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain).doFilter(servletRequest, servletResponse);
         verify(servletResponse, never()).sendError(anyInt(), anyString());
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.ADMIN_API)
     void testDoFilterWithAdminApiAndCompatibilityDisabled()
@@ -120,7 +121,7 @@ class ApiCompatibilityFilterTest {
         verify(servletResponse).sendError(eq(HttpServletResponse.SC_GONE),
                 matches(".*" + ApiCompatibilityConfig.ADMIN_API_COMPATIBILITY_KEY + ".*"));
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "/test/admin")
     void testDoFilterWithAdminApiAndCompatibilityDisabledAndAlternatives()
@@ -133,7 +134,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain, never()).doFilter(servletRequest, servletResponse);
         verify(servletResponse).sendError(eq(HttpServletResponse.SC_GONE), matches(".*/test/admin.*"));
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.CONSOLE_API)
     void testDoFilterWithConsoleApiAndCompatibilityEnabled()
@@ -146,7 +147,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain).doFilter(servletRequest, servletResponse);
         verify(servletResponse, never()).sendError(anyInt(), anyString());
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.CONSOLE_API)
     void testDoFilterWithConsoleApiAndCompatibilityDisabled()
@@ -160,7 +161,7 @@ class ApiCompatibilityFilterTest {
         verify(servletResponse).sendError(eq(HttpServletResponse.SC_GONE),
                 matches(".*" + ApiCompatibilityConfig.CONSOLE_API_COMPATIBILITY_KEY + ".*"));
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "/test/console")
     void testDoFilterWithConsoleApiAndCompatibilityDisabledAndAlternatives()
@@ -173,7 +174,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain, never()).doFilter(servletRequest, servletResponse);
         verify(servletResponse).sendError(eq(HttpServletResponse.SC_GONE), matches(".*/test/console.*"));
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.OPEN_API)
     void testDoFilterWithOpenApiAndCompatibilityEnabled() throws ServletException, IOException, NoSuchMethodException {
@@ -185,7 +186,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain).doFilter(servletRequest, servletResponse);
         verify(servletResponse, never()).sendError(anyInt(), anyString());
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.OPEN_API)
     void testDoFilterWithOpenApiAndCompatibilityDisabled() throws ServletException, IOException, NoSuchMethodException {
@@ -198,7 +199,7 @@ class ApiCompatibilityFilterTest {
         verify(servletResponse).sendError(eq(HttpServletResponse.SC_GONE),
                 matches(".*" + ApiCompatibilityConfig.CLIENT_API_COMPATIBILITY_KEY + ".*"));
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.OPEN_API, alternatives = "/test/client")
     void testDoFilterWithOpenApiAndCompatibilityDisabledAndAlternatives()
@@ -211,7 +212,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain, never()).doFilter(servletRequest, servletResponse);
         verify(servletResponse).sendError(eq(HttpServletResponse.SC_GONE), matches(".*/test/client.*"));
     }
-    
+
     @Test
     @Compatibility(apiType = ApiType.INNER_API)
     void testDoFilterWithInnerApi() throws NoSuchMethodException, ServletException, IOException {
@@ -221,7 +222,7 @@ class ApiCompatibilityFilterTest {
         verify(filterChain).doFilter(servletRequest, servletResponse);
         verify(servletResponse, never()).sendError(anyInt(), anyString());
     }
-    
+
     @Test
     void testDoFilterWithException() throws ServletException, IOException {
         doThrow(new ServletException()).when(filterChain).doFilter(servletRequest, servletResponse);

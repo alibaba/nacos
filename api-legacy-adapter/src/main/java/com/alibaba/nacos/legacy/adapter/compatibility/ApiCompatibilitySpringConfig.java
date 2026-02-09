@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.compatibility;
+package com.alibaba.nacos.legacy.adapter.compatibility;
 
 import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.web.NacosWebBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration of Api Compatibility.
+ * Configuration of legacy v1/v2 API compatibility filter.
  *
  * @author xiweng.yy
  */
 @Configuration
 @NacosWebBean
 public class ApiCompatibilitySpringConfig {
-    
+
     @Bean
     public ApiCompatibilityFilter apiCompatibilityFilter(ControllerMethodsCache methodsCache,
-            InnerApiAuthEnabled innerApiAuthEnabled) {
+            @Autowired(required = false) InnerApiAuthEnabled innerApiAuthEnabled) {
         return new ApiCompatibilityFilter(methodsCache, innerApiAuthEnabled);
     }
-    
+
     @Bean
     public FilterRegistrationBean<ApiCompatibilityFilter> apiCompatibilityFilterRegistration(
             ApiCompatibilityFilter apiCompatibilityFilter) {

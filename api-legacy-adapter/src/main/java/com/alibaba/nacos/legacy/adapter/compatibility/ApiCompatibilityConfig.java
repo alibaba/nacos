@@ -14,84 +14,84 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.compatibility;
+package com.alibaba.nacos.legacy.adapter.compatibility;
 
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
- * Compatible for old version API configuration.
+ * Compatible for old version API configuration (v1/v2 legacy APIs).
  *
  * @author xiweng.yy
  */
 public class ApiCompatibilityConfig extends AbstractDynamicConfig {
-    
+
     private static final String API_COMPATIBILITY = "ApiCompatibility";
-    
+
     private static final ApiCompatibilityConfig INSTANCE = new ApiCompatibilityConfig();
-    
+
     private static final String PREFIX = "nacos.core.api.compatibility";
-    
+
     public static final String CLIENT_API_COMPATIBILITY_KEY = PREFIX + ".client.enabled";
-    
+
     public static final String CONSOLE_API_COMPATIBILITY_KEY = PREFIX + ".console.enabled";
-    
+
     public static final String ADMIN_API_COMPATIBILITY_KEY = PREFIX + ".admin.enabled";
-    
+
     private boolean clientApiCompatibility;
-    
+
     private boolean consoleApiCompatibility;
-    
+
     private boolean adminApiCompatibility;
-    
+
     protected ApiCompatibilityConfig() {
         super(API_COMPATIBILITY);
         resetConfig();
     }
-    
+
     public static ApiCompatibilityConfig getInstance() {
         return INSTANCE;
     }
-    
+
     @Override
     protected void getConfigFromEnv() {
         clientApiCompatibility = EnvUtil.getProperty(CLIENT_API_COMPATIBILITY_KEY, Boolean.class, true);
         consoleApiCompatibility = EnvUtil.getProperty(CONSOLE_API_COMPATIBILITY_KEY, Boolean.class, false);
         adminApiCompatibility = EnvUtil.getProperty(ADMIN_API_COMPATIBILITY_KEY, Boolean.class, false);
     }
-    
+
     @Override
     protected String printConfig() {
         return toString();
     }
-    
+
     @Override
     public String toString() {
         return "ApiCompatibilityConfig{" + "clientApiCompatibility=" + clientApiCompatibility
                 + ", consoleApiCompatibility=" + consoleApiCompatibility + ", adminApiCompatibility="
                 + adminApiCompatibility + '}';
     }
-    
+
     public boolean isClientApiCompatibility() {
         return clientApiCompatibility;
     }
-    
+
     public void setClientApiCompatibility(boolean clientApiCompatibility) {
         this.clientApiCompatibility = clientApiCompatibility;
     }
-    
+
     public boolean isConsoleApiCompatibility() {
         return consoleApiCompatibility;
     }
-    
+
     public void setConsoleApiCompatibility(boolean consoleApiCompatibility) {
         this.consoleApiCompatibility = consoleApiCompatibility;
     }
-    
+
     public boolean isAdminApiCompatibility() {
         return adminApiCompatibility;
     }
-    
+
     public void setAdminApiCompatibility(boolean adminApiCompatibility) {
         this.adminApiCompatibility = adminApiCompatibility;
     }
