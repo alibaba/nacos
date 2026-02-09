@@ -38,13 +38,14 @@ public interface PromptOperationService {
      * @param template    template content
      * @param commitMsg   commit message
      * @param description description
+     * @param promptTags  prompt tags (comma-separated)
      * @param srcUser     source user
      * @param srcIp       source IP
      * @return true if publish success
      * @throws NacosException if version validation fails or publish error
      */
     boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
-            String commitMsg, String description, String srcUser, String srcIp) throws NacosException;
+            String commitMsg, String description, String promptTags, String srcUser, String srcIp) throws NacosException;
     
     /**
      * Get prompt detail.
@@ -107,16 +108,17 @@ public interface PromptOperationService {
     PromptDetail getPromptHistoryDetail(String namespaceId, String promptKey, Long historyId) throws NacosException;
     
     /**
-     * Update prompt metadata (description only, without changing version).
+     * Update prompt metadata (description and tags, without changing version).
      *
      * @param namespaceId namespace ID
      * @param promptKey   prompt key
      * @param description new description
+     * @param promptTags  new prompt tags (comma-separated)
      * @param srcUser     source user
      * @param srcIp       source IP
      * @return true if update success
      * @throws NacosException if update error
      */
-    boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String srcUser, String srcIp)
-            throws NacosException;
+    boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String promptTags, 
+            String srcUser, String srcIp) throws NacosException;
 }

@@ -85,6 +85,7 @@ public class PromptAdminController {
                 form.getTemplate(),
                 form.getCommitMsg(),
                 form.getDescription(),
+                form.getPromptTags(),
                 srcUser,
                 srcIp
         );
@@ -210,6 +211,7 @@ public class PromptAdminController {
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getDescription(),
+                form.getPromptTags(),
                 srcUser,
                 srcIp
         );

@@ -41,6 +41,8 @@ public class PromptDetail implements Serializable {
     
     private String md5;
     
+    private String promptTags;
+    
     private Long createTime;
     
     private Long updateTime;
@@ -99,6 +101,14 @@ public class PromptDetail implements Serializable {
     
     public void setMd5(String md5) {
         this.md5 = md5;
+    }
+    
+    public String getPromptTags() {
+        return promptTags;
+    }
+    
+    public void setPromptTags(String promptTags) {
+        this.promptTags = promptTags;
     }
     
     public Long getCreateTime() {

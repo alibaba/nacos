@@ -31,7 +31,9 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.HistoryService;
@@ -39,12 +41,15 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +100,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
-            String commitMsg, String description, String srcUser, String srcIp) throws NacosException {
+            String commitMsg, String description, String promptTags, String srcUser, String srcIp) throws NacosException {
         
         // 1. Validate version format
         if (!PromptVersionUtils.isValidVersion(version)) {
@@ -154,6 +159,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         if (StringUtils.isNotBlank(description)) {
             configForm.setDesc(description);
         }
+        if (StringUtils.isNotBlank(promptTags)) {
+            configForm.setConfigTags(promptTags);
+        }
         
         // 6. Build ConfigRequestInfo with CAS
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
@@ -184,6 +192,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Set description
         if (StringUtils.isNotBlank(configAllInfo.getDesc())) {
             detail.setDescription(configAllInfo.getDesc());
+        }
+        
+        // Set promptTags
+        if (StringUtils.isNotBlank(configAllInfo.getConfigTags())) {
+            detail.setPromptTags(configAllInfo.getConfigTags());
         }
         
         // Set update time from modifyTime
@@ -237,6 +250,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                         // Set description from config metadata (c_desc)
                         if (StringUtils.isNotBlank(configInfo.getDesc())) {
                             basicInfo.setDescription(configInfo.getDesc());
+                        }
+                        
+                        // Set promptTags from config tags
+                        if (StringUtils.isNotBlank(configInfo.getConfigTags())) {
+                            basicInfo.setPromptTags(configInfo.getConfigTags());
                         }
                         
                         // Set update time from gmtModified
@@ -449,34 +467,19 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     @Override
-    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String srcUser,
-            String srcIp) throws NacosException {
+    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String promptTags,
+            String srcUser, String srcIp) throws NacosException {
         
-        // 1. Get current config
         String dataId = PromptVersionUtils.buildDataId(promptKey);
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, PROMPT_GROUP, namespaceId);
-        ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
-        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Prompt not found: " + promptKey);
-        }
+        // Update metadata only (no history record, no content change)
+        configInfoPersistService.updateConfigInfoMetadata(dataId, PROMPT_GROUP, namespaceId, promptTags, description);
         
-        // 2. Update with same content but new description
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(dataId);
-        configForm.setGroup(PROMPT_GROUP);
-        configForm.setNamespaceId(namespaceId);
-        configForm.setContent(response.getContent());
-        configForm.setType(PROMPT_CONFIG_TYPE);
-        configForm.setSrcUser(srcUser);
-        configForm.setDesc(description);
-        
-        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setSrcIp(srcIp);
-        configRequestInfo.setCasMd5(response.getMd5());
-        
-        configOperationService.publishConfig(configForm, configRequestInfo, null);
+        // Notify config change
+        final Timestamp time = TimeUtils.getCurrentTime();
+        ConfigTraceService.logPersistenceEvent(dataId, PROMPT_GROUP, namespaceId, null, time.getTime(), srcIp,
+                ConfigTraceService.PERSISTENCE_EVENT_METADATA, ConfigTraceService.PERSISTENCE_TYPE_PUB, null);
+        ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(dataId, PROMPT_GROUP, namespaceId, time.getTime()));
         
         return true;
     }

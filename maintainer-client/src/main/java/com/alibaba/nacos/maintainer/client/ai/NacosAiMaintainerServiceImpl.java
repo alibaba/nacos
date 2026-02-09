@@ -381,7 +381,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     
     @Override
     public boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
-            String commitMsg, String description) throws NacosException {
+            String commitMsg, String description, String promptTags) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
@@ -395,6 +395,9 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         }
         if (StringUtils.isNotBlank(description)) {
             params.put("description", description);
+        }
+        if (StringUtils.isNotBlank(promptTags)) {
+            params.put("promptTags", promptTags);
         }
         RequestResource resource = buildRequestResource(namespaceId, promptKey);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
@@ -466,7 +469,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description)
+    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String promptTags)
             throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
@@ -474,7 +477,12 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         Map<String, String> params = new HashMap<>(4);
         params.put("namespaceId", namespaceId);
         params.put("promptKey", promptKey);
-        params.put("description", description);
+        if (description != null) {
+            params.put("description", description);
+        }
+        if (promptTags != null) {
+            params.put("promptTags", promptTags);
+        }
         RequestResource resource = buildRequestResource(namespaceId, promptKey);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.AI_PROMPT_METADATA_ADMIN_PATH).setParamValue(params).build();

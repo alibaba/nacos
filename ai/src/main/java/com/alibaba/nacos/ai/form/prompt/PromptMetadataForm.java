@@ -35,11 +35,24 @@ public class PromptMetadataForm extends PromptForm {
      */
     private String description;
     
+    /**
+     * Prompt tags (comma-separated).
+     */
+    private String promptTags;
+    
     public String getDescription() {
         return description;
     }
     
     public void setDescription(String description) {
         this.description = description;
+    }
+    
+    public String getPromptTags() {
+        return promptTags;
+    }
+    
+    public void setPromptTags(String promptTags) {
+        this.promptTags = promptTags;
     }
 }
