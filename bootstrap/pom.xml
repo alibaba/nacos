@@ -35,6 +35,10 @@
             <artifactId>nacos-console</artifactId>
         </dependency>
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-api-legacy-adapter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-server</artifactId>
         </dependency>

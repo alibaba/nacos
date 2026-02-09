@@ -1,0 +1,69 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.legacy.adapter.console;
+
+import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
+import com.alibaba.nacos.core.cluster.health.ReadinessResult;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+/**
+ * Legacy Health Controller (v1/console/health).
+ *
+ * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
+ */
+@RestController("legacyConsoleHealth")
+@RequestMapping("/v1/console/health")
+@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+public class HealthController {
+    
+    /**
+     * Liveness probe.
+     *
+     * @deprecated This API is deprecated and no longer maintained. Please use the v3 API instead.
+     */
+    @GetMapping("/liveness")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/health/liveness")
+    public ResponseEntity<String> liveness() {
+        return ResponseEntity.ok().body("OK");
+    }
+    
+    /**
+     * Readiness probe.
+     *
+     * @deprecated This API is deprecated and no longer maintained. Please use the v3 API instead.
+     */
+    @GetMapping("/readiness")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/health/readiness")
+    public ResponseEntity<String> readiness(HttpServletRequest request) {
+        ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();
+        if (result.isSuccess()) {
+            return ResponseEntity.ok().body("OK");
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getResultMessage());
+    }
+    
+}
