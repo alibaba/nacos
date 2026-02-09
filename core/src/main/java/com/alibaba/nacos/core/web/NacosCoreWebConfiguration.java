@@ -43,7 +43,7 @@ public class NacosCoreWebConfiguration {
         registration.setFilter(formSizeFilter);
         registration.addUrlPatterns("/*");
         registration.setName("formSizeFilter");
-        // 注意优先级必须比“com.alibaba.nacos.core.auth.AuthFilter”要高，否则校验失效。
+        // Note: The priority must be higher than "com.alibaba.nacos.core.auth.AuthFilter", otherwise the verification will not take effect.
         registration.setOrder(5);
         return registration;
     }
