@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.controller;
+package com.alibaba.nacos.legacy.adapter.auth;
 
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -35,28 +35,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Permission operation controller.
+ * Legacy v1 auth permission API. Loaded only when new default-auth-plugin is on classpath.
  *
  * @author nkorange
- * @since 1.2.0
+ * @deprecated Use v3 auth API instead.
  */
 @RestController
 @RequestMapping("/v1/auth/permissions")
-public class PermissionController {
-    
+@Deprecated
+public class LegacyAuthPermissionController {
+
     private final NacosRoleService nacosRoleService;
-    
-    public PermissionController(NacosRoleService nacosRoleService) {
+
+    public LegacyAuthPermissionController(NacosRoleService nacosRoleService) {
         this.nacosRoleService = nacosRoleService;
     }
-    
+
     /**
-     * Query permissions of a role.
-     *
-     * @param role     the role
-     * @param pageNo   page index
-     * @param pageSize page size
-     * @return permission of a role
+     * Get permissions of a role (v1 API).
      */
     @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
@@ -65,14 +61,9 @@ public class PermissionController {
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.getPermissions(role, pageNo, pageSize);
     }
-    
+
     /**
-     * Fuzzy Query permissions of a role.
-     *
-     * @param role     the role
-     * @param pageNo   page index
-     * @param pageSize page size
-     * @return permission of a role
+     * Fuzzy search permissions (v1 API).
      */
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
@@ -81,14 +72,9 @@ public class PermissionController {
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.findPermissions(role, pageNo, pageSize);
     }
-    
+
     /**
-     * Add a permission to a role.
-     *
-     * @param role     the role
-     * @param resource the related resource
-     * @param action   the related action
-     * @return ok if succeed
+     * Add permission to role (v1 API).
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
@@ -97,14 +83,9 @@ public class PermissionController {
         nacosRoleService.addPermission(role, resource, action);
         return RestResultUtils.success("add permission ok!");
     }
-    
+
     /**
-     * Delete a permission from a role.
-     *
-     * @param role     the role
-     * @param resource the related resource
-     * @param action   the related action
-     * @return ok if succeed
+     * Delete permission from role (v1 API).
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
@@ -114,14 +95,9 @@ public class PermissionController {
         nacosRoleService.deletePermission(role, resource, action);
         return RestResultUtils.success("delete permission ok!");
     }
-    
+
     /**
-     * Judge whether a permission is duplicate.
-     *
-     * @param role     the role
-     * @param resource the related resource
-     * @param action   the related action
-     * @return true if duplicate, false otherwise
+     * Check if permission already exists (v1 API).
      */
     @GetMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)

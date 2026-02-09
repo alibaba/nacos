@@ -16,3 +16,4 @@
 
 com.alibaba.nacos.legacy.adapter.autoconfigure.LegacyAdapterServerWebAutoConfiguration
 com.alibaba.nacos.legacy.adapter.autoconfigure.LegacyAdapterConsoleAutoConfiguration
+com.alibaba.nacos.legacy.adapter.autoconfigure.LegacyAdapterAuthAutoConfiguration

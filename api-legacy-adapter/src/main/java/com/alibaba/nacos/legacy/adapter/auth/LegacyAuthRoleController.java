@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.controller;
+package com.alibaba.nacos.legacy.adapter.auth;
 
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -36,29 +36,24 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Role operation controller.
+ * Legacy v1 auth role API. Loaded only when new default-auth-plugin is on classpath.
  *
  * @author nkorange
- * @since 1.2.0
+ * @deprecated Use v3 auth API instead.
  */
 @RestController
 @RequestMapping("/v1/auth/roles")
-public class RoleController {
-    
+@Deprecated
+public class LegacyAuthRoleController {
+
     private final NacosRoleService roleService;
-    
-    public RoleController(NacosRoleService roleService) {
+
+    public LegacyAuthRoleController(NacosRoleService roleService) {
         this.roleService = roleService;
     }
-    
+
     /**
-     * Get roles list.
-     *
-     * @param pageNo   number index of page
-     * @param pageSize page size
-     * @param username optional, username of user
-     * @param role optional role
-     * @return role list
+     * Get roles list (v1 API).
      */
     @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
@@ -68,14 +63,9 @@ public class RoleController {
             @RequestParam(name = "role", defaultValue = "") String role) {
         return roleService.getRoles(username, role, pageNo, pageSize);
     }
-    
+
     /**
-     * Fuzzy query role information.
-     * @param pageNo number index of page
-     * @param pageSize page size
-     * @param username username of user
-     * @param role role
-     * @return role list
+     * Fuzzy search roles (v1 API).
      */
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
@@ -85,12 +75,9 @@ public class RoleController {
             @RequestParam(name = "role", defaultValue = "") String role) {
         return roleService.findRoles(username, role, pageNo, pageSize);
     }
-    
+
     /**
-     * Fuzzy matching role name .
-     *
-     * @param role role id
-     * @return role list
+     * Search role names by prefix (v1 API).
      */
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
@@ -98,15 +85,9 @@ public class RoleController {
     public List<String> searchRoles(@RequestParam String role) {
         return roleService.findRoleNames(role);
     }
-    
+
     /**
-     * Add a role to a user
-     *
-     * <p>This method is used for 2 functions: 1. create a role and bind it to GLOBAL_ADMIN. 2. bind a role to an user.
-     *
-     * @param role     role name
-     * @param username username
-     * @return Code 200 and message 'add role ok!'
+     * Add role to user (v1 API).
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
@@ -115,13 +96,9 @@ public class RoleController {
         roleService.addRole(role, username);
         return RestResultUtils.success("add role ok!");
     }
-    
+
     /**
-     * Delete a role. If no username is specified, all users under this role are deleted.
-     *
-     * @param role     role
-     * @param username username
-     * @return ok if succeed
+     * Delete role or unbind role from user (v1 API).
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
@@ -135,5 +112,4 @@ public class RoleController {
         }
         return RestResultUtils.success("delete role of user " + username + " ok!");
     }
-    
 }

@@ -43,6 +43,13 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-console</artifactId>
         </dependency>
+        <!-- Optional + provided: v1 auth APIs (user CRUD, role, permission) only loaded when new default-auth-plugin is present -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>default-auth-plugin</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
