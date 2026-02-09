@@ -1,6 +1,10 @@
 package com.alibaba.nacos.core.web;
 
-import jakarta.servlet.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -9,7 +13,7 @@ import org.springframework.http.MediaType;
 import java.io.IOException;
 
 ///
-/// 用于限制表单数据大小的过滤器，详见：[#14423](https://github.com/alibaba/nacos/issues/14423)
+/// A filter used to limit the size of form data; see: [#14423](https://github.com/alibaba/nacos/issues/14423)
 ///
 /// @author Huang Xiao
 /// @version 1.0.0
