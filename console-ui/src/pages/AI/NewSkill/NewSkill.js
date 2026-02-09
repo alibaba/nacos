@@ -821,9 +821,19 @@ class NewSkill extends React.Component {
   };
 
   handleSkillNameChange = value => {
-    // Skill名称：只允许英文、下划线、横杠
+    // Skill名称：只允许英文、下划线、横杠，输入非法字符时实时提醒
     const filteredValue = value.replace(/[^a-zA-Z_-]/g, '');
+    if (filteredValue.length !== value.length) {
+      Message.warning(
+        this.getLocaleValue(
+          'skillNameInvalidChars',
+          'Name can only contain English letters, underscore and hyphen'
+        )
+      );
+    }
     this.field.setValue('name', filteredValue);
+    // 实时校验（双下划线、必填等），在表单项下展示错误
+    this.field.validate('name');
     // 检查是否有变化
     if (this.state.isEdit) {
       setTimeout(() => {
@@ -833,6 +843,32 @@ class NewSkill extends React.Component {
         }
       }, 0);
     }
+  };
+
+  validateSkillName = (rule, value, callback) => {
+    if (!value || value.trim() === '') {
+      callback(this.getLocaleValue('requiredField', 'This field is required'));
+      return;
+    }
+    if (!/^[a-zA-Z_-]+$/.test(value)) {
+      callback(
+        this.getLocaleValue(
+          'skillNameInvalidChars',
+          'Name can only contain English letters, underscore and hyphen'
+        )
+      );
+      return;
+    }
+    if (value.includes('__')) {
+      callback(
+        this.getLocaleValue(
+          'skillNameNoDoubleUnderscore',
+          'Name cannot contain double underscores (__)'
+        )
+      );
+      return;
+    }
+    callback();
   };
 
   validateRequired = (rule, value, callback) => {
@@ -3168,13 +3204,13 @@ class NewSkill extends React.Component {
               <Form.Item
                 label={this.getLocaleValue('skillName', 'Skill Name')}
                 required
-                validator={this.validateRequired}
+                validator={this.validateSkillName}
               >
                 <Input
                   name="name"
                   placeholder={this.getLocaleValue(
                     'skillNamePlaceholder',
-                    'Please enter Skill name (only English letters, underscore, hyphen)'
+                    'Please enter Skill name (letters, underscore, hyphen only)'
                   )}
                   disabled={isEdit}
                   maxLength={255}
