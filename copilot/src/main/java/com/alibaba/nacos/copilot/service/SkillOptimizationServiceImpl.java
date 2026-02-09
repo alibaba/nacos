@@ -174,8 +174,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 SkillResource res = entry.getValue();
                 
                 // Match by key or name
-                if (key.equals(targetFileName) || 
-                    (res.getName() != null && res.getName().equals(targetFileName))) {
+                if (key.equals(targetFileName)
+                    || (res.getName() != null && res.getName().equals(targetFileName))) {
                     found = true;
                     skillInfo.append("\n目标文件：").append(key).append("\n");
                     skillInfo.append("文件名：").append(res.getName()).append("\n");
@@ -219,8 +219,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         // If no specific requirements, merge into a simpler structure
         if (!hasConversationHistory && !hasSelectedTools && !hasOptimizationGoal) {
             // Simplest case: user just wants to try the feature, check for obvious improvements
-            String simpleRequest = "请帮我看看这个文件（" + targetFileName + "）有没有明显可以优化的地方。" +
-                "请只优化这个文件的内容，其他文件保持不变。如果没有明显问题，保持原样即可。";
+            String simpleRequest = "请帮我看看这个文件（" + targetFileName + "）有没有明显可以优化的地方。"
+                + "请只优化这个文件的内容，其他文件保持不变。如果没有明显问题，保持原样即可。";
             messages.add(Msg.builder()
                     .textContent(simpleRequest)
                     .role(MsgRole.USER)

@@ -310,17 +310,28 @@ class SkillDetail extends React.Component {
       });
     }
 
-    // Add type folders
-    Object.entries(resourcesByType).forEach(([type, files]) => {
-      fileList.push({
+    // Sort files inside each type folder by name (A-Z)
+    Object.keys(resourcesByType).forEach(type => {
+      resourcesByType[type].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+      );
+    });
+
+    // Build type folders and root files, merge and sort by name: SKILL.md first, then all else A-Z
+    const typeFolders = Object.entries(resourcesByType)
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }))
+      .map(([type, files]) => ({
         name: type,
         type: 'folder',
         children: files,
-      });
-    });
-
-    // Add resources without type (directly in file list)
-    fileList.push(...resourcesWithoutType);
+      }));
+    const sortedRootFiles = resourcesWithoutType.sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    );
+    const afterSkill = [...typeFolders, ...sortedRootFiles].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    );
+    fileList.push(...afterSkill);
 
     return fileList;
   };

@@ -125,6 +125,11 @@ public class Constants {
         public static final String SEARCH_ACCURATE = "accurate";
         
         public static final String SKILL_DEFAULT_NAMESPACE = "public";
+
+        /**
+         * Max allowed size for skill zip upload (10MB). Exceeding this will result in a clear error.
+         */
+        public static final long MAX_UPLOAD_ZIP_BYTES = 10L * 1024 * 1024;
     }
     
     public static class Prompt {
