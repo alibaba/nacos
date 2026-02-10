@@ -670,7 +670,6 @@
         <module>address</module>
         <module>test</module>
         <module>api</module>
-        <module>api-legacy-adapter</module>
         <module>client</module>
         <module>example</module>
         <module>common</module>
@@ -827,11 +826,6 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-console</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>nacos-api-legacy-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

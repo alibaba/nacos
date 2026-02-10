@@ -34,7 +34,6 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-console</artifactId>
         </dependency>
-        <!-- nacos-api-legacy-adapter is optional: add to classpath (e.g. plugins dir) when legacy v1/v2 HTTP APIs are needed -->
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-server</artifactId>
