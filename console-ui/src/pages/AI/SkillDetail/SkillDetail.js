@@ -17,6 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
+  Balloon,
   Button,
   Card,
   Collapse,
@@ -967,7 +968,7 @@ class SkillDetail extends React.Component {
         draggingFile.resourceKey === (node.resourceKey || node.name) &&
         draggingFile.name === node.name;
 
-      return (
+      const row = (
         <div
           key={nodeKey}
           className={`file-tree-item file-tree-file-item ${isSelected ? 'selected' : ''}`}
@@ -1021,16 +1022,38 @@ class SkillDetail extends React.Component {
             />
           ) : (
             <span
-              style={{ pointerEvents: 'none', flex: 1 }}
-              title={
-                canEdit ? this.props.locale?.doubleClickToRename || 'Double click to rename' : ''
-              }
+              style={{
+                pointerEvents: 'none',
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
             >
               {node.name}
             </span>
           )}
         </div>
       );
+      if (!isEditing) {
+        return (
+          <Balloon
+            trigger={row}
+            triggerType="hover"
+            delay={100}
+            align="tl"
+            closable={false}
+            popupStyle={{
+              padding: '4px 8px',
+              fontSize: 12,
+            }}
+          >
+            <span style={{ whiteSpace: 'nowrap' }}>{node.name}</span>
+          </Balloon>
+        );
+      }
+      return row;
     }
   };
 

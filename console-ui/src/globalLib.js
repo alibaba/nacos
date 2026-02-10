@@ -17,6 +17,7 @@
 import projectConfig from './config';
 import $ from 'jquery';
 import { Message } from '@alifd/next';
+import { toastError } from './utils/message';
 import { LOGINPAGE_ENABLED } from './constants';
 
 function goLogin() {
@@ -556,7 +557,7 @@ const request = (function(_global) {
         const { status, responseJSON = {} } = error || {};
         if (responseJSON.message) {
           const _errorcontent = responseJSON?.data ? ` : ${responseJSON.data}` : '';
-          Message.error(responseJSON.message + _errorcontent);
+          toastError(responseJSON.message + _errorcontent);
         }
         const shouldRedirectToLogin =
           [401, 403].includes(status) &&
