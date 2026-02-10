@@ -61,7 +61,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置HistoryControllerV3的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
-        when(historyControllerV3.listConfigHistory(any(), any())).thenThrow(
+        when(historyControllerV3.getConfigsByNamespace(any())).thenThrow(
                         new NacosRuntimeException(NacosException.INVALID_PARAM))
                 .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
                 .thenThrow(new NacosRuntimeException(503));
