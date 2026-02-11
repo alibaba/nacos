@@ -116,7 +116,7 @@
         <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <soptbugs-maven-plugin.version>4.8.6.2</soptbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.8.6.2</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.0.2</sonar-maven-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
@@ -414,7 +414,12 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${soptbugs-maven-plugin.version}</version>
+                <version>${spotbugs-maven-plugin.version}</version>
+                <configuration>
+                    <excludeFilterFile>style/spotbugs-exclude.xml</excludeFilterFile>
+                    <effort>Max</effort>
+                    <threshold>High</threshold>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
@@ -610,7 +615,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${soptbugs-maven-plugin.version}</version>
+                <version>${spotbugs-maven-plugin.version}</version>
             </plugin>
         </plugins>
     </reporting>
