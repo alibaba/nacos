@@ -15,10 +15,147 @@
  */
 
 .new-skill-container {
-  padding: 20px;
 
   .new-skill-form {
     margin-top: 20px;
+  }
+
+  // 编辑模式使用与查看详情相同的样式类名
+  .skill-detail-container {
+    display: flex;
+    height: calc(100vh - 200px);
+    overflow: hidden;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e6e6e6;
+
+    .skill-detail-sidebar {
+      width: 300px;
+      border-right: 1px solid #e6e6e6;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+
+      .skill-detail-sidebar-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e6e6e6;
+        font-weight: 500;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+    .skill-detail-file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+
+      // 通用文件行样式（根节点和文件夹内节点都会应用）
+      .file-tree-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #333;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        margin: 2px 4px;
+
+        &.file-tree-folder-item {
+          color: #666;
+          font-weight: 500;
+          padding: 6px 12px;
+        }
+
+        &.file-tree-file-item {
+          cursor: pointer;
+          position: relative;
+
+          &:hover {
+            background-color: #f5f5f5;
+          }
+
+          &.selected {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            font-weight: 500;
+
+            .next-icon {
+              color: #1890ff;
+            }
+
+            &:hover {
+              background-color: #bae7ff;
+            }
+          }
+
+          &:not(.selected):hover {
+            background-color: #f5f5f5;
+          }
+        }
+
+        .next-icon {
+          color: #666;
+          margin-right: 8px;
+          font-size: 16px;
+          transition: color 0.2s ease;
+        }
+
+        span {
+          user-select: none;
+        }
+      }
+
+      .file-tree-empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: #999;
+        font-size: 13px;
+      }
+    }
+    }
+
+    .skill-detail-content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #fff;
+
+      .file-content-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+        font-size: 14px;
+      }
+
+      .file-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+
+        .file-content-header {
+          padding: 12px 16px;
+          border-bottom: 1px solid #e6e6e6;
+          display: flex;
+          align-items: center;
+          font-weight: 500;
+          background: #fafafa;
+        }
+
+        .file-content-resource {
+          flex: 1;
+          padding: 16px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+        }
+      }
+    }
   }
 
   .resources-section {
@@ -120,31 +257,55 @@
       .file-tree-item {
         display: flex;
         align-items: center;
-        padding: 6px 8px;
+        padding: 8px 12px;
         font-size: 13px;
         color: #333;
-        transition: background-color 0.2s;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        margin: 2px 4px;
 
         &.file-tree-folder-item {
           color: #666;
           font-weight: 500;
+          padding: 6px 12px;
         }
 
         &.file-tree-file-item {
           cursor: pointer;
+          position: relative;
 
           &:hover {
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
           }
 
           &.selected {
             background-color: #e6f7ff;
             color: #1890ff;
+            font-weight: 500;
+
+            .next-icon {
+              color: #1890ff;
+            }
+
+            &:hover {
+              background-color: #bae7ff;
+            }
+          }
+
+          &:not(.selected):hover {
+            background-color: #f5f5f5;
           }
         }
 
         .next-icon {
           color: #666;
+          margin-right: 8px;
+          font-size: 16px;
+          transition: color 0.2s ease;
+        }
+
+        span {
+          user-select: none;
         }
       }
     }

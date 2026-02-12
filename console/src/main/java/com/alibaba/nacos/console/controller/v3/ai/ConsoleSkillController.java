@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
@@ -158,6 +159,11 @@ public class ConsoleSkillController {
             @RequestParam("file") MultipartFile file) throws NacosException {
         if (file == null || file.isEmpty()) {
             return Result.failure(com.alibaba.nacos.api.model.v2.ErrorCode.DATA_EMPTY, "File is required");
+        }
+        if (file.getSize() > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
+            return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Skill zip size must not exceed " + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
+                            + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
         }
         try {
             String skillName = skillProxy.uploadSkillFromZip(namespaceId, file.getBytes());

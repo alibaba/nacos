@@ -17,6 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
+  Balloon,
   Button,
   Card,
   Collapse,
@@ -27,6 +28,7 @@ import {
   Grid,
   Icon,
   Loading,
+  Input,
 } from '@alifd/next';
 import SkillOptimizeDialog from '../SkillManagement/SkillOptimizeDialog';
 import MarkdownRenderer from '../../../components/MarkdownRenderer/MarkdownRenderer';
@@ -55,26 +57,49 @@ class SkillDetail extends React.Component {
       skillData: null,
       optimizeDialogVisible: false,
       expandedKeys: [],
-      showPreviewDialog: false,
-      previewData: null,
       fileTree: null,
       selectedFile: null,
+      editingFileName: null, // 正在编辑的文件名（格式：{nodeKey, oldName, type}）
+      editingFileNameValue: '', // 正在编辑的文件名的临时值
+      resources: [], // 资源列表（用于编辑）
+      draggingFile: null, // 正在拖拽的文件（格式：{resourceKey, name, type}）
+      dragOverFolder: null, // 当前拖拽悬停的文件夹名称
+      showOptimizeSuccess: false, // 是否显示优化成功提示
     };
+    this.optimizeSuccessTimer = null; // 优化成功提示的定时器
   }
 
   componentDidMount() {
     this.loadSkillData();
   }
 
-  componentWillUnmount() {
-    // Cleanup
+  componentDidUpdate(prevProps, prevState) {
+    // 当skillData加载完成后，初始化文件树和选中文件
+    if (!prevState.skillData && this.state.skillData) {
+      const previewData = this.buildPreviewData();
+      const fileTree = this.buildFileTree(previewData);
+      if (fileTree) {
+        this.setState({
+          fileTree,
+          selectedFile: { name: 'SKILL.md', type: 'file', fileType: 'skill-md' },
+        });
+      }
+    }
   }
 
-  handleExpandChange = (expandedKeys) => {
+  componentWillUnmount() {
+    // Cleanup
+    if (this.optimizeSuccessTimer) {
+      clearTimeout(this.optimizeSuccessTimer);
+      this.optimizeSuccessTimer = null;
+    }
+  }
+
+  handleExpandChange = expandedKeys => {
     this.setState({ expandedKeys });
   };
 
-  loadSkillData = () => {
+  loadSkillData = callback => {
     const skillName = getParams('name');
     const namespaceId = getParams('namespace') || '';
 
@@ -89,7 +114,29 @@ class SkillDetail extends React.Component {
       success: data => {
         this.setState({ loading: false });
         if (data && (data.code === 0 || data.code === 200) && data.data) {
-          this.setState({ skillData: data.data });
+          const skillData = data.data;
+          const previewData = this.buildPreviewDataStatic(skillData);
+          const fileTree = this.buildFileTree(previewData);
+          // Find SKILL.md file in the file list
+          const skillMdFile =
+            fileTree && Array.isArray(fileTree)
+              ? fileTree.find(file => file.name === 'SKILL.md' && file.fileType === 'skill-md')
+              : null;
+          // 加载资源列表用于编辑
+          const resources = skillData.resource ? Object.values(skillData.resource) : [];
+          this.setState(
+            {
+              skillData,
+              fileTree,
+              selectedFile: skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
+              resources,
+            },
+            () => {
+              if (callback && typeof callback === 'function') {
+                callback();
+              }
+            }
+          );
         } else {
           const { locale = {} } = this.props;
           Message.error(
@@ -119,15 +166,82 @@ class SkillDetail extends React.Component {
     this.setState({ optimizeDialogVisible: false });
   };
 
+  handleOptimizeSuccess = optimizedSkill => {
+    const { locale = {} } = this.props;
+    const { skillData } = this.state;
+
+    if (!optimizedSkill || !skillData) {
+      return;
+    }
+
+    // 构建 skillCard 对象用于更新
+    const skillCard = {
+      name: optimizedSkill.name || skillData.name,
+      description: optimizedSkill.description || skillData.description || '',
+      instruction: optimizedSkill.instruction || skillData.instruction || '',
+    };
+
+    // 使用优化后的资源
+    if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
+      skillCard.resource = optimizedSkill.resource;
+    } else {
+      skillCard.resource = {};
+    }
+
+    // 准备请求数据
+    const namespaceId = getParams('namespace') || '';
+    const skillName = skillData.name;
+    const params = new URLSearchParams();
+    params.append('skillName', skillName);
+    if (namespaceId) {
+      params.append('namespaceId', namespaceId);
+    }
+
+    // 调用更新 API
+    request({
+      url: 'v3/console/ai/skills',
+      method: 'PUT',
+      data: {
+        namespaceId,
+        skillName,
+        skillCard: JSON.stringify(skillCard),
+      },
+      success: data => {
+        if (data && data.code === 0) {
+          // 显示优化成功提示
+          this.setState({ showOptimizeSuccess: true });
+
+          // 清除之前的定时器
+          if (this.optimizeSuccessTimer) {
+            clearTimeout(this.optimizeSuccessTimer);
+          }
+
+          // 重新加载数据
+          this.loadSkillData();
+
+          // 3秒后自动隐藏提示
+          this.optimizeSuccessTimer = setTimeout(() => {
+            this.setState({ showOptimizeSuccess: false });
+            this.optimizeSuccessTimer = null;
+          }, 3000);
+        } else {
+          Message.error(data?.message || locale.optimizeFailed || 'Failed to apply optimization');
+        }
+      },
+      error: () => {
+        Message.error(locale.optimizeFailed || 'Failed to apply optimization');
+      },
+    });
+  };
+
   handleDelete = () => {
     const { locale = {} } = this.props;
     const skillName = getParams('name');
     Dialog.confirm({
       title: locale.deleteConfirm || 'Delete Confirmation',
-      content: (locale.deleteSkillConfirm || 'Are you sure you want to delete Skill "{0}"?').replace(
-        '{0}',
-        skillName
-      ),
+      content: (
+        locale.deleteSkillConfirm || 'Are you sure you want to delete Skill "{0}"?'
+      ).replace('{0}', skillName),
       onOk: () => {
         this.deleteSkill();
       },
@@ -190,7 +304,7 @@ class SkillDetail extends React.Component {
   // Generate resource unique identifier
   // Format: "type::name" if type is not blank, otherwise "name"
   // The separator "::" is used because it's not in the allowed character set for type and name
-  getResourceIdentifier = (resource) => {
+  getResourceIdentifier = resource => {
     if (resource.type && resource.type.trim() !== '') {
       return `${resource.type}::${resource.name || ''}`;
     }
@@ -212,71 +326,97 @@ class SkillDetail extends React.Component {
     };
   };
 
-  // Build file tree structure
-  buildFileTree = (previewData) => {
+  // Build preview data from skill data (static version for use in render)
+  buildPreviewDataStatic = skillData => {
+    if (!skillData) {
+      return null;
+    }
+
+    return {
+      name: skillData.name || '',
+      description: skillData.description || '',
+      instruction: skillData.instruction || '',
+      resource: skillData.resource || {},
+    };
+  };
+
+  // Build file tree structure; type may contain "/" for multi-level folders (e.g. folder1/folder2)
+  buildFileTree = previewData => {
     if (!previewData || !previewData.name) {
       return null;
     }
 
-    const tree = {
-      name: previewData.name,
-      type: 'folder',
-      children: [
-        {
-          name: 'SKILL.md',
-          type: 'file',
-          fileType: 'skill-md',
-        },
-      ],
+    const fileList = [
+      {
+        name: 'SKILL.md',
+        type: 'file',
+        fileType: 'skill-md',
+      },
+    ];
+
+    const rootChildren = [];
+    const resourcesWithoutType = [];
+
+    const getOrCreateFolder = (children, folderName, level = 0) => {
+      let folder = children.find(n => n.type === 'folder' && n.name === folderName);
+      if (!folder) {
+        // Default expand folders up to level 2 (0-indexed: 0, 1, 2 = 3 levels)
+        folder = { name: folderName, type: 'folder', children: [], expanded: level < 3 };
+        children.push(folder);
+      }
+      return { children: folder.children, level: level + 1 };
     };
 
-    // Group resources by type
-    const resourcesByType = {};
-    const resourcesWithoutType = [];
+    const sortNodeChildren = nodes => {
+      nodes.sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+      );
+      nodes.forEach(n => {
+        if (n.type === 'folder' && n.children && n.children.length) {
+          sortNodeChildren(n.children);
+        }
+      });
+    };
 
     if (previewData.resource && Object.keys(previewData.resource).length > 0) {
       Object.entries(previewData.resource).forEach(([key, resource]) => {
-        if (resource.type && resource.type.trim() !== '') {
-          const type = resource.type.trim();
-          if (!resourcesByType[type]) {
-            resourcesByType[type] = [];
-          }
-          resourcesByType[type].push({
-            name: resource.name || key,
-            type: 'file',
-            fileType: 'resource',
-            resourceKey: key,
-            resource: resource,
-          });
+        const fileNode = {
+          name: resource.name || key,
+          type: 'file',
+          fileType: 'resource',
+          resourceKey: key,
+          resource: resource,
+        };
+        if (!resource.type || resource.type.trim() === '') {
+          resourcesWithoutType.push(fileNode);
         } else {
-          resourcesWithoutType.push({
-            name: resource.name || key,
-            type: 'file',
-            fileType: 'resource',
-            resourceKey: key,
-            resource: resource,
-          });
+          const pathSegments = resource.type
+            .trim()
+            .split('/')
+            .filter(Boolean);
+          let target = { children: rootChildren, level: 0 };
+          for (const seg of pathSegments) {
+            target = getOrCreateFolder(target.children, seg, target.level);
+          }
+          target.children.push(fileNode);
         }
       });
     }
 
-    // Add type folders
-    Object.entries(resourcesByType).forEach(([type, files]) => {
-      tree.children.push({
-        name: type,
-        type: 'folder',
-        children: files,
-      });
-    });
+    sortNodeChildren(rootChildren);
+    const sortedRootFiles = resourcesWithoutType.sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    );
+    const afterSkill = [...rootChildren, ...sortedRootFiles].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    );
+    fileList.push(...afterSkill);
 
-    // Add resources without type (directly in skill folder)
-    tree.children.push(...resourcesWithoutType);
-
-    return tree;
+    return fileList;
   };
 
   // Escape YAML value (handle special characters)
-  escapeYamlValue = (value) => {
+  escapeYamlValue = value => {
     if (!value) {
       return '';
     }
@@ -288,7 +428,7 @@ class SkillDetail extends React.Component {
   };
 
   // Build SKILL.md content
-  buildSkillMarkdown = (previewData) => {
+  buildSkillMarkdown = previewData => {
     if (!previewData) {
       return '';
     }
@@ -306,26 +446,6 @@ class SkillDetail extends React.Component {
     return markdown;
   };
 
-  handleShowPreview = () => {
-    const previewData = this.buildPreviewData();
-    const fileTree = this.buildFileTree(previewData);
-    this.setState({
-      showPreviewDialog: true,
-      previewData,
-      fileTree,
-      selectedFile: fileTree ? { name: 'SKILL.md', type: 'file', fileType: 'skill-md' } : null,
-    });
-  };
-
-  handleClosePreview = () => {
-    this.setState({
-      showPreviewDialog: false,
-      previewData: null,
-      fileTree: null,
-      selectedFile: null,
-    });
-  };
-
   handleFileClick = (file, e) => {
     if (e) {
       e.preventDefault();
@@ -341,10 +461,282 @@ class SkillDetail extends React.Component {
     });
   };
 
+  // 开始编辑文件名
+  handleStartEditFileName = (node, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // SKILL.md 不能被编辑
+    if (node.fileType === 'skill-md' || node.name === 'SKILL.md') {
+      return;
+    }
+    // 只有资源文件可以编辑
+    if (node.fileType === 'resource') {
+      this.setState({
+        editingFileName: {
+          nodeKey: node.resourceKey || node.name,
+          oldName: node.name,
+          type: node.resource?.type || '',
+        },
+        editingFileNameValue: node.name, // 初始化编辑值
+      });
+    }
+  };
+
+  // 更新正在编辑的文件名临时值
+  handleEditingFileNameChange = value => {
+    // 过滤文件名：只允许英文大小写、数字、点号、下划线、横杠
+    const filteredValue = value.replace(/[^a-zA-Z0-9._-]/g, '');
+    this.setState({ editingFileNameValue: filteredValue });
+  };
+
+  // 保存文件名修改（详情页需要调用更新 API）
+  handleSaveFileName = async newName => {
+    const { editingFileName, resources, skillData } = this.state;
+    if (!editingFileName) {
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+      return;
+    }
+
+    // 使用传入的 newName 或当前编辑值
+    const nameToSave = newName || this.state.editingFileNameValue || editingFileName.oldName;
+    if (!nameToSave || nameToSave.trim() === '') {
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+      return;
+    }
+
+    // 过滤文件名：只允许英文大小写、数字、点号、下划线、横杠
+    const filteredName = nameToSave.replace(/[^a-zA-Z0-9._-]/g, '');
+
+    if (filteredName === editingFileName.oldName) {
+      // 没有变化，取消编辑
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+      return;
+    }
+
+    // 检查是否重名
+    const isDuplicate = resources.some(
+      r =>
+        r.name === filteredName &&
+        r.type === editingFileName.type &&
+        r.name !== editingFileName.oldName
+    );
+
+    if (isDuplicate) {
+      const { locale = {} } = this.props;
+      Message.warning(locale.fileNameDuplicate || 'File name already exists');
+      return;
+    }
+
+    // 更新资源名称
+    const resourceIndex = resources.findIndex(
+      r => r.name === editingFileName.oldName && r.type === editingFileName.type
+    );
+
+    if (resourceIndex !== -1) {
+      const newResources = [...resources];
+      newResources[resourceIndex] = {
+        ...newResources[resourceIndex],
+        name: filteredName,
+      };
+
+      // 更新 skillData 中的 resource
+      const newResourceMap = {};
+      newResources.forEach(r => {
+        if (r.name && r.name.trim() !== '') {
+          const key = r.name.trim();
+          newResourceMap[key] = {
+            name: r.name.trim(),
+            type: r.type || '',
+            content: r.content || '',
+            metadata: r.metadata || null,
+          };
+        }
+      });
+
+      const updatedSkillData = {
+        ...skillData,
+        resource: newResourceMap,
+      };
+
+      // 调用更新 API
+      const namespaceId = getParams('namespace') || '';
+      const skillName = skillData.name;
+      const params = new URLSearchParams();
+      params.append('skillName', skillName);
+      if (namespaceId) {
+        params.append('namespaceId', namespaceId);
+      }
+
+      request({
+        method: 'PUT',
+        url: `v3/console/ai/skills?${params.toString()}`,
+        data: updatedSkillData,
+        success: data => {
+          if (data && (data.code === 0 || data.code === 200)) {
+            const { locale = {} } = this.props;
+            Message.success(locale.updateSuccess || 'Update successful');
+            // 重新加载数据（会自动更新文件树和选中文件）
+            this.loadSkillData();
+          } else {
+            const { locale = {} } = this.props;
+            Message.error(data?.message || locale.updateFailed || 'Update failed');
+            this.setState({ editingFileName: null, editingFileNameValue: '' });
+          }
+        },
+        error: () => {
+          const { locale = {} } = this.props;
+          Message.error(locale.updateFailed || 'Update failed');
+          this.setState({ editingFileName: null, editingFileNameValue: '' });
+        },
+      });
+    } else {
+      this.setState({ editingFileName: null, editingFileNameValue: '' });
+    }
+  };
+
+  // 取消编辑文件名
+  handleCancelEditFileName = () => {
+    this.setState({ editingFileName: null, editingFileNameValue: '' });
+  };
+
+  // 拖拽开始
+  handleDragStart = (node, e) => {
+    if (node.fileType === 'resource' && node.name !== 'SKILL.md') {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData(
+        'text/plain',
+        JSON.stringify({
+          resourceKey: node.resourceKey || node.name,
+          name: node.name,
+          type: node.resource?.type || '',
+        })
+      );
+      this.setState({
+        draggingFile: {
+          resourceKey: node.resourceKey || node.name,
+          name: node.name,
+          type: node.resource?.type || '',
+        },
+      });
+    } else {
+      e.preventDefault();
+    }
+  };
+
+  // 拖拽结束
+  handleDragEnd = () => {
+    this.setState({
+      draggingFile: null,
+      dragOverFolder: null,
+    });
+  };
+
+  // 拖拽悬停在文件夹上
+  handleDragOver = (folderName, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    if (this.state.dragOverFolder !== folderName) {
+      this.setState({ dragOverFolder: folderName });
+    }
+  };
+
+  // 拖拽离开文件夹
+  handleDragLeave = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 只有当真正离开文件夹区域时才清除状态
+    const relatedTarget = e.relatedTarget;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      this.setState({ dragOverFolder: null });
+    }
+  };
+
+  // 文件拖放到文件夹
+  handleDrop = async (folderName, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const { draggingFile, resources, skillData } = this.state;
+    if (!draggingFile) {
+      this.setState({ dragOverFolder: null });
+      return;
+    }
+
+    // 找到要移动的资源
+    const resourceIndex = resources.findIndex(
+      r => r.name === draggingFile.name && r.type === draggingFile.type
+    );
+
+    if (resourceIndex !== -1) {
+      const newResources = [...resources];
+      // 更新资源的 type 为文件夹名称
+      newResources[resourceIndex] = {
+        ...newResources[resourceIndex],
+        type: folderName,
+      };
+
+      // 更新 skillData 中的 resource
+      const newResourceMap = {};
+      newResources.forEach(r => {
+        if (r.name && r.name.trim() !== '') {
+          const key = r.name.trim();
+          newResourceMap[key] = {
+            name: r.name.trim(),
+            type: r.type || '',
+            content: r.content || '',
+            metadata: r.metadata || null,
+          };
+        }
+      });
+
+      const updatedSkillData = {
+        ...skillData,
+        resource: newResourceMap,
+      };
+
+      // 调用更新 API
+      const namespaceId = getParams('namespace') || '';
+      const skillName = skillData.name;
+      const params = new URLSearchParams();
+      params.append('skillName', skillName);
+      if (namespaceId) {
+        params.append('namespaceId', namespaceId);
+      }
+
+      request({
+        method: 'PUT',
+        url: `v3/console/ai/skills?${params.toString()}`,
+        data: updatedSkillData,
+        success: data => {
+          if (data && (data.code === 0 || data.code === 200)) {
+            const { locale = {} } = this.props;
+            Message.success(locale.updateSuccess || 'Update successful');
+            // 重新加载数据
+            this.loadSkillData();
+          } else {
+            const { locale = {} } = this.props;
+            Message.error(data?.message || locale.updateFailed || 'Update failed');
+          }
+        },
+        error: () => {
+          const { locale = {} } = this.props;
+          Message.error(locale.updateFailed || 'Update failed');
+        },
+      });
+
+      this.setState({ draggingFile: null, dragOverFolder: null });
+    } else {
+      this.setState({ draggingFile: null, dragOverFolder: null });
+    }
+  };
+
   handleExport = async () => {
     const { locale = {} } = this.props;
     const { skillData } = this.state;
-    
+
     if (!skillData) {
       Message.warning(locale.noSkillData || 'No skill data to export');
       return;
@@ -359,60 +751,64 @@ class SkillDetail extends React.Component {
     try {
       const skillName = skillData.name || 'skill';
       const zipFileName = `${skillName}.zip`;
-      
+
       // Always create zip package
-        const zip = new JSZip();
-        const folder = zip.folder(skillName);
+      const zip = new JSZip();
+      const folder = zip.folder(skillName);
 
-        // Add SKILL.md file
-        const markdown = this.buildSkillMarkdown(previewData);
-        folder.file('SKILL.md', markdown);
+      // Add SKILL.md file
+      const markdown = this.buildSkillMarkdown(previewData);
+      folder.file('SKILL.md', markdown);
 
-        // Add resource files
-        if (previewData.resource && Object.keys(previewData.resource).length > 0) {
-          Object.entries(previewData.resource).forEach(([key, resource]) => {
-            const resourceName = resource.name || key;
-            const resourceContent = resource.content || '';
-            
-            if (resource.type && resource.type.trim() !== '') {
-              // Add to type folder
-              const typeFolder = folder.folder(resource.type.trim());
-              typeFolder.file(resourceName, resourceContent);
-            } else {
-              // Add directly to skill folder
-              folder.file(resourceName, resourceContent);
-            }
-          });
-        }
+      // Add resource files
+      if (previewData.resource && Object.keys(previewData.resource).length > 0) {
+        Object.entries(previewData.resource).forEach(([key, resource]) => {
+          const resourceName = resource.name || key;
+          const resourceContent = resource.content || '';
 
-        // Generate zip file
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
+          if (resource.type && resource.type.trim() !== '') {
+            // Add to type folder
+            const typeFolder = folder.folder(resource.type.trim());
+            typeFolder.file(resourceName, resourceContent);
+          } else {
+            // Add directly to skill folder
+            folder.file(resourceName, resourceContent);
+          }
+        });
+      }
+
+      // Generate zip file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
       // Check if browser supports File System Access API
       if ('showSaveFilePicker' in window) {
         // Use File System Access API to let user choose save location
         try {
           const fileHandle = await window.showSaveFilePicker({
             suggestedName: zipFileName,
-            types: [{
-              description: 'ZIP files',
-              accept: {
-                'application/zip': ['.zip'],
+            types: [
+              {
+                description: 'ZIP files',
+                accept: {
+                  'application/zip': ['.zip'],
+                },
               },
-            }],
+            ],
           });
-          
+
           const writable = await fileHandle.createWritable();
           await writable.write(zipBlob);
           await writable.close();
-          
+
           Message.success(locale.exportSuccess || 'Export successful');
         } catch (saveError) {
           // User cancelled the file picker
           if (saveError.name !== 'AbortError') {
             // eslint-disable-next-line no-console
             console.error('Save file error:', saveError);
-            Message.error(locale.exportFailed || `Export failed: ${saveError.message || saveError}`);
+            Message.error(
+              locale.exportFailed || `Export failed: ${saveError.message || saveError}`
+            );
           }
           // If user cancelled, just return silently
           return;
@@ -441,123 +837,359 @@ class SkillDetail extends React.Component {
     }
   };
 
-  renderFileTree = (node, level = 0, parentKey = '') => {
-    if (!node) {
+  toggleFolderExpanded = (fileTree, targetKey) => {
+    if (!fileTree || !Array.isArray(fileTree)) {
+      return fileTree;
+    }
+
+    const toggleNode = (nodes, currentKey = '') => {
+      return nodes.map(node => {
+        const nodeKey = node.resourceKey
+          ? `${currentKey}/${node.resourceKey}`
+          : currentKey
+          ? `${currentKey}/${node.name}`
+          : node.name;
+
+        if (nodeKey === targetKey && node.type === 'folder') {
+          return { ...node, expanded: !node.expanded };
+        }
+
+        if (node.type === 'folder' && node.children) {
+          return {
+            ...node,
+            children: toggleNode(node.children, nodeKey),
+          };
+        }
+
+        return node;
+      });
+    };
+
+    return toggleNode(fileTree);
+  };
+
+  renderFileTree = (fileList, level = 0, parentKey = '') => {
+    if (!fileList) {
       return null;
     }
 
-    // Generate unique key: use resourceKey for resources, otherwise use path-based key
-    const nodeKey = node.resourceKey 
-      ? `${parentKey}/${node.resourceKey}` 
-      : (parentKey ? `${parentKey}/${node.name}` : node.name);
-    const isSelected = this.state.selectedFile &&
+    // If fileList is an array, render each item
+    if (Array.isArray(fileList)) {
+      return fileList.map(node => this.renderFileTree(node, level, parentKey));
+    }
+
+    // If it's a single node
+    const node = fileList;
+    const nodeKey = node.resourceKey
+      ? `${parentKey}/${node.resourceKey}`
+      : parentKey
+      ? `${parentKey}/${node.name}`
+      : node.name;
+    const isSelected =
+      this.state.selectedFile &&
       this.state.selectedFile.name === node.name &&
       this.state.selectedFile.fileType === node.fileType &&
       this.state.selectedFile.resourceKey === node.resourceKey;
 
     if (node.type === 'folder') {
+      const { dragOverFolder, draggingFile } = this.state;
+      const isDragOver = dragOverFolder === node.name && draggingFile;
+      const isExpanded = node.expanded !== false; // Default to true if not set
+      const folderStyle = {
+        paddingLeft: level === 0 ? '8px' : `${level * 20 + 8}px`,
+        paddingTop: '8px',
+        paddingBottom: '6px',
+        paddingRight: '12px',
+        marginTop: level === 0 ? '8px' : '12px',
+        marginBottom: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        fontWeight: 600,
+        color: '#666',
+        fontSize: '13px',
+        backgroundColor: isDragOver ? '#e6f7ff' : 'transparent',
+        borderRadius: 4,
+        transition: 'background-color 0.2s',
+        cursor: 'pointer',
+      };
+
+      const toggleExpand = e => {
+        e.stopPropagation();
+        const updatedTree = this.toggleFolderExpanded(this.state.fileTree, nodeKey);
+        this.setState({ fileTree: updatedTree });
+      };
+
       return (
         <div key={nodeKey} className="file-tree-folder">
           <div
             className="file-tree-item file-tree-folder-item"
-            style={{ paddingLeft: `${level * 20 + 8}px` }}
+            style={folderStyle}
+            onClick={toggleExpand}
+            onDragOver={e => this.handleDragOver(node.name, e)}
+            onDragLeave={this.handleDragLeave}
+            onDrop={e => this.handleDrop(node.name, e)}
           >
-            <Icon type="folder" style={{ marginRight: 8 }} />
-            <span>{node.name}</span>
+            <Icon
+              type={isExpanded ? 'arrow-down' : 'arrow-right'}
+              style={{ marginRight: 4, fontSize: 12, color: '#999' }}
+            />
+            <Icon type="folder" style={{ marginRight: 8, color: '#666' }} />
+            <span style={{ fontWeight: 600 }}>{node.name}</span>
           </div>
-          {node.children && node.children.map((child) => this.renderFileTree(child, level + 1, nodeKey))}
+          {isExpanded &&
+            node.children &&
+            node.children.map(child => this.renderFileTree(child, level + 1, nodeKey))}
         </div>
       );
     } else {
-      return (
+      const itemStyle = {
+        paddingLeft: level === 0 ? '8px' : `${level * 20 + 8}px`,
+        paddingTop: '10px',
+        paddingBottom: '10px',
+        paddingRight: '12px',
+        cursor: 'pointer',
+        backgroundColor: isSelected ? '#e6f7ff' : 'transparent',
+        color: isSelected ? '#1890ff' : '#333',
+        fontWeight: isSelected ? 500 : 'normal',
+        borderRadius: 4,
+        margin: '2px 4px',
+        display: 'flex',
+        alignItems: 'center',
+      };
+
+      const { editingFileName, draggingFile } = this.state;
+      const isEditing =
+        editingFileName &&
+        editingFileName.nodeKey === (node.resourceKey || node.name) &&
+        editingFileName.oldName === node.name;
+      const canEdit = node.fileType === 'resource' && node.name !== 'SKILL.md';
+      const isDragging =
+        draggingFile &&
+        draggingFile.resourceKey === (node.resourceKey || node.name) &&
+        draggingFile.name === node.name;
+
+      const row = (
         <div
           key={nodeKey}
           className={`file-tree-item file-tree-file-item ${isSelected ? 'selected' : ''}`}
-          style={{ paddingLeft: `${level * 20 + 8}px`, cursor: 'pointer' }}
-          onClick={(e) => {
+          style={{
+            ...itemStyle,
+            opacity: isDragging ? 0.5 : 1,
+            cursor: canEdit ? 'move' : 'pointer',
+          }}
+          draggable={canEdit && !isEditing}
+          onDragStart={canEdit && !isEditing ? e => this.handleDragStart(node, e) : undefined}
+          onDragEnd={canEdit ? this.handleDragEnd : undefined}
+          onClick={e => {
             e.preventDefault();
             e.stopPropagation();
-            this.handleFileClick(node, e);
+            if (!isEditing) {
+              this.handleFileClick(node, e);
+            }
+          }}
+          onDoubleClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (canEdit) {
+              this.handleStartEditFileName(node, e);
+            }
           }}
         >
           <Icon type="file" style={{ marginRight: 8 }} />
-          <span 
-            style={{ pointerEvents: 'none' }}
-          >
-            {node.name}
-          </span>
+          {isEditing ? (
+            <Input
+              size="small"
+              value={this.state.editingFileNameValue}
+              autoFocus
+              style={{ flex: 1, marginRight: 4 }}
+              onChange={value => {
+                this.handleEditingFileNameChange(value);
+              }}
+              onBlur={e => {
+                this.handleSaveFileName(e.target.value);
+              }}
+              onPressEnter={e => {
+                this.handleSaveFileName(e.target.value);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Escape') {
+                  this.handleCancelEditFileName();
+                }
+              }}
+              onClick={e => {
+                e.stopPropagation();
+              }}
+            />
+          ) : (
+            <span
+              style={{
+                pointerEvents: 'none',
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {node.name}
+            </span>
+          )}
         </div>
       );
+      if (!isEditing) {
+        return (
+          <Balloon
+            trigger={row}
+            triggerType="hover"
+            delay={100}
+            align="tl"
+            closable={false}
+            popupStyle={{
+              padding: '4px 8px',
+              fontSize: 12,
+            }}
+          >
+            <span style={{ whiteSpace: 'nowrap' }}>{node.name}</span>
+          </Balloon>
+        );
+      }
+      return row;
     }
   };
 
   renderFileContent = () => {
-    const { selectedFile, previewData } = this.state;
+    const { selectedFile, skillData } = this.state;
 
-    if (!selectedFile || !previewData) {
+    if (!selectedFile || !skillData) {
       return (
-        <div className="file-content-empty">
+        <div
+          className="file-content-empty"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#999',
+            fontSize: '14px',
+          }}
+        >
           {this.props.locale?.selectFileToPreview || 'Select a file to preview'}
         </div>
       );
     }
 
     if (selectedFile.fileType === 'skill-md') {
+      const previewData = this.buildPreviewDataStatic(skillData);
       const markdown = this.buildSkillMarkdown(previewData);
       return (
-        <div className="file-content">
-          <div className="file-content-header">
+        <div
+          className="file-content"
+          style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+        >
+          <div
+            className="file-content-header"
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #e6e6e6',
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 500,
+              background: '#fafafa',
+            }}
+          >
             <Icon type="file" style={{ marginRight: 8 }} />
             <span>{selectedFile.name}</span>
           </div>
-          <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px' }}>
-            <MonacoEditor
-              language="markdown"
-              width="100%"
-              height={500}
-              value={markdown}
-              options={{
-                readOnly: true,
-                wordWrap: 'on',
-                minimap: { enabled: false },
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-              }}
-            />
+          <div style={{ flex: 1, overflow: 'hidden', padding: '16px' }}>
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', height: '100%' }}>
+              <MonacoEditor
+                language="markdown"
+                width="100%"
+                height="100%"
+                value={markdown}
+                options={{
+                  readOnly: true,
+                  wordWrap: 'on',
+                  minimap: { enabled: false },
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            </div>
           </div>
         </div>
       );
     } else if (selectedFile.fileType === 'resource') {
       const resource = selectedFile.resource;
       return (
-        <div className="file-content">
-          <div className="file-content-header">
+        <div
+          className="file-content"
+          style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+        >
+          <div
+            className="file-content-header"
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #e6e6e6',
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 500,
+              background: '#fafafa',
+            }}
+          >
             <Icon type="file" style={{ marginRight: 8 }} />
             <span>{selectedFile.name}</span>
           </div>
-          <div className="file-content-resource">
-              {resource.content ? (
-              <div style={{ border: '1px solid #e6e6e6', borderRadius: '4px' }}>
-                  <MonacoEditor
-                    key={`${selectedFile.resourceKey || selectedFile.name}-${getLanguageFromFileName(resource.name || '')}`}
-                    language={getLanguageFromFileName(resource.name || '')}
-                    width="100%"
-                    height={300}
-                    value={resource.content}
-                    options={{
-                      readOnly: true,
-                      wordWrap: 'on',
-                      minimap: { enabled: false },
-                      lineNumbers: 'on',
-                      scrollBeyondLastLine: false,
-                    }}
-                  />
-                </div>
-              ) : (
-              <div style={{ padding: '12px', color: '#999' }}>
-                  {this.props.locale?.noContent || 'No content'}
-                </div>
-              )}
+          <div
+            className="file-content-resource"
+            style={{
+              flex: 1,
+              padding: '16px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {resource.content ? (
+              <div
+                style={{
+                  flex: 1,
+                  border: '1px solid #e6e6e6',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                }}
+              >
+                <MonacoEditor
+                  key={`${selectedFile.resourceKey || selectedFile.name}-${getLanguageFromFileName(
+                    resource.name || ''
+                  )}`}
+                  language={getLanguageFromFileName(resource.name || '')}
+                  width="100%"
+                  height="100%"
+                  value={resource.content}
+                  options={{
+                    readOnly: true,
+                    wordWrap: 'on',
+                    minimap: { enabled: false },
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                style={{
+                  padding: '12px',
+                  color: '#999',
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {this.props.locale?.noContent || 'No content'}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -586,13 +1218,54 @@ class SkillDetail extends React.Component {
       );
     }
 
-    const resources = skillData.resource ? Object.values(skillData.resource) : [];
+    const previewData = this.buildPreviewDataStatic(skillData);
+    const fileTree = this.state.fileTree || this.buildFileTree(previewData);
 
     return (
       <div className="skill-detail">
+        {/* 优化成功提示条 */}
+        {this.state.showOptimizeSuccess && (
+          <div
+            style={{
+              backgroundColor: '#e6f7ff',
+              border: '1px solid #91d5ff',
+              borderRadius: '4px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon type="success" style={{ color: '#1890ff', fontSize: '16px' }} />
+              <span style={{ color: '#1890ff', fontSize: '14px' }}>
+                {locale.optimizeSuccess || '优化完成'}
+              </span>
+            </div>
+            <Icon
+              type="close"
+              style={{ color: '#1890ff', cursor: 'pointer', fontSize: '14px' }}
+              onClick={() => {
+                this.setState({ showOptimizeSuccess: false });
+                if (this.optimizeSuccessTimer) {
+                  clearTimeout(this.optimizeSuccessTimer);
+                  this.optimizeSuccessTimer = null;
+                }
+              }}
+            />
+          </div>
+        )}
+
         <div
           className="page-title"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 8,
+            marginBottom: 8,
+          }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>
@@ -603,10 +1276,8 @@ class SkillDetail extends React.Component {
                 <Icon type="edit" /> {locale.edit || 'Edit'}
               </Button>
               <Button onClick={this.handleOptimize}>
-                <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} /> {locale.aiOptimize || 'AI 优化'}
-              </Button>
-              <Button onClick={this.handleShowPreview}>
-                <Icon type="eye" /> {locale.preview || 'Preview'}
+                <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
+                {locale.aiOptimize || 'AI 优化'}
               </Button>
               <Button onClick={this.handleExport}>
                 <Icon type="download" /> {locale.export || 'Export'}
@@ -620,150 +1291,161 @@ class SkillDetail extends React.Component {
           </div>
         </div>
 
-        <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #e6e6e6' }}>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={12}>
-              <div className="info-item">
-                <label>{locale.skillName || 'Skill Name'}:</label>
-                <span>{skillData.name || '--'}</span>
-              </div>
-            </Col>
-          </Row>
-          <Row gutter={16} style={{ marginBottom: 24 }}>
-            <Col span={24}>
-              <div className="info-item">
-                <label>{locale.description || 'Description'}:</label>
-                <span>{skillData.description || '--'}</span>
-              </div>
-            </Col>
-          </Row>
-
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
-              {locale.instruction || 'Instruction'}
+        <div
+          className="skill-detail-container"
+          style={{
+            background: '#fff',
+            borderRadius: '4px',
+            border: '1px solid #e6e6e6',
+            height: 'calc(100vh - 200px)',
+            display: 'flex',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            className="skill-detail-sidebar"
+            style={{
+              width: '300px',
+              borderRight: '1px solid #e6e6e6',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#fafafa',
+            }}
+          >
+            <div
+              className="skill-detail-sidebar-header"
+              style={{
+                padding: '12px 16px',
+                borderBottom: '1px solid #e6e6e6',
+                fontWeight: 500,
+                background: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <span>{skillData.name || locale.projectFiles || '项目文件'}</span>
             </div>
-            <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', minHeight: '400px' }}>
-              <MonacoEditor
-                language="markdown"
-                width="100%"
-                height={400}
-                value={skillData.instruction || ''}
-                options={{
-                  readOnly: true,
-                  wordWrap: 'on',
-                  minimap: { enabled: false },
-                  lineNumbers: 'on',
-                }}
-              />
+            <div
+              className="skill-detail-file-tree"
+              style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}
+              onDragOver={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.state.draggingFile) {
+                  e.dataTransfer.dropEffect = 'move';
+                  if (this.state.dragOverFolder !== '') {
+                    this.setState({ dragOverFolder: '' });
+                  }
+                }
+              }}
+              onDrop={async e => {
+                e.preventDefault();
+                e.stopPropagation();
+                const { draggingFile, resources, skillData } = this.state;
+                if (!draggingFile) return;
+
+                const resourceIndex = resources.findIndex(
+                  r => r.name === draggingFile.name && r.type === draggingFile.type
+                );
+
+                if (resourceIndex !== -1) {
+                  const newResources = [...resources];
+                  newResources[resourceIndex] = {
+                    ...newResources[resourceIndex],
+                    type: '', // 拖到根目录，清空 type
+                  };
+
+                  const newResourceMap = {};
+                  newResources.forEach(r => {
+                    if (r.name && r.name.trim() !== '') {
+                      const key = r.name.trim();
+                      newResourceMap[key] = {
+                        name: r.name.trim(),
+                        type: r.type || '',
+                        content: r.content || '',
+                        metadata: r.metadata || null,
+                      };
+                    }
+                  });
+
+                  const updatedSkillData = {
+                    ...skillData,
+                    resource: newResourceMap,
+                  };
+
+                  const namespaceId = getParams('namespace') || '';
+                  const skillName = skillData.name;
+                  const params = new URLSearchParams();
+                  params.append('skillName', skillName);
+                  if (namespaceId) {
+                    params.append('namespaceId', namespaceId);
+                  }
+
+                  request({
+                    method: 'PUT',
+                    url: `v3/console/ai/skills?${params.toString()}`,
+                    data: updatedSkillData,
+                    success: data => {
+                      if (data && (data.code === 0 || data.code === 200)) {
+                        const { locale = {} } = this.props;
+                        Message.success(locale.updateSuccess || 'Update successful');
+                        this.loadSkillData();
+                      } else {
+                        const { locale = {} } = this.props;
+                        Message.error(data?.message || locale.updateFailed || 'Update failed');
+                      }
+                    },
+                    error: () => {
+                      const { locale = {} } = this.props;
+                      Message.error(locale.updateFailed || 'Update failed');
+                    },
+                  });
+
+                  this.setState({ draggingFile: null, dragOverFolder: null });
+                }
+              }}
+            >
+              {fileTree ? (
+                this.renderFileTree(fileTree)
+              ) : (
+                <div
+                  className="file-tree-empty"
+                  style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#999',
+                    fontSize: '13px',
+                  }}
+                >
+                  {locale.noPreviewData || 'No preview data available'}
+                </div>
+              )}
             </div>
           </div>
-
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#333' }}>
-              {locale.resources || 'Resources'}
-            </div>
-            {resources.length > 0 ? (
-              <div className="resources-section">
-                <Collapse expandedKeys={this.state.expandedKeys} onExpand={this.handleExpandChange}>
-                  {resources.map((resource, index) => (
-                    <Panel
-                      key={String(index)}
-                      title={
-                        <div className="resource-panel-header">
-                          <span>
-                            {resource.type && resource.name
-                              ? `${resource.type}/${resource.name}`
-                              : `${locale.resource || 'Resource'} ${index + 1}`}
-                          </span>
-                        </div>
-                      }
-                    >
-                      <Row gutter={16}>
-                        <Col span={24}>
-                            <div className="resource-content">
-                              {resource.content ? (
-                                <MonacoEditor
-                                  language={getLanguageFromFileName(resource.name || '')}
-                                  width="100%"
-                                  height={300}
-                                  value={resource.content}
-                                  options={{
-                                    readOnly: true,
-                                    wordWrap: 'on',
-                                    minimap: { enabled: false },
-                                    lineNumbers: 'on',
-                                    scrollBeyondLastLine: false,
-                                  }}
-                                />
-                              ) : (
-                                <div style={{ padding: '12px', color: '#999' }}>--</div>
-                              )}
-                          </div>
-                        </Col>
-                      </Row>
-                      {resource.metadata && (
-                        <Row gutter={16}>
-                          <Col span={24}>
-                            <div className="info-item">
-                              <label>{locale.metadata || 'Metadata'}:</label>
-                              <div className="resource-metadata">
-                                <pre>{JSON.stringify(resource.metadata, null, 2)}</pre>
-                              </div>
-                            </div>
-                          </Col>
-                        </Row>
-                      )}
-                    </Panel>
-                  ))}
-                </Collapse>
-              </div>
-            ) : (
-              <div className="empty-resources">
-                {locale.noResources || 'No resources'}
-              </div>
-            )}
+          <div
+            className="skill-detail-content-area"
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              background: '#fff',
+            }}
+          >
+            {this.renderFileContent()}
           </div>
         </div>
 
         <SkillOptimizeDialog
           visible={this.state.optimizeDialogVisible}
           skill={this.state.skillData}
+          selectedFile={this.state.selectedFile}
+          fileTree={this.state.fileTree}
           onClose={this.handleOptimizeDialogClose}
+          onSuccess={this.handleOptimizeSuccess}
           locale={this.props.locale}
           history={this.props.history}
         />
-
-        <Dialog
-          visible={this.state.showPreviewDialog}
-          title={locale.previewSkill || 'Preview Skill'}
-          onClose={this.handleClosePreview}
-          footer={[
-            <Button key="close" onClick={this.handleClosePreview}>
-              {locale.close || 'Close'}
-            </Button>
-          ]}
-          style={{ width: 1200 }}
-          className="skill-preview-dialog"
-          shouldUpdatePosition={false}
-        >
-          <div className="preview-container">
-            <div className="preview-sidebar">
-              <div className="preview-sidebar-header">
-                {locale.fileStructure || 'File Structure'}
-              </div>
-              <div className="preview-file-tree">
-                {this.state.fileTree ? this.renderFileTree(this.state.fileTree) : (
-                  <div className="file-tree-empty">
-                    {locale.noPreviewData || 'No preview data available'}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="preview-content-area">
-              {this.renderFileContent()}
-            </div>
-          </div>
-        </Dialog>
       </div>
     );
   }

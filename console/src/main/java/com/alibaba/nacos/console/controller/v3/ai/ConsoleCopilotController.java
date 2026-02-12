@@ -37,6 +37,10 @@ import com.alibaba.nacos.copilot.service.PromptOptimizationService;
 import com.alibaba.nacos.copilot.service.SkillGenerationService;
 import com.alibaba.nacos.copilot.service.SkillOptimizationService;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import java.util.Map;
+import java.util.HashMap;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -141,6 +145,7 @@ public class ConsoleCopilotController {
         request.setSkill(form.getSkill());
         request.setOptimizationGoal(form.getOptimizationGoal());
         request.setConversationHistory(form.getConversationHistory());
+        request.setTargetFileName(form.getTargetFileName());
         
         // Set selectedMcpTools to params if provided
         if (form.getSelectedMcpTools() != null && !form.getSelectedMcpTools().isEmpty()) {
@@ -154,6 +159,43 @@ public class ConsoleCopilotController {
             @Override
             public void onNext(SkillOptimizationResponse response) {
                 try {
+                    // Filter out SKILL.md from resources before sending to frontend
+                    if (response != null && response.getOptimizedSkill() != null) {
+                        Skill optimizedSkill = response.getOptimizedSkill();
+                        if (optimizedSkill.getResource() != null && !optimizedSkill.getResource().isEmpty()) {
+                            Map<String, SkillResource> filteredResources = new HashMap<>();
+                            boolean hasFiltered = false;
+                            
+                            for (Map.Entry<String, SkillResource> entry : optimizedSkill.getResource().entrySet()) {
+                                String key = entry.getKey();
+                                SkillResource resource = entry.getValue();
+                                
+                                // Check if resource name or key is SKILL.md (case-insensitive)
+                                String resourceName = resource != null && resource.getName() != null 
+                                    ? resource.getName() : "";
+                                String resourceKey = key != null ? key : "";
+                                
+                                boolean isSkillMd = "SKILL.MD".equalsIgnoreCase(resourceName) 
+                                    || "SKILL.MD".equalsIgnoreCase(resourceKey)
+                                    || resourceName.toUpperCase().contains("SKILL.MD")
+                                    || resourceKey.toUpperCase().contains("SKILL.MD");
+                                
+                                if (isSkillMd) {
+                                    hasFiltered = true;
+                                    LOGGER.warn("Filtered out SKILL.md resource: key={}, name={}", key, resourceName);
+                                    continue;
+                                }
+                                
+                                filteredResources.put(key, resource);
+                            }
+                            
+                            if (hasFiltered) {
+                                optimizedSkill.setResource(filteredResources);
+                                response.setOptimizedSkill(optimizedSkill);
+                            }
+                        }
+                    }
+                    
                     // Send SSE event
                     emitter.send(SseEmitter.event()
                             .data(JacksonUtils.toJson(response))

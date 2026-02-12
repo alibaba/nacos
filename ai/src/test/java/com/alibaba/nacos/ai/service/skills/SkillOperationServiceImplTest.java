@@ -51,7 +51,6 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -150,16 +149,20 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testRegisterSkillWithDoubleUnderscore() {
-        // Given
+    void testRegisterSkillWithDoubleUnderscore() throws NacosException {
+        // Given: skill name and resource names may contain double underscores
         Skill skill = createValidSkill();
         skill.setName("test__skill"); // Contains double underscore
         String namespaceId = "test-namespace";
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
         
-        // When & Then
-        NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> skillOperationService.registerSkill(skill, namespaceId));
-        assertTrue(exception.getMessage().contains("double underscores"));
+        // When
+        String result = skillOperationService.registerSkill(skill, namespaceId);
+        
+        // Then
+        assertEquals("test__skill", result);
     }
     
     @Test

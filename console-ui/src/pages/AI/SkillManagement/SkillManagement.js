@@ -204,10 +204,9 @@ class SkillManagement extends React.Component {
     const { locale = {} } = this.props;
     Dialog.confirm({
       title: locale.deleteConfirm || 'Delete Confirmation',
-      content: (locale.deleteSkillConfirm || 'Are you sure you want to delete Skill "{0}"?').replace(
-        '{0}',
-        record.name
-      ),
+      content: (
+        locale.deleteSkillConfirm || 'Are you sure you want to delete Skill "{0}"?'
+      ).replace('{0}', record.name),
       onOk: () => {
         this.deleteSkill(record);
       },
@@ -257,10 +256,10 @@ class SkillManagement extends React.Component {
       content: (
         <div>
           <p>
-            {(locale.batchDeleteContent || 'Are you sure you want to delete the following {0} Skills?').replace(
-              '{0}',
-              selectedRows.length
-            )}
+            {(
+              locale.batchDeleteContent ||
+              'Are you sure you want to delete the following {0} Skills?'
+            ).replace('{0}', selectedRows.length)}
           </p>
           <ul>
             {selectedRows.map(row => (
@@ -344,7 +343,9 @@ class SkillManagement extends React.Component {
           });
         } else {
           const { locale = {} } = this.props;
-          Message.error(data?.message || locale.getSkillInfoFailed || 'Failed to get Skill information');
+          Message.error(
+            data?.message || locale.getSkillInfoFailed || 'Failed to get Skill information'
+          );
         }
       },
       error: () => {
@@ -354,7 +355,7 @@ class SkillManagement extends React.Component {
     });
   };
 
-  beforeUpload = (file) => {
+  beforeUpload = file => {
     const { locale = {} } = this.props;
     const isZip = file.name.toLowerCase().endsWith('.zip');
     if (!isZip) {
@@ -364,7 +365,7 @@ class SkillManagement extends React.Component {
     return true;
   };
 
-  uploadFormatter = (res) => {
+  uploadFormatter = res => {
     // Format response for Upload component (similar to ImportDialog)
     if (res && (res.code === 0 || res.code === 200)) {
       return {
@@ -388,7 +389,7 @@ class SkillManagement extends React.Component {
     // The formatted response is stored in file.response (after formatter processing)
     const formatted = file?.response || file;
     const response = formatted?.retData || formatted?.response || formatted;
-    
+
     // Check formatted code (formatter returns '0' for success, '1' for error)
     if (formatted?.code === '0') {
       Message.success(locale.uploadSkillSuccess || 'Skill uploaded successfully');
@@ -399,13 +400,17 @@ class SkillManagement extends React.Component {
         Message.success(locale.uploadSkillSuccess || 'Skill uploaded successfully');
         this.getData();
       } else {
-        const errorMsg = formatted?.error?.message || response?.message || locale.uploadSkillFailed || 'Upload failed';
+        const errorMsg =
+          formatted?.error?.message ||
+          response?.message ||
+          locale.uploadSkillFailed ||
+          'Upload failed';
         Message.error(errorMsg);
       }
     }
   };
 
-  handleUploadError = (error) => {
+  handleUploadError = error => {
     const { locale = {} } = this.props;
     // Upload component error format
     // Check if it's actually a success response that was treated as error
@@ -415,9 +420,10 @@ class SkillManagement extends React.Component {
       this.getData();
       return;
     }
-    
+
     const errorData = error?.response?.data || error?.response || error;
-    const errorMessage = errorData?.message || error?.message || locale.uploadSkillFailed || 'Upload failed';
+    const errorMessage =
+      errorData?.message || error?.message || locale.uploadSkillFailed || 'Upload failed';
     Message.error(errorMessage);
   };
 
@@ -474,17 +480,17 @@ class SkillManagement extends React.Component {
       <>
         <div>
           <div style={{ position: 'relative' }}>
-        <PageTitle
-          title={locale.skillManagement || 'Skill Management'}
-          desc={this.state.nownamespace_desc}
-          namespaceId={this.state.nownamespace_id}
-          namespaceName={this.state.nownamespace_name}
-          nameSpace
-        />
-        <RegionGroup
-          namespaceCallBack={this.cleanAndGetData.bind(this)}
-          setNowNameSpace={this.setNowNameSpace.bind(this)}
-        />
+            <PageTitle
+              title={locale.skillManagement || 'Skill Management'}
+              desc={this.state.nownamespace_desc}
+              namespaceId={this.state.nownamespace_id}
+              namespaceName={this.state.nownamespace_name}
+              nameSpace
+            />
+            <RegionGroup
+              namespaceCallBack={this.cleanAndGetData.bind(this)}
+              setNowNameSpace={this.setNowNameSpace.bind(this)}
+            />
 
             <div
               style={{
@@ -494,146 +500,141 @@ class SkillManagement extends React.Component {
                 overflow: 'visible',
               }}
             >
-          <Form inline field={this.field}>
-            <Form.Item label={`${locale.skillName || 'Skill Name'}：`}>
-              <Input
-                name="searchName"
-                placeholder={locale.skillNamePlaceholder || 'Please enter Skill name'}
-                style={{ width: 200 }}
-                onPressEnter={this.handleSearch}
-              />
-            </Form.Item>
-            <Form.Item>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <Button type="primary" onClick={this.handleSearch}>
-                {locale.search || 'Search'}
-              </Button>
-                  <Button type="primary" onClick={this.handleCreateSkill}>
-                {locale.createSkill || 'Create Skill'}
-              </Button>
-              <Upload
-                accept=".zip"
-                action={`v3/console/ai/skills/upload?namespaceId=${getParams('namespace') || ''}`}
-                beforeUpload={this.beforeUpload}
-                formatter={this.uploadFormatter}
-                onSuccess={this.handleUploadSuccess}
-                onError={this.handleUploadError}
-                showUploadList={false}
-              >
-                <Button type="normal">
-                  {locale.uploadSkill || 'Upload Skill'}
-                </Button>
-              </Upload>
-                </div>
-            </Form.Item>
-          </Form>
-        </div>
+              <Form inline field={this.field}>
+                <Form.Item label={`${locale.skillName || 'Skill Name'}：`}>
+                  <Input
+                    name="searchName"
+                    placeholder={locale.skillNamePlaceholder || 'Please enter Skill name'}
+                    style={{ width: 200 }}
+                    onPressEnter={this.handleSearch}
+                  />
+                </Form.Item>
+                <Form.Item>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <Button type="primary" onClick={this.handleSearch}>
+                      {locale.search || 'Search'}
+                    </Button>
+                    <Button type="primary" onClick={this.handleCreateSkill}>
+                      {locale.createSkill || 'Create Skill'}
+                    </Button>
+                    <Upload
+                      accept=".zip"
+                      action={`v3/console/ai/skills/upload?namespaceId=${getParams('namespace') ||
+                        ''}`}
+                      beforeUpload={this.beforeUpload}
+                      formatter={this.uploadFormatter}
+                      onSuccess={this.handleUploadSuccess}
+                      onError={this.handleUploadError}
+                      showUploadList={false}
+                    >
+                      <Button type="normal">{locale.uploadSkill || 'Upload Skill'}</Button>
+                    </Upload>
+                  </div>
+                </Form.Item>
+              </Form>
+            </div>
 
-        <Table
+            <Table
               className="configuration-table"
-          dataSource={dataSource}
-          loading={loading}
-          emptyContent={this.renderEmptyState()}
-          primaryKey="name"
-          rowSelection={{
-            onChange: this.handleRowSelectionChange,
-            selectedRowKeys,
-          }}
-        >
-          <Table.Column
-            title={locale.skillName || 'Skill Name'}
-            dataIndex="name"
-            cell={value => <strong>{value || '--'}</strong>}
-          />
-          <Table.Column
-            title={locale.description || 'Description'}
-            dataIndex="description"
-                width={300}
+              dataSource={dataSource}
+              loading={loading}
+              emptyContent={this.renderEmptyState()}
+              primaryKey="name"
+              rowSelection={{
+                onChange: this.handleRowSelectionChange,
+                selectedRowKeys,
+              }}
+            >
+              <Table.Column
+                title={locale.skillName || 'Skill Name'}
+                dataIndex="name"
+                width={160}
+                cell={value => <strong>{value || '--'}</strong>}
+              />
+              <Table.Column
+                title={locale.description || 'Description'}
+                dataIndex="description"
+                width={900}
                 cell={value => {
                   const description = value || '--';
                   const isEmpty = !value || value === '--';
                   const cellStyle = {
                     display: 'inline-block',
-                    width: '300px',
-                    maxWidth: '300px',
+                    width: '900px',
+                    maxWidth: '900px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     verticalAlign: 'middle',
                   };
-                  
-                  const cellContent = (
-                    <span style={cellStyle}>
-                      {description}
-                    </span>
-                  );
-                  
+
+                  const cellContent = <span style={cellStyle}>{description}</span>;
+
                   if (isEmpty) {
                     return cellContent;
                   }
-                  
+
                   return (
-                    <Balloon
-                      trigger={cellContent}
-                      triggerType="hover"
-                      closable={false}
-                    >
+                    <Balloon trigger={cellContent} triggerType="hover" closable={false}>
                       {description}
                     </Balloon>
                   );
                 }}
-          />
-          <Table.Column
-            title={locale.updateTime || 'Update Time'}
-            dataIndex="updateTime"
-            cell={value => this.formatTime(value)}
-          />
-          <Table.Column
-            title={locale.operation || 'Operation'}
-            cell={this.renderOperationColumn}
-            width={200}
-          />
-        </Table>
+              />
+              <Table.Column
+                title={locale.updateTime || 'Update Time'}
+                dataIndex="updateTime"
+                width={150}
+                cell={value => this.formatTime(value)}
+              />
+              <Table.Column
+                title={locale.operation || 'Operation'}
+                cell={this.renderOperationColumn}
+                width={200}
+              />
+            </Table>
 
-        {total > 0 && (
+            {total > 0 && (
               <>
                 <div style={{ float: 'left' }}>
-              <Button
-                warning
-                disabled={selectedRowKeys.length === 0}
+                  <Button
+                    warning
+                    disabled={selectedRowKeys.length === 0}
                     type="primary"
                     style={{ marginRight: 10 }}
-                onClick={this.handleBatchDelete}
-              >
+                    onClick={this.handleBatchDelete}
+                  >
                     {locale.delete || 'Delete'}
                     {selectedRowKeys.length > 0 && ` (${selectedRowKeys.length})`}
-              </Button>
-            </div>
-            <Pagination
+                  </Button>
+                </div>
+                <Pagination
                   style={{ float: 'right' }}
-              pageSizeList={GLOBAL_PAGE_SIZE_LIST}
-              pageSizePosition="start"
-              pageSizeSelector="dropdown"
+                  pageSizeList={GLOBAL_PAGE_SIZE_LIST}
+                  pageSizePosition="start"
+                  pageSizeSelector="dropdown"
                   popupProps={{ align: 'bl tl' }}
                   onPageSizeChange={this.handlePageSizeChange}
                   current={currentPage}
                   total={total}
-              totalRender={totalCount => <TotalRender locale={locale} total={totalCount || 0} />}
+                  totalRender={totalCount => (
+                    <TotalRender locale={locale} total={totalCount || 0} />
+                  )}
                   pageSize={pageSize}
-              onChange={this.handlePageChange}
-            />
+                  onChange={this.handlePageChange}
+                />
               </>
-        )}
+            )}
 
-        <SkillOptimizeDialog
-          visible={this.state.optimizeDialogVisible}
-          skill={this.state.currentOptimizeSkill}
-          onClose={this.handleOptimizeDialogClose}
-          onSuccess={this.handleOptimizeSuccess}
-          locale={this.props.locale}
-          history={this.props.history}
-        />
-      </div>
+            <SkillOptimizeDialog
+              visible={this.state.optimizeDialogVisible}
+              skill={this.state.currentOptimizeSkill}
+              onClose={this.handleOptimizeDialogClose}
+              onSuccess={this.handleOptimizeSuccess}
+              locale={this.props.locale}
+              history={this.props.history}
+            />
+          </div>
         </div>
       </>
     );

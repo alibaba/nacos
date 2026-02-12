@@ -49,6 +49,13 @@ public class SkillOptimizationRequest implements Serializable {
     private ConversationHistory conversationHistory;
     
     /**
+     * Target file name to optimize (optional).
+     * If specified, only optimize the content of this specific file.
+     * If not specified, optimize the entire Skill.
+     */
+    private String targetFileName;
+    
+    /**
      * Additional parameters.
      */
     private Map<String, Object> params;
@@ -86,5 +93,13 @@ public class SkillOptimizationRequest implements Serializable {
     
     public void setConversationHistory(ConversationHistory conversationHistory) {
         this.conversationHistory = conversationHistory;
+    }
+    
+    public String getTargetFileName() {
+        return targetFileName;
+    }
+    
+    public void setTargetFileName(String targetFileName) {
+        this.targetFileName = targetFileName;
     }
 }

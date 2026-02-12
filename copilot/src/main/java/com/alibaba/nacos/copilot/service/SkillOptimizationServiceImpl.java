@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
@@ -67,7 +68,14 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             return;
         }
         
-        // 2. Check if Copilot is enabled
+        // 2. Validate target file name (required)
+        if (StringUtils.isBlank(request.getTargetFileName())) {
+            callback.onError(new NacosException(NacosException.INVALID_PARAM,
+                    "Target file name is required. Please select a file to optimize."));
+            return;
+        }
+        
+        // 3. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
                     "AI 功能未启用：请配置 Copilot API Key。请设置 nacos.copilot.llm.apiKey 或环境变量 COPILOT_API_KEY"));
@@ -145,25 +153,54 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
             }
         }
 
-        // Message 1: User provides Skill information (only Skill content, no optimization request)
+        // Target file name is required (validated above)
+        String targetFileName = request.getTargetFileName();
+        
+        // Message 1: User provides Skill information (only the target file's content)
         StringBuilder skillInfo = new StringBuilder();
         skillInfo.append("名称：").append(skill.getName()).append("\n");
-        skillInfo.append("描述：").append(skill.getDescription()).append("\n");
-        skillInfo.append("指令：\n").append(skill.getInstruction()).append("\n");
         
-        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-            skillInfo.append("\n资源：\n");
-            skill.getResource().forEach((key, resource) -> {
-                skillInfo.append("- ").append(key).append(": ")
-                  .append(resource.getName());
-                if (StringUtils.isNotBlank(resource.getType())) {
-                    skillInfo.append(" (type: ").append(resource.getType()).append(")");
+        // Check if target file is SKILL.md (instruction) or a resource file
+        if ("SKILL.md".equals(targetFileName) || "skill-md".equals(targetFileName)) {
+            // Target is SKILL.md, include description and instruction
+            skillInfo.append("描述：").append(skill.getDescription()).append("\n");
+            skillInfo.append("指令：\n").append(skill.getInstruction()).append("\n");
+        } else if (skill.getResource() != null && !skill.getResource().isEmpty()) {
+            // Target is a resource file, find and include only that resource
+            boolean found = false;
+            for (java.util.Map.Entry<String, SkillResource> entry
+                    : skill.getResource().entrySet()) {
+                String key = entry.getKey();
+                SkillResource res = entry.getValue();
+                
+                // Match by key or name
+                if (key.equals(targetFileName)
+                    || (res.getName() != null && res.getName().equals(targetFileName))) {
+                    found = true;
+                    skillInfo.append("\n目标文件：").append(key).append("\n");
+                    skillInfo.append("文件名：").append(res.getName()).append("\n");
+                    if (StringUtils.isNotBlank(res.getType())) {
+                        skillInfo.append("类型：").append(res.getType()).append("\n");
+                    }
+                    if (StringUtils.isNotBlank(res.getContent())) {
+                        skillInfo.append("内容：\n").append(res.getContent()).append("\n");
+                    }
+                    break;
                 }
-                if (StringUtils.isNotBlank(resource.getContent())) {
-                    skillInfo.append("\n  内容：").append(resource.getContent());
-                }
-                skillInfo.append("\n");
-            });
+            }
+            if (!found) {
+                // File not found, include all resources for context
+                skillInfo.append("\n注意：未找到指定的文件 ").append(targetFileName)
+                    .append("，以下是所有资源文件供参考：\n");
+                skill.getResource().forEach((key, resource) -> {
+                    skillInfo.append("- ").append(key).append(": ")
+                      .append(resource.getName());
+                    if (StringUtils.isNotBlank(resource.getType())) {
+                        skillInfo.append(" (type: ").append(resource.getType()).append(")");
+                    }
+                    skillInfo.append("\n");
+                });
+            }
         }
         
         messages.add(Msg.builder()
@@ -182,8 +219,10 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         // If no specific requirements, merge into a simpler structure
         if (!hasConversationHistory && !hasSelectedTools && !hasOptimizationGoal) {
             // Simplest case: user just wants to try the feature, check for obvious improvements
+            String simpleRequest = "请帮我看看这个文件（" + targetFileName + "）有没有明显可以优化的地方。"
+                + "请只优化这个文件的内容，其他文件保持不变。如果没有明显问题，保持原样即可。";
             messages.add(Msg.builder()
-                    .textContent("请帮我看看这个 Skill 有没有明显可以优化的地方。如果没有明显问题，保持原样即可。")
+                    .textContent(simpleRequest)
                     .role(MsgRole.USER)
                     .build());
         } else {
@@ -252,12 +291,37 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 }
                 optimizationRequest.append("【重要】我的优化目标是：").append(request.getOptimizationGoal()).append("\n");
                 optimizationRequest.append("请优先考虑并聚焦于这个优化目标，所有优化建议和改动都应该围绕这个目标展开。");
+                
+                // 如果优化目标中包含"资源"相关关键词，特别强调不要添加SKILL.md
+                String optimizationGoalLower = request.getOptimizationGoal().toLowerCase();
+                if (optimizationGoalLower.contains("资源") || optimizationGoalLower.contains("resource") 
+                    || optimizationGoalLower.contains("增加") || optimizationGoalLower.contains("添加")
+                    || optimizationGoalLower.contains("add") || optimizationGoalLower.contains("增加资源")
+                    || optimizationGoalLower.contains("添加资源")) {
+                    optimizationRequest.append("\n【绝对禁止】如果优化目标涉及添加或增加资源，请注意：");
+                    optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在 resource 字段中");
+                    optimizationRequest.append("\n- 绝对不能创建名为 SKILL.md 的资源文件");
+                    optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在任何资源类型（template、data、script 等）下");
+                    optimizationRequest.append("\n- SKILL.md 是特殊的元数据文件，由 Skill 的 name、description 和 instruction 字段自动生成，不需要也不应该在 resource 中定义");
+                    optimizationRequest.append("\n- 只能添加真正的资源文件（如 .json、.yaml、.txt 等），绝对不能添加 SKILL.md");
+                }
             }
             
             // Part 4: Final request with context-aware emphasis
             optimizationRequest.append("\n\n");
+            
+            // Add target file constraint (targetFileName is required)
+            String targetFileConstraint = "【重要】请只优化文件 " + targetFileName + " 的内容，其他文件保持不变。";
+            
+            // Always add SKILL.md constraint
+            optimizationRequest.append("\n【绝对禁止】无论优化目标是什么，都绝对不能：");
+            optimizationRequest.append("\n- 将 SKILL.md 放在 resource 字段中");
+            optimizationRequest.append("\n- 创建名为 SKILL.md 的资源文件");
+            optimizationRequest.append("\n- 将 SKILL.md 放在任何资源类型下");
+            
             if (hasOptimizationGoal) {
-                optimizationRequest.append("请基于以上要求优化这个 Skill，务必优先满足我的优化目标");
+                optimizationRequest.append(targetFileConstraint).append(" ");
+                optimizationRequest.append("请基于以上要求优化这个文件，务必优先满足我的优化目标");
                 if (hasConversationHistory && hasSelectedTools) {
                     optimizationRequest.append("，同时将从对话历史中分析出的标准流程融入到优化方案中，并确保工具整合服务于优化目标");
                 } else if (hasConversationHistory) {
@@ -267,13 +331,18 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 }
                 optimizationRequest.append("。");
             } else if (hasConversationHistory) {
-                optimizationRequest.append("请基于以上要求，特别是从对话历史中分析出的标准流程，优化这个 Skill");
+                optimizationRequest.append(targetFileConstraint).append(" ");
+                optimizationRequest.append("请基于以上要求，特别是从对话历史中分析出的标准流程，优化这个文件");
                 if (hasSelectedTools) {
                     optimizationRequest.append("，并整合上述工具");
                 }
                 optimizationRequest.append("。");
             } else if (hasSelectedTools) {
-                optimizationRequest.append("请基于以上要求，整合上述工具并优化这个 Skill。");
+                optimizationRequest.append(targetFileConstraint).append(" ");
+                optimizationRequest.append("请基于以上要求，整合上述工具并优化这个文件。");
+            } else {
+                optimizationRequest.append(targetFileConstraint).append(" ");
+                optimizationRequest.append("请基于以上要求优化这个文件。");
             }
             
             messages.add(Msg.builder()

@@ -423,10 +423,11 @@ public class SkillUtils {
      * Generate resource ID from resource type and name.
      * Format: {type}_{resourcename}
      * If resourcename ends with .xx, convert the last . to __
+     * Slashes in type are encoded as dots so that dataId (resource_{resourceId}.json) is valid in Nacos.
      *
-     * @param type resource type (can be null or empty)
+     * @param type resource type (can be null or empty; may contain / for multi-level paths)
      * @param resourceName resource name
-     * @return resource ID
+     * @return resource ID (safe for use in config dataId)
      */
     public static String generateResourceId(String type, String resourceName) {
         if (resourceName == null || resourceName.trim().isEmpty()) {
@@ -445,7 +446,9 @@ public class SkillUtils {
         }
         
         if (type != null && !type.trim().isEmpty()) {
-            return type + "_" + processedName;
+            // Encode / as . so dataId has no slash (Nacos config key compatibility)
+            String safeType = type.trim().replace("/", ".");
+            return safeType + "_" + processedName;
         } else {
             return processedName;
         }
