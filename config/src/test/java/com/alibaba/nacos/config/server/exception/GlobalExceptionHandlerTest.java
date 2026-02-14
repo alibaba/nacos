@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.config.server.controller.v2.HistoryControllerV2;
+import com.alibaba.nacos.config.server.controller.v3.HistoryControllerV3;
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -45,7 +46,7 @@ class GlobalExceptionHandlerTest {
     private WebApplicationContext context;
     
     @MockitoBean
-    private HistoryControllerV2 historyControllerV2;
+    private HistoryControllerV3 historyControllerV3;
     
     @BeforeAll
     static void beforeAll() {
@@ -59,22 +60,20 @@ class GlobalExceptionHandlerTest {
     
     @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
-        // 设置HistoryControllerV2的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
-        when(historyControllerV2.getConfigsByTenant("test")).thenThrow(
+        // 设置HistoryControllerV3的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
+        when(historyControllerV3.getConfigsByNamespace(any())).thenThrow(
                         new NacosRuntimeException(NacosException.INVALID_PARAM))
                 .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
                 .thenThrow(new NacosRuntimeException(503));
         
-        // 执行请求并验证响应码
-        ResultActions resultActions = mockMvc.perform(get("/v2/cs/history/configs").param("namespaceId", "test"));
+        // 执行请求并验证响应码 (v3 history path)
+        ResultActions resultActions = mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
         
-        // 执行请求并验证响应码
-        ResultActions resultActions1 = mockMvc.perform(get("/v2/cs/history/configs").param("namespaceId", "test"));
+        ResultActions resultActions1 = mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
         resultActions1.andExpect(MockMvcResultMatchers.status().is(NacosException.SERVER_ERROR));
         
-        // 执行请求并验证响应码
-        ResultActions resultActions2 = mockMvc.perform(get("/v2/cs/history/configs").param("namespaceId", "test"));
+        ResultActions resultActions2 = mockMvc.perform(get("/v3/admin/cs/history/configs").param("namespaceId", "test"));
         resultActions2.andExpect(MockMvcResultMatchers.status().is(503));
     }
     

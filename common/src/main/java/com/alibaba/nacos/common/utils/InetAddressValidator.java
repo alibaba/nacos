@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  *
  * @author Dynatrace LLC
  */
-@SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class InetAddressValidator {
     
     private InetAddressValidator() {

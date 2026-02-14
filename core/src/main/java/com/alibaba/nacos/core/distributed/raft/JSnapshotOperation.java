@@ -29,7 +29,6 @@ import com.google.protobuf.ZeroByteStringHelper;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 interface JSnapshotOperation {
     
     /**

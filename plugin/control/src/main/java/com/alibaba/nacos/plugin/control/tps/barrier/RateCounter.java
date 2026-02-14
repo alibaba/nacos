@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author zunfei.lzf
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RateCounter {
     
     /**

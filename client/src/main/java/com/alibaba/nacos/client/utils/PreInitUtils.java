@@ -34,7 +34,6 @@ public class PreInitUtils {
     /**
      * Async pre load cost component.
      */
-    @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
     public static void asyncPreLoadCostComponent() {
         Thread preLoadThread = new Thread(() -> {
             // Jackson util will init static {@code ObjectMapper}, which will cost hundreds milliseconds.

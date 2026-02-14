@@ -114,7 +114,6 @@ public class ConfigMigrateService {
      */
     NamespacePersistService namespacePersistService;
     
-    
     /**
      * The Old table version.
      */
@@ -511,7 +510,6 @@ public class ConfigMigrateService {
         
     }
     
-    @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckNamespaceMigrate() throws Exception {
         final long startTime = System.currentTimeMillis();
         int maxNamespaceMigrateRetryTimes = EnvUtil.getProperty("nacos.namespace.migrate.retry.times", Integer.class,
@@ -1063,7 +1061,6 @@ public class ConfigMigrateService {
         return configAdvanceInfo;
     }
     
-    @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckMigrate() throws Exception {
         
         int migrateMulti = EnvUtil.getProperty("nacos.gray.migrate.executor.multi", Integer.class, Integer.valueOf(4));

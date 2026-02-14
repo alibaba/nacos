@@ -46,7 +46,7 @@ import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInje
  *
  * @author lixiaoshuang
  */
-@SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedOtherPersistServiceImpl")
 public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistService {

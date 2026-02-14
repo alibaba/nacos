@@ -23,7 +23,6 @@ import java.util.concurrent.Executor;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractSharedListener implements Listener {
     
     private volatile String dataId;

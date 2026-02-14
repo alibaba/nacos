@@ -66,7 +66,7 @@ import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FL
  *
  * @author rong
  */
-@SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedConfigInfoGrayPersistServiceImpl")
 public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayPersistService {

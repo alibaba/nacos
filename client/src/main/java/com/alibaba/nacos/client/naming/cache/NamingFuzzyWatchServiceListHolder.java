@@ -105,7 +105,6 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber implement
     /**
      * start.
      */
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void start() {
         
         executorService = Executors.newSingleThreadScheduledExecutor(
