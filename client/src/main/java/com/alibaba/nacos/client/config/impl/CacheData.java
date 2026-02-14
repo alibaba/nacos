@@ -67,7 +67,7 @@ public class CacheData {
     static long initNotifyWarnTimeout() {
         String notifyTimeouts = System.getProperty("nacos.listener.notify.warn.timeout");
         if (StringUtils.isNotBlank(notifyTimeouts) && NumberUtils.isDigits(notifyTimeouts)) {
-            notifyWarnTimeout = Long.valueOf(notifyTimeouts);
+            notifyWarnTimeout = Long.parseLong(notifyTimeouts);
             LOGGER.info("config listener notify warn timeout millis is set to {}", notifyWarnTimeout);
         } else {
             LOGGER.info("config listener notify warn timeout millis use default {} millis ",
