@@ -28,7 +28,7 @@ public class TrustedOracleFunctionEnumTest {
 
     @Test
     void testGetFunctionByName() {
-        Assertions.assertEquals("SYSDATE()", TrustedOracleFunctionEnum.getFunctionByName("NOW()"));
+        Assertions.assertEquals("SYSDATE", TrustedOracleFunctionEnum.getFunctionByName("NOW()"));
     }
 
     @Test()
