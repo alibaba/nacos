@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.constants;
+package com.alibaba.nacos.plugin.datasource.impl.oracle;
+
+import com.alibaba.nacos.plugin.datasource.impl.enums.oracle.TrustedOracleFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**
- * The data source name.
+ * The abstract oracle mapper contains CRUD methods.
  *
- * @author hyx
+ * @author liam.fu
  **/
+public abstract class AbstractMapperByOracle extends AbstractMapper {
 
-public class DataSourceConstant {
-    public static final String MYSQL = "mysql";
-    
-    public static final String DERBY = "derby";
-
-    public static final String ORACLE = "oracle";
+    @Override
+    public String getFunction(String functionName) {
+        return TrustedOracleFunctionEnum.getFunctionByName(functionName);
+    }
 }
