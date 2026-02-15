@@ -78,7 +78,7 @@ public interface ConfigInfoMapper extends Mapper {
      * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=? LIMIT startRow, pageSize
      *
      * @param context The context of startRow, pageSize
-     * @return The sql of querying configration information based on group.
+     * @return The sql of querying configuration information based on group.
      */
     MapperResult findConfigInfoByAppFetchRows(MapperContext context);
     
