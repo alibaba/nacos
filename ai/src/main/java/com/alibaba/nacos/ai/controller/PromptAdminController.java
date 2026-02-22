@@ -19,14 +19,18 @@ package com.alibaba.nacos.ai.controller;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
-import com.alibaba.nacos.ai.service.prompt.PromptOperationService;
+import com.alibaba.nacos.ai.service.prompt.PromptAdminOperationService;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -42,8 +46,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Prompt admin controller.
@@ -58,9 +64,9 @@ import org.springframework.web.bind.annotation.RestController;
 @ExtractorManager.Extractor(httpExtractor = PromptHttpParamExtractor.class)
 public class PromptAdminController {
     
-    private final PromptOperationService promptOperationService;
+    private final PromptAdminOperationService promptOperationService;
     
-    public PromptAdminController(PromptOperationService promptOperationService) {
+    public PromptAdminController(PromptAdminOperationService promptOperationService) {
         this.promptOperationService = promptOperationService;
     }
     
@@ -78,14 +84,14 @@ public class PromptAdminController {
         form.validate();
         String srcUser = request.getRemoteUser();
         String srcIp = request.getRemoteAddr();
-        boolean success = promptOperationService.publishPrompt(
+        boolean success = promptOperationService.publishPromptVersion(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getVersion(),
                 form.getTemplate(),
                 form.getCommitMsg(),
                 form.getDescription(),
-                form.getPromptTags(),
+                parseBizTags(form.getBizTags()),
                 srcUser,
                 srcIp
         );
@@ -93,17 +99,13 @@ public class PromptAdminController {
     }
     
     /**
-     * Get prompt detail.
-     *
-     * @param form the prompt form
-     * @return result of the get operation
-     * @throws NacosException if the prompt get fails
+     * Get prompt metadata.
      */
-    @GetMapping
+    @GetMapping("/metadata")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<PromptDetail> getPrompt(PromptForm form) throws NacosException {
+    public Result<PromptMetaInfo> getPromptMetadata(PromptForm form) throws NacosException {
         form.validate();
-        PromptDetail detail = promptOperationService.getPromptDetail(form.getNamespaceId(), form.getPromptKey());
+        PromptMetaInfo detail = promptOperationService.getPromptMeta(form.getNamespaceId(), form.getPromptKey());
         return Result.success(detail);
     }
     
@@ -139,12 +141,13 @@ public class PromptAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<PromptBasicInfo>> listPrompts(PromptListForm form) throws NacosException {
+    public Result<Page<PromptMetaSummary>> listPrompts(PromptListForm form) throws NacosException {
         form.validate();
-        Page<PromptBasicInfo> result = promptOperationService.listPrompts(
+        Page<PromptMetaSummary> result = promptOperationService.listPrompts(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getSearch(),
+                form.getBizTags(),
                 form.getPageNo(),
                 form.getPageSize()
         );
@@ -152,17 +155,13 @@ public class PromptAdminController {
     }
     
     /**
-     * List prompt history versions.
-     *
-     * @param form the prompt history form
-     * @return result of the history list operation
-     * @throws NacosException if the history list fails
+     * List prompt versions.
      */
-    @GetMapping("/history")
+    @GetMapping("/versions")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<PromptHistoryItem>> listPromptHistory(PromptHistoryForm form) throws NacosException {
+    public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form) throws NacosException {
         form.validate();
-        Page<PromptHistoryItem> result = promptOperationService.listPromptHistory(
+        Page<PromptVersionSummary> result = promptOperationService.listPromptVersions(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getPageNo(),
@@ -172,24 +171,58 @@ public class PromptAdminController {
     }
     
     /**
-     * Get prompt history detail by history ID.
-     *
-     * @param form      the prompt form
-     * @param historyId history record ID
-     * @return result of the history detail operation
-     * @throws NacosException if the history detail fails
+     * Get prompt detail by specified version, null for latest.
      */
-    @GetMapping("/history/detail")
+    @GetMapping("/detail")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<PromptDetail> getPromptHistoryDetail(PromptForm form, @RequestParam("historyId") Long historyId)
-            throws NacosException {
+    public Result<PromptVersionInfo> queryPromptDetail(PromptQueryForm form) throws NacosException {
         form.validate();
-        PromptDetail detail = promptOperationService.getPromptHistoryDetail(
+        PromptVersionInfo detail = promptOperationService.queryPromptDetail(
                 form.getNamespaceId(),
                 form.getPromptKey(),
-                historyId
+                form.getVersion(),
+                form.getLabel()
         );
         return Result.success(detail);
+    }
+    
+    /**
+     * Bind label to a specified prompt version.
+     */
+    @PutMapping("/label")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> bindLabel(PromptLabelBindForm form, HttpServletRequest request) throws NacosException {
+        form.validate();
+        String srcUser = request.getRemoteUser();
+        String srcIp = request.getRemoteAddr();
+        boolean success = promptOperationService.bindLabel(
+                form.getNamespaceId(),
+                form.getPromptKey(),
+                form.getLabel(),
+                form.getVersion(),
+                srcUser,
+                srcIp
+        );
+        return Result.success(success);
+    }
+    
+    /**
+     * Unbind label from prompt.
+     */
+    @DeleteMapping("/label")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> unbindLabel(PromptLabelForm form, HttpServletRequest request) throws NacosException {
+        form.validate();
+        String srcUser = request.getRemoteUser();
+        String srcIp = request.getRemoteAddr();
+        boolean success = promptOperationService.unbindLabel(
+                form.getNamespaceId(),
+                form.getPromptKey(),
+                form.getLabel(),
+                srcUser,
+                srcIp
+        );
+        return Result.success(success);
     }
     
     /**
@@ -211,10 +244,27 @@ public class PromptAdminController {
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getDescription(),
-                form.getPromptTags(),
+                parseBizTags(form.getBizTags()),
                 srcUser,
                 srcIp
         );
         return Result.success(success);
+    }
+    
+    private List<String> parseBizTags(String bizTags) {
+        if (bizTags == null) {
+            return null;
+        }
+        if (bizTags.trim().isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        String[] split = bizTags.split(",");
+        List<String> result = new ArrayList<>(split.length);
+        for (String each : split) {
+            if (each != null && !each.trim().isEmpty()) {
+                result.add(each.trim());
+            }
+        }
+        return result;
     }
 }

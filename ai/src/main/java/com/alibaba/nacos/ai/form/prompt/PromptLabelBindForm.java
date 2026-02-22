@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,53 +18,46 @@ package com.alibaba.nacos.ai.form.prompt;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
-
-import java.io.Serial;
 
 /**
- * Prompt form base class.
+ * Prompt label bind form.
  *
  * @author nacos
  */
-public class PromptForm implements NacosForm {
+public class PromptLabelBindForm extends PromptForm {
     
-    @Serial
-    private static final long serialVersionUID = 1L;
+    private String label;
     
-    private String namespaceId;
-    
-    private String promptKey;
+    private String version;
     
     @Override
     public void validate() throws NacosApiException {
-        fillDefaultNamespaceId();
-        if (StringUtils.isEmpty(promptKey)) {
+        super.validate();
+        if (StringUtils.isBlank(label)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'promptKey' type String is not present");
+                    "Required parameter 'label' type String is not present");
+        }
+        if (StringUtils.isBlank(version)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'version' type String is not present");
         }
     }
     
-    protected void fillDefaultNamespaceId() {
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+    public String getLabel() {
+        return label;
     }
     
-    public String getNamespaceId() {
-        return namespaceId;
+    public void setLabel(String label) {
+        this.label = label;
     }
     
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
+    public String getVersion() {
+        return version;
     }
     
-    public String getPromptKey() {
-        return promptKey;
-    }
-    
-    public void setPromptKey(String promptKey) {
-        this.promptKey = promptKey;
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

@@ -67,11 +67,13 @@ public class Constants {
         
         public static final String AI_PROMPT_LIST_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/list";
         
-        public static final String AI_PROMPT_HISTORY_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/history";
-        
-        public static final String AI_PROMPT_HISTORY_DETAIL_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/history/detail";
+        public static final String AI_PROMPT_VERSIONS_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/versions";
         
         public static final String AI_PROMPT_METADATA_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/metadata";
+        
+        public static final String AI_PROMPT_DETAIL_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/detail";
+        
+        public static final String AI_PROMPT_LABEL_ADMIN_PATH = AI_PROMPT_ADMIN_PATH + "/label";
 
         public static final String CORE_PLUGIN_ADMIN_PATH = "/v3/admin/core/plugin";
         

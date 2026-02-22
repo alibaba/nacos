@@ -30,10 +30,13 @@ public class PromptChangedEvent extends Event {
     
     private final String promptKey;
     
+    private final String cacheKey;
+    
     private final Prompt prompt;
     
-    public PromptChangedEvent(String promptKey, Prompt prompt) {
+    public PromptChangedEvent(String promptKey, String cacheKey, Prompt prompt) {
         this.promptKey = promptKey;
+        this.cacheKey = cacheKey;
         this.prompt = prompt;
     }
     
@@ -43,5 +46,9 @@ public class PromptChangedEvent extends Event {
     
     public Prompt getPrompt() {
         return prompt;
+    }
+    
+    public String getCacheKey() {
+        return cacheKey;
     }
 }

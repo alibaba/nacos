@@ -18,12 +18,16 @@ package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -52,7 +56,25 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
-    public PromptDetail getPrompt(PromptForm form) throws NacosException {
+    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                PROMPT_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                PROMPT_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                PROMPT_NOT_ENABLED_MESSAGE);
+    }
+    
+    @Override
+    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 PROMPT_NOT_ENABLED_MESSAGE);
     }
@@ -64,19 +86,13 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
-    public Page<PromptBasicInfo> listPrompts(PromptListForm form) throws NacosException {
+    public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 PROMPT_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public Page<PromptHistoryItem> listPromptHistory(PromptHistoryForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
-    }
-    
-    @Override
-    public PromptDetail getPromptHistoryDetail(PromptForm form, Long historyId) throws NacosException {
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 PROMPT_NOT_ENABLED_MESSAGE);
     }

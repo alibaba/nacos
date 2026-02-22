@@ -18,13 +18,17 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
-import com.alibaba.nacos.ai.service.prompt.PromptOperationService;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
+import com.alibaba.nacos.ai.service.prompt.PromptAdminOperationService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
@@ -33,6 +37,9 @@ import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Prompt inner handler implementation.
@@ -45,30 +52,51 @@ import org.springframework.stereotype.Component;
 @Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class PromptInnerHandler implements PromptHandler {
     
-    private final PromptOperationService promptOperationService;
+    private final PromptAdminOperationService promptOperationService;
     
-    public PromptInnerHandler(PromptOperationService promptOperationService) {
+    public PromptInnerHandler(PromptAdminOperationService promptOperationService) {
         this.promptOperationService = promptOperationService;
     }
     
     @Override
     public boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException {
-        return promptOperationService.publishPrompt(
+        return promptOperationService.publishPromptVersion(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getVersion(),
                 form.getTemplate(),
                 form.getCommitMsg(),
                 form.getDescription(),
-                form.getPromptTags(),
+                parseBizTags(form.getBizTags()),
                 srcUser,
                 srcIp
         );
     }
     
     @Override
-    public PromptDetail getPrompt(PromptForm form) throws NacosException {
-        return promptOperationService.getPromptDetail(form.getNamespaceId(), form.getPromptKey());
+    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
+        return promptOperationService.getPromptMeta(form.getNamespaceId(), form.getPromptKey());
+    }
+    
+    @Override
+    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
+        return promptOperationService.queryPromptDetail(
+                form.getNamespaceId(), form.getPromptKey(), form.getVersion(), form.getLabel()
+        );
+    }
+    
+    @Override
+    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
+        return promptOperationService.bindLabel(
+                form.getNamespaceId(), form.getPromptKey(), form.getLabel(), form.getVersion(), srcUser, srcIp
+        );
+    }
+    
+    @Override
+    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
+        return promptOperationService.unbindLabel(
+                form.getNamespaceId(), form.getPromptKey(), form.getLabel(), srcUser, srcIp
+        );
     }
     
     @Override
@@ -77,29 +105,25 @@ public class PromptInnerHandler implements PromptHandler {
     }
     
     @Override
-    public Page<PromptBasicInfo> listPrompts(PromptListForm form) throws NacosException {
+    public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
         return promptOperationService.listPrompts(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getSearch(),
+                form.getBizTags(),
                 form.getPageNo(),
                 form.getPageSize()
         );
     }
     
     @Override
-    public Page<PromptHistoryItem> listPromptHistory(PromptHistoryForm form) throws NacosException {
-        return promptOperationService.listPromptHistory(
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
+        return promptOperationService.listPromptVersions(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getPageNo(),
                 form.getPageSize()
         );
-    }
-    
-    @Override
-    public PromptDetail getPromptHistoryDetail(PromptForm form, Long historyId) throws NacosException {
-        return promptOperationService.getPromptHistoryDetail(form.getNamespaceId(), form.getPromptKey(), historyId);
     }
     
     @Override
@@ -108,9 +132,26 @@ public class PromptInnerHandler implements PromptHandler {
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getDescription(),
-                form.getPromptTags(),
+                parseBizTags(form.getBizTags()),
                 srcUser,
                 srcIp
         );
+    }
+    
+    private List<String> parseBizTags(String bizTags) {
+        if (bizTags == null) {
+            return null;
+        }
+        if (bizTags.trim().isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        String[] split = bizTags.split(",");
+        List<String> result = new ArrayList<>(split.length);
+        for (String each : split) {
+            if (each != null && !each.trim().isEmpty()) {
+                result.add(each.trim());
+            }
+        }
+        return result;
     }
 }

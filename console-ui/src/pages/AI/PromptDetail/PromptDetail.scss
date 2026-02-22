@@ -32,13 +32,14 @@
         line-height: 32px;
       }
 
-      .version-select {
-        min-width: 240px;
-        
-        .next-select-inner {
-          height: 32px;
-          line-height: 32px;
-        }
+      .current-version-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 12px;
+        color: #1677ff;
+        background: #e8f3ff;
       }
     }
   }
@@ -335,26 +336,50 @@
   }
 }
 
-// 下拉框弹出层样式（需要放在 .prompt-detail 外面，因为弹出层挂载在 body 下）
-.version-select-popup {
-  min-width: 360px !important;
+.version-panel-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
 
-  .next-menu-item {
-    padding: 10px 12px !important;
-    line-height: normal !important;
-    height: auto !important;
-    white-space: normal !important;
-    
-    .next-menu-item-inner {
-      height: auto !important;
-      line-height: normal !important;
-      white-space: normal !important;
-      overflow: visible !important;
-    }
-    
-    // 隐藏原有勾号
-    .next-menu-icon-selected {
-      display: none !important;
-    }
+.version-panel {
+  width: 56%;
+  max-width: 920px;
+  min-width: 680px;
+  height: 100%;
+  background: #fff;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+
+  .version-panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .version-panel-title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .version-panel-tab {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1677ff;
+    border-bottom: 2px solid #1677ff;
+    width: fit-content;
+  }
+
+  .version-panel-body {
+    flex: 1;
+    overflow: auto;
+    padding: 16px 20px 20px;
   }
 }

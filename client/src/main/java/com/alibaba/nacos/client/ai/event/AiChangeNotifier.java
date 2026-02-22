@@ -101,12 +101,12 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     private void handlePromptChangedEvent(PromptChangedEvent event) {
-        String promptKey = CacheKeyUtils.buildPromptKey(event.getPromptKey());
-        if (!isSubscribed(promptKey, promptListenerInvokers)) {
+        String promptCacheKey = event.getCacheKey();
+        if (!isSubscribed(promptCacheKey, promptListenerInvokers)) {
             return;
         }
         NacosPromptEvent notifiedEvent = new NacosPromptEvent(event.getPromptKey(), event.getPrompt());
-        for (PromptListenerInvoker each : promptListenerInvokers.get(promptKey)) {
+        for (PromptListenerInvoker each : promptListenerInvokers.get(promptCacheKey)) {
             each.invoke(notifiedEvent);
         }
     }
@@ -189,11 +189,11 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param promptKey       prompt key
      * @param listenerInvoker listener invoker
      */
-    public void registerListener(String promptKey, PromptListenerInvoker listenerInvoker) {
+    public void registerListener(String promptKey, String version, String label, PromptListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
-        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        String key = CacheKeyUtils.buildPromptKey(promptKey, version, label);
         promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
             if (null == promptListenerInvokers) {
                 promptListenerInvokers = new ConcurrentHashSet<>();
@@ -271,11 +271,11 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param promptKey       prompt key
      * @param listenerInvoker listener invoker
      */
-    public void deregisterListener(String promptKey, PromptListenerInvoker listenerInvoker) {
+    public void deregisterListener(String promptKey, String version, String label, PromptListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
-        String key = CacheKeyUtils.buildPromptKey(promptKey);
+        String key = CacheKeyUtils.buildPromptKey(promptKey, version, label);
         promptListenerInvokers.compute(key, (k, promptListenerInvokers) -> {
             if (null == promptListenerInvokers) {
                 return null;
@@ -326,12 +326,12 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param promptKey prompt key
      * @return is prompt subscribed
      */
-    public boolean isPromptSubscribed(String promptKey) {
-        String key = CacheKeyUtils.buildPromptKey(promptKey);
+    public boolean isPromptSubscribed(String promptKey, String version, String label) {
+        String key = CacheKeyUtils.buildPromptKey(promptKey, version, label);
         return isSubscribed(key, promptListenerInvokers);
     }
     
-    private <T extends AbstractAiListenerInvoker> boolean isSubscribed(String key,
+    private <T extends AbstractAiListenerInvoker<?, ?>> boolean isSubscribed(String key,
             Map<String, Set<T>> listenerInvokers) {
         return CollectionUtils.isNotEmpty(listenerInvokers.get(key));
     }

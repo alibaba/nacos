@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,42 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.prompt;
+package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.NacosForm;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
-
-import java.io.Serial;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.request.Request;
 
 /**
- * Prompt form base class.
+ * Nacos AI module prompt request.
  *
  * @author nacos
  */
-public class PromptForm implements NacosForm {
-    
-    @Serial
-    private static final long serialVersionUID = 1L;
+public abstract class AbstractPromptRequest extends Request {
     
     private String namespaceId;
     
     private String promptKey;
     
     @Override
-    public void validate() throws NacosApiException {
-        fillDefaultNamespaceId();
-        if (StringUtils.isEmpty(promptKey)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'promptKey' type String is not present");
-        }
-    }
-    
-    protected void fillDefaultNamespaceId() {
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+    public String getModule() {
+        return Constants.AI.AI_MODULE;
     }
     
     public String getNamespaceId() {

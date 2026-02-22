@@ -16,22 +16,27 @@
 
 package com.alibaba.nacos.client.ai.cache;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
+import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Nacos AI module prompt cache holder.
@@ -42,196 +47,165 @@ public class NacosPromptCacheHolder implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(NacosPromptCacheHolder.class);
     
-    /**
-     * Fixed group for all prompt configurations.
-     */
-    private static final String PROMPT_GROUP = "nacos-ai-prompt";
-    
-    /**
-     * JSON field name for version.
-     */
-    private static final String FIELD_VERSION = "version";
-    
-    /**
-     * JSON field name for template.
-     */
-    private static final String FIELD_TEMPLATE = "template";
-    
-    /**
-     * JSON field name for commit message.
-     */
-    private static final String FIELD_COMMIT_MSG = "commitMsg";
-    
-    private final ConfigService configService;
-    
-    private final String namespaceId;
+    private final AiGrpcClient aiGrpcClient;
     
     private final Map<String, Prompt> promptCache;
     
-    private final Map<String, Listener> listenerMap;
+    private final ScheduledExecutorService updaterExecutor;
     
-    public NacosPromptCacheHolder(ConfigService configService, String namespaceId) {
-        this.configService = configService;
-        this.namespaceId = namespaceId;
+    private final long updateIntervalMillis;
+    
+    private final Map<String, PromptUpdater> updateTaskMap;
+    
+    public NacosPromptCacheHolder(AiGrpcClient aiGrpcClient, NacosClientProperties properties) {
+        this.aiGrpcClient = aiGrpcClient;
         this.promptCache = new ConcurrentHashMap<>(4);
-        this.listenerMap = new ConcurrentHashMap<>(4);
+        this.updateTaskMap = new ConcurrentHashMap<>(4);
+        this.updaterExecutor = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.ai.prompt.updater"));
+        this.updateIntervalMillis = properties.getLong(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL,
+                AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
+    }
+    
+    private Prompt queryPrompt(String promptKey, String version, String label) throws NacosException {
+        return queryPrompt(promptKey, version, label, null);
+    }
+    
+    private Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException {
+        return aiGrpcClient.queryPrompt(promptKey, version, label, md5);
     }
     
     /**
-     * Get prompt from server.
-     *
-     * @param promptKey prompt key
-     * @return Prompt object, null if not found
-     * @throws NacosException if query fails
-     */
-    public Prompt getPrompt(String promptKey) throws NacosException {
-        String dataId = buildDataId(promptKey);
-        String content = configService.getConfig(dataId, PROMPT_GROUP, 5000);
-        if (StringUtils.isBlank(content)) {
-            return null;
-        }
-        return parsePromptContent(promptKey, content);
-    }
-    
-    /**
-     * Subscribe prompt and start listening for configuration changes.
+     * Subscribe prompt and start polling for prompt changes.
      *
      * @param promptKey prompt key
      * @return current Prompt object, null if not found
      * @throws NacosException if error occurs
      */
-    public Prompt subscribePrompt(String promptKey) throws NacosException {
+    public Prompt subscribePrompt(String promptKey, String version, String label) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Required parameter `promptKey` not present");
         }
+        String cacheKey = CacheKeyUtils.buildPromptKey(promptKey, version, label);
         
-        // Check if already subscribed
-        if (listenerMap.containsKey(promptKey)) {
-            return promptCache.get(promptKey);
-        }
-        
-        // Load prompt initially
-        Prompt prompt = getPrompt(promptKey);
-        
-        // Create listener
-        String dataId = buildDataId(promptKey);
-        Listener listener = new PromptConfigListener(promptKey);
-        
+        Prompt prompt = null;
         try {
-            configService.addListener(dataId, PROMPT_GROUP, listener);
-            listenerMap.put(promptKey, listener);
+            prompt = queryPrompt(promptKey, version, label);
+            processPrompt(promptKey, cacheKey, prompt);
         } catch (NacosException e) {
-            LOGGER.warn("Failed to add listener for prompt: promptKey={}, error={}", promptKey, e.getMessage());
+            if (e.getErrCode() != NacosException.NOT_FOUND) {
+                throw e;
+            }
+            processPrompt(promptKey, cacheKey, null);
         }
-        
-        // Cache prompt
-        if (prompt != null) {
-            promptCache.put(promptKey, prompt);
-        }
-        
-        LOGGER.info("Subscribed prompt: {}", promptKey);
+        addPromptUpdateTask(promptKey, version, label);
+        LOGGER.info("Subscribed prompt: {}, version: {}, label: {}", promptKey, version, label);
         return prompt;
     }
     
     /**
-     * Unsubscribe prompt and remove listener.
+     * Unsubscribe prompt and remove update task.
      *
      * @param promptKey prompt key
      */
-    public void unsubscribePrompt(String promptKey) {
+    public void unsubscribePrompt(String promptKey, String version, String label) {
         if (StringUtils.isBlank(promptKey)) {
             return;
         }
+        String cacheKey = CacheKeyUtils.buildPromptKey(promptKey, version, label);
         
-        Listener listener = listenerMap.remove(promptKey);
-        if (listener != null) {
-            String dataId = buildDataId(promptKey);
-            configService.removeListener(dataId, PROMPT_GROUP, listener);
-        }
-        
-        promptCache.remove(promptKey);
-        LOGGER.info("Unsubscribed prompt: {}", promptKey);
+        removePromptUpdateTask(promptKey, version, label);
+        promptCache.remove(cacheKey);
+        LOGGER.info("Unsubscribed prompt: {}, version: {}, label: {}", promptKey, version, label);
     }
     
     @Override
     public void shutdown() throws NacosException {
-        // Remove all listeners
-        for (Map.Entry<String, Listener> entry : listenerMap.entrySet()) {
-            String dataId = buildDataId(entry.getKey());
-            configService.removeListener(dataId, PROMPT_GROUP, entry.getValue());
-        }
-        listenerMap.clear();
-        promptCache.clear();
+        this.updaterExecutor.shutdownNow();
     }
     
-    private String buildDataId(String promptKey) {
-        return promptKey + ".json";
+    private void addPromptUpdateTask(String promptKey, String version, String label) {
+        String key = CacheKeyUtils.buildPromptKey(promptKey, version, label);
+        this.updateTaskMap.computeIfAbsent(key, s -> {
+            PromptUpdater task = new PromptUpdater(promptKey, version, label);
+            updaterExecutor.schedule(task, updateIntervalMillis, TimeUnit.MILLISECONDS);
+            return task;
+        });
     }
     
-    /**
-     * Parse prompt content from JSON string.
-     *
-     * @param promptKey prompt key
-     * @param content   JSON content
-     * @return Prompt object, null if parse fails
-     */
-    public Prompt parsePromptContent(String promptKey, String content) {
-        try {
-            JsonNode node = JacksonUtils.toObj(content, JsonNode.class);
-            Prompt prompt = new Prompt();
-            prompt.setNamespaceId(namespaceId);
-            prompt.setPromptKey(promptKey);
-            if (node.has(FIELD_VERSION)) {
-                prompt.setVersion(node.get(FIELD_VERSION).asText());
-            }
-            if (node.has(FIELD_TEMPLATE)) {
-                prompt.setTemplate(node.get(FIELD_TEMPLATE).asText());
-            }
-            if (node.has(FIELD_COMMIT_MSG)) {
-                prompt.setCommitMsg(node.get(FIELD_COMMIT_MSG).asText());
-            }
-            return prompt;
-        } catch (Exception e) {
-            LOGGER.warn("Failed to parse prompt content: promptKey={}, error={}", promptKey, e.getMessage());
-            return null;
+    private void removePromptUpdateTask(String promptKey, String version, String label) {
+        String key = CacheKeyUtils.buildPromptKey(promptKey, version, label);
+        PromptUpdater task = this.updateTaskMap.remove(key);
+        if (task != null) {
+            task.cancel();
         }
     }
     
-    /**
-     * Prompt config listener.
-     */
-    private class PromptConfigListener implements Listener {
+    private void processPrompt(String promptKey, String cacheKey, Prompt newPrompt) {
+        Prompt oldPrompt = promptCache.get(cacheKey);
+        if (newPrompt == null) {
+            promptCache.remove(cacheKey);
+        } else {
+            promptCache.put(cacheKey, newPrompt);
+        }
+        if (isPromptChanged(oldPrompt, newPrompt)) {
+            NotifyCenter.publishEvent(new PromptChangedEvent(promptKey, cacheKey, newPrompt));
+        }
+    }
+    
+    private boolean isPromptChanged(Prompt oldPrompt, Prompt newPrompt) {
+        String oldJson = oldPrompt == null ? StringUtils.EMPTY : JacksonUtils.toJson(oldPrompt);
+        String newJson = newPrompt == null ? StringUtils.EMPTY : JacksonUtils.toJson(newPrompt);
+        return !StringUtils.equals(oldJson, newJson);
+    }
+    
+    private class PromptUpdater implements Runnable {
         
         private final String promptKey;
         
-        public PromptConfigListener(String promptKey) {
+        private final String version;
+        
+        private final String label;
+        
+        private final String cacheKey;
+        
+        private final AtomicBoolean cancel = new AtomicBoolean(false);
+        
+        PromptUpdater(String promptKey, String version, String label) {
             this.promptKey = promptKey;
+            this.version = version;
+            this.label = label;
+            this.cacheKey = CacheKeyUtils.buildPromptKey(promptKey, version, label);
+        }
+        
+        void cancel() {
+            cancel.set(true);
         }
         
         @Override
-        public Executor getExecutor() {
-            return null;
-        }
-        
-        @Override
-        public void receiveConfigInfo(String configInfo) {
-            LOGGER.info("Received prompt config change: promptKey={}", promptKey);
-            
-            Prompt prompt = null;
-            if (StringUtils.isNotBlank(configInfo)) {
-                prompt = parsePromptContent(promptKey, configInfo);
+        public void run() {
+            if (cancel.get()) {
+                return;
             }
-            
-            // Update cache
-            if (prompt != null) {
-                promptCache.put(promptKey, prompt);
-            } else {
-                promptCache.remove(promptKey);
+            try {
+                Prompt currentPrompt = promptCache.get(cacheKey);
+                String currentMd5 = currentPrompt == null ? null : currentPrompt.getMd5();
+                Prompt latestPrompt = queryPrompt(promptKey, version, label, currentMd5);
+                processPrompt(promptKey, cacheKey, latestPrompt);
+            } catch (NacosException e) {
+                if (e.getErrCode() == NacosException.NOT_FOUND) {
+                    processPrompt(promptKey, cacheKey, null);
+                } else if (e.getErrCode() == NacosException.NOT_MODIFIED) {
+                    // No content change, keep local cache and skip callback.
+                } else {
+                    LOGGER.warn("Prompt updater execute query failed: promptKey={}, err={}", promptKey, e.getErrMsg());
+                }
+            } finally {
+                if (!cancel.get()) {
+                    updaterExecutor.schedule(this, updateIntervalMillis, TimeUnit.MILLISECONDS);
+                }
             }
-            
-            // Publish change event
-            NotifyCenter.publishEvent(new PromptChangedEvent(promptKey, prompt));
         }
     }
 }

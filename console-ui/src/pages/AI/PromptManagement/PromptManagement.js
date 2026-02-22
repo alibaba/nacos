@@ -467,7 +467,7 @@ class PromptManagement extends React.Component {
               />
               <Table.Column
                 title={locale.version || 'Version'}
-                dataIndex="version"
+                dataIndex="latestVersion"
                 width={100}
                 cell={value =>
                   value ? (

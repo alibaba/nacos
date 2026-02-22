@@ -16,7 +16,20 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, ConfigProvider, Dialog, Icon, Input, Loading, Message, Select } from '@alifd/next';
+import {
+  Button,
+  Checkbox,
+  ConfigProvider,
+  Dialog,
+  Field,
+  Icon,
+  Input,
+  Loading,
+  Message,
+  Pagination,
+  Table,
+  Tag,
+} from '@alifd/next';
 import MonacoEditor from '../../../components/MonacoEditor/MonacoEditor';
 import PromptOptimizeDialog from '../PromptOptimizeDialog';
 import { getParams, request } from '@/globalLib';
@@ -33,6 +46,7 @@ class PromptDetail extends React.Component {
 
   constructor(props) {
     super(props);
+    this.field = new Field(this);
 
     this.state = {
       loading: true,
@@ -46,8 +60,20 @@ class PromptDetail extends React.Component {
       variables: [],
       // Version list (latest + history)
       versions: [],
+      labelsMap: {},
+      selectedLabel: null,
       selectedVersion: null,
       isLatestVersion: true,
+      versionPanelVisible: false,
+      versionPageNo: 1,
+      versionPageSize: 10,
+      versionTotal: 0,
+      labelEditorVisible: false,
+      labelEditorVersion: '',
+      labelEditorSelected: [],
+      labelEditorAll: [],
+      labelEditorNewLabel: '',
+      labelEditorSaving: false,
       // Description editing
       editingDescription: false,
       descriptionValue: '',
@@ -73,38 +99,65 @@ class PromptDetail extends React.Component {
   }
 
   // Load prompt detail
-  loadPromptDetail = (version = null) => {
+  loadPromptDetail = (version = null, label = null) => {
     const { promptKey, namespaceId } = this.state;
     const { locale = {} } = this.props;
 
     this.setState({ loading: true });
-
-    const params = {
-      promptKey,
-      namespaceId,
-    };
-
     request({
-      url: 'v3/console/ai/prompt',
+      url: 'v3/console/ai/prompt/metadata',
       method: 'get',
-      data: params,
-      success: result => {
-        if (result && result.code === 0 && result.data) {
-          const data = result.data;
-          const template = data.template || '';
-          this.setState({
-            loading: false,
-            promptData: data,
-            template: template,
-            variables: this.extractVariables(template),
-            descriptionValue: data.description || '',
-            selectedVersion: data.version,
-            isLatestVersion: true,
-          });
-        } else {
+      data: { promptKey, namespaceId },
+      success: metaResult => {
+        if (!(metaResult && metaResult.code === 0 && metaResult.data)) {
           this.setState({ loading: false });
-          Message.error(result?.message || locale.getPromptFailed || '获取 Prompt 详情失败');
+          Message.error(metaResult?.message || locale.getPromptFailed || '获取 Prompt 详情失败');
+          return;
         }
+        const metaData = metaResult.data;
+        const detailParams = { promptKey, namespaceId };
+        if (label) {
+          detailParams.label = label;
+        } else if (version) {
+          detailParams.version = version;
+        }
+        request({
+          url: 'v3/console/ai/prompt/detail',
+          method: 'get',
+          data: detailParams,
+          success: detailResult => {
+            if (detailResult && detailResult.code === 0 && detailResult.data) {
+              const versionData = detailResult.data;
+              const template = versionData.template || '';
+              const isLatestVersion =
+                !versionData.version || metaData.latestVersion === versionData.version;
+              this.setState({
+                loading: false,
+                promptData: {
+                  ...versionData,
+                  description: metaData.description || '',
+                  promptTags: (metaData.bizTags || []).join(','),
+                },
+                template: template,
+                variables: this.extractVariables(template),
+                descriptionValue: metaData.description || '',
+                labelsMap: metaData.labels || {},
+                selectedLabel: label || null,
+                selectedVersion: versionData.version,
+                isLatestVersion,
+              });
+            } else {
+              this.setState({ loading: false });
+              Message.error(
+                detailResult?.message || locale.getPromptFailed || '获取 Prompt 详情失败'
+              );
+            }
+          },
+          error: () => {
+            this.setState({ loading: false });
+            Message.error(locale.getPromptFailed || '获取 Prompt 详情失败');
+          },
+        });
       },
       error: () => {
         this.setState({ loading: false });
@@ -114,19 +167,22 @@ class PromptDetail extends React.Component {
   };
 
   // Load history versions
-  loadHistoryVersions = () => {
+  loadHistoryVersions = (
+    pageNo = this.state.versionPageNo,
+    pageSize = this.state.versionPageSize
+  ) => {
     const { promptKey, namespaceId } = this.state;
 
-    this.setState({ loadingHistory: true });
+    this.setState({ loadingHistory: true, versionPageNo: pageNo, versionPageSize: pageSize });
 
     request({
-      url: 'v3/console/ai/prompt/history',
+      url: 'v3/console/ai/prompt/versions',
       method: 'get',
       data: {
         promptKey,
         namespaceId,
-        pageNo: 1,
-        pageSize: 20,
+        pageNo,
+        pageSize,
       },
       success: result => {
         if (result && result.code === 0 && result.data) {
@@ -134,6 +190,7 @@ class PromptDetail extends React.Component {
           this.setState({
             loadingHistory: false,
             versions: historyItems,
+            versionTotal: result.data.totalCount || 0,
           });
         } else {
           this.setState({ loadingHistory: false });
@@ -141,50 +198,6 @@ class PromptDetail extends React.Component {
       },
       error: () => {
         this.setState({ loadingHistory: false });
-      },
-    });
-  };
-
-  // Load history version detail
-  loadHistoryDetail = historyId => {
-    const { promptKey, namespaceId, promptData } = this.state;
-    const { locale = {} } = this.props;
-
-    this.setState({ loading: true });
-
-    request({
-      url: 'v3/console/ai/prompt/history/detail',
-      method: 'get',
-      data: {
-        promptKey,
-        namespaceId,
-        historyId,
-      },
-      success: result => {
-        if (result && result.code === 0 && result.data) {
-          const data = result.data;
-          const template = data.template || '';
-          this.setState({
-            loading: false,
-            template: template,
-            variables: this.extractVariables(template),
-            selectedVersion: data.version,
-            isLatestVersion: false,
-            // Update promptData with history version's commitMsg and time
-            promptData: {
-              ...promptData,
-              commitMsg: data.commitMsg || '',
-              updateTime: data.updateTime,
-            },
-          });
-        } else {
-          this.setState({ loading: false });
-          Message.error(result?.message || locale.getHistoryFailed || '获取历史版本失败');
-        }
-      },
-      error: () => {
-        this.setState({ loading: false });
-        Message.error(locale.getHistoryFailed || '获取历史版本失败');
       },
     });
   };
@@ -209,14 +222,24 @@ class PromptDetail extends React.Component {
     this.setState({ template: value, variables });
   };
 
-  // Handle version change
-  handleVersionChange = value => {
-    if (value === 'latest') {
-      this.loadPromptDetail();
-    } else {
-      // value is historyId
-      this.loadHistoryDetail(value);
-    }
+  handleOpenVersionPanel = () => {
+    this.setState(
+      {
+        versionPanelVisible: true,
+      },
+      () => this.loadHistoryVersions(1, this.state.versionPageSize)
+    );
+  };
+
+  handleCloseVersionPanel = () => {
+    this.setState({
+      versionPanelVisible: false,
+    });
+  };
+
+  getLabelsByVersion = version => {
+    const { labelsMap = {} } = this.state;
+    return Object.keys(labelsMap).filter(each => labelsMap[each] === version);
   };
 
   // Start editing description
@@ -328,6 +351,136 @@ class PromptDetail extends React.Component {
         Message.error(locale.deleteFailed || '删除失败');
       },
     });
+  };
+
+  openLabelEditor = version => {
+    const { labelsMap = {} } = this.state;
+    const allLabels = Object.keys(labelsMap);
+    const selected = allLabels.filter(each => labelsMap[each] === version);
+    this.setState({
+      labelEditorVisible: true,
+      labelEditorVersion: version || '',
+      labelEditorSelected: selected,
+      labelEditorAll: allLabels,
+      labelEditorNewLabel: '',
+    });
+  };
+
+  closeLabelEditor = () => {
+    this.setState({
+      labelEditorVisible: false,
+      labelEditorVersion: '',
+      labelEditorSelected: [],
+      labelEditorAll: [],
+      labelEditorNewLabel: '',
+      labelEditorSaving: false,
+    });
+  };
+
+  addNewLabelToEditor = () => {
+    const { locale = {} } = this.props;
+    const { labelEditorNewLabel, labelEditorAll, labelEditorSelected } = this.state;
+    const newLabel = (labelEditorNewLabel || '').trim();
+    if (!newLabel) {
+      Message.error(locale.labelRequired || '请输入 Label');
+      return;
+    }
+    if (!/^[A-Za-z0-9._-]+$/.test(newLabel)) {
+      Message.error(locale.labelInvalid || 'Label 仅支持字母、数字、.-_');
+      return;
+    }
+    if (labelEditorAll.includes(newLabel)) {
+      Message.error(locale.labelExists || 'Label 已存在');
+      return;
+    }
+    this.setState({
+      labelEditorAll: [...labelEditorAll, newLabel],
+      labelEditorSelected: [...labelEditorSelected, newLabel],
+      labelEditorNewLabel: '',
+    });
+  };
+
+  bindLabelRequest = (label, version) => {
+    const { promptKey, namespaceId } = this.state;
+    return new Promise((resolve, reject) => {
+      request({
+        method: 'PUT',
+        url: 'v3/console/ai/prompt/label',
+        data: {
+          namespaceId,
+          promptKey,
+          label,
+          version,
+        },
+        success: data => {
+          if (data && data.code === 0) {
+            resolve(true);
+          } else {
+            reject(new Error(data?.message || 'Label 绑定失败'));
+          }
+        },
+        error: () => reject(new Error('Label 绑定失败')),
+      });
+    });
+  };
+
+  unbindLabelRequest = label => {
+    const { promptKey, namespaceId } = this.state;
+    const { locale = {} } = this.props;
+    const params = new URLSearchParams();
+    params.append('namespaceId', namespaceId);
+    params.append('promptKey', promptKey);
+    params.append('label', label);
+    return new Promise((resolve, reject) => {
+      request({
+        method: 'DELETE',
+        url: `v3/console/ai/prompt/label?${params.toString()}`,
+        success: data => {
+          if (data && data.code === 0) {
+            resolve(true);
+          } else {
+            reject(new Error(data?.message || locale.unbindLabelFailed || 'Label 解绑失败'));
+          }
+        },
+        error: () => reject(new Error(locale.unbindLabelFailed || 'Label 解绑失败')),
+      });
+    });
+  };
+
+  handleSaveLabelEditor = () => {
+    const { locale = {} } = this.props;
+    const { labelsMap = {}, labelEditorVersion, labelEditorSelected, selectedVersion } = this.state;
+    if (!labelEditorVersion) {
+      Message.error(locale.versionRequired || '缺少版本信息');
+      return;
+    }
+    const allLabels = Object.keys(labelsMap);
+    const currentBound = allLabels.filter(each => labelsMap[each] === labelEditorVersion);
+    const selectedSet = new Set(labelEditorSelected);
+    const needUnbind = currentBound.filter(each => !selectedSet.has(each));
+    const needBind = labelEditorSelected.filter(each => labelsMap[each] !== labelEditorVersion);
+    this.setState({ labelEditorSaving: true });
+    Promise.all([
+      ...needUnbind.map(each => this.unbindLabelRequest(each)),
+      ...needBind.map(each => this.bindLabelRequest(each, labelEditorVersion)),
+    ])
+      .then(() => {
+        Message.success(locale.bindLabelSuccess || 'Label 更新成功');
+        this.closeLabelEditor();
+        this.loadPromptDetail(selectedVersion, null);
+        this.loadHistoryVersions(this.state.versionPageNo, this.state.versionPageSize);
+      })
+      .catch(err => {
+        Message.error(err?.message || locale.bindLabelFailed || 'Label 更新失败');
+      })
+      .finally(() => {
+        this.setState({ labelEditorSaving: false });
+      });
+  };
+
+  handleViewVersion = version => {
+    this.loadPromptDetail(version, null);
+    this.handleCloseVersionPanel();
   };
 
   // Go back to list
@@ -541,61 +694,6 @@ class PromptDetail extends React.Component {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   };
 
-  // Build version options for select
-  buildVersionOptions = () => {
-    const { promptData, versions } = this.state;
-    const { locale = {} } = this.props;
-    const options = [];
-
-    // Add latest version
-    if (promptData?.version) {
-      options.push({
-        label: promptData.version,
-        value: 'latest',
-        version: promptData.version,
-        commitMsg: promptData.commitMsg || '',
-        publishTime: promptData.updateTime || promptData.publishTime,
-        isLatest: true,
-      });
-    }
-
-    // Add history versions
-    versions.forEach(item => {
-      if (item.version && item.version !== promptData?.version) {
-        options.push({
-          label: item.version,
-          value: item.id,
-          version: item.version,
-          commitMsg: item.commitMsg || '',
-          publishTime: item.publishTime || item.lastModifiedTime,
-          isLatest: false,
-        });
-      }
-    });
-
-    return options;
-  };
-
-  // Render version option item
-  renderVersionOption = item => {
-    const { locale = {} } = this.props;
-    return (
-      <div className="version-option">
-        <div className="version-option-header">
-          <span className="version-number">{item.version}</span>
-          {item.isLatest && (
-            <span className="version-tag latest">{locale.latestVersion || '最新版本'}</span>
-          )}
-          {!item.isLatest && (
-            <span className="version-tag history">{locale.historyVersion || '历史版本'}</span>
-          )}
-        </div>
-        {item.commitMsg && <div className="version-commit">{item.commitMsg}</div>}
-        <div className="version-time">{this.formatTime(item.publishTime)}</div>
-      </div>
-    );
-  };
-
   render() {
     const { locale = {} } = this.props;
     const {
@@ -604,11 +702,21 @@ class PromptDetail extends React.Component {
       promptData,
       template,
       variables,
+      labelsMap,
       selectedVersion,
       isLatestVersion,
-      editingDescription,
-      descriptionValue,
-      savingDescription,
+      versionPanelVisible,
+      versionPageNo,
+      versionPageSize,
+      versionTotal,
+      versions,
+      loadingHistory,
+      labelEditorVisible,
+      labelEditorVersion,
+      labelEditorSelected,
+      labelEditorAll,
+      labelEditorNewLabel,
+      labelEditorSaving,
       optimizeDialogVisible,
       variableValues,
       userInput,
@@ -628,100 +736,29 @@ class PromptDetail extends React.Component {
       );
     }
 
-    const versionOptions = this.buildVersionOptions();
+    const labels = Object.keys(labelsMap || {});
 
     return (
       <div className="prompt-detail">
         <div className="page-header">
           <div className="header-left">
             <h1 className="prompt-title">{promptKey}</h1>
-            <Select
-              className="version-select"
-              popupClassName="version-select-popup"
-              style={{ minWidth: 240 }}
-              value={isLatestVersion ? 'latest' : selectedVersion}
-              onChange={this.handleVersionChange}
-              valueRender={() => (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{selectedVersion}</span>
-                  {isLatestVersion && (
-                    <>
-                      <Icon type="success" size="small" style={{ color: '#1DC11D' }} />
-                      <span style={{ color: '#1DC11D' }}>{locale.latestVersion || '最新版本'}</span>
-                    </>
-                  )}
-                  {!isLatestVersion && (
-                    <span style={{ color: '#888' }}>{locale.historyVersion || '历史版本'}</span>
-                  )}
-                </span>
-              )}
-            >
-              {versionOptions.map(item => {
-                const isSelected =
-                  (item.value === 'latest' && isLatestVersion) ||
-                  (item.value !== 'latest' && !isLatestVersion && item.version === selectedVersion);
-                return (
-                  <Select.Option key={item.value} value={item.value}>
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '4px 0' }}>
-                      <div style={{ flex: 1, lineHeight: '1.5' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            marginBottom: '6px',
-                          }}
-                        >
-                          <span style={{ fontWeight: 600, fontSize: '14px', color: '#333' }}>
-                            {item.version}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '12px',
-                              padding: '2px 8px',
-                              borderRadius: '3px',
-                              background: item.isLatest ? '#e6f7e6' : '#fff7e6',
-                              color: item.isLatest ? '#52c41a' : '#faad14',
-                              lineHeight: '1.4',
-                            }}
-                          >
-                            {item.isLatest
-                              ? locale.latestVersion || '最新版本'
-                              : locale.historyVersion || '历史版本'}
-                          </span>
-                        </div>
-                        {item.commitMsg && (
-                          <div
-                            style={{
-                              fontSize: '13px',
-                              color: '#555',
-                              marginBottom: '4px',
-                              lineHeight: '1.4',
-                            }}
-                          >
-                            {item.commitMsg}
-                          </div>
-                        )}
-                        <div style={{ fontSize: '12px', color: '#999', lineHeight: '1.4' }}>
-                          {this.formatTime(item.publishTime)}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <Icon
-                          type="select"
-                          size="small"
-                          style={{ color: '#1890ff', marginLeft: '12px' }}
-                        />
-                      )}
-                    </div>
-                  </Select.Option>
-                );
-              })}
-            </Select>
+            <span className="current-version-tag">
+              {`${selectedVersion || '--'} ${
+                isLatestVersion
+                  ? `(${locale.latestVersion || '最新版本'})`
+                  : `(${locale.historyVersion || '历史版本'})`
+              }`}
+            </span>
           </div>
-          <Button type="primary" onClick={this.handlePublishNewVersion}>
-            {locale.publishNewVersion || '发布新版本'}
-          </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button onClick={this.handleOpenVersionPanel}>
+              {locale.versionManagement || '版本管理'}
+            </Button>
+            <Button type="primary" onClick={this.handlePublishNewVersion}>
+              {locale.publishNewVersion || '发布新版本'}
+            </Button>
+          </div>
         </div>
 
         <div className="prompt-meta">
@@ -737,10 +774,30 @@ class PromptDetail extends React.Component {
               <span className="meta-value">{promptData.commitMsg}</span>
             </div>
           )}
-          {promptData?.updateTime && (
+          {promptData?.gmtModified && (
             <div className="meta-item">
               <span className="meta-label">{locale.publishTime || '发布时间'}:</span>
-              <span className="meta-value">{this.formatTime(promptData.updateTime)}</span>
+              <span className="meta-value">{this.formatTime(promptData.gmtModified)}</span>
+            </div>
+          )}
+          {labels.length > 0 && (
+            <div
+              className="meta-item"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
+            >
+              <span className="meta-label">{locale.label || 'Label'}:</span>
+              {labels.map(label => (
+                <Tag
+                  key={label}
+                  onClick={() => this.openLabelEditor(selectedVersion)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {label}
+                </Tag>
+              ))}
+              <a onClick={() => this.openLabelEditor(selectedVersion)}>
+                {locale.manageLabel || '管理Label'}
+              </a>
             </div>
           )}
         </div>
@@ -908,6 +965,127 @@ class PromptDetail extends React.Component {
           onApply={this.handleApplyOptimizedPrompt}
           locale={locale}
         />
+        {versionPanelVisible && (
+          <div className="version-panel-mask" onClick={this.handleCloseVersionPanel}>
+            <div className="version-panel" onClick={e => e.stopPropagation()}>
+              <div className="version-panel-header">
+                <div className="version-panel-title">{locale.versionManagement || '版本管理'}</div>
+                <Icon
+                  type="close"
+                  onClick={this.handleCloseVersionPanel}
+                  style={{ cursor: 'pointer' }}
+                />
+              </div>
+              <div className="version-panel-tab">{locale.versionList || '版本列表'}</div>
+              <div className="version-panel-body">
+                <Table dataSource={versions} loading={loadingHistory} primaryKey="version">
+                  <Table.Column
+                    title={locale.version || '版本号'}
+                    dataIndex="version"
+                    width={120}
+                  />
+                  <Table.Column
+                    title={locale.publishTime || '发布日期'}
+                    dataIndex="gmtModified"
+                    width={160}
+                    cell={value => this.formatTime(value)}
+                  />
+                  <Table.Column
+                    title={locale.label || 'Labels'}
+                    dataIndex="version"
+                    cell={(value, index, record) => {
+                      const tags = this.getLabelsByVersion(value);
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {tags.length === 0 ? (
+                            <a
+                              onClick={() => this.openLabelEditor(record.version)}
+                              style={{ color: '#999' }}
+                            >
+                              --
+                            </a>
+                          ) : (
+                            tags.map(each => (
+                              <Tag
+                                key={each}
+                                onClick={() => this.openLabelEditor(record.version)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {each}
+                              </Tag>
+                            ))
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  <Table.Column title={locale.commitMsg || 'commitMsg'} dataIndex="commitMsg" />
+                  <Table.Column
+                    title={locale.operation || '操作'}
+                    width={160}
+                    cell={(value, index, record) => (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <a onClick={() => this.handleViewVersion(record.version)}>
+                          {locale.view || '查看'}
+                        </a>
+                        <a onClick={() => this.openLabelEditor(record.version)}>
+                          {locale.manageLabel || '管理Label'}
+                        </a>
+                      </div>
+                    )}
+                  />
+                </Table>
+                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Pagination
+                    current={versionPageNo}
+                    pageSize={versionPageSize}
+                    total={versionTotal}
+                    onChange={page => this.loadHistoryVersions(page, versionPageSize)}
+                    onPageSizeChange={size => this.loadHistoryVersions(1, size)}
+                    pageSizeSelector="filter"
+                    pageSizeList={[10, 20, 50]}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <Dialog
+          title={locale.manageLabel || '管理 Label'}
+          visible={labelEditorVisible}
+          onOk={this.handleSaveLabelEditor}
+          onCancel={this.closeLabelEditor}
+          onClose={this.closeLabelEditor}
+          okProps={{ loading: labelEditorSaving }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 420 }}>
+            <div>{`${locale.version || '版本'}: ${labelEditorVersion || '--'}`}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontWeight: 500 }}>{locale.customLabels || 'Custom labels'}</div>
+              <Checkbox.Group
+                value={labelEditorSelected}
+                onChange={value => this.setState({ labelEditorSelected: value || [] })}
+              >
+                {(labelEditorAll || []).map(each => (
+                  <div key={each} style={{ marginBottom: 8 }}>
+                    <Checkbox value={each}>{each}</Checkbox>
+                  </div>
+                ))}
+              </Checkbox.Group>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                value={labelEditorNewLabel}
+                onChange={value => this.setState({ labelEditorNewLabel: value })}
+                placeholder={locale.newLabel || 'New label'}
+                onPressEnter={this.addNewLabelToEditor}
+              />
+              <Button onClick={this.addNewLabelToEditor}>
+                <Icon type="add" />
+              </Button>
+            </div>
+          </div>
+        </Dialog>
       </div>
     );
   }

@@ -34,6 +34,8 @@ public class PromptListForm implements NacosForm {
     @Serial
     private static final long serialVersionUID = 1L;
     
+    private static final int MAX_PAGE_SIZE = 50;
+    
     private String namespaceId;
     
     /**
@@ -45,6 +47,11 @@ public class PromptListForm implements NacosForm {
      * Search mode: "accurate" or "blur".
      */
     private String search;
+    
+    /**
+     * Optional biz tags filter (comma-separated).
+     */
+    private String bizTags;
     
     /**
      * Page number (1-based).
@@ -73,8 +80,8 @@ public class PromptListForm implements NacosForm {
         if (pageSize < 1) {
             pageSize = 10;
         }
-        if (pageSize > Constants.MAX_LIST_SIZE) {
-            pageSize = Constants.MAX_LIST_SIZE;
+        if (pageSize > MAX_PAGE_SIZE) {
+            pageSize = MAX_PAGE_SIZE;
         }
     }
     
@@ -106,6 +113,14 @@ public class PromptListForm implements NacosForm {
     
     public void setSearch(String search) {
         this.search = search;
+    }
+    
+    public String getBizTags() {
+        return bizTags;
+    }
+    
+    public void setBizTags(String bizTags) {
+        this.bizTags = bizTags;
     }
     
     public int getPageNo() {

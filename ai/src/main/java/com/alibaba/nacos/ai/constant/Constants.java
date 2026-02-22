@@ -138,6 +138,8 @@ public class Constants {
         
         public static final String ADMIN_PATH = "/v3/admin/ai/prompt";
         
+        public static final String CLIENT_PATH = "/v3/client/ai/prompt";
+        
         /**
          * Fixed group for all prompt configurations.
          */
