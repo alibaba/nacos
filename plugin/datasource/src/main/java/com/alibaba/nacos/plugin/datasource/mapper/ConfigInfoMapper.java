@@ -411,7 +411,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Query config info. <br/>The default sql: <br/>SELECT
-     * id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info ...
+     * id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type,md5 FROM config_info ...
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying config info
