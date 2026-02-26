@@ -67,11 +67,11 @@ public class NacosCoreWebConfiguration {
     /**
      * form size filter.
      *
-     * @param maxFormSize max form size
+     * @param maxFormSize max form size (default 2MB, same as Tomcat's default)
      * @return filter
      */
     @Bean
-    public FormSizeFilter formSizeFilter(@Value("${server.tomcat.max-http-form-post-size}") DataSize maxFormSize) {
+    public FormSizeFilter formSizeFilter(@Value("${server.tomcat.max-http-form-post-size:2MB}") DataSize maxFormSize) {
         return new FormSizeFilter(maxFormSize.toBytes());
     }
 }

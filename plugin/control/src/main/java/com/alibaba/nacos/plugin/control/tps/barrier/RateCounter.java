@@ -84,7 +84,7 @@ public abstract class RateCounter {
     public static long getTrimMillsOfMinute(long timeStamp) {
         String millString = String.valueOf(timeStamp);
         String substring = millString.substring(0, millString.length() - 3);
-        return Long.valueOf(Long.valueOf(substring) / 60 * 60 + "000");
+        return Long.parseLong(Long.parseLong(substring) / 60 * 60 + "000");
     }
     
     /**
@@ -96,7 +96,7 @@ public abstract class RateCounter {
     public static long getTrimMillsOfSecond(long timeStamp) {
         String millString = String.valueOf(timeStamp);
         String substring = millString.substring(0, millString.length() - 3);
-        return Long.valueOf(substring + "000");
+        return Long.parseLong(substring + "000");
     }
     
     /**
@@ -108,6 +108,6 @@ public abstract class RateCounter {
     public static long getTrimMillsOfHour(long timeStamp) {
         String millString = String.valueOf(timeStamp);
         String substring = millString.substring(0, millString.length() - 3);
-        return Long.valueOf(Long.valueOf(substring) / (60 * 60) * (60 * 60) + "000");
+        return Long.parseLong(Long.parseLong(substring) / (60 * 60) * (60 * 60) + "000");
     }
 }

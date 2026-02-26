@@ -119,7 +119,7 @@ public class NacosBootstrap {
     
     private static void startOnlyConsole(String[] args) {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
-        ConfigurableApplicationContext consoleContext = new SpringApplicationBuilder(NacosConsole.class).banner(
+        new SpringApplicationBuilder(NacosConsole.class).banner(
                 getBanner("nacos-console-banner.txt")).run(args);
     }
     
