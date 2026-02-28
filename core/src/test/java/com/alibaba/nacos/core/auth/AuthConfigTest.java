@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -38,14 +39,25 @@ class AuthConfigTest {
     @Mock
     private AuthFilter authFilter;
     
+    @Mock
+    private AuthAdminFilter authAdminFilter;
+    
     @Test
     void testAuthFilterRegistration() {
         AuthConfig config = new AuthConfig();
-        FilterRegistrationBean filter = config.authFilterRegistration(authFilter);
+        FilterRegistrationBean<AuthFilter> filter = config.authFilterRegistration(authFilter);
         assertTrue(filter.getFilter() instanceof AuthFilter);
-        
         assertTrue(filter.getUrlPatterns().contains("/*"));
-        
+        assertEquals(6, filter.getOrder());
+    }
+    
+    @Test
+    void testAuthAdminFilterRegistration() {
+        AuthConfig config = new AuthConfig();
+        FilterRegistrationBean<AuthAdminFilter> filter = config.authAdminFilterRegistration(authAdminFilter);
+        assertNotNull(filter);
+        assertTrue(filter.getFilter() instanceof AuthAdminFilter);
+        assertTrue(filter.getUrlPatterns().contains("/*"));
         assertEquals(6, filter.getOrder());
     }
 }
