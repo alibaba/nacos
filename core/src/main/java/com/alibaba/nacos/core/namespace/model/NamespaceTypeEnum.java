@@ -62,19 +62,5 @@ public enum NamespaceTypeEnum {
     public String getDescription() {
         return description;
     }
-    
-    public static NamespaceTypeEnum getByType(String type) {
-        try {
-            int typeInt = Integer.parseInt(type);
-            for (NamespaceTypeEnum value : values()) {
-                if (value.getType() == typeInt) {
-                    return value;
-                }
-            }
-        } catch (NumberFormatException ignored) {
-        }
-        return null;
-    }
-    
 }
 
