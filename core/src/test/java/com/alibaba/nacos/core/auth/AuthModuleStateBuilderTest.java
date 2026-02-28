@@ -42,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 /**
  * {@link AuthModuleStateBuilder} unit test.
@@ -68,8 +67,8 @@ class AuthModuleStateBuilderTest {
         EnvUtil.setEnvironment(environment);
         PluginStateCheckerHolder.setInstance(pluginStateChecker);
         lenient().when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(), "nacos")).thenReturn(true);
-        lenient().when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(),
-                MockAuthPluginServiceB.TEST_PLUGIN)).thenReturn(true);
+        lenient().when(pluginStateChecker.isPluginEnabled(PluginType.AUTH.getType(), MockAuthPluginServiceB.TEST_PLUGIN))
+                .thenReturn(true);
     }
     
     @AfterEach
