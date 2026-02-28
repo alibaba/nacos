@@ -445,6 +445,9 @@ public class ConfigMigrateService {
      * @param deletedConfigInfoGrayStateWrapper the deleted config info gray state wrapper
      */
     public void checkDeletedConfigGrayMigrateState(ConfigInfoStateWrapper deletedConfigInfoGrayStateWrapper) {
+        if (deletedConfigInfoGrayStateWrapper == null) {
+            return;
+        }
         String tenant = deletedConfigInfoGrayStateWrapper.getTenant();
         if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
@@ -458,7 +461,7 @@ public class ConfigMigrateService {
         }
         ConfigInfoStateWrapper targetConfigInfoGrayStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(
                 deletedConfigInfoGrayStateWrapper.getDataId(), deletedConfigInfoGrayStateWrapper.getGroup(),
-                deletedConfigInfoGrayStateWrapper.getGrayName(), targetTenant);
+                targetTenant, deletedConfigInfoGrayStateWrapper.getGrayName());
         if (targetConfigInfoGrayStateWrapper == null) {
             return;
         }
