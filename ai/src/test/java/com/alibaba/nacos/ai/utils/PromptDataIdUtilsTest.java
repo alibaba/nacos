@@ -27,21 +27,27 @@ class PromptDataIdUtilsTest {
     
     @Test
     void buildDataIdsShouldReturnExpectedFormat() {
-        assertEquals("p1.meta.json", PromptDataIdUtils.buildMetaDataId("p1"));
+        assertEquals("p1.admin-info.json", PromptDataIdUtils.buildMetaDataId("p1"));
+        assertEquals("p1.admin-info.json", PromptDataIdUtils.buildAdminInfoDataId("p1"));
+        assertEquals("p1.label-version-mapping.json", PromptDataIdUtils.buildLabelVersionMappingDataId("p1"));
         assertEquals("p1.json", PromptDataIdUtils.buildLatestDataId("p1"));
         assertEquals("p1.1.0.0.json", PromptDataIdUtils.buildVersionDataId("p1", "1.0.0"));
     }
     
     @Test
     void isMetaDataIdShouldMatchOnlyMetaSuffix() {
-        assertTrue(PromptDataIdUtils.isMetaDataId("p1.meta.json"));
+        assertTrue(PromptDataIdUtils.isMetaDataId("p1.admin-info.json"));
+        assertTrue(PromptDataIdUtils.isAdminInfoDataId("p1.admin-info.json"));
+        assertTrue(PromptDataIdUtils.isLabelVersionMappingDataId("p1.label-version-mapping.json"));
         assertFalse(PromptDataIdUtils.isMetaDataId("p1.json"));
         assertFalse(PromptDataIdUtils.isMetaDataId(""));
     }
     
     @Test
     void extractPromptKeyFromMetaDataIdShouldReturnNullForInvalid() {
-        assertEquals("p1", PromptDataIdUtils.extractPromptKeyFromMetaDataId("p1.meta.json"));
+        assertEquals("p1", PromptDataIdUtils.extractPromptKeyFromMetaDataId("p1.admin-info.json"));
+        assertEquals("p1",
+                PromptDataIdUtils.extractPromptKeyFromLabelVersionMappingDataId("p1.label-version-mapping.json"));
         assertNull(PromptDataIdUtils.extractPromptKeyFromMetaDataId("p1.json"));
     }
 }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -70,12 +71,12 @@ public class PromptClientOperationServiceImpl implements PromptClientOperationSe
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `promptKey` not present");
         }
-        PromptMetaInfo meta = getPromptMeta(namespaceId, promptKey);
-        if (meta == null) {
+        PromptLabelVersionMapping mapping = getPromptLabelVersionMapping(namespaceId, promptKey);
+        if (mapping == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     String.format("prompt `%s` not found", promptKey));
         }
-        String targetVersion = PromptMetaUtils.resolveTargetVersion(meta, version, label);
+        String targetVersion = PromptMetaUtils.resolveTargetVersion(mapping, version, label);
         String versionDataId = PromptDataIdUtils.buildVersionDataId(promptKey, targetVersion);
         if (StringUtils.isNotBlank(md5)) {
             String groupKey = GroupKey2.getKey(versionDataId, PROMPT_GROUP, namespaceId);
@@ -105,6 +106,14 @@ public class PromptClientOperationServiceImpl implements PromptClientOperationSe
     
     @Override
     public PromptMetaInfo getPromptMeta(String namespaceId, String promptKey) throws NacosException {
+        PromptLabelVersionMapping mapping = getPromptLabelVersionMapping(namespaceId, promptKey);
+        if (mapping == null) {
+            return null;
+        }
+        return PromptMetaUtils.composeMetaInfo(promptKey, mapping, null);
+    }
+    
+    private PromptLabelVersionMapping getPromptLabelVersionMapping(String namespaceId, String promptKey) {
         if (StringUtils.isBlank(promptKey)) {
             return null;
         }
@@ -112,24 +121,25 @@ public class PromptClientOperationServiceImpl implements PromptClientOperationSe
         MetaCacheEntry cacheEntry = metaCache.get(cacheKey);
         long now = System.currentTimeMillis();
         if (cacheEntry != null && cacheEntry.expireAtMs > now) {
-            return PromptMetaUtils.cloneMeta(cacheEntry.snapshot.getMeta());
+            return PromptMetaUtils.cloneLabelVersionMapping(cacheEntry.snapshot.getMapping());
         }
-        PromptMetaSnapshot loaded = loadMetaSnapshot(namespaceId, promptKey);
-        if (loaded.getMeta() != null) {
+        PromptLabelVersionMappingSnapshot loaded = loadLabelVersionMappingSnapshot(namespaceId, promptKey);
+        if (loaded.getMapping() != null) {
             putMetaCache(cacheKey, loaded, now + metaCacheExpireMs);
-            return PromptMetaUtils.cloneMeta(loaded.getMeta());
+            return PromptMetaUtils.cloneLabelVersionMapping(loaded.getMapping());
         }
         return null;
     }
     
-    private PromptMetaSnapshot loadMetaSnapshot(String namespaceId, String promptKey) {
-        String dataId = PromptDataIdUtils.buildMetaDataId(promptKey);
+    private PromptLabelVersionMappingSnapshot loadLabelVersionMappingSnapshot(String namespaceId, String promptKey) {
+        String dataId = PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey);
         ConfigQueryChainResponse response = queryConfig(namespaceId, dataId);
         if (!isFound(response)) {
-            return PromptMetaSnapshot.empty();
+            return PromptLabelVersionMappingSnapshot.empty();
         }
-        PromptMetaInfo meta = PromptMetaUtils.normalizeMeta(JacksonUtils.toObj(response.getContent(), PromptMetaInfo.class));
-        return new PromptMetaSnapshot(meta, response.getMd5());
+        PromptLabelVersionMapping mapping = PromptMetaUtils.normalizeLabelVersionMapping(
+                JacksonUtils.toObj(response.getContent(), PromptLabelVersionMapping.class));
+        return new PromptLabelVersionMappingSnapshot(mapping, response.getMd5());
     }
     
     private ConfigQueryChainResponse queryConfig(String namespaceId, String dataId) {
@@ -146,7 +156,7 @@ public class PromptClientOperationServiceImpl implements PromptClientOperationSe
         return namespaceId + "::" + promptKey;
     }
     
-    private void putMetaCache(String cacheKey, PromptMetaSnapshot snapshot, long expireAtMs) {
+    private void putMetaCache(String cacheKey, PromptLabelVersionMappingSnapshot snapshot, long expireAtMs) {
         if (metaCache.size() >= metaCacheMaxSize) {
             String removingKey = metaCache.keySet().stream().findFirst().orElse(null);
             if (removingKey != null) {
@@ -158,11 +168,11 @@ public class PromptClientOperationServiceImpl implements PromptClientOperationSe
     
     private static class MetaCacheEntry {
         
-        private final PromptMetaSnapshot snapshot;
+        private final PromptLabelVersionMappingSnapshot snapshot;
         
         private final long expireAtMs;
         
-        MetaCacheEntry(PromptMetaSnapshot snapshot, long expireAtMs) {
+        MetaCacheEntry(PromptLabelVersionMappingSnapshot snapshot, long expireAtMs) {
             this.snapshot = snapshot;
             this.expireAtMs = expireAtMs;
         }

@@ -26,13 +26,19 @@ import com.alibaba.nacos.common.utils.StringUtils;
  */
 public final class PromptDataIdUtils {
     
-    private static final String META_SUFFIX = ".meta" + Constants.Prompt.PROMPT_DATA_ID_SUFFIX;
-    
     private PromptDataIdUtils() {
     }
     
     public static String buildMetaDataId(String promptKey) {
-        return promptKey + META_SUFFIX;
+        return buildAdminInfoDataId(promptKey);
+    }
+    
+    public static String buildAdminInfoDataId(String promptKey) {
+        return promptKey + Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX;
+    }
+    
+    public static String buildLabelVersionMappingDataId(String promptKey) {
+        return promptKey + Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX;
     }
     
     public static String buildLatestDataId(String promptKey) {
@@ -50,7 +56,21 @@ public final class PromptDataIdUtils {
      * @return true if meta dataId
      */
     public static boolean isMetaDataId(String dataId) {
-        return StringUtils.isNotBlank(dataId) && dataId.endsWith(META_SUFFIX);
+        return isAdminInfoDataId(dataId);
+    }
+    
+    public static boolean isAdminInfoDataId(String dataId) {
+        return StringUtils.isNotBlank(dataId) && dataId.endsWith(Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX);
+    }
+    
+    /**
+     * Check whether dataId is prompt label/version mapping dataId.
+     *
+     * @param dataId config dataId
+     * @return true if mapping dataId
+     */
+    public static boolean isLabelVersionMappingDataId(String dataId) {
+        return StringUtils.isNotBlank(dataId) && dataId.endsWith(Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX);
     }
     
     /**
@@ -60,9 +80,32 @@ public final class PromptDataIdUtils {
      * @return prompt key if valid, otherwise null
      */
     public static String extractPromptKeyFromMetaDataId(String dataId) {
-        if (!isMetaDataId(dataId)) {
+        return extractPromptKeyFromAdminInfoDataId(dataId);
+    }
+    
+    /**
+     * Extract prompt key from prompt admin info dataId.
+     *
+     * @param dataId config dataId
+     * @return prompt key if valid, otherwise null
+     */
+    public static String extractPromptKeyFromAdminInfoDataId(String dataId) {
+        if (!isAdminInfoDataId(dataId)) {
             return null;
         }
-        return dataId.substring(0, dataId.length() - META_SUFFIX.length());
+        return dataId.substring(0, dataId.length() - Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX.length());
+    }
+    
+    /**
+     * Extract prompt key from mapping dataId.
+     *
+     * @param dataId config dataId
+     * @return prompt key if valid, otherwise null
+     */
+    public static String extractPromptKeyFromLabelVersionMappingDataId(String dataId) {
+        if (!isLabelVersionMappingDataId(dataId)) {
+            return null;
+        }
+        return dataId.substring(0, dataId.length() - Constants.Prompt.LABEL_VERSION_MAPPING_DATA_ID_SUFFIX.length());
     }
 }

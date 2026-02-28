@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.ai.service.prompt;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
 import com.alibaba.nacos.ai.utils.PromptVersionUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptAdminInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
@@ -89,14 +92,15 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `template` not present");
         }
-        PromptMetaSnapshot snapshot = loadMetaSnapshot(namespaceId, promptKey);
-        boolean newPrompt = snapshot.getMeta() == null;
+        PromptLabelVersionMappingSnapshot snapshot = loadLabelVersionMappingSnapshot(namespaceId, promptKey);
+        boolean newPrompt = snapshot.getMapping() == null;
         if (!newPrompt && (description != null || bizTags != null)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "description and bizTags can only be set on first publish, use updatePromptMetadata afterwards");
         }
-        PromptMetaInfo meta = snapshot.getMeta() == null ? PromptMetaUtils.initEmptyMeta(promptKey) : snapshot.getMeta();
-        if (meta.getVersions().contains(version)) {
+        PromptLabelVersionMapping mapping = snapshot.getMapping() == null
+                ? PromptMetaUtils.initEmptyLabelVersionMapping(promptKey) : snapshot.getMapping();
+        if (mapping.getVersions().contains(version)) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     String.format("prompt version `%s` already exists", version));
         }
@@ -116,19 +120,23 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         versionInfo.setGmtModified(now);
         publishConfig(namespaceId, versionDataId, JacksonUtils.toJson(versionInfo), srcUser, srcIp, null, false, null);
         
-        meta.getVersions().add(version);
-        meta.getVersions().sort(buildVersionComparator());
-        meta.setLatestVersion(meta.getVersions().get(meta.getVersions().size() - 1));
-        if (newPrompt && StringUtils.isNotBlank(description)) {
-            meta.setDescription(description);
-        }
-        if (newPrompt && bizTags != null) {
-            meta.setBizTags(new ArrayList<>(bizTags));
-        }
-        meta.setGmtModified(now);
+        mapping.getVersions().add(version);
+        mapping.getVersions().sort(buildVersionComparator());
+        mapping.setLatestVersion(mapping.getVersions().get(mapping.getVersions().size() - 1));
+        mapping.setGmtModified(now);
         
-        publishMeta(namespaceId, promptKey, meta, snapshot.getMd5(), srcUser, srcIp);
-        refreshLatestMirror(namespaceId, promptKey, meta.getLatestVersion(), srcUser, srcIp);
+        publishLabelVersionMapping(namespaceId, promptKey, mapping, snapshot.getMd5(), srcUser, srcIp);
+        if (newPrompt) {
+            PromptAdminInfo adminInfo = PromptMetaUtils.initEmptyAdminInfo(promptKey);
+            if (StringUtils.isNotBlank(description)) {
+                adminInfo.setDescription(description);
+            }
+            if (bizTags != null) {
+                adminInfo.setBizTags(new ArrayList<>(bizTags));
+            }
+            publishAdminInfo(namespaceId, promptKey, adminInfo, null, srcUser, srcIp);
+        }
+        refreshLatestMirror(namespaceId, promptKey, mapping.getLatestVersion(), srcUser, srcIp);
         return true;
     }
     
@@ -140,15 +148,15 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `label` not present");
         }
-        PromptMetaSnapshot snapshot = requireMetaSnapshot(namespaceId, promptKey);
-        PromptMetaInfo meta = snapshot.getMeta();
-        if (!meta.getVersions().contains(version)) {
+        PromptLabelVersionMappingSnapshot snapshot = requireLabelVersionMappingSnapshot(namespaceId, promptKey);
+        PromptLabelVersionMapping mapping = snapshot.getMapping();
+        if (!mapping.getVersions().contains(version)) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     String.format("prompt version `%s` not found", version));
         }
-        meta.getLabels().put(label, version);
-        meta.setGmtModified(System.currentTimeMillis());
-        publishMeta(namespaceId, promptKey, meta, snapshot.getMd5(), srcUser, srcIp);
+        mapping.getLabels().put(label, version);
+        mapping.setGmtModified(System.currentTimeMillis());
+        publishLabelVersionMapping(namespaceId, promptKey, mapping, snapshot.getMd5(), srcUser, srcIp);
         return true;
     }
     
@@ -159,11 +167,11 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `promptKey` and `label` not present");
         }
-        PromptMetaSnapshot snapshot = requireMetaSnapshot(namespaceId, promptKey);
-        PromptMetaInfo meta = snapshot.getMeta();
-        meta.getLabels().remove(label);
-        meta.setGmtModified(System.currentTimeMillis());
-        publishMeta(namespaceId, promptKey, meta, snapshot.getMd5(), srcUser, srcIp);
+        PromptLabelVersionMappingSnapshot snapshot = requireLabelVersionMappingSnapshot(namespaceId, promptKey);
+        PromptLabelVersionMapping mapping = snapshot.getMapping();
+        mapping.getLabels().remove(label);
+        mapping.setGmtModified(System.currentTimeMillis());
+        publishLabelVersionMapping(namespaceId, promptKey, mapping, snapshot.getMd5(), srcUser, srcIp);
         return true;
     }
     
@@ -173,13 +181,15 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `promptKey` not present");
         }
-        PromptMetaSnapshot snapshot = loadMetaSnapshot(namespaceId, promptKey);
-        configOperationService.deleteConfig(PromptDataIdUtils.buildMetaDataId(promptKey), PROMPT_GROUP, namespaceId, null, srcIp,
+        PromptLabelVersionMappingSnapshot snapshot = loadLabelVersionMappingSnapshot(namespaceId, promptKey);
+        configOperationService.deleteConfig(PromptDataIdUtils.buildAdminInfoDataId(promptKey), PROMPT_GROUP, namespaceId, null, srcIp,
                 srcUser, null);
+        configOperationService.deleteConfig(PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey), PROMPT_GROUP, namespaceId, null,
+                srcIp, srcUser, null);
         configOperationService.deleteConfig(PromptDataIdUtils.buildLatestDataId(promptKey), PROMPT_GROUP, namespaceId, null, srcIp,
                 srcUser, null);
-        if (snapshot.getMeta() != null) {
-            for (String version : new ArrayList<>(snapshot.getMeta().getVersions())) {
+        if (snapshot.getMapping() != null) {
+            for (String version : new ArrayList<>(snapshot.getMapping().getVersions())) {
                 String versionDataId = PromptDataIdUtils.buildVersionDataId(promptKey, version);
                 configOperationService.deleteConfig(versionDataId, PROMPT_GROUP, namespaceId, null, srcIp, srcUser, null);
             }
@@ -194,16 +204,17 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `promptKey` not present");
         }
-        PromptMetaSnapshot snapshot = requireMetaSnapshot(namespaceId, promptKey);
-        PromptMetaInfo meta = snapshot.getMeta();
+        requireLabelVersionMappingSnapshot(namespaceId, promptKey);
+        AdminInfoSnapshot adminSnapshot = loadAdminInfoSnapshot(namespaceId, promptKey);
+        PromptAdminInfo adminInfo = adminSnapshot.getAdminInfo() == null
+                ? PromptMetaUtils.initEmptyAdminInfo(promptKey) : adminSnapshot.getAdminInfo();
         if (description != null) {
-            meta.setDescription(description);
+            adminInfo.setDescription(description);
         }
         if (bizTags != null) {
-            meta.setBizTags(new ArrayList<>(bizTags));
+            adminInfo.setBizTags(new ArrayList<>(bizTags));
         }
-        meta.setGmtModified(System.currentTimeMillis());
-        publishMeta(namespaceId, promptKey, meta, snapshot.getMd5(), srcUser, srcIp);
+        publishAdminInfo(namespaceId, promptKey, adminInfo, adminSnapshot.getMd5(), srcUser, srcIp);
         return true;
     }
     
@@ -213,10 +224,10 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         String metaPattern;
         if (StringUtils.isEmpty(promptKey) || SEARCH_BLUR.equalsIgnoreCase(search)) {
             String keyPattern = StringUtils.isNotBlank(promptKey) ? promptKey : StringUtils.EMPTY;
-            metaPattern = ALL_PATTERN + keyPattern + ALL_PATTERN + ".meta.json";
+            metaPattern = ALL_PATTERN + keyPattern + ALL_PATTERN + Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX;
             search = SEARCH_BLUR;
         } else {
-            metaPattern = PromptDataIdUtils.buildMetaDataId(promptKey);
+            metaPattern = PromptDataIdUtils.buildAdminInfoDataId(promptKey);
         }
         Map<String, Object> configAdvanceInfo = null;
         if (StringUtils.isNotBlank(bizTags)) {
@@ -227,17 +238,23 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
                 namespaceId, configAdvanceInfo);
         List<PromptMetaSummary> items = configPage.getPageItems().stream().map(each -> {
             try {
-                PromptMetaInfo meta = JacksonUtils.toObj(each.getContent(), PromptMetaInfo.class);
+                PromptAdminInfo adminInfo = PromptMetaUtils.normalizeAdminInfo(
+                        JacksonUtils.toObj(each.getContent(), PromptAdminInfo.class));
+                if (each.getGmtModified() != null) {
+                    adminInfo.setGmtModified(each.getGmtModified());
+                }
+                String itemPromptKey = StringUtils.isBlank(adminInfo.getPromptKey())
+                        ? PromptDataIdUtils.extractPromptKeyFromAdminInfoDataId(each.getDataId())
+                        : adminInfo.getPromptKey();
+                PromptLabelVersionMapping mapping = getPromptLabelVersionMapping(namespaceId, itemPromptKey);
+                PromptMetaInfo merged = PromptMetaUtils.composeMetaInfo(itemPromptKey, mapping, adminInfo);
                 PromptMetaSummary result = new PromptMetaSummary();
-                result.setSchemaVersion(meta.getSchemaVersion());
-                result.setPromptKey(
-                        StringUtils.isBlank(meta.getPromptKey())
-                                ? PromptDataIdUtils.extractPromptKeyFromMetaDataId(each.getDataId())
-                                : meta.getPromptKey());
-                result.setDescription(meta.getDescription());
-                result.setLatestVersion(meta.getLatestVersion());
-                result.setBizTags(meta.getBizTags() == null ? new ArrayList<>(4) : new ArrayList<>(meta.getBizTags()));
-                result.setGmtModified(meta.getGmtModified());
+                result.setSchemaVersion(merged.getSchemaVersion());
+                result.setPromptKey(merged.getPromptKey());
+                result.setDescription(merged.getDescription());
+                result.setLatestVersion(merged.getLatestVersion());
+                result.setBizTags(merged.getBizTags() == null ? new ArrayList<>(4) : new ArrayList<>(merged.getBizTags()));
+                result.setGmtModified(merged.getGmtModified());
                 return result;
             } catch (Exception ex) {
                 return null;
@@ -298,13 +315,12 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         if (StringUtils.isBlank(promptKey)) {
             return null;
         }
-        ConfigInfoWrapper metaConfig = configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(promptKey), PROMPT_GROUP,
-                namespaceId);
-        if (metaConfig == null || StringUtils.isBlank(metaConfig.getContent())) {
+        PromptLabelVersionMapping mapping = getPromptLabelVersionMapping(namespaceId, promptKey);
+        if (mapping == null) {
             return null;
         }
-        PromptMetaInfo meta = JacksonUtils.toObj(metaConfig.getContent(), PromptMetaInfo.class);
-        return PromptMetaUtils.normalizeMeta(meta);
+        AdminInfoSnapshot adminSnapshot = loadAdminInfoSnapshot(namespaceId, promptKey);
+        return PromptMetaUtils.composeMetaInfo(promptKey, mapping, adminSnapshot.getAdminInfo());
     }
     
     @Override
@@ -334,23 +350,41 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         return result;
     }
     
-    private PromptMetaSnapshot loadMetaSnapshot(String namespaceId, String promptKey) {
-        ConfigInfoWrapper metaConfig = configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(promptKey), PROMPT_GROUP,
-                namespaceId);
-        if (metaConfig == null || StringUtils.isBlank(metaConfig.getContent())) {
-            return PromptMetaSnapshot.empty();
+    private PromptLabelVersionMappingSnapshot loadLabelVersionMappingSnapshot(String namespaceId, String promptKey) {
+        ConfigInfoWrapper mappingConfig = configInfoPersistService.findConfigInfo(
+                PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey), PROMPT_GROUP, namespaceId);
+        if (mappingConfig == null || StringUtils.isBlank(mappingConfig.getContent())) {
+            return PromptLabelVersionMappingSnapshot.empty();
         }
-        PromptMetaInfo meta = PromptMetaUtils.normalizeMeta(JacksonUtils.toObj(metaConfig.getContent(), PromptMetaInfo.class));
-        return new PromptMetaSnapshot(meta, metaConfig.getMd5());
+        PromptLabelVersionMapping mapping = PromptMetaUtils.normalizeLabelVersionMapping(
+                JacksonUtils.toObj(mappingConfig.getContent(), PromptLabelVersionMapping.class));
+        return new PromptLabelVersionMappingSnapshot(mapping, mappingConfig.getMd5());
     }
     
-    private PromptMetaSnapshot requireMetaSnapshot(String namespaceId, String promptKey) throws NacosException {
-        PromptMetaSnapshot snapshot = loadMetaSnapshot(namespaceId, promptKey);
-        if (snapshot.getMeta() == null) {
+    private PromptLabelVersionMappingSnapshot requireLabelVersionMappingSnapshot(String namespaceId, String promptKey)
+            throws NacosException {
+        PromptLabelVersionMappingSnapshot snapshot = loadLabelVersionMappingSnapshot(namespaceId, promptKey);
+        if (snapshot.getMapping() == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     String.format("prompt `%s` not found", promptKey));
         }
         return snapshot;
+    }
+    
+    private PromptLabelVersionMapping getPromptLabelVersionMapping(String namespaceId, String promptKey) {
+        return loadLabelVersionMappingSnapshot(namespaceId, promptKey).getMapping();
+    }
+    
+    private AdminInfoSnapshot loadAdminInfoSnapshot(String namespaceId, String promptKey) {
+        ConfigInfoWrapper adminInfoConfig = configInfoPersistService.findConfigInfo(
+                PromptDataIdUtils.buildAdminInfoDataId(promptKey), PROMPT_GROUP, namespaceId);
+        if (adminInfoConfig == null || StringUtils.isBlank(adminInfoConfig.getContent())) {
+            return AdminInfoSnapshot.empty();
+        }
+        PromptAdminInfo adminInfo = PromptMetaUtils.normalizeAdminInfo(
+                JacksonUtils.toObj(adminInfoConfig.getContent(), PromptAdminInfo.class));
+        adminInfo.setGmtModified(adminInfoConfig.getLastModified());
+        return new AdminInfoSnapshot(adminInfo, adminInfoConfig.getMd5());
     }
     
     private void refreshLatestMirror(String namespaceId, String promptKey, String latestVersion, String srcUser, String srcIp)
@@ -365,11 +399,17 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         publishConfig(namespaceId, latestDataId, versionConfig.getContent(), srcUser, srcIp, null, true, null);
     }
     
-    private void publishMeta(String namespaceId, String promptKey, PromptMetaInfo meta, String casMd5, String srcUser,
+    private void publishLabelVersionMapping(String namespaceId, String promptKey, PromptLabelVersionMapping mapping, String casMd5,
+            String srcUser, String srcIp) throws NacosException {
+        String mappingDataId = PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey);
+        publishConfig(namespaceId, mappingDataId, JacksonUtils.toJson(mapping), srcUser, srcIp, casMd5, true, null);
+    }
+    
+    private void publishAdminInfo(String namespaceId, String promptKey, PromptAdminInfo adminInfo, String casMd5, String srcUser,
             String srcIp) throws NacosException {
-        String metaDataId = PromptDataIdUtils.buildMetaDataId(promptKey);
-        publishConfig(namespaceId, metaDataId, JacksonUtils.toJson(meta), srcUser, srcIp, casMd5, true,
-                joinBizTags(meta.getBizTags()));
+        String adminInfoDataId = PromptDataIdUtils.buildAdminInfoDataId(promptKey);
+        publishConfig(namespaceId, adminInfoDataId, JacksonUtils.toJson(adminInfo), srcUser, srcIp, casMd5, true,
+                joinBizTags(adminInfo.getBizTags()));
     }
     
     private void publishConfig(String namespaceId, String dataId, String content, String srcUser, String srcIp, String casMd5,
@@ -418,6 +458,30 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         }
         return bizTags.stream().filter(StringUtils::isNotBlank).map(String::trim).distinct()
                 .collect(Collectors.joining(","));
+    }
+    
+    private static class AdminInfoSnapshot {
+        
+        private final PromptAdminInfo adminInfo;
+        
+        private final String md5;
+        
+        AdminInfoSnapshot(PromptAdminInfo adminInfo, String md5) {
+            this.adminInfo = adminInfo;
+            this.md5 = md5;
+        }
+        
+        public PromptAdminInfo getAdminInfo() {
+            return adminInfo;
+        }
+        
+        public String getMd5() {
+            return md5;
+        }
+        
+        static AdminInfoSnapshot empty() {
+            return new AdminInfoSnapshot(null, null);
+        }
     }
     
 }

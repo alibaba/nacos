@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -73,21 +74,20 @@ class PromptClientOperationServiceImplTest {
     
     @Test
     void queryPromptShouldReturnPromptVersionInfoWhenLabelResolved() throws NacosException {
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey("p1");
-        meta.setLabels(new HashMap<>());
-        meta.getLabels().put("prod", "1.0.0");
-        meta.setVersions(new ArrayList<>());
-        meta.getVersions().add("1.0.0");
-        meta.setBizTags(new ArrayList<>());
-        meta.setLatestVersion("1.0.0");
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey("p1");
+        mapping.setLabels(new HashMap<>());
+        mapping.getLabels().put("prod", "1.0.0");
+        mapping.setVersions(new ArrayList<>());
+        mapping.getVersions().add("1.0.0");
+        mapping.setLatestVersion("1.0.0");
         
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("1.0.0");
         versionInfo.setTemplate("hello");
         
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(foundResponse(meta, "m-meta"))
+                .thenReturn(foundResponse(mapping, "m-meta"))
                 .thenReturn(foundResponse(versionInfo, "m-ver"));
         
         PromptVersionInfo actual = service.queryPrompt("public", "p1", null, "prod", null);
@@ -100,19 +100,18 @@ class PromptClientOperationServiceImplTest {
     
     @Test
     void queryPromptShouldInvalidateMetaCacheWhenVersionDataMissing() throws Exception {
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey("p1");
-        meta.setLabels(new HashMap<>());
-        meta.setVersions(new ArrayList<>());
-        meta.getVersions().add("1.0.0");
-        meta.setBizTags(new ArrayList<>());
-        meta.setLatestVersion("1.0.0");
-        String metaDataId = "p1.meta.json";
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey("p1");
+        mapping.setLabels(new HashMap<>());
+        mapping.setVersions(new ArrayList<>());
+        mapping.getVersions().add("1.0.0");
+        mapping.setLatestVersion("1.0.0");
+        String metaDataId = "p1.label-version-mapping.json";
         String versionDataId = "p1.1.0.0.json";
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenAnswer(invocation -> {
             ConfigQueryChainRequest request = invocation.getArgument(0);
             if (metaDataId.equals(request.getDataId())) {
-                return foundResponse(meta, "m-meta");
+                return foundResponse(mapping, "m-meta");
             }
             if (versionDataId.equals(request.getDataId())) {
                 return notFoundResponse();
@@ -129,16 +128,14 @@ class PromptClientOperationServiceImplTest {
     
     @Test
     void getPromptMetaShouldReturnCloneAndUseCache() throws Exception {
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey("p1");
-        meta.setLabels(new HashMap<>());
-        meta.getLabels().put("prod", "1.0.0");
-        meta.setVersions(new ArrayList<>());
-        meta.getVersions().add("1.0.0");
-        meta.setBizTags(new ArrayList<>());
-        meta.getBizTags().add("x");
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey("p1");
+        mapping.setLabels(new HashMap<>());
+        mapping.getLabels().put("prod", "1.0.0");
+        mapping.setVersions(new ArrayList<>());
+        mapping.getVersions().add("1.0.0");
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(foundResponse(meta, "m-meta"));
+                .thenReturn(foundResponse(mapping, "m-meta"));
         
         PromptMetaInfo first = service.getPromptMeta("public", "p1");
         first.getLabels().put("gray", "2.0.0");
@@ -151,15 +148,14 @@ class PromptClientOperationServiceImplTest {
     
     @Test
     void queryPromptShouldThrowNotModifiedWhenMd5UpToDate() throws NacosException {
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey("p1");
-        meta.setLabels(new HashMap<>());
-        meta.setVersions(new ArrayList<>());
-        meta.getVersions().add("1.0.0");
-        meta.setBizTags(new ArrayList<>());
-        meta.setLatestVersion("1.0.0");
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey("p1");
+        mapping.setLabels(new HashMap<>());
+        mapping.setVersions(new ArrayList<>());
+        mapping.getVersions().add("1.0.0");
+        mapping.setLatestVersion("1.0.0");
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(foundResponse(meta, "m-meta"));
+                .thenReturn(foundResponse(mapping, "m-meta"));
         String groupKey = GroupKey2.getKey("p1.1.0.0.json", "nacos-ai-prompt", "public");
         try (MockedStatic<ConfigCacheService> mocked = mockStatic(ConfigCacheService.class)) {
             mocked.when(() -> ConfigCacheService.isUptodate(groupKey, "m1"))
@@ -174,14 +170,13 @@ class PromptClientOperationServiceImplTest {
         System.setProperty("nacos.prompt.meta.cache.expireSeconds", "0");
         try {
             PromptClientOperationServiceImpl expiredService = new PromptClientOperationServiceImpl(configQueryChainService);
-            PromptMetaInfo meta = new PromptMetaInfo();
-            meta.setPromptKey("p1");
-            meta.setLabels(new HashMap<>());
-            meta.setVersions(new ArrayList<>());
-            meta.setBizTags(new ArrayList<>());
+            PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+            mapping.setPromptKey("p1");
+            mapping.setLabels(new HashMap<>());
+            mapping.setVersions(new ArrayList<>());
             when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                    .thenReturn(foundResponse(meta, "m1"))
-                    .thenReturn(foundResponse(meta, "m2"));
+                    .thenReturn(foundResponse(mapping, "m1"))
+                    .thenReturn(foundResponse(mapping, "m2"));
             
             expiredService.getPromptMeta("public", "p1");
             expiredService.getPromptMeta("public", "p1");
@@ -198,13 +193,12 @@ class PromptClientOperationServiceImplTest {
     
     @Test
     void invalidateMetaCacheShouldNoopWhenPromptKeyBlank() throws Exception {
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey("p1");
-        meta.setLabels(new HashMap<>());
-        meta.setVersions(new ArrayList<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey("p1");
+        mapping.setLabels(new HashMap<>());
+        mapping.setVersions(new ArrayList<>());
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(foundResponse(meta, "m1"));
+                .thenReturn(foundResponse(mapping, "m1"));
         service.getPromptMeta("public", "p1");
         assertEquals(1, getMetaCache().size());
         
@@ -221,12 +215,11 @@ class PromptClientOperationServiceImplTest {
             PromptClientOperationServiceImpl maxSizeService = new PromptClientOperationServiceImpl(configQueryChainService);
             when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenAnswer(invocation -> {
                 ConfigQueryChainRequest req = invocation.getArgument(0);
-                PromptMetaInfo meta = new PromptMetaInfo();
-                meta.setPromptKey(req.getDataId().startsWith("p1") ? "p1" : "p2");
-                meta.setLabels(new HashMap<>());
-                meta.setVersions(new ArrayList<>());
-                meta.setBizTags(new ArrayList<>());
-                return foundResponse(meta, "m");
+                PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+                mapping.setPromptKey(req.getDataId().startsWith("p1") ? "p1" : "p2");
+                mapping.setLabels(new HashMap<>());
+                mapping.setVersions(new ArrayList<>());
+                return foundResponse(mapping, "m");
             });
             
             maxSizeService.getPromptMeta("public", "p1");

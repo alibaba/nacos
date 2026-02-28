@@ -42,21 +42,23 @@ class PromptMetaCacheInvalidateServiceTest {
     
     @Test
     void onEventShouldIgnoreWhenGroupNotPromptGroup() {
-        LocalDataChangeEvent event = new LocalDataChangeEvent(GroupKey.getKey("p1.meta.json", "other-group", "public"));
+        LocalDataChangeEvent event = new LocalDataChangeEvent(
+                GroupKey.getKey("p1.label-version-mapping.json", "other-group", "public"));
         service.onEvent(event);
         verify(promptClientOperationService, never()).invalidateMetaCache("public", "p1");
     }
     
     @Test
     void onEventShouldIgnoreWhenDataIdNotMeta() {
-        LocalDataChangeEvent event = new LocalDataChangeEvent(GroupKey.getKey("p1.json", "nacos-ai-prompt", "public"));
+        LocalDataChangeEvent event = new LocalDataChangeEvent(GroupKey.getKey("p1.admin-info.json", "nacos-ai-prompt", "public"));
         service.onEvent(event);
         verify(promptClientOperationService, never()).invalidateMetaCache("public", "p1");
     }
     
     @Test
     void onEventShouldInvalidateCacheWhenMetaChanged() {
-        LocalDataChangeEvent event = new LocalDataChangeEvent(GroupKey.getKey("p1.meta.json", "nacos-ai-prompt", "public"));
+        LocalDataChangeEvent event = new LocalDataChangeEvent(
+                GroupKey.getKey("p1.label-version-mapping.json", "nacos-ai-prompt", "public"));
         service.onEvent(event);
         verify(promptClientOperationService).invalidateMetaCache("public", "p1");
     }

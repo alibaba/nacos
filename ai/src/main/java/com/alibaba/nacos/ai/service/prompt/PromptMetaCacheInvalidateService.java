@@ -50,10 +50,10 @@ public class PromptMetaCacheInvalidateService extends Subscriber<LocalDataChange
         if (!Constants.Prompt.PROMPT_GROUP.equals(group)) {
             return;
         }
-        if (!PromptDataIdUtils.isMetaDataId(dataId)) {
+        if (!PromptDataIdUtils.isLabelVersionMappingDataId(dataId)) {
             return;
         }
-        String promptKey = PromptDataIdUtils.extractPromptKeyFromMetaDataId(dataId);
+        String promptKey = PromptDataIdUtils.extractPromptKeyFromLabelVersionMappingDataId(dataId);
         promptOperationService.invalidateMetaCache(NamespaceUtil.processNamespaceParameter(tenant), promptKey);
     }
     

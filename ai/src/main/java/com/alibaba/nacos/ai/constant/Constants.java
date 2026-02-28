@@ -151,6 +151,16 @@ public class Constants {
         public static final String PROMPT_DATA_ID_SUFFIX = ".json";
         
         /**
+         * DataId suffix for admin side prompt metadata.
+         */
+        public static final String ADMIN_INFO_DATA_ID_SUFFIX = ".admin-info" + PROMPT_DATA_ID_SUFFIX;
+        
+        /**
+         * DataId suffix for runtime label/version mapping.
+         */
+        public static final String LABEL_VERSION_MAPPING_DATA_ID_SUFFIX = ".label-version-mapping" + PROMPT_DATA_ID_SUFFIX;
+        
+        /**
          * Key for prompt version in extInfo.
          */
         public static final String EXT_PROMPT_VERSION = "prompt_version";

@@ -17,7 +17,8 @@
 package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
-import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptAdminInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.alibaba.nacos.ai.constant.Constants.Prompt.PROMPT_GROUP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,6 +56,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PromptAdminOperationServiceImplTest {
+    
+    private static final String PROMPT_GROUP = "nacos-ai-prompt";
     
     @Mock
     private ConfigOperationService configOperationService;
@@ -78,10 +80,10 @@ class PromptAdminOperationServiceImplTest {
         String ns = "public";
         String key = "p1";
         String version = "1.0.0";
-        String metaDataId = PromptDataIdUtils.buildMetaDataId(key);
+        String mappingDataId = PromptDataIdUtils.buildLabelVersionMappingDataId(key);
         String versionDataId = PromptDataIdUtils.buildVersionDataId(key, version);
         
-        when(configInfoPersistService.findConfigInfo(metaDataId, PROMPT_GROUP, ns)).thenReturn(null);
+        when(configInfoPersistService.findConfigInfo(mappingDataId, PROMPT_GROUP, ns)).thenReturn(null);
         ConfigInfoWrapper latestSource = new ConfigInfoWrapper();
         latestSource.setContent("{\"version\":\"1.0.0\",\"template\":\"hello\"}");
         when(configInfoPersistService.findConfigInfo(versionDataId, PROMPT_GROUP, ns))
@@ -96,9 +98,10 @@ class PromptAdminOperationServiceImplTest {
         ArgumentCaptor<ConfigRequestInfo> reqCaptor = ArgumentCaptor.forClass(ConfigRequestInfo.class);
         verify(configOperationService, atLeastOnce()).publishConfig(formCaptor.capture(), reqCaptor.capture(), eq(null));
         List<ConfigForm> forms = formCaptor.getAllValues();
-        assertEquals(3, forms.size());
+        assertEquals(4, forms.size());
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildVersionDataId(key, version).equals(f.getDataId())));
-        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildMetaDataId(key).equals(f.getDataId())));
+        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildLabelVersionMappingDataId(key).equals(f.getDataId())));
+        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildAdminInfoDataId(key).equals(f.getDataId())));
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildLatestDataId(key).equals(f.getDataId())));
     }
     
@@ -107,15 +110,15 @@ class PromptAdminOperationServiceImplTest {
         String ns = "public";
         String key = "p1";
         String version = "1.1.0";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         assertThrows(NacosException.class,
                 () -> service.publishPromptVersion(ns, key, version, "hello", null, "desc", null, "u1", "127.0.0.1"));
@@ -125,15 +128,15 @@ class PromptAdminOperationServiceImplTest {
     void bindLabelShouldThrowNotFoundWhenVersionNotExists() {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         assertThrows(NacosException.class, () -> service.bindLabel(ns, key, "prod", "2.0.0", "u1", "127.0.0.1"));
     }
@@ -142,16 +145,16 @@ class PromptAdminOperationServiceImplTest {
     void queryPromptDetailShouldResolveByLabel() throws NacosException {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.getLabels().put("prod", "1.0.0");
-        meta.setBizTags(new ArrayList<>());
-        meta.setLatestVersion("1.0.0");
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
+        mapping.getLabels().put("prod", "1.0.0");
+        mapping.setLatestVersion("1.0.0");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("1.0.0");
@@ -175,14 +178,14 @@ class PromptAdminOperationServiceImplTest {
     void listPromptVersionsShouldSortBySemverDescAndPaginate() throws NacosException {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0", "2.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0", "2.0.0")));
+        mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("2.0.0");
@@ -215,14 +218,14 @@ class PromptAdminOperationServiceImplTest {
     void publishPromptVersionShouldThrowConflictWhenMetaContainsVersion() {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         assertThrows(NacosException.class, () -> service.publishPromptVersion(
                 ns, key, "1.0.0", "hello", null, null, null, "u1", "127.0.0.1"));
@@ -235,7 +238,8 @@ class PromptAdminOperationServiceImplTest {
         String version = "1.0.0";
         ConfigInfoWrapper existedVersion = new ConfigInfoWrapper();
         existedVersion.setContent("exists");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(null);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(null);
         when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildVersionDataId(key, version), PROMPT_GROUP, ns))
                 .thenReturn(existedVersion);
         
@@ -247,43 +251,45 @@ class PromptAdminOperationServiceImplTest {
     void bindLabelShouldPublishMetaWhenSuccess() throws NacosException {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         service.bindLabel(ns, key, "prod", "1.0.0", "u1", "127.0.0.1");
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         verify(configOperationService).publishConfig(formCaptor.capture(), any(ConfigRequestInfo.class), eq(null));
-        assertEquals(PromptDataIdUtils.buildMetaDataId(key), formCaptor.getValue().getDataId());
+        assertEquals(PromptDataIdUtils.buildLabelVersionMappingDataId(key), formCaptor.getValue().getDataId());
     }
     
     @Test
     void unbindLabelShouldPublishMetaWhenSuccess() throws NacosException {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.getLabels().put("prod", "1.0.0");
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
+        mapping.getLabels().put("prod", "1.0.0");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         service.unbindLabel(ns, key, "prod", "u1", "127.0.0.1");
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         verify(configOperationService).publishConfig(formCaptor.capture(), any(ConfigRequestInfo.class), eq(null));
-        PromptMetaInfo written = com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(), PromptMetaInfo.class);
+        PromptLabelVersionMapping written =
+                com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(),
+                        PromptLabelVersionMapping.class);
         assertNull(written.getLabels().get("prod"));
     }
     
@@ -291,18 +297,18 @@ class PromptAdminOperationServiceImplTest {
     void deletePromptShouldDeleteMetaLatestAndAllVersionConfigs() throws NacosException {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0", "2.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0", "2.0.0")));
+        mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         
         service.deletePrompt(ns, key, "u1", "127.0.0.1");
         
-        verify(configOperationService, times(4)).deleteConfig(anyString(), eq(PROMPT_GROUP), eq(ns), eq(null), eq("127.0.0.1"),
+        verify(configOperationService, times(5)).deleteConfig(anyString(), eq(PROMPT_GROUP), eq(ns), eq(null), eq("127.0.0.1"),
                 eq("u1"), eq(null));
     }
     
@@ -310,22 +316,32 @@ class PromptAdminOperationServiceImplTest {
     void updatePromptMetadataShouldPublishMergedMeta() throws NacosException {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>(List.of("old")));
-        meta.setDescription("old");
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
+        PromptAdminInfo adminInfo = new PromptAdminInfo();
+        adminInfo.setPromptKey(key);
+        adminInfo.setBizTags(new ArrayList<>(List.of("old")));
+        adminInfo.setDescription("old");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        ConfigInfoWrapper adminConfig = new ConfigInfoWrapper();
+        adminConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(adminInfo));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        adminConfig.setMd5("m2");
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildAdminInfoDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(adminConfig);
         
         service.updatePromptMetadata(ns, key, "new", List.of("a", "b"), "u1", "127.0.0.1");
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         verify(configOperationService).publishConfig(formCaptor.capture(), any(ConfigRequestInfo.class), eq(null));
-        PromptMetaInfo written = com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(), PromptMetaInfo.class);
+        assertEquals(PromptDataIdUtils.buildAdminInfoDataId(key), formCaptor.getValue().getDataId());
+        PromptAdminInfo written =
+                com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(), PromptAdminInfo.class);
         assertEquals("new", written.getDescription());
         assertEquals(2, written.getBizTags().size());
     }
@@ -338,18 +354,24 @@ class PromptAdminOperationServiceImplTest {
         page.setPagesAvailable(1);
         page.setTotalCount(2);
         ConfigInfo ok = new ConfigInfo();
-        ok.setDataId("p1.meta.json");
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey("p1");
-        meta.setLatestVersion("1.0.0");
-        meta.setBizTags(new ArrayList<>(List.of("x")));
-        ok.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
+        ok.setDataId("p1.admin-info.json");
+        PromptAdminInfo adminInfo = new PromptAdminInfo();
+        adminInfo.setPromptKey("p1");
+        adminInfo.setBizTags(new ArrayList<>(List.of("x")));
+        ok.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(adminInfo));
         ConfigInfo bad = new ConfigInfo();
-        bad.setDataId("p2.meta.json");
+        bad.setDataId("p2.admin-info.json");
         bad.setContent("not-json");
         page.setPageItems(List.of(ok, bad));
-        when(configDetailService.findConfigInfoPage(eq("blur"), eq(1), eq(10), eq("*p*.meta.json"), eq(PROMPT_GROUP), eq(ns),
+        when(configDetailService.findConfigInfoPage(eq("blur"), eq(1), eq(10), eq("*p*.admin-info.json"), eq(PROMPT_GROUP), eq(ns),
                 eq(null))).thenReturn(page);
+        ConfigInfoWrapper mappingConfig = new ConfigInfoWrapper();
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey("p1");
+        mapping.setLatestVersion("1.0.0");
+        mappingConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId("p1"), PROMPT_GROUP, ns))
+                .thenReturn(mappingConfig);
         
         Page<?> actual = service.listPrompts(ns, "p", "blur", null, 1, 10);
         assertEquals(1, actual.getPageItems().size());
@@ -359,15 +381,15 @@ class PromptAdminOperationServiceImplTest {
     void queryPromptDetailShouldThrowWhenVersionConfigMissing() {
         String ns = "public";
         String key = "p1";
-        PromptMetaInfo meta = new PromptMetaInfo();
-        meta.setPromptKey(key);
-        meta.setVersions(new ArrayList<>(List.of("1.0.0")));
-        meta.setLabels(new HashMap<>());
-        meta.setBizTags(new ArrayList<>());
-        meta.setLatestVersion("1.0.0");
+        PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
+        mapping.setPromptKey(key);
+        mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
+        mapping.setLabels(new HashMap<>());
+        mapping.setLatestVersion("1.0.0");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
-        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(meta));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildMetaDataId(key), PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
+                .thenReturn(metaConfig);
         when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "1.0.0"), PROMPT_GROUP, ns))
                 .thenReturn(null);
         
