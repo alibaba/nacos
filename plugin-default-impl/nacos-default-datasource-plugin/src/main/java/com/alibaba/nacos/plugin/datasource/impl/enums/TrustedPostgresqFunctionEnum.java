@@ -25,7 +25,9 @@ import java.util.Map;
  * to avoid potential SQL injection risks.
  *
  * @author blake.qiu
+ * @deprecated Use {@link com.alibaba.nacos.plugin.datasource.impl.enums.postgresql.TrustedPostgresqlFunctionEnum} replaced.
  */
+@Deprecated
 public enum TrustedPostgresqFunctionEnum {
 
     /**
