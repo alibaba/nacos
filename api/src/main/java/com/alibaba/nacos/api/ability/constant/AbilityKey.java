@@ -131,7 +131,11 @@ public enum AbilityKey {
      * @return all keys
      */
     public static Collection<AbilityKey> getAllValues(AbilityMode mode) {
-        return Collections.unmodifiableCollection(ALL_ABILITIES.get(mode).values());
+        Map<String, AbilityKey> modeAbilities = ALL_ABILITIES.get(mode);
+        if (modeAbilities == null) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableCollection(modeAbilities.values());
     }
     
     /**
@@ -140,7 +144,11 @@ public enum AbilityKey {
      * @return all names
      */
     public static Collection<String> getAllNames(AbilityMode mode) {
-        return Collections.unmodifiableCollection(ALL_ABILITIES.get(mode).keySet());
+        Map<String, AbilityKey> modeAbilities = ALL_ABILITIES.get(mode);
+        if (modeAbilities == null) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableCollection(modeAbilities.keySet());
     }
     
     /**
@@ -150,7 +158,11 @@ public enum AbilityKey {
      * @return whether contains
      */
     public static boolean isLegalKey(AbilityMode mode, String name) {
-        return ALL_ABILITIES.get(mode).containsKey(name);
+        Map<String, AbilityKey> modeAbilities = ALL_ABILITIES.get(mode);
+        if (modeAbilities == null) {
+            return false;
+        }
+        return modeAbilities.containsKey(name);
     }
     
     /**
@@ -188,7 +200,11 @@ public enum AbilityKey {
      * @return enum
      */
     public static AbilityKey getEnum(AbilityMode mode, String key) {
-        return ALL_ABILITIES.get(mode).get(key);
+        Map<String, AbilityKey> modeAbilities = ALL_ABILITIES.get(mode);
+        if (modeAbilities == null) {
+            return null;
+        }
+        return modeAbilities.get(key);
     }
     
     static {
