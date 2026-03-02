@@ -35,8 +35,6 @@
     <Match><Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/></Match>
     <!-- MS_SHOULD_BE_FINAL: 7 occurrences, static field should be final -->
     <Match><Bug pattern="MS_SHOULD_BE_FINAL"/></Match>
-    <!-- DM_BOXED_PRIMITIVE_FOR_PARSING: 4 occurrences, unnecessary boxing -->
-    <Match><Bug pattern="DM_BOXED_PRIMITIVE_FOR_PARSING"/></Match>
     <!-- HE_EQUALS_USE_HASHCODE: 3 occurrences, equals without hashCode -->
     <Match><Bug pattern="HE_EQUALS_USE_HASHCODE"/></Match>
     <!-- EQ_DONT_DEFINE_EQUALS_FOR_ENUM: 2 occurrences, enum should not override equals -->
