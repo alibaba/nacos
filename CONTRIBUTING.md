@@ -1,5 +1,7 @@
 # Contributing to Nacos
 
+[中文版](./CONTRIBUTING_zh.md)
+
 Welcome to Nacos! This document is a guideline about how to contribute to Nacos.
 
 If you find something incorrect or missing, please leave comments / suggestions.
@@ -53,10 +55,12 @@ Now, if you are ready to create PR, here is the workflow for contributors:
 4.  Keep your branch in sync
     
 5.  Commit your changes (make sure your commit message is concise)
-    
-6.  Push your commits to your forked repository
-    
-7.  Create a pull request to **develop** branch.
+
+6.  Run pre-submission checks locally (see [Pre-submission Checks](#pre-submission-checks) below)
+
+7.  Push your commits to your forked repository
+
+8.  Create a pull request to **develop** branch.
     
 
 When creating pull request:
@@ -77,6 +81,51 @@ When creating pull request:
     
 
 If your PR contains large changes, e.g. component refactor or new components, please write detailed documents about its design and usage.
+
+### License header
+
+Every new source file (`.java`, `.xml`, etc.) **must** include the Apache License 2.0 header. CI enforces this via `apache-rat:check` and your PR will fail without it.
+
+Copy the header below into every new file (adjust the comment style for non-Java files):
+
+```java
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+```
+
+### Pre-submission checks
+
+Before pushing your commits, run the following command locally to catch issues early:
+
+```bash
+mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTests
+```
+
+| Check | What it verifies |
+|-------|-----------------|
+| `compile` | Code compiles without errors |
+| `apache-rat:check` | All source files have the required Apache License header |
+| `checkstyle:check` | Code style complies with [Alibaba Java Coding Guidelines](style/NacosCheckStyle.xml) |
+| `spotbugs:check` | No high-priority bug patterns detected by [SpotBugs](https://spotbugs.github.io/) |
+
+To run unit tests:
+
+```bash
+mvn clean test
+```
 
 ### Code review guidance
 
