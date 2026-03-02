@@ -97,19 +97,19 @@ public final class InstancesDiffer {
             remvHosts.add(host);
         }
         
-        if (newHosts.size() > 0) {
+        if (!newHosts.isEmpty()) {
             NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(newHosts));
             instancesDiff.setAddedInstances(newHosts);
         }
         
-        if (remvHosts.size() > 0) {
+        if (!remvHosts.isEmpty()) {
             NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(remvHosts));
             instancesDiff.setRemovedInstances(remvHosts);
         }
         
-        if (modHosts.size() > 0) {
+        if (!modHosts.isEmpty()) {
             NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(modHosts));
             instancesDiff.setModifiedInstances(modHosts);

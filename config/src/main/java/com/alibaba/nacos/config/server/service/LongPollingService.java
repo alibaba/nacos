@@ -176,7 +176,7 @@ public class LongPollingService {
         
         long start = System.currentTimeMillis();
         Map<String, ConfigListenState> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
-        if (changedGroups.size() > 0) {
+        if (!changedGroups.isEmpty()) {
             generateResponse(req, rsp, changedGroups);
             LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
                     RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,

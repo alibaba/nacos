@@ -100,7 +100,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
             
-            if (domMap.size() > 0) {
+            if (!domMap.isEmpty()) {
                 serviceMap = domMap;
             }
         }

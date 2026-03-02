@@ -134,7 +134,7 @@ public class ParamUtils {
      * @throws NacosException nacos exception
      */
     public static void checkKeyParam(List<String> dataIds, String group) throws NacosException {
-        if (dataIds == null || dataIds.size() == 0) {
+        if (dataIds == null || dataIds.isEmpty()) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "dataIds invalid");
         }
         for (String dataId : dataIds) {

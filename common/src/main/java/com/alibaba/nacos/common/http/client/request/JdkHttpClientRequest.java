@@ -91,7 +91,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         Map<String, String> headerMap = headers.getHeader();
-        if (headerMap != null && headerMap.size() > 0) {
+        if (headerMap != null && !headerMap.isEmpty()) {
             for (Map.Entry<String, String> entry : headerMap.entrySet()) {
                 conn.setRequestProperty(entry.getKey(), entry.getValue());
             }

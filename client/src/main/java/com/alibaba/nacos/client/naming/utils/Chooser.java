@@ -50,7 +50,7 @@ public class Chooser<K, T> {
      */
     public T random() {
         List<T> items = ref.items;
-        if (items.size() == 0) {
+        if (items.isEmpty()) {
             return null;
         }
         if (items.size() == 1) {

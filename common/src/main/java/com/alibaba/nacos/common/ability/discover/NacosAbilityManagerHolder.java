@@ -80,7 +80,7 @@ public class NacosAbilityManagerHolder {
                 .sorted(Comparator.comparingInt(AbstractAbilityControlManager::getPriority))
                 .collect(Collectors.toList());
         // get the highest priority one
-        if (load.size() > 0) {
+        if (!load.isEmpty()) {
             abstractAbilityControlManager = collect.get(collect.size() - 1);
             LOGGER.info("[AbilityControlManager] Successfully initialize AbilityControlManager");
         }
