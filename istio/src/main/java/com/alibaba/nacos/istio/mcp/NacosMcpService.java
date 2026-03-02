@@ -55,7 +55,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     NacosResourceManager resourceManager;
 
     public boolean hasClientConnection() {
-        return connections.size() != 0;
+        return !connections.isEmpty();
     }
 
     @Override
@@ -158,7 +158,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     }
 
     public void handleEvent(PushRequest pushRequest) {
-        if (connections.size() == 0) {
+        if (connections.isEmpty()) {
             return;
         }
     

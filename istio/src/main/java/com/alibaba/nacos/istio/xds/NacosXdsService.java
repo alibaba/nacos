@@ -61,7 +61,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     private final Map<String, AbstractConnection<DeltaDiscoveryResponse>> deltaConnections = new ConcurrentHashMap<>(16);
 
     public boolean hasClientConnection() {
-        return connections.size() != 0 || deltaConnections.size() != 0;
+        return connections!isEmpty() || deltaConnections!isEmpty();
     }
     
     @Autowired
@@ -212,7 +212,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
 
     public void handleEvent(PushRequest pushRequest) {
-        if (connections.size() == 0) {
+        if (connections.isEmpty()) {
             return;
         }
         
@@ -252,7 +252,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
      * @param pushRequest pushRequest
      */
     public void handleConfigEvent(PushRequest pushRequest) {
-        if (connections.size() == 0) {
+        if (connections.isEmpty()) {
             return;
         }
 
@@ -402,7 +402,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
     
     public void handleDeltaEvent(PushRequest pushRequest) {
-        if (deltaConnections.size() == 0) {
+        if (deltaConnections.isEmpty()) {
             return;
         }
         pushRequest.setFull(pushRequest.getResourceSnapshot().getIstioConfig().isFullEnabled());
