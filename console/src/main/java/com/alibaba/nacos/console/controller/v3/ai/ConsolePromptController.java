@@ -19,12 +19,16 @@ package com.alibaba.nacos.console.controller.v3.ai;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -42,7 +46,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -82,19 +85,49 @@ public class ConsolePromptController {
         return Result.success(success);
     }
     
-    /**
-     * Get prompt detail.
-     *
-     * @param form the prompt form
-     * @return result of the get operation
-     * @throws NacosException if the prompt get fails
-     */
-    @GetMapping
+    @GetMapping("/metadata")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<PromptDetail> getPrompt(PromptForm form) throws NacosException {
+    public Result<PromptMetaInfo> getPromptMeta(PromptForm form) throws NacosException {
         form.validate();
-        PromptDetail detail = promptProxy.getPrompt(form);
+        PromptMetaInfo detail = promptProxy.getPromptMeta(form);
         return Result.success(detail);
+    }
+    
+    /**
+     * Query prompt detail by label/version/latest with priority label > version > latest.
+     */
+    @GetMapping("/detail")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<PromptVersionInfo> queryPromptDetail(PromptQueryForm form) throws NacosException {
+        form.validate();
+        PromptVersionInfo detail = promptProxy.queryPromptDetail(form);
+        return Result.success(detail);
+    }
+    
+    /**
+     * Bind label to a specified prompt version.
+     */
+    @PutMapping("/label")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Boolean> bindLabel(PromptLabelBindForm form, HttpServletRequest request) throws NacosException {
+        form.validate();
+        String srcUser = request.getRemoteUser();
+        String srcIp = request.getRemoteAddr();
+        boolean success = promptProxy.bindLabel(form, srcUser, srcIp);
+        return Result.success(success);
+    }
+    
+    /**
+     * Unbind label from prompt.
+     */
+    @DeleteMapping("/label")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Boolean> unbindLabel(PromptLabelForm form, HttpServletRequest request) throws NacosException {
+        form.validate();
+        String srcUser = request.getRemoteUser();
+        String srcIp = request.getRemoteAddr();
+        boolean success = promptProxy.unbindLabel(form, srcUser, srcIp);
+        return Result.success(success);
     }
     
     /**
@@ -124,42 +157,25 @@ public class ConsolePromptController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<PromptBasicInfo>> listPrompts(PromptListForm form) throws NacosException {
+    public Result<Page<PromptMetaSummary>> listPrompts(PromptListForm form) throws NacosException {
         form.validate();
-        Page<PromptBasicInfo> result = promptProxy.listPrompts(form);
+        Page<PromptMetaSummary> result = promptProxy.listPrompts(form);
         return Result.success(result);
     }
     
     /**
-     * List prompt history versions.
+     * List prompt versions with pagination.
      *
      * @param form the prompt history form
-     * @return result of the history list operation
-     * @throws NacosException if the history list fails
+     * @return result of the version list operation
+     * @throws NacosException if the version list fails
      */
-    @GetMapping("/history")
+    @GetMapping("/versions")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<PromptHistoryItem>> listPromptHistory(PromptHistoryForm form) throws NacosException {
+    public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form) throws NacosException {
         form.validate();
-        Page<PromptHistoryItem> result = promptProxy.listPromptHistory(form);
+        Page<PromptVersionSummary> result = promptProxy.listPromptVersions(form);
         return Result.success(result);
-    }
-    
-    /**
-     * Get prompt history detail by history ID.
-     *
-     * @param form      the prompt form
-     * @param historyId history record ID
-     * @return result of the history detail operation
-     * @throws NacosException if the history detail fails
-     */
-    @GetMapping("/history/detail")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<PromptDetail> getPromptHistoryDetail(PromptForm form, @RequestParam("historyId") Long historyId)
-            throws NacosException {
-        form.validate();
-        PromptDetail detail = promptProxy.getPromptHistoryDetail(form, historyId);
-        return Result.success(detail);
     }
     
     /**

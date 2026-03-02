@@ -62,6 +62,8 @@ public class AiConstants {
     
     public static final String AI_AGENT_CARD_CACHE_UPDATE_INTERVAL = "nacosAiAgentCardCacheUpdateInterval";
     
+    public static final String AI_PROMPT_CACHE_UPDATE_INTERVAL = "nacosAiPromptCacheUpdateInterval";
+    
     public static final long DEFAULT_AI_CACHE_UPDATE_INTERVAL = 10000L;
     
     public static class A2a {

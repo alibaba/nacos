@@ -55,9 +55,9 @@ public class PromptPublishForm extends PromptForm {
     private String description;
     
     /**
-     * Prompt tags (comma-separated, optional).
+     * Prompt biz tags (comma-separated, optional).
      */
-    private String promptTags;
+    private String bizTags;
     
     @Override
     public void validate() throws NacosApiException {
@@ -106,11 +106,11 @@ public class PromptPublishForm extends PromptForm {
         this.description = description;
     }
     
-    public String getPromptTags() {
-        return promptTags;
+    public String getBizTags() {
+        return bizTags;
     }
     
-    public void setPromptTags(String promptTags) {
-        this.promptTags = promptTags;
+    public void setBizTags(String bizTags) {
+        this.bizTags = bizTags;
     }
 }

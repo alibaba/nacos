@@ -150,16 +150,23 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public boolean publishPrompt(Prompt prompt) throws NacosException {
-        return false;
-    }
-    
-    @Override
-    public Prompt subscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException {
+    public Prompt getPromptByVersion(String promptKey, String version) throws NacosException {
         return null;
     }
     
     @Override
-    public void unsubscribePrompt(String promptKey, AbstractNacosPromptListener promptListener) throws NacosException {
+    public Prompt getPromptByLabel(String promptKey, String label) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Prompt subscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void unsubscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException {
     }
 }

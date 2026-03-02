@@ -156,7 +156,6 @@ class PublishPromptVersion extends React.Component {
           version: values.version,
           template: template,
           commitMsg: values.commitMsg || '',
-          description: description,
         },
         success: data => {
           this.setState({ loading: false });

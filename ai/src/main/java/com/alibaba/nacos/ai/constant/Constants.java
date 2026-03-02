@@ -138,6 +138,8 @@ public class Constants {
         
         public static final String ADMIN_PATH = "/v3/admin/ai/prompt";
         
+        public static final String CLIENT_PATH = "/v3/client/ai/prompt";
+        
         /**
          * Fixed group for all prompt configurations.
          */
@@ -147,6 +149,16 @@ public class Constants {
          * DataId suffix for prompt configurations.
          */
         public static final String PROMPT_DATA_ID_SUFFIX = ".json";
+        
+        /**
+         * DataId suffix for admin side prompt metadata.
+         */
+        public static final String ADMIN_INFO_DATA_ID_SUFFIX = ".admin-info" + PROMPT_DATA_ID_SUFFIX;
+        
+        /**
+         * DataId suffix for runtime label/version mapping.
+         */
+        public static final String LABEL_VERSION_MAPPING_DATA_ID_SUFFIX = ".label-version-mapping" + PROMPT_DATA_ID_SUFFIX;
         
         /**
          * Key for prompt version in extInfo.

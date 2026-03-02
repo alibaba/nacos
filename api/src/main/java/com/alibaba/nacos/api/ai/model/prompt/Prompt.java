@@ -32,19 +32,9 @@ public class Prompt implements Serializable {
     private static final long serialVersionUID = 1L;
     
     /**
-     * Namespace ID (Nacos management field).
-     */
-    private String namespaceId;
-    
-    /**
      * Prompt key (unique identifier within namespace).
      */
     private String promptKey;
-    
-    /**
-     * Prompt description.
-     */
-    private String description;
     
     /**
      * Prompt version in format "major.minor.patch" (e.g., "1.0.0").
@@ -55,11 +45,6 @@ public class Prompt implements Serializable {
      * Prompt template content.
      */
     private String template;
-    
-    /**
-     * Commit message for this version.
-     */
-    private String commitMsg;
     
     /**
      * MD5 hash of the prompt content (for CAS operations).
@@ -75,28 +60,12 @@ public class Prompt implements Serializable {
         this.template = template;
     }
     
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-    
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
-    }
-    
     public String getPromptKey() {
         return promptKey;
     }
     
     public void setPromptKey(String promptKey) {
         this.promptKey = promptKey;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
     }
     
     public String getVersion() {
@@ -113,14 +82,6 @@ public class Prompt implements Serializable {
     
     public void setTemplate(String template) {
         this.template = template;
-    }
-    
-    public String getCommitMsg() {
-        return commitMsg;
-    }
-    
-    public void setCommitMsg(String commitMsg) {
-        this.commitMsg = commitMsg;
     }
     
     public String getMd5() {
@@ -171,7 +132,6 @@ public class Prompt implements Serializable {
     
     @Override
     public String toString() {
-        return "Prompt{" + "namespaceId='" + namespaceId + '\'' + ", promptKey='" + promptKey + '\'' + ", version='"
-                + version + '\'' + ", description='" + description + '\'' + '}';
+        return "Prompt{" + "promptKey='" + promptKey + '\'' + ", version='" + version + '\'' + '}';
     }
 }

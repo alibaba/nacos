@@ -1,0 +1,214 @@
+/*
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.client.ai.cache;
+
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
+import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class NacosPromptCacheHolderTest {
+    
+    @Mock
+    private AiGrpcClient aiGrpcClient;
+    
+    private NacosPromptCacheHolder cacheHolder;
+    
+    @BeforeEach
+    void setUp() {
+        Properties properties = new Properties();
+        properties.put(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL, "100");
+        cacheHolder = new NacosPromptCacheHolder(aiGrpcClient, NacosClientProperties.PROTOTYPE.derive(properties));
+    }
+    
+    @AfterEach
+    void tearDown() throws NacosException {
+        cacheHolder.shutdown();
+        NotifyCenter.deregisterPublisher(PromptChangedEvent.class);
+    }
+    
+    @Test
+    void subscribePromptShouldReturnNullAndScheduleWhenNotFound() throws Exception {
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null))
+                .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+        
+        Prompt result = cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        
+        assertNull(result);
+        assertEquals(1, getUpdateTaskMap().size());
+    }
+    
+    @Test
+    void subscribePromptShouldCacheAndPublishEventWhenFound() throws Exception {
+        Prompt prompt = new Prompt("p1", "1.0.0", "v1");
+        prompt.setMd5("m1");
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        
+        assertNotNull(getPromptCache().get("p1::version:1.0.0"));
+        waitForSubscriber(subscriber);
+        assertTrue(subscriber.invokedMark.get());
+    }
+    
+    @Test
+    void updaterShouldIgnoreWhenNotModified() throws Exception {
+        Prompt prompt = new Prompt("p1", "1.0.0", "v1");
+        prompt.setMd5("m1");
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, "m1"))
+                .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        
+        Runnable updater = getOnlyUpdater();
+        updater.run();
+        TimeUnit.MILLISECONDS.sleep(50);
+        
+        assertEquals("v1", getPromptCache().get("p1::version:1.0.0").getTemplate());
+        assertTrue(!subscriber.invokedMark.get());
+    }
+    
+    @Test
+    void updaterShouldEvictAndPublishNullEventWhenNotFound() throws Exception {
+        Prompt prompt = new Prompt("p1", "1.0.0", "v1");
+        prompt.setMd5("m1");
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, "m1"))
+                .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        
+        Runnable updater = getOnlyUpdater();
+        updater.run();
+        
+        assertNull(getPromptCache().get("p1::version:1.0.0"));
+        waitForSubscriber(subscriber);
+        assertTrue(subscriber.invokedMark.get());
+    }
+    
+    @Test
+    void unsubscribePromptShouldCancelTaskAndRemoveCache() throws Exception {
+        Prompt prompt = new Prompt("p1", "1.0.0", "v1");
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        
+        cacheHolder.unsubscribePrompt("p1", "1.0.0", null);
+        
+        assertTrue(getUpdateTaskMap().isEmpty());
+        assertTrue(getPromptCache().isEmpty());
+        verify(aiGrpcClient, never()).queryPrompt("p1", null, null, null);
+    }
+    
+    @Test
+    void subscribePromptShouldThrowWhenUnexpectedException() throws Exception {
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null))
+                .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
+        
+        org.junit.jupiter.api.Assertions.assertThrows(NacosException.class,
+                () -> cacheHolder.subscribePrompt("p1", "1.0.0", null));
+    }
+    
+    @Test
+    void updaterShouldIgnoreGeneralExceptionAndKeepCache() throws Exception {
+        Prompt prompt = new Prompt("p1", "1.0.0", "v1");
+        prompt.setMd5("m1");
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, "m1"))
+                .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
+        cacheHolder.subscribePrompt("p1", "1.0.0", null);
+        
+        Runnable updater = getOnlyUpdater();
+        updater.run();
+        
+        assertNotNull(getPromptCache().get("p1::version:1.0.0"));
+        assertEquals(1, getUpdateTaskMap().size());
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, Prompt> getPromptCache() throws Exception {
+        Field field = NacosPromptCacheHolder.class.getDeclaredField("promptCache");
+        field.setAccessible(true);
+        return (Map<String, Prompt>) field.get(cacheHolder);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getUpdateTaskMap() throws Exception {
+        Field field = NacosPromptCacheHolder.class.getDeclaredField("updateTaskMap");
+        field.setAccessible(true);
+        return (Map<String, Object>) field.get(cacheHolder);
+    }
+    
+    private Runnable getOnlyUpdater() throws Exception {
+        Object updater = getUpdateTaskMap().values().iterator().next();
+        return (Runnable) updater;
+    }
+    
+    private void waitForSubscriber(MockPromptEventSubscriber subscriber) throws InterruptedException {
+        for (int i = 0; i < 4; i++) {
+            if (subscriber.invokedMark.get()) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(200);
+        }
+    }
+    
+    private static class MockPromptEventSubscriber extends Subscriber<PromptChangedEvent> {
+        
+        private final AtomicBoolean invokedMark = new AtomicBoolean(false);
+        
+        @Override
+        public void onEvent(PromptChangedEvent event) {
+            invokedMark.set(true);
+        }
+        
+        @Override
+        public Class<? extends Event> subscribeType() {
+            return PromptChangedEvent.class;
+        }
+    }
+}

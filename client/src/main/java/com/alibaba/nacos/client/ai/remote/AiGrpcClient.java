@@ -26,18 +26,22 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.request.QueryPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
+import com.alibaba.nacos.api.ai.remote.response.QueryPromptResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
@@ -179,6 +183,40 @@ public class AiGrpcClient implements Closeable {
         request.setVersion(version);
         QueryMcpServerResponse response = requestToServer(request, QueryMcpServerResponse.class);
         return response.getMcpServerDetailInfo();
+    }
+    
+    /**
+     * Query prompt by latest/version/label.
+     *
+     * @param promptKey prompt key
+     * @param version prompt version, optional
+     * @param label prompt label, optional
+     * @return prompt detail
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public Prompt queryPrompt(String promptKey, String version, String label) throws NacosException {
+        return queryPrompt(promptKey, version, label, null);
+    }
+    
+    /**
+     * Query prompt by latest/version/label with optional md5.
+     *
+     * @param promptKey prompt key
+     * @param version prompt version, optional
+     * @param label prompt label, optional
+     * @param md5 client md5 for conditional query, optional
+     * @return prompt detail
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException {
+        QueryPromptRequest request = new QueryPromptRequest();
+        request.setNamespaceId(namespaceId);
+        request.setPromptKey(promptKey);
+        request.setVersion(version);
+        request.setLabel(label);
+        request.setMd5(md5);
+        QueryPromptResponse response = requestToServer(request, QueryPromptResponse.class);
+        return response.getPromptInfo();
     }
     
     /**
@@ -553,6 +591,9 @@ public class AiGrpcClient implements Closeable {
             } else if (request instanceof AbstractAgentRequest) {
                 AbstractAgentRequest agentRequest = (AbstractAgentRequest) request;
                 request.putAllHeader(getSecurityHeaders(agentRequest.getNamespaceId(), agentRequest.getAgentName()));
+            } else if (request instanceof AbstractPromptRequest) {
+                AbstractPromptRequest promptRequest = (AbstractPromptRequest) request;
+                request.putAllHeader(getSecurityHeaders(promptRequest.getNamespaceId(), promptRequest.getPromptKey()));
             } else {
                 throw new NacosException(400,
                         String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.form.prompt;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 
 import java.io.Serial;
@@ -30,6 +29,8 @@ public class PromptHistoryForm extends PromptForm {
     
     @Serial
     private static final long serialVersionUID = 1L;
+    
+    private static final int MAX_PAGE_SIZE = 50;
     
     /**
      * Page number (1-based).
@@ -51,8 +52,8 @@ public class PromptHistoryForm extends PromptForm {
         if (pageSize < 1) {
             pageSize = 10;
         }
-        if (pageSize > Constants.MAX_LIST_SIZE) {
-            pageSize = Constants.MAX_LIST_SIZE;
+        if (pageSize > MAX_PAGE_SIZE) {
+            pageSize = MAX_PAGE_SIZE;
         }
     }
     

@@ -18,12 +18,16 @@ package com.alibaba.nacos.console.proxy.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.PromptHandler;
@@ -56,15 +60,20 @@ public class PromptProxy {
         return promptHandler.publishPrompt(form, srcUser, srcIp);
     }
     
-    /**
-     * Get prompt detail.
-     *
-     * @param form prompt form
-     * @return prompt detail
-     * @throws NacosException if get fails
-     */
-    public PromptDetail getPrompt(PromptForm form) throws NacosException {
-        return promptHandler.getPrompt(form);
+    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
+        return promptHandler.getPromptMeta(form);
+    }
+    
+    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
+        return promptHandler.queryPromptDetail(form);
+    }
+    
+    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
+        return promptHandler.bindLabel(form, srcUser, srcIp);
+    }
+    
+    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
+        return promptHandler.unbindLabel(form, srcUser, srcIp);
     }
     
     /**
@@ -87,31 +96,12 @@ public class PromptProxy {
      * @return prompt list page
      * @throws NacosException if list fails
      */
-    public Page<PromptBasicInfo> listPrompts(PromptListForm form) throws NacosException {
+    public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
         return promptHandler.listPrompts(form);
     }
     
-    /**
-     * List prompt history versions.
-     *
-     * @param form prompt history form
-     * @return history list page
-     * @throws NacosException if list fails
-     */
-    public Page<PromptHistoryItem> listPromptHistory(PromptHistoryForm form) throws NacosException {
-        return promptHandler.listPromptHistory(form);
-    }
-    
-    /**
-     * Get prompt history detail.
-     *
-     * @param form      prompt form
-     * @param historyId history record ID
-     * @return prompt detail of the history version
-     * @throws NacosException if get fails
-     */
-    public PromptDetail getPromptHistoryDetail(PromptForm form, Long historyId) throws NacosException {
-        return promptHandler.getPromptHistoryDetail(form, historyId);
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
+        return promptHandler.listPromptVersions(form);
     }
     
     /**

@@ -18,12 +18,16 @@ package com.alibaba.nacos.console.handler.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
@@ -46,13 +50,44 @@ public interface PromptHandler {
     boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException;
     
     /**
-     * Get prompt detail.
+     * Gets prompt meta.
      *
-     * @param form prompt form
-     * @return prompt detail
-     * @throws NacosException if get fails
+     * @param form the form
+     * @return the prompt meta
+     * @throws NacosException the nacos exception
      */
-    PromptDetail getPrompt(PromptForm form) throws NacosException;
+    PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException;
+    
+    /**
+     * Query prompt detail prompt version info.
+     *
+     * @param form the form
+     * @return the prompt version info
+     * @throws NacosException the nacos exception
+     */
+    PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException;
+    
+    /**
+     * Bind prompt label to version.
+     *
+     * @param form    bind form
+     * @param srcUser source user
+     * @param srcIp   source ip
+     * @return true if bind success
+     * @throws NacosException if bind fails
+     */
+    boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException;
+    
+    /**
+     * Unbind prompt label.
+     *
+     * @param form    label form
+     * @param srcUser source user
+     * @param srcIp   source ip
+     * @return true if unbind success
+     * @throws NacosException if unbind fails
+     */
+    boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException;
     
     /**
      * Delete prompt.
@@ -72,26 +107,16 @@ public interface PromptHandler {
      * @return prompt list page
      * @throws NacosException if list fails
      */
-    Page<PromptBasicInfo> listPrompts(PromptListForm form) throws NacosException;
+    Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException;
     
     /**
-     * List prompt history versions.
+     * List prompt versions page.
      *
-     * @param form prompt history form
-     * @return history list page
-     * @throws NacosException if list fails
+     * @param form the form
+     * @return the page
+     * @throws NacosException the nacos exception
      */
-    Page<PromptHistoryItem> listPromptHistory(PromptHistoryForm form) throws NacosException;
-    
-    /**
-     * Get prompt history detail.
-     *
-     * @param form      prompt form
-     * @param historyId history record ID
-     * @return prompt detail of the history version
-     * @throws NacosException if get fails
-     */
-    PromptDetail getPromptHistoryDetail(PromptForm form, Long historyId) throws NacosException;
+    Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException;
     
     /**
      * Update prompt metadata (description only).

@@ -18,12 +18,16 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
+import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.api.ai.model.prompt.PromptBasicInfo;
-import com.alibaba.nacos.api.ai.model.prompt.PromptDetail;
-import com.alibaba.nacos.api.ai.model.prompt.PromptHistoryItem;
+import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.PromptHandler;
@@ -59,15 +63,45 @@ public class PromptRemoteHandler implements PromptHandler {
                 form.getVersion(),
                 form.getTemplate(),
                 form.getCommitMsg(),
-                form.getDescription()
+                form.getDescription(),
+                form.getBizTags()
         );
     }
     
     @Override
-    public PromptDetail getPrompt(PromptForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().getPromptDetail(
+    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
+        return clientHolder.getAiMaintainerService().getPromptMeta(
                 form.getNamespaceId(),
                 form.getPromptKey()
+        );
+    }
+    
+    @Override
+    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
+        return clientHolder.getAiMaintainerService().queryPromptDetail(
+                form.getNamespaceId(),
+                form.getPromptKey(),
+                form.getVersion(),
+                form.getLabel()
+        );
+    }
+    
+    @Override
+    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
+        return clientHolder.getAiMaintainerService().bindLabel(
+                form.getNamespaceId(),
+                form.getPromptKey(),
+                form.getLabel(),
+                form.getVersion()
+        );
+    }
+    
+    @Override
+    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
+        return clientHolder.getAiMaintainerService().unbindLabel(
+                form.getNamespaceId(),
+                form.getPromptKey(),
+                form.getLabel()
         );
     }
     
@@ -80,32 +114,24 @@ public class PromptRemoteHandler implements PromptHandler {
     }
     
     @Override
-    public Page<PromptBasicInfo> listPrompts(PromptListForm form) throws NacosException {
+    public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
         return clientHolder.getAiMaintainerService().listPrompts(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getSearch(),
+                form.getBizTags(),
                 form.getPageNo(),
                 form.getPageSize()
         );
     }
     
     @Override
-    public Page<PromptHistoryItem> listPromptHistory(PromptHistoryForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().listPromptHistory(
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
+        return clientHolder.getAiMaintainerService().listPromptVersions(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getPageNo(),
                 form.getPageSize()
-        );
-    }
-    
-    @Override
-    public PromptDetail getPromptHistoryDetail(PromptForm form, Long historyId) throws NacosException {
-        return clientHolder.getAiMaintainerService().getPromptHistoryDetail(
-                form.getNamespaceId(),
-                form.getPromptKey(),
-                historyId
         );
     }
     
@@ -114,7 +140,8 @@ public class PromptRemoteHandler implements PromptHandler {
         return clientHolder.getAiMaintainerService().updatePromptMetadata(
                 form.getNamespaceId(),
                 form.getPromptKey(),
-                form.getDescription()
+                form.getDescription(),
+                form.getBizTags()
         );
     }
 }

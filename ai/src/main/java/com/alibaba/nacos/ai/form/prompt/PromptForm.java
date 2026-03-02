@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.ai.form.prompt;
 
-import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 
 import java.io.Serial;
 
@@ -49,9 +49,7 @@ public class PromptForm implements NacosForm {
     }
     
     protected void fillDefaultNamespaceId() {
-        if (StringUtils.isEmpty(namespaceId)) {
-            namespaceId = Constants.Prompt.PROMPT_DEFAULT_NAMESPACE;
-        }
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
     }
     
     public String getNamespaceId() {
