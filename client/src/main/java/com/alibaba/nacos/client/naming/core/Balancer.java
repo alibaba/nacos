@@ -69,8 +69,8 @@ public class Balancer {
      */
     protected static Instance getHostByRandomWeight(List<Instance> hosts) {
         NAMING_LOGGER.debug("entry randomWithWeight");
-        if (hosts == null || hosts.size() == 0) {
-            NAMING_LOGGER.debug("hosts == null || hosts.size() == 0");
+        if (hosts == null || hosts.isEmpty()) {
+            NAMING_LOGGER.debug("hosts == null || hosts.isEmpty()");
             return null;
         }
         NAMING_LOGGER.debug("new Chooser");
