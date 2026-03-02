@@ -39,8 +39,6 @@
     <Match><Bug pattern="DM_BOXED_PRIMITIVE_FOR_PARSING"/></Match>
     <!-- HE_EQUALS_USE_HASHCODE: 3 occurrences, equals without hashCode -->
     <Match><Bug pattern="HE_EQUALS_USE_HASHCODE"/></Match>
-    <!-- EQ_DONT_DEFINE_EQUALS_FOR_ENUM: 2 occurrences, enum should not override equals -->
-    <Match><Bug pattern="EQ_DONT_DEFINE_EQUALS_FOR_ENUM"/></Match>
     <!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
     <Match><Bug pattern="DMI_BLOCKING_METHODS_ON_URL"/></Match>
     <!-- CN_IDIOM_NO_SUPER_CALL: 1 occurrence, clone() without super.clone() -->
