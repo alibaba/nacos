@@ -212,7 +212,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
 
     public void handleEvent(PushRequest pushRequest) {
-        if (connections.size() == 0) {
+        if (connections.isEmpty()) {
             return;
         }
         
@@ -252,7 +252,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
      * @param pushRequest pushRequest
      */
     public void handleConfigEvent(PushRequest pushRequest) {
-        if (connections.size() == 0) {
+        if (connections.isEmpty()) {
             return;
         }
 
@@ -402,7 +402,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
     
     public void handleDeltaEvent(PushRequest pushRequest) {
-        if (deltaConnections.size() == 0) {
+        if (deltaConnections.isEmpty()) {
             return;
         }
         pushRequest.setFull(pushRequest.getResourceSnapshot().getIstioConfig().isFullEnabled());
