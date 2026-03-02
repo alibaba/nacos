@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.prompt;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
 import com.alibaba.nacos.ai.utils.PromptVersionUtils;
-import com.alibaba.nacos.api.ai.model.prompt.PromptAdminInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptDescriptor;
 import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
@@ -127,14 +127,14 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         
         publishLabelVersionMapping(namespaceId, promptKey, mapping, snapshot.getMd5(), srcUser, srcIp);
         if (newPrompt) {
-            PromptAdminInfo adminInfo = PromptMetaUtils.initEmptyAdminInfo(promptKey);
+            PromptDescriptor descriptor = PromptMetaUtils.initEmptyDescriptor(promptKey);
             if (StringUtils.isNotBlank(description)) {
-                adminInfo.setDescription(description);
+                descriptor.setDescription(description);
             }
             if (bizTags != null) {
-                adminInfo.setBizTags(new ArrayList<>(bizTags));
+                descriptor.setBizTags(new ArrayList<>(bizTags));
             }
-            publishAdminInfo(namespaceId, promptKey, adminInfo, null, srcUser, srcIp);
+            publishDescriptor(namespaceId, promptKey, descriptor, null, srcUser, srcIp);
         }
         refreshLatestMirror(namespaceId, promptKey, mapping.getLatestVersion(), srcUser, srcIp);
         return true;
@@ -182,7 +182,7 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
                     "Required parameter `promptKey` not present");
         }
         PromptLabelVersionMappingSnapshot snapshot = loadLabelVersionMappingSnapshot(namespaceId, promptKey);
-        configOperationService.deleteConfig(PromptDataIdUtils.buildAdminInfoDataId(promptKey), PROMPT_GROUP, namespaceId, null, srcIp,
+        configOperationService.deleteConfig(PromptDataIdUtils.buildDescriptorDataId(promptKey), PROMPT_GROUP, namespaceId, null, srcIp,
                 srcUser, null);
         configOperationService.deleteConfig(PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey), PROMPT_GROUP, namespaceId, null,
                 srcIp, srcUser, null);
@@ -205,16 +205,16 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
                     "Required parameter `promptKey` not present");
         }
         requireLabelVersionMappingSnapshot(namespaceId, promptKey);
-        AdminInfoSnapshot adminSnapshot = loadAdminInfoSnapshot(namespaceId, promptKey);
-        PromptAdminInfo adminInfo = adminSnapshot.getAdminInfo() == null
-                ? PromptMetaUtils.initEmptyAdminInfo(promptKey) : adminSnapshot.getAdminInfo();
+        DescriptorSnapshot descriptorSnapshot = loadDescriptorSnapshot(namespaceId, promptKey);
+        PromptDescriptor descriptor = descriptorSnapshot.getDescriptor() == null
+                ? PromptMetaUtils.initEmptyDescriptor(promptKey) : descriptorSnapshot.getDescriptor();
         if (description != null) {
-            adminInfo.setDescription(description);
+            descriptor.setDescription(description);
         }
         if (bizTags != null) {
-            adminInfo.setBizTags(new ArrayList<>(bizTags));
+            descriptor.setBizTags(new ArrayList<>(bizTags));
         }
-        publishAdminInfo(namespaceId, promptKey, adminInfo, adminSnapshot.getMd5(), srcUser, srcIp);
+        publishDescriptor(namespaceId, promptKey, descriptor, descriptorSnapshot.getMd5(), srcUser, srcIp);
         return true;
     }
     
@@ -224,10 +224,10 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         String metaPattern;
         if (StringUtils.isEmpty(promptKey) || SEARCH_BLUR.equalsIgnoreCase(search)) {
             String keyPattern = StringUtils.isNotBlank(promptKey) ? promptKey : StringUtils.EMPTY;
-            metaPattern = ALL_PATTERN + keyPattern + ALL_PATTERN + Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX;
+            metaPattern = ALL_PATTERN + keyPattern + ALL_PATTERN + Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX;
             search = SEARCH_BLUR;
         } else {
-            metaPattern = PromptDataIdUtils.buildAdminInfoDataId(promptKey);
+            metaPattern = PromptDataIdUtils.buildDescriptorDataId(promptKey);
         }
         Map<String, Object> configAdvanceInfo = null;
         if (StringUtils.isNotBlank(bizTags)) {
@@ -238,16 +238,16 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
                 namespaceId, configAdvanceInfo);
         List<PromptMetaSummary> items = configPage.getPageItems().stream().map(each -> {
             try {
-                PromptAdminInfo adminInfo = PromptMetaUtils.normalizeAdminInfo(
-                        JacksonUtils.toObj(each.getContent(), PromptAdminInfo.class));
+                PromptDescriptor descriptor = PromptMetaUtils.normalizeDescriptor(
+                        JacksonUtils.toObj(each.getContent(), PromptDescriptor.class));
                 if (each.getGmtModified() != null) {
-                    adminInfo.setGmtModified(each.getGmtModified());
+                    descriptor.setGmtModified(each.getGmtModified());
                 }
-                String itemPromptKey = StringUtils.isBlank(adminInfo.getPromptKey())
-                        ? PromptDataIdUtils.extractPromptKeyFromAdminInfoDataId(each.getDataId())
-                        : adminInfo.getPromptKey();
+                String itemPromptKey = StringUtils.isBlank(descriptor.getPromptKey())
+                        ? PromptDataIdUtils.extractPromptKeyFromDescriptorDataId(each.getDataId())
+                        : descriptor.getPromptKey();
                 PromptLabelVersionMapping mapping = getPromptLabelVersionMapping(namespaceId, itemPromptKey);
-                PromptMetaInfo merged = PromptMetaUtils.composeMetaInfo(itemPromptKey, mapping, adminInfo);
+                PromptMetaInfo merged = PromptMetaUtils.composeMetaInfo(itemPromptKey, mapping, descriptor);
                 PromptMetaSummary result = new PromptMetaSummary();
                 result.setSchemaVersion(merged.getSchemaVersion());
                 result.setPromptKey(merged.getPromptKey());
@@ -319,8 +319,8 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         if (mapping == null) {
             return null;
         }
-        AdminInfoSnapshot adminSnapshot = loadAdminInfoSnapshot(namespaceId, promptKey);
-        return PromptMetaUtils.composeMetaInfo(promptKey, mapping, adminSnapshot.getAdminInfo());
+        DescriptorSnapshot descriptorSnapshot = loadDescriptorSnapshot(namespaceId, promptKey);
+        return PromptMetaUtils.composeMetaInfo(promptKey, mapping, descriptorSnapshot.getDescriptor());
     }
     
     @Override
@@ -375,16 +375,16 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         return loadLabelVersionMappingSnapshot(namespaceId, promptKey).getMapping();
     }
     
-    private AdminInfoSnapshot loadAdminInfoSnapshot(String namespaceId, String promptKey) {
-        ConfigInfoWrapper adminInfoConfig = configInfoPersistService.findConfigInfo(
-                PromptDataIdUtils.buildAdminInfoDataId(promptKey), PROMPT_GROUP, namespaceId);
-        if (adminInfoConfig == null || StringUtils.isBlank(adminInfoConfig.getContent())) {
-            return AdminInfoSnapshot.empty();
+    private DescriptorSnapshot loadDescriptorSnapshot(String namespaceId, String promptKey) {
+        ConfigInfoWrapper descriptorConfig = configInfoPersistService.findConfigInfo(
+                PromptDataIdUtils.buildDescriptorDataId(promptKey), PROMPT_GROUP, namespaceId);
+        if (descriptorConfig == null || StringUtils.isBlank(descriptorConfig.getContent())) {
+            return DescriptorSnapshot.empty();
         }
-        PromptAdminInfo adminInfo = PromptMetaUtils.normalizeAdminInfo(
-                JacksonUtils.toObj(adminInfoConfig.getContent(), PromptAdminInfo.class));
-        adminInfo.setGmtModified(adminInfoConfig.getLastModified());
-        return new AdminInfoSnapshot(adminInfo, adminInfoConfig.getMd5());
+        PromptDescriptor descriptor = PromptMetaUtils.normalizeDescriptor(
+                JacksonUtils.toObj(descriptorConfig.getContent(), PromptDescriptor.class));
+        descriptor.setGmtModified(descriptorConfig.getLastModified());
+        return new DescriptorSnapshot(descriptor, descriptorConfig.getMd5());
     }
     
     private void refreshLatestMirror(String namespaceId, String promptKey, String latestVersion, String srcUser, String srcIp)
@@ -405,11 +405,11 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         publishConfig(namespaceId, mappingDataId, JacksonUtils.toJson(mapping), srcUser, srcIp, casMd5, true, null);
     }
     
-    private void publishAdminInfo(String namespaceId, String promptKey, PromptAdminInfo adminInfo, String casMd5, String srcUser,
+    private void publishDescriptor(String namespaceId, String promptKey, PromptDescriptor descriptor, String casMd5, String srcUser,
             String srcIp) throws NacosException {
-        String adminInfoDataId = PromptDataIdUtils.buildAdminInfoDataId(promptKey);
-        publishConfig(namespaceId, adminInfoDataId, JacksonUtils.toJson(adminInfo), srcUser, srcIp, casMd5, true,
-                joinBizTags(adminInfo.getBizTags()));
+        String descriptorDataId = PromptDataIdUtils.buildDescriptorDataId(promptKey);
+        publishConfig(namespaceId, descriptorDataId, JacksonUtils.toJson(descriptor), srcUser, srcIp, casMd5, true,
+                joinBizTags(descriptor.getBizTags()));
     }
     
     private void publishConfig(String namespaceId, String dataId, String content, String srcUser, String srcIp, String casMd5,
@@ -460,27 +460,27 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
                 .collect(Collectors.joining(","));
     }
     
-    private static class AdminInfoSnapshot {
+    private static class DescriptorSnapshot {
         
-        private final PromptAdminInfo adminInfo;
+        private final PromptDescriptor descriptor;
         
         private final String md5;
         
-        AdminInfoSnapshot(PromptAdminInfo adminInfo, String md5) {
-            this.adminInfo = adminInfo;
+        DescriptorSnapshot(PromptDescriptor descriptor, String md5) {
+            this.descriptor = descriptor;
             this.md5 = md5;
         }
         
-        public PromptAdminInfo getAdminInfo() {
-            return adminInfo;
+        public PromptDescriptor getDescriptor() {
+            return descriptor;
         }
         
         public String getMd5() {
             return md5;
         }
         
-        static AdminInfoSnapshot empty() {
-            return new AdminInfoSnapshot(null, null);
+        static DescriptorSnapshot empty() {
+            return new DescriptorSnapshot(null, null);
         }
     }
     

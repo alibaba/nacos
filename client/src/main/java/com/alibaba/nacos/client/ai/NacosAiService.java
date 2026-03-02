@@ -56,7 +56,9 @@ import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
 import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
 import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
+import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -87,6 +89,8 @@ public class NacosAiService implements AiService {
     
     private final AiGrpcClient grpcClient;
     
+    private final AiClientProxy aiClientProxy;
+    
     private final NacosMcpServerCacheHolder mcpServerCacheHolder;
     
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
@@ -103,13 +107,20 @@ public class NacosAiService implements AiService {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
-        // Create ConfigService instance for Skill operations
         this.configService = NacosFactory.createConfigService(clientProperties.asProperties());
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
+        String transportMode = clientProperties.getProperty(AiConstants.AI_TRANSPORT_MODE,
+                AiConstants.AI_TRANSPORT_MODE_GRPC);
+        if (AiConstants.AI_TRANSPORT_MODE_HTTP.equalsIgnoreCase(transportMode)) {
+            LOGGER.info("AI transport mode is HTTP, using AiHttpClientProxy for prompt operations.");
+            this.aiClientProxy = new AiHttpClientProxy(namespaceId, clientProperties);
+        } else {
+            this.aiClientProxy = this.grpcClient;
+        }
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.skillCacheHolder = new NacosSkillCacheHolder(configService, this.namespaceId);
-        this.promptCacheHolder = new NacosPromptCacheHolder(grpcClient, clientProperties);
+        this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -550,9 +561,9 @@ public class NacosAiService implements AiService {
                     "parameters `promptKey` can't be empty or null");
         }
         if (StringUtils.isBlank(version)) {
-            return grpcClient.queryPrompt(promptKey, null, null);
+            return aiClientProxy.queryPrompt(promptKey, null, null, null);
         }
-        return grpcClient.queryPrompt(promptKey, version, null);
+        return aiClientProxy.queryPrompt(promptKey, version, null, null);
     }
     
     @Override
@@ -565,7 +576,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `label` can't be empty or null");
         }
-        return grpcClient.queryPrompt(promptKey, null, label);
+        return aiClientProxy.queryPrompt(promptKey, null, label, null);
     }
     
     @Override
@@ -609,9 +620,11 @@ public class NacosAiService implements AiService {
     @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
+        if (this.aiClientProxy != this.grpcClient) {
+            this.aiClientProxy.shutdown();
+        }
         this.mcpServerCacheHolder.shutdown();
         this.skillCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();
-        // ConfigService will be closed automatically when client shuts down
     }
 }

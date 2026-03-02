@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
-import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 class NacosPromptCacheHolderTest {
     
     @Mock
-    private AiGrpcClient aiGrpcClient;
+    private AiClientProxy aiClientProxy;
     
     private NacosPromptCacheHolder cacheHolder;
     
@@ -58,7 +58,7 @@ class NacosPromptCacheHolderTest {
     void setUp() {
         Properties properties = new Properties();
         properties.put(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL, "100");
-        cacheHolder = new NacosPromptCacheHolder(aiGrpcClient, NacosClientProperties.PROTOTYPE.derive(properties));
+        cacheHolder = new NacosPromptCacheHolder(aiClientProxy, NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @AfterEach
@@ -69,7 +69,7 @@ class NacosPromptCacheHolderTest {
     
     @Test
     void subscribePromptShouldReturnNullAndScheduleWhenNotFound() throws Exception {
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null))
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null))
                 .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         
         Prompt result = cacheHolder.subscribePrompt("p1", "1.0.0", null);
@@ -82,7 +82,7 @@ class NacosPromptCacheHolderTest {
     void subscribePromptShouldCacheAndPublishEventWhenFound() throws Exception {
         Prompt prompt = new Prompt("p1", "1.0.0", "v1");
         prompt.setMd5("m1");
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
         MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
         NotifyCenter.registerSubscriber(subscriber);
         
@@ -97,8 +97,8 @@ class NacosPromptCacheHolderTest {
     void updaterShouldIgnoreWhenNotModified() throws Exception {
         Prompt prompt = new Prompt("p1", "1.0.0", "v1");
         prompt.setMd5("m1");
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, "m1"))
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
                 .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
@@ -116,8 +116,8 @@ class NacosPromptCacheHolderTest {
     void updaterShouldEvictAndPublishNullEventWhenNotFound() throws Exception {
         Prompt prompt = new Prompt("p1", "1.0.0", "v1");
         prompt.setMd5("m1");
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, "m1"))
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
                 .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
@@ -134,19 +134,19 @@ class NacosPromptCacheHolderTest {
     @Test
     void unsubscribePromptShouldCancelTaskAndRemoveCache() throws Exception {
         Prompt prompt = new Prompt("p1", "1.0.0", "v1");
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
         cacheHolder.unsubscribePrompt("p1", "1.0.0", null);
         
         assertTrue(getUpdateTaskMap().isEmpty());
         assertTrue(getPromptCache().isEmpty());
-        verify(aiGrpcClient, never()).queryPrompt("p1", null, null, null);
+        verify(aiClientProxy, never()).queryPrompt("p1", null, null, null);
     }
     
     @Test
     void subscribePromptShouldThrowWhenUnexpectedException() throws Exception {
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null))
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null))
                 .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
         
         org.junit.jupiter.api.Assertions.assertThrows(NacosException.class,
@@ -157,8 +157,8 @@ class NacosPromptCacheHolderTest {
     void updaterShouldIgnoreGeneralExceptionAndKeepCache() throws Exception {
         Prompt prompt = new Prompt("p1", "1.0.0", "v1");
         prompt.setMd5("m1");
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
-        when(aiGrpcClient.queryPrompt("p1", "1.0.0", null, "m1"))
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
+        when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
                 .thenThrow(new NacosException(NacosException.SERVER_ERROR, "server error"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         

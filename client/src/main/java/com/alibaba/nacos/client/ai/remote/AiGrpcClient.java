@@ -64,7 +64,6 @@ import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
@@ -91,7 +90,7 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
  *
  * @author xiweng.yy
  */
-public class AiGrpcClient implements Closeable {
+public class AiGrpcClient implements AiClientProxy {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AiGrpcClient.class);
     

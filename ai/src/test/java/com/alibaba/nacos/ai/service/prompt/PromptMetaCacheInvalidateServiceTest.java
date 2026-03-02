@@ -50,7 +50,7 @@ class PromptMetaCacheInvalidateServiceTest {
     
     @Test
     void onEventShouldIgnoreWhenDataIdNotMeta() {
-        LocalDataChangeEvent event = new LocalDataChangeEvent(GroupKey.getKey("p1.admin-info.json", "nacos-ai-prompt", "public"));
+        LocalDataChangeEvent event = new LocalDataChangeEvent(GroupKey.getKey("p1.descriptor.json", "nacos-ai-prompt", "public"));
         service.onEvent(event);
         verify(promptClientOperationService, never()).invalidateMetaCache("public", "p1");
     }

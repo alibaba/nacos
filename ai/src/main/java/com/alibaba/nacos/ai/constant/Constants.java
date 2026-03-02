@@ -151,9 +151,9 @@ public class Constants {
         public static final String PROMPT_DATA_ID_SUFFIX = ".json";
         
         /**
-         * DataId suffix for admin side prompt metadata.
+         * DataId suffix for descriptor side prompt metadata.
          */
-        public static final String ADMIN_INFO_DATA_ID_SUFFIX = ".admin-info" + PROMPT_DATA_ID_SUFFIX;
+        public static final String DESCRIPTOR_DATA_ID_SUFFIX = ".descriptor" + PROMPT_DATA_ID_SUFFIX;
         
         /**
          * DataId suffix for runtime label/version mapping.

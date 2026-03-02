@@ -30,11 +30,16 @@ public final class PromptDataIdUtils {
     }
     
     public static String buildMetaDataId(String promptKey) {
-        return buildAdminInfoDataId(promptKey);
+        return buildDescriptorDataId(promptKey);
     }
     
+    public static String buildDescriptorDataId(String promptKey) {
+        return promptKey + Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX;
+    }
+    
+    @Deprecated
     public static String buildAdminInfoDataId(String promptKey) {
-        return promptKey + Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX;
+        return buildDescriptorDataId(promptKey);
     }
     
     public static String buildLabelVersionMappingDataId(String promptKey) {
@@ -56,11 +61,16 @@ public final class PromptDataIdUtils {
      * @return true if meta dataId
      */
     public static boolean isMetaDataId(String dataId) {
-        return isAdminInfoDataId(dataId);
+        return isDescriptorDataId(dataId);
     }
     
+    public static boolean isDescriptorDataId(String dataId) {
+        return StringUtils.isNotBlank(dataId) && dataId.endsWith(Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX);
+    }
+    
+    @Deprecated
     public static boolean isAdminInfoDataId(String dataId) {
-        return StringUtils.isNotBlank(dataId) && dataId.endsWith(Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX);
+        return isDescriptorDataId(dataId);
     }
     
     /**
@@ -80,20 +90,25 @@ public final class PromptDataIdUtils {
      * @return prompt key if valid, otherwise null
      */
     public static String extractPromptKeyFromMetaDataId(String dataId) {
-        return extractPromptKeyFromAdminInfoDataId(dataId);
+        return extractPromptKeyFromDescriptorDataId(dataId);
     }
     
     /**
-     * Extract prompt key from prompt admin info dataId.
+     * Extract prompt key from prompt descriptor dataId.
      *
      * @param dataId config dataId
      * @return prompt key if valid, otherwise null
      */
-    public static String extractPromptKeyFromAdminInfoDataId(String dataId) {
-        if (!isAdminInfoDataId(dataId)) {
+    public static String extractPromptKeyFromDescriptorDataId(String dataId) {
+        if (!isDescriptorDataId(dataId)) {
             return null;
         }
-        return dataId.substring(0, dataId.length() - Constants.Prompt.ADMIN_INFO_DATA_ID_SUFFIX.length());
+        return dataId.substring(0, dataId.length() - Constants.Prompt.DESCRIPTOR_DATA_ID_SUFFIX.length());
+    }
+    
+    @Deprecated
+    public static String extractPromptKeyFromAdminInfoDataId(String dataId) {
+        return extractPromptKeyFromDescriptorDataId(dataId);
     }
     
     /**

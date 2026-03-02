@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.ai.utils.PromptVersionUtils;
-import com.alibaba.nacos.api.ai.model.prompt.PromptAdminInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptDescriptor;
 import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -80,19 +80,19 @@ public final class PromptMetaUtils {
     }
     
     /**
-     * Ensure admin info collection fields are initialized.
+     * Ensure descriptor collection fields are initialized.
      *
-     * @param adminInfo admin info
-     * @return normalized admin info
+     * @param descriptor descriptor
+     * @return normalized descriptor
      */
-    public static PromptAdminInfo normalizeAdminInfo(PromptAdminInfo adminInfo) {
-        if (adminInfo == null) {
+    public static PromptDescriptor normalizeDescriptor(PromptDescriptor descriptor) {
+        if (descriptor == null) {
             return null;
         }
-        if (adminInfo.getBizTags() == null) {
-            adminInfo.setBizTags(new ArrayList<>(4));
+        if (descriptor.getBizTags() == null) {
+            descriptor.setBizTags(new ArrayList<>(4));
         }
-        return adminInfo;
+        return descriptor;
     }
     
     /**
@@ -138,21 +138,21 @@ public final class PromptMetaUtils {
     }
     
     /**
-     * Defensive clone for prompt admin info object.
+     * Defensive clone for prompt descriptor object.
      *
-     * @param adminInfo admin info
-     * @return cloned admin info
+     * @param descriptor descriptor
+     * @return cloned descriptor
      */
-    public static PromptAdminInfo cloneAdminInfo(PromptAdminInfo adminInfo) {
-        if (adminInfo == null) {
+    public static PromptDescriptor cloneDescriptor(PromptDescriptor descriptor) {
+        if (descriptor == null) {
             return null;
         }
-        PromptAdminInfo copied = new PromptAdminInfo();
-        copied.setSchemaVersion(adminInfo.getSchemaVersion());
-        copied.setPromptKey(adminInfo.getPromptKey());
-        copied.setDescription(adminInfo.getDescription());
-        copied.setGmtModified(adminInfo.getGmtModified());
-        copied.setBizTags(adminInfo.getBizTags() == null ? new ArrayList<>(4) : new ArrayList<>(adminInfo.getBizTags()));
+        PromptDescriptor copied = new PromptDescriptor();
+        copied.setSchemaVersion(descriptor.getSchemaVersion());
+        copied.setPromptKey(descriptor.getPromptKey());
+        copied.setDescription(descriptor.getDescription());
+        copied.setGmtModified(descriptor.getGmtModified());
+        copied.setBizTags(descriptor.getBizTags() == null ? new ArrayList<>(4) : new ArrayList<>(descriptor.getBizTags()));
         return copied;
     }
     
@@ -186,27 +186,27 @@ public final class PromptMetaUtils {
     }
     
     /**
-     * Build empty prompt admin info for first publish flow.
+     * Build empty prompt descriptor for first publish flow.
      *
      * @param promptKey prompt key
-     * @return initialized prompt admin info
+     * @return initialized prompt descriptor
      */
-    public static PromptAdminInfo initEmptyAdminInfo(String promptKey) {
-        PromptAdminInfo result = new PromptAdminInfo();
+    public static PromptDescriptor initEmptyDescriptor(String promptKey) {
+        PromptDescriptor result = new PromptDescriptor();
         result.setPromptKey(promptKey);
         result.setBizTags(new ArrayList<>(4));
         return result;
     }
     
     /**
-     * Compose full prompt meta info from mapping and admin info.
+     * Compose full prompt meta info from mapping and descriptor.
      *
      * @param promptKey prompt key
      * @param mapping runtime mapping
-     * @param adminInfo admin info
+     * @param descriptor descriptor
      * @return merged prompt meta info
      */
-    public static PromptMetaInfo composeMetaInfo(String promptKey, PromptLabelVersionMapping mapping, PromptAdminInfo adminInfo) {
+    public static PromptMetaInfo composeMetaInfo(String promptKey, PromptLabelVersionMapping mapping, PromptDescriptor descriptor) {
         PromptMetaInfo result = new PromptMetaInfo();
         result.setPromptKey(promptKey);
         if (mapping != null) {
@@ -219,12 +219,12 @@ public final class PromptMetaUtils {
             result.setVersions(new ArrayList<>(4));
             result.setLabels(new HashMap<>(4));
         }
-        if (adminInfo != null) {
-            result.setSchemaVersion(adminInfo.getSchemaVersion());
-            result.setDescription(adminInfo.getDescription());
-            result.setBizTags(adminInfo.getBizTags() == null ? new ArrayList<>(4) : new ArrayList<>(adminInfo.getBizTags()));
-            if (adminInfo.getGmtModified() != null) {
-                result.setGmtModified(adminInfo.getGmtModified());
+        if (descriptor != null) {
+            result.setSchemaVersion(descriptor.getSchemaVersion());
+            result.setDescription(descriptor.getDescription());
+            result.setBizTags(descriptor.getBizTags() == null ? new ArrayList<>(4) : new ArrayList<>(descriptor.getBizTags()));
+            if (descriptor.getGmtModified() != null) {
+                result.setGmtModified(descriptor.getGmtModified());
             }
         } else {
             result.setBizTags(new ArrayList<>(4));
