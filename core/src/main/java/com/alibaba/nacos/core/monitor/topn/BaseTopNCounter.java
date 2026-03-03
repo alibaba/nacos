@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public abstract class BaseTopNCounter<T> {
     
     private final Comparator<Pair<String, AtomicInteger>> comparator;

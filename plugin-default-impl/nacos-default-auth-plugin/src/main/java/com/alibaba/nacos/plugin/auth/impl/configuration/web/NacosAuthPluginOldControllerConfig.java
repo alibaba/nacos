@@ -18,39 +18,24 @@ package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.controller.PermissionController;
-import com.alibaba.nacos.plugin.auth.impl.controller.RoleController;
 import com.alibaba.nacos.plugin.auth.impl.controller.UserController;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 
 /**
- * Nacos auth plugin controller config.
+ * Nacos auth plugin v1 controller config. Registers only the v1 login API;
+ * other v1 auth APIs (user CRUD, role, permission) are in nacos-api-legacy-adapter.
  *
  * @author xiweng.yy
  * @deprecated after v1 api not supported
  */
 @Deprecated
 public class NacosAuthPluginOldControllerConfig {
-    
+
     @Bean
-    public UserController userController(NacosUserService userDetailsService, NacosRoleService roleService,
-            AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
+    public UserController userController(AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
             TokenManagerDelegate jwtTokenManager, AuthenticationManager authenticationManager) {
-        return new UserController(jwtTokenManager, userDetailsService, roleService, authConfigs, iAuthenticationManager,
-                authenticationManager);
-    }
-    
-    @Bean
-    public RoleController roleController(NacosRoleService roleService) {
-        return new RoleController(roleService);
-    }
-    
-    @Bean
-    public PermissionController permissionController(NacosRoleService roleService) {
-        return new PermissionController(roleService);
+        return new UserController(jwtTokenManager, authConfigs, iAuthenticationManager, authenticationManager);
     }
 }

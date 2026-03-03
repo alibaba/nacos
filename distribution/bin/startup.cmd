@@ -85,6 +85,14 @@ if %FUNCTION_MODE% == "naming" (
     set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.functionMode=naming"
 )
 
+rem set JVM options for Java 9+
+for /f tokens^=2-5^ delims^=.-_+^" %%j in ('"%JAVA%" -fullversion 2^>^&1') do set "JAVA_MAJOR_VERSION=%%j"
+if %JAVA_MAJOR_VERSION% GEQ 9 (
+    set "NACOS_JVM_OPTS=%NACOS_JVM_OPTS% --add-opens=java.base/java.lang=ALL-UNNAMED"
+    set "NACOS_JVM_OPTS=%NACOS_JVM_OPTS% --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+    set "NACOS_JVM_OPTS=%NACOS_JVM_OPTS% --add-opens=java.base/java.util=ALL-UNNAMED"
+)
+
 rem set nacos options
 set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.deployment.type=%DEPLOYMENT%"
 set "NACOS_OPTS=%NACOS_OPTS% -Dloader.path=%BASE_DIR%/plugins,%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb,%BASE_DIR%/plugins/selector"

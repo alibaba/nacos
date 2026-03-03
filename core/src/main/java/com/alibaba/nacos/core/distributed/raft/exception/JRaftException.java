@@ -21,7 +21,6 @@ package com.alibaba.nacos.core.distributed.raft.exception;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftException extends RuntimeException {
     
     private static final long serialVersionUID = 8802314713344513544L;

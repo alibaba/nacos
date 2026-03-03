@@ -93,7 +93,7 @@ import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_
  *
  * @author lixiaoshuang
  */
-@SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength", "PMD.MethodTooLongRule"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedConfigInfoPersistServiceImpl")
 public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistService {
@@ -168,6 +168,10 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {

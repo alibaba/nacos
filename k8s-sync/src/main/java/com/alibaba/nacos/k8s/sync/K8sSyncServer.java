@@ -100,7 +100,6 @@ public class K8sSyncServer {
      *
      * @throws IOException io exception
      */
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public void startInformer() throws IOException {
         ApiClient apiClient;
         CoreV1Api coreV1Api;

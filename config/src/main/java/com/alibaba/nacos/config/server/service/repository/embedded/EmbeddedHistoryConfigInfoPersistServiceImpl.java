@@ -58,7 +58,7 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
  *
  * @author lixiaoshuang
  */
-@SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedHistoryConfigInfoPersistServiceImpl")
 public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfigInfoPersistService {

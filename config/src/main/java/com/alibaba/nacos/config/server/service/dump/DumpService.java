@@ -58,7 +58,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DumpService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);

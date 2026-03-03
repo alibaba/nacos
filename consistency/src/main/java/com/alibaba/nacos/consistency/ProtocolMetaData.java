@@ -32,7 +32,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
     
     private final Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
@@ -93,7 +92,6 @@ public final class ProtocolMetaData {
         metaDataMap.computeIfAbsent(group, s -> new MetaData(group)).unSubscribe(key, observer);
     }
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public static final class MetaData {
         
         private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>(8);

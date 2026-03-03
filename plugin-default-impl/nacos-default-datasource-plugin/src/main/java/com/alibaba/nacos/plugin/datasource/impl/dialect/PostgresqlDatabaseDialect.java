@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.dialect;
 
 import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
-import com.alibaba.nacos.plugin.datasource.impl.enums.TrustedPostgresqFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.impl.enums.postgresql.TrustedPostgresqlFunctionEnum;
 
 /**
  * PostgreSQL database dialect.
@@ -52,7 +52,7 @@ public class PostgresqlDatabaseDialect extends AbstractDatabaseDialect {
 
     @Override
     public String getFunction(String functionName) {
-        return TrustedPostgresqFunctionEnum.getFunctionByName(functionName);
+        return TrustedPostgresqlFunctionEnum.getFunctionByName(functionName);
     }
 
 }

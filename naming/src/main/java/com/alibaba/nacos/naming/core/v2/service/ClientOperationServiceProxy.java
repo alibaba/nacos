@@ -37,7 +37,6 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @DependsOn("namingSubscriberServiceV2Impl")
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
 public class ClientOperationServiceProxy implements ClientOperationService {
     

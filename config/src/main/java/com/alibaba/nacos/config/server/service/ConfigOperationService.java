@@ -84,7 +84,6 @@ public class ConfigOperationService {
      *
      * @throws NacosException NacosException.
      */
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey) throws NacosException {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
@@ -211,6 +210,10 @@ public class ConfigOperationService {
         
         ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());
+        // set old md5
+        if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
+            configInfo.setMd5(configRequestInfo.getCasMd5());
+        }
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(configForm.getEncryptedDataKey());
         

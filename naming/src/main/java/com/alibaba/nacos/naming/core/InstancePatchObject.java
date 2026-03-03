@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Patch object for instance update. To save which variables will be update by {@link
- * com.alibaba.nacos.naming.controllers.InstanceController#patch(HttpServletRequest)} API
+ * com.alibaba.nacos.legacy.adapter.naming.InstanceController#patch(HttpServletRequest)} API
  *
  * @author xiweng.yy
  */

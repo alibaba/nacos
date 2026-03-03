@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.springframework.stereotype.Component;
@@ -42,14 +41,13 @@ import java.util.concurrent.TimeoutException;
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
 /**
- * TCP health check processor for v2.x.
+ * MySQL health check processor for v2.x.
  *
  * <p>Current health check logic is same as v1.x. TODO refactor health check for v2.x.
  *
  * @author xiweng.yy
  */
 @Component
-@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
     
     public static final String TYPE = HealthCheckType.MYSQL.name();
@@ -125,10 +123,6 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
         
         @Override
         public void run() {
-            
-            Statement statement = null;
-            ResultSet resultSet = null;
-            
             try {
                 String clusterName = instance.getCluster();
                 String key =
@@ -136,27 +130,29 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
                                 .getPort();
                 Connection connection = CONNECTION_POOL.get(key);
                 Mysql config = (Mysql) metadata.getHealthChecker();
-                
+
                 if (connection == null || connection.isClosed()) {
                     String url = "jdbc:mysql://" + instance.getIp() + ":" + instance.getPort() + "?connectTimeout="
                             + CONNECT_TIMEOUT_MS + "&socketTimeout=" + CONNECT_TIMEOUT_MS + "&loginTimeout=" + 1;
                     connection = DriverManager.getConnection(url, config.getUser(), config.getPwd());
                     CONNECTION_POOL.put(key, connection);
                 }
-                
-                statement = connection.createStatement();
-                statement.setQueryTimeout(1);
-                
-                resultSet = statement.executeQuery(config.getCmd());
-                int resultColumnIndex = 2;
-                
-                if (CHECK_MYSQL_MASTER_SQL.equals(config.getCmd())) {
-                    resultSet.next();
-                    if (MYSQL_SLAVE_READONLY.equals(resultSet.getString(resultColumnIndex))) {
-                        throw new IllegalStateException("current node is slave!");
+
+                try (Statement statement = connection.createStatement()) {
+                    statement.setQueryTimeout(1);
+
+                    try (ResultSet resultSet = statement.executeQuery(config.getCmd())) {
+                        int resultColumnIndex = 2;
+
+                        if (CHECK_MYSQL_MASTER_SQL.equals(config.getCmd())) {
+                            resultSet.next();
+                            if (MYSQL_SLAVE_READONLY.equals(resultSet.getString(resultColumnIndex))) {
+                                throw new IllegalStateException("current node is slave!");
+                            }
+                        }
                     }
                 }
-                
+
                 healthCheckCommon.checkOk(task, service, "mysql:+ok");
                 healthCheckCommon.reEvaluateCheckRt(System.currentTimeMillis() - startTime, task,
                         switchDomain.getMysqlHealthParams());
@@ -168,39 +164,25 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
             } catch (Throwable t) {
                 Throwable cause = t;
                 int maxStackDepth = 50;
-                for (int deepth = 0; deepth < maxStackDepth && cause != null; deepth++) {
+                for (int depth = 0; depth < maxStackDepth && cause != null; depth++) {
                     if (cause instanceof SocketTimeoutException || cause instanceof ConnectException
                             || cause instanceof TimeoutException || cause.getCause() instanceof TimeoutException) {
-                        
+
                         healthCheckCommon.checkFail(task, service, "mysql:timeout:" + cause.getMessage());
                         healthCheckCommon.reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,
                                 switchDomain.getMysqlHealthParams());
                         return;
                     }
-                    
+
                     cause = cause.getCause();
                 }
-                
+
                 // connection error, probably not reachable
                 healthCheckCommon.checkFail(task, service, "mysql:error:" + t.getMessage());
                 healthCheckCommon.reEvaluateCheckRt(switchDomain.getMysqlHealthParams().getMax(), task,
                         switchDomain.getMysqlHealthParams());
             } finally {
                 instance.setCheckRt(System.currentTimeMillis() - startTime);
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (SQLException e) {
-                        Loggers.SRV_LOG.error("[MYSQL-CHECK] failed to close statement:" + statement, e);
-                    }
-                }
-                if (resultSet != null) {
-                    try {
-                        resultSet.close();
-                    } catch (SQLException e) {
-                        Loggers.SRV_LOG.error("[MYSQL-CHECK] failed to close resultSet:" + resultSet, e);
-                    }
-                }
             }
         }
     }
