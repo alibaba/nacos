@@ -60,14 +60,18 @@ class PluginStatePersistenceTest {
 
     @BeforeEach
     void setUp() {
-        System.setProperty("nacos.home", tempDir.toString());
+        // Use EnvUtil.setNacosHomePath to set the static cached path directly.
+        // This ensures proper isolation when running with other tests (e.g. mvn test -pl core),
+        // since getNacosHome() prefers the static nacosHomePath over System.getProperty("nacos.home").
+        EnvUtil.setNacosHomePath(tempDir.toString());
         pluginDataDir = Paths.get(tempDir.toString(), "data", "plugin");
         persistence = new FilePluginStatePersistenceImpl();
     }
 
     @AfterEach
     void tearDown() {
-        System.clearProperty("nacos.home");
+        // Clear the static cached path to avoid affecting other tests.
+        EnvUtil.setNacosHomePath(null);
     }
 
     @Test
