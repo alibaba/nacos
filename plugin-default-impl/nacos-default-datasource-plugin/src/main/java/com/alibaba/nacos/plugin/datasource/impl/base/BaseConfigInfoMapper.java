@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.base;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
@@ -106,9 +107,12 @@ public class BaseConfigInfoMapper extends ConfigInfoMapperByMySql {
     public MapperResult findAllConfigInfoFragment(MapperContext context) {
         int startRow = context.getStartRow();
         int pageSize = context.getPageSize();
+        String contextParameter = context.getContextParameter(ContextConstant.NEED_CONTENT);
+        boolean needContent = Boolean.parseBoolean(contextParameter);
         String sql = getLimitPageSqlWithOffset(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                        + "FROM config_info WHERE id > ? ORDER BY id ASC ", startRow, pageSize);
+                "SELECT id,data_id,group_id,tenant_id,app_name," + (needContent ? "content," : "")
+                        + "md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id > ? ORDER BY id ASC ",
+                startRow, pageSize);
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID)));
     }
     
@@ -201,7 +205,7 @@ public class BaseConfigInfoMapper extends ConfigInfoMapperByMySql {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         List<Object> paramList = new ArrayList<>();
-        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info";
+        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
         paramList.add(tenant);
@@ -244,7 +248,7 @@ public class BaseConfigInfoMapper extends ConfigInfoMapperByMySql {
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
+        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id LIKE ? ");
         List<Object> paramList = new ArrayList<>();

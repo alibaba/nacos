@@ -44,7 +44,6 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: ConfigTransportClient.java, v 0.1 2020年08月24日 2:01 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConfigTransportClient {
     
     private static final String CONFIG_INFO_HEADER = "exConfigInfo";
@@ -145,7 +144,6 @@ public abstract class ConfigTransportClient {
     /**
      * base start client.
      */
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void start() throws NacosException {
         securityProxy.login(this.properties);
         this.loginScheduledExecutor =

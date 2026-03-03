@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.lock.model.LockInstance;
  * @author 985492783@qq.com
  * @date 2023/8/24 19:52
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class NLock extends LockInstance {
     
     private static final long serialVersionUID = -346054842454875524L;

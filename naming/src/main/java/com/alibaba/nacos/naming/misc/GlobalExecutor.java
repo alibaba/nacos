@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author nacos
  */
-@SuppressWarnings({"checkstyle:indentation", "PMD.ThreadPoolCreationRule"})
+@SuppressWarnings("checkstyle:indentation")
 public class GlobalExecutor {
     
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);

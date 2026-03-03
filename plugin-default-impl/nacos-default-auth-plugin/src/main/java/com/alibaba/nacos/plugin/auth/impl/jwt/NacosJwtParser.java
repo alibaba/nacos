@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
  * @author Weizhan▪Yun
  * @date 2023/1/15 21:38
  */
-@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class NacosJwtParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(NacosJwtParser.class);

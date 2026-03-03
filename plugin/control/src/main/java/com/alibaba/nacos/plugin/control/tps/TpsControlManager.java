@@ -35,7 +35,6 @@ import java.util.Map;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class TpsControlManager {
     
     private final TpsControlRuleParser tpsControlRuleParser;

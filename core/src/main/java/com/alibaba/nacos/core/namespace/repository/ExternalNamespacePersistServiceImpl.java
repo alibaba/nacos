@@ -46,7 +46,7 @@ import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInje
  *
  * @author lixiaoshuang
  */
-@SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service("externalOtherPersistServiceImpl")
 public class ExternalNamespacePersistServiceImpl implements NamespacePersistService {
@@ -149,6 +149,10 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {

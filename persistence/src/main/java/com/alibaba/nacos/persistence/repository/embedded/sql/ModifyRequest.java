@@ -24,7 +24,6 @@ import java.util.Arrays;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class ModifyRequest implements Serializable {
     
     private static final long serialVersionUID = 4548851816596520564L;

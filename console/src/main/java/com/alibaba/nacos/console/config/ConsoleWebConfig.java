@@ -21,7 +21,6 @@ import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
@@ -123,22 +122,6 @@ public class ConsoleWebConfig {
     @Bean
     public ParamCheckerFilter consoleParamCheckerFilter(ControllerMethodsCache methodsCache) {
         return new ParamCheckerFilter(methodsCache);
-    }
-    
-    @Bean
-    public ApiCompatibilityFilter consoleApiCompatibilityFilter(ControllerMethodsCache methodsCache) {
-        return new ApiCompatibilityFilter(methodsCache, null);
-    }
-    
-    @Bean
-    public FilterRegistrationBean<ApiCompatibilityFilter> consoleApiCompatibilityFilterRegistration(
-            ApiCompatibilityFilter consoleApiCompatibilityFilter) {
-        FilterRegistrationBean<ApiCompatibilityFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(consoleApiCompatibilityFilter);
-        registration.addUrlPatterns("/v1/*", "/v2/*");
-        registration.setName("consoleApiCompatibilityFilter");
-        registration.setOrder(5);
-        return registration;
     }
     
     @Bean

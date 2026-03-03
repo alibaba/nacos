@@ -25,7 +25,8 @@ import java.lang.annotation.RetentionPolicy;
  * Nacos old API compatibility annotation.
  * <p>
  *     Marked old API will be deprecated in future version, but for some users need time to refactor and move to new API.
- *     In this situation, change the configuration in {@link ApiCompatibilityConfig} to open the old API usage.
+ *     In this situation, change the configuration in {@link com.alibaba.nacos.legacy.adapter.compatibility.ApiCompatibilityConfig}
+ *     to open the old API usage.
  * </p>
  *
  * @author xiweng.yy

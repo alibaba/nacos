@@ -23,8 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * 
  * @author xinluo
  */
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", 
-        "checkstyle:SummaryJavadoc", "PMD.LowerCamelCaseVariableNamingRule"})
+@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", "checkstyle:SummaryJavadoc"})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServerVersionDetail {
 

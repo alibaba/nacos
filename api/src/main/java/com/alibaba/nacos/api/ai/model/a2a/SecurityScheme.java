@@ -24,7 +24,6 @@ import java.util.HashMap;
  *
  * @author KiteSoar
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public class SecurityScheme extends HashMap<String, Object> {
     
     private static final long serialVersionUID = -708604225878249736L;

@@ -57,8 +57,4 @@ public enum ConfigChangePointCutTypes {
     public String value() {
         return value;
     }
-    
-    public boolean equals(ConfigChangePointCutTypes configChangePointCutTypes) {
-        return this.compareTo(configChangePointCutTypes) == 0;
-    }
 }

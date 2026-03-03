@@ -104,7 +104,6 @@ public class SwitchManager extends RequestProcessor4CP {
      * @param debug whether debug
      * @throws Exception exception
      */
-    @SuppressWarnings("PMD")
     public void update(String entry, String value, boolean debug) throws Exception {
         
         this.requestLock.lock();
