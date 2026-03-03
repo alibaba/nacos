@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Prompt admin information for control plane fields.
+ * Prompt descriptor for control plane fields.
  *
  * @author nacos
  */
-public class PromptAdminInfo implements Serializable {
+public class PromptDescriptor implements Serializable {
     
     private static final long serialVersionUID = 1L;
     

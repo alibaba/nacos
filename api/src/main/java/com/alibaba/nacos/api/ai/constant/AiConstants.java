@@ -56,6 +56,12 @@ public class AiConstants {
         public static final String OFFICIAL_TRANSPORT_STREAMABLE = "streamable-http";
     }
     
+    public static final String AI_TRANSPORT_MODE = "nacosAiTransportMode";
+    
+    public static final String AI_TRANSPORT_MODE_GRPC = "grpc";
+    
+    public static final String AI_TRANSPORT_MODE_HTTP = "http";
+    
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
     
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL = "nacosAiMcpServerCacheUpdateInterval";

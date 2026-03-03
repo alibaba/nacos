@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.ai.cache;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
 import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -47,7 +47,7 @@ public class NacosPromptCacheHolder implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(NacosPromptCacheHolder.class);
     
-    private final AiGrpcClient aiGrpcClient;
+    private final AiClientProxy aiClientProxy;
     
     private final Map<String, Prompt> promptCache;
     
@@ -57,8 +57,8 @@ public class NacosPromptCacheHolder implements Closeable {
     
     private final Map<String, PromptUpdater> updateTaskMap;
     
-    public NacosPromptCacheHolder(AiGrpcClient aiGrpcClient, NacosClientProperties properties) {
-        this.aiGrpcClient = aiGrpcClient;
+    public NacosPromptCacheHolder(AiClientProxy aiClientProxy, NacosClientProperties properties) {
+        this.aiClientProxy = aiClientProxy;
         this.promptCache = new ConcurrentHashMap<>(4);
         this.updateTaskMap = new ConcurrentHashMap<>(4);
         this.updaterExecutor = new ScheduledThreadPoolExecutor(1,
@@ -72,7 +72,7 @@ public class NacosPromptCacheHolder implements Closeable {
     }
     
     private Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException {
-        return aiGrpcClient.queryPrompt(promptKey, version, label, md5);
+        return aiClientProxy.queryPrompt(promptKey, version, label, md5);
     }
     
     /**

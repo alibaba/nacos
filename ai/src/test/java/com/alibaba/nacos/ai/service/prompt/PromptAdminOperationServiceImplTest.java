@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
-import com.alibaba.nacos.api.ai.model.prompt.PromptAdminInfo;
+import com.alibaba.nacos.api.ai.model.prompt.PromptDescriptor;
 import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
@@ -101,7 +101,7 @@ class PromptAdminOperationServiceImplTest {
         assertEquals(4, forms.size());
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildVersionDataId(key, version).equals(f.getDataId())));
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildLabelVersionMappingDataId(key).equals(f.getDataId())));
-        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildAdminInfoDataId(key).equals(f.getDataId())));
+        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildDescriptorDataId(key).equals(f.getDataId())));
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildLatestDataId(key).equals(f.getDataId())));
     }
     
@@ -320,28 +320,28 @@ class PromptAdminOperationServiceImplTest {
         mapping.setPromptKey(key);
         mapping.setVersions(new ArrayList<>(List.of("1.0.0")));
         mapping.setLabels(new HashMap<>());
-        PromptAdminInfo adminInfo = new PromptAdminInfo();
-        adminInfo.setPromptKey(key);
-        adminInfo.setBizTags(new ArrayList<>(List.of("old")));
-        adminInfo.setDescription("old");
+        PromptDescriptor descriptor = new PromptDescriptor();
+        descriptor.setPromptKey(key);
+        descriptor.setBizTags(new ArrayList<>(List.of("old")));
+        descriptor.setDescription("old");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         ConfigInfoWrapper adminConfig = new ConfigInfoWrapper();
-        adminConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(adminInfo));
+        adminConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(descriptor));
         metaConfig.setMd5("m1");
         adminConfig.setMd5("m2");
         when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
                 .thenReturn(metaConfig);
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildAdminInfoDataId(key), PROMPT_GROUP, ns))
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildDescriptorDataId(key), PROMPT_GROUP, ns))
                 .thenReturn(adminConfig);
         
         service.updatePromptMetadata(ns, key, "new", List.of("a", "b"), "u1", "127.0.0.1");
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         verify(configOperationService).publishConfig(formCaptor.capture(), any(ConfigRequestInfo.class), eq(null));
-        assertEquals(PromptDataIdUtils.buildAdminInfoDataId(key), formCaptor.getValue().getDataId());
-        PromptAdminInfo written =
-                com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(), PromptAdminInfo.class);
+        assertEquals(PromptDataIdUtils.buildDescriptorDataId(key), formCaptor.getValue().getDataId());
+        PromptDescriptor written =
+                com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(), PromptDescriptor.class);
         assertEquals("new", written.getDescription());
         assertEquals(2, written.getBizTags().size());
     }
@@ -354,16 +354,16 @@ class PromptAdminOperationServiceImplTest {
         page.setPagesAvailable(1);
         page.setTotalCount(2);
         ConfigInfo ok = new ConfigInfo();
-        ok.setDataId("p1.admin-info.json");
-        PromptAdminInfo adminInfo = new PromptAdminInfo();
-        adminInfo.setPromptKey("p1");
-        adminInfo.setBizTags(new ArrayList<>(List.of("x")));
-        ok.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(adminInfo));
+        ok.setDataId("p1.descriptor.json");
+        PromptDescriptor descriptor = new PromptDescriptor();
+        descriptor.setPromptKey("p1");
+        descriptor.setBizTags(new ArrayList<>(List.of("x")));
+        ok.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(descriptor));
         ConfigInfo bad = new ConfigInfo();
-        bad.setDataId("p2.admin-info.json");
+        bad.setDataId("p2.descriptor.json");
         bad.setContent("not-json");
         page.setPageItems(List.of(ok, bad));
-        when(configDetailService.findConfigInfoPage(eq("blur"), eq(1), eq(10), eq("*p*.admin-info.json"), eq(PROMPT_GROUP), eq(ns),
+        when(configDetailService.findConfigInfoPage(eq("blur"), eq(1), eq(10), eq("*p*.descriptor.json"), eq(PROMPT_GROUP), eq(ns),
                 eq(null))).thenReturn(page);
         ConfigInfoWrapper mappingConfig = new ConfigInfoWrapper();
         PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
