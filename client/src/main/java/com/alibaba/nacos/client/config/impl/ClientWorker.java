@@ -691,7 +691,7 @@ public class ClientWorker implements Closeable {
                         try {
                             entry.getValue().shutdown();
                         } catch (NacosException nacosException) {
-                            nacosException.printStackTrace();
+                            LOGGER.warn("Failed to shutdown rpc client {}", entry.getKey(), nacosException);
                         }
                         LOGGER.info("Remove rpc client {}", entry.getKey());
                         iterator.remove();
