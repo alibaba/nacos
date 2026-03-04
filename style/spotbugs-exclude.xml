@@ -43,8 +43,6 @@
     <Match><Bug pattern="CN_IDIOM_NO_SUPER_CALL"/></Match>
     <!-- NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE: 1 occurrence -->
     <Match><Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/></Match>
-    <!-- NS_DANGEROUS_NON_SHORT_CIRCUIT: 1 occurrence, & instead of && -->
-    <Match><Bug pattern="NS_DANGEROUS_NON_SHORT_CIRCUIT"/></Match>
     <!-- RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT: 1 occurrence -->
     <Match><Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/></Match>
     <!-- RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED: 2 occurrences, concurrency risk -->
