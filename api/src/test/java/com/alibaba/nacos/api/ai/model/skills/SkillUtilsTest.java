@@ -141,7 +141,7 @@ class SkillUtilsTest {
         Path skillDir = baseDir.resolve(skill.getName());
         assertTrue(Files.exists(skillDir));
         assertTrue(Files.exists(skillDir.resolve("SKILL.md")));
-        assertTrue(Files.exists(skillDir.resolve("scripts").resolve("test.sh")));
+        assertTrue(Files.exists(skillDir.resolve("script").resolve("test.sh")));
     }
     
     @Test

@@ -59,6 +59,10 @@ public class SkillZipParser {
     private static final String INSTRUCTIONS_HEADER_NO_SPACE = "##Instructions";
     private static final String DOUBLE_QUOTE = "\"";
     private static final String SINGLE_QUOTE = "'";
+    private static final String DOUBLE_SINGLE_QUOTE = "''";
+    private static final String BACKSLASH = "\\";
+    private static final String DOUBLE_BACKSLASH = "\\\\";
+    private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
     private static final String SLASH = "/";
     /** Metadata key for binary resources: value "base64" means content is Base64-encoded. */
     private static final String METADATA_ENCODING = "encoding";
@@ -321,14 +325,31 @@ public class SkillZipParser {
                 String value = line.substring(colonIndex + 1).trim();
                 boolean hasDoubleQuotes = value.startsWith(DOUBLE_QUOTE) && value.endsWith(DOUBLE_QUOTE);
                 boolean hasSingleQuotes = value.startsWith(SINGLE_QUOTE) && value.endsWith(SINGLE_QUOTE);
-                if (hasDoubleQuotes || hasSingleQuotes) {
+                if (hasDoubleQuotes) {
                     value = value.substring(1, value.length() - 1);
+                    value = unescapeDoubleQuotedYamlValue(value);
+                } else if (hasSingleQuotes) {
+                    value = value.substring(1, value.length() - 1);
+                    value = value.replace(DOUBLE_SINGLE_QUOTE, SINGLE_QUOTE);
                 }
                 result.put(key, value);
             }
         }
         
         return result;
+    }
+
+    /**
+     * Minimal unescape for double-quoted YAML scalar values.
+     * Only revert the escape sequences that are emitted by SKILL.md exporters:
+     * - \\\\ -> \
+     * - \\\" -> "
+     */
+    private static String unescapeDoubleQuotedYamlValue(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        return value.replace(DOUBLE_BACKSLASH, BACKSLASH).replace(ESCAPED_DOUBLE_QUOTE, DOUBLE_QUOTE);
     }
     
     private static String extractInstruction(String markdownContent) {
