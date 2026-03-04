@@ -392,6 +392,10 @@
                         <exclude>**/failover_test/**</exclude>
                         <exclude>lefthook.yml</exclude>
                         <exclude>.vscode/**</exclude>
+                        <exclude>.cursor/**</exclude>
+                        <exclude>.agents/**</exclude>
+                        <exclude>.qoder/**</exclude>
+                        <exclude>skills/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
