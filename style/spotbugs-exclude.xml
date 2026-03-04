@@ -39,8 +39,6 @@
     <Match><Bug pattern="HE_EQUALS_USE_HASHCODE"/></Match>
     <!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
     <Match><Bug pattern="DMI_BLOCKING_METHODS_ON_URL"/></Match>
-    <!-- CN_IDIOM_NO_SUPER_CALL: 1 occurrence, clone() without super.clone() -->
-    <Match><Bug pattern="CN_IDIOM_NO_SUPER_CALL"/></Match>
     <!-- NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE: 1 occurrence -->
     <Match><Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/></Match>
     <!-- NS_DANGEROUS_NON_SHORT_CIRCUIT: 1 occurrence, & instead of && -->
