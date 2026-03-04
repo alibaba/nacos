@@ -422,7 +422,8 @@ class SkillDetail extends React.Component {
     }
     // If value contains special characters, wrap in quotes
     if (value.includes(':') || value.includes('"') || value.includes("'") || value.includes('\n')) {
-      return `"${value.replace(/"/g, '\\"')}"`;
+      const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return `"${escaped}"`;
     }
     return value;
   };
