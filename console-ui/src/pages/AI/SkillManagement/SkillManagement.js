@@ -32,8 +32,8 @@ import {
 } from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import PageTitle from 'components/PageTitle';
-import { getParams, request, setParams } from '@/globalLib';
-import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
+import { getParams, goLogin, request, setParams } from '@/globalLib';
+import { GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
 import TotalRender from '../../../components/Page/TotalRender';
 import SkillOptimizeDialog from './SkillOptimizeDialog';
 import './SkillManagement.scss';
@@ -355,6 +355,32 @@ class SkillManagement extends React.Component {
     });
   };
 
+  getTokenInfo = () => {
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
+    let token = {};
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log(e);
+        goLogin();
+        return {};
+      }
+    }
+    return token;
+  };
+
+  getUploadAction = () => {
+    const { accessToken = '', username = '' } = this.getTokenInfo();
+    return `v3/console/ai/skills/upload?namespaceId=${getParams('namespace') ||
+      ''}&accessToken=${accessToken}&username=${username}`;
+  };
+
+  getUploadHeaders = () => {
+    const { accessToken = '' } = this.getTokenInfo();
+    return { accessToken };
+  };
+
   beforeUpload = file => {
     const { locale = {} } = this.props;
     const isZip = file.name.toLowerCase().endsWith('.zip');
@@ -519,8 +545,8 @@ class SkillManagement extends React.Component {
                     </Button>
                     <Upload
                       accept=".zip"
-                      action={`v3/console/ai/skills/upload?namespaceId=${getParams('namespace') ||
-                        ''}`}
+                      action={this.getUploadAction()}
+                      headers={this.getUploadHeaders()}
                       beforeUpload={this.beforeUpload}
                       formatter={this.uploadFormatter}
                       onSuccess={this.handleUploadSuccess}
