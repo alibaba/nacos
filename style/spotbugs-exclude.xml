@@ -29,8 +29,6 @@
     <!-- spotbugs:check can be enabled. They will be removed one by one via     -->
     <!-- follow-up PRs that fix the underlying issues (ratchet approach).       -->
 
-    <!-- DM_DEFAULT_ENCODING: 12 occurrences, missing explicit charset -->
-    <Match><Bug pattern="DM_DEFAULT_ENCODING"/></Match>
     <!-- DMI_RANDOM_USED_ONLY_ONCE: 7 occurrences, Random instance not reused -->
     <Match><Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/></Match>
     <!-- MS_SHOULD_BE_FINAL: 7 occurrences, static field should be final -->

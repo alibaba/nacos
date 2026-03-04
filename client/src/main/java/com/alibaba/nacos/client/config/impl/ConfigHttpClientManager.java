@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -151,7 +152,7 @@ public class ConfigHttpClientManager implements Closeable {
         
         @Override
         public InputStream getBody() throws IOException {
-            return new ByteArrayInputStream("More than client-side current limit threshold".getBytes());
+            return new ByteArrayInputStream("More than client-side current limit threshold".getBytes(StandardCharsets.UTF_8));
         }
         
         @Override

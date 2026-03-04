@@ -47,8 +47,10 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -428,7 +430,10 @@ public class K8sSyncServer {
         String kubeConfigPath = k8sSyncConfig.getKubeConfig();
 
         // loading the out-of-cluster config, a kubeconfig from file-system
-        ApiClient apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+        ApiClient apiClient = ClientBuilder
+                .kubeconfig(KubeConfig.loadKubeConfig(
+                        Files.newBufferedReader(Paths.get(kubeConfigPath), StandardCharsets.UTF_8)))
+                .build();
 
         // set the global default api-client to the in-cluster one from above
         Configuration.setDefaultApiClient(apiClient);
