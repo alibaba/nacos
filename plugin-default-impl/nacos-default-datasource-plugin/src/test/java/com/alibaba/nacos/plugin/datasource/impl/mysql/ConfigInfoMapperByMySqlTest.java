@@ -276,13 +276,13 @@ class ConfigInfoMapperByMySqlTest {
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
-        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc"
+        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified"
                 + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? LIMIT " + startRow + "," + pageSize;
-        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,"
+        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"
                 + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + expectedInnerSql + ") a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc";
+                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
         assertEquals(expectedSql, mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
