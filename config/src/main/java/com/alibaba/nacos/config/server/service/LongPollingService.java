@@ -45,7 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
@@ -198,7 +198,7 @@ public class LongPollingService {
         if (!connectionCheckResponse.isSuccess()) {
             RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(
                     () -> generate503Response(asyncContext, rsp, connectionCheckResponse.getMessage()),
-                    1000L + new Random().nextInt(2000), TimeUnit.MILLISECONDS);
+                    1000L + ThreadLocalRandom.current().nextInt(2000), TimeUnit.MILLISECONDS);
             return;
         }
         

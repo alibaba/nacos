@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
@@ -231,8 +231,7 @@ public abstract class DumpService {
             }
             if (!EnvUtil.getStandaloneMode()) {
                 
-                Random random = new Random();
-                long initialDelay = random.nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
+                long initialDelay = ThreadLocalRandom.current().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
                 LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
                 
                 ConfigExecutor.scheduleConfigTask(new DumpAllProcessorRunner(), initialDelay,
@@ -243,12 +242,14 @@ public abstract class DumpService {
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeConfigWorker(this.configInfoPersistService, this.historyConfigInfoPersistService,
                                 this.configMigrateService,
-                                currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
+                                currentTime),
+                        ThreadLocalRandom.current().nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
                         TimeUnit.MILLISECONDS);
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime,
                                 this.historyConfigInfoPersistService, this.configMigrateService),
-                        random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
+                        ThreadLocalRandom.current().nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
+                        TimeUnit.MILLISECONDS);
             }
             
             HistoryConfigCleaner cleaner = HistoryConfigCleanerManager.getHistoryConfigCleaner(

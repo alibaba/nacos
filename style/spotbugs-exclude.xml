@@ -29,8 +29,6 @@
     <!-- spotbugs:check can be enabled. They will be removed one by one via     -->
     <!-- follow-up PRs that fix the underlying issues (ratchet approach).       -->
 
-    <!-- DMI_RANDOM_USED_ONLY_ONCE: 7 occurrences, Random instance not reused -->
-    <Match><Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/></Match>
     <!-- MS_SHOULD_BE_FINAL: 7 occurrences, static field should be final -->
     <Match><Bug pattern="MS_SHOULD_BE_FINAL"/></Match>
     <!-- HE_EQUALS_USE_HASHCODE: 3 occurrences, equals without hashCode -->

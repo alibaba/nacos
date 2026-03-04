@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -436,12 +436,11 @@ public abstract class RpcClient implements Closeable {
             return false;
         }
         int reTryTimes = rpcClientConfig.healthCheckRetryTimes();
-        Random random = new Random();
         while (reTryTimes >= 0) {
             reTryTimes--;
             try {
                 if (reTryTimes > 1) {
-                    Thread.sleep(random.nextInt(500));
+                    Thread.sleep(ThreadLocalRandom.current().nextInt(500));
                 }
                 Response response = this.currentConnection
                         .request(healthCheckRequest, rpcClientConfig.healthCheckTimeOut());
