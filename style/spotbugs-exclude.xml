@@ -41,12 +41,20 @@
     <Match><Bug pattern="CN_IDIOM_NO_SUPER_CALL"/></Match>
     <!-- NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE: 1 occurrence -->
     <Match><Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/></Match>
-    <!-- RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT: 1 occurrence -->
-    <Match><Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/></Match>
     <!-- RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED: 2 occurrences, concurrency risk -->
     <Match><Bug pattern="RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED"/></Match>
     <!-- SE_BAD_FIELD: 1 occurrence (High), non-serializable field in serializable class -->
     <Match><Bug pattern="SE_BAD_FIELD"/></Match>
-    <!-- ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD: 1 occurrence -->
-    <Match><Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/></Match>
+
+    <!-- ==================== Targeted class-level exclusions ==================== -->
+    <!-- RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT: LruCache.get() uses LinkedHashMap.get() for LRU side effect -->
+    <Match>
+        <Class name="com.alibaba.nacos.common.cache.decorators.LruCache"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+    <!-- ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD: Spring ApplicationContextInitializer callback -->
+    <Match>
+        <Class name="com.alibaba.nacos.sys.utils.ApplicationUtils"/>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
 </FindBugsFilter>
