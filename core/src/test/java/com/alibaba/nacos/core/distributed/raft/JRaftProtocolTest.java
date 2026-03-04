@@ -22,7 +22,6 @@ import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alipay.sofa.jraft.Node;
 import com.google.protobuf.Message;
@@ -96,7 +95,8 @@ class JRaftProtocolTest {
         jRaftMaintainServiceField.set(raftProtocol, jRaftMaintainService);
         
         when(serverMock.get(readRequest)).thenReturn(futureMock);
-        when(serverMock.commit(any(String.class), any(Message.class), any(CompletableFuture.class))).thenReturn(futureMock);
+        when(serverMock.commit(any(String.class), any(Message.class), any(CompletableFuture.class))).thenReturn(
+                futureMock);
         
         groupId = "test_group";
         when(serverMock.findNodeByGroup(groupId)).thenReturn(nodeMock);
@@ -144,8 +144,7 @@ class JRaftProtocolTest {
     @Test
     void testExecuteDelegatesToMaintainService() {
         when(jRaftMaintainService.execute(anyMap())).thenReturn(RestResultUtils.success("ok"));
-        RestResult<String> result = raftProtocol.execute(
-                Collections.singletonMap("command", "doSnapshot"));
+        RestResult<String> result = raftProtocol.execute(Collections.singletonMap("command", "doSnapshot"));
         verify(jRaftMaintainService).execute(anyMap());
     }
     
@@ -185,7 +184,9 @@ class JRaftProtocolTest {
         verify(serverMock).commit(eq(writeRequest.getGroup()), eq(writeRequest), any(CompletableFuture.class));
     }
     
-    /** When peerChange returns true on first call, memberChange returns without retrying 5 times. */
+    /**
+     * When peerChange returns true on first call, memberChange returns without retrying 5 times.
+     */
     @Test
     void testMemberChangeSucceedsOnFirstTry() {
         Set<String> addresses = new HashSet<>();
@@ -194,7 +195,9 @@ class JRaftProtocolTest {
         verify(serverMock, times(1)).peerChange(any(JRaftMaintainService.class), eq(addresses));
     }
     
-    /** Second shutdown does not call raftServer.shutdown again (idempotent). */
+    /**
+     * Second shutdown does not call raftServer.shutdown again (idempotent).
+     */
     @Test
     void testShutdownWhenAlreadyShutdownedDoesNotCallRaftServerShutdownAgain() throws Exception {
         Field initializedField = JRaftProtocol.class.getDeclaredField("initialized");
@@ -207,7 +210,9 @@ class JRaftProtocolTest {
         verify(serverMock, times(1)).shutdown();
     }
     
-    /** When already initialized, second init() does not call raftServer.init/start again. */
+    /**
+     * When already initialized, second init() does not call raftServer.init/start again.
+     */
     @Test
     void testInitWhenAlreadyInitializedDoesNotReinit() throws Exception {
         RaftConfig config = new RaftConfig();

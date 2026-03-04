@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.Status;
-import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.rpc.Connection;
 import com.alipay.sofa.jraft.rpc.RpcContext;
 import org.junit.jupiter.api.Test;
