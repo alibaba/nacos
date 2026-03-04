@@ -86,6 +86,20 @@ class SkillZipParserTest {
         assertNotNull(skill.getResource());
         assertTrue(skill.getResource().size() > 0);
     }
+
+    @Test
+    void testParseSkillFromZipWithEscapedYamlValues() throws Exception {
+        // Given
+        byte[] zipBytes = createZipWithEscapedYamlValues();
+
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then
+        assertNotNull(skill);
+        assertEquals("test\\skill\"name", skill.getName());
+        assertEquals("desc\\folder\"quoted", skill.getDescription());
+    }
     
     @Test
     void testParseSkillFromZipWithoutSkillMd() throws IOException {
@@ -344,6 +358,25 @@ class SkillZipParserTest {
             zos.putNextEntry(entry);
             String skillMd = "---\n"
                     + "name: test-skill\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Create a zip with escaped YAML values in front matter.
+     */
+    private byte[] createZipWithEscapedYamlValues() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                    + "name: \"test\\\\skill\\\"name\"\n"
+                    + "description: \"desc\\\\folder\\\"quoted\"\n"
                     + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
