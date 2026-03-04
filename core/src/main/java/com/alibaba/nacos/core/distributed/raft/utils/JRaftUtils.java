@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
@@ -78,8 +77,8 @@ public class JRaftUtils {
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
         
-        rpcServer.registerProcessor(new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
-        rpcServer.registerProcessor(new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
+        rpcServer.registerProcessor(new NacosWriteRequestProcessor(server));
+        rpcServer.registerProcessor(new NacosReadRequestProcessor(server));
         
         return rpcServer;
     }

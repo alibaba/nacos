@@ -25,7 +25,11 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
+import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
+import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
+import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
@@ -36,6 +40,7 @@ import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.NodeImpl;
 import com.alipay.sofa.jraft.core.State;
 import com.alipay.sofa.jraft.entity.PeerId;
+import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RemotingException;
 import com.alipay.sofa.jraft.rpc.CliRequests;
 import com.alipay.sofa.jraft.rpc.InvokeCallback;
@@ -64,6 +69,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,10 +77,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -338,6 +349,162 @@ class JRaftServerTest {
         assertTrue(server.isReady());
         setLeaderAs(null);
         assertFalse(server.isReady());
+    }
+    
+    @Test
+    void testGetWhenTupleNotFoundCompletesExceptionally() throws Exception {
+        ReadRequest request = ReadRequest.newBuilder().setGroup("nonexistent_group").build();
+        CompletableFuture<Response> future = server.get(request);
+        assertTrue(future.isCompletedExceptionally());
+        try {
+            future.get();
+        } catch (Exception e) {
+            assertTrue(e.getCause() instanceof NoSuchRaftGroupException);
+            assertTrue(e.getCause().getMessage().contains("nonexistent_group"));
+        }
+    }
+    
+    @Test
+    void testCommitWhenTupleNotFoundCompletesExceptionally() {
+        CompletableFuture<Response> future = new CompletableFuture<>();
+        server.commit("nonexistent_group", WriteRequest.newBuilder().build(), future);
+        assertTrue(future.isCompletedExceptionally());
+        try {
+            future.get();
+        } catch (Exception e) {
+            assertTrue(e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause().getMessage().contains("No corresponding Raft Group"));
+        }
+    }
+    
+    @Test
+    void testSetFailoverRetries() {
+        server.setFailoverRetries(10);
+        assertEquals(10, ReflectionTestUtils.getField(server, "failoverRetries"));
+    }
+    
+    /** get() with existing group and readIndex success completes future with processor response. */
+    @Test
+    void testGetWhenTupleExistsAndReadIndexSucceeds() throws Exception {
+        ReadRequest request = ReadRequest.newBuilder().setGroup("test_nacos").build();
+        Response expectedResponse = Response.newBuilder().setSuccess(true).build();
+        when(requestProcessor.onRequest(any(ReadRequest.class))).thenReturn(expectedResponse);
+        doAnswer(inv -> {
+            ReadIndexClosure closure = inv.getArgument(1);
+            closure.run(Status.OK(), 1L, new byte[0]);
+            return null;
+        }).when(node).readIndex(any(byte[].class), any(ReadIndexClosure.class));
+        
+        CompletableFuture<Response> future = server.get(request);
+        assertEquals(expectedResponse, future.get(2, java.util.concurrent.TimeUnit.SECONDS));
+        verify(requestProcessor).onRequest(eq(request));
+    }
+    
+    /** get() when readIndex fails (status not OK) falls back to readFromLeader (commit path). */
+    @Test
+    void testGetWhenReadIndexFailsFallsBackToLeader() throws Exception {
+        ReadRequest request = ReadRequest.newBuilder().setGroup("test_nacos").build();
+        doAnswer(inv -> {
+            inv.getArgument(1, ReadIndexClosure.class).run(new Status(RaftError.UNKNOWN, "read index error"), 0, new byte[0]);
+            return (Object) null;
+        }).when(node).readIndex(any(byte[].class), any(ReadIndexClosure.class));
+        when(node.isLeader()).thenReturn(true);
+        when(requestProcessor.onRequest(any(ReadRequest.class))).thenReturn(Response.newBuilder().setSuccess(true).build());
+        doAnswer(inv -> {
+            com.alipay.sofa.jraft.entity.Task task = inv.getArgument(0);
+            if (task.getDone() != null) {
+                NacosClosure nacosClosure = (NacosClosure) task.getDone();
+                nacosClosure.setResponse(Response.newBuilder().setSuccess(true).build());
+                nacosClosure.run(Status.OK());
+            }
+            return (Object) null;
+        }).when(node).apply(any(com.alipay.sofa.jraft.entity.Task.class));
+        
+        CompletableFuture<Response> future = server.get(request);
+        assertTrue(future.get(2, java.util.concurrent.TimeUnit.SECONDS).getSuccess());
+    }
+    
+    /** applyOperation enqueues task with request-type prefix and invokes node.apply. */
+    @Test
+    void testApplyOperation() {
+        WriteRequest writeRequest = WriteRequest.newBuilder().setGroup("test_nacos").build();
+        com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
+                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
+        server.applyOperation(node, writeRequest, closure);
+        verify(node).apply(any(com.alipay.sofa.jraft.entity.Task.class));
+    }
+    
+    @Test
+    void testFindNodeByGroupReturnsNullWhenTupleMissing() {
+        assertNull(server.findNodeByGroup("nonexistent"));
+    }
+    
+    /** Second shutdown returns immediately and does not double-close services. */
+    @Test
+    void testShutdownWhenAlreadyShutdownReturnsEarly() {
+        server.shutdown();
+        server.shutdown();
+        verify(cliServiceMock, times(1)).shutdown();
+    }
+    
+    /** When new peers equal current members (no removal), peerChange returns true without execute. */
+    @Test
+    void testPeerChangeWhenNoRemovalReturnsTrue() {
+        Set<String> sameAsCurrent = new HashSet<>(config.getMembers());
+        JRaftMaintainService service = new JRaftMaintainService(server);
+        assertTrue(server.peerChange(service, sameAsCurrent));
+    }
+    
+    /** When isStarted is false, createMultiRaftGroup only adds to processors and returns. */
+    @Test
+    void testCreateMultiRaftGroupWhenNotStartedOnlyAddsProcessors() throws Exception {
+        JRaftServer notStartedServer = new JRaftServer();
+        notStartedServer.init(config);
+        Field multiRaftGroupField = JRaftServer.class.getDeclaredField("multiRaftGroup");
+        multiRaftGroupField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, JRaftServer.RaftGroupTuple> map = (Map<String, JRaftServer.RaftGroupTuple>) multiRaftGroupField.get(notStartedServer);
+        int sizeBefore = map.size();
+        RequestProcessor4CP processor = org.mockito.Mockito.mock(RequestProcessor4CP.class);
+        when(processor.group()).thenReturn("new_group");
+        when(processor.loadSnapshotOperate()).thenReturn(Collections.emptyList());
+        notStartedServer.createMultiRaftGroup(Collections.singletonList(processor));
+        assertEquals(sizeBefore, map.size());
+        @SuppressWarnings("unchecked")
+        Collection<RequestProcessor4CP> processors = (Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(notStartedServer, "processors");
+        assertTrue(processors.contains(processor));
+    }
+    
+    /** createMultiRaftGroup with same group id throws DuplicateRaftGroupException. */
+    @Test
+    void testCreateMultiRaftGroupThrowsWhenDuplicateGroup() {
+        RequestProcessor4CP duplicateProcessor = org.mockito.Mockito.mock(RequestProcessor4CP.class);
+        when(duplicateProcessor.group()).thenReturn("test_nacos");
+        when(duplicateProcessor.loadSnapshotOperate()).thenReturn(Collections.emptyList());
+        assertThrows(DuplicateRaftGroupException.class,
+                () -> server.createMultiRaftGroup(Collections.singletonList(duplicateProcessor)));
+    }
+    
+    /** invokeToLeader when no leader throws NoLeaderException. */
+    @Test
+    void testInvokeToLeaderWhenNoLeaderThrowsNoLeaderException() throws Exception {
+        JRaftServer serverWithNoLeader = new JRaftServer() {
+            @Override
+            protected PeerId getLeader(String raftGroupId) {
+                return null;
+            }
+        };
+        serverWithNoLeader.init(config);
+        serverWithNoLeader.mockMultiRaftGroup(server.getMultiRaftGroup());
+        ReflectionTestUtils.setField(serverWithNoLeader, "cliClientService", cliClientServiceMock);
+        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+                int.class, FailoverClosure.class);
+        invokeToLeaderMethod.setAccessible(true);
+        com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl closure =
+                new com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl(new CompletableFuture<>());
+        invokeToLeaderMethod.invoke(serverWithNoLeader, "test_nacos", ReadRequest.newBuilder().setGroup("test_nacos").build(), 3000, closure);
+        Throwable throwable = (Throwable) ReflectionTestUtils.getField(closure, "throwable");
+        assertInstanceOf(NoLeaderException.class, throwable);
     }
     
     @AfterEach
