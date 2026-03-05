@@ -50,6 +50,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class SkillOptimizationServiceImpl implements SkillOptimizationService {
     
+    private static final String SKILL_MD_FILE_NAME = "SKILL.md";
+    
+    private static final String SKILL_MD_KEY = "skill-md";
+    
+    private static final String RESOURCE_KEYWORD_EN = "resource";
+    
+    private static final String RESOURCE_KEYWORD_ZH = "资源";
+    
     private final CopilotAgentManager agentManager;
     
     @Autowired
@@ -161,7 +169,8 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         skillInfo.append("名称：").append(skill.getName()).append("\n");
         
         // Check if target file is SKILL.md (instruction) or a resource file
-        if ("SKILL.md".equals(targetFileName) || "skill-md".equals(targetFileName)) {
+        boolean isSkillMd = SKILL_MD_FILE_NAME.equals(targetFileName) || SKILL_MD_KEY.equals(targetFileName);
+        if (isSkillMd) {
             // Target is SKILL.md, include description and instruction
             skillInfo.append("描述：").append(skill.getDescription()).append("\n");
             skillInfo.append("指令：\n").append(skill.getInstruction()).append("\n");
@@ -174,8 +183,9 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 SkillResource res = entry.getValue();
                 
                 // Match by key or name
-                if (key.equals(targetFileName)
-                    || (res.getName() != null && res.getName().equals(targetFileName))) {
+                boolean matchByKey = key.equals(targetFileName);
+                boolean matchByName = res.getName() != null && res.getName().equals(targetFileName);
+                if (matchByKey || matchByName) {
                     found = true;
                     skillInfo.append("\n目标文件：").append(key).append("\n");
                     skillInfo.append("文件名：").append(res.getName()).append("\n");
@@ -294,10 +304,12 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                 
                 // 如果优化目标中包含"资源"相关关键词，特别强调不要添加SKILL.md
                 String optimizationGoalLower = request.getOptimizationGoal().toLowerCase();
-                if (optimizationGoalLower.contains("资源") || optimizationGoalLower.contains("resource") 
+                boolean containsResourceKeyword = optimizationGoalLower.contains(RESOURCE_KEYWORD_ZH)
+                    || optimizationGoalLower.contains(RESOURCE_KEYWORD_EN)
                     || optimizationGoalLower.contains("增加") || optimizationGoalLower.contains("添加")
                     || optimizationGoalLower.contains("add") || optimizationGoalLower.contains("增加资源")
-                    || optimizationGoalLower.contains("添加资源")) {
+                    || optimizationGoalLower.contains("添加资源");
+                if (containsResourceKeyword) {
                     optimizationRequest.append("\n【绝对禁止】如果优化目标涉及添加或增加资源，请注意：");
                     optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在 resource 字段中");
                     optimizationRequest.append("\n- 绝对不能创建名为 SKILL.md 的资源文件");

@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import java.sql.Timestamp;
+import java.util.List;
+
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -26,9 +29,6 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.sql.Timestamp;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -278,8 +278,8 @@ class ConfigInfoMapperByMySqlTest {
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
         String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified"
                 + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? LIMIT " + startRow + "," + pageSize;
-        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"
-                + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
+                + ",a.gmt_modified,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + expectedInnerSql + ") a "
                 + "LEFT JOIN config_tags_relation b ON a.id=b.id "
                 + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";

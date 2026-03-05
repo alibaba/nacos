@@ -64,6 +64,7 @@ public class SkillZipParser {
     private static final String DOUBLE_BACKSLASH = "\\\\";
     private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
     private static final String SLASH = "/";
+    private static final String DOT = ".";
     /** Metadata key for binary resources: value "base64" means content is Base64-encoded. */
     private static final String METADATA_ENCODING = "encoding";
     private static final String METADATA_ENCODING_BASE64 = "base64";
@@ -163,7 +164,8 @@ public class SkillZipParser {
                     continue;
                 }
                 String name = entry.getName();
-                if (name != null && (name.contains("__MACOSX") || name.contains("/__MACOSX/"))) {
+                boolean isMacOsxEntry = name != null && (name.contains("__MACOSX") || name.contains("/__MACOSX/"));
+                if (isMacOsxEntry) {
                     continue;
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -247,10 +249,10 @@ public class SkillZipParser {
     }
     
     private static boolean isBinaryResource(String fileName) {
-        if (StringUtils.isBlank(fileName) || !fileName.contains(".")) {
+        if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
             return false;
         }
-        String ext = fileName.substring(fileName.lastIndexOf('.') + 1).trim().toLowerCase();
+        String ext = fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
         return BINARY_EXTENSIONS.contains(ext);
     }
     
