@@ -324,7 +324,7 @@ class ConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.CONTENT, "test_content");
         mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(context);
         assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,"
-                + "md5,encrypted_data_key,type,c_desc FROM config_info WHERE tenant_id LIKE ? ESCAPE '\\' "
+                + "md5,encrypted_data_key,type,c_desc,gmt_modified FROM config_info WHERE tenant_id LIKE ? ESCAPE '\\' "
                 + " AND data_id LIKE ? ESCAPE '\\'  AND group_id LIKE ? ESCAPE '\\'  AND app_name = ? "
                 + " AND content LIKE ? ESCAPE '\\' "
                 + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
