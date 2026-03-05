@@ -27,7 +27,6 @@ import jakarta.servlet.http.HttpServletRequest;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class HttpTpsCheckRequestParser {
     
     public HttpTpsCheckRequestParser() {

@@ -215,6 +215,16 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         String grayName = "grayName...";
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+
+        ConfigInfoGrayWrapper mockedConfigInfoGrayWrapper = new ConfigInfoGrayWrapper();
+        mockedConfigInfoGrayWrapper.setDataId(dataId);
+        mockedConfigInfoGrayWrapper.setGroup(group);
+        mockedConfigInfoGrayWrapper.setTenant(tenant);
+        mockedConfigInfoGrayWrapper.setId(mockedConfigInfoStateWrapper.getId());
+        mockedConfigInfoGrayWrapper.setLastModified(mockedConfigInfoStateWrapper.getLastModified());
+        mockedConfigInfoGrayWrapper.setGrayName(grayName);
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoGrayWrapper);
         
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
@@ -380,7 +390,17 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         String grayName = "grayName...";
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
-        
+
+        ConfigInfoGrayWrapper mockedConfigInfoGrayWrapper = new ConfigInfoGrayWrapper();
+        mockedConfigInfoGrayWrapper.setDataId(dataId);
+        mockedConfigInfoGrayWrapper.setGroup(group);
+        mockedConfigInfoGrayWrapper.setTenant(tenant);
+        mockedConfigInfoGrayWrapper.setId(mockedConfigInfoStateWrapper.getId());
+        mockedConfigInfoGrayWrapper.setLastModified(mockedConfigInfoStateWrapper.getLastModified());
+        mockedConfigInfoGrayWrapper.setGrayName(grayName);
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
+            eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoGrayWrapper);
+
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
         String appName = "appname";

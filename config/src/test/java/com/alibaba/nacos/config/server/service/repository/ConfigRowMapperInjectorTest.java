@@ -184,6 +184,7 @@ class ConfigRowMapperInjectorTest {
         preConfig.setGroup("group_id11");
         preConfig.setTenant("tenant_id11111");
         preConfig.setModifyTime(System.currentTimeMillis());
+        preConfig.setCreateTime(System.currentTimeMillis());
         preConfig.setId(1243567898L);
         preConfig.setAppName("app_name11111");
         preConfig.setType("type55555");
@@ -199,7 +200,9 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(new Timestamp(preConfig.getModifyTime()));
-        
+        Mockito.when(resultSet.getTimestamp(eq("gmt_create"))).thenReturn(new Timestamp(preConfig.getCreateTime()));
+
+
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         Mockito.when(resultSet.getString(eq("md5"))).thenReturn(preConfig.getMd5());
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());

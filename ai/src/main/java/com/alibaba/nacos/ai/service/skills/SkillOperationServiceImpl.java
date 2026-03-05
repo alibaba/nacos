@@ -44,8 +44,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 
@@ -222,13 +224,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill not found: " + skill.getName());
         }
         
-        // 3. Parse existing main config to get all existing resources
+        // 2. Parse existing main config to get all existing resources
         SkillMainConfig existingMainConfig = JacksonUtils.toObj(response.getContent(), SkillMainConfig.class);
         
-        // 4. Generate uniform timestamp for all configs in this update
+        // 3. Generate uniform timestamp for all configs in this update
         long uniformId = System.currentTimeMillis();
         
-        // 5. Update main config with uniformId
+        // 4. Update main config with uniformId
         ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, mainConfigInfo.getGroup(), uniformId);
         ConfigRequestInfo mainConfigRequest = new ConfigRequestInfo();
         mainConfigRequest.setUpdateForExist(Boolean.TRUE);
@@ -238,70 +240,82 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     String.format("Failed to update main config for skill: %s", skill.getName()));
         }
         
-        // 6. Build a set of existing resource keys for comparison
-        java.util.Set<String> existingResourceKeys = new java.util.HashSet<>();
-        if (existingMainConfig.getResources() != null) {
-            for (SkillResourceRef resourceRef : existingMainConfig.getResources()) {
-                String key = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                existingResourceKeys.add(key);
-            }
-        }
+        // 5. Compute existing and new resource key sets
+        Set<String> existingResourceKeys = collectResourceKeys(existingMainConfig);
+        Set<String> newResourceKeys = collectSkillResourceKeys(skill);
         
-        // 7. Build a set of new resource keys
-        java.util.Set<String> newResourceKeys = new java.util.HashSet<>();
-        if (skill.getResource() != null) {
-            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                SkillResource resource = entry.getValue();
-                String key = SkillUtils.generateResourceId(resource.getType(), resource.getName());
-                newResourceKeys.add(key);
-            }
-        }
+        // 6. Process all resources from the new skill object
+        updateSkillResources(skill, namespaceId, existingResourceKeys, uniformId);
         
-        // 8. Process all resources from the new skill object
-        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                SkillResource resource = entry.getValue();
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skill.getName(), resource.getType(), resource.getName());
-                
-                String resourceKey = SkillUtils.generateResourceId(resource.getType(), resource.getName());
-                boolean isNewResource = !existingResourceKeys.contains(resourceKey);
-                
-                ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId,
-                        resourceConfigInfo.getGroup(), resourceConfigInfo.getDataId(), uniformId);
-                ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
-                
-                if (!isNewResource) {
-                    // Update existing resource
-                    resourceConfigRequest.setUpdateForExist(Boolean.TRUE);
-                }
-                // For new resources, don't set updateForExist - this will create them
-                
-                Boolean resourcePublishResult = configOperationService.publishConfig(resourceConfigForm, resourceConfigRequest, null);
-                if (resourcePublishResult == null || !resourcePublishResult) {
-                    throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                            String.format("Failed to %s resource config for skill: %s, resource: %s",
-                                    isNewResource ? "create" : "update", skill.getName(), resource.getName()));
-                }
-            }
-        }
-        
-        // 9. Delete resources that were removed
-        if (existingMainConfig.getResources() != null && !existingMainConfig.getResources().isEmpty()) {
-            for (SkillResourceRef resourceRef : existingMainConfig.getResources()) {
-                String key = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                if (!newResourceKeys.contains(key)) {
-                    // This resource was removed, delete it
-                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                            skill.getName(), resourceRef.getType(), resourceRef.getName());
-                    configOperationService.deleteConfig(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(),
-                            namespaceId, null, null, "nacos", null);
-                }
-            }
-        }
+        // 7. Delete resources that were removed
+        deleteRemovedResources(skill.getName(), namespaceId, existingMainConfig, newResourceKeys);
         
         long startOperationTime = System.currentTimeMillis();
         syncEffectService.toSync(mainConfigForm, startOperationTime);
+    }
+    
+    private Set<String> collectResourceKeys(SkillMainConfig mainConfig) {
+        Set<String> keys = new HashSet<>();
+        if (mainConfig.getResources() != null) {
+            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
+                keys.add(SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName()));
+            }
+        }
+        return keys;
+    }
+    
+    private Set<String> collectSkillResourceKeys(Skill skill) {
+        Set<String> keys = new HashSet<>();
+        if (skill.getResource() != null) {
+            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
+                SkillResource resource = entry.getValue();
+                keys.add(SkillUtils.generateResourceId(resource.getType(), resource.getName()));
+            }
+        }
+        return keys;
+    }
+    
+    private void updateSkillResources(Skill skill, String namespaceId,
+            Set<String> existingResourceKeys, long uniformId) throws NacosException {
+        if (skill.getResource() == null || skill.getResource().isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
+            SkillResource resource = entry.getValue();
+            SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                    skill.getName(), resource.getType(), resource.getName());
+            String resourceKey = SkillUtils.generateResourceId(resource.getType(), resource.getName());
+            boolean isNewResource = !existingResourceKeys.contains(resourceKey);
+            ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId,
+                    resourceConfigInfo.getGroup(), resourceConfigInfo.getDataId(), uniformId);
+            ConfigRequestInfo resourceConfigRequest = new ConfigRequestInfo();
+            if (!isNewResource) {
+                resourceConfigRequest.setUpdateForExist(Boolean.TRUE);
+            }
+            Boolean resourcePublishResult = configOperationService.publishConfig(
+                    resourceConfigForm, resourceConfigRequest, null);
+            if (resourcePublishResult == null || !resourcePublishResult) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        String.format("Failed to %s resource config for skill: %s, resource: %s",
+                                isNewResource ? "create" : "update", skill.getName(), resource.getName()));
+            }
+        }
+    }
+    
+    private void deleteRemovedResources(String skillName, String namespaceId,
+            SkillMainConfig existingMainConfig, Set<String> newResourceKeys) throws NacosException {
+        if (existingMainConfig.getResources() == null || existingMainConfig.getResources().isEmpty()) {
+            return;
+        }
+        for (SkillResourceRef resourceRef : existingMainConfig.getResources()) {
+            String key = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
+            if (!newResourceKeys.contains(key)) {
+                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
+                        skillName, resourceRef.getType(), resourceRef.getName());
+                configOperationService.deleteConfig(resourceConfigInfo.getDataId(),
+                        resourceConfigInfo.getGroup(), namespaceId, null, null, "nacos", null);
+            }
+        }
     }
     
     @Override

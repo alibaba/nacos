@@ -42,7 +42,6 @@ import java.util.stream.IntStream;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface BaseDatabaseOperate extends DatabaseOperate {
     
     Logger LOGGER = LoggerFactory.getLogger(BaseDatabaseOperate.class);

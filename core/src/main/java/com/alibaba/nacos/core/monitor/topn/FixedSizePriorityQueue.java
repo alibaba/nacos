@@ -25,7 +25,6 @@ import java.util.List;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class FixedSizePriorityQueue<T> {
     
     private Object[] elements;

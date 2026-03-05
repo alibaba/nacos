@@ -374,7 +374,6 @@ public class Constants {
     /**
      * The constants in AI directory.
      */
-    @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     public static class AI {
         
         public static final String AI_MODULE = "ai";

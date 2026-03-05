@@ -80,7 +80,6 @@ import java.util.Set;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAiService implements AiService {
     
     private static final Logger LOGGER = LogUtils.logger(NacosAiService.class);

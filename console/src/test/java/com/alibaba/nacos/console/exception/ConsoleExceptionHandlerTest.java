@@ -21,8 +21,8 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.console.controller.NamespaceController;
-import com.alibaba.nacos.console.controller.v2.HealthControllerV2;
+import com.alibaba.nacos.console.controller.v3.core.ConsoleNamespaceController;
+import com.alibaba.nacos.console.controller.v3.ConsoleHealthController;
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
@@ -59,10 +59,10 @@ class ConsoleExceptionHandlerTest {
     private WebApplicationContext context;
     
     @MockitoBean
-    private NamespaceController namespaceController;
+    private ConsoleNamespaceController consoleNamespaceController;
     
     @MockitoBean
-    private HealthControllerV2 healthControllerV2;
+    private ConsoleHealthController consoleHealthController;
     
     @BeforeAll
     static void beforeAll() {
@@ -79,50 +79,48 @@ class ConsoleExceptionHandlerTest {
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 执行请求并验证响应码
         mockControllerThrowException(new NacosRuntimeException(NacosException.INVALID_PARAM));
-        ResultActions resultActions = mockMvc.perform(get("/v1/console/namespaces?show=all&namespaceId="));
+        ResultActions resultActions = mockMvc.perform(get("/v3/console/core/namespace").param("namespaceId", ""));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
         
-        // 执行请求并验证响应码
         mockControllerThrowException(new NacosRuntimeException(NacosException.SERVER_ERROR));
-        ResultActions resultActions1 = mockMvc.perform(get("/v1/console/namespaces?show=all&namespaceId="));
+        ResultActions resultActions1 = mockMvc.perform(get("/v3/console/core/namespace").param("namespaceId", ""));
         resultActions1.andExpect(MockMvcResultMatchers.status().is(NacosException.SERVER_ERROR));
         
-        // 执行请求并验证响应码
         mockControllerThrowException(new NacosRuntimeException(NacosApiException.OVER_THRESHOLD));
-        ResultActions resultActions2 = mockMvc.perform(get("/v1/console/namespaces?show=all&namespaceId="));
+        ResultActions resultActions2 = mockMvc.perform(get("/v3/console/core/namespace").param("namespaceId", ""));
         resultActions2.andExpect(MockMvcResultMatchers.status().is(NacosApiException.OVER_THRESHOLD));
     }
     
     @Test
     void handleIllegalArgumentException() throws Exception {
         mockControllerThrowException(new IllegalArgumentException("test"));
-        ResultActions resultActions = mockMvc.perform(get("/v1/console/namespaces?show=all&namespaceId="));
+        ResultActions resultActions = mockMvc.perform(get("/v3/console/core/namespace").param("namespaceId", ""));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
     }
     
     @Test
     void handleAccessException() throws Exception {
         mockControllerThrowException(new AccessException("test"));
-        ResultActions resultActions = mockMvc.perform(get("/v1/console/namespaces?show=all&namespaceId="));
+        ResultActions resultActions = mockMvc.perform(get("/v3/console/core/namespace").param("namespaceId", ""));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.NO_RIGHT));
     }
     
     @Test
     void handleException() throws Exception {
         mockControllerThrowException(new RuntimeException("test"));
-        ResultActions resultActions = mockMvc.perform(get("/v1/console/namespaces?show=all&namespaceId="));
+        ResultActions resultActions = mockMvc.perform(get("/v3/console/core/namespace").param("namespaceId", ""));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.SERVER_ERROR));
     }
     
     @Test
     void handleExceptionForV2() throws Exception {
-        doThrow(new RuntimeException("test")).when(healthControllerV2).liveness();
-        ResultActions resultActions = mockMvc.perform(get("/v2/console/health/liveness"));
+        doThrow(new RuntimeException("test")).when(consoleHealthController).liveness();
+        ResultActions resultActions = mockMvc.perform(get("/v3/console/health/liveness"));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.SERVER_ERROR));
     }
     
     private void mockControllerThrowException(Exception exceptionClass) throws NacosException {
-        doThrow(exceptionClass).when(namespaceController).getNamespace(anyString());
+        doThrow(exceptionClass).when(consoleNamespaceController).getNamespaceDetail(anyString());
     }
     
     private static class NacosResultErrorCodeMatcher implements ResultMatcher {

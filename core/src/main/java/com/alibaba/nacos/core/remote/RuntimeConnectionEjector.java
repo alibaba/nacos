@@ -23,7 +23,6 @@ package com.alibaba.nacos.core.remote;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RuntimeConnectionEjector {
     
     /**

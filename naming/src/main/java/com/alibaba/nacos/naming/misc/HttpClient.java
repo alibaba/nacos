@@ -36,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -216,7 +217,7 @@ public class HttpClient {
      */
     public static void asyncHttpPostLarge(String url, List<String> headers, String content, Callback<String> callback)
             throws Exception {
-        asyncHttpPostLarge(url, headers, content.getBytes(), callback);
+        asyncHttpPostLarge(url, headers, content.getBytes(StandardCharsets.UTF_8), callback);
     }
     
     /**

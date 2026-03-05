@@ -23,7 +23,6 @@ import java.util.Objects;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RedoData<T> {
     
     /**

@@ -86,7 +86,7 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
     
     @Override
     public BufferedReader getReader() throws IOException {
-        return new BufferedReader(new InputStreamReader(getInputStream()));
+        return new BufferedReader(new InputStreamReader(getInputStream(), StandardCharsets.UTF_8));
     }
     
     @Override

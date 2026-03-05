@@ -21,7 +21,6 @@ package com.alibaba.nacos.config.server.manager;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface TaskManagerMBean {
     
     /**

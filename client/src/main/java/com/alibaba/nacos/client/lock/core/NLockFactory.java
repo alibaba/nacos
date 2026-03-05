@@ -22,7 +22,6 @@ package com.alibaba.nacos.client.lock.core;
  * @author 985492783@qq.com
  * @date 2023/8/27 15:23
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class NLockFactory {
     
     /**

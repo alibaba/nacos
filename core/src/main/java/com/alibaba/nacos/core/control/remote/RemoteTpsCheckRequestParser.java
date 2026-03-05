@@ -27,7 +27,6 @@ import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RemoteTpsCheckRequestParser {
     
     public RemoteTpsCheckRequestParser() {

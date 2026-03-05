@@ -54,7 +54,6 @@ import static com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosConfigService implements ConfigService {
     
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);

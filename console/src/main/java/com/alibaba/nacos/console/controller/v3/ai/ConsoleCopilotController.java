@@ -163,7 +163,7 @@ public class ConsoleCopilotController {
                     if (response != null && response.getOptimizedSkill() != null) {
                         Skill optimizedSkill = response.getOptimizedSkill();
                         if (optimizedSkill.getResource() != null && !optimizedSkill.getResource().isEmpty()) {
-                            Map<String, SkillResource> filteredResources = new HashMap<>();
+                            Map<String, SkillResource> filteredResources = new HashMap<>(optimizedSkill.getResource().size());
                             boolean hasFiltered = false;
                             
                             for (Map.Entry<String, SkillResource> entry : optimizedSkill.getResource().entrySet()) {
