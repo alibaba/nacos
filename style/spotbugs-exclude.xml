@@ -31,9 +31,7 @@
 
     <!-- MS_SHOULD_BE_FINAL: 7 occurrences, static field should be final -->
     <Match><Bug pattern="MS_SHOULD_BE_FINAL"/></Match>
-    <!-- HE_EQUALS_USE_HASHCODE: 3 occurrences, equals without hashCode -->
-    <Match><Bug pattern="HE_EQUALS_USE_HASHCODE"/></Match>
-    <!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
+<!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
     <Match><Bug pattern="DMI_BLOCKING_METHODS_ON_URL"/></Match>
     <!-- NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE: 1 occurrence -->
     <Match><Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/></Match>
