@@ -401,6 +401,14 @@ public class ConfigRowMapperInjector {
             } catch (SQLException ignore) {
                 // 字段不存在时设置为 null，保证向后兼容
             }
+            try {
+                java.sql.Timestamp gmtModified = rs.getTimestamp("gmt_modified");
+                if (gmtModified != null) {
+                    info.setGmtModified(gmtModified.getTime());
+                }
+            } catch (SQLException ignore) {
+                // 字段不存在时设置为 null，保证向后兼容
+            }
             
             return info;
         }

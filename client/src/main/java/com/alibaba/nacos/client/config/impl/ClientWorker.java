@@ -1257,6 +1257,8 @@ public class ClientWorker implements Closeable {
             if (response.isSuccess()) {
                 LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, response.getContent());
                 configResponse.setContent(response.getContent());
+                // Set MD5 from server response
+                configResponse.setMd5(response.getMd5());
                 String configType;
                 if (StringUtils.isNotBlank(response.getContentType())) {
                     configType = response.getContentType();

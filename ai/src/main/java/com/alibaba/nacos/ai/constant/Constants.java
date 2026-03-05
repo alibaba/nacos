@@ -109,4 +109,105 @@ public class Constants {
         
         public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
     }
+    
+    public static class Skills {
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/skills";
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/skills";
+        
+        public static final String SKILL_GROUP = "skill";
+        
+        public static final String SKILL_VERSION_GROUP = "skill-version";
+        
+        public static final String SEARCH_BLUR = "blur";
+        
+        public static final String SEARCH_ACCURATE = "accurate";
+        
+        public static final String SKILL_DEFAULT_NAMESPACE = "public";
+
+        /**
+         * Max allowed size for skill zip upload (10MB). Exceeding this will result in a clear error.
+         */
+        public static final long MAX_UPLOAD_ZIP_BYTES = 10L * 1024 * 1024;
+    }
+    
+    public static class Prompt {
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/prompt";
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/prompt";
+        
+        public static final String CLIENT_PATH = "/v3/client/ai/prompt";
+        
+        /**
+         * Fixed group for all prompt configurations.
+         */
+        public static final String PROMPT_GROUP = "nacos-ai-prompt";
+        
+        /**
+         * DataId suffix for prompt configurations.
+         */
+        public static final String PROMPT_DATA_ID_SUFFIX = ".json";
+        
+        /**
+         * DataId suffix for descriptor side prompt metadata.
+         */
+        public static final String DESCRIPTOR_DATA_ID_SUFFIX = ".descriptor" + PROMPT_DATA_ID_SUFFIX;
+        
+        /**
+         * DataId suffix for runtime label/version mapping.
+         */
+        public static final String LABEL_VERSION_MAPPING_DATA_ID_SUFFIX = ".label-version-mapping" + PROMPT_DATA_ID_SUFFIX;
+        
+        /**
+         * Key for prompt version in extInfo.
+         */
+        public static final String EXT_PROMPT_VERSION = "prompt_version";
+        
+        /**
+         * Key for prompt commit message in extInfo.
+         */
+        public static final String EXT_PROMPT_COMMIT_MSG = "prompt_commit_msg";
+        
+        /**
+         * Search mode: blur search.
+         */
+        public static final String SEARCH_BLUR = "blur";
+        
+        /**
+         * Search mode: accurate search.
+         */
+        public static final String SEARCH_ACCURATE = "accurate";
+        
+        /**
+         * Default namespace for prompt.
+         */
+        public static final String PROMPT_DEFAULT_NAMESPACE = "public";
+        
+        /**
+         * Config type for prompt.
+         */
+        public static final String PROMPT_CONFIG_TYPE = "json";
+        
+        /**
+         * JSON field: promptKey.
+         */
+        public static final String FIELD_PROMPT_KEY = "promptKey";
+        
+        /**
+         * JSON field: version.
+         */
+        public static final String FIELD_VERSION = "version";
+        
+        /**
+         * JSON field: template.
+         */
+        public static final String FIELD_TEMPLATE = "template";
+        
+        /**
+         * JSON field: commitMsg.
+         */
+        public static final String FIELD_COMMIT_MSG = "commitMsg";
+    }
 }

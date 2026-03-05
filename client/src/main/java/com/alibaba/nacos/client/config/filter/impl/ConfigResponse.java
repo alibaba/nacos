@@ -27,6 +27,7 @@ import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.DATA_ID;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.ENCRYPTED_DATA_KEY;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.GROUP;
+import static com.alibaba.nacos.client.config.common.ConfigConstants.MD5;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
 
 /**
@@ -86,6 +87,26 @@ public class ConfigResponse implements IConfigResponse {
     
     public void setEncryptedDataKey(String encryptedDataKey) {
         param.put(ENCRYPTED_DATA_KEY, encryptedDataKey);
+    }
+    
+    /**
+     * Get MD5 hash of the config content.
+     *
+     * @return MD5 hash string
+     * @since 3.0
+     */
+    public String getMd5() {
+        return (String) param.get(MD5);
+    }
+    
+    /**
+     * Set MD5 hash of the config content.
+     *
+     * @param md5 MD5 hash string
+     * @since 3.0
+     */
+    public void setMd5(String md5) {
+        param.put(MD5, md5);
     }
     
     @Override

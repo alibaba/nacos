@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigQueryResult;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
@@ -261,6 +262,72 @@ public class NacosConfigService implements ConfigService {
     
     private String blank2defaultGroup(String group) {
         return (StringUtils.isBlank(group)) ? Constants.DEFAULT_GROUP : group.trim();
+    }
+    
+    private ConfigResponse getConfigInnerWithResponse(String tenant, String dataId, String group, long timeoutMs) 
+            throws NacosException {
+        group = blank2defaultGroup(group);
+        ParamUtils.checkKeyParam(dataId, group);
+        ConfigResponse cr = new ConfigResponse();
+        
+        cr.setDataId(dataId);
+        cr.setTenant(tenant);
+        cr.setGroup(group);
+        
+        // Try local failover first
+        String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
+        if (content != null) {
+            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}", worker.getAgentName(),
+                    dataId, group, tenant);
+            cr.setContent(content);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
+                    dataId, group, tenant);
+            cr.setEncryptedDataKey(encryptedDataKey);
+            // Failover doesn't have MD5 from server
+            configFilterChainManager.doFilter(null, cr);
+            return cr;
+        }
+        
+        try {
+            ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
+            cr.setContent(response.getContent());
+            cr.setMd5(response.getMd5());
+            cr.setEncryptedDataKey(response.getEncryptedDataKey());
+            cr.setConfigType(response.getConfigType());
+            configFilterChainManager.doFilter(null, cr);
+            return cr;
+        } catch (NacosException ioe) {
+            if (NacosException.NO_RIGHT == ioe.getErrCode()) {
+                throw ioe;
+            }
+            LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
+                    worker.getAgentName(), dataId, group, tenant, ioe.toString());
+        }
+        
+        // Fall back to snapshot
+        content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+        if (content != null) {
+            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}", worker.getAgentName(),
+                    dataId, group, tenant);
+        }
+        cr.setContent(content);
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(),
+                dataId, group, tenant);
+        cr.setEncryptedDataKey(encryptedDataKey);
+        // Snapshot doesn't have MD5 from server
+        configFilterChainManager.doFilter(null, cr);
+        return cr;
+    }
+    
+    @Override
+    public ConfigQueryResult getConfigWithResult(String dataId, String group, long timeoutMs) throws NacosException {
+        ConfigResponse response = getConfigInnerWithResponse(namespace, dataId, group, timeoutMs);
+        ConfigQueryResult result = new ConfigQueryResult();
+        result.setContent(response.getContent());
+        result.setMd5(response.getMd5());
+        result.setConfigType(response.getConfigType());
+        result.setEncryptedDataKey(response.getEncryptedDataKey());
+        return result;
     }
     
     private boolean removeConfigInner(String tenant, String dataId, String group, String tag) throws NacosException {

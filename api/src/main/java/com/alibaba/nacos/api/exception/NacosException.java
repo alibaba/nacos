@@ -139,6 +139,11 @@ public class NacosException extends Exception {
     public static final int NOT_FOUND = 404;
     
     /**
+     * not modified.
+     */
+    public static final int NOT_MODIFIED = 304;
+    
+    /**
      * conflict（写并发冲突）.
      */
     public static final int CONFLICT = 409;

@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.alibaba.nacos.copilot.config.CopilotConfiguration

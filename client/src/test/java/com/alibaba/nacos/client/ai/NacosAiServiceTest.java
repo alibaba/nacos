@@ -284,6 +284,9 @@ class NacosAiServiceTest {
         field.setAccessible(true);
         final AiGrpcClient autoBuildGrpcClient = (AiGrpcClient) field.get(nacosAiService);
         field.set(nacosAiService, grpcClient);
+        field = NacosAiService.class.getDeclaredField("aiClientProxy");
+        field.setAccessible(true);
+        field.set(nacosAiService, grpcClient);
         field = NacosAiService.class.getDeclaredField("mcpServerCacheHolder");
         field.setAccessible(true);
         NacosMcpServerCacheHolder autoBuildCacheHolder = (NacosMcpServerCacheHolder) field.get(nacosAiService);

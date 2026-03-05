@@ -20,14 +20,14 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
-import { getState, getNotice, getGuide } from '../reducers/base';
+import { getState, getGuide } from '../reducers/base';
 import getMenuData from './menu';
 import './index.scss';
 
 const { SubMenu, Item } = Menu;
 
 @withRouter
-@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice, getGuide })
+@connect(state => ({ ...state.locale, ...state.base }), { getState, getGuide })
 @ConfigProvider.config
 class MainLayout extends React.Component {
   constructor(props) {
@@ -48,9 +48,7 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
-    children: PropTypes.array,
-    getNotice: PropTypes.func,
-    notice: PropTypes.string,
+    children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
     consoleUiEnable: PropTypes.string,
     getGuide: PropTypes.func,
     guideMsg: PropTypes.string,
@@ -58,7 +56,6 @@ class MainLayout extends React.Component {
 
   componentDidMount() {
     this.props.getState();
-    this.props.getNotice();
     this.props.getGuide();
   }
   
@@ -77,6 +74,8 @@ class MainLayout extends React.Component {
     const pageParamMap = {
       '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
       '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/skillManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/promptManagement': ['namespace', 'namespaceShowName', 'searchName'],
       '/mcpServerManagement': ['namespace', 'namespaceShowName'],
       '/serviceManagement': ['namespace', 'namespaceShowName'],
     };
@@ -240,11 +239,6 @@ class MainLayout extends React.Component {
               </div>
             </div>
             <div className="right-panel next-shell-sub-main">
-              {authEnabled === 'false' && consoleUiEnable === 'true' ? (
-                <Message type="notice">
-                  <div dangerouslySetInnerHTML={{ __html: this.props.notice }} />
-                </Message>
-              ) : null}
               {consoleUiEnable === 'false' && (
                 <Dialog
                   visible={visible}

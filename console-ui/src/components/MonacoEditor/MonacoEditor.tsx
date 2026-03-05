@@ -52,7 +52,10 @@ class MonacoEditor extends React.Component<PropsType, StateType> {
       this.monacoEditor.setValue(nextProps.value || '');
     }
     if (language !== nextProps.language) {
-      this.monacoEditor.editor.setModelLanguage(this.monacoEditor.getModel(), nextProps.language);
+      // Use window.monaco.editor.setModelLanguage static method instead of instance method
+      if (window.monaco && window.monaco.editor && this.monacoEditor.getModel()) {
+        window.monaco.editor.setModelLanguage(this.monacoEditor.getModel(), nextProps.language);
+      }
     }
 
     if (this.monacoEditor && (width !== nextProps.width || height !== nextProps.height)) {
