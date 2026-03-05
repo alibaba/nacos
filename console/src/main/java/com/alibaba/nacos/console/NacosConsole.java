@@ -19,6 +19,7 @@ package com.alibaba.nacos.console;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -28,6 +29,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @author xiweng.yy
  */
 @SpringBootApplication(exclude = LdapAutoConfiguration.class)
+@ComponentScan(basePackages = {"com.alibaba.nacos.console", "com.alibaba.nacos.copilot"})
 @PropertySource("classpath:nacos-console.properties")
 @EnableScheduling
 public class NacosConsole {

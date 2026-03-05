@@ -46,8 +46,11 @@ public class SkillRemoteHandler implements SkillHandler {
     
     private final NacosMaintainerClientHolder clientHolder;
     
-    public SkillRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+    private final SkillUploadService skillUploadService;
+    
+    public SkillRemoteHandler(NacosMaintainerClientHolder clientHolder, SkillUploadService skillUploadService) {
         this.clientHolder = clientHolder;
+        this.skillUploadService = skillUploadService;
     }
     
     @Override
@@ -89,6 +92,6 @@ public class SkillRemoteHandler implements SkillHandler {
     
     @Override
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return clientHolder.getAiMaintainerService().uploadSkillFromZip(namespaceId, zipBytes);
+        return skillUploadService.uploadSkillFromZip(namespaceId, zipBytes);
     }
 }

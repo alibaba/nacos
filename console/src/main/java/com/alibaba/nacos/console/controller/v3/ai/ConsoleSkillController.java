@@ -17,7 +17,6 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
@@ -157,20 +156,8 @@ public class ConsoleSkillController {
     public Result<String> uploadSkill(HttpServletRequest request,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam("file") MultipartFile file) throws NacosException {
-        if (file == null || file.isEmpty()) {
-            return Result.failure(com.alibaba.nacos.api.model.v2.ErrorCode.DATA_EMPTY, "File is required");
-        }
-        if (file.getSize() > Constants.Skills.MAX_UPLOAD_ZIP_BYTES) {
-            return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "Skill zip size must not exceed " + (Constants.Skills.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
-                            + "MB, current: " + (file.getSize() / 1024 / 1024) + "MB");
-        }
-        try {
-            String skillName = skillProxy.uploadSkillFromZip(namespaceId, file.getBytes());
-            return Result.success(skillName);
-        } catch (java.io.IOException e) {
-            return Result.failure(com.alibaba.nacos.api.model.v2.ErrorCode.PARSING_DATA_FAILED,
-                    "Failed to read file: " + e.getMessage());
-        }
+        byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
+        String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes);
+        return Result.success(skillName);
     }
 }
