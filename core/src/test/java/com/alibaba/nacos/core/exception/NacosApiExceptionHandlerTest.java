@@ -51,29 +51,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 @WebMvcTest(NacosApiExceptionHandler.class)
 @EnableWebMvc
 class NacosApiExceptionHandlerTest {
-    
+
     private MockMvc mockMvc;
-    
+
     @Autowired
     private WebApplicationContext context;
-    
+
     @MockitoBean
-    private NamespaceControllerV3 namespaceControllerV2;
-    
+    private NamespaceControllerV3 namespaceControllerV3;
+
     @BeforeAll
     static void beforeAll() {
         NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
     }
-    
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
     }
-    
+
     @Test
     void testNacosExceptionHandler() throws Exception {
         mockControllerThrowException(new NacosException(NacosException.INVALID_PARAM, "test"));
@@ -81,7 +81,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.SERVER_ERROR.getCode()));
     }
-    
+
     @Test
     void testNacosApiExceptionHandler() throws Exception {
         mockControllerThrowException(
@@ -90,26 +90,26 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_MISSING.getCode()));
     }
-    
+
     @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
-        // 设置NamespaceControllerV2的行为，使其抛出NacosRuntimeException并被NacosApiExceptionHandler捕获处理
+        // 设置NamespaceControllerV3的行为，使其抛出NacosRuntimeException并被NacosApiExceptionHandler捕获处理
         mockControllerThrowException(new NacosRuntimeException(NacosException.INVALID_PARAM));
         ResultActions resultActions = mockMvc.perform(post("/v3/admin/core/namespace"));
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.SERVER_ERROR.getCode()));
-        
+
         mockControllerThrowException(new NacosRuntimeException(NacosException.SERVER_ERROR));
         ResultActions resultActions1 = mockMvc.perform(post("/v3/admin/core/namespace"));
         resultActions1.andExpect(MockMvcResultMatchers.status().is(NacosException.SERVER_ERROR));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.SERVER_ERROR.getCode()));
-        
+
         mockControllerThrowException(new NacosRuntimeException(NacosApiException.OVER_THRESHOLD));
         ResultActions resultActions2 = mockMvc.perform(post("/v3/admin/core/namespace"));
         resultActions2.andExpect(MockMvcResultMatchers.status().is(NacosApiException.OVER_THRESHOLD));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.SERVER_ERROR.getCode()));
     }
-    
+
     @Test
     void handleHttpMessageNotReadableException() throws Exception {
         mockControllerThrowException(new HttpMessageNotReadableException("test", (HttpInputMessage) null));
@@ -117,7 +117,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_MISSING.getCode()));
     }
-    
+
     @Test
     void handleHttpMessageConversionException() throws Exception {
         mockControllerThrowException(new HttpMessageConversionException("test"));
@@ -125,7 +125,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode()));
     }
-    
+
     @Test
     void handleNumberFormatException() throws Exception {
         mockControllerThrowException(new NumberFormatException("test"));
@@ -133,7 +133,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode()));
     }
-    
+
     @Test
     void handleIllegalArgumentException() throws Exception {
         mockControllerThrowException(new IllegalArgumentException("test"));
@@ -141,7 +141,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode()));
     }
-    
+
     @Test
     void handleMissingServletRequestParameterException() throws Exception {
         mockControllerThrowException(new MissingServletRequestParameterException("test", "test"));
@@ -149,7 +149,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.PARAMETER_MISSING.getCode()));
     }
-    
+
     @Test
     void handleHttpMediaTypeException() throws Exception {
         mockControllerThrowException(new HttpMediaTypeNotSupportedException("test"));
@@ -157,7 +157,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.INVALID_PARAM));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.MEDIA_TYPE_ERROR.getCode()));
     }
-    
+
     @Test
     void handleAccessException() throws Exception {
         mockControllerThrowException(new AccessException("test"));
@@ -165,7 +165,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.NO_RIGHT));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.ACCESS_DENIED.getCode()));
     }
-    
+
     @Test
     void handleDataAccessException() throws Exception {
         mockControllerThrowException(new DataIntegrityViolationException("test"));
@@ -173,7 +173,7 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.SERVER_ERROR));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.DATA_ACCESS_ERROR.getCode()));
     }
-    
+
     @Test
     void handleOtherException() throws Exception {
         mockControllerThrowException(new Exception("test"));
@@ -181,24 +181,33 @@ class NacosApiExceptionHandlerTest {
         resultActions.andExpect(MockMvcResultMatchers.status().is(NacosApiException.SERVER_ERROR));
         resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.SERVER_ERROR.getCode()));
     }
-    
-    private void mockControllerThrowException(Exception exceptionClass) throws Exception {
-        doThrow(exceptionClass).when(namespaceControllerV2).createNamespace(any());
+
+    @Test
+    void handleRuntimeExceptionWithNullMessage() throws Exception {
+        mockControllerThrowException(new RuntimeException((String) null));
+        ResultActions resultActions = mockMvc.perform(post("/v3/admin/core/namespace"));
+        resultActions.andExpect(MockMvcResultMatchers.status().isInternalServerError());
+        resultActions.andExpect(new NacosResultErrorCodeMatcher(ErrorCode.SERVER_ERROR.getCode()));
     }
-    
+
+    private void mockControllerThrowException(Exception exceptionClass) throws Exception {
+        doThrow(exceptionClass).when(namespaceControllerV3).createNamespace(any());
+    }
+
     private static class NacosResultErrorCodeMatcher implements ResultMatcher {
-        
+
         private final int errorCode;
-        
+
         private NacosResultErrorCodeMatcher(int errorCode) {
             this.errorCode = errorCode;
         }
-        
+
         @Override
         public void match(MvcResult result) throws Exception {
             String resultJson = result.getResponse().getContentAsString();
             Result actualResult = JacksonUtils.toObj(resultJson, Result.class);
             assertEquals(errorCode, actualResult.getCode());
+            assertNotNull(actualResult.getMessage(), "Exception message should not be null");
         }
     }
 }
