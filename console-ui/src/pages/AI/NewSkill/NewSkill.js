@@ -2342,7 +2342,7 @@ class NewSkill extends React.Component {
     }
     // If value contains special characters, wrap in quotes
     if (value.includes(':') || value.includes('"') || value.includes("'") || value.includes('\n')) {
-      return `"${value.replace(/"/g, '\\"')}"`;
+      return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
     }
     return value;
   };
