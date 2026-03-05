@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
-import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
@@ -28,14 +27,32 @@ import com.alipay.sofa.jraft.rpc.Connection;
 import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.google.protobuf.Message;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class AbstractProcessorTest {
+    
+    @Mock
+    private JRaftServer serverWithNullTuple;
+    
+    @Mock
+    private JRaftServer serverWithFollowerNode;
+    
+    @Mock
+    private Node followerNode;
     
     private JRaftServer server = new JRaftServer() {
         @Override
@@ -65,7 +82,7 @@ class AbstractProcessorTest {
                 return null;
             }
         };
-        AbstractProcessor processor = new NacosWriteRequestProcessor(server, SerializeFactory.getDefault());
+        AbstractProcessor processor = new NacosWriteRequestProcessor(server);
         processor.execute(server, context, WriteRequest.newBuilder().build(), new JRaftServer.RaftGroupTuple());
         
         Response response = reference.get();
@@ -73,6 +90,167 @@ class AbstractProcessorTest {
         
         assertEquals("Error message transmission", response.getErrMsg());
         assertFalse(response.getSuccess());
+    }
+    
+    @Test
+    void testHandleRequestWhenTupleNotFound() {
+        when(serverWithNullTuple.findTupleByGroup(anyString())).thenReturn(null);
+        NacosWriteRequestProcessor processor = new NacosWriteRequestProcessor(serverWithNullTuple);
+        final AtomicReference<Response> reference = new AtomicReference<>();
+        RpcContext context = new RpcContext() {
+            @Override
+            public void sendResponse(Object responseObj) {
+                reference.set((Response) responseObj);
+            }
+            
+            @Override
+            public Connection getConnection() {
+                return null;
+            }
+            
+            @Override
+            public String getRemoteAddress() {
+                return null;
+            }
+        };
+        processor.handleRequest(context, WriteRequest.newBuilder().setGroup("unknown-group").build());
+        Response response = reference.get();
+        assertNotNull(response);
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("Could not find the corresponding Raft Group"));
+        assertTrue(response.getErrMsg().contains("unknown-group"));
+    }
+    
+    @Test
+    void testHandleRequestWhenNodeIsNotLeader() {
+        when(followerNode.isLeader()).thenReturn(false);
+        JRaftServer.RaftGroupTuple tuple = new JRaftServer.RaftGroupTuple(followerNode, null, null, null);
+        when(serverWithFollowerNode.findTupleByGroup(anyString())).thenReturn(tuple);
+        NacosWriteRequestProcessor processor = new NacosWriteRequestProcessor(serverWithFollowerNode);
+        final AtomicReference<Response> reference = new AtomicReference<>();
+        RpcContext context = new RpcContext() {
+            @Override
+            public void sendResponse(Object responseObj) {
+                reference.set((Response) responseObj);
+            }
+            
+            @Override
+            public Connection getConnection() {
+                return null;
+            }
+            
+            @Override
+            public String getRemoteAddress() {
+                return null;
+            }
+        };
+        processor.handleRequest(context, WriteRequest.newBuilder().setGroup("g").build());
+        Response response = reference.get();
+        assertNotNull(response);
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("Could not find leader"));
+        assertTrue(response.getErrMsg().contains("g"));
+    }
+    
+    @Test
+    void testHandleRequestWhenThrowableInTryBlockSendsErrorResponse() {
+        when(followerNode.isLeader()).thenThrow(new RuntimeException("node error"));
+        JRaftServer.RaftGroupTuple tuple = new JRaftServer.RaftGroupTuple(followerNode, null, null, null);
+        when(serverWithFollowerNode.findTupleByGroup(anyString())).thenReturn(tuple);
+        NacosWriteRequestProcessor processor = new NacosWriteRequestProcessor(serverWithFollowerNode);
+        final AtomicReference<Response> reference = new AtomicReference<>();
+        RpcContext context = new RpcContext() {
+            @Override
+            public void sendResponse(Object responseObj) {
+                reference.set((Response) responseObj);
+            }
+            
+            @Override
+            public Connection getConnection() {
+                return null;
+            }
+            
+            @Override
+            public String getRemoteAddress() {
+                return null;
+            }
+        };
+        processor.handleRequest(context, WriteRequest.newBuilder().setGroup("g").build());
+        Response response = reference.get();
+        assertNotNull(response);
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("node error"));
+    }
+    
+    @Test
+    void testExecuteSuccessPathSendsResponseData() {
+        final AtomicReference<Response> reference = new AtomicReference<>();
+        RpcContext context = new RpcContext() {
+            @Override
+            public void sendResponse(Object responseObj) {
+                reference.set((Response) responseObj);
+            }
+            
+            @Override
+            public Connection getConnection() {
+                return null;
+            }
+            
+            @Override
+            public String getRemoteAddress() {
+                return null;
+            }
+        };
+        when(followerNode.isLeader()).thenReturn(true);
+        JRaftServer.RaftGroupTuple tuple = new JRaftServer.RaftGroupTuple(followerNode, null, null, null);
+        when(serverWithFollowerNode.findTupleByGroup(anyString())).thenReturn(tuple);
+        doAnswer(invocation -> {
+            FailoverClosure c = invocation.getArgument(2);
+            c.setResponse(Response.newBuilder().setSuccess(true).build());
+            c.run(Status.OK());
+            return null;
+        }).when(serverWithFollowerNode).applyOperation(any(), any(), any());
+        NacosWriteRequestProcessor processor = new NacosWriteRequestProcessor(serverWithFollowerNode);
+        processor.handleRequest(context, WriteRequest.newBuilder().setGroup("g").build());
+        Response response = reference.get();
+        assertNotNull(response);
+        assertTrue(response.getSuccess());
+    }
+    
+    @Test
+    void testExecuteWhenClosureSetThrowableSendsErrorResponseViaRpcContext() {
+        final AtomicReference<Response> reference = new AtomicReference<>();
+        RpcContext context = new RpcContext() {
+            @Override
+            public void sendResponse(Object responseObj) {
+                reference.set((Response) responseObj);
+            }
+            
+            @Override
+            public Connection getConnection() {
+                return null;
+            }
+            
+            @Override
+            public String getRemoteAddress() {
+                return null;
+            }
+        };
+        when(followerNode.isLeader()).thenReturn(true);
+        JRaftServer.RaftGroupTuple tuple = new JRaftServer.RaftGroupTuple(followerNode, null, null, null);
+        when(serverWithFollowerNode.findTupleByGroup(anyString())).thenReturn(tuple);
+        doAnswer(invocation -> {
+            FailoverClosure c = invocation.getArgument(2);
+            c.setThrowable(new RuntimeException("execute exception branch"));
+            c.run(Status.OK());
+            return null;
+        }).when(serverWithFollowerNode).applyOperation(any(), any(), any());
+        NacosWriteRequestProcessor processor = new NacosWriteRequestProcessor(serverWithFollowerNode);
+        processor.handleRequest(context, WriteRequest.newBuilder().setGroup("g").build());
+        Response response = reference.get();
+        assertNotNull(response);
+        assertFalse(response.getSuccess());
+        assertTrue(response.getErrMsg().contains("execute exception branch"));
     }
     
 }

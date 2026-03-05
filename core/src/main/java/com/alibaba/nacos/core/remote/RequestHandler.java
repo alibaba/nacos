@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author liuzunfei
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RequestHandler<T extends Request, S extends Response> {
     
     @Autowired

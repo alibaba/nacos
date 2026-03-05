@@ -134,7 +134,7 @@ public class NacosServerLoaderService {
         LOGGER.info("Low load limit server list ={}", lowLimitServer);
         AtomicBoolean result = new AtomicBoolean(true);
         
-        for (int i = 0; i < overLimitServer.size() & i < lowLimitServer.size(); i++) {
+        for (int i = 0; i < overLimitServer.size() && i < lowLimitServer.size(); i++) {
             ServerReloadRequest serverLoaderInfoRequest = new ServerReloadRequest();
             serverLoaderInfoRequest.setReloadCount(overLimitCount);
             serverLoaderInfoRequest.setReloadServer(lowLimitServer.get(i).getAddress());

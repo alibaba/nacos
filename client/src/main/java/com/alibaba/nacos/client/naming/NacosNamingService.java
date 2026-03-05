@@ -71,7 +71,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author nkorange
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     
     private static final String DEFAULT_NAMING_LOG_FILE_PATH = "naming.log";

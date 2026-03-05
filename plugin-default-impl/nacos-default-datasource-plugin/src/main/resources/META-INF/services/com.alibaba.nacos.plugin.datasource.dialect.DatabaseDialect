@@ -18,5 +18,6 @@ com.alibaba.nacos.plugin.datasource.impl.dialect.DefaultDatabaseDialect
 com.alibaba.nacos.plugin.datasource.impl.dialect.MysqlDatabaseDialect
 com.alibaba.nacos.plugin.datasource.impl.dialect.DerbyDatabaseDialect
 com.alibaba.nacos.plugin.datasource.impl.dialect.PostgresqlDatabaseDialect
+com.alibaba.nacos.plugin.datasource.impl.dialect.OracleDatabaseDialect
 
 

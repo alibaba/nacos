@@ -41,15 +41,16 @@ import java.util.List;
 
 public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements ConfigInfoMapper {
     
+    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
+    
     @Override
     public MapperResult findConfigInfoByAppFetchRows(MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         
-        String sql =
-                "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND "
-                        + "app_name = ?" + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY";
+        String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ?"
+                + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE + "AND app_name = ?" + " OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         
         return new MapperResult(sql, CollectionUtils.list(tenantId, appName));
     }
@@ -76,7 +77,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
     public MapperResult findAllConfigKey(MapperContext context) {
         
         String sql = " SELECT data_id,group_id,app_name FROM "
-                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET " + context.getStartRow()
+                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ?"
+                + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE
+                + "ORDER BY id OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY ) "
                 + "g, config_info t  WHERE g.id = t.id ";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
@@ -118,14 +121,14 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         String where = " 1=1 ";
         
         if (!StringUtils.isBlank(dataId)) {
-            where += " AND data_id LIKE ? ";
+            where += " AND data_id LIKE ?" + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             paramList.add(dataId);
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ? ";
+            where += " AND group_id LIKE ?" + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             paramList.add(group);
         }
-        
+
         if (!StringUtils.isBlank(tenant)) {
             where += " AND tenant_id = ? ";
             paramList.add(tenant);
@@ -166,15 +169,15 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
         String where = " 1=1 AND tenant_id='" + NamespaceUtil.getNamespaceDefaultId() + "' ";
         if (!StringUtils.isBlank(dataId)) {
-            where += " AND data_id LIKE ? ";
+            where += " AND data_id LIKE ?" + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             paramList.add(dataId);
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ? ";
+            where += " AND group_id LIKE ?" + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             paramList.add(group);
         }
         if (!StringUtils.isBlank(tenant)) {
-            where += " AND content LIKE ? ";
+            where += " AND content LIKE ?" + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             paramList.add(tenant);
         }
         return new MapperResult(
@@ -211,7 +214,8 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
             paramList.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
-            where.append(" AND content LIKE ? ");
+            where.append(" AND content LIKE ?");
+            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             paramList.add(content);
         }
         
@@ -231,6 +235,36 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
     }
     
     @Override
+    public MapperResult findConfigInfoLike4PageCountRows(MapperContext context) {
+        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
+        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
+        
+        WhereBuilder where = new WhereBuilder("SELECT count(*) FROM config_info");
+        
+        where.likeWithEscape("tenant_id", tenantId);
+        if (StringUtils.isNotBlank(dataId)) {
+            where.and().likeWithEscape("data_id", dataId);
+        }
+        if (StringUtils.isNotBlank(group)) {
+            where.and().likeWithEscape("group_id", group);
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            where.and().eq("app_name", appName);
+        }
+        if (StringUtils.isNotBlank(content)) {
+            where.and().likeWithEscape("content", content);
+        }
+        if (!ArrayUtils.isEmpty(types)) {
+            where.and().in("type", types);
+        }
+        return where.build();
+    }
+    
+    @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -243,32 +277,33 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         WhereBuilder where = new WhereBuilder(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified FROM config_info");
         
-        where.like("tenant_id", tenantId);
+        where.likeWithEscape("tenant_id", tenantId);
         if (StringUtils.isNotBlank(dataId)) {
-            where.and().like("data_id", dataId);
+            where.and().likeWithEscape("data_id", dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.and().like("group_id", group);
+            where.and().likeWithEscape("group_id", group);
         }
         if (StringUtils.isNotBlank(appName)) {
             where.and().eq("app_name", appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            where.and().like("content", content);
+            where.and().likeWithEscape("content", content);
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("type", types);
         }
         
         where.offset(context.getStartRow(), context.getPageSize());
-        
         return where.build();
     }
     
     @Override
     public MapperResult findAllConfigInfoFetchRows(MapperContext context) {
         return new MapperResult(" SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )"
+                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ?"
+                + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE
+                + "ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )"
                 + " g, config_info t  WHERE g.id = t.id ",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID), context.getStartRow(),
                         context.getPageSize()));

@@ -111,12 +111,12 @@
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-        <maven-pmd-plugin.version>3.16.0</maven-pmd-plugin.version>
+
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
         <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <soptbugs-maven-plugin.version>4.8.6.2</soptbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.8.6.2</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.0.2</sonar-maven-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
@@ -125,7 +125,6 @@
         <maven-easyj-version>1.1.5</maven-easyj-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.9.0</extra-enforcer-rules.version>
-        <p3c-pmd.version>2.1.1</p3c-pmd.version>
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.4</nacos.logback.adapter.version>
@@ -156,6 +155,7 @@
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
         <mcp.version>0.14.1</mcp.version>
+        <ojdbc.version>19.7.0.0</ojdbc.version>
 
         <!-- Maven Central Portal -->
         <central.publishing.maven.version>0.7.0</central.publishing.maven.version>
@@ -272,53 +272,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <version>${maven-pmd-plugin.version}</version>
-                <configuration>
-                    <rulesets>
-                        <ruleset>rulesets/java/ali-comment.xml</ruleset>
-                        <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
-                        <ruleset>rulesets/java/ali-constant.xml</ruleset>
-                        <ruleset>rulesets/java/ali-exception.xml</ruleset>
-                        <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>
-                        <ruleset>rulesets/java/ali-naming.xml</ruleset>
-                        <ruleset>rulesets/java/ali-oop.xml</ruleset>
-                        <ruleset>rulesets/java/ali-orm.xml</ruleset>
-                        <ruleset>rulesets/java/ali-other.xml</ruleset>
-                        <ruleset>rulesets/java/ali-set.xml</ruleset>
-                    </rulesets>
-                    <printFailingErrors>true</printFailingErrors>
-                    <excludes>
-                        <exclude>**/consistency/entity/*.java</exclude>
-                        <exclude>**/istio/model/mcp/*.java</exclude>
-                        <exclude>**/istio/model/naming/*.java</exclude>
-                        <exclude>**/istio/model/*.java</exclude>
-                        <exclude>**/api/grpc/auto/*.java</exclude>
-                        <exclude>**/istio/mcp/**</exclude>
-                        <exclude>**/istio/networking/**</exclude>
-                        <exclude>**/google/protobuf/**</exclude>
-                        <exclude>**/common/packagescan/classreading/*.java</exclude>
-                        <exclude>**/common/packagescan/resource/*.java</exclude>
-                        <exclude>**/common/packagescan/util/*.java</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.alibaba.p3c</groupId>
-                        <artifactId>p3c-pmd</artifactId>
-                        <version>${p3c-pmd.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -465,7 +418,12 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${soptbugs-maven-plugin.version}</version>
+                <version>${spotbugs-maven-plugin.version}</version>
+                <configuration>
+                    <excludeFilterFile>style/spotbugs-exclude.xml</excludeFilterFile>
+                    <effort>Max</effort>
+                    <threshold>High</threshold>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
@@ -647,7 +605,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${soptbugs-maven-plugin.version}</version>
+                <version>${spotbugs-maven-plugin.version}</version>
             </plugin>
         </plugins>
     </reporting>
@@ -817,6 +775,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-console</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>default-auth-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1172,6 +1135,14 @@
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java</artifactId>
                 <version>${kubernetes.client.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.oracle.database.jdbc</groupId>
+                <artifactId>ojdbc8</artifactId>
+                <version>${ojdbc.version}</version>
+                <scope>provided</scope>
+                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>

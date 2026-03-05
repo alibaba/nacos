@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class ServiceTopNCounter extends BaseTopNCounter<Service> {
     
     public ServiceTopNCounter() {

@@ -25,7 +25,6 @@ import java.util.Objects;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class NamingRedoData<T> extends RedoData<T> {
     
     private final String serviceName;

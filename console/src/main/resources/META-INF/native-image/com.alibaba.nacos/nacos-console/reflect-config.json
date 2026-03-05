@@ -2595,7 +2595,7 @@
   "name":"com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.CatalogController",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.CatalogController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2603,13 +2603,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"listDetail","parameterTypes":["boolean","java.lang.String","int","int","java.lang.String","java.lang.String","java.lang.String","boolean"] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.CatalogController__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.CatalogController__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.CatalogController__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.CatalogController__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.ClusterController",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.ClusterController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2617,10 +2617,10 @@
   "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.naming.core.ClusterOperatorV2Impl"] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.ClusterController__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.ClusterController__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.HealthController",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.HealthController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2628,13 +2628,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.HealthController__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.HealthController__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.HealthController__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.HealthController__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.InstanceController",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.InstanceController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2642,16 +2642,16 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.InstanceController$1"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.InstanceController$1"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.InstanceController__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.InstanceController__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.InstanceController__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.InstanceController__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.OperatorController",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.OperatorController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2659,10 +2659,10 @@
   "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.naming.misc.SwitchManager","com.alibaba.nacos.naming.cluster.ServerStatusManager","com.alibaba.nacos.naming.misc.SwitchDomain","com.alibaba.nacos.naming.core.DistroMapper","com.alibaba.nacos.naming.core.v2.client.manager.ClientManager"] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.OperatorController__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.OperatorController__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.ServiceController",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.ServiceController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2670,13 +2670,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.ServiceController__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.ServiceController__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.ServiceController__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.ServiceController__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.CatalogControllerV2",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.CatalogControllerV2",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2684,13 +2684,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.CatalogControllerV2__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.CatalogControllerV2__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.CatalogControllerV2__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.CatalogControllerV2__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.ClientInfoControllerV2",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.ClientInfoControllerV2",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2698,10 +2698,10 @@
   "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.naming.core.v2.client.manager.ClientManager","com.alibaba.nacos.core.remote.ConnectionManager","com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager"] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.ClientInfoControllerV2__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.ClientInfoControllerV2__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.HealthControllerV2",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.HealthControllerV2",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2709,13 +2709,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.HealthControllerV2__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.HealthControllerV2__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.HealthControllerV2__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.HealthControllerV2__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.InstanceControllerV2",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.InstanceControllerV2",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2723,16 +2723,16 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.InstanceControllerV2$1"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.InstanceControllerV2$1"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.InstanceControllerV2__Autowiring"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.InstanceControllerV2__Autowiring"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.InstanceControllerV2__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.InstanceControllerV2__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.OperatorControllerV2",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.OperatorControllerV2",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2740,10 +2740,10 @@
   "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.naming.misc.SwitchManager","com.alibaba.nacos.naming.cluster.ServerStatusManager","com.alibaba.nacos.naming.misc.SwitchDomain","com.alibaba.nacos.naming.core.v2.client.manager.ClientManager"] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.OperatorControllerV2__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.OperatorControllerV2__BeanDefinitions"
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.ServiceControllerV2",
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.ServiceControllerV2",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
@@ -2751,7 +2751,7 @@
   "methods":[{"name":"<init>","parameterTypes":["com.alibaba.nacos.naming.core.ServiceOperatorV2Impl","com.alibaba.nacos.naming.selector.SelectorManager"] }]
 },
 {
-  "name":"com.alibaba.nacos.naming.controllers.v2.ServiceControllerV2__BeanDefinitions"
+  "name":"com.alibaba.nacos.legacy.adapter.naming.v2.ServiceControllerV2__BeanDefinitions"
 },
 {
   "name":"com.alibaba.nacos.naming.core.CatalogService",

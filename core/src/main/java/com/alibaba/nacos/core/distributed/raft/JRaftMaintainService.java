@@ -31,7 +31,6 @@ import java.util.Objects;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftMaintainService {
     
     private final JRaftServer raftServer;

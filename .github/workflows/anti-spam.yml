@@ -1,0 +1,138 @@
+name: Anti-Spam Protection
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  spam-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for spam
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const author = issue.user.login;
+            const authorAssociation = issue.author_association;
+
+            // Skip if author is a member, collaborator, or owner
+            if (['MEMBER', 'COLLABORATOR', 'OWNER'].includes(authorAssociation)) {
+              console.log(`Skipping spam check for ${authorAssociation}: ${author}`);
+              return;
+            }
+
+            // Get user details via API to calculate account age
+            let accountAgeDays = 365; // Default to old account if API fails
+            try {
+              const { data: userData } = await github.rest.users.getByUsername({
+                username: author
+              });
+              const authorCreatedAt = new Date(userData.created_at);
+              const now = new Date();
+              accountAgeDays = (now - authorCreatedAt) / (1000 * 60 * 60 * 24);
+              console.log(`Account ${author} created at ${userData.created_at}, age: ${accountAgeDays.toFixed(1)} days`);
+            } catch (error) {
+              console.log(`Failed to get user info for ${author}: ${error.message}`);
+            }
+
+            // Spam keywords - airlines and travel-related spam
+            const spamKeywords = [
+              // Airlines
+              'lufthansa', 'emirates', 'klm', 'turkish airlines', 'singapore airlines',
+              'aer lingus', 'sas airlines', 'qatar airways', 'british airways',
+              'american airlines', 'united airlines', 'delta airlines', 'air france',
+              'swiss air', 'austrian airlines', 'tap portugal', 'air canada',
+              'air europa', 'ita airways',
+              // Italian terms
+              'telefono', 'rimborso', 'volo', 'biglietto', 'prenotazione',
+              'annullare', 'cancellare', 'modifica', 'gestire', 'chiamare',
+              'numero di telefono', 'contattare', 'assistenza clienti',
+              // German terms
+              'kontakt', 'buchen', 'kundenservice', 'hotline', 'kundendienst',
+              'buchung', 'stornieren', 'umbuchung', 'erreichen', 'telefonnummer',
+              // French terms
+              'billet', 'réservation', 'annuler', 'rembours', 'vol',
+              'contacter', 'numéro', 'téléphone', 'modifier', 'payer',
+              // Common spam patterns
+              'customer service number', 'booking number', 'flight cancel',
+              'refund process', 'how to contact', 'toll free', 'helpline',
+              '1-800', '1-888', '1-877', '1-866'
+            ];
+
+            // Check content for spam keywords
+            const contentToCheck = title + ' ' + body;
+            const matchedKeywords = spamKeywords.filter(kw => contentToCheck.includes(kw));
+
+            // Check for phone number patterns (3+ phone numbers is suspicious)
+            const phonePatterns = [
+              /\+\d{1,3}[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,4}/g,  // International format
+              /\d{3}[\s.-]?\d{3}[\s.-]?\d{4}/g                       // US/common format
+            ];
+            let phoneCount = 0;
+            for (const pattern of phonePatterns) {
+              const matches = contentToCheck.match(pattern) || [];
+              phoneCount += matches.length;
+            }
+            const hasExcessivePhones = phoneCount >= 2;
+
+            // Spam detection rules:
+            // 1. Match 2+ spam keywords
+            // 2. New account (< 7 days) + 1 spam keyword
+            // 3. 2+ phone numbers in content
+            const isSpam = matchedKeywords.length >= 2 ||
+                          (accountAgeDays < 7 && matchedKeywords.length >= 1) ||
+                          hasExcessivePhones;
+
+            if (isSpam) {
+              console.log(`Spam detected in issue #${issue.number}`);
+              console.log(`Author: ${author}, Account age: ${accountAgeDays.toFixed(1)} days`);
+              console.log(`Matched keywords: ${matchedKeywords.join(', ')}`);
+              console.log(`Phone numbers found: ${phoneCount}`);
+
+              // Add spam label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['spam']
+              });
+
+              // Add comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `This issue has been automatically detected as spam and will be closed.\n\n` +
+                      `If this is a legitimate issue, please create a new issue using the [issue template](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/new/choose).\n\n` +
+                      `---\n` +
+                      `此 Issue 被自动检测为垃圾信息，将被关闭。如果这是一个合法的问题，请使用 [Issue 模板](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/new/choose) 重新创建。`
+              });
+
+              // Close issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'not_planned'
+              });
+
+              // Lock issue
+              await github.rest.issues.lock({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                lock_reason: 'spam'
+              });
+
+              console.log(`Issue #${issue.number} closed and locked as spam`);
+            } else {
+              console.log(`No spam detected in issue #${issue.number}`);
+              console.log(`Matched keywords: ${matchedKeywords.length}, Phone numbers: ${phoneCount}, Account age: ${accountAgeDays.toFixed(1)} days`);
+            }

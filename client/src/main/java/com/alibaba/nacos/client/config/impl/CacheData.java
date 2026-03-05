@@ -67,7 +67,7 @@ public class CacheData {
     static long initNotifyWarnTimeout() {
         String notifyTimeouts = System.getProperty("nacos.listener.notify.warn.timeout");
         if (StringUtils.isNotBlank(notifyTimeouts) && NumberUtils.isDigits(notifyTimeouts)) {
-            notifyWarnTimeout = Long.valueOf(notifyTimeouts);
+            notifyWarnTimeout = Long.parseLong(notifyTimeouts);
             LOGGER.info("config listener notify warn timeout millis is set to {}", notifyWarnTimeout);
         } else {
             LOGGER.info("config listener notify warn timeout millis use default {} millis ",
@@ -416,7 +416,6 @@ public class CacheData {
         return stringBuilder.toString();
     }
     
-    @SuppressWarnings("PMD.MethodTooLongRule")
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
@@ -510,7 +509,6 @@ public class CacheData {
         }
     }
     
-    @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
     abstract class NotifyTask implements Runnable {
         
         boolean async = false;
