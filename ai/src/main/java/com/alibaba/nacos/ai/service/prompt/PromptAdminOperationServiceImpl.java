@@ -94,7 +94,8 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         }
         PromptLabelVersionMappingSnapshot snapshot = loadLabelVersionMappingSnapshot(namespaceId, promptKey);
         boolean newPrompt = snapshot.getMapping() == null;
-        if (!newPrompt && (description != null || bizTags != null)) {
+        boolean hasMetadataFields = description != null || bizTags != null;
+        if (!newPrompt && hasMetadataFields) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "description and bizTags can only be set on first publish, use updatePromptMetadata afterwards");
         }
