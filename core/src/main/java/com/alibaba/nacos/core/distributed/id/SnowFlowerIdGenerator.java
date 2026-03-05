@@ -124,7 +124,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     public synchronized long nextId() {
         long currentMillis = currentTimeMillis();
         if (this.lastTime == currentMillis) {
-            if (0L == (this.sequence = ++this.sequence & 4095L)) {
+            if (0L == (this.sequence = ++this.sequence & SEQUENCE_MASK)) {
                 currentMillis = this.waitUntilNextTime(currentMillis);
             }
         } else {

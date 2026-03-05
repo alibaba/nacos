@@ -27,6 +27,8 @@ import java.lang.reflect.Constructor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DistroConfigTest {
     
@@ -107,5 +109,38 @@ class DistroConfigTest {
         assertEquals(distroConfig.getVerifyTimeoutMillis(), verifyTimeoutMillis);
         assertEquals(distroConfig.getLoadDataRetryDelayMillis(), loadDataRetryDelayMillis);
         
+    }
+
+    @Test
+    void testSetAndGetSyncTimeoutMillis() {
+        distroConfig.setSyncTimeoutMillis(syncTimeoutMillis);
+        assertEquals(syncTimeoutMillis, distroConfig.getSyncTimeoutMillis());
+    }
+
+    @Test
+    void testSetAndGetVerifyTimeoutMillis() {
+        distroConfig.setVerifyTimeoutMillis(verifyTimeoutMillis);
+        assertEquals(verifyTimeoutMillis, distroConfig.getVerifyTimeoutMillis());
+    }
+
+    @Test
+    void testSetAndGetLoadDataRetryDelayMillis() {
+        distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
+        assertEquals(loadDataRetryDelayMillis, distroConfig.getLoadDataRetryDelayMillis());
+    }
+
+    @Test
+    void testSetAndGetLoadDataTimeoutMillis() {
+        long loadDataTimeoutMillis = 60000L;
+        distroConfig.setLoadDataTimeoutMillis(loadDataTimeoutMillis);
+        assertEquals(loadDataTimeoutMillis, distroConfig.getLoadDataTimeoutMillis());
+    }
+
+    @Test
+    void testPrintConfig() {
+        distroConfig.setSyncDelayMillis(1000L);
+        String printed = distroConfig.printConfig();
+        assertNotNull(printed);
+        assertTrue(printed.contains("syncDelayMillis="));
     }
 }
