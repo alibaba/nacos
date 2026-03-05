@@ -20,14 +20,14 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
-import { getState, getGuide } from '../reducers/base';
+import { getState, getNotice, getGuide } from '../reducers/base';
 import getMenuData from './menu';
 import './index.scss';
 
 const { SubMenu, Item } = Menu;
 
 @withRouter
-@connect(state => ({ ...state.locale, ...state.base }), { getState, getGuide })
+@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice, getGuide })
 @ConfigProvider.config
 class MainLayout extends React.Component {
   constructor(props) {
@@ -50,6 +50,7 @@ class MainLayout extends React.Component {
     authEnabled: PropTypes.string,
     children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
     consoleUiEnable: PropTypes.string,
+    getNotice: PropTypes.func,
     getGuide: PropTypes.func,
     guideMsg: PropTypes.string,
   };
@@ -58,13 +59,13 @@ class MainLayout extends React.Component {
     this.props.getState();
     this.props.getGuide();
   }
-  
+
   componentDidUpdate(prevProps) {
     if (prevProps.language !== this.props.language) {
       this.props.getNotice();
     }
   }
-  
+
   goBack() {
     this.props.history.goBack();
   }
