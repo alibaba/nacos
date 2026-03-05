@@ -130,7 +130,7 @@ class TpsControlRequestFilterTest {
      * test when getHandleMethod throws (handler class has no handle method), returns null.
      */
     @Test
-    void testFilterWhenGetHandleMethodThrows_returnsNull() {
+    void testFilterWhenGetHandleMethodThrowsReturnsNull() {
         HealthCheckRequest request = new HealthCheckRequest();
         RequestMeta meta = new RequestMeta();
         Response response = tpsControlRequestFilter.filter(request, meta, String.class);
@@ -141,7 +141,7 @@ class TpsControlRequestFilterTest {
      * test when parser returns request with blank pointName, filter sets pointName.
      */
     @Test
-    void testFilterWhenParserReturnsRequestWithBlankPointName_setsPointName() {
+    void testFilterWhenParserReturnsRequestWithBlankPointNameSetsPointName() {
         RemoteTpsCheckRequestParserRegistry.register(new RemoteTpsCheckRequestParser() {
             @Override
             public TpsCheckRequest parse(Request request, RequestMeta meta) {
@@ -174,7 +174,7 @@ class TpsControlRequestFilterTest {
      * test when no parser registered, uses default TpsCheckRequest.
      */
     @Test
-    void testFilterWhenNoParser_registersAndUsesDefaultRequest() {
+    void testFilterWhenNoParserRegistersAndUsesDefaultRequest() {
         Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(new TpsCheckResponse(true, 200, "ok"));
         Response filterResponse = tpsControlRequestFilter.filter(new HealthCheckRequest(), new RequestMeta(),
                 HealthCheckRequestHandler.class);

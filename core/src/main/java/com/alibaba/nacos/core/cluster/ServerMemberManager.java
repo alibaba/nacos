@@ -353,8 +353,7 @@ public class ServerMemberManager implements NacosMemberManager {
         boolean isContainSelfIp = members.stream()
                 .anyMatch(ipPortTmp -> Objects.equals(localAddress, ipPortTmp.getAddress()));
         
-        if (isContainSelfIp) {
-        } else {
+        if (!isContainSelfIp) {
             members.add(this.self);
             Loggers.CLUSTER.warn("[serverlist] self ip {} not in serverlist {}", self, members);
         }

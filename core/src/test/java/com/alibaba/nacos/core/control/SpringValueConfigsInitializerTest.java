@@ -46,7 +46,7 @@ class SpringValueConfigsInitializerTest {
     }
     
     @Test
-    void testInitialize_withDefaultProperties() {
+    void testInitializeWithDefaultProperties() {
         ControlConfigs configs = new ControlConfigs();
         SpringValueConfigsInitializer initializer = new SpringValueConfigsInitializer();
         initializer.initialize(configs);
@@ -55,7 +55,7 @@ class SpringValueConfigsInitializerTest {
     }
     
     @Test
-    void testInitialize_withCustomConnectionRuntimeEjector() {
+    void testInitializeWithCustomConnectionRuntimeEjector() {
         environment.setProperty("nacos.plugin.control.connection.runtime.ejector", "custom");
         ControlConfigs configs = new ControlConfigs();
         SpringValueConfigsInitializer initializer = new SpringValueConfigsInitializer();
@@ -64,7 +64,7 @@ class SpringValueConfigsInitializerTest {
     }
     
     @Test
-    void testInitialize_withLocalRuleStorageBaseDir() {
+    void testInitializeWithLocalRuleStorageBaseDir() {
         environment.setProperty("nacos.plugin.control.rule.local.basedir", "/custom/rules");
         ControlConfigs configs = new ControlConfigs();
         SpringValueConfigsInitializer initializer = new SpringValueConfigsInitializer();
@@ -73,7 +73,7 @@ class SpringValueConfigsInitializerTest {
     }
     
     @Test
-    void testInitialize_withRuleExternalStorageAndControlManagerType() {
+    void testInitializeWithRuleExternalStorageAndControlManagerType() {
         environment.setProperty("nacos.plugin.control.rule.external.storage", "mysql");
         environment.setProperty("nacos.plugin.control.manager.type", "local");
         ControlConfigs configs = new ControlConfigs();

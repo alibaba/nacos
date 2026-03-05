@@ -85,7 +85,7 @@ class HttpTpsPointRegistryTest {
     }
     
     @Test
-    void testOnApplicationEvent_registersTpsPoints() throws Exception {
+    void testOnApplicationEventRegistersTpsPoints() throws Exception {
         HealthCheckRequestHandler handlerBean = new HealthCheckRequestHandler();
         Method handleMethod = HealthCheckRequestHandler.class.getMethod("handle",
                 HealthCheckRequest.class, RequestMeta.class);
@@ -104,7 +104,7 @@ class HttpTpsPointRegistryTest {
     }
     
     @Test
-    void testOnApplicationEvent_secondCallSkipsInit() throws Exception {
+    void testOnApplicationEventSecondCallSkipsInit() throws Exception {
         HealthCheckRequestHandler handlerBean = new HealthCheckRequestHandler();
         Method handleMethod = HealthCheckRequestHandler.class.getMethod("handle",
                 HealthCheckRequest.class, RequestMeta.class);

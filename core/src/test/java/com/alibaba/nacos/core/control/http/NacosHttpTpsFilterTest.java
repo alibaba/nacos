@@ -51,7 +51,6 @@ import java.lang.reflect.Method;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -215,7 +214,7 @@ class NacosHttpTpsFilterTest {
     }
     
     @Test
-    void testDoFilterWhenMethodIsNull_continuesChain() throws Exception {
+    void testDoFilterWhenMethodIsNullContinuesChain() throws Exception {
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         FilterChain filterChain = Mockito.mock(FilterChain.class);
@@ -225,7 +224,7 @@ class NacosHttpTpsFilterTest {
     }
     
     @Test
-    void testGenerate503Response_exceptionPath() throws Exception {
+    void testGenerate503ResponseExceptionPath() throws Exception {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         jakarta.servlet.AsyncContext asyncContext = Mockito.mock(jakarta.servlet.AsyncContext.class);

@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -137,8 +136,7 @@ class NamespaceControllerV3Test {
         form.setNamespaceDesc(TEST_NAMESPACE_DESC);
         
         when(namespaceOperationService.createNamespace(org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_NAME),
-                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_DESC))).thenReturn(true);
+                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_NAME), org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_DESC))).thenReturn(true);
         
         Result<Boolean> result = namespaceControllerV3.createNamespace(form);
         
