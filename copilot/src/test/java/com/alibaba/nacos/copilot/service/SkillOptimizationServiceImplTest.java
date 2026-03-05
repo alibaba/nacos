@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -112,6 +111,14 @@ class SkillOptimizationServiceImplTest {
         SkillOptimizationRequest request = createValidRequest();
         request.setOptimizationGoal("Improve clarity and add error handling");
         when(agentManager.isEnabled()).thenReturn(true);
+        io.agentscope.core.ReActAgent mockAgent = mock(io.agentscope.core.ReActAgent.class);
+        when(agentManager.createAgent(anyString())).thenReturn(mockAgent);
+        
+        reactor.core.publisher.Flux<io.agentscope.core.agent.Event> mockFlux =
+                reactor.core.publisher.Flux.empty();
+        when(mockAgent.stream(any(java.util.List.class),
+                any(io.agentscope.core.agent.StreamOptions.class))).thenReturn(mockFlux);
+        
         StreamResponseCallback<SkillOptimizationResponse> callback = new StreamResponseCallback<SkillOptimizationResponse>() {
             @Override
             public void onNext(SkillOptimizationResponse response) {
@@ -130,8 +137,7 @@ class SkillOptimizationServiceImplTest {
         skillOptimizationService.optimizeSkillStream(request, callback);
         
         // Then
-        // Verify that agent is created (would need to mock agent properly)
-        assertNotNull(request);
+        verify(agentManager, times(1)).createAgent(anyString());
     }
     
     @Test
@@ -274,6 +280,7 @@ class SkillOptimizationServiceImplTest {
         skill.setDescription("Test description");
         skill.setInstruction("Test instruction");
         request.setSkill(skill);
+        request.setTargetFileName("SKILL.md");
         return request;
     }
     
