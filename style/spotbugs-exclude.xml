@@ -45,11 +45,6 @@
     <Match><Bug pattern="SE_BAD_FIELD"/></Match>
 
     <!-- ==================== Targeted class-level exclusions ==================== -->
-    <!-- RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT: LruCache.get() uses LinkedHashMap.get() for LRU side effect -->
-    <Match>
-        <Class name="com.alibaba.nacos.common.cache.decorators.LruCache"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
-    </Match>
     <!-- ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD: Spring ApplicationContextInitializer callback -->
     <Match>
         <Class name="com.alibaba.nacos.sys.utils.ApplicationUtils"/>
