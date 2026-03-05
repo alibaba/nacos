@@ -17,28 +17,20 @@
 package com.alibaba.nacos.console.handler.impl.remote.config;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.config.NacosAuthConfig;
-import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
-import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.console.handler.impl.remote.RemoteServerConnector;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NacosMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -51,7 +43,6 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpRequest;
 import org.apache.hc.core5.http.ProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,10 +56,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Nacos config import and export service.
@@ -85,13 +74,10 @@ public class ConfigImportAndExportService {
     
     private static final String REMOTE_CONFIG_EXPORT_URL = "http://%s%s/v3/admin/cs/config/export";
     
-    private final NacosMemberManager memberManager;
-
-    private final ClusterHandler remoteClusterHandler;
+    private final RemoteServerConnector remoteServerConnector;
     
-    public ConfigImportAndExportService(NacosMemberManager memberManager, ClusterHandler remoteClusterHandler) {
-        this.memberManager = memberManager;
-        this.remoteClusterHandler = remoteClusterHandler;
+    public ConfigImportAndExportService(RemoteServerConnector remoteServerConnector) {
+        this.remoteServerConnector = remoteServerConnector;
     }
     
     /**
@@ -107,8 +93,8 @@ public class ConfigImportAndExportService {
      */
     public Result<Map<String, Object>> importConfig(String sourceUser, String namespaceId, SameConfigPolicy policy,
             MultipartFile importFile, String sourceIp, String sourceApp) throws NacosException {
-        String serverContextPath = getServerContextPath();
-        Member serverMember = randomOneHealthyMember();
+        String serverContextPath = remoteServerConnector.getServerContextPath();
+        Member serverMember = remoteServerConnector.randomOneHealthyMember();
         String url = String.format(REMOTE_CONFIG_IMPORT_URL, serverMember.getAddress(), serverContextPath);
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             Query query = Query.newInstance().addParam("namespaceId", namespaceId).addParam("srcUser", sourceUser);
@@ -116,7 +102,7 @@ public class ConfigImportAndExportService {
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setHeader(WebUtils.X_FORWARDED_FOR, sourceIp);
             httpPost.setHeader(RequestUtil.CLIENT_APPNAME_HEADER, sourceApp);
-            addAuthIdentity(httpPost);
+            remoteServerConnector.addAuthIdentity(httpPost);
             String contentTypeString = null == importFile.getContentType() ? MediaType.MULTIPART_FORM_DATA_VALUE
                     : importFile.getContentType();
             ContentType contentType = ContentType.create(contentTypeString, Constants.ENCODE);
@@ -152,15 +138,15 @@ public class ConfigImportAndExportService {
      */
     public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception {
-        String serverContextPath = getServerContextPath();
-        Member serverMember = randomOneHealthyMember();
+        String serverContextPath = remoteServerConnector.getServerContextPath();
+        Member serverMember = remoteServerConnector.randomOneHealthyMember();
         String url = String.format(REMOTE_CONFIG_EXPORT_URL, serverMember.getAddress(), serverContextPath);
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             Query query = Query.newInstance().addParam("namespaceId", namespaceId).addParam("dataId", dataId)
                     .addParam("groupName", group).addParam("ids", StringUtils.join(ids, ","));
             URI uri = HttpUtils.buildUri(url, query);
             HttpGet httpGet = new HttpGet(uri);
-            addAuthIdentity(httpGet);
+            remoteServerConnector.addAuthIdentity(httpGet);
             return httpClient.execute(httpGet, new ExportHttpClientResponseHandler());
         } catch (HttpResponseException responseException) {
             LOGGER.error("Export config from server {} failed with code {}: ", serverMember.getAddress(),
@@ -170,34 +156,6 @@ public class ConfigImportAndExportService {
             LOGGER.error("Export config from server {} failed: ", serverMember.getAddress(), e);
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Export config to server failed.");
         }
-    }
-    
-    private void addAuthIdentity(HttpRequest request) {
-        NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
-        if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
-            request.setHeader(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
-        }
-    }
-    
-    private String getServerContextPath() {
-        return EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
-    }
-    
-    private Member randomOneHealthyMember() throws NacosException {
-        // all nodes in cluster.conf
-        Collection<Member> allMembers = memberManager.allMembers();
-        // nodes with state  in cluster
-        Collection<? extends NacosMember> membersWithState = remoteClusterHandler.getNodeList("");
-        Map<String, NodeState> nodeStateMap = membersWithState
-                .stream().collect(Collectors.toMap(NacosMember::getAddress, NacosMember::getState));
-        // remove unhealthy nodes
-        allMembers.removeIf(node -> !NodeState.UP.equals(nodeStateMap.get(node.getAddress())));
-        if (CollectionUtils.isEmpty(allMembers)) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "No healthy server node found.");
-        }
-
-        return allMembers.parallelStream().findAny().orElseThrow();
     }
     
     static class ExportHttpClientResponseHandler
