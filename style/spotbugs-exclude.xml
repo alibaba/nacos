@@ -29,9 +29,7 @@
     <!-- spotbugs:check can be enabled. They will be removed one by one via     -->
     <!-- follow-up PRs that fix the underlying issues (ratchet approach).       -->
 
-    <!-- MS_SHOULD_BE_FINAL: 7 occurrences, static field should be final -->
-    <Match><Bug pattern="MS_SHOULD_BE_FINAL"/></Match>
-<!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
+    <!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
     <Match><Bug pattern="DMI_BLOCKING_METHODS_ON_URL"/></Match>
     <!-- RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED: 2 occurrences, concurrency risk -->
     <Match><Bug pattern="RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED"/></Match>
@@ -43,5 +41,25 @@
     <Match>
         <Class name="com.alibaba.nacos.sys.utils.ApplicationUtils"/>
         <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: TLS config fields are set via system properties at runtime -->
+    <Match>
+        <Class name="com.alibaba.nacos.common.tls.TlsSystemConfig"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: version is conditionally assigned in static initializer -->
+    <Match>
+        <Class name="com.alibaba.nacos.common.utils.VersionUtils"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: public mutable map used by external plugins -->
+    <Match>
+        <Class name="com.alibaba.nacos.persistence.repository.RowMapperManager"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: URL fields reassigned at runtime via InitUtils -->
+    <Match>
+        <Class name="com.alibaba.nacos.client.naming.utils.UtilAndComs"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
     </Match>
 </FindBugsFilter>
