@@ -299,7 +299,7 @@ class NacosCoreStartUpTest {
     }
 
     @Test
-    void loadPrePropertiesRegisteredWatcherOnChangeIgnoresIOException() throws Exception {
+    void loadPrePropertiesRegisteredWatcherOnChangeIgnoresIoException() throws Exception {
         NacosCoreStartUp startUp = new NacosCoreStartUp();
         ConfigurableEnvironment environment = new MockEnvironment();
         Resource resource = mock(Resource.class);

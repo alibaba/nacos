@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.response.ServerLoaderMetric;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;

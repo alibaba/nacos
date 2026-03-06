@@ -17,7 +17,6 @@ package com.alibaba.nacos.core.persistence;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
@@ -30,7 +29,6 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.persistence.exception.NJdbcException;
 import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
@@ -321,7 +319,7 @@ class DistributedDatabaseOperateImplTest {
 
         Boolean result = impl.update(
                 Collections.singletonList(new ModifyRequest("INSERT INTO t VALUES (1)")),
-                (ok, e) -> {});
+                (ok, e) -> { });
         assertTrue(result);
     }
 
@@ -458,7 +456,7 @@ class DistributedDatabaseOperateImplTest {
                 .setData(ByteString.copyFrom(SerializeFactory.getDefault().serialize(sqlContext)))
                 .build();
 
-        when(transactionTemplate.execute(any())).thenThrow(new DataAccessException("data access") {});
+        when(transactionTemplate.execute(any())).thenThrow(new DataAccessException("data access") { });
 
         assertThrows(ConsistencyException.class, () -> impl.onApply(log));
     }

@@ -118,7 +118,9 @@ class NamespaceOperationServiceTest {
         tenantInfo.setTenantId(TEST_NAMESPACE_ID);
         tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
-        when(namespacePersistService.findTenantByKp(eq(String.valueOf(NamespaceTypeEnum.CUSTOM.getType())), eq(TEST_NAMESPACE_ID))).thenReturn(tenantInfo);
+        when(namespacePersistService.findTenantByKp(
+                eq(String.valueOf(NamespaceTypeEnum.CUSTOM.getType())), eq(TEST_NAMESPACE_ID)))
+                .thenReturn(tenantInfo);
 
         Namespace namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID, NamespaceTypeEnum.CUSTOM);
 
