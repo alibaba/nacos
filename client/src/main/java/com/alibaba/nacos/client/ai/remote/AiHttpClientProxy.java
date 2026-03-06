@@ -43,8 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
@@ -138,8 +138,7 @@ public class AiHttpClientProxy implements AiClientProxy {
         }
         
         NacosException exception = new NacosException();
-        Random random = new Random();
-        int index = random.nextInt(servers.size());
+        int index = ThreadLocalRandom.current().nextInt(servers.size());
         
         for (int i = 0; i < Math.max(servers.size(), MAX_RETRY); i++) {
             String server = servers.get(index % servers.size());
