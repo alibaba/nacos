@@ -96,6 +96,9 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkill();
         String namespaceId = "test-namespace";
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
         
         // When
         String result = skillOperationService.registerSkill(skill, namespaceId);
@@ -112,6 +115,9 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkillWithResources();
         String namespaceId = "test-namespace";
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
         
         // When
         String result = skillOperationService.registerSkill(skill, namespaceId);
@@ -222,6 +228,9 @@ class SkillOperationServiceImplTest {
         ConfigQueryChainResponse response = createMockConfigResponse();
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
                 .thenReturn(response);
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
         
         // When
         skillOperationService.updateSkill(skill, namespaceId);
@@ -306,6 +315,9 @@ class SkillOperationServiceImplTest {
         // Given
         String namespaceId = "test-namespace";
         byte[] zipBytes = createValidZipBytes();
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
         
         // When
         String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
