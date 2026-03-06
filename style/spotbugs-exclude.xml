@@ -31,8 +31,6 @@
 
     <!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
     <Match><Bug pattern="DMI_BLOCKING_METHODS_ON_URL"/></Match>
-    <!-- RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED: 2 occurrences, concurrency risk -->
-    <Match><Bug pattern="RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED"/></Match>
     <!-- SE_BAD_FIELD: 1 occurrence (High), non-serializable field in serializable class -->
     <Match><Bug pattern="SE_BAD_FIELD"/></Match>
 

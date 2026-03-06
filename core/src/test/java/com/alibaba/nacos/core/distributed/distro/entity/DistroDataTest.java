@@ -47,4 +47,15 @@ class DistroDataTest {
         assertEquals(content, distroData.getContent());
         assertEquals(DataOperation.VERIFY, distroData.getType());
     }
+
+    @Test
+    void testDefaultConstructorAndSetters() {
+        DistroData data = new DistroData();
+        data.setDistroKey(distroKey);
+        data.setType(DataOperation.CHANGE);
+        data.setContent(content);
+        assertEquals(distroKey, data.getDistroKey());
+        assertEquals(DataOperation.CHANGE, data.getType());
+        assertEquals(content, data.getContent());
+    }
 }
