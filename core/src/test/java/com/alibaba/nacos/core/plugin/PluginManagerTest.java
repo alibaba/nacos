@@ -348,6 +348,103 @@ class PluginManagerTest {
         verify(synchronizer, times(1)).syncConfigChange(eq("trace:configurable"), eq(config));
     }
 
+    @Test
+    void setPluginEnabledLocalOnlyTest() throws NacosApiException {
+        registerTestPlugin("trace", "test", false, false, true);
+
+        manager.setPluginEnabled("trace:test", false, true);
+
+        assertFalse(manager.isPluginEnabled("trace", "test"));
+        verify(synchronizer, times(0)).syncStateChange(any(), anyBoolean());
+    }
+
+    @Test
+    void updatePluginConfigLocalOnlyTest() throws NacosApiException {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("key", "value");
+
+        manager.updatePluginConfig("trace:test", config, true);
+
+        assertEquals("value", plugin.getCurrentConfig().get("key"));
+        verify(synchronizer, times(0)).syncConfigChange(any(), anyMap());
+    }
+
+    @Test
+    void getLocalPluginIdsTest() {
+        registerTestPlugin("trace", "test1", false, false, false);
+        registerTestPlugin("auth", "test2", false, false, false);
+
+        java.util.Set<String> ids = manager.getLocalPluginIds();
+
+        assertEquals(2, ids.size());
+        assertTrue(ids.contains("trace:test1"));
+        assertTrue(ids.contains("auth:test2"));
+    }
+
+    @Test
+    void isPluginAvailableTest() {
+        registerTestPlugin("trace", "test", false, false, false);
+
+        assertTrue(manager.isPluginAvailable("trace:test"));
+        assertFalse(manager.isPluginAvailable("nonexistent:plugin"));
+    }
+
+    @Test
+    void applyStateChangeDirectTest() {
+        registerTestPlugin("trace", "test", false, false, true);
+
+        manager.applyStateChange("trace:test", false);
+
+        assertFalse(manager.isPluginEnabled("trace", "test"));
+    }
+
+    @Test
+    void applyConfigChangeDirectTest() {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("k", "v");
+
+        manager.applyConfigChange("trace:test", config);
+
+        assertEquals("v", plugin.getCurrentConfig().get("k"));
+    }
+
+    @Test
+    void updatePluginConfigWithNullDefinitionsTest() throws NacosApiException {
+        TestConfigurablePlugin plugin = new TestConfigurablePlugin();
+        plugin.setConfigDefinitions(null);
+        registerConfigurablePlugin("trace", "test", plugin);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("key", "value");
+
+        manager.updatePluginConfig("trace:test", config, true);
+
+        assertEquals("value", plugin.getCurrentConfig().get("key"));
+    }
+
+    @Test
+    void applyConfigChangeWhenApplyConfigThrowsTest() {
+        ThrowingConfigurablePlugin plugin = new ThrowingConfigurablePlugin();
+        registerConfigurablePlugin("trace", "test", plugin);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("k", "v");
+
+        assertThrows(RuntimeException.class, () -> manager.applyConfigChange("trace:test", config));
+    }
+
+    @Test
+    void applyStateChangeWithUnknownPluginIdTest() {
+        manager.applyStateChange("unknown:plugin", true);
+        assertTrue(manager.isPluginEnabled("unknown", "plugin"));
+    }
+
     private void registerTestPlugin(String type, String name, boolean critical, boolean configurable,
             boolean enabled) {
         Object instance = new Object();
@@ -355,6 +452,10 @@ class PluginManagerTest {
     }
 
     private void registerConfigurablePlugin(String type, String name, TestConfigurablePlugin plugin) {
+        registerConfigurablePlugin(type, name, (PluginConfigSpec) plugin);
+    }
+
+    private void registerConfigurablePlugin(String type, String name, PluginConfigSpec plugin) {
         String pluginId = type + ":" + name;
 
         PluginInfo info = new PluginInfo();
@@ -442,6 +543,24 @@ class PluginManagerTest {
         @Override
         public Map<String, String> getCurrentConfig() {
             return currentConfig;
+        }
+    }
+
+    static class ThrowingConfigurablePlugin implements PluginConfigSpec {
+
+        @Override
+        public List<ConfigItemDefinition> getConfigDefinitions() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public void applyConfig(Map<String, String> config) {
+            throw new RuntimeException("applyConfig failed");
+        }
+
+        @Override
+        public Map<String, String> getCurrentConfig() {
+            return new HashMap<>();
         }
     }
 }
