@@ -544,7 +544,7 @@ const request = (function(_global) {
           config.beforeSend && config.beforeSend(xhr);
         },
         headers: {
-          Authorization: localStorage.getItem('token') || undefined,
+          Authorization: accessTokenInHeader ? `Bearer ${accessTokenInHeader}` : undefined,
           AccessToken: accessTokenInHeader,
         },
       })

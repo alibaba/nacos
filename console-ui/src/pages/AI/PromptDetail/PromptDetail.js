@@ -583,7 +583,7 @@ class PromptDetail extends React.Component {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
-        ...(token ? { Authorization: token } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...(accessToken ? { AccessToken: accessToken } : {}),
       },
       body: JSON.stringify(payload),

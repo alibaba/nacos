@@ -360,13 +360,23 @@ class SkillOptimizeDialog extends React.Component {
   };
 
   startSSEStream = (url, payload, token) => {
+    let accessToken = '';
+    try {
+      const tokenObj = JSON.parse(token);
+      accessToken = tokenObj.accessToken || '';
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse token:', e);
+    }
+
     // Use fetch API for POST request with SSE
     fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
-        ...(token ? { Authorization: token } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(accessToken ? { AccessToken: accessToken } : {}),
       },
       body: JSON.stringify(payload),
     })
