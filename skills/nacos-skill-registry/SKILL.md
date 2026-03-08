@@ -1,9 +1,9 @@
 ---
-name: find-skill-from-nacos
+name: nacos-skill-registry
 description: Discover, install, and upload AI skills with Nacos. Use when users want to find, install, or publish skills to a team's Nacos server.
 ---
 
-# Find Skills from Nacos
+# Nacos Skill Registry
 
 This skill helps you discover, install, and upload AI skills to a Nacos configuration center using the nacos-cli tool.
 
@@ -58,27 +58,27 @@ iwr -UseBasicParsing https://nacos.io/nacos-installer.ps1 -OutFile $env:TEMP\nac
 
 ### Step 2: Resolve Configuration
 
-The default config file path is `~/.find-skill-from-nacos.conf`. Check if it exists:
+The default config file path is `~/.nacos-skill-registry.conf`. Check if it exists:
 
 ```bash
-cat ~/.find-skill-from-nacos.conf
+cat ~/.nacos-skill-registry.conf
 ```
 
 **If the config file exists**, use it directly for all subsequent commands:
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-list
+nacos-cli --config ~/.nacos-skill-registry.conf skill-list
 ```
 
 **If the config file does NOT exist**, ask the user to choose one of the following options:
 
 1. **Provide an existing config file path** - User has a config file elsewhere. Use it directly, no need to save.
-2. **Input custom configuration** - User provides host, port, username, password, namespace. Save to `~/.find-skill-from-nacos.conf`.
+2. **Input custom configuration** - User provides host, port, username, password, namespace. Save to `~/.nacos-skill-registry.conf`.
 
-For option 2, save the configuration to `~/.find-skill-from-nacos.conf` so it can be reused next time:
+For option 2, save the configuration to `~/.nacos-skill-registry.conf` so it can be reused next time:
 
 ```yaml
-# ~/.find-skill-from-nacos.conf
+# ~/.nacos-skill-registry.conf
 host: <user-provided-host>
 port: <user-provided-port>
 username: <user-provided-username>
@@ -99,13 +99,13 @@ When a user asks for help, identify:
 Run the skill-list command with the resolved config:
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-list
+nacos-cli --config ~/.nacos-skill-registry.conf skill-list
 ```
 
 To filter by name:
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-list --name <keyword>
+nacos-cli --config ~/.nacos-skill-registry.conf skill-list --name <keyword>
 ```
 
 For example:
@@ -140,7 +140,7 @@ I found N skills in Nacos. The most relevant one for your needs is:
 **<skill-name>** - <description>
 
 To install it:
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-get <skill-name>
+nacos-cli --config ~/.nacos-skill-registry.conf skill-get <skill-name>
 
 This will download the skill to ~/.skills/ and make it available immediately.
 Would you like me to install it?
@@ -151,13 +151,13 @@ Would you like me to install it?
 If the user wants to proceed, download and install the skill:
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-get <skill-name>
+nacos-cli --config ~/.nacos-skill-registry.conf skill-get <skill-name>
 ```
 
 The skill will be downloaded to `~/.skills/` by default. To install to a custom location:
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-get <skill-name> -o /custom/path
+nacos-cli --config ~/.nacos-skill-registry.conf skill-get <skill-name> -o /custom/path
 ```
 
 After installation, confirm the skill is available by checking the directory:
@@ -172,7 +172,7 @@ When a user wants to share a skill with their team by publishing it to Nacos, fo
 
 ### Step 1: Ensure nacos-cli is Available and Configured
 
-Same as the discovery flow above -- check `which nacos-cli` and resolve configuration via `~/.find-skill-from-nacos.conf`.
+Same as the discovery flow above -- check `which nacos-cli` and resolve configuration via `~/.nacos-skill-registry.conf`.
 
 ### Step 2: Verify the Skill Directory
 
@@ -187,7 +187,7 @@ If the file doesn't exist or lacks frontmatter, help the user create or fix it b
 ### Step 3: Upload the Skill
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-upload <path-to-skill>
+nacos-cli --config ~/.nacos-skill-registry.conf skill-upload <path-to-skill>
 ```
 
 The command reads the skill's `SKILL.md` frontmatter to determine the skill name and description, then publishes all files in the directory to the Nacos server.
@@ -197,7 +197,7 @@ The command reads the skill's `SKILL.md` frontmatter to determine the skill name
 After uploading, verify the skill is visible in Nacos:
 
 ```bash
-nacos-cli --config ~/.find-skill-from-nacos.conf skill-list --name <skill-name>
+nacos-cli --config ~/.nacos-skill-registry.conf skill-list --name <skill-name>
 ```
 
 Example response to user:
@@ -236,7 +236,7 @@ I can still help you with this task directly! Would you like me to proceed?
 
 If this is something your team does often, you could create a skill and
 publish it to Nacos for everyone:
-nacos-cli skill-upload /path/to/your-skill --config ~/.find-skill-from-nacos.conf
+nacos-cli skill-upload /path/to/your-skill --config ~/.nacos-skill-registry.conf
 ```
 
 ## Tips for Effective Use
