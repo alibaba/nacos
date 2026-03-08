@@ -1,11 +1,11 @@
 ---
 name: find-skill-from-nacos
-description: Discover and install AI skills from Nacos. Use when users want to find or install skills from a team's Nacos server.
+description: Discover, install, and upload AI skills with Nacos. Use when users want to find, install, or publish skills to a team's Nacos server.
 ---
 
 # Find Skills from Nacos
 
-This skill helps you discover and install AI skills from a Nacos configuration center using the nacos-cli tool.
+This skill helps you discover, install, and upload AI skills to a Nacos configuration center using the nacos-cli tool.
 
 ## When to Use This Skill
 
@@ -16,6 +16,7 @@ Use this skill when the user:
 - Asks "what skills are available" or "list skills from Nacos"
 - Wants to search for tools, templates, or workflows stored in Nacos
 - Needs to download or install a skill from a team/organization's Nacos server
+- Wants to upload or publish a skill to Nacos for their team
 - Mentions they want to share or discover skills within their team
 
 ## What is nacos-cli?
@@ -41,19 +42,18 @@ Check if nacos-cli is installed:
 which nacos-cli
 ```
 
-If not found, install it from source:
+If not found, install it using the official installer script:
+
+**Linux / macOS:**
 
 ```bash
-git clone https://github.com/nacos-group/nacos-cli.git
-cd nacos-cli && go build -o nacos-cli
-mkdir -p ~/.local/bin
-cp nacos-cli ~/.local/bin/
-export PATH="$HOME/.local/bin:$PATH"
+curl -fsSL https://nacos.io/nacos-installer.sh | sudo bash -s -- --cli
 ```
 
-To make the PATH change permanent, add the following line to `~/.bashrc` or `~/.zshrc`:
-```bash
-export PATH="$HOME/.local/bin:$PATH"
+**Windows (PowerShell):**
+
+```powershell
+iwr -UseBasicParsing https://nacos.io/nacos-installer.ps1 -OutFile $env:TEMP\nacos-installer.ps1; & $env:TEMP\nacos-installer.ps1 -cli; Remove-Item $env:TEMP\nacos-installer.ps1
 ```
 
 ### Step 2: Resolve Configuration
@@ -73,18 +73,17 @@ nacos-cli --config ~/.find-skill-from-nacos.conf skill-list
 **If the config file does NOT exist**, ask the user to choose one of the following options:
 
 1. **Provide an existing config file path** - User has a config file elsewhere. Use it directly, no need to save.
-2. **Use default configuration** - Use the built-in defaults (127.0.0.1:8848, nacos/nacos). Save to `~/.find-skill-from-nacos.conf`.
-3. **Input custom configuration** - User provides host, port, username, password, namespace. Save to `~/.find-skill-from-nacos.conf`.
+2. **Input custom configuration** - User provides host, port, username, password, namespace. Save to `~/.find-skill-from-nacos.conf`.
 
-For options 2 and 3, save the configuration to `~/.find-skill-from-nacos.conf` so it can be reused next time:
+For option 2, save the configuration to `~/.find-skill-from-nacos.conf` so it can be reused next time:
 
 ```yaml
 # ~/.find-skill-from-nacos.conf
-host: 127.0.0.1
-port: 8848
-username: nacos
-password: nacos
-namespace: ""
+host: <user-provided-host>
+port: <user-provided-port>
+username: <user-provided-username>
+password: <user-provided-password>
+namespace: <user-provided-namespace>
 ```
 
 ### Step 3: Understand What They Need
@@ -165,6 +164,48 @@ After installation, confirm the skill is available by checking the directory:
 
 ```bash
 ls ~/.skills/<skill-name>/SKILL.md
+```
+
+## How to Help Users Upload Skills to Nacos
+
+When a user wants to share a skill with their team by publishing it to Nacos, follow these steps.
+
+### Step 1: Ensure nacos-cli is Available and Configured
+
+Same as the discovery flow above -- check `which nacos-cli` and resolve configuration via `~/.find-skill-from-nacos.conf`.
+
+### Step 2: Verify the Skill Directory
+
+A valid skill directory must contain a `SKILL.md` file with proper frontmatter (name, description). Confirm the path:
+
+```bash
+ls <path-to-skill>/SKILL.md
+```
+
+If the file doesn't exist or lacks frontmatter, help the user create or fix it before uploading.
+
+### Step 3: Upload the Skill
+
+```bash
+nacos-cli --config ~/.find-skill-from-nacos.conf skill-upload <path-to-skill>
+```
+
+The command reads the skill's `SKILL.md` frontmatter to determine the skill name and description, then publishes all files in the directory to the Nacos server.
+
+### Step 4: Verify the Upload
+
+After uploading, verify the skill is visible in Nacos:
+
+```bash
+nacos-cli --config ~/.find-skill-from-nacos.conf skill-list --name <skill-name>
+```
+
+Example response to user:
+
+```text
+Your skill "<skill-name>" has been uploaded to Nacos successfully!
+Team members can install it with:
+nacos-cli --config <their-config> skill-get <skill-name>
 ```
 
 ## Connection Reference
