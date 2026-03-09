@@ -86,6 +86,8 @@ password: <user-provided-password>
 namespace: <user-provided-namespace>
 ```
 
+**IMPORTANT: After saving the config file, you MUST use `--config ~/.nacos-skill-registry.conf` in all subsequent commands. Do NOT pass host, port, username, or password as individual command-line flags — nacos-cli does not support them.**
+
 ### Step 3: Understand What They Need
 
 When a user asks for help, identify:
@@ -210,14 +212,12 @@ nacos-cli --config <their-config> skill-get <skill-name>
 
 ## Connection Reference
 
-**Command-line flags** (can override config file settings):
+**IMPORTANT: nacos-cli does NOT support `--host`, `--port`, `--user`, `--password` or `--namespace` as command-line flags. You MUST always use `--config` to pass connection settings. NEVER attempt to pass connection parameters as individual command-line flags.**
+
+The ONLY supported connection flag:
 
 | Flag | Short | Description |
 | :--- | :--- | :--- |
-| --server | -s | Nacos server address (host:port) |
-| --username | -u | Nacos username (default: nacos) |
-| --password | -p | Nacos password (default: nacos) |
-| --namespace | -n | Nacos namespace ID |
 | --config | -c | Path to configuration file |
 
 ## When No Skills Are Found
@@ -241,8 +241,9 @@ nacos-cli skill-upload /path/to/your-skill --config ~/.nacos-skill-registry.conf
 
 ## Tips for Effective Use
 
-1. **Use specific keywords**: "react testing" is better than just "testing" when filtering
-2. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
-3. **Check namespaces**: Different teams may store skills in different Nacos namespaces - use `-n <namespace>` to switch
-4. **Use config files**: Save connection details to avoid typing credentials repeatedly
-5. **Keep skills updated**: Use `nacos-cli skill-sync --all` to keep local skills in sync with Nacos
+1. **Always use `--config`**: nacos-cli only accepts connection settings via config file. Never use `--host`, `--port`, `--user`, `--password`, or `--namespace` as command-line flags — they are not supported and will cause errors.
+2. **Use specific keywords**: "react testing" is better than just "testing" when filtering
+3. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
+4. **Check namespaces**: Different teams may store skills in different Nacos namespaces - use `-n <namespace>` to switch
+5. **Use config files**: Save connection details to avoid typing credentials repeatedly
+6. **Keep skills updated**: Use `nacos-cli skill-sync --all` to keep local skills in sync with Nacos
