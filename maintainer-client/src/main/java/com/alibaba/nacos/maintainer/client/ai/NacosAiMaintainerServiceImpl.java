@@ -645,7 +645,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         RequestResource resource = buildRequestResource(namespaceId, null);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_ADMIN_PATH).setParamValue(params)
-                .setBody(java.util.Base64.getEncoder().encodeToString(zipBytes)).build();
+                .setFileUpload(zipBytes, "skill.zip", "file").build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result = JacksonUtils.toObj(restResult.getData(),
                 new TypeReference<Result<String>>() {
