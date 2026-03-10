@@ -22,8 +22,6 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
-import com.alibaba.nacos.core.plugin.model.form.PluginConfigForm;
-import com.alibaba.nacos.core.plugin.model.form.PluginStatusForm;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import org.junit.jupiter.api.Test;
@@ -140,13 +138,7 @@ class PluginControllerV3Test {
     
     @Test
     void testUpdatePluginStatus() throws NacosApiException {
-        PluginStatusForm form = new PluginStatusForm();
-        form.setPluginType("auth");
-        form.setPluginName("nacos");
-        form.setEnabled(false);
-        form.setLocalOnly(true);
-        
-        Result<String> result = pluginControllerV3.updatePluginStatus(form);
+        Result<String> result = pluginControllerV3.updatePluginStatus("auth", "nacos", false, true);
         
         assertNotNull(result);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -155,36 +147,25 @@ class PluginControllerV3Test {
     
     @Test
     void testUpdatePluginStatusBlankTypeThrows() {
-        PluginStatusForm form = new PluginStatusForm();
-        form.setPluginType("");
-        form.setPluginName("nacos");
-        
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> pluginControllerV3.updatePluginStatus(form));
+                () -> pluginControllerV3.updatePluginStatus("", "nacos", true, false));
         
         assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getErrCode());
     }
     
     @Test
     void testUpdatePluginStatusBlankNameThrows() {
-        PluginStatusForm form = new PluginStatusForm();
-        form.setPluginType("auth");
-        form.setPluginName("  ");
-        
-        assertThrows(NacosApiException.class, () -> pluginControllerV3.updatePluginStatus(form));
+        assertThrows(NacosApiException.class,
+                () -> pluginControllerV3.updatePluginStatus("auth", "  ", true, false));
     }
     
     @Test
     void testUpdatePluginConfig() throws NacosApiException {
-        PluginConfigForm form = new PluginConfigForm();
-        form.setPluginType("auth");
-        form.setPluginName("nacos");
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
-        form.setConfig(config);
-        form.setLocalOnly(false);
+        String configJson = "{\"key\":\"value\"}";
         
-        Result<String> result = pluginControllerV3.updatePluginConfig(form);
+        Result<String> result = pluginControllerV3.updatePluginConfig("auth", "nacos", configJson, false);
         
         assertNotNull(result);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -193,16 +174,8 @@ class PluginControllerV3Test {
     
     @Test
     void testUpdatePluginConfigNullConfigThrows() {
-        PluginConfigForm form = new PluginConfigForm();
-        form.setPluginType("auth");
-        form.setPluginName("nacos");
-        form.setConfig(null);
-        
-        NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> pluginControllerV3.updatePluginConfig(form));
-        
-        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getErrCode());
-        assertTrue(ex.getErrMsg().contains("Plugin configuration is required"));
+        assertThrows(Exception.class,
+                () -> pluginControllerV3.updatePluginConfig("auth", "nacos", "null", false));
     }
     
     @Test

@@ -22,26 +22,26 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.plugin.PluginManager;
 import com.alibaba.nacos.core.plugin.model.PluginInfo;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
-import com.alibaba.nacos.core.plugin.model.form.PluginStatusForm;
-import com.alibaba.nacos.core.plugin.model.form.PluginConfigForm;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 
@@ -112,36 +112,51 @@ public class PluginControllerV3 {
     /**
      * Enable or disable plugin.
      *
-     * @param form plugin status form
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param enabled    enable or disable
+     * @param localOnly  whether only apply to local node
      * @return success result
      */
     @PutMapping("/status")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<String> updatePluginStatus(@RequestBody PluginStatusForm form) throws NacosApiException {
-        validatePluginIdentifier(form.getPluginType(), form.getPluginName());
-        String pluginId = form.getPluginType() + ":" + form.getPluginName();
-        unifiedPluginManager.setPluginEnabled(pluginId, form.isEnabled(), form.isLocalOnly());
+    public Result<String> updatePluginStatus(
+            @RequestParam("pluginType") String pluginType,
+            @RequestParam("pluginName") String pluginName,
+            @RequestParam("enabled") boolean enabled,
+            @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosApiException {
+        validatePluginIdentifier(pluginType, pluginName);
+        String pluginId = pluginType + ":" + pluginName;
+        unifiedPluginManager.setPluginEnabled(pluginId, enabled, localOnly);
         return Result.success("Plugin status updated successfully");
     }
 
     /**
      * Update plugin configuration.
      *
-     * @param form plugin config form
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param configJson plugin configuration as JSON string
+     * @param localOnly  whether only apply to local node
      * @return success result
      */
     @PutMapping("/config")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<String> updatePluginConfig(@RequestBody PluginConfigForm form) throws NacosApiException {
-        validatePluginIdentifier(form.getPluginType(), form.getPluginName());
-        if (form.getConfig() == null) {
+    public Result<String> updatePluginConfig(
+            @RequestParam("pluginType") String pluginType,
+            @RequestParam("pluginName") String pluginName,
+            @RequestParam("config") String configJson,
+            @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosApiException {
+        validatePluginIdentifier(pluginType, pluginName);
+        Map<String, String> config = JacksonUtils.toObj(configJson, new TypeReference<Map<String, String>>() { });
+        if (config == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Plugin configuration is required");
         }
-        String pluginId = form.getPluginType() + ":" + form.getPluginName();
-        unifiedPluginManager.updatePluginConfig(pluginId, form.getConfig(), form.isLocalOnly());
+        String pluginId = pluginType + ":" + pluginName;
+        unifiedPluginManager.updatePluginConfig(pluginId, config, localOnly);
         return Result.success("Plugin configuration updated successfully");
     }
 
