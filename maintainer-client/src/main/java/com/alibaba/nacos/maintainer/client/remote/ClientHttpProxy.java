@@ -214,11 +214,11 @@ public class ClientHttpProxy implements Closeable {
         conn.setConnectTimeout(httpConfig.getConTimeOutMillis());
         conn.setReadTimeout(httpConfig.getReadTimeOutMillis());
         conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         
         for (Map.Entry<String, String> entry : httpHeaders.getHeader().entrySet()) {
             conn.setRequestProperty(entry.getKey(), entry.getValue());
         }
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         
         byte[] fileBytes = request.getFileBytes();
         String fieldName = request.getFileFieldName();
