@@ -27,6 +27,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
@@ -115,6 +116,37 @@ class ConfigOperationServiceTest {
         Boolean fResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         assertTrue(fResult);
     }
+
+    @Test
+    void testPublishConfigBetaCasWithMd5Set() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        String expectedCasMd5 = "test-cas-md5-value";
+        configRequestInfo.setBetaIps("test-betaIps");
+        configRequestInfo.setCasMd5(expectedCasMd5);
+        configForm.setTag("");
+
+        // Use ArgumentCaptor to capture the ConfigInfo object passed to insertOrUpdateGrayCas
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(configInfoCaptor.capture(), eq("beta"), anyString(),
+            eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
+
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+
+        assertTrue(result);
+
+        // Verify that the md5 field of ConfigInfo is correctly set to the casMd5 value
+        ConfigInfo capturedConfigInfo = configInfoCaptor.getValue();
+        assertEquals(expectedCasMd5, capturedConfigInfo.getMd5(), "ConfigInfo's md5 should be set to casMd5 value");
+        assertEquals("test", capturedConfigInfo.getDataId());
+        assertEquals("test", capturedConfigInfo.getGroup());
+        assertEquals("test content", capturedConfigInfo.getContent());
+    }
     
     @Test
     void testPublishConfigTag() throws NacosException {
@@ -153,6 +185,37 @@ class ConfigOperationServiceTest {
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
         Boolean dResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         assertTrue(dResult);
+    }
+
+    @Test
+    void testPublishConfigTagCasWithMd5Set() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        String expectedCasMd5 = "test-cas-md5-value";
+        String tag = "testTag";
+        configRequestInfo.setCasMd5(expectedCasMd5);
+        configForm.setTag(tag);
+
+        // Use ArgumentCaptor to capture the ConfigInfo object passed to insertOrUpdateGrayCas
+        ArgumentCaptor<ConfigInfo> configInfoCaptor = ArgumentCaptor.forClass(ConfigInfo.class);
+
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(configInfoCaptor.capture(), eq("tag_" + tag), anyString(),
+            eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
+
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+
+        assertTrue(result);
+
+        // Verify that the md5 field of ConfigInfo is correctly set to the casMd5 value
+        ConfigInfo capturedConfigInfo = configInfoCaptor.getValue();
+        assertEquals(expectedCasMd5, capturedConfigInfo.getMd5(), "ConfigInfo's md5 should be set to casMd5 value");
+        assertEquals("test", capturedConfigInfo.getDataId());
+        assertEquals("test", capturedConfigInfo.getGroup());
+        assertEquals("test content", capturedConfigInfo.getContent());
     }
     
     @Test

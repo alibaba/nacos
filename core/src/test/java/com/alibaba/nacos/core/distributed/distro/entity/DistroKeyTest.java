@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DistroKeyTest {
     
@@ -53,5 +55,33 @@ class DistroKeyTest {
     @Test
     void testEquals() {
         assertEquals(distroKey1, distroKey2);
+    }
+
+    @Test
+    void testEqualsSameInstance() {
+        assertEquals(distroKey1, distroKey1);
+    }
+
+    @Test
+    void testEqualsNull() {
+        assertFalse(distroKey1.equals(null));
+    }
+
+    @Test
+    void testEqualsDifferentClass() {
+        assertFalse(distroKey1.equals("not a DistroKey"));
+    }
+
+    @Test
+    void testHashCode() {
+        assertEquals(distroKey1.hashCode(), distroKey2.hashCode());
+    }
+
+    @Test
+    void testToString() {
+        String s = distroKey1.toString();
+        assertTrue(s.contains(resourceKey));
+        assertTrue(s.contains(type));
+        assertTrue(s.contains(targetServer));
     }
 }

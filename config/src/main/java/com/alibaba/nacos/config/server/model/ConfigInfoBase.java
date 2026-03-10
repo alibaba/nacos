@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * ConfigInfoBase.
@@ -212,7 +213,12 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         }
         return true;
     }
-    
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dataId, group, content, md5);
+    }
+
     @Override
     public String toString() {
         return "ConfigInfoBase{" + "id=" + id + ", dataId='" + dataId + '\'' + ", group='" + group + '\''

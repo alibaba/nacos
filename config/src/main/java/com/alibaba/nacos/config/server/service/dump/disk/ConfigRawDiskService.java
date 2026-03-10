@@ -38,7 +38,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
  *
  * @author zunfei.lzf
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class ConfigRawDiskService implements ConfigDiskService {
     
     private static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";

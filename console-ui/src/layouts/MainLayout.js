@@ -48,26 +48,24 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
-    children: PropTypes.array,
-    getNotice: PropTypes.func,
-    notice: PropTypes.string,
+    children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
     consoleUiEnable: PropTypes.string,
+    getNotice: PropTypes.func,
     getGuide: PropTypes.func,
     guideMsg: PropTypes.string,
   };
 
   componentDidMount() {
     this.props.getState();
-    this.props.getNotice();
     this.props.getGuide();
   }
-  
+
   componentDidUpdate(prevProps) {
     if (prevProps.language !== this.props.language) {
       this.props.getNotice();
     }
   }
-  
+
   goBack() {
     this.props.history.goBack();
   }
@@ -77,6 +75,8 @@ class MainLayout extends React.Component {
     const pageParamMap = {
       '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
       '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/skillManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/promptManagement': ['namespace', 'namespaceShowName', 'searchName'],
       '/mcpServerManagement': ['namespace', 'namespaceShowName'],
       '/serviceManagement': ['namespace', 'namespaceShowName'],
     };
@@ -240,11 +240,6 @@ class MainLayout extends React.Component {
               </div>
             </div>
             <div className="right-panel next-shell-sub-main">
-              {authEnabled === 'false' && consoleUiEnable === 'true' ? (
-                <Message type="notice">
-                  <div dangerouslySetInnerHTML={{ __html: this.props.notice }} />
-                </Message>
-              ) : null}
               {consoleUiEnable === 'false' && (
                 <Dialog
                   visible={visible}

@@ -46,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Paths;
@@ -104,7 +105,6 @@ public class SwitchManager extends RequestProcessor4CP {
      * @param debug whether debug
      * @throws Exception exception
      */
-    @SuppressWarnings("PMD")
     public void update(String entry, String value, boolean debug) throws Exception {
         
         this.requestLock.lock();
@@ -515,7 +515,7 @@ public class SwitchManager extends RequestProcessor4CP {
         if (1 != keys.size()) {
             return false;
         }
-        String keyString = new String(keys.get(0));
+        String keyString = new String(keys.get(0), StandardCharsets.UTF_8);
         return !KeyBuilder.getSwitchDomainKey().equals(keyString);
     }
     

@@ -142,5 +142,11 @@ public class ConfigAdvanceInfo implements Serializable {
                 && Objects.equals(use, that.use) && Objects.equals(effect, that.effect) && Objects.equals(type,
                 that.type) && Objects.equals(schema, that.schema) && Objects.equals(configTags, that.configTags);
     }
-    
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(createTime, modifyTime, createUser, createIp, desc, use, effect, type, schema,
+                configTags);
+    }
+
 }

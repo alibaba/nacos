@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,10 +29,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -73,5 +77,34 @@ class FileConfigMemberLookupTest {
     @Test
     void testUseAddressServer() {
         assertFalse(fileConfigMemberLookup.useAddressServer());
+    }
+
+    @Test
+    void testWatcherInterest() {
+        FileWatcher watcher = (FileWatcher) ReflectionTestUtils.getField(fileConfigMemberLookup, "watcher");
+        assertTrue(watcher.interest("/conf/cluster.conf"));
+        assertTrue(watcher.interest("cluster.conf"));
+        assertFalse(watcher.interest("other.txt"));
+    }
+
+    @Test
+    void testWatcherOnChange() {
+        FileWatcher watcher = (FileWatcher) ReflectionTestUtils.getField(fileConfigMemberLookup, "watcher");
+        FileChangeEvent event = FileChangeEvent.builder().paths(EnvUtil.getConfPath()).context("cluster.conf").build();
+        watcher.onChange(event);
+    }
+
+    @Test
+    void testDoStartWhenRegisterWatcherThrows() throws NacosException {
+        String previousConfPath = EnvUtil.getConfPath();
+        try {
+            EnvUtil.setConfPath("/nonexistent_nacos_watch_path_12345");
+            FileConfigMemberLookup lookup = new FileConfigMemberLookup();
+            lookup.injectMemberManager(memberManager);
+            lookup.start();
+            lookup.destroy();
+        } finally {
+            EnvUtil.setConfPath(previousConfPath);
+        }
     }
 }

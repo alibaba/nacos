@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Utils {
 
     private MD5Utils() {
@@ -32,14 +31,6 @@ public class MD5Utils {
     
     private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f'};
-    
-    private static final ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = ThreadLocal.withInitial(() -> {
-        try {
-            return MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        }
-    });
     
     /**
      * Calculate MD5 hex string.
@@ -49,15 +40,8 @@ public class MD5Utils {
      * @throws NoSuchAlgorithmException if can't load md5 digest spi.
      */
     public static String md5Hex(byte[] bytes) throws NoSuchAlgorithmException {
-        try {
-            MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
-            if (messageDigest != null) {
-                return encodeHexString(messageDigest.digest(bytes));
-            }
-            throw new NoSuchAlgorithmException("MessageDigest get MD5 instance error");
-        } finally {
-            MESSAGE_DIGEST_LOCAL.remove();
-        }
+        MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+        return encodeHexString(messageDigest.digest(bytes));
     }
     
     /**

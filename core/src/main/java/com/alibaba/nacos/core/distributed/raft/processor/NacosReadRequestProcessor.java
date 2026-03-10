@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alipay.sofa.jraft.rpc.RpcContext;
@@ -33,8 +32,8 @@ public class NacosReadRequestProcessor extends AbstractProcessor implements RpcP
     
     private final JRaftServer server;
     
-    public NacosReadRequestProcessor(JRaftServer server, Serializer serializer) {
-        super(serializer);
+    public NacosReadRequestProcessor(JRaftServer server) {
+        super();
         this.server = server;
     }
     

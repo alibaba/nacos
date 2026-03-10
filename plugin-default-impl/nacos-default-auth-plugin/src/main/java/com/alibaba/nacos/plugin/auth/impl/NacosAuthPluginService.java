@@ -43,7 +43,6 @@ import java.util.List;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
     
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {

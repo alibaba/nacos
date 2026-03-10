@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  *
  * @author Nacos
  */
-@SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class InternetAddressUtil {
     
     private InternetAddressUtil() {

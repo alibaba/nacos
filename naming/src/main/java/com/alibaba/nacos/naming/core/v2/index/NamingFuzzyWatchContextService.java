@@ -325,7 +325,6 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
                             NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(), service.getName()));
                 }
             }
-            matchedServiceKeysMap.putIfAbsent(completedPattern, matchedServices);
             Loggers.SRV_LOG.info("FUZZY_WATCH: pattern {} match {} services, overMatchCount={},cost {}ms",
                     completedPattern, matchedServices.size(), overMatchCount,
                     System.currentTimeMillis() - matchBeginTime);

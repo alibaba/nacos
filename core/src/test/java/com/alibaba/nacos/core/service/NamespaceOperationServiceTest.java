@@ -113,28 +113,48 @@ class NamespaceOperationServiceTest {
     }
     
     @Test
-    void testGetNamespace() {
-        assertThrows(NacosApiException.class, () -> {
-            
-            TenantInfo tenantInfo = new TenantInfo();
-            tenantInfo.setTenantId(TEST_NAMESPACE_ID);
-            tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
-            tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
-            when(namespacePersistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID)).thenReturn(tenantInfo);
-            when(namespacePersistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id")).thenReturn(null);
-            Namespace namespaceAllInfo = new Namespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC,
-                    DEFAULT_QUOTA, 1, NamespaceTypeEnum.GLOBAL.getType());
-            Namespace namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID);
-            assertEquals(namespaceAllInfo.getNamespace(), namespace.getNamespace());
-            assertEquals(namespaceAllInfo.getNamespaceShowName(), namespace.getNamespaceShowName());
-            assertEquals(namespaceAllInfo.getNamespaceDesc(), namespace.getNamespaceDesc());
-            assertEquals(namespaceAllInfo.getQuota(), namespace.getQuota());
-            assertEquals(namespaceAllInfo.getConfigCount(), namespace.getConfigCount());
-            
-            namespaceOperationService.getNamespace("test_not_exist_id");
-            
-        });
-        
+    void testGetNamespaceCustomExists() throws NacosException {
+        TenantInfo tenantInfo = new TenantInfo();
+        tenantInfo.setTenantId(TEST_NAMESPACE_ID);
+        tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
+        tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
+        when(namespacePersistService.findTenantByKp(
+                eq(String.valueOf(NamespaceTypeEnum.CUSTOM.getType())), eq(TEST_NAMESPACE_ID)))
+                .thenReturn(tenantInfo);
+
+        Namespace namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID, NamespaceTypeEnum.CUSTOM);
+
+        assertEquals(TEST_NAMESPACE_ID, namespace.getNamespace());
+        assertEquals(TEST_NAMESPACE_NAME, namespace.getNamespaceShowName());
+        assertEquals(TEST_NAMESPACE_DESC, namespace.getNamespaceDesc());
+        assertEquals(DEFAULT_QUOTA, namespace.getQuota());
+    }
+
+    @Test
+    void testGetNamespaceDefaultOrBlank() throws NacosException {
+        Namespace namespaceBlank = namespaceOperationService.getNamespace("");
+        assertEquals("", namespaceBlank.getNamespace());
+        assertEquals(DEFAULT_NAMESPACE_SHOW_NAME, namespaceBlank.getNamespaceShowName());
+
+        Namespace namespaceDefault = namespaceOperationService.getNamespace(Constants.DEFAULT_NAMESPACE_ID);
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, namespaceDefault.getNamespace());
+        assertEquals(DEFAULT_NAMESPACE_SHOW_NAME, namespaceDefault.getNamespaceShowName());
+    }
+
+    @Test
+    void testGetNamespaceNotExistThrows() {
+        when(namespacePersistService.findTenantByKp(eq(String.valueOf(NamespaceTypeEnum.CUSTOM.getType())), eq("not_exist_id"))).thenReturn(null);
+
+        assertThrows(NacosApiException.class,
+                () -> namespaceOperationService.getNamespace("not_exist_id", NamespaceTypeEnum.CUSTOM));
+    }
+
+    @Test
+    void testValidateNamespaceNotExistsWhenExists() {
+        when(namespacePersistService.tenantInfoCountByTenantId(TEST_NAMESPACE_ID)).thenReturn(1);
+
+        assertThrows(NacosApiException.class,
+                () -> namespaceOperationService.validateNamespaceNotExists(TEST_NAMESPACE_ID));
     }
     
     @Test

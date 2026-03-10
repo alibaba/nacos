@@ -281,7 +281,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             // reflect
             com.alibaba.nacos.common.notify.SlowEvent.class, com.alibaba.nacos.common.packagescan.PackageScan.class,
             com.alibaba.nacos.common.packagescan.DefaultPackageScan.class,
-            com.alibaba.nacos.naming.controllers.CatalogController.class,
             com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent.ServiceMetadataEvent.class,
             com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.class,
             com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.InstanceStoreRequest.class,
@@ -482,6 +481,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
 
         // Register optional plugin classes by name to avoid compile-time dependency
         registerOptionalClass(hints, "com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload");
+        // Register optional legacy adapter naming controllers (when api-legacy-adapter is on classpath, e.g. via bootstrap)
+        registerOptionalClass(hints, "com.alibaba.nacos.legacy.adapter.naming.CatalogController");
 
         for (String pattern : resourcePattern) {
             hints.resources().registerPattern(pattern);

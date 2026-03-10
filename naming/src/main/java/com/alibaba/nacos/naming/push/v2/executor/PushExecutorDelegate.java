@@ -30,7 +30,6 @@ import java.util.Optional;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
 public class PushExecutorDelegate implements PushExecutor {
     

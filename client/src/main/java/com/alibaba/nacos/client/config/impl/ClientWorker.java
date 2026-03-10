@@ -528,7 +528,6 @@ public class ClientWorker implements Closeable {
         return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ClientWorker(final ConfigFilterChainManager configFilterChainManager,
             ConfigServerListManager serverListManager, final NacosClientProperties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
@@ -769,7 +768,6 @@ public class ClientWorker implements Closeable {
             return response;
         }
         
-        @SuppressWarnings("PMD.MethodTooLongRule")
         private void initRpcClientHandler(final RpcClient rpcClientInner) {
             /*
              * Register Config Change /Config ReSync Handler
@@ -1088,7 +1086,6 @@ public class ClientWorker implements Closeable {
             }
         }
         
-        @SuppressWarnings("PMD.MethodTooLongRule")
         private boolean checkListenCache(Map<String, List<CacheData>> listenCachesMap) throws NacosException {
             
             final AtomicBoolean hasChangedKeys = new AtomicBoolean(false);
@@ -1260,6 +1257,8 @@ public class ClientWorker implements Closeable {
             if (response.isSuccess()) {
                 LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, response.getContent());
                 configResponse.setContent(response.getContent());
+                // Set MD5 from server response
+                configResponse.setMd5(response.getMd5());
                 String configType;
                 if (StringUtils.isNotBlank(response.getContentType())) {
                     configType = response.getContentType();

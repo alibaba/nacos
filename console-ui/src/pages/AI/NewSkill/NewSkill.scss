@@ -1,0 +1,417 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.new-skill-container {
+
+  .new-skill-form {
+    margin-top: 20px;
+  }
+
+  // 编辑模式使用与查看详情相同的样式类名
+  .skill-detail-container {
+    display: flex;
+    height: calc(100vh - 200px);
+    overflow: hidden;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e6e6e6;
+
+    .skill-detail-sidebar {
+      width: 300px;
+      border-right: 1px solid #e6e6e6;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+
+      .skill-detail-sidebar-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e6e6e6;
+        font-weight: 500;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+    .skill-detail-file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+
+      // 通用文件行样式（根节点和文件夹内节点都会应用）
+      .file-tree-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #333;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        margin: 2px 4px;
+
+        &.file-tree-folder-item {
+          color: #666;
+          font-weight: 500;
+          padding: 6px 12px;
+        }
+
+        &.file-tree-file-item {
+          cursor: pointer;
+          position: relative;
+
+          &:hover {
+            background-color: #f5f5f5;
+          }
+
+          &.selected {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            font-weight: 500;
+
+            .next-icon {
+              color: #1890ff;
+            }
+
+            &:hover {
+              background-color: #bae7ff;
+            }
+          }
+
+          &:not(.selected):hover {
+            background-color: #f5f5f5;
+          }
+        }
+
+        .next-icon {
+          color: #666;
+          margin-right: 8px;
+          font-size: 16px;
+          transition: color 0.2s ease;
+        }
+
+        span {
+          user-select: none;
+        }
+      }
+
+      .file-tree-empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: #999;
+        font-size: 13px;
+      }
+    }
+    }
+
+    .skill-detail-content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #fff;
+
+      .file-content-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+        font-size: 14px;
+      }
+
+      .file-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+
+        .file-content-header {
+          padding: 12px 16px;
+          border-bottom: 1px solid #e6e6e6;
+          display: flex;
+          align-items: center;
+          font-weight: 500;
+          background: #fafafa;
+        }
+
+        .file-content-resource {
+          flex: 1;
+          padding: 16px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+        }
+      }
+    }
+  }
+
+  .resources-section {
+    .resource-card {
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+    }
+
+    .resource-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding-left: 20px;
+      gap: 8px;
+
+      .resource-title-text {
+        &:hover {
+          color: #1890ff;
+          text-decoration: underline;
+        }
+      }
+
+      .resource-title-editor {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+      }
+    }
+
+    .next-collapse {
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+
+      .next-collapse-panel {
+        border-bottom: 1px solid #e6e6e6;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .next-collapse-panel-title {
+          padding: 12px 16px;
+          background: #fafafa;
+        }
+
+        .next-collapse-panel-content {
+          padding: 16px;
+        }
+      }
+    }
+
+    .empty-resources {
+      padding: 40px;
+      text-align: center;
+      color: #999;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+  }
+}
+
+.skill-preview-dialog {
+  .next-dialog-body {
+    padding: 0;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .preview-sidebar {
+    width: 300px;
+    border-right: 1px solid #e6e6e6;
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+
+    .preview-sidebar-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e6e6e6;
+      font-weight: 500;
+      background: #fff;
+    }
+
+    .preview-file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .file-tree-folder {
+      .file-tree-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #333;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        margin: 2px 4px;
+
+        &.file-tree-folder-item {
+          color: #666;
+          font-weight: 500;
+          padding: 6px 12px;
+        }
+
+        &.file-tree-file-item {
+          cursor: pointer;
+          position: relative;
+
+          &:hover {
+            background-color: #f5f5f5;
+          }
+
+          &.selected {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            font-weight: 500;
+
+            .next-icon {
+              color: #1890ff;
+            }
+
+            &:hover {
+              background-color: #bae7ff;
+            }
+          }
+
+          &:not(.selected):hover {
+            background-color: #f5f5f5;
+          }
+        }
+
+        .next-icon {
+          color: #666;
+          margin-right: 8px;
+          font-size: 16px;
+          transition: color 0.2s ease;
+        }
+
+        span {
+          user-select: none;
+        }
+      }
+    }
+
+    .file-tree-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+    }
+  }
+
+  .preview-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+
+    .file-content-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .file-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+
+      .file-content-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e6e6e6;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        background: #fafafa;
+      }
+
+      .file-content-markdown {
+        flex: 1;
+        padding: 16px;
+        margin: 0;
+        overflow-y: auto;
+        background: #fff;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #333;
+      }
+
+      .file-content-resource {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+
+        .resource-info {
+          margin-bottom: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e6e6e6;
+
+          .resource-info-item {
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #666;
+
+            strong {
+              color: #333;
+              margin-right: 8px;
+            }
+          }
+        }
+
+        .resource-content {
+          flex: 1;
+
+          .resource-content-label {
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #333;
+          }
+
+          .resource-content-text {
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            border: 1px solid #e6e6e6;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #333;
+            margin: 0;
+            min-height: 200px;
+          }
+        }
+      }
+    }
+  }
+}

@@ -38,4 +38,19 @@ class SelectRequestTest {
         assertEquals("SelectRequest{queryType=0, sql='SELECT 1', args=[1], className='java.lang.Integer'}",
                 request.toString());
     }
+
+    @Test
+    void testSelectRequestGettersSetters() {
+        SelectRequest request = new SelectRequest();
+        request.setQueryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS);
+        request.setSql("SELECT * FROM t");
+        request.setArgs(new Object[] {"a", 1});
+        request.setClassName("java.lang.String");
+        assertEquals(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS, request.getQueryType());
+        assertEquals("SELECT * FROM t", request.getSql());
+        assertEquals(2, request.getArgs().length);
+        assertEquals("java.lang.String", request.getClassName());
+        assertEquals("SelectRequest{queryType=4, sql='SELECT * FROM t', args=[a, 1], className='java.lang.String'}",
+                request.toString());
+    }
 }

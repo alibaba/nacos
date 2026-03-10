@@ -233,6 +233,17 @@ class ExternalNamespacePersistServiceTest {
         
         assertEquals("test%", testB);
     }
+
+    @Test
+    void generateLikeArgumentWithUnderscoreTest() {
+        // underscore is escaped for SQL LIKE (e.g. _ matches single char)
+        String withUnderscore = externalNamespacePersistService.generateLikeArgument("ns_name");
+        assertEquals("ns\\_name", withUnderscore);
+
+        // underscore escaped and star replaced by percent
+        String withUnderscoreAndStar = externalNamespacePersistService.generateLikeArgument("ns_name*");
+        assertEquals("ns\\_name%", withUnderscoreAndStar);
+    }
     
     @Test
     void isExistTableTest() {

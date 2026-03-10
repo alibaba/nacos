@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
  *
  * @author shiyiyu
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConnectionControlManager {
     
     private final ConnectionControlRuleParser connectionControlRuleParser;

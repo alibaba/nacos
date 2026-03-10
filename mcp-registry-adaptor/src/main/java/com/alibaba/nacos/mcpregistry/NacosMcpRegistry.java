@@ -29,6 +29,7 @@ import org.springframework.context.annotation.PropertySource;
 @SpringBootApplication(exclude = LdapAutoConfiguration.class)
 @PropertySource("classpath:nacos-mcp-registry.properties")
 public class NacosMcpRegistry {
+    
     public static void main(String[] args) {
         SpringApplication.run(NacosMcpRegistry.class, args);
     }

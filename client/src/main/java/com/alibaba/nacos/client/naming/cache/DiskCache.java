@@ -115,7 +115,6 @@ public class DiskCache {
      * @return Service info
      * @throws UnsupportedEncodingException if the file is not encoded in UTF-8
      */
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Map<String, ServiceInfo> parseServiceInfoFromCache(File file) throws UnsupportedEncodingException {
         Map<String, ServiceInfo> result = new HashMap<>(1);
         String fileName = URLDecoder.decode(file.getName(), "UTF-8");

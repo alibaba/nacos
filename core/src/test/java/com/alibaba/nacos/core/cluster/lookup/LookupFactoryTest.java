@@ -32,7 +32,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 @TestMethodOrder(MethodName.class)
@@ -96,15 +103,98 @@ class LookupFactoryTest {
         String name1 = "file";
         MemberLookup memberLookup = LookupFactory.switchLookup(name1, memberManager);
         assertEquals(FileConfigMemberLookup.class, memberLookup.getClass());
-        
+
         createLookUpAddressServerMemberLookup();
         String name2 = "address-server";
         memberLookup = LookupFactory.switchLookup(name2, memberManager);
         assertEquals(AddressServerMemberLookup.class, memberLookup.getClass());
-        
+
         createLookUpStandaloneMemberLookup();
         String name3 = "address-server";
         memberLookup = LookupFactory.switchLookup(name3, memberManager);
         assertEquals(StandaloneMemberLookup.class, memberLookup.getClass());
+    }
+
+    @Test
+    void switchLookupWithInvalidNameThrows() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        createLookUpFileConfigMemberLookup();
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> LookupFactory.switchLookup("invalid-name", memberManager));
+        assertNotNull(ex.getMessage());
+        assertTrue(ex.getMessage().contains("invalid-name") || ex.getMessage().contains("addressing"));
+    }
+
+    @Test
+    void getLookUpReturnsCurrentAfterCreate() throws NacosException {
+        EnvUtil.setIsStandalone(true);
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        assertNotNull(LookupFactory.getLookUp());
+        assertEquals(memberLookup, LookupFactory.getLookUp());
+    }
+
+    @Test
+    void lookupTypeSourceOfAndAccessors() {
+        assertEquals(LookupFactory.LookupType.FILE_CONFIG, LookupFactory.LookupType.sourceOf("file"));
+        assertEquals(LookupFactory.LookupType.ADDRESS_SERVER, LookupFactory.LookupType.sourceOf("address-server"));
+        assertNull(LookupFactory.LookupType.sourceOf("unknown"));
+        assertNull(LookupFactory.LookupType.sourceOf(null));
+
+        assertEquals(1, LookupFactory.LookupType.FILE_CONFIG.getCode());
+        assertEquals("file", LookupFactory.LookupType.FILE_CONFIG.getName());
+        assertEquals("file", LookupFactory.LookupType.FILE_CONFIG.toString());
+        assertEquals(2, LookupFactory.LookupType.ADDRESS_SERVER.getCode());
+        assertEquals("address-server", LookupFactory.LookupType.ADDRESS_SERVER.getName());
+    }
+
+    @Test
+    void createLookUpNoArgDefaultsToFileConfigWhenMemberListSet() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        mockEnvironment.setProperty("nacos.member.list", "127.0.0.1:8848");
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        assertEquals(FileConfigMemberLookup.class, memberLookup.getClass());
+    }
+
+    @Test
+    void createLookUpNoArgDefaultsToAddressServerWhenNoFileNoMemberList() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        Path tempDir = Files.createTempDirectory("nacos_cluster_test");
+        try {
+            EnvUtil.setNacosHomePath(tempDir.toAbsolutePath().toString());
+            memberLookup = LookupFactory.createLookUp(memberManager);
+            assertEquals(AddressServerMemberLookup.class, memberLookup.getClass());
+        } finally {
+            EnvUtil.setNacosHomePath(null);
+        }
+    }
+
+    @Test
+    void switchLookupSameTypeReturnsSameInstance() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "file");
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        MemberLookup same = LookupFactory.switchLookup("file", memberManager);
+        assertTrue(same == memberLookup);
+        assertEquals(LookupFactory.getLookUp(), same);
+    }
+
+    @Test
+    void destroySuccess() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "file");
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        LookupFactory.destroy();
+    }
+
+    @Test
+    void switchLookupDifferentTypeDestroysOldLookup() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "file");
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        MemberLookup fileLookup = LookupFactory.getLookUp();
+        mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "address-server");
+        MemberLookup addressLookup = LookupFactory.createLookUp(memberManager);
+        assertEquals(AddressServerMemberLookup.class, addressLookup.getClass());
+        assertTrue(addressLookup != fileLookup);
     }
 }

@@ -26,7 +26,6 @@ import java.util.List;
  * @author nkorange
  * @since 1.2.0
  */
-@SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface RolePersistService {
 
     /**

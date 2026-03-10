@@ -175,7 +175,7 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(InputStream is) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder textBuilder = new StringBuilder();
             String lineTxt = null;
             while ((lineTxt = reader.readLine()) != null) {

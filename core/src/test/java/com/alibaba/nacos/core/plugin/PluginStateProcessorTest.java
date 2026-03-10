@@ -155,6 +155,28 @@ class PluginStateProcessorTest {
     }
 
     @Test
+    void onApplyChangeStateWithNullEnabledTest() throws Exception {
+        PluginStateOperation operation = PluginStateOperation.builder()
+                .type(PluginStateOperation.OperationType.CHANGE_STATE)
+                .pluginId("trace:otel")
+                .enabled(true)
+                .build();
+        operation.setEnabled(null);
+
+        byte[] data = serializer.serialize(operation);
+        WriteRequest request = WriteRequest.newBuilder()
+                .setData(ByteString.copyFrom(data))
+                .build();
+
+        Response response = processor.onApply(request);
+
+        assertNotNull(response);
+        assertFalse(response.getSuccess());
+        assertNotNull(response.getErrMsg());
+        assertTrue(response.getErrMsg().contains("trace:otel") || response.getErrMsg().contains("CHANGE_STATE"));
+    }
+
+    @Test
     void loadSnapshotOperateTest() {
         List<SnapshotOperation> operations = processor.loadSnapshotOperate();
 

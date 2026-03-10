@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Service
 public class SimpleSyncEffectService implements SyncEffectService {
     

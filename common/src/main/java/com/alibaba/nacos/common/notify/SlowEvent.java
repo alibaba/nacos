@@ -22,7 +22,6 @@ package com.alibaba.nacos.common.notify;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SlowEvent extends Event {
     
     @Override

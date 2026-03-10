@@ -24,7 +24,6 @@ import java.util.List;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class AclInfo implements Serializable {
     
     private static final long serialVersionUID = 1383026926036269457L;

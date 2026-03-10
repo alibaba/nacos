@@ -39,7 +39,6 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
  * @author 985492783@qq.com
  * @date 2023/8/24 19:51
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosLockService implements LockService {
     
     private final LockGrpcClient lockGrpcClient;

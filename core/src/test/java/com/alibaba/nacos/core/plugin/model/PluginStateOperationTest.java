@@ -115,4 +115,38 @@ class PluginStateOperationTest {
         });
         assertEquals("type is required", exception.getMessage());
     }
+
+    @Test
+    void builderEmptyPluginIdTest() {
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            PluginStateOperation.builder()
+                    .type(PluginStateOperation.OperationType.CHANGE_STATE)
+                    .pluginId("")
+                    .enabled(true)
+                    .build();
+        });
+        assertEquals("pluginId is required", exception.getMessage());
+    }
+
+    @Test
+    void builderChangeStateWithoutEnabledTest() {
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            PluginStateOperation.builder()
+                    .type(PluginStateOperation.OperationType.CHANGE_STATE)
+                    .pluginId("trace:test")
+                    .build();
+        });
+        assertEquals("enabled is required for CHANGE_STATE operation", exception.getMessage());
+    }
+
+    @Test
+    void builderUpdateConfigWithoutConfigTest() {
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            PluginStateOperation.builder()
+                    .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
+                    .pluginId("trace:test")
+                    .build();
+        });
+        assertEquals("config is required for UPDATE_CONFIG operation", exception.getMessage());
+    }
 }

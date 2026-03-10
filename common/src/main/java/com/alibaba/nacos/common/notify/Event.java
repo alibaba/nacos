@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Event implements Serializable {
     
     private static final long serialVersionUID = -3731383194964997493L;

@@ -67,7 +67,6 @@ public class ConfigSubService {
     
     private ServerMemberManager memberManager;
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ConfigSubService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
@@ -113,7 +112,6 @@ public class ConfigSubService {
         }
     }
     
-    @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
     abstract static class ClusterJob<T> {
         
         private String url;
