@@ -193,4 +193,68 @@ JAVA_OPT="${JAVA_OPT} -Xms512m -Xmx512m"
 
 ---
 
+## 性能优化
+
+### JVM 调优
+
+生产环境推荐配置:
+```bash
+JAVA_OPT="${JAVA_OPT} -server -Xms2g -Xmx2g -Xmn1g"
+JAVA_OPT="${JAVA_OPT} -XX:+UseG1GC"
+JAVA_OPT="${JAVA_OPT} -XX:MaxGCPauseMillis=200"
+```
+
+### 连接数优化
+
+```properties
+# application.properties
+server.tomcat.max-threads=500
+server.tomcat.accept-count=500
+```
+
+### 集群模式
+
+生产环境建议使用集群模式:
+
+```bash
+# Node 1
+sh startup.sh -p embedded
+
+# Node 2
+sh startup.sh -p embedded
+
+# Node 3
+sh startup.sh -p embedded
+```
+
+## 故障排查
+
+### 服务注册失败
+
+检查点:
+1. Nacos 服务是否启动
+2. 网络是否连通
+3. 权限配置是否正确
+4. 日志中是否有异常
+
+### 配置不生效
+
+检查点:
+1. Data ID 是否正确
+2. Group 是否匹配
+3. 配置格式是否正确
+4. 客户端缓存是否刷新
+
+### 内存泄露
+
+排查步骤:
+```bash
+# 生成 heap dump
+jmap -dump:format=b,file=nacos.hprof <pid>
+
+# 使用 MAT 分析
+```
+
+---
+
 感谢你对 Nacos 的贡献！🎉
