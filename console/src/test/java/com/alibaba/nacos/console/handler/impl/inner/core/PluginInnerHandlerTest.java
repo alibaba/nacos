@@ -158,11 +158,11 @@ class PluginInnerHandlerTest {
 
     @Test
     void testUpdatePluginStatusTest() throws NacosException {
-        doNothing().when(pluginManager).setPluginEnabled(eq("auth:test"), eq(false));
+        doNothing().when(pluginManager).setPluginEnabled(eq("auth:test"), eq(false), eq(false));
 
-        pluginInnerHandler.updatePluginStatus("auth", "test", false);
+        pluginInnerHandler.updatePluginStatus("auth", "test", false, false);
 
-        verify(pluginManager).setPluginEnabled("auth:test", false);
+        verify(pluginManager).setPluginEnabled("auth:test", false, false);
     }
 
     @Test
@@ -170,11 +170,11 @@ class PluginInnerHandlerTest {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
 
-        doNothing().when(pluginManager).updatePluginConfig(eq("auth:test"), any());
+        doNothing().when(pluginManager).updatePluginConfig(eq("auth:test"), any(), eq(false));
 
-        pluginInnerHandler.updatePluginConfig("auth", "test", config);
+        pluginInnerHandler.updatePluginConfig("auth", "test", config, false);
 
-        verify(pluginManager).updatePluginConfig(eq("auth:test"), eq(config));
+        verify(pluginManager).updatePluginConfig(eq("auth:test"), eq(config), eq(false));
     }
 
     @Test

@@ -144,16 +144,17 @@ public class PluginInnerHandler implements PluginHandler {
     }
 
     @Override
-    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
+    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+            throws NacosException {
         String pluginId = pluginType + ":" + pluginName;
-        pluginManager.setPluginEnabled(pluginId, enabled);
+        pluginManager.setPluginEnabled(pluginId, enabled, localOnly);
     }
 
     @Override
-    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
-            throws NacosException {
+    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
+            boolean localOnly) throws NacosException {
         String pluginId = pluginType + ":" + pluginName;
-        pluginManager.updatePluginConfig(pluginId, config);
+        pluginManager.updatePluginConfig(pluginId, config, localOnly);
     }
 
     @Override

@@ -68,10 +68,12 @@ public class PluginProxy {
      * @param pluginType plugin type
      * @param pluginName plugin name
      * @param enabled    whether to enable
+     * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin status
      */
-    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
-        pluginHandler.updatePluginStatus(pluginType, pluginName, enabled);
+    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+            throws NacosException {
+        pluginHandler.updatePluginStatus(pluginType, pluginName, enabled, localOnly);
     }
 
     /**
@@ -80,11 +82,12 @@ public class PluginProxy {
      * @param pluginType plugin type
      * @param pluginName plugin name
      * @param config     configuration map
+     * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin config
      */
-    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
-            throws NacosException {
-        pluginHandler.updatePluginConfig(pluginType, pluginName, config);
+    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
+            boolean localOnly) throws NacosException {
+        pluginHandler.updatePluginConfig(pluginType, pluginName, config, localOnly);
     }
 
     /**

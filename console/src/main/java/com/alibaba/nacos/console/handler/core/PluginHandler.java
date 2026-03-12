@@ -55,9 +55,11 @@ public interface PluginHandler {
      * @param pluginType plugin type
      * @param pluginName plugin name
      * @param enabled    whether to enable
+     * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin status
      */
-    void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException;
+    void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+            throws NacosException;
 
     /**
      * Update plugin configuration.
@@ -65,9 +67,11 @@ public interface PluginHandler {
      * @param pluginType plugin type
      * @param pluginName plugin name
      * @param config     configuration map
+     * @param localOnly  whether only apply to local node
      * @throws NacosException if there is an issue updating the plugin config
      */
-    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config) throws NacosException;
+    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config, boolean localOnly)
+            throws NacosException;
 
     /**
      * Get plugin availability across cluster nodes.

@@ -101,11 +101,11 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
 
     @Test
     void testUpdatePluginStatusTest() throws NacosException {
-        doNothing().when(namingMaintainerService).updatePluginStatus("auth", "test", false);
+        doNothing().when(namingMaintainerService).updatePluginStatus("auth", "test", false, false);
 
-        pluginRemoteHandler.updatePluginStatus("auth", "test", false);
+        pluginRemoteHandler.updatePluginStatus("auth", "test", false, false);
 
-        verify(namingMaintainerService).updatePluginStatus("auth", "test", false);
+        verify(namingMaintainerService).updatePluginStatus("auth", "test", false, false);
     }
 
     @Test
@@ -113,11 +113,11 @@ class PluginRemoteHandlerTest extends AbstractRemoteHandlerTest {
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
 
-        doNothing().when(namingMaintainerService).updatePluginConfig(eq("auth"), eq("test"), any());
+        doNothing().when(namingMaintainerService).updatePluginConfig(eq("auth"), eq("test"), any(), eq(false));
 
-        pluginRemoteHandler.updatePluginConfig("auth", "test", config);
+        pluginRemoteHandler.updatePluginConfig("auth", "test", config, false);
 
-        verify(namingMaintainerService).updatePluginConfig("auth", "test", config);
+        verify(namingMaintainerService).updatePluginConfig("auth", "test", config, false);
     }
 
     @Test

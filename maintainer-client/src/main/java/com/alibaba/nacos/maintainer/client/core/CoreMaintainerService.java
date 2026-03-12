@@ -248,7 +248,21 @@ public interface CoreMaintainerService extends Closeable {
      * @param enabled    whether to enable
      * @throws NacosException if the operation fails
      */
-    void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException;
+    default void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
+        updatePluginStatus(pluginType, pluginName, enabled, false);
+    }
+
+    /**
+     * Update plugin enabled/disabled status.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param enabled    whether to enable
+     * @param localOnly  whether only apply to local node
+     * @throws NacosException if the operation fails
+     */
+    void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+            throws NacosException;
 
     /**
      * Update plugin configuration.
@@ -258,7 +272,22 @@ public interface CoreMaintainerService extends Closeable {
      * @param config     configuration map
      * @throws NacosException if the operation fails
      */
-    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config) throws NacosException;
+    default void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
+            throws NacosException {
+        updatePluginConfig(pluginType, pluginName, config, false);
+    }
+
+    /**
+     * Update plugin configuration.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param config     configuration map
+     * @param localOnly  whether only apply to local node
+     * @throws NacosException if the operation fails
+     */
+    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config, boolean localOnly)
+            throws NacosException;
 
     /**
      * Get plugin availability across cluster nodes.

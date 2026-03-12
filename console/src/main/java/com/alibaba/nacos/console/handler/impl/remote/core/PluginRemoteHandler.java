@@ -98,14 +98,15 @@ public class PluginRemoteHandler implements PluginHandler {
     }
 
     @Override
-    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
-        clientHolder.getNamingMaintainerService().updatePluginStatus(pluginType, pluginName, enabled);
+    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+            throws NacosException {
+        clientHolder.getNamingMaintainerService().updatePluginStatus(pluginType, pluginName, enabled, localOnly);
     }
 
     @Override
-    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
-            throws NacosException {
-        clientHolder.getNamingMaintainerService().updatePluginConfig(pluginType, pluginName, config);
+    public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
+            boolean localOnly) throws NacosException {
+        clientHolder.getNamingMaintainerService().updatePluginConfig(pluginType, pluginName, config, localOnly);
     }
 
     @Override

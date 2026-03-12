@@ -100,8 +100,9 @@ public class ConsolePluginController {
     public Result<String> updatePluginStatus(
             @RequestParam("pluginType") String pluginType,
             @RequestParam("pluginName") String pluginName,
-            @RequestParam("enabled") boolean enabled) throws NacosException {
-        pluginProxy.updatePluginStatus(pluginType, pluginName, enabled);
+            @RequestParam("enabled") boolean enabled,
+            @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosException {
+        pluginProxy.updatePluginStatus(pluginType, pluginName, enabled, localOnly);
         return Result.success("Plugin status updated successfully");
     }
 
@@ -122,7 +123,8 @@ public class ConsolePluginController {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Plugin configuration is required");
         }
-        pluginProxy.updatePluginConfig(form.getPluginType(), form.getPluginName(), form.getConfig());
+        pluginProxy.updatePluginConfig(form.getPluginType(), form.getPluginName(), form.getConfig(),
+                form.isLocalOnly());
         return Result.success("Plugin configuration updated successfully");
     }
 
