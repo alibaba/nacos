@@ -448,6 +448,12 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     @Override
     public boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
             String commitMsg, String description, String bizTags) throws NacosException {
+        return publishPrompt(namespaceId, promptKey, version, template, commitMsg, description, bizTags, null);
+    }
+    
+    @Override
+    public boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
+            String commitMsg, String description, String bizTags, String variables) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
@@ -464,6 +470,9 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         }
         if (StringUtils.isNotBlank(bizTags)) {
             params.put("bizTags", bizTags);
+        }
+        if (StringUtils.isNotBlank(variables)) {
+            params.put("variables", variables);
         }
         RequestResource resource = buildRequestResource(namespaceId, promptKey);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)

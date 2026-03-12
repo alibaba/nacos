@@ -85,6 +85,7 @@ public class QueryPromptRequestHandler extends RequestHandler<QueryPromptRequest
         prompt.setVersion(versionInfo.getVersion());
         prompt.setTemplate(versionInfo.getTemplate());
         prompt.setMd5(versionInfo.getMd5());
+        prompt.setVariables(versionInfo.getVariables());
         return prompt;
     }
 }

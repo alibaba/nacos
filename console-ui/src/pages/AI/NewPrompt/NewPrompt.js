@@ -40,6 +40,8 @@ class NewPrompt extends React.Component {
       loading: false,
       template: '',
       variables: [],
+      variableDefaults: {},
+      variableDescriptions: {},
       optimizeDialogVisible: false,
     };
   }
@@ -102,6 +104,13 @@ class NewPrompt extends React.Component {
 
       const namespaceId = getParams('namespace') || '';
 
+      const { variables: vars, variableDefaults, variableDescriptions } = this.state;
+      const variablesDef = vars.map(name => ({
+        name,
+        defaultValue: variableDefaults[name] || null,
+        description: variableDescriptions[name] || null,
+      }));
+
       request({
         method: 'POST',
         url: 'v3/console/ai/prompt',
@@ -112,6 +121,7 @@ class NewPrompt extends React.Component {
           description: values.description || '',
           template: template,
           commitMsg: values.commitMsg || '',
+          variables: JSON.stringify(variablesDef),
         },
         success: data => {
           this.setState({ loading: false });
@@ -289,9 +299,39 @@ class NewPrompt extends React.Component {
               {variables.length > 0 ? (
                 <div className="variables-list">
                   {variables.map((variable, index) => (
-                    <div key={index} className="variable-item">
-                      <Icon type="success" size="small" className="variable-icon" />
-                      {`{{${variable}}}`}
+                    <div
+                      key={index}
+                      className="variable-item"
+                      style={{ flexDirection: 'column', alignItems: 'stretch' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                        <Icon type="success" size="small" className="variable-icon" />
+                        <span style={{ fontWeight: 500 }}>{`{{${variable}}}`}</span>
+                      </div>
+                      <Input
+                        size="small"
+                        placeholder={locale.defaultValuePlaceholder || '默认值（可选）'}
+                        value={this.state.variableDefaults[variable] || ''}
+                        onChange={value =>
+                          this.setState(prev => ({
+                            variableDefaults: { ...prev.variableDefaults, [variable]: value },
+                          }))
+                        }
+                        style={{ marginBottom: 4 }}
+                      />
+                      <Input
+                        size="small"
+                        placeholder={locale.variableDescPlaceholder || '变量说明（可选）'}
+                        value={this.state.variableDescriptions[variable] || ''}
+                        onChange={value =>
+                          this.setState(prev => ({
+                            variableDescriptions: {
+                              ...prev.variableDescriptions,
+                              [variable]: value,
+                            },
+                          }))
+                        }
+                      />
                     </div>
                   ))}
                 </div>

@@ -134,6 +134,25 @@ public interface PromptMaintainerService {
             String commitMsg, String description, String bizTags) throws NacosException;
     
     /**
+     * Publish a new version of prompt with variable definitions.
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version (must be greater than current version)
+     * @param template    prompt template content
+     * @param commitMsg   commit message
+     * @param description prompt description
+     * @param bizTags     biz tags (comma-separated)
+     * @param variables   variable definitions JSON string (optional)
+     * @return true if publish success
+     * @throws NacosException if fail to publish prompt
+     */
+    default boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
+            String commitMsg, String description, String bizTags, String variables) throws NacosException {
+        return publishPrompt(namespaceId, promptKey, version, template, commitMsg, description, bizTags);
+    }
+    
+    /**
      * Publish a new version of prompt without tags.
      *
      * @param namespaceId namespace ID
@@ -147,7 +166,7 @@ public interface PromptMaintainerService {
      */
     default boolean publishPrompt(String namespaceId, String promptKey, String version, String template,
             String commitMsg, String description) throws NacosException {
-        return publishPrompt(namespaceId, promptKey, version, template, commitMsg, description, null);
+        return publishPrompt(namespaceId, promptKey, version, template, commitMsg, description, (String) null);
     }
     
     /**
@@ -162,7 +181,8 @@ public interface PromptMaintainerService {
      */
     default boolean publishPrompt(String promptKey, String version, String template, String commitMsg)
             throws NacosException {
-        return publishPrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey, version, template, commitMsg, null, null);
+        return publishPrompt(Constants.DEFAULT_NAMESPACE_ID, promptKey, version, template, commitMsg, null,
+                (String) null);
     }
     
     /**

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.prompt;
 
+import java.util.List;
+
 /**
  * Prompt version information.
  *
@@ -28,6 +30,8 @@ public class PromptVersionInfo extends PromptVersionSummary {
     private String template;
     
     private String md5;
+    
+    private List<PromptVariable> variables;
     
     public String getTemplate() {
         return template;
@@ -43,5 +47,13 @@ public class PromptVersionInfo extends PromptVersionSummary {
     
     public void setMd5(String md5) {
         this.md5 = md5;
+    }
+    
+    public List<PromptVariable> getVariables() {
+        return variables;
+    }
+    
+    public void setVariables(List<PromptVariable> variables) {
+        this.variables = variables;
     }
 }

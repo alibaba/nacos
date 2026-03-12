@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.prompt.PromptDescriptor;
 import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -82,7 +83,8 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
     
     @Override
     public boolean publishPromptVersion(String namespaceId, String promptKey, String version, String template, String commitMsg,
-            String description, List<String> bizTags, String srcUser, String srcIp) throws NacosException {
+            String description, List<String> bizTags, List<PromptVariable> variables, String srcUser, String srcIp)
+            throws NacosException {
         validatePromptKeyAndVersion(promptKey, version);
         if (!PromptVersionUtils.isValidVersion(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
@@ -119,6 +121,7 @@ public class PromptAdminOperationServiceImpl implements PromptAdminOperationServ
         versionInfo.setTemplate(template);
         versionInfo.setCommitMsg(commitMsg);
         versionInfo.setGmtModified(now);
+        versionInfo.setVariables(variables);
         publishConfig(namespaceId, versionDataId, JacksonUtils.toJson(versionInfo), srcUser, srcIp, null, false, null);
         
         mapping.getVersions().add(version);

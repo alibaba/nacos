@@ -64,7 +64,8 @@ public class PromptRemoteHandler implements PromptHandler {
                 form.getTemplate(),
                 form.getCommitMsg(),
                 form.getDescription(),
-                form.getBizTags()
+                form.getBizTags(),
+                form.getVariables()
         );
     }
     

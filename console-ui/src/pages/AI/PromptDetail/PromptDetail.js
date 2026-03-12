@@ -80,6 +80,8 @@ class PromptDetail extends React.Component {
       savingDescription: false,
       // History versions loading
       loadingHistory: false,
+      // Server-side variable definitions (with defaults)
+      serverVariables: [],
       // AI optimize dialog
       optimizeDialogVisible: false,
       // Debug functionality
@@ -131,6 +133,13 @@ class PromptDetail extends React.Component {
               const template = versionData.template || '';
               const isLatestVersion =
                 !versionData.version || metaData.latestVersion === versionData.version;
+              const svrVars = versionData.variables || [];
+              const initialVarValues = {};
+              svrVars.forEach(v => {
+                if (v.defaultValue) {
+                  initialVarValues[v.name] = v.defaultValue;
+                }
+              });
               this.setState({
                 loading: false,
                 promptData: {
@@ -140,6 +149,8 @@ class PromptDetail extends React.Component {
                 },
                 template: template,
                 variables: this.extractVariables(template),
+                serverVariables: svrVars,
+                variableValues: initialVarValues,
                 descriptionValue: metaData.description || '',
                 labelsMap: metaData.labels || {},
                 selectedLabel: label || null,
@@ -297,11 +308,13 @@ class PromptDetail extends React.Component {
 
   // Navigate to publish new version
   handlePublishNewVersion = () => {
-    const { promptKey, namespaceId, template, promptData } = this.state;
-    // Store template and metadata in sessionStorage for the publish page to use
+    const { promptKey, namespaceId, template, promptData, serverVariables } = this.state;
     sessionStorage.setItem('promptPublishTemplate', template);
     sessionStorage.setItem('promptPublishCurrentVersion', promptData?.version || '');
     sessionStorage.setItem('promptPublishDescription', promptData?.description || '');
+    if (serverVariables && serverVariables.length > 0) {
+      sessionStorage.setItem('promptPublishVariables', JSON.stringify(serverVariables));
+    }
     this.props.history.push(
       `/publishPromptVersion?namespace=${namespaceId}&promptKey=${promptKey}`
     );
@@ -525,13 +538,24 @@ class PromptDetail extends React.Component {
     this.setState({ userInput: value });
   };
 
-  // Render prompt with variable values
+  // Render prompt with variable values (user values override defaults)
   renderPromptWithVariables = () => {
-    const { template, variableValues } = this.state;
+    const { template, variableValues, serverVariables } = this.state;
+    const merged = {};
+    (serverVariables || []).forEach(v => {
+      if (v.defaultValue) {
+        merged[v.name] = v.defaultValue;
+      }
+    });
+    Object.keys(variableValues).forEach(key => {
+      if (variableValues[key]) {
+        merged[key] = variableValues[key];
+      }
+    });
     let renderedPrompt = template;
-    Object.keys(variableValues).forEach(variable => {
+    Object.keys(merged).forEach(variable => {
       const regex = new RegExp(`\\{\\{${variable}\\}\\}`, 'g');
-      renderedPrompt = renderedPrompt.replace(regex, variableValues[variable] || '');
+      renderedPrompt = renderedPrompt.replace(regex, merged[variable] || '');
     });
     return renderedPrompt;
   };
@@ -853,18 +877,42 @@ class PromptDetail extends React.Component {
                       <span className="variables-count">{variables.length}</span>
                     </div>
                     <div className="variable-list">
-                      {variables.map((variable, index) => (
-                        <div key={index} className="variable-input-item">
-                          <label className="variable-label">{`{{${variable}}}`}</label>
-                          <Input
-                            size="small"
-                            placeholder={`${locale.enterValue || '输入'} ${variable}`}
-                            value={variableValues[variable] || ''}
-                            onChange={value => this.handleVariableChange(variable, value)}
-                            disabled={debugging}
-                          />
-                        </div>
-                      ))}
+                      {variables.map((variable, index) => {
+                        const svrVar = (this.state.serverVariables || []).find(
+                          v => v.name === variable
+                        );
+                        const defaultVal = svrVar?.defaultValue;
+                        const desc = svrVar?.description;
+                        const placeholder = defaultVal
+                          ? `${locale.defaultValue || '默认值'}: ${defaultVal}`
+                          : `${locale.enterValue || '输入'} ${variable}`;
+                        return (
+                          <div key={index} className="variable-input-item">
+                            <label className="variable-label">
+                              {`{{${variable}}}`}
+                              {desc && (
+                                <span
+                                  style={{
+                                    fontWeight: 'normal',
+                                    color: '#999',
+                                    marginLeft: 4,
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {desc}
+                                </span>
+                              )}
+                            </label>
+                            <Input
+                              size="small"
+                              placeholder={placeholder}
+                              value={variableValues[variable] || ''}
+                              onChange={value => this.handleVariableChange(variable, value)}
+                              disabled={debugging}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

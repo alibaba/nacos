@@ -26,15 +26,19 @@ import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
 import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.ai.service.prompt.PromptAdminOperationService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.ai.PromptHandler;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
@@ -68,6 +72,7 @@ public class PromptInnerHandler implements PromptHandler {
                 form.getCommitMsg(),
                 form.getDescription(),
                 parseBizTags(form.getBizTags()),
+                parseVariables(form.getVariables()),
                 srcUser,
                 srcIp
         );
@@ -153,5 +158,13 @@ public class PromptInnerHandler implements PromptHandler {
             }
         }
         return result;
+    }
+    
+    private List<PromptVariable> parseVariables(String variables) {
+        if (StringUtils.isBlank(variables)) {
+            return null;
+        }
+        return JacksonUtils.toObj(variables, new TypeReference<List<PromptVariable>>() {
+        });
     }
 }

@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
 import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
@@ -37,9 +38,12 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -92,6 +96,7 @@ public class PromptAdminController {
                 form.getCommitMsg(),
                 form.getDescription(),
                 parseBizTags(form.getBizTags()),
+                parseVariables(form.getVariables()),
                 srcUser,
                 srcIp
         );
@@ -266,5 +271,13 @@ public class PromptAdminController {
             }
         }
         return result;
+    }
+    
+    private List<PromptVariable> parseVariables(String variables) {
+        if (StringUtils.isBlank(variables)) {
+            return null;
+        }
+        return JacksonUtils.toObj(variables, new TypeReference<List<PromptVariable>>() {
+        });
     }
 }

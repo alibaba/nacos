@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -42,13 +43,15 @@ public interface PromptAdminOperationService {
      * @param commitMsg   the commit msg
      * @param description the description
      * @param bizTags     the biz tags
+     * @param variables   the prompt variable definitions with optional default values
      * @param srcUser     the src user
      * @param srcIp       the src ip
      * @return the boolean
      * @throws NacosException the nacos exception
      */
     boolean publishPromptVersion(String namespaceId, String promptKey, String version, String template, String commitMsg,
-            String description, List<String> bizTags, String srcUser, String srcIp) throws NacosException;
+            String description, List<String> bizTags, List<PromptVariable> variables, String srcUser, String srcIp)
+            throws NacosException;
     
     /**
      * Bind label boolean.

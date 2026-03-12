@@ -59,6 +59,13 @@ public class PromptPublishForm extends PromptForm {
      */
     private String bizTags;
     
+    /**
+     * Variable definitions with default values (JSON array string, optional).
+     *
+     * <p>Example: [{"name":"question","defaultValue":"Hello","description":"User question"}]</p>
+     */
+    private String variables;
+    
     @Override
     public void validate() throws NacosApiException {
         super.validate();
@@ -112,5 +119,13 @@ public class PromptPublishForm extends PromptForm {
     
     public void setBizTags(String bizTags) {
         this.bizTags = bizTags;
+    }
+    
+    public String getVariables() {
+        return variables;
+    }
+    
+    public void setVariables(String variables) {
+        this.variables = variables;
     }
 }
