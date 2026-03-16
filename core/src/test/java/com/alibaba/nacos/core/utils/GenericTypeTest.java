@@ -18,40 +18,31 @@ package com.alibaba.nacos.core.utils;
 
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Type;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * {@link StringPool} unit tests.
- *
- * @author chenglu
- * @date 2021-06-10 13:52
- */
-class StringPoolTest {
-    
+class GenericTypeTest {
+
     @Test
-    void testStringPool() {
-        String val1 = StringPool.get("test");
-        assertEquals("test", val1);
-
-        String val2 = StringPool.get(null);
-        assertNull(val2);
-
-        long size1 = StringPool.size();
-        assertTrue(size1 >= 1);
-
-        StringPool.remove("test");
-        long size2 = StringPool.size();
-        assertTrue(size2 >= 0);
+    void getTypeReturnsResolvedParameterizedType() {
+        GenericType<List<String>> genericType = new GenericType<List<String>>() {
+        };
+        Type type = genericType.getType();
+        assertEquals(List.class, ((java.lang.reflect.ParameterizedType) type).getRawType());
+        assertTrue(type.getTypeName().contains("java.util.List"));
     }
 
     @Test
-    void testGetAfterRemoveReturnsNewInstance() {
-        String key = "uniqueKeyForGetAfterRemove";
-        StringPool.get(key);
-        StringPool.remove(key);
-        String afterRemove = StringPool.get(key);
-        assertEquals(key, afterRemove);
+    void constructorThrowsWhenRuntimeTypeIsTypeVariable() {
+        assertThrows(IllegalArgumentException.class, GenericTypeTest::createWithTypeVariable);
+    }
+
+    private static <T> void createWithTypeVariable() {
+        new GenericType<T>() {
+        };
     }
 }
