@@ -90,6 +90,14 @@ class ServerMemberManagerTest {
         serverMemberManager.updateMember(Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build());
         serverMemberManager.getMemberAddressInfos().add("1.1.1.1:8848");
         NotifyCenter.getPublisherMap().put(MembersChangeEvent.class.getCanonicalName(), eventPublisher);
+        // Pin serverList to exactly self + 1.1.1.1 so tests are deterministic (lookup may add members in some envs)
+        ConcurrentSkipListMap<String, Member> pinned = new ConcurrentSkipListMap<>();
+        pinned.put(serverMemberManager.getSelf().getAddress(), serverMemberManager.getSelf());
+        pinned.put("1.1.1.1:8848", serverMemberManager.find("1.1.1.1:8848"));
+        ReflectionTestUtils.setField(serverMemberManager, "serverList", pinned);
+        serverMemberManager.getMemberAddressInfos().clear();
+        serverMemberManager.getMemberAddressInfos().add(serverMemberManager.getSelf().getAddress());
+        serverMemberManager.getMemberAddressInfos().add("1.1.1.1:8848");
     }
     
     @AfterEach
@@ -527,27 +535,43 @@ class ServerMemberManagerTest {
 
     @Test
     void testIpChangeEventSubscriber() throws InterruptedException {
-        String oldIp = serverMemberManager.getSelf().getIp();
+        // Use fixed IPs so test is deterministic across environments (e.g. cloud runners use hostnames).
+        String oldIp = "192.168.1.1";
         String newIp = "192.168.2.100";
+        int port = 8848;
+        Member self = serverMemberManager.getSelf();
+        self.setIp(oldIp);
+        String oldAddress = oldIp + ":" + port;
+        ReflectionTestUtils.setField(serverMemberManager, "localAddress", oldAddress);
+        @SuppressWarnings("unchecked")
+        ConcurrentSkipListMap<String, Member> serverList = (ConcurrentSkipListMap<String, Member>) ReflectionTestUtils
+                .getField(serverMemberManager, "serverList");
+        String previousAddress = serverList.firstKey();
+        serverList.remove(previousAddress);
+        serverList.put(oldAddress, self);
+        serverMemberManager.getMemberAddressInfos().remove(previousAddress);
+        serverMemberManager.getMemberAddressInfos().add(oldAddress);
+
         InetUtils.IPChangeEvent event = new InetUtils.IPChangeEvent();
         event.setOldIP(oldIp);
         event.setNewIP(newIp);
         NotifyCenter.publishEvent(event);
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 100; i++) {
             if (newIp.equals(serverMemberManager.getSelf().getIp())) {
                 break;
             }
             Thread.sleep(100);
         }
-        assertEquals(newIp, serverMemberManager.getSelf().getIp());
-        String newAddress = newIp + ":" + 8848;
+        assertEquals(newIp, serverMemberManager.getSelf().getIp(),
+                "IP change event should be processed; async subscriber may be slow in some environments");
+        String newAddress = newIp + ":" + port;
         assertTrue(serverMemberManager.getServerList().containsKey(newAddress));
         assertTrue(serverMemberManager.getMemberAddressInfos().contains(newAddress));
         InetUtils.IPChangeEvent restoreEvent = new InetUtils.IPChangeEvent();
         restoreEvent.setOldIP(newIp);
         restoreEvent.setNewIP(oldIp);
         NotifyCenter.publishEvent(restoreEvent);
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 100; i++) {
             if (oldIp.equals(serverMemberManager.getSelf().getIp())) {
                 break;
             }
