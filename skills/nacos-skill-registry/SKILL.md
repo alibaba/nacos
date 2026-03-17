@@ -1,6 +1,6 @@
 ---
 name: nacos-skill-registry
-description: Discover, install, and upload AI skills with Nacos. Use when users want to find, install, or publish skills to a team's Nacos server.
+description: Helps users discover and install AI skills from a team's Nacos server when they ask questions like "how do I do X", "I want to X", "help me with X", "find a skill for X", "is there a skill that can...", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill in Nacos. Also supports uploading and publishing skills for team sharing.
 ---
 
 # Nacos Skill Registry
@@ -58,35 +58,53 @@ iwr -UseBasicParsing https://nacos.io/nacos-installer.ps1 -OutFile $env:TEMP\nac
 
 ### Step 2: Resolve Configuration
 
-The default config file path is `~/.nacos-skill-registry.conf`. Check if it exists:
+nacos-cli uses a **profile-based** configuration system. The default profile is stored at `~/.nacos-cli/default.conf`.
+Once configured, all commands work without any extra flags.
+
+Check if the default profile already exists by running:
 
 ```bash
-cat ~/.nacos-skill-registry.conf
+test -f ~/.nacos-cli/default.conf && echo "configured" || echo "not configured"
 ```
 
-**If the config file exists**, use it directly for all subsequent commands:
+**If the output is "configured"**, skip to the next step — nacos-cli will use it automatically.
+
+**If the output is "not configured"**, you need to create the config file for the user. Ask the user to provide the
+following information:
+
+1. Nacos server host (e.g., `10.0.0.1`)
+2. Nacos server port (e.g., `8848`)
+3. Auth type (`nacos` or `aliyun`)
+4. Credentials (username/password for nacos auth, or AccessKey/SecretKey for aliyun auth)
+5. Namespace ID (leave empty for public namespace)
+
+Then create the config file directly:
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-list
-```
-
-**If the config file does NOT exist**, ask the user to choose one of the following options:
-
-1. **Provide an existing config file path** - User has a config file elsewhere. Use it directly, no need to save.
-2. **Input custom configuration** - User provides host, port, username, password, namespace. Save to `~/.nacos-skill-registry.conf`.
-
-For option 2, save the configuration to `~/.nacos-skill-registry.conf` so it can be reused next time:
-
-```yaml
-# ~/.nacos-skill-registry.conf
+mkdir -p ~/.nacos-cli && cat > ~/.nacos-cli/default.conf << 'EOF'
 host: <user-provided-host>
 port: <user-provided-port>
+authType: nacos
 username: <user-provided-username>
 password: <user-provided-password>
 namespace: <user-provided-namespace>
+EOF
 ```
 
-**IMPORTANT: After saving the config file, you MUST use `--config ~/.nacos-skill-registry.conf` in all subsequent commands. Do NOT pass host, port, username, or password as individual command-line flags — nacos-cli does not support them.**
+For aliyun auth type, use this format instead:
+
+```bash
+mkdir -p ~/.nacos-cli && cat > ~/.nacos-cli/default.conf << 'EOF'
+host: <user-provided-host>
+port: <user-provided-port>
+authType: aliyun
+accessKey: <user-provided-access-key>
+secretKey: <user-provided-secret-key>
+namespace: <user-provided-namespace>
+EOF
+```
+
+After creating the config, all subsequent commands will use it automatically — no extra flags needed.
 
 ### Step 3: Understand What They Need
 
@@ -98,16 +116,16 @@ When a user asks for help, identify:
 
 ### Step 4: Search for Skills
 
-Run the skill-list command with the resolved config:
+Run the skill-list command (uses the default profile automatically):
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-list
+nacos-cli skill-list
 ```
 
 To filter by name:
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-list --name <keyword>
+nacos-cli skill-list --name <keyword>
 ```
 
 For example:
@@ -142,7 +160,7 @@ I found N skills in Nacos. The most relevant one for your needs is:
 **<skill-name>** - <description>
 
 To install it:
-nacos-cli --config ~/.nacos-skill-registry.conf skill-get <skill-name>
+nacos-cli skill-get <skill-name>
 
 This will download the skill to ~/.skills/ and make it available immediately.
 Would you like me to install it?
@@ -153,13 +171,13 @@ Would you like me to install it?
 If the user wants to proceed, download and install the skill:
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-get <skill-name>
+nacos-cli skill-get <skill-name>
 ```
 
 The skill will be downloaded to `~/.skills/` by default. To install to a custom location:
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-get <skill-name> -o /custom/path
+nacos-cli skill-get <skill-name> -o /custom/path
 ```
 
 After installation, confirm the skill is available by checking the directory:
@@ -174,7 +192,8 @@ When a user wants to share a skill with their team by publishing it to Nacos, fo
 
 ### Step 1: Ensure nacos-cli is Available and Configured
 
-Same as the discovery flow above -- check `which nacos-cli` and resolve configuration via `~/.nacos-skill-registry.conf`.
+Same as the discovery flow above -- check `which nacos-cli` and ensure a profile is configured (see Step 2 of the
+discovery flow).
 
 ### Step 2: Verify the Skill Directory
 
@@ -189,7 +208,7 @@ If the file doesn't exist or lacks frontmatter, help the user create or fix it b
 ### Step 3: Upload the Skill
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-upload <path-to-skill>
+nacos-cli skill-upload <path-to-skill>
 ```
 
 The command reads the skill's `SKILL.md` frontmatter to determine the skill name and description, then publishes all files in the directory to the Nacos server.
@@ -199,7 +218,7 @@ The command reads the skill's `SKILL.md` frontmatter to determine the skill name
 After uploading, verify the skill is visible in Nacos:
 
 ```bash
-nacos-cli --config ~/.nacos-skill-registry.conf skill-list --name <skill-name>
+nacos-cli skill-list --name <skill-name>
 ```
 
 Example response to user:
@@ -207,18 +226,14 @@ Example response to user:
 ```text
 Your skill "<skill-name>" has been uploaded to Nacos successfully!
 Team members can install it with:
-nacos-cli --config <their-config> skill-get <skill-name>
+nacos-cli skill-get <skill-name>
 ```
 
 ## Connection Reference
 
-**IMPORTANT: nacos-cli does NOT support `--host`, `--port`, `--user`, `--password` or `--namespace` as command-line flags. You MUST always use `--config` to pass connection settings. NEVER attempt to pass connection parameters as individual command-line flags.**
-
-The ONLY supported connection flag:
-
-| Flag | Short | Description |
-| :--- | :--- | :--- |
-| --config | -c | Path to configuration file |
+When no flags are provided, nacos-cli automatically loads the default profile from `~/.nacos-cli/default.conf`. This is
+the recommended way to use nacos-cli — configure once with `nacos-cli profile edit`, then all commands work without any
+flags.
 
 ## When No Skills Are Found
 
@@ -236,14 +251,13 @@ I can still help you with this task directly! Would you like me to proceed?
 
 If this is something your team does often, you could create a skill and
 publish it to Nacos for everyone:
-nacos-cli skill-upload /path/to/your-skill --config ~/.nacos-skill-registry.conf
+nacos-cli skill-upload /path/to/your-skill
 ```
 
 ## Tips for Effective Use
 
-1. **Always use `--config`**: nacos-cli only accepts connection settings via config file. Never use `--host`, `--port`, `--user`, `--password`, or `--namespace` as command-line flags — they are not supported and will cause errors.
+1. **One-time setup**: Run `nacos-cli profile edit` once to configure, then all commands work without any flags
 2. **Use specific keywords**: "react testing" is better than just "testing" when filtering
 3. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
 4. **Check namespaces**: Different teams may store skills in different Nacos namespaces - use `-n <namespace>` to switch
-5. **Use config files**: Save connection details to avoid typing credentials repeatedly
-6. **Keep skills updated**: Use `nacos-cli skill-sync --all` to keep local skills in sync with Nacos
+5. **Keep skills updated**: Use `nacos-cli skill-sync --all` to keep local skills in sync with Nacos
