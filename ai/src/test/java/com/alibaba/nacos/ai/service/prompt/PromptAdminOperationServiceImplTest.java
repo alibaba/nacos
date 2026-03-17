@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.prompt;
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptDescriptor;
 import com.alibaba.nacos.api.ai.model.prompt.PromptLabelVersionMapping;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -91,7 +92,7 @@ class PromptAdminOperationServiceImplTest {
                 .thenReturn(latestSource);
         
         boolean result = service.publishPromptVersion(ns, key, version, "hello", "c1", "desc",
-                List.of("a", "a", "b"), "u1", "127.0.0.1");
+                List.of("a", "a", "b"), List.<PromptVariable>of(), "u1", "127.0.0.1");
         
         assertTrue(result);
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
@@ -121,7 +122,7 @@ class PromptAdminOperationServiceImplTest {
                 .thenReturn(metaConfig);
         
         assertThrows(NacosException.class,
-                () -> service.publishPromptVersion(ns, key, version, "hello", null, "desc", null, "u1", "127.0.0.1"));
+                () -> service.publishPromptVersion(ns, key, version, "hello", null, "desc", null, null, "u1", "127.0.0.1"));
     }
     
     @Test
@@ -205,13 +206,13 @@ class PromptAdminOperationServiceImplTest {
     @Test
     void publishPromptVersionShouldThrowWhenVersionInvalid() {
         assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                "public", "p1", "1.0", "hello", null, null, null, "u1", "127.0.0.1"));
+                "public", "p1", "1.0", "hello", null, null, null, null, "u1", "127.0.0.1"));
     }
     
     @Test
     void publishPromptVersionShouldThrowWhenTemplateBlank() {
         assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                "public", "p1", "1.0.0", " ", null, null, null, "u1", "127.0.0.1"));
+                "public", "p1", "1.0.0", " ", null, null, null, null, "u1", "127.0.0.1"));
     }
     
     @Test
@@ -228,7 +229,7 @@ class PromptAdminOperationServiceImplTest {
                 .thenReturn(metaConfig);
         
         assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                ns, key, "1.0.0", "hello", null, null, null, "u1", "127.0.0.1"));
+                ns, key, "1.0.0", "hello", null, null, null, null, "u1", "127.0.0.1"));
     }
     
     @Test
@@ -244,7 +245,7 @@ class PromptAdminOperationServiceImplTest {
                 .thenReturn(existedVersion);
         
         assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                ns, key, version, "hello", null, null, null, "u1", "127.0.0.1"));
+                ns, key, version, "hello", null, null, null, null, "u1", "127.0.0.1"));
     }
     
     @Test

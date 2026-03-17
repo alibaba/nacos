@@ -115,6 +115,8 @@ public class Constants {
         public static final String CONSOLE_PATH = "/v3/console/ai/skills";
         
         public static final String ADMIN_PATH = "/v3/admin/ai/skills";
+
+        public static final String CLIENT_PATH = "/v3/client/ai/skills";
         
         public static final String SKILL_GROUP = "skill";
         

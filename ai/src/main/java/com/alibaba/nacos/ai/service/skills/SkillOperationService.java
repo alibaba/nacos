@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
+import java.util.Map;
+
 /**
  * Skill operation service.
  *
@@ -88,4 +90,73 @@ public interface SkillOperationService {
      * @throws NacosException if upload failed
      */
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+
+    /**
+     * Search skills for runtime client usage. Only returns enable skills that have at least one online version.
+     *
+     * @param namespaceId namespace ID
+     * @param keyword keyword (optional)
+     * @param pageNo page number
+     * @param pageSize page size
+     */
+    Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize) throws NacosException;
+
+    /**
+     * Query skill for runtime client usage. Priority: label > version > latest(label).
+     *
+     * @param namespaceId namespace ID
+     * @param name skill name
+     * @param version explicit version (optional)
+     * @param label route label, e.g. latest/stable (optional)
+     */
+    Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException;
+
+    /**
+     * Create a new draft version based on latest or specified version.
+     *
+     * @param namespaceId namespace ID
+     * @param name skill name
+     * @param basedOnVersion base version (optional, default latest)
+     * @return created draft version
+     */
+    String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException;
+
+    /**
+     * Update existing draft content.
+     *
+     * @param namespaceId namespace ID
+     * @param draftSkill full skill content to write into draft
+     */
+    void updateDraft(String namespaceId, Skill draftSkill) throws NacosException;
+
+    /**
+     * Delete current draft and release working pointer.
+     */
+    void deleteDraft(String namespaceId, String name) throws NacosException;
+
+    /**
+     * Submit a draft version for publish. If no pipeline plugins configured, will directly publish.
+     *
+     * @return submit result identifier or current version
+     */
+    String submit(String namespaceId, String name, String version) throws NacosException;
+
+    /**
+     * Publish a reviewing version. Must have pipeline all passed when pipeline exists.
+     */
+    void publish(String namespaceId, String name, String version, boolean updateLatestLabel) throws NacosException;
+
+    /**
+     * Update labels mapping (label -> version) without changing any version status.
+     */
+    void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException;
+
+    /**
+     * Online/offline operation.
+     *
+     * @param scope "skill" for global enable/disable, otherwise version scope
+     * @param version version to operate when scope is version-level
+     * @param online true means online/enable, false means offline/disable
+     */
+    void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online) throws NacosException;
 }

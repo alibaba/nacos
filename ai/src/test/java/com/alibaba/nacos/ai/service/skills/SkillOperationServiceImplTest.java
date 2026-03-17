@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
+import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
@@ -24,19 +26,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
+import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -52,13 +47,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Test for SkillOperationServiceImpl.
@@ -69,13 +65,13 @@ import static org.mockito.Mockito.when;
 class SkillOperationServiceImplTest {
     
     @Mock
-    private ConfigQueryChainService configQueryChainService;
+    private AiResourceStorage storage;
     
     @Mock
-    private ConfigOperationService configOperationService;
+    private AiResourcePersistService aiResourcePersistService;
     
     @Mock
-    private ConfigInfoPersistService configInfoPersistService;
+    private AiResourceVersionPersistService aiResourceVersionPersistService;
     
     @Mock
     private SyncEffectService syncEffectService;
@@ -84,11 +80,11 @@ class SkillOperationServiceImplTest {
     
     @BeforeEach
     void setUp() {
-        skillOperationService = new SkillOperationServiceImpl(
-                configQueryChainService,
-                configOperationService,
-                configInfoPersistService,
-                syncEffectService);
+        AiResourceStorageRouter.reset();
+        lenient().when(storage.type()).thenReturn("nacos_config");
+        AiResourceStorageRouter.join(storage);
+        skillOperationService = new SkillOperationServiceImpl(syncEffectService, aiResourcePersistService,
+                aiResourceVersionPersistService);
     }
     
     @Test
@@ -96,18 +92,15 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkill();
         String namespaceId = "test-namespace";
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull()))
-                .thenReturn(Boolean.TRUE);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
         
         // When
         String result = skillOperationService.registerSkill(skill, namespaceId);
         
         // Then
         assertEquals(skill.getName(), result);
-        verify(configOperationService, times(1)).publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull());
-        verify(syncEffectService, times(1)).toSync(any(ConfigForm.class), any(Long.class));
+        verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+        verify(syncEffectService, times(1)).toSync(any(), any(Long.class));
     }
     
     @Test
@@ -115,18 +108,15 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkillWithResources();
         String namespaceId = "test-namespace";
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull()))
-                .thenReturn(Boolean.TRUE);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
         
         // When
         String result = skillOperationService.registerSkill(skill, namespaceId);
         
         // Then
         assertEquals(skill.getName(), result);
-        // Should publish main config + resource configs
-        verify(configOperationService, times(2)).publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull());
+        // Should save main config + resource configs
+        verify(storage, times(2)).save(any(StorageKey.class), any(byte[].class));
     }
     
     @Test
@@ -160,9 +150,7 @@ class SkillOperationServiceImplTest {
         Skill skill = createValidSkill();
         skill.setName("test__skill"); // Contains double underscore
         String namespaceId = "test-namespace";
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull()))
-                .thenReturn(Boolean.TRUE);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
         
         // When
         String result = skillOperationService.registerSkill(skill, namespaceId);
@@ -176,9 +164,8 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkill();
         String namespaceId = "test-namespace";
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull()))
-                .thenThrow(new ConfigAlreadyExistsException("Config already exists"));
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString()))
+                .thenReturn(new com.alibaba.nacos.ai.model.AiResource());
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
@@ -191,9 +178,13 @@ class SkillOperationServiceImplTest {
         // Given
         String namespaceId = "test-namespace";
         String skillName = "test-skill";
-        ConfigQueryChainResponse response = createMockConfigResponse();
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(response);
+        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skillName).getBytes());
         
         // When
         Skill skill = skillOperationService.getSkillDetail(namespaceId, skillName);
@@ -205,14 +196,11 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testGetSkillDetailNotFound() {
+    void testGetSkillDetailNotFound() throws NacosException {
         // Given
         String namespaceId = "test-namespace";
         String skillName = "non-existent-skill";
-        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(response);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
@@ -225,32 +213,28 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkill();
         String namespaceId = "test-namespace";
-        ConfigQueryChainResponse response = createMockConfigResponse();
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(response);
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull()))
-                .thenReturn(Boolean.TRUE);
+        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
+        meta.setName(skill.getName());
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(meta);
+        when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skill.getName()).getBytes());
         
         // When
         skillOperationService.updateSkill(skill, namespaceId);
         
         // Then
-        ArgumentCaptor<ConfigRequestInfo> requestInfoCaptor = ArgumentCaptor.forClass(ConfigRequestInfo.class);
-        verify(configOperationService, times(1)).publishConfig(any(ConfigForm.class),
-                requestInfoCaptor.capture(), isNull());
-        assertEquals(Boolean.TRUE, requestInfoCaptor.getValue().getUpdateForExist());
+        verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
     }
     
     @Test
-    void testUpdateSkillNotFound() {
+    void testUpdateSkillNotFound() throws NacosException {
         // Given
         Skill skill = createValidSkill();
         String namespaceId = "test-namespace";
-        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(response);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
         
         // When & Then
         assertThrows(NacosApiException.class,
@@ -262,16 +246,23 @@ class SkillOperationServiceImplTest {
         // Given
         String namespaceId = "test-namespace";
         String skillName = "test-skill";
-        ConfigQueryChainResponse response = createMockConfigResponse();
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(response);
+        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("v1");
+        vPage.setPageItems(List.of(v1));
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
+        when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skillName).getBytes());
         
         // When
         skillOperationService.deleteSkill(namespaceId, skillName);
         
         // Then
-        verify(configOperationService, times(1)).deleteConfig(eq("skill.json"),
-                eq("skill_" + skillName), eq(namespaceId), isNull(), isNull(), eq("nacos"), isNull());
+        verify(storage, times(1)).delete(any(StorageKey.class));
     }
     
     @Test
@@ -279,27 +270,29 @@ class SkillOperationServiceImplTest {
         // Given
         String namespaceId = "test-namespace";
         String skillName = "test-skill";
-        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
-                .thenReturn(response);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
         
         // When
         skillOperationService.deleteSkill(namespaceId, skillName);
         
         // Then
-        verify(configOperationService, never()).deleteConfig(anyString(), anyString(),
-                anyString(), isNull(), isNull(), anyString(), isNull());
+        verify(storage, never()).delete(any(StorageKey.class));
     }
     
     @Test
     void testListSkillsSuccessfully() throws NacosException {
         // Given
         String namespaceId = "test-namespace";
-        Page<ConfigInfo> configInfoPage = createMockConfigInfoPage();
-        when(configInfoPersistService.findConfigInfoLike4Page(eq(1), eq(10), eq("skill.json"),
-                anyString(), eq(namespaceId), isNull()))
-                .thenReturn(configInfoPage);
+        Page<com.alibaba.nacos.ai.model.AiResource> metaPage = new Page<>();
+        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
+        meta.setName("test-skill");
+        meta.setDesc("Test description");
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPageNumber(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+                .thenReturn(metaPage);
         
         // When
         Page<SkillBasicInfo> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
@@ -315,17 +308,14 @@ class SkillOperationServiceImplTest {
         // Given
         String namespaceId = "test-namespace";
         byte[] zipBytes = createValidZipBytes();
-        when(configOperationService.publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull()))
-                .thenReturn(Boolean.TRUE);
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
         
         // When
         String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
         
         // Then
         assertNotNull(result);
-        verify(configOperationService, times(1)).publishConfig(any(ConfigForm.class),
-                any(ConfigRequestInfo.class), isNull());
+        verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
     }
     
     /**
@@ -354,40 +344,13 @@ class SkillOperationServiceImplTest {
         return skill;
     }
     
-    /**
-     * Create a mock config response.
-     */
-    private ConfigQueryChainResponse createMockConfigResponse() {
-        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+    private String createMainConfigJson(String skillName) {
         Map<String, Object> mainConfig = new HashMap<>();
-        mainConfig.put("name", "test-skill");
+        mainConfig.put("name", skillName);
         mainConfig.put("description", "Test description");
         mainConfig.put("instruction", "Test instruction");
-        mainConfig.put("resource", new HashMap<>());
-        response.setContent(JacksonUtils.toJson(mainConfig));
-        return response;
-    }
-    
-    /**
-     * Create a mock config info page.
-     */
-    private Page<ConfigInfo> createMockConfigInfoPage() {
-        Page<ConfigInfo> page = new Page<>();
-        ConfigInfo configInfo = new ConfigInfo();
-        configInfo.setDataId("skill.json");
-        configInfo.setGroup("skill_test-skill");
-        Map<String, Object> mainConfig = new HashMap<>();
-        mainConfig.put("name", "test-skill");
-        mainConfig.put("description", "Test description");
-        mainConfig.put("instruction", "Test instruction");
-        mainConfig.put("resource", new HashMap<>());
-        configInfo.setContent(JacksonUtils.toJson(mainConfig));
-        page.setPageItems(List.of(configInfo));
-        page.setTotalCount(1);
-        page.setPageNumber(1);
-        page.setPagesAvailable(1);
-        return page;
+        mainConfig.put("resources", List.of());
+        return JacksonUtils.toJson(mainConfig);
     }
     
     /**
