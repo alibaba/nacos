@@ -25,6 +25,8 @@ com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantCapacityMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.GroupCapacityMapperByMysql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigMigrateMapperByMysql
+com.alibaba.nacos.plugin.datasource.impl.mysql.AiResourceMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.mysql.AiResourceVersionMapperByMySql
 
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoBetaMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoMapperByDerby
@@ -36,6 +38,8 @@ com.alibaba.nacos.plugin.datasource.impl.derby.TenantInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantCapacityMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.GroupCapacityMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigMigrateMapperByDerby
+com.alibaba.nacos.plugin.datasource.impl.derby.AiResourceMapperByDerby
+com.alibaba.nacos.plugin.datasource.impl.derby.AiResourceVersionMapperByDerby
 
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoAggrMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoBetaMapperByPostgresql
@@ -48,6 +52,8 @@ com.alibaba.nacos.plugin.datasource.impl.postgresql.HistoryConfigInfoMapperByPos
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantCapacityMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantInfoMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigMigrateMapperByPostgresql
+com.alibaba.nacos.plugin.datasource.impl.postgresql.AiResourceMapperByPostgresql
+com.alibaba.nacos.plugin.datasource.impl.postgresql.AiResourceVersionMapperByPostgresql
 
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoAggrMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoBetaMapperByOracle
@@ -60,3 +66,5 @@ com.alibaba.nacos.plugin.datasource.impl.oracle.TenantInfoMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.TenantCapacityMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.GroupCapacityMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigMigrateMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.AiResourceMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.AiResourceVersionMapperByOracle
