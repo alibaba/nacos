@@ -67,7 +67,7 @@ class SkillOperationServiceImplTest {
     
     @Mock
     private AiResourceStorage storage;
-    
+
     @Mock
     private AiResourcePersistService aiResourcePersistService;
     
@@ -125,7 +125,7 @@ class SkillOperationServiceImplTest {
                 () -> skillOperationService.getSkillDetail(namespaceId, skillName));
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
     }
-    
+
     @Test
     void testDeleteSkillSuccessfully() throws NacosException {
         // Given

@@ -69,7 +69,7 @@ public class SkillAdminController {
     public SkillAdminController(SkillOperationService skillOperationService) {
         this.skillOperationService = skillOperationService;
     }
-    
+
     /**
      * Get skill.
      *
@@ -84,7 +84,7 @@ public class SkillAdminController {
         return Result.success(
                 skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
     }
-    
+
     /**
      * Delete skill.
      *

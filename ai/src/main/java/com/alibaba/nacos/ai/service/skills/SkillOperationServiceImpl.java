@@ -111,9 +111,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private final AiResourcePersistService aiResourcePersistService;
 
     private final AiResourceVersionPersistService aiResourceVersionPersistService;
-    
+
     private final PublishPipelineExecutor publishPipelineExecutor;
-    
+
     private final PipelineExecutionRepository pipelineExecutionRepository;
 
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
@@ -126,7 +126,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.pipelineExecutionRepository = pipelineExecutionRepository;
     }
-    
+
     private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
             boolean isNewSkill) throws NacosException {
         String skillName = skill.getName();
@@ -473,9 +473,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill version not found: " + name + "@" + target);
         }
-        
+
         final String finalTarget = target;
-        
+
         // Build context for pipeline execution (multi-file skill representation).
         Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget);
         SkillPipelineContext ctx = new SkillPipelineContext();
@@ -483,7 +483,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ctx.setResourceName(name);
         ctx.setVersion(finalTarget);
         ctx.setFiles(buildPipelineFiles(skill));
-        
+
         // Execute asynchronously via standard pipeline engine.
         String executionId = publishPipelineExecutor.execute(ctx,
                 result -> onPipelineComplete(namespaceId, name, finalTarget, result));
@@ -492,20 +492,20 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             publish(namespaceId, name, finalTarget, true);
             return finalTarget;
         }
-        
+
         // Move to reviewing and record pipeline execution id.
         aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, VERSION_STATUS_REVIEWING);
         info.setEditingVersion(null);
         info.setReviewingVersion(finalTarget);
         updateMetaVersionInfoCas(namespaceId, meta, info);
-        
+
         SkillPublishPipelineInfo pipelineInfo = new SkillPublishPipelineInfo();
         pipelineInfo.setExecutionId(executionId);
         pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);
         pipelineInfo.setPipeline(new ArrayList<>());
         aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget,
                 JacksonUtils.toJson(pipelineInfo));
-        
+
         return finalTarget;
     }
 
@@ -841,7 +841,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             info.setPipeline(result == null ? null : result.getPipeline());
             aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL, version,
                     JacksonUtils.toJson(info));
-            
+
             if (result == null || result.getStatus() != PipelineExecutionStatus.APPROVED) {
                 // Reject back to draft and move reviewing -> editing (best effort).
                 aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, version, VERSION_STATUS_DRAFT);
@@ -902,7 +902,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return null;
         }
     }
-    
+
     private static SkillPublishPipelineInfo parseSkillPublishPipelineInfo(String json) {
         if (StringUtils.isBlank(json)) {
             return null;
@@ -1135,35 +1135,35 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             this.pipeline = pipeline;
         }
     }
-    
+
     private static class SkillPublishPipelineInfo {
-        
+
         private String executionId;
-        
+
         private PipelineExecutionStatus status;
-        
+
         private List<PipelineNodeResult> pipeline;
-        
+
         public String getExecutionId() {
             return executionId;
         }
-        
+
         public void setExecutionId(String executionId) {
             this.executionId = executionId;
         }
-        
+
         public PipelineExecutionStatus getStatus() {
             return status;
         }
-        
+
         public void setStatus(PipelineExecutionStatus status) {
             this.status = status;
         }
-        
+
         public List<PipelineNodeResult> getPipeline() {
             return pipeline;
         }
-        
+
         public void setPipeline(List<PipelineNodeResult> pipeline) {
             this.pipeline = pipeline;
         }
