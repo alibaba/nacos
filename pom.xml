@@ -865,6 +865,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-ai-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1148,4 +1153,3 @@
     </dependencyManagement>
 
 </project>
-

@@ -177,3 +177,19 @@ CREATE TABLE `permissions` (
                                UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 );
 
+
+/******************************************/
+/*   表名称 = pipeline_execution           */
+/******************************************/
+CREATE TABLE `pipeline_execution` (
+    `execution_id`  varchar(64)  NOT NULL COMMENT '执行ID',
+    `resource_type` varchar(32)  NOT NULL COMMENT '资源类型',
+    `resource_name` varchar(256) NOT NULL COMMENT '资源名称',
+    `namespace_id`  varchar(128) DEFAULT NULL COMMENT '命名空间ID',
+    `version`       varchar(64)  DEFAULT NULL COMMENT '版本',
+    `status`        varchar(32)  NOT NULL COMMENT '执行状态',
+    `pipeline`      longtext     NOT NULL COMMENT 'pipeline节点结果JSON',
+    `create_time`   bigint(20)   NOT NULL COMMENT '创建时间',
+    `update_time`   bigint(20)   NOT NULL COMMENT '修改时间',
+    PRIMARY KEY (`execution_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='AI资源发布审核Pipeline执行记录';

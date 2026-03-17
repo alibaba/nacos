@@ -19,8 +19,6 @@ package com.alibaba.nacos.plugin.ai.pipeline.model;
 /**
  * Result of a single publish pipeline plugin execution.
  *
- * <p>Simplified to two core fields: whether the review passed and the review comments.</p>
- *
  * @author mosong.lp
  * @since 3.2.0
  */
@@ -33,37 +31,31 @@ public class PublishPipelineResult {
     private boolean passed;
 
     /**
-     * Review comments. Contains review opinions, suggestions, error descriptions, etc.
+     * Review message. Contains review opinions, suggestions, error descriptions, etc.
      * When passed is false, this should describe the reason for rejection.
      */
-    private String comments;
+    private String message;
 
     public PublishPipelineResult() {
     }
 
-    public PublishPipelineResult(boolean passed, String comments) {
+    public PublishPipelineResult(boolean passed, String message) {
         this.passed = passed;
-        this.comments = comments;
+        this.message = message;
     }
 
     /**
-     * Create a passed result with comments.
-     *
-     * @param comments review comments
-     * @return a passed result
+     * Create a passed result.
      */
-    public static PublishPipelineResult pass(String comments) {
-        return new PublishPipelineResult(true, comments);
+    public static PublishPipelineResult pass(String message) {
+        return new PublishPipelineResult(true, message);
     }
 
     /**
-     * Create a rejected result with comments.
-     *
-     * @param comments rejection reason and suggestions
-     * @return a rejected result
+     * Create a rejected result.
      */
-    public static PublishPipelineResult reject(String comments) {
-        return new PublishPipelineResult(false, comments);
+    public static PublishPipelineResult reject(String message) {
+        return new PublishPipelineResult(false, message);
     }
 
     public boolean isPassed() {
@@ -74,17 +66,17 @@ public class PublishPipelineResult {
         this.passed = passed;
     }
 
-    public String getComments() {
-        return comments;
+    public String getMessage() {
+        return message;
     }
 
-    public void setComments(String comments) {
-        this.comments = comments;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     @Override
     public String toString() {
-        return "PublishPipelineResult{passed=" + passed + ", comments='" + comments + "'}";
+        return "PublishPipelineResult{passed=" + passed + ", message='" + message + "'}";
     }
 }
 

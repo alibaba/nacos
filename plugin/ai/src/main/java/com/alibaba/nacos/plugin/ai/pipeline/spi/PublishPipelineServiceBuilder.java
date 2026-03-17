@@ -16,12 +16,18 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi;
 
+import java.util.Properties;
+
 /**
  * Builder SPI for creating {@link PublishPipelineService} instances.
  *
  * <p>Since SPI-loaded classes are instantiated via no-arg constructors, this builder pattern allows
  * creating pipeline service implementations. Each pipeline plugin should implement this builder and
  * register it via SPI (META-INF/services).</p>
+ *
+ * <p>The {@link #build(Properties)} method receives per-node configuration properties from the
+ * pipeline config (e.g. {@code nacos.ai.pipeline.node.{pipelineId}.*}), allowing each plugin
+ * to be initialized with custom parameters such as API endpoints, timeouts, etc.</p>
  *
  * @author mosong.lp
  * @since 3.2.0
@@ -36,10 +42,15 @@ public interface PublishPipelineServiceBuilder {
     String pipelineId();
 
     /**
-     * Build a {@link PublishPipelineService} instance.
+     * Build a {@link PublishPipelineService} instance with the given configuration properties.
      *
+     * <p>The properties are sourced from pipeline configuration, keyed by this builder's
+     * {@link #pipelineId()}. For example, if pipelineId is "ai-review", properties may contain
+     * entries like "endpoint", "timeout", etc.</p>
+     *
+     * @param properties per-node configuration properties, never null (may be empty)
      * @return a fully initialized {@link PublishPipelineService} instance
      */
-    PublishPipelineService build();
+    PublishPipelineService build(Properties properties);
 }
 

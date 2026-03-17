@@ -239,3 +239,19 @@ ALTER TABLE config_info_beta ADD  src_ip varchar(50)  DEFAULT NULL  ;
 ALTER TABLE his_config_info ADD publish_type varchar(50)  DEFAULT 'formal';
 ALTER TABLE his_config_info ADD ext_info CLOB   DEFAULT NULL ;
 ALTER TABLE his_config_info ADD gray_name varchar(128) DEFAULT NULL;
+
+/******************************************/
+/*   AI pipeline execution                */
+/******************************************/
+
+CREATE TABLE pipeline_execution (
+    execution_id  VARCHAR(64)  NOT NULL PRIMARY KEY,
+    resource_type VARCHAR(32)  NOT NULL,
+    resource_name VARCHAR(256) NOT NULL,
+    namespace_id  VARCHAR(128) DEFAULT NULL,
+    version       VARCHAR(64)  DEFAULT NULL,
+    status        VARCHAR(32)  NOT NULL,
+    pipeline      CLOB         NOT NULL,
+    create_time   BIGINT       NOT NULL,
+    update_time   BIGINT       NOT NULL
+);
