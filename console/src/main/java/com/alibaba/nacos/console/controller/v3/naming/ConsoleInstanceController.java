@@ -77,6 +77,7 @@ public class ConsoleInstanceController {
     public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm, PageForm pageForm)
             throws NacosException {
         instanceForm.validate();
+        pageForm.validate();
         Page<? extends Instance> instancePage = instanceProxy.listInstances(instanceForm.getNamespaceId(),
                 instanceForm.getServiceName(), instanceForm.getGroupName(), instanceForm.getClusterName(),
                 pageForm.getPageNo(), pageForm.getPageSize());
