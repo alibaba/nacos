@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi;
 
-import java.util.Properties;
-
 /**
  * Builder SPI for creating {@link PublishPipelineService} instances.
  *
