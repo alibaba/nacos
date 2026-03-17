@@ -100,4 +100,29 @@ class RequestFiltersTest {
         assertNotNull(resp);
         assertTrue(resp instanceof com.alibaba.nacos.api.remote.response.HealthCheckResponse);
     }
+
+    @Test
+    void testAbstractRequestFilterGetDefaultResponseInstanceThrowsWhenInvalidHandler() throws Exception {
+        AbstractRequestFilter filter = new AbstractRequestFilter() {
+            @Override
+            protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
+                return null;
+            }
+        };
+        Method getDefaultResponseInstance = AbstractRequestFilter.class.getDeclaredMethod("getDefaultResponseInstance", Class.class);
+        getDefaultResponseInstance.setAccessible(true);
+        InvocationTargetException wrapped = assertThrows(InvocationTargetException.class,
+                () -> getDefaultResponseInstance.invoke(filter, HandlerWithNonInstantiableResponse.class));
+        assertTrue(wrapped.getCause() instanceof NacosException);
+    }
+
+    static abstract class AbstractFakeResponse extends Response {
+    }
+
+    static class HandlerWithNonInstantiableResponse extends RequestHandler<Request, AbstractFakeResponse> {
+        @Override
+        public AbstractFakeResponse handle(Request request, RequestMeta meta) throws NacosException {
+            return null;
+        }
+    }
 }
