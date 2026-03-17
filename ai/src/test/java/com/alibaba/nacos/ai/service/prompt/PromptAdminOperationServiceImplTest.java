@@ -72,7 +72,8 @@ class PromptAdminOperationServiceImplTest {
     
     @BeforeEach
     void setUp() {
-        service = new PromptAdminOperationServiceImpl(configOperationService, configDetailService, configInfoPersistService);
+        service = new PromptAdminOperationServiceImpl(configOperationService, configDetailService,
+                configInfoPersistService);
     }
     
     @Test
@@ -86,21 +87,23 @@ class PromptAdminOperationServiceImplTest {
         when(configInfoPersistService.findConfigInfo(mappingDataId, PROMPT_GROUP, ns)).thenReturn(null);
         ConfigInfoWrapper latestSource = new ConfigInfoWrapper();
         latestSource.setContent("{\"version\":\"1.0.0\",\"template\":\"hello\"}");
-        when(configInfoPersistService.findConfigInfo(versionDataId, PROMPT_GROUP, ns))
-                .thenReturn(null)
+        when(configInfoPersistService.findConfigInfo(versionDataId, PROMPT_GROUP, ns)).thenReturn(null)
                 .thenReturn(latestSource);
         
-        boolean result = service.publishPromptVersion(ns, key, version, "hello", "c1", "desc",
-                List.of("a", "a", "b"), "u1", "127.0.0.1");
+        boolean result = service.publishPromptVersion(ns, key, version, "hello", "c1", "desc", List.of("a", "a", "b"),
+                List.of(), "u1", "127.0.0.1");
         
         assertTrue(result);
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         ArgumentCaptor<ConfigRequestInfo> reqCaptor = ArgumentCaptor.forClass(ConfigRequestInfo.class);
-        verify(configOperationService, atLeastOnce()).publishConfig(formCaptor.capture(), reqCaptor.capture(), eq(null));
+        verify(configOperationService, atLeastOnce()).publishConfig(formCaptor.capture(), reqCaptor.capture(),
+                eq(null));
         List<ConfigForm> forms = formCaptor.getAllValues();
         assertEquals(4, forms.size());
-        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildVersionDataId(key, version).equals(f.getDataId())));
-        assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildLabelVersionMappingDataId(key).equals(f.getDataId())));
+        assertTrue(
+                forms.stream().anyMatch(f -> PromptDataIdUtils.buildVersionDataId(key, version).equals(f.getDataId())));
+        assertTrue(forms.stream()
+                .anyMatch(f -> PromptDataIdUtils.buildLabelVersionMappingDataId(key).equals(f.getDataId())));
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildDescriptorDataId(key).equals(f.getDataId())));
         assertTrue(forms.stream().anyMatch(f -> PromptDataIdUtils.buildLatestDataId(key).equals(f.getDataId())));
     }
@@ -117,11 +120,12 @@ class PromptAdminOperationServiceImplTest {
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         assertThrows(NacosException.class,
-                () -> service.publishPromptVersion(ns, key, version, "hello", null, "desc", null, "u1", "127.0.0.1"));
+                () -> service.publishPromptVersion(ns, key, version, "hello", null, "desc", null, List.of(), "u1",
+                        "127.0.0.1"));
     }
     
     @Test
@@ -135,8 +139,8 @@ class PromptAdminOperationServiceImplTest {
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         assertThrows(NacosException.class, () -> service.bindLabel(ns, key, "prod", "2.0.0", "u1", "127.0.0.1"));
     }
@@ -153,8 +157,8 @@ class PromptAdminOperationServiceImplTest {
         mapping.setLatestVersion("1.0.0");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("1.0.0");
@@ -163,8 +167,8 @@ class PromptAdminOperationServiceImplTest {
         allInfo.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(versionInfo));
         allInfo.setMd5("m1");
         allInfo.setCreateUser("u1");
-        when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "1.0.0"), PROMPT_GROUP, ns))
-                .thenReturn(allInfo);
+        when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "1.0.0"),
+                PROMPT_GROUP, ns)).thenReturn(allInfo);
         
         PromptVersionInfo actual = service.queryPromptDetail(ns, key, null, "prod");
         
@@ -184,8 +188,8 @@ class PromptAdminOperationServiceImplTest {
         mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("2.0.0");
@@ -193,8 +197,8 @@ class PromptAdminOperationServiceImplTest {
         ConfigAllInfo allInfo = new ConfigAllInfo();
         allInfo.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(versionInfo));
         allInfo.setCreateUser("u1");
-        when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "2.0.0"), PROMPT_GROUP, ns))
-                .thenReturn(allInfo);
+        when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "2.0.0"),
+                PROMPT_GROUP, ns)).thenReturn(allInfo);
         
         List<PromptVersionSummary> items = service.listPromptVersions(ns, key, 1, 1).getPageItems();
         
@@ -204,14 +208,16 @@ class PromptAdminOperationServiceImplTest {
     
     @Test
     void publishPromptVersionShouldThrowWhenVersionInvalid() {
-        assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                "public", "p1", "1.0", "hello", null, null, null, "u1", "127.0.0.1"));
+        assertThrows(NacosException.class,
+                () -> service.publishPromptVersion("public", "p1", "1.0", "hello", null, null, null, List.of(), "u1",
+                        "127.0.0.1"));
     }
     
     @Test
     void publishPromptVersionShouldThrowWhenTemplateBlank() {
-        assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                "public", "p1", "1.0.0", " ", null, null, null, "u1", "127.0.0.1"));
+        assertThrows(NacosException.class,
+                () -> service.publishPromptVersion("public", "p1", "1.0.0", " ", null, null, null, List.of(), "u1",
+                        "127.0.0.1"));
     }
     
     @Test
@@ -224,11 +230,12 @@ class PromptAdminOperationServiceImplTest {
         mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
-        assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                ns, key, "1.0.0", "hello", null, null, null, "u1", "127.0.0.1"));
+        assertThrows(NacosException.class,
+                () -> service.publishPromptVersion(ns, key, "1.0.0", "hello", null, null, null, List.of(), "u1",
+                        "127.0.0.1"));
     }
     
     @Test
@@ -238,13 +245,14 @@ class PromptAdminOperationServiceImplTest {
         String version = "1.0.0";
         ConfigInfoWrapper existedVersion = new ConfigInfoWrapper();
         existedVersion.setContent("exists");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(null);
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildVersionDataId(key, version), PROMPT_GROUP, ns))
-                .thenReturn(existedVersion);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(null);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildVersionDataId(key, version), PROMPT_GROUP,
+                ns)).thenReturn(existedVersion);
         
-        assertThrows(NacosException.class, () -> service.publishPromptVersion(
-                ns, key, version, "hello", null, null, null, "u1", "127.0.0.1"));
+        assertThrows(NacosException.class,
+                () -> service.publishPromptVersion(ns, key, version, "hello", null, null, null, List.of(), "u1",
+                        "127.0.0.1"));
     }
     
     @Test
@@ -258,8 +266,8 @@ class PromptAdminOperationServiceImplTest {
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         service.bindLabel(ns, key, "prod", "1.0.0", "u1", "127.0.0.1");
         
@@ -280,16 +288,15 @@ class PromptAdminOperationServiceImplTest {
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
         metaConfig.setMd5("m1");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         service.unbindLabel(ns, key, "prod", "u1", "127.0.0.1");
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         verify(configOperationService).publishConfig(formCaptor.capture(), any(ConfigRequestInfo.class), eq(null));
-        PromptLabelVersionMapping written =
-                com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(),
-                        PromptLabelVersionMapping.class);
+        PromptLabelVersionMapping written = com.alibaba.nacos.common.utils.JacksonUtils.toObj(
+                formCaptor.getValue().getContent(), PromptLabelVersionMapping.class);
         assertNull(written.getLabels().get("prod"));
     }
     
@@ -303,13 +310,13 @@ class PromptAdminOperationServiceImplTest {
         mapping.setLabels(new HashMap<>());
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
         
         service.deletePrompt(ns, key, "u1", "127.0.0.1");
         
-        verify(configOperationService, times(5)).deleteConfig(anyString(), eq(PROMPT_GROUP), eq(ns), eq(null), eq("127.0.0.1"),
-                eq("u1"), eq(null));
+        verify(configOperationService, times(5)).deleteConfig(anyString(), eq(PROMPT_GROUP), eq(ns), eq(null),
+                eq("127.0.0.1"), eq("u1"), eq(null));
     }
     
     @Test
@@ -330,18 +337,18 @@ class PromptAdminOperationServiceImplTest {
         adminConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(descriptor));
         metaConfig.setMd5("m1");
         adminConfig.setMd5("m2");
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildDescriptorDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(adminConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildDescriptorDataId(key), PROMPT_GROUP,
+                ns)).thenReturn(adminConfig);
         
         service.updatePromptMetadata(ns, key, "new", List.of("a", "b"), "u1", "127.0.0.1");
         
         ArgumentCaptor<ConfigForm> formCaptor = ArgumentCaptor.forClass(ConfigForm.class);
         verify(configOperationService).publishConfig(formCaptor.capture(), any(ConfigRequestInfo.class), eq(null));
         assertEquals(PromptDataIdUtils.buildDescriptorDataId(key), formCaptor.getValue().getDataId());
-        PromptDescriptor written =
-                com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(), PromptDescriptor.class);
+        PromptDescriptor written = com.alibaba.nacos.common.utils.JacksonUtils.toObj(formCaptor.getValue().getContent(),
+                PromptDescriptor.class);
         assertEquals("new", written.getDescription());
         assertEquals(2, written.getBizTags().size());
     }
@@ -363,15 +370,15 @@ class PromptAdminOperationServiceImplTest {
         bad.setDataId("p2.descriptor.json");
         bad.setContent("not-json");
         page.setPageItems(List.of(ok, bad));
-        when(configDetailService.findConfigInfoPage(eq("blur"), eq(1), eq(10), eq("*p*.descriptor.json"), eq(PROMPT_GROUP), eq(ns),
-                eq(null))).thenReturn(page);
+        when(configDetailService.findConfigInfoPage(eq("blur"), eq(1), eq(10), eq("*p*.descriptor.json"),
+                eq(PROMPT_GROUP), eq(ns), eq(null))).thenReturn(page);
         ConfigInfoWrapper mappingConfig = new ConfigInfoWrapper();
         PromptLabelVersionMapping mapping = new PromptLabelVersionMapping();
         mapping.setPromptKey("p1");
         mapping.setLatestVersion("1.0.0");
         mappingConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId("p1"), PROMPT_GROUP, ns))
-                .thenReturn(mappingConfig);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId("p1"),
+                PROMPT_GROUP, ns)).thenReturn(mappingConfig);
         
         Page<?> actual = service.listPrompts(ns, "p", "blur", null, 1, 10);
         assertEquals(1, actual.getPageItems().size());
@@ -388,10 +395,10 @@ class PromptAdminOperationServiceImplTest {
         mapping.setLatestVersion("1.0.0");
         ConfigInfoWrapper metaConfig = new ConfigInfoWrapper();
         metaConfig.setContent(com.alibaba.nacos.common.utils.JacksonUtils.toJson(mapping));
-        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key), PROMPT_GROUP, ns))
-                .thenReturn(metaConfig);
-        when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "1.0.0"), PROMPT_GROUP, ns))
-                .thenReturn(null);
+        when(configInfoPersistService.findConfigInfo(PromptDataIdUtils.buildLabelVersionMappingDataId(key),
+                PROMPT_GROUP, ns)).thenReturn(metaConfig);
+        when(configInfoPersistService.findConfigAllInfo(PromptDataIdUtils.buildVersionDataId(key, "1.0.0"),
+                PROMPT_GROUP, ns)).thenReturn(null);
         
         assertThrows(NacosException.class, () -> service.queryPromptDetail(ns, key, null, null));
     }

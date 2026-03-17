@@ -40,6 +40,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -105,6 +106,13 @@ class RequestHandlerRegistryTest {
         
         assertFalse(registry.checkSourceInvokeAllowed(ServerReloadRequest.class.getSimpleName(),
                 RemoteConstants.LABEL_SOURCE_SDK));
-        
+
+        assertTrue(registry.checkSourceInvokeAllowed(ServerReloadRequest.class.getSimpleName(),
+                RemoteConstants.LABEL_SOURCE_CLUSTER));
+    }
+
+    @Test
+    void testCheckSourceInvokeAllowedWhenTypeNotInRegistry() {
+        assertTrue(registry.checkSourceInvokeAllowed("UnknownType", "anySource"));
     }
 }

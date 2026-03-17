@@ -47,24 +47,42 @@ class ClientConnectionEventListenerRegistryTest {
     void testRegistryMethods() {
         try {
             registry.registerClientConnectionEventListener(new MockClientConnectionEventListener());
-            
+
             registry.notifyClientConnected(connection);
-            
+
             registry.notifyClientDisConnected(connection);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
     }
-    
+
+    @Test
+    void testNotifyWhenListenerThrowsDoesNotPropagate() {
+        registry.registerClientConnectionEventListener(new ClientConnectionEventListener() {
+            @Override
+            public void clientConnected(Connection connect) {
+                throw new RuntimeException("connected throw");
+            }
+
+            @Override
+            public void clientDisConnected(Connection connect) {
+                throw new RuntimeException("disconnected throw");
+            }
+        });
+        registry.registerClientConnectionEventListener(new MockClientConnectionEventListener());
+        registry.notifyClientConnected(connection);
+        registry.notifyClientDisConnected(connection);
+    }
+
     class MockClientConnectionEventListener extends ClientConnectionEventListener {
-        
+
         @Override
         public void clientConnected(Connection connect) {
             assertTrue(Objects.nonNull(connect));
         }
-        
+
         @Override
         public void clientDisConnected(Connection connect) {
             assertTrue(Objects.nonNull(connect));
