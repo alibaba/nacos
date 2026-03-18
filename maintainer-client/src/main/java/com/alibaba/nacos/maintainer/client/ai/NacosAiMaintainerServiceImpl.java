@@ -45,6 +45,7 @@ import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
 import java.util.List;
@@ -658,6 +659,48 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result = JacksonUtils.toObj(restResult.getData(),
                 new TypeReference<Result<String>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public JsonNode getPipeline(String pipelineId) throws NacosException {
+        Map<String, String> params = new HashMap<>(2);
+        RequestResource resource = buildRequestResource("", pipelineId);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH + "/" + pipelineId)
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<JsonNode>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
+            String version, int pageNo, int pageSize) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("resourceType", resourceType);
+        if (StringUtils.isNotBlank(resourceName)) {
+            params.put("resourceName", resourceName);
+        }
+        if (StringUtils.isNotBlank(namespaceId)) {
+            params.put("namespaceId", namespaceId);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            params.put("version", version);
+        }
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        RequestResource resource = buildRequestResource(
+                StringUtils.isNotBlank(namespaceId) ? namespaceId : "", resourceName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH)
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<JsonNode>>() {
                 });
         return result.getData();
     }

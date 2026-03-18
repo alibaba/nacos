@@ -124,6 +124,18 @@ class PublishPipelineExecutorPropertyTest {
                     String namespaceId, String version) {
                 return null;
             }
+            
+            @Override
+            public List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName,
+                    String namespaceId, String version, int offset, int limit) {
+                return Collections.emptyList();
+            }
+            
+            @Override
+            public int countByResource(String resourceType, String resourceName,
+                    String namespaceId, String version) {
+                return 0;
+            }
         };
     }
     
@@ -155,6 +167,18 @@ class PublishPipelineExecutorPropertyTest {
                 String namespaceId, String version) {
             return null;
         }
+        
+        @Override
+        public List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName,
+                String namespaceId, String version, int offset, int limit) {
+            return Collections.emptyList();
+        }
+        
+        @Override
+        public int countByResource(String resourceType, String resourceName,
+                String namespaceId, String version) {
+            return 0;
+        }
     }
     
     // ---- Throwing repository ----
@@ -180,6 +204,18 @@ class PublishPipelineExecutorPropertyTest {
             public PipelineExecution findByResource(String resourceType, String resourceName,
                     String namespaceId, String version) {
                 return null;
+            }
+            
+            @Override
+            public List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName,
+                    String namespaceId, String version, int offset, int limit) {
+                return Collections.emptyList();
+            }
+            
+            @Override
+            public int countByResource(String resourceType, String resourceName,
+                    String namespaceId, String version) {
+                return 0;
             }
         };
     }

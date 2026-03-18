@@ -100,6 +100,81 @@ class PipelineExecutionRepositoryPropertyTest {
         assertNotNull(foundByResource, "findByResource should return a non-null record");
         assertExecutionEquals(original, foundByResource);
     }
+
+    /**
+     * Property 5: listPipelines filter correctness.
+     *
+     * <p>Every record returned by findByResourceWithPage should have all non-null filter fields
+     * matching the query parameters.</p>
+     *
+     * <p><b>Validates: Requirements 4.1, 4.2, 4.3, 4.4</b></p>
+     */
+    @Property(tries = 30)
+    void filterCorrectness(@ForAll("pipelineExecutions") PipelineExecution seed) {
+        // Insert several records with varying fields
+        repository.save(seed);
+        for (int i = 0; i < 3; i++) {
+            PipelineExecution other = new PipelineExecution();
+            other.setExecutionId(UUID.randomUUID().toString());
+            other.setResourceType(i == 0 ? seed.getResourceType() : "OTHER_TYPE_" + i);
+            other.setResourceName(i <= 1 ? seed.getResourceName() : "other_name_" + i);
+            other.setNamespaceId(seed.getNamespaceId());
+            other.setVersion(seed.getVersion());
+            other.setStatus(seed.getStatus());
+            other.setPipeline(new ArrayList<>());
+            other.setCreateTime(seed.getCreateTime() - i - 1);
+            other.setUpdateTime(seed.getUpdateTime());
+            repository.save(other);
+        }
+
+        List<PipelineExecution> results = repository.findByResourceWithPage(
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion(), 0, 100);
+
+        for (PipelineExecution r : results) {
+            assertEquals(seed.getResourceType(), r.getResourceType());
+            assertEquals(seed.getResourceName(), r.getResourceName());
+            assertEquals(seed.getNamespaceId(), r.getNamespaceId());
+            assertEquals(seed.getVersion(), r.getVersion());
+        }
+    }
+
+    /**
+     * Property 6: count and find filter consistency.
+     *
+     * <p>countByResource should return a count equal to the total number of records returned
+     * by findByResourceWithPage when pagination is not limited.</p>
+     *
+     * <p><b>Validates: Requirements 4.5, 4.6</b></p>
+     */
+    @Property(tries = 30)
+    void countAndFindConsistency(@ForAll("pipelineExecutions") PipelineExecution seed) {
+        repository.save(seed);
+        for (int i = 0; i < 4; i++) {
+            PipelineExecution other = new PipelineExecution();
+            other.setExecutionId(UUID.randomUUID().toString());
+            other.setResourceType(seed.getResourceType());
+            other.setResourceName(seed.getResourceName());
+            other.setNamespaceId(seed.getNamespaceId());
+            other.setVersion(i < 2 ? seed.getVersion() : "diff_ver_" + i);
+            other.setStatus(seed.getStatus());
+            other.setPipeline(new ArrayList<>());
+            other.setCreateTime(seed.getCreateTime() - i - 1);
+            other.setUpdateTime(seed.getUpdateTime());
+            repository.save(other);
+        }
+
+        int count = repository.countByResource(
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion());
+        List<PipelineExecution> all = repository.findByResourceWithPage(
+                seed.getResourceType(), seed.getResourceName(),
+                seed.getNamespaceId(), seed.getVersion(), 0, Integer.MAX_VALUE);
+
+        assertEquals(count, all.size(),
+                "countByResource should equal findByResourceWithPage size with unlimited pagination");
+    }
+
     
     private void assertExecutionEquals(PipelineExecution expected, PipelineExecution actual) {
         assertEquals(expected.getExecutionId(), actual.getExecutionId());

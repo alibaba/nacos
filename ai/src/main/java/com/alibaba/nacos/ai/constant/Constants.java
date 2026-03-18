@@ -132,6 +132,13 @@ public class Constants {
         public static final long MAX_UPLOAD_ZIP_BYTES = 10L * 1024 * 1024;
     }
     
+    public static class Pipeline {
+        
+        public static final String ADMIN_PATH = "/v3/admin/ai/pipelines";
+        
+        public static final String CONSOLE_PATH = "/v3/console/ai/pipelines";
+    }
+    
     public static class Prompt {
         
         public static final String CONSOLE_PATH = "/v3/console/ai/prompt";
