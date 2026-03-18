@@ -43,7 +43,6 @@ import java.util.List;
  * findings are detected.</p>
  *
  * @author qiacheng.cxy
- * @since 3.2.0
  */
 public class SkillScannerPipelineService implements PublishPipelineService {
 
@@ -55,11 +54,6 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     private static final String SKILL_SCANNER_CMD = "skill-scanner";
 
     /**
-     * System property to override skill-scanner command (for testing).
-     */
-    private static final String SKILL_SCANNER_CMD_PROPERTY = "nacos.skill.scanner.command";
-
-    /**
      * Installation hint when skill-scanner is not found.
      */
     static final String INSTALLATION_HINT = "skill-scanner 未安装。请先安装 Cisco AI skill-scanner 后再使用此插件。\n"
@@ -67,8 +61,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             + "  # 使用 uv（推荐）\n"
             + "  uv pip install cisco-ai-skill-scanner\n"
             + "  # 使用 pip\n"
-            + "  pip install cisco-ai-skill-scanner\n"
-            + "更多信息: https://github.com/cisco-ai-defense/skill-scanner";
+            + "  pip install cisco-ai-skill-scanner";
 
     private final boolean installed;
 
@@ -102,9 +95,8 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             tempDir = Files.createTempDirectory("nacos-skill-scanner-");
             writeSkillFiles(tempDir, files);
 
-            String cmd = getSkillScannerCommand();
             ProcessBuilder pb = new ProcessBuilder(
-                    cmd,
+                    SKILL_SCANNER_CMD,
                     "scan",
                     tempDir.toAbsolutePath().toString(),
                     "--fail-on-severity", "high",
@@ -145,11 +137,6 @@ public class SkillScannerPipelineService implements PublishPipelineService {
                 deleteRecursively(tempDir.toFile());
             }
         }
-    }
-
-    private String getSkillScannerCommand() {
-        String override = System.getProperty(SKILL_SCANNER_CMD_PROPERTY);
-        return (override != null && !override.isEmpty()) ? override : SKILL_SCANNER_CMD;
     }
 
     private void writeSkillFiles(Path baseDir, List<ResourceFileContent> files) throws IOException {

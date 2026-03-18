@@ -110,7 +110,6 @@ class SkillScannerPipelineServiceTest {
 
     /**
      * Integration test: when skill-scanner is installed and content is benign, scan should pass.
-     * Covers single/multi-file and nested paths (writeSkillFiles). Skipped if skill-scanner not in PATH.
      */
     @Test
     void executeBenignSkillWhenInstalledTest() {
@@ -131,7 +130,6 @@ class SkillScannerPipelineServiceTest {
 
     /**
      * Integration test: when skill-scanner is installed and content is risky, scan should reject.
-     * Skipped if skill-scanner is not in PATH.
      */
     @Test
     void executeRiskySkillWhenInstalledTest() {
@@ -145,27 +143,6 @@ class SkillScannerPipelineServiceTest {
         assertFalse(result.isPassed());
         assertNotNull(result.getMessage());
         assertTrue(result.getMessage().contains("安全风险") || result.getMessage().contains("发布被拒绝"));
-    }
-
-    /**
-     * When process fails to start (e.g. command not found), should reject with IOException message.
-     */
-    @Test
-    void executeWhenProcessFailsToStartTest() {
-        String prop = "nacos.skill.scanner.command";
-        try {
-            System.setProperty(prop, "nonexistent-skill-scanner-cmd-xyz");
-            SkillScannerPipelineService installedService = new SkillScannerPipelineService(true);
-            SkillPipelineContext context = createBenignSkillContext("benign-skill");
-
-            PublishPipelineResult result = installedService.execute(context);
-
-            assertNotNull(result);
-            assertFalse(result.isPassed());
-            assertTrue(result.getMessage().contains("执行 skill-scanner 失败"));
-        } finally {
-            System.clearProperty(prop);
-        }
     }
 
     private static boolean skillScannerAvailable() {

@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
  * during initialization and logs installation instructions if not found.
  *
  * @author qiacheng.cxy
- * @since 3.2.0
  */
 public class SkillScannerPipelineServiceBuilder implements PublishPipelineServiceBuilder {
 
