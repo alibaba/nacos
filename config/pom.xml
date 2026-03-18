@@ -132,8 +132,31 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>default-datasource-plugin</artifactId>
+            <artifactId>nacos-datasource-plugin-mysql</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-derby</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-postgresql</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-oracle</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

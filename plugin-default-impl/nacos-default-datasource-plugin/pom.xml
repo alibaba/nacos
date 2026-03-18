@@ -26,26 +26,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>default-datasource-plugin</artifactId>
+    <packaging>pom</packaging>
     <name>nacos-default-datasource-plugin ${project.version}</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-datasource-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>nacos-datasource-plugin-base</module>
+        <module>nacos-datasource-plugin-mysql</module>
+        <module>nacos-datasource-plugin-derby</module>
+        <module>nacos-datasource-plugin-postgresql</module>
+        <module>nacos-datasource-plugin-oracle</module>
+    </modules>
 </project>

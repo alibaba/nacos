@@ -58,7 +58,9 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.caucho.hessian.io.ContextSerializerFactory.class};
     // endregion
     
-    // region SQL
+        // region SQL
+        // TODO: Replace hard Derby class literals with optional reflection-based registration,
+        //       then remove direct Derby compile dependency from console.
     private final Class<?>[] sqlClasses = {org.apache.derby.impl.store.raw.data.CachedPage.class,
             org.apache.derby.catalog.types.TypesImplInstanceGetter.class,
             org.apache.derby.impl.services.uuid.BasicUUIDGetter.class, org.apache.derby.iapi.types.DTSClassInfo.class,
