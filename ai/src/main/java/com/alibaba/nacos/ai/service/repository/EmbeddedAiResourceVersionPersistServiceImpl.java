@@ -157,6 +157,18 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
     }
 
     @Override
+    public int deleteByNameAndType(String namespaceId, String name, String type) {
+        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
+    }
+
+    @Override
     public int updateStatus(String namespaceId, String name, String type, String version, String status) {
         if (find(namespaceId, name, type, version) == null) {
             return 0;

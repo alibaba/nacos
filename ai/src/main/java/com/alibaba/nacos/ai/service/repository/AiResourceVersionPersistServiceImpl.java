@@ -158,6 +158,14 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
     }
 
     @Override
+    public int deleteByNameAndType(String namespaceId, String name, String type) {
+        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
+        return jt.update(sql, StringUtils.defaultEmptyIfBlank(namespaceId), name, type);
+    }
+
+    @Override
     public int updateStatus(String namespaceId, String name, String type, String version, String status) {
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);

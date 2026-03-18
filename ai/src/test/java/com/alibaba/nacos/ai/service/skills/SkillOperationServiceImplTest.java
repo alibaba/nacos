@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
+import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -105,12 +106,12 @@ class SkillOperationServiceImplTest {
         when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skillName).getBytes());
         
         // When
-        Skill skill = skillOperationService.getSkillDetail(namespaceId, skillName);
+        SkillAdminDetail skillAdminDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
         
         // Then
-        assertNotNull(skill);
-        assertEquals(skillName, skill.getName());
-        assertEquals("Test description", skill.getDescription());
+        assertNotNull(skillAdminDetail);
+        assertEquals(skillName, skillAdminDetail.getSkill().getName());
+        assertEquals("Test description", skillAdminDetail.getSkill().getDescription());
     }
     
     @Test
@@ -180,7 +181,7 @@ class SkillOperationServiceImplTest {
                 .thenReturn(metaPage);
         
         // When
-        Page<SkillBasicInfo> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillAdminListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         
         // Then
         assertNotNull(result);

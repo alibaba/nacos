@@ -25,12 +25,13 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
+import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -71,7 +72,7 @@ public class SkillAdminController {
     }
 
     /**
-     * Get skill.
+     * Get skill detail for admin (includes version governance info).
      *
      * @param form the skill form to get
      * @return result of the get operation
@@ -79,7 +80,7 @@ public class SkillAdminController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Skill> getSkill(SkillForm form) throws NacosException {
+    public Result<SkillAdminDetail> getSkill(SkillForm form) throws NacosException {
         form.validate();
         return Result.success(
                 skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
@@ -101,7 +102,7 @@ public class SkillAdminController {
     }
     
     /**
-     * List skills.
+     * List skills for admin (includes governance metadata: status, tags, labels, etc.).
      *
      * @param skillListForm the skill list form to list
      * @param pageForm the page form to list
@@ -110,7 +111,7 @@ public class SkillAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<SkillBasicInfo>> listSkills(SkillListForm skillListForm, PageForm pageForm)
+    public Result<Page<SkillAdminListItem>> listSkills(SkillListForm skillListForm, PageForm pageForm)
             throws NacosException {
         skillListForm.validate();
         pageForm.validate();

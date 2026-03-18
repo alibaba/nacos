@@ -26,9 +26,10 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
+import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
+import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
@@ -59,7 +60,7 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public Skill getSkill(SkillForm form) throws NacosException {
+    public SkillAdminDetail getSkill(SkillForm form) throws NacosException {
         return skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName());
     }
     
@@ -69,7 +70,7 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public Page<SkillBasicInfo> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Page<SkillAdminListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
                 skillListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize());
     }

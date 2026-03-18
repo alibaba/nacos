@@ -38,11 +38,6 @@ public enum PublishPipelineResourceType {
     /**
      * Prompt resource type.
      */
-    PROMPT,
-
-    /**
-     * Other resource types for future extension.
-     */
-    OTHERS
+    PROMPT
 }
 
