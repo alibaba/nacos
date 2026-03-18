@@ -73,7 +73,7 @@ class SkillOperationServiceImplTest {
     
     @Mock
     private AiResourceVersionPersistService aiResourceVersionPersistService;
-    
+
     @Mock
     private PublishPipelineExecutor publishPipelineExecutor;
 
