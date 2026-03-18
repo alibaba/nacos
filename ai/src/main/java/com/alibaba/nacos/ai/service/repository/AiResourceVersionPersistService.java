@@ -39,6 +39,8 @@ public interface AiResourceVersionPersistService {
 
     int deleteByName(String namespaceId, String name);
 
+    int deleteByNameAndType(String namespaceId, String name, String type);
+
     int updateStatus(String namespaceId, String name, String type, String version, String status);
 
     int updateStorage(String namespaceId, String name, String type, String version, String storage);

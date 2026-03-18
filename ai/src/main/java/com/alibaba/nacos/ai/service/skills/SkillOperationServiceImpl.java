@@ -19,6 +19,8 @@ package com.alibaba.nacos.ai.service.skills;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
+import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
@@ -37,13 +39,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
-import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -68,8 +67,6 @@ import static com.alibaba.nacos.ai.constant.Constants.Skills;
 public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
-    
-    private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
 
     /**
      * Default storage provider for skills when system config is not specified.
@@ -184,52 +181,69 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     @Override
-    public Skill getSkillDetail(String namespaceId, String skillName) throws NacosException {
+    public SkillAdminDetail getSkillDetail(String namespaceId, String skillName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
         }
+        SkillVersionInfo versionInfo = requireVersionInfo(meta);
         String version = resolveVersion(meta, null, null);
-        if (StringUtils.isBlank(version)) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill version not found: " + skillName);
-        }
-        return loadSkillFromStorage(namespaceId, skillName, version);
-    }
 
-    private void updateSkillResourcesInGroup(AiResourceStorageRouter router, Skill skill, String namespaceId,
-            String version, long uniformId) throws NacosException {
-        if (skill.getResource() == null || skill.getResource().isEmpty()) {
-            return;
-        }
-        for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-            SkillResource resource = entry.getValue();
-            String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
-            byte[] content = buildResourceContent(resource, uniformId);
-            StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
-                    namespaceId, skill.getName(), version, path);
-            router.route(resourceKey).save(resourceKey, content);
-        }
-    }
-    
-    private void deleteRemovedResourcesInGroup(AiResourceStorageRouter router, String skillName, String namespaceId,
-            String version, SkillMainConfig existingMainConfig, Map<String, SkillResource> newResources)
-            throws NacosException {
-        if (existingMainConfig.getResources() == null || existingMainConfig.getResources().isEmpty()) {
-            return;
-        }
-        for (SkillResourceRef resourceRef : existingMainConfig.getResources()) {
-            String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-            if (!newResources.containsKey(resourceId)) {
-                String path = NacosConfigAiResourceStorage.getResourceFilePath(resourceRef.getType(), resourceRef.getName());
-                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
-                        namespaceId, skillName, version, path);
-                router.route(resourceKey).delete(resourceKey);
+        // Load skill content from storage (best-effort, may be blank if no published version yet)
+        Skill skill = null;
+        if (StringUtils.isNotBlank(version)) {
+            try {
+                skill = loadSkillFromStorage(namespaceId, skillName, version);
+            } catch (NacosException ignored) {
+                // version row exists but storage missing, return meta info only
             }
         }
+
+        // Load version row for status info
+        String versionStatus = null;
+        if (StringUtils.isNotBlank(version)) {
+            AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, skillName,
+                    RESOURCE_TYPE_SKILL, version);
+            if (versionRow != null) {
+                versionStatus = versionRow.getStatus();
+            }
+        }
+
+        // Load all version summaries
+        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
+        List<SkillAdminDetail.SkillVersionSummary> versionSummaries = new ArrayList<>();
+        if (versionPage != null && versionPage.getPageItems() != null) {
+            for (AiResourceVersion v : versionPage.getPageItems()) {
+                if (v == null) {
+                    continue;
+                }
+                SkillAdminDetail.SkillVersionSummary summary = new SkillAdminDetail.SkillVersionSummary();
+                summary.setVersion(v.getVersion());
+                summary.setStatus(v.getStatus());
+                summary.setAuthor(v.getAuthor());
+                summary.setDescription(v.getDesc());
+                summary.setCreateTime(v.getGmtCreate() == null ? null : v.getGmtCreate().getTime());
+                summary.setUpdateTime(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
+                summary.setPublishPipelineInfo(v.getPublishPipelineInfo());
+                versionSummaries.add(summary);
+            }
+        }
+
+        SkillAdminDetail detail = new SkillAdminDetail();
+        detail.setSkill(skill);
+        detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
+        detail.setVersion(version);
+        detail.setVersionStatus(versionStatus);
+        detail.setEditingVersion(versionInfo.getEditingVersion());
+        detail.setReviewingVersion(versionInfo.getReviewingVersion());
+        detail.setLabels(versionInfo.getLabels());
+        detail.setOnlineCnt(versionInfo.getOnlineCnt());
+        detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+        detail.setVersions(versionSummaries);
+        return detail;
     }
-    
+
     @Override
     public void deleteSkill(String namespaceId, String skillName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
@@ -237,7 +251,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return;
         }
 
+        // Delete in reverse order of creation: meta -> version rows -> storage files
+        aiResourcePersistService.delete(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+
         Page<AiResourceVersion> versions = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
+        aiResourceVersionPersistService.deleteByNameAndType(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+
         if (versions != null && versions.getPageItems() != null) {
             for (AiResourceVersion v : versions.getPageItems()) {
                 if (v == null || StringUtils.isBlank(v.getVersion())) {
@@ -246,13 +265,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion());
             }
         }
-
-        aiResourceVersionPersistService.deleteByName(namespaceId, skillName);
-        aiResourcePersistService.delete(namespaceId, skillName, RESOURCE_TYPE_SKILL);
     }
     
     @Override
-    public Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo,
+    public Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
@@ -265,22 +281,31 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
                 pageSize);
-        List<SkillBasicInfo> items = new ArrayList<>();
+        List<SkillAdminListItem> items = new ArrayList<>();
         if (metaPage != null && metaPage.getPageItems() != null) {
             for (AiResource meta : metaPage.getPageItems()) {
                 if (meta == null) {
                     continue;
                 }
-                SkillBasicInfo basicInfo = new SkillBasicInfo();
-                basicInfo.setNamespaceId(namespaceId);
-                basicInfo.setName(meta.getName());
-                basicInfo.setDescription(meta.getDesc());
-                basicInfo.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
-                items.add(basicInfo);
+                SkillVersionInfo versionInfo = parseVersionInfo(meta.getVersionInfo());
+                SkillAdminListItem item = new SkillAdminListItem();
+                item.setNamespaceId(namespaceId);
+                item.setName(meta.getName());
+                item.setDescription(meta.getDesc());
+                item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
+                item.setBizTags(meta.getBizTags());
+                item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+                if (versionInfo != null) {
+                    item.setLabels(versionInfo.getLabels());
+                    item.setEditingVersion(versionInfo.getEditingVersion());
+                    item.setReviewingVersion(versionInfo.getReviewingVersion());
+                    item.setOnlineCnt(versionInfo.getOnlineCnt());
+                }
+                items.add(item);
             }
         }
 
-        Page<SkillBasicInfo> result = new Page<>();
+        Page<SkillAdminListItem> result = new Page<>();
         result.setPageItems(items);
         result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
@@ -333,11 +358,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
                     continue;
                 }
+                // Client only receives name and description
                 SkillBasicInfo basicInfo = new SkillBasicInfo();
-                basicInfo.setNamespaceId(namespaceId);
                 basicInfo.setName(meta.getName());
                 basicInfo.setDescription(meta.getDesc());
-                basicInfo.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
                 items.add(basicInfo);
             }
         }
@@ -473,9 +497,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill version not found: " + name + "@" + target);
         }
-
+        
         final String finalTarget = target;
-
+        
         // Build context for pipeline execution (multi-file skill representation).
         Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget);
         SkillPipelineContext ctx = new SkillPipelineContext();
@@ -536,16 +560,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (execution.getStatus() != PipelineExecutionStatus.APPROVED) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                         "Pipeline not approved, cannot publish: " + version);
-            }
-        } else {
-            // Backward compatibility: older versions store PipelineSnapshot as publishPipelineInfo.
-            List<PublishPipelineService> pipelines = findSkillPipelines();
-            if (!pipelines.isEmpty()) {
-                PipelineSnapshot snapshot = parsePipelineSnapshot(v.getPublishPipelineInfo());
-                if (snapshot == null || !snapshot.isAllPassed()) {
-                    throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                            "Pipeline not passed, cannot publish: " + version);
-                }
             }
         }
 
@@ -809,30 +823,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
     }
 
-    private List<PublishPipelineService> findSkillPipelines() {
-        List<PublishPipelineService> result = new ArrayList<>();
-        for (PublishPipelineServiceBuilder b : NacosServiceLoader.load(PublishPipelineServiceBuilder.class)) {
-            try {
-                PublishPipelineService svc = b.build(new java.util.Properties());
-                if (svc != null) {
-                    result.add(svc);
-                }
-            } catch (Throwable ex) {
-                LOGGER.warn("Failed to build pipeline service: {}", b, ex);
-            }
-        }
-        // fallback: allow direct service SPI as well
-        for (PublishPipelineService svc : NacosServiceLoader.load(PublishPipelineService.class)) {
-            if (svc != null) {
-                result.add(svc);
-            }
-        }
-        result.removeIf(svc -> svc.pipelineResourceTypes() == null
-                || java.util.Arrays.stream(svc.pipelineResourceTypes()).noneMatch(t -> t != null && "SKILL".equals(t.name())));
-        result.sort((a, b) -> Integer.compare(a.getPreferOrder(), b.getPreferOrder()));
-        return result;
-    }
-
     private void onPipelineComplete(String namespaceId, String name, String version, PipelineExecutionResult result) {
         try {
             SkillPublishPipelineInfo info = new SkillPublishPipelineInfo();
@@ -890,17 +880,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return skillName + "/" + r.getName();
         }
         return skillName + "/" + type + "/" + r.getName();
-    }
-
-    private static PipelineSnapshot parsePipelineSnapshot(String json) {
-        if (StringUtils.isBlank(json)) {
-            return null;
-        }
-        try {
-            return JacksonUtils.toObj(json, PipelineSnapshot.class);
-        } catch (Exception ignored) {
-            return null;
-        }
     }
 
     private static SkillPublishPipelineInfo parseSkillPublishPipelineInfo(String json) {
@@ -1112,27 +1091,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         public void setLabels(Map<String, String> labels) {
             this.labels = labels;
-        }
-    }
-
-    private static class PipelineSnapshot {
-        private boolean allPassed;
-        private List<Map<String, Object>> pipeline;
-
-        public boolean isAllPassed() {
-            return allPassed;
-        }
-
-        public void setAllPassed(boolean allPassed) {
-            this.allPassed = allPassed;
-        }
-
-        public List<Map<String, Object>> getPipeline() {
-            return pipeline;
-        }
-
-        public void setPipeline(List<Map<String, Object>> pipeline) {
-            this.pipeline = pipeline;
         }
     }
 

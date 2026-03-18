@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
+import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -31,14 +33,14 @@ import java.util.Map;
 public interface SkillOperationService {
     
     /**
-     * Get skill detail.
+     * Get skill detail for admin usage. Returns full skill content plus version governance info.
      *
      * @param namespaceId namespace ID
      * @param skillName skill name
-     * @return skill detail
+     * @return skill admin detail (skill content + governance info)
      * @throws NacosException if skill not found
      */
-    Skill getSkillDetail(String namespaceId, String skillName) throws NacosException;
+    SkillAdminDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
     
     /**
      * Delete skill.
@@ -50,17 +52,17 @@ public interface SkillOperationService {
     void deleteSkill(String namespaceId, String skillName) throws NacosException;
     
     /**
-     * List skills with pagination.
+     * List skills with pagination for admin usage. Returns full governance metadata.
      *
      * @param namespaceId namespace ID
      * @param skillName skill name (for search)
-     * @param search search keyword
+     * @param search search type (accurate/blur)
      * @param pageNo page number
      * @param pageSize page size
-     * @return skill list page
+     * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
+    Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
     
     /**
      * Upload skill from zip file.
@@ -73,7 +75,8 @@ public interface SkillOperationService {
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
 
     /**
-     * Search skills for runtime client usage. Only returns enable skills that have at least one online version.
+     * Search skills for runtime client usage. Only returns enabled skills that have at least one online version.
+     * Returns only name and description for client consumption.
      *
      * @param namespaceId namespace ID
      * @param keyword keyword (optional)
