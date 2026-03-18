@@ -18,12 +18,16 @@ package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -32,41 +36,31 @@ import com.alibaba.nacos.plugin.datasource.mapper.AiResourceMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.Arrays;
 
 /**
- * Jdbc based persist service for {@link AiResource}.
- *
- * <p>Uses datasource-plugin {@link AiResourceMapper} to keep SQL generation consistent with Nacos config.</p>
- *
- * @author nacos
- * @since 3.2.0
+ * Embedded (Derby) persist service for {@link AiResource}.
  */
-@Conditional(value = ConditionOnExternalStorage.class)
+@Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service
-public class AiResourcePersistServiceImpl implements AiResourcePersistService {
+public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistService {
+
+    private final DatabaseOperate databaseOperate;
 
     private final DataSourceService dataSourceService;
 
-    private final JdbcTemplate jt;
-
     private final MapperManager mapperManager;
 
-    public AiResourcePersistServiceImpl() {
+    public EmbeddedAiResourcePersistServiceImpl(DatabaseOperate databaseOperate) {
+        this.databaseOperate = databaseOperate;
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        this.jt = dataSourceService.getJdbcTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
 
     @Override
@@ -75,26 +69,21 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         String sql = mapper.insert(Arrays.asList("name", "type", "c_desc", "status", "namespace_id", "biz_tags", "ext",
                 "version_info", "meta_version", "gmt_create@NOW()", "gmt_modified@NOW()"));
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jt.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, resource.getName());
-            ps.setString(2, resource.getType());
-            ps.setString(3, resource.getDesc());
-            ps.setString(4, resource.getStatus());
-            ps.setString(5, StringUtils.defaultEmptyIfBlank(resource.getNamespaceId()));
-            ps.setString(6, resource.getBizTags());
-            ps.setString(7, resource.getExt());
-            ps.setString(8, resource.getVersionInfo());
-            ps.setLong(9, resource.getMetaVersion() == null ? 1L : resource.getMetaVersion());
-            return ps;
-        }, keyHolder);
+        Object[] args = new Object[] {resource.getName(), resource.getType(), resource.getDesc(), resource.getStatus(),
+                StringUtils.defaultEmptyIfBlank(resource.getNamespaceId()), resource.getBizTags(), resource.getExt(),
+                resource.getVersionInfo(), resource.getMetaVersion() == null ? 1L : resource.getMetaVersion()};
 
-        Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new IllegalStateException("insert ai_resource failed, no generated key");
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
+        Boolean success = databaseOperate.blockUpdate();
+        if (success == null || !success) {
+            throw new IllegalStateException("insert ai_resource failed");
         }
-        return key.longValue();
+
+        AiResource inserted = find(resource.getNamespaceId(), resource.getName(), resource.getType());
+        if (inserted == null || inserted.getId() == null) {
+            throw new IllegalStateException("insert ai_resource failed, cannot query inserted row");
+        }
+        return inserted.getId();
     }
 
     @Override
@@ -104,18 +93,14 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
                 Arrays.asList("id", "gmt_create", "gmt_modified", "name", "type", "c_desc", "status", "namespace_id",
                         "biz_tags", "ext", "version_info", "meta_version"),
                 Arrays.asList("namespace_id", "name", "type"));
-        try {
-            return jt.queryForObject(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type},
-                    AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+        return databaseOperate.queryOne(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type},
+                AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
 
     @Override
     public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo,
             int pageSize) {
-        PaginationHelper<AiResource> helper = new ExternalStoragePaginationHelperImpl<>(jt);
+        PaginationHelper<AiResource> helper = new EmbeddedPaginationHelperImpl<>(databaseOperate);
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
 
         MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
@@ -146,15 +131,32 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
 
         Object[] args = new Object[] {newValue.getStatus(), newValue.getDesc(), newValue.getBizTags(), newValue.getExt(),
                 newValue.getVersionInfo(), StringUtils.defaultEmptyIfBlank(namespaceId), name, type, expectedMetaVersion};
-        int rows = jt.update(sql, args);
-        return rows == 1;
+
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
+        Boolean success = databaseOperate.blockUpdate();
+        if (success == null || !success) {
+            return false;
+        }
+        AiResource updated = find(namespaceId, name, type);
+        return updated != null && updated.getMetaVersion() == expectedMetaVersion + 1;
     }
 
     @Override
     public int delete(String namespaceId, String name, String type) {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
-        return jt.update(sql, StringUtils.defaultEmptyIfBlank(namespaceId), name, type);
+
+        AiResource existed = find(namespaceId, name, type);
+        if (existed == null) {
+            return 0;
+        }
+
+        EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+        Boolean success = databaseOperate.blockUpdate();
+        if (success == null || !success) {
+            return 0;
+        }
+        return 1;
     }
 }
 

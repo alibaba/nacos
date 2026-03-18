@@ -18,12 +18,16 @@ package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -32,39 +36,31 @@ import com.alibaba.nacos.plugin.datasource.mapper.AiResourceVersionMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.Arrays;
 
 /**
- * Jdbc based persist service for {@link AiResourceVersion}.
- *
- * @author nacos
- * @since 3.2.0
+ * Embedded (Derby) persist service for {@link AiResourceVersion}.
  */
-@Conditional(value = ConditionOnExternalStorage.class)
+@Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service
-public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPersistService {
+public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVersionPersistService {
+
+    private final DatabaseOperate databaseOperate;
 
     private final DataSourceService dataSourceService;
 
-    private final JdbcTemplate jt;
-
     private final MapperManager mapperManager;
 
-    public AiResourceVersionPersistServiceImpl() {
+    public EmbeddedAiResourceVersionPersistServiceImpl(DatabaseOperate databaseOperate) {
+        this.databaseOperate = databaseOperate;
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        this.jt = dataSourceService.getJdbcTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
 
     @Override
@@ -74,26 +70,22 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
         String sql = mapper.insert(Arrays.asList("type", "author", "name", "c_desc", "status", "version", "namespace_id",
                 "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jt.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, version.getType());
-            ps.setString(2, version.getAuthor());
-            ps.setString(3, version.getName());
-            ps.setString(4, version.getDesc());
-            ps.setString(5, version.getStatus());
-            ps.setString(6, version.getVersion());
-            ps.setString(7, StringUtils.defaultEmptyIfBlank(version.getNamespaceId()));
-            ps.setString(8, version.getStorage());
-            ps.setString(9, version.getPublishPipelineInfo());
-            return ps;
-        }, keyHolder);
+        Object[] args = new Object[] {version.getType(), version.getAuthor(), version.getName(), version.getDesc(),
+                version.getStatus(), version.getVersion(), StringUtils.defaultEmptyIfBlank(version.getNamespaceId()),
+                version.getStorage(), version.getPublishPipelineInfo()};
 
-        Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new IllegalStateException("insert ai_resource_version failed, no generated key");
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
+        Boolean success = databaseOperate.blockUpdate();
+        if (success == null || !success) {
+            throw new IllegalStateException("insert ai_resource_version failed");
         }
-        return key.longValue();
+
+        AiResourceVersion inserted = find(version.getNamespaceId(), version.getName(), version.getType(),
+                version.getVersion());
+        if (inserted == null || inserted.getId() == null) {
+            throw new IllegalStateException("insert ai_resource_version failed, cannot query inserted row");
+        }
+        return inserted.getId();
     }
 
     @Override
@@ -104,19 +96,15 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
                 Arrays.asList("id", "gmt_create", "gmt_modified", "type", "author", "name", "c_desc", "status", "version",
                         "namespace_id", "storage", "publish_pipeline_info"),
                 Arrays.asList("namespace_id", "name", "type", "version"));
-        try {
-            return jt.queryForObject(sql,
-                    new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version},
-                    AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+        return databaseOperate.queryOne(sql,
+                new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version},
+                AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER);
     }
 
     @Override
     public Page<AiResourceVersion> list(String namespaceId, String name, String type, String status, int pageNo,
             int pageSize) {
-        PaginationHelper<AiResourceVersion> helper = new ExternalStoragePaginationHelperImpl<>(jt);
+        PaginationHelper<AiResourceVersion> helper = new EmbeddedPaginationHelperImpl<>(databaseOperate);
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
 
@@ -132,8 +120,7 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
 
         MapperResult count = mapper.findAiResourceVersionCountRows(context);
         MapperResult fetch = mapper.findAiResourceVersionFetchRows(context);
-        return helper.fetchPageLimit(count, fetch, pageNo, pageSize,
-                AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER);
+        return helper.fetchPageLimit(count, fetch, pageNo, pageSize, AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER);
     }
 
     @Override
@@ -143,10 +130,19 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
 
     @Override
     public int delete(String namespaceId, String name, String type, String version) {
+        AiResourceVersion existed = find(namespaceId, name, type, version);
+        if (existed == null) {
+            return 0;
+        }
+
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type", "version"));
-        return jt.update(sql, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version);
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
     }
 
     @Override
@@ -154,35 +150,59 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name"));
-        return jt.update(sql, StringUtils.defaultEmptyIfBlank(namespaceId), name);
+
+        EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
     }
 
     @Override
     public int updateStatus(String namespaceId, String name, String type, String version, String status) {
+        if (find(namespaceId, name, type, version) == null) {
+            return 0;
+        }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = "UPDATE ai_resource_version SET status=?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, status, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version);
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {status, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
     }
 
     @Override
     public int updateStorage(String namespaceId, String name, String type, String version, String storage) {
+        if (find(namespaceId, name, type, version) == null) {
+            return 0;
+        }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = "UPDATE ai_resource_version SET storage=?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, storage, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version);
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {storage, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
     }
 
     @Override
     public int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
             String publishPipelineInfo) {
+        if (find(namespaceId, name, type, version) == null) {
+            return 0;
+        }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = "UPDATE ai_resource_version SET publish_pipeline_info=?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, publishPipelineInfo, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version);
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {publishPipelineInfo, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
     }
 }
 

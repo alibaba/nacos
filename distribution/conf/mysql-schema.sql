@@ -193,3 +193,49 @@ CREATE TABLE `pipeline_execution` (
     `update_time`   bigint(20)   NOT NULL COMMENT '修改时间',
     PRIMARY KEY (`execution_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='AI资源发布审核Pipeline执行记录';
+
+/******************************************/
+/*   表名称 = ai_resource                 */
+/******************************************/
+CREATE TABLE `ai_resource` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+    `name` varchar(256) NOT NULL COMMENT '资源名称',
+    `type` varchar(32) NOT NULL COMMENT '资源类型',
+    `c_desc` varchar(512) DEFAULT NULL COMMENT '资源描述',
+    `status` varchar(32) DEFAULT NULL COMMENT '资源状态',
+    `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
+    `biz_tags` varchar(1024) DEFAULT NULL COMMENT '业务标签',
+    `ext` longtext DEFAULT NULL COMMENT '扩展信息(JSON)',
+    `version_info` longtext DEFAULT NULL COMMENT '版本信息(JSON)',
+    `meta_version` bigint(20) NOT NULL DEFAULT 1 COMMENT '元数据版本(乐观锁)',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_ai_resource_ns_name_type` (`namespace_id`,`name`,`type`),
+    KEY `idx_ai_resource_name` (`name`),
+    KEY `idx_ai_resource_type` (`type`),
+    KEY `idx_ai_resource_gmt_modified` (`gmt_modified`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='AI资源元数据表';
+
+/******************************************/
+/*   表名称 = ai_resource_version         */
+/******************************************/
+CREATE TABLE `ai_resource_version` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+    `type` varchar(32) NOT NULL COMMENT '资源类型',
+    `author` varchar(128) DEFAULT NULL COMMENT '作者',
+    `name` varchar(256) NOT NULL COMMENT '资源名称',
+    `c_desc` varchar(512) DEFAULT NULL COMMENT '版本描述',
+    `status` varchar(32) NOT NULL COMMENT '版本状态',
+    `version` varchar(64) NOT NULL COMMENT '版本号',
+    `namespace_id` varchar(128) NOT NULL DEFAULT '' COMMENT '命名空间ID',
+    `storage` longtext DEFAULT NULL COMMENT '存储信息(JSON)',
+    `publish_pipeline_info` longtext DEFAULT NULL COMMENT '发布流水线信息(JSON)',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_ai_resource_ver_ns_name_type_ver` (`namespace_id`,`name`,`type`,`version`),
+    KEY `idx_ai_resource_ver_name` (`name`),
+    KEY `idx_ai_resource_ver_status` (`status`),
+    KEY `idx_ai_resource_ver_gmt_modified` (`gmt_modified`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='AI资源版本表';
