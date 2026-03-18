@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -59,5 +60,23 @@ class JacksonSerializerTest {
     @Test
     void testName() {
         assertEquals("JSON", jacksonSerializer.name());
+    }
+    
+    @Test
+    void testDeserializeWithClassAndEmptyData() {
+        assertNull(jacksonSerializer.deserialize(new byte[0], String.class));
+    }
+    
+    @Test
+    void testDeserializeWithTypeAndEmptyData() {
+        assertNull(jacksonSerializer.deserialize(new byte[0], (java.lang.reflect.Type) String.class));
+    }
+    
+    @Test
+    void testDeserializeWithType() {
+        String data = "testType";
+        byte[] bytes = jacksonSerializer.serialize(data);
+        String result = jacksonSerializer.deserialize(bytes, (java.lang.reflect.Type) String.class);
+        assertEquals(data, result);
     }
 }
