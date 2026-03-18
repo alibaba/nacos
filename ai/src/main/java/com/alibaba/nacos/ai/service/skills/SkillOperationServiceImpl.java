@@ -19,6 +19,12 @@ package com.alibaba.nacos.ai.service.skills;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
+import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
+import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
@@ -34,7 +40,6 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
@@ -51,8 +56,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 
@@ -103,23 +106,25 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     private static final int MAX_WORKING_VERSION_RETRY = 3;
 
-    private final ExecutorService pipelineExecutor = Executors.newFixedThreadPool(2, r -> {
-        Thread t = new Thread(r, "nacos-skill-pipeline");
-        t.setDaemon(true);
-        return t;
-    });
-
     private final AiResourceStorageRouter storageRouter;
 
     private final AiResourcePersistService aiResourcePersistService;
 
     private final AiResourceVersionPersistService aiResourceVersionPersistService;
+    
+    private final PublishPipelineExecutor publishPipelineExecutor;
+    
+    private final PipelineExecutionRepository pipelineExecutionRepository;
 
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
-            AiResourceVersionPersistService aiResourceVersionPersistService) {
+            AiResourceVersionPersistService aiResourceVersionPersistService,
+            PublishPipelineExecutor publishPipelineExecutor,
+            PipelineExecutionRepository pipelineExecutionRepository) {
         this.storageRouter = AiResourceStorageRouter.getInstance();
         this.aiResourcePersistService = aiResourcePersistService;
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
+        this.publishPipelineExecutor = publishPipelineExecutor;
+        this.pipelineExecutionRepository = pipelineExecutionRepository;
     }
     
     private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
@@ -468,22 +473,40 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill version not found: " + name + "@" + target);
         }
-
-        List<PublishPipelineService> pipelines = findSkillPipelines();
-        if (pipelines.isEmpty()) {
-            publish(namespaceId, name, target, true);
-            return target;
+        
+        final String finalTarget = target;
+        
+        // Build context for pipeline execution (multi-file skill representation).
+        Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget);
+        SkillPipelineContext ctx = new SkillPipelineContext();
+        ctx.setNamespaceId(namespaceId);
+        ctx.setResourceName(name);
+        ctx.setVersion(finalTarget);
+        ctx.setFiles(buildPipelineFiles(skill));
+        
+        // Execute asynchronously via standard pipeline engine.
+        String executionId = publishPipelineExecutor.execute(ctx,
+                result -> onPipelineComplete(namespaceId, name, finalTarget, result));
+        if (StringUtils.isBlank(executionId)) {
+            // Pipeline disabled or no matched nodes -> publish directly.
+            publish(namespaceId, name, finalTarget, true);
+            return finalTarget;
         }
-
-        // move to reviewing
-        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, target, VERSION_STATUS_REVIEWING);
+        
+        // Move to reviewing and record pipeline execution id.
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, VERSION_STATUS_REVIEWING);
         info.setEditingVersion(null);
-        info.setReviewingVersion(target);
+        info.setReviewingVersion(finalTarget);
         updateMetaVersionInfoCas(namespaceId, meta, info);
-
-        String reviewingVersion = target;
-        pipelineExecutor.execute(() -> runPipelineAsync(namespaceId, name, reviewingVersion));
-        return reviewingVersion;
+        
+        SkillPublishPipelineInfo pipelineInfo = new SkillPublishPipelineInfo();
+        pipelineInfo.setExecutionId(executionId);
+        pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);
+        pipelineInfo.setPipeline(new ArrayList<>());
+        aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget,
+                JacksonUtils.toJson(pipelineInfo));
+        
+        return finalTarget;
     }
 
     @Override
@@ -502,12 +525,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Only reviewing version can be published: " + version);
         }
 
-        List<PublishPipelineService> pipelines = findSkillPipelines();
-        if (!pipelines.isEmpty()) {
-            PipelineSnapshot snapshot = parsePipelineSnapshot(v.getPublishPipelineInfo());
-            if (snapshot == null || !snapshot.isAllPassed()) {
+        // Validate pipeline execution result if pipeline exists.
+        SkillPublishPipelineInfo pipelineInfo = parseSkillPublishPipelineInfo(v.getPublishPipelineInfo());
+        if (pipelineInfo != null && StringUtils.isNotBlank(pipelineInfo.getExecutionId())) {
+            PipelineExecution execution = pipelineExecutionRepository.findById(pipelineInfo.getExecutionId());
+            if (execution == null) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                        "Pipeline not passed, cannot publish: " + version);
+                        "Pipeline execution not found, cannot publish: " + version);
+            }
+            if (execution.getStatus() != PipelineExecutionStatus.APPROVED) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "Pipeline not approved, cannot publish: " + version);
+            }
+        } else {
+            // Backward compatibility: older versions store PipelineSnapshot as publishPipelineInfo.
+            List<PublishPipelineService> pipelines = findSkillPipelines();
+            if (!pipelines.isEmpty()) {
+                PipelineSnapshot snapshot = parsePipelineSnapshot(v.getPublishPipelineInfo());
+                if (snapshot == null || !snapshot.isAllPassed()) {
+                    throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "Pipeline not passed, cannot publish: " + version);
+                }
             }
         }
 
@@ -775,7 +813,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<PublishPipelineService> result = new ArrayList<>();
         for (PublishPipelineServiceBuilder b : NacosServiceLoader.load(PublishPipelineServiceBuilder.class)) {
             try {
-                PublishPipelineService svc = b.build();
+                PublishPipelineService svc = b.build(new java.util.Properties());
                 if (svc != null) {
                     result.add(svc);
                 }
@@ -795,59 +833,26 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return result;
     }
 
-    private void runPipelineAsync(String namespaceId, String name, String version) {
+    private void onPipelineComplete(String namespaceId, String name, String version, PipelineExecutionResult result) {
         try {
-            List<PublishPipelineService> pipelines = findSkillPipelines();
-            if (pipelines.isEmpty()) {
-                return;
-            }
-            Skill skill = loadSkillFromStorage(namespaceId, name, version);
-            SkillPipelineContext ctx = new SkillPipelineContext();
-            ctx.setNamespaceId(namespaceId);
-            ctx.setResourceName(name);
-            ctx.setVersion(version);
-            ctx.setFiles(buildPipelineFiles(skill));
-
-            List<Map<String, Object>> executed = new ArrayList<>();
-            boolean allPassed = true;
-            for (PublishPipelineService p : pipelines) {
-                long start = System.currentTimeMillis();
-                PublishPipelineResult r = p.execute(ctx);
-                long dur = System.currentTimeMillis() - start;
-                Map<String, Object> item = new LinkedHashMap<>();
-                item.put("pipelineId", p.pipelineId());
-                item.put("executedAt", System.currentTimeMillis());
-                if (r != null) {
-                    item.put("passed", r.isPassed());
-                    item.put("comments", r.getComments());
-                } else {
-                    item.put("passed", false);
-                }
-                item.put("costMs", dur);
-                executed.add(item);
-                if (r == null || !r.isPassed()) {
-                    allPassed = false;
-                    break;
-                }
-            }
-
-            PipelineSnapshot snapshot = new PipelineSnapshot();
-            snapshot.setAllPassed(allPassed);
-            snapshot.setPipeline(executed);
+            SkillPublishPipelineInfo info = new SkillPublishPipelineInfo();
+            info.setExecutionId(result == null ? null : result.getExecutionId());
+            info.setStatus(result == null ? PipelineExecutionStatus.REJECTED : result.getStatus());
+            info.setPipeline(result == null ? null : result.getPipeline());
             aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL, version,
-                    JacksonUtils.toJson(snapshot));
-
-            if (!allPassed) {
-                // reject back to draft and move reviewing -> editing
+                    JacksonUtils.toJson(info));
+            
+            if (result == null || result.getStatus() != PipelineExecutionStatus.APPROVED) {
+                // Reject back to draft and move reviewing -> editing (best effort).
                 aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, version, VERSION_STATUS_DRAFT);
                 AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
                 if (meta != null) {
-                    SkillVersionInfo info = requireVersionInfo(meta);
-                    if (StringUtils.equals(info.getReviewingVersion(), version)) {
-                        info.setReviewingVersion(null);
-                        info.setEditingVersion(version);
+                    SkillVersionInfo vInfo = requireVersionInfo(meta);
+                    if (StringUtils.equals(vInfo.getReviewingVersion(), version)) {
+                        vInfo.setReviewingVersion(null);
+                        vInfo.setEditingVersion(version);
                         try {
-                            updateMetaVersionInfoCas(namespaceId, meta, info);
+                            updateMetaVersionInfoCas(namespaceId, meta, vInfo);
                         } catch (Exception ex) {
                             LOGGER.warn("Failed to rollback meta working pointers for {}@{}", name, version, ex);
                         }
@@ -855,7 +860,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 }
             }
         } catch (Throwable ex) {
-            LOGGER.error("Run pipeline failed for {}@{}", name, version, ex);
+            LOGGER.error("Pipeline callback failed for {}@{}", name, version, ex);
         }
     }
 
@@ -893,6 +898,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         try {
             return JacksonUtils.toObj(json, PipelineSnapshot.class);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+    
+    private static SkillPublishPipelineInfo parseSkillPublishPipelineInfo(String json) {
+        if (StringUtils.isBlank(json)) {
+            return null;
+        }
+        try {
+            SkillPublishPipelineInfo info = JacksonUtils.toObj(json, SkillPublishPipelineInfo.class);
+            if (info == null || StringUtils.isBlank(info.getExecutionId())) {
+                return null;
+            }
+            return info;
         } catch (Exception ignored) {
             return null;
         }
@@ -1112,6 +1132,39 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
 
         public void setPipeline(List<Map<String, Object>> pipeline) {
+            this.pipeline = pipeline;
+        }
+    }
+    
+    private static class SkillPublishPipelineInfo {
+        
+        private String executionId;
+        
+        private PipelineExecutionStatus status;
+        
+        private List<PipelineNodeResult> pipeline;
+        
+        public String getExecutionId() {
+            return executionId;
+        }
+        
+        public void setExecutionId(String executionId) {
+            this.executionId = executionId;
+        }
+        
+        public PipelineExecutionStatus getStatus() {
+            return status;
+        }
+        
+        public void setStatus(PipelineExecutionStatus status) {
+            this.status = status;
+        }
+        
+        public List<PipelineNodeResult> getPipeline() {
+            return pipeline;
+        }
+        
+        public void setPipeline(List<PipelineNodeResult> pipeline) {
             this.pipeline = pipeline;
         }
     }

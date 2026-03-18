@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -71,6 +73,12 @@ class SkillOperationServiceImplTest {
     
     @Mock
     private AiResourceVersionPersistService aiResourceVersionPersistService;
+    
+    @Mock
+    private PublishPipelineExecutor publishPipelineExecutor;
+    
+    @Mock
+    private PipelineExecutionRepository pipelineExecutionRepository;
 
     private SkillOperationServiceImpl skillOperationService;
 
@@ -79,7 +87,8 @@ class SkillOperationServiceImplTest {
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
-        skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService);
+        skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
+                publishPipelineExecutor, pipelineExecutionRepository);
     }
     
     @Test
