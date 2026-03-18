@@ -197,7 +197,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         return loadSkillFromStorage(namespaceId, skillName, version);
     }
-    
+
     private void updateSkillResourcesInGroup(AiResourceStorageRouter router, Skill skill, String namespaceId,
             String version, long uniformId) throws NacosException {
         if (skill.getResource() == null || skill.getResource().isEmpty()) {
