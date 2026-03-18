@@ -17,8 +17,14 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -38,6 +44,7 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -126,5 +133,91 @@ public class ConsoleSkillController {
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
         String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes);
         return Result.success(skillName);
+    }
+
+    /**
+     * Create draft version.
+     */
+    @PostMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
+        form.validate();
+        return Result.success(skillProxy.createDraft(form));
+    }
+
+    /**
+     * Update current draft content.
+     */
+    @PutMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateDraft(SkillUpdateForm form) throws NacosException {
+        form.validate();
+        skillProxy.updateDraft(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Delete current draft version.
+     */
+    @DeleteMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> deleteDraft(SkillForm form) throws NacosException {
+        form.validate();
+        skillProxy.deleteDraft(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Submit a version for pipeline review.
+     */
+    @PostMapping("/submit")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> submit(SkillSubmitForm form) throws NacosException {
+        form.validate();
+        return Result.success(skillProxy.submit(form));
+    }
+
+    /**
+     * Publish an approved reviewing version.
+     */
+    @PostMapping("/publish")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> publish(SkillPublishForm form) throws NacosException {
+        form.validate();
+        skillProxy.publish(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Update runtime route labels without changing version status.
+     */
+    @PutMapping("/labels")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateLabels(SkillLabelsUpdateForm form) throws NacosException {
+        form.validate();
+        skillProxy.updateLabels(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Online operation (version-level or skill-level by scope).
+     */
+    @PostMapping("/online")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> online(SkillOnlineForm form) throws NacosException {
+        form.validate();
+        skillProxy.online(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Offline operation (version-level or skill-level by scope).
+     */
+    @PostMapping("/offline")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> offline(SkillOnlineForm form) throws NacosException {
+        form.validate();
+        skillProxy.offline(form);
+        return Result.success("ok");
     }
 }

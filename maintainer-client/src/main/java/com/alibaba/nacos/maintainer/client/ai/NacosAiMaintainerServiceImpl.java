@@ -552,24 +552,6 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     // ========== Skill Maintainer Service Implementation ==========
     
     @Override
-    public String registerSkill(String namespaceId, Skill skill) throws NacosException {
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
-        }
-        Map<String, String> params = new HashMap<>(4);
-        params.put("namespaceId", namespaceId);
-        params.put("skillCard", JacksonUtils.toJson(skill));
-        RequestResource resource = buildRequestResource(namespaceId, skill.getName());
-        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<String>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
     public Skill getSkillDetail(String namespaceId, String skillName) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
@@ -585,24 +567,6 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 new TypeReference<Result<Skill>>() {
                 });
         return result.getData();
-    }
-    
-    @Override
-    public boolean updateSkill(String namespaceId, Skill skill) throws NacosException {
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
-        }
-        Map<String, String> params = new HashMap<>(4);
-        params.put("namespaceId", namespaceId);
-        params.put("skillCard", JacksonUtils.toJson(skill));
-        RequestResource resource = buildRequestResource(namespaceId, skill.getName());
-        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<String>>() {
-                });
-        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
     @Override
@@ -661,6 +625,148 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 new TypeReference<Result<String>>() {
                 });
         return result.getData();
+    }
+
+    @Override
+    public String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        if (StringUtils.isNotBlank(basedOnVersion)) {
+            params.put("basedOnVersion", basedOnVersion);
+        }
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/draft").setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return result.getData();
+    }
+
+    @Override
+    public boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillCard", skillCard);
+        if (null != setAsLatest) {
+            params.put("setAsLatest", String.valueOf(setAsLatest));
+        }
+        RequestResource resource = buildRequestResource(namespaceId, null);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/draft").setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+
+    @Override
+    public boolean deleteDraft(String namespaceId, String skillName) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/draft").setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+
+    @Override
+    public String submit(String namespaceId, String skillName, String version) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        if (StringUtils.isNotBlank(version)) {
+            params.put("version", version);
+        }
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/submit").setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return result.getData();
+    }
+
+    @Override
+    public boolean publish(String namespaceId, String skillName, String version, Boolean updateLatestLabel)
+            throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("version", version);
+        if (null != updateLatestLabel) {
+            params.put("updateLatestLabel", String.valueOf(updateLatestLabel));
+        }
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/publish").setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+
+    @Override
+    public boolean updateLabels(String namespaceId, String skillName, String labels) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("labels", labels);
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/labels").setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+
+    @Override
+    public boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version, boolean online)
+            throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        if (StringUtils.isNotBlank(scope)) {
+            params.put("scope", scope);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            params.put("version", version);
+        }
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        String op = online ? "/online" : "/offline";
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + op).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
     @Override

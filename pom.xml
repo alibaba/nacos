@@ -348,6 +348,7 @@
                         <exclude>.cursor/**</exclude>
                         <exclude>.agents/**</exclude>
                         <exclude>.qoder/**</exclude>
+                        <exclude>.tools/**</exclude>
                         <exclude>skills/**</exclude>
                     </excludes>
                 </configuration>

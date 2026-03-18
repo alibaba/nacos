@@ -16,9 +16,16 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
@@ -28,8 +35,11 @@ import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Skill inner handler.
@@ -67,5 +77,44 @@ public class SkillInnerHandler implements SkillHandler {
     @Override
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
         return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
+    }
+
+    @Override
+    public String createDraft(SkillDraftCreateForm form) throws NacosException {
+        return skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(), form.getBasedOnVersion());
+    }
+
+    @Override
+    public void updateDraft(SkillUpdateForm form) throws NacosException {
+        Skill skill = SkillRequestUtil.parseSkill(form);
+        skillOperationService.updateDraft(form.getNamespaceId(), skill);
+    }
+
+    @Override
+    public void deleteDraft(SkillForm form) throws NacosException {
+        skillOperationService.deleteDraft(form.getNamespaceId(), form.getSkillName());
+    }
+
+    @Override
+    public String submit(SkillSubmitForm form) throws NacosException {
+        return skillOperationService.submit(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+    }
+
+    @Override
+    public void publish(SkillPublishForm form) throws NacosException {
+        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+    }
+
+    @Override
+    public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
+        Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
+        skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);
+    }
+
+    @Override
+    public void changeOnlineStatus(SkillOnlineForm form, boolean online) throws NacosException {
+        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
+                form.getVersion(), online);
     }
 }
