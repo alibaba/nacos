@@ -90,4 +90,11 @@ class ServerIdentityCheckerHolderTest {
             return ServerIdentityResult.success();
         }
     }
+
+    @Test
+    void testNewCheckerWithInvalidClass() {
+        ReflectionTestUtils.setField(ServerIdentityCheckerHolder.getInstance(), "checkerClass",
+                ServerIdentityChecker.class);
+        assertInstanceOf(DefaultChecker.class, ServerIdentityCheckerHolder.getInstance().newChecker());
+    }
 }
