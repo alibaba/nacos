@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -32,15 +30,6 @@ import com.alibaba.nacos.core.model.form.PageForm;
  * @author nacos
  */
 public interface SkillHandler {
-    
-    /**
-     * Register skill.
-     *
-     * @param skill skill to register
-     * @param form skill detail form
-     * @throws NacosException nacos exception
-     */
-    void registerSkill(Skill skill, SkillDetailForm form) throws NacosException;
     
     /**
      * Get skill.
@@ -58,15 +47,6 @@ public interface SkillHandler {
      * @throws NacosException nacos exception
      */
     void deleteSkill(SkillForm form) throws NacosException;
-    
-    /**
-     * Update skill.
-     *
-     * @param skill skill to update
-     * @param form skill update form
-     * @throws NacosException nacos exception
-     */
-    void updateSkill(Skill skill, SkillUpdateForm form) throws NacosException;
     
     /**
      * List skills.

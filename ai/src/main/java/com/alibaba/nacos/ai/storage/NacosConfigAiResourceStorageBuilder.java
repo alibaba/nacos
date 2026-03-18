@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.storage;
 
+import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
@@ -36,7 +37,9 @@ public class NacosConfigAiResourceStorageBuilder implements AiResourceStorageBui
     public AiResourceStorage build() {
         ConfigQueryChainService queryChainService = ApplicationUtils.getBean(ConfigQueryChainService.class);
         ConfigOperationService operationService = ApplicationUtils.getBean(ConfigOperationService.class);
-        return new NacosConfigAiResourceStorage(queryChainService, operationService);
+        SyncEffectService[] syncRef = new SyncEffectService[1];
+        ApplicationUtils.getBeanIfExist(SyncEffectService.class, bean -> syncRef[0] = bean);
+        return new NacosConfigAiResourceStorage(queryChainService, operationService, syncRef[0]);
     }
 }
 

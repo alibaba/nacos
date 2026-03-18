@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
-import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -72,111 +71,15 @@ class SkillOperationServiceImplTest {
     
     @Mock
     private AiResourceVersionPersistService aiResourceVersionPersistService;
-    
-    @Mock
-    private SyncEffectService syncEffectService;
-    
+
     private SkillOperationServiceImpl skillOperationService;
-    
+
     @BeforeEach
     void setUp() {
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
-        skillOperationService = new SkillOperationServiceImpl(syncEffectService, aiResourcePersistService,
-                aiResourceVersionPersistService);
-    }
-    
-    @Test
-    void testRegisterSkillSuccessfully() throws NacosException {
-        // Given
-        Skill skill = createValidSkill();
-        String namespaceId = "test-namespace";
-        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
-        
-        // When
-        String result = skillOperationService.registerSkill(skill, namespaceId);
-        
-        // Then
-        assertEquals(skill.getName(), result);
-        verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
-        verify(syncEffectService, times(1)).toSync(any(), any(Long.class));
-    }
-    
-    @Test
-    void testRegisterSkillWithResources() throws NacosException {
-        // Given
-        Skill skill = createValidSkillWithResources();
-        String namespaceId = "test-namespace";
-        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
-        
-        // When
-        String result = skillOperationService.registerSkill(skill, namespaceId);
-        
-        // Then
-        assertEquals(skill.getName(), result);
-        // Should save main config + resource configs
-        verify(storage, times(2)).save(any(StorageKey.class), any(byte[].class));
-    }
-    
-    @Test
-    void testRegisterSkillWithBlankName() {
-        // Given
-        Skill skill = createValidSkill();
-        skill.setName("");
-        String namespaceId = "test-namespace";
-        
-        // When & Then
-        NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> skillOperationService.registerSkill(skill, namespaceId));
-        assertEquals("Skill name is required", exception.getMessage());
-    }
-    
-    @Test
-    void testRegisterSkillWithInvalidName() {
-        // Given
-        Skill skill = createValidSkill();
-        skill.setName("invalid-name-123"); // Contains numbers
-        String namespaceId = "test-namespace";
-        
-        // When & Then
-        assertThrows(NacosApiException.class,
-                () -> skillOperationService.registerSkill(skill, namespaceId));
-    }
-    
-    @Test
-    void testRegisterSkillWithDoubleUnderscore() throws NacosException {
-        // Given: skill name and resource names may contain double underscores
-        Skill skill = createValidSkill();
-        skill.setName("test__skill"); // Contains double underscore
-        String namespaceId = "test-namespace";
-        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
-        
-        // When
-        String result = skillOperationService.registerSkill(skill, namespaceId);
-        
-        // Then
-        assertEquals("test__skill", result);
-    }
-    
-    @Test
-    void testRegisterSkillAlreadyExists() throws NacosException {
-        // Given
-        Skill skill = createValidSkill();
-        String namespaceId = "test-namespace";
-        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
-        meta.setName(skill.getName());
-        meta.setType("skill");
-        meta.setStatus("enable");
-        meta.setMetaVersion(1L);
-        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"onlineCnt\":0}");
-        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString()))
-                .thenReturn(meta);
-        
-        // When & Then
-        NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> skillOperationService.registerSkill(skill, namespaceId));
-        assertEquals(NacosException.CONFLICT, exception.getErrCode());
+        skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService);
     }
     
     @Test
@@ -212,39 +115,6 @@ class SkillOperationServiceImplTest {
         NacosApiException exception = assertThrows(NacosApiException.class,
                 () -> skillOperationService.getSkillDetail(namespaceId, skillName));
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
-    }
-    
-    @Test
-    void testUpdateSkillSuccessfully() throws NacosException {
-        // Given
-        Skill skill = createValidSkill();
-        String namespaceId = "test-namespace";
-        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
-        meta.setName(skill.getName());
-        meta.setType("skill");
-        meta.setStatus("enable");
-        meta.setMetaVersion(1L);
-        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
-        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(meta);
-        when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skill.getName()).getBytes());
-        
-        // When
-        skillOperationService.updateSkill(skill, namespaceId);
-        
-        // Then
-        verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
-    }
-    
-    @Test
-    void testUpdateSkillNotFound() throws NacosException {
-        // Given
-        Skill skill = createValidSkill();
-        String namespaceId = "test-namespace";
-        when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString())).thenReturn(null);
-        
-        // When & Then
-        assertThrows(NacosApiException.class,
-                () -> skillOperationService.updateSkill(skill, namespaceId));
     }
     
     @Test

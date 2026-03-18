@@ -19,9 +19,9 @@ package com.alibaba.nacos.ai.service.skills;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
-import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
@@ -34,7 +34,6 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
@@ -42,6 +41,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineServiceBuilder;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +68,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
 
+    /**
+     * Default storage provider for skills when system config is not specified.
+     */
     private static final String STORAGE_PROVIDER_NACOS_CONFIG = "nacos_config";
+
+    /**
+     * System config key for skill storage provider.
+     *
+     * <p>Similar to Nacos datasource type selection, this allows choosing
+     * different storage providers via service-level configuration.</p>
+     */
+    private static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.skill.storage.provider";
 
     private static final String RESOURCE_TYPE_SKILL = "skill";
 
@@ -97,18 +108,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         t.setDaemon(true);
         return t;
     });
-    
-    private final SyncEffectService syncEffectService;
 
     private final AiResourceStorageRouter storageRouter;
-    
+
     private final AiResourcePersistService aiResourcePersistService;
-    
+
     private final AiResourceVersionPersistService aiResourceVersionPersistService;
-    
-    public SkillOperationServiceImpl(SyncEffectService syncEffectService, AiResourcePersistService aiResourcePersistService,
+
+    public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
             AiResourceVersionPersistService aiResourceVersionPersistService) {
-        this.syncEffectService = syncEffectService;
         this.storageRouter = AiResourceStorageRouter.getInstance();
         this.aiResourcePersistService = aiResourcePersistService;
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
@@ -118,26 +126,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             boolean isNewSkill) throws NacosException {
         String skillName = skill.getName();
         long uniformId = System.currentTimeMillis();
-        String versionGroup = buildSkillVersionGroup(skillName, version);
 
-        // 1) write storage for draft version
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, versionGroup, uniformId);
-
-        StorageKey mainKey = nacosConfigKey(namespaceId, versionGroup, mainConfigInfo.getDataId());
-        storageRouter.route(mainKey).save(mainKey, mainConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
+        // 1) write storage for draft version (provider + key, raw bytes)
+        byte[] mainContent = buildMainContent(skill, uniformId);
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
+                skillName, version, NacosConfigAiResourceStorage.getMainFilePath());
+        storageRouter.route(mainKey).save(mainKey, mainContent);
 
         if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skillName, resource.getType(), resource.getName());
-
-                ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, versionGroup,
-                        resourceConfigInfo.getDataId(), uniformId);
-
-                StorageKey resourceKey = nacosConfigKey(namespaceId, versionGroup, resourceConfigInfo.getDataId());
-                storageRouter.route(resourceKey).save(resourceKey, resourceConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
+                String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
+                byte[] resourceContent = buildResourceContent(resource, uniformId);
+                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
+                        namespaceId, skillName, version, path);
+                storageRouter.route(resourceKey).save(resourceKey, resourceContent);
             }
         }
 
@@ -150,7 +153,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         versionRow.setStatus(VERSION_STATUS_DRAFT);
         versionRow.setVersion(version);
         versionRow.setDesc(skill.getDescription());
-        versionRow.setStorage(buildStorageJson(versionGroup));
+        versionRow.setStorage(buildStorageJson(namespaceId, skillName, version));
         aiResourceVersionPersistService.insert(versionRow);
 
         // 3) create or update meta for editingVersion
@@ -173,8 +176,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             info.setEditingVersion(version);
             updateMetaVersionInfoCas(namespaceId, existedMeta, info);
         }
-
-        syncEffectService.toSync(mainConfigForm, System.currentTimeMillis());
     }
     
     @Override
@@ -193,33 +194,32 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     private void updateSkillResourcesInGroup(AiResourceStorageRouter router, Skill skill, String namespaceId,
-            String versionGroup, long uniformId) throws NacosException {
+            String version, long uniformId) throws NacosException {
         if (skill.getResource() == null || skill.getResource().isEmpty()) {
             return;
         }
         for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
             SkillResource resource = entry.getValue();
-            SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                    skill.getName(), resource.getType(), resource.getName());
-            ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, versionGroup,
-                    resourceConfigInfo.getDataId(), uniformId);
-            StorageKey resourceKey = nacosConfigKey(namespaceId, versionGroup, resourceConfigInfo.getDataId());
-            router.route(resourceKey).save(resourceKey, resourceConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
+            String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
+            byte[] content = buildResourceContent(resource, uniformId);
+            StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
+                    namespaceId, skill.getName(), version, path);
+            router.route(resourceKey).save(resourceKey, content);
         }
     }
     
     private void deleteRemovedResourcesInGroup(AiResourceStorageRouter router, String skillName, String namespaceId,
-            String versionGroup, SkillMainConfig existingMainConfig, Map<String, SkillResource> newResources)
+            String version, SkillMainConfig existingMainConfig, Map<String, SkillResource> newResources)
             throws NacosException {
         if (existingMainConfig.getResources() == null || existingMainConfig.getResources().isEmpty()) {
             return;
         }
         for (SkillResourceRef resourceRef : existingMainConfig.getResources()) {
-            String key = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-            if (!newResources.containsKey(key)) {
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skillName, resourceRef.getType(), resourceRef.getName());
-                StorageKey resourceKey = nacosConfigKey(namespaceId, versionGroup, resourceConfigInfo.getDataId());
+            String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
+            if (!newResources.containsKey(resourceId)) {
+                String path = NacosConfigAiResourceStorage.getResourceFilePath(resourceRef.getType(), resourceRef.getName());
+                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
+                        namespaceId, skillName, version, path);
                 router.route(resourceKey).delete(resourceKey);
             }
         }
@@ -382,12 +382,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
 
         String newVersion = nextVersion(namespaceId, name);
-        String dstGroup = buildSkillVersionGroup(name, newVersion);
 
         // 1) copy storage content (skill.json + resources)
         Skill baseSkill = loadSkillFromStorage(namespaceId, name, base);
         long uniformId = System.currentTimeMillis();
-        writeSkillToGroup(namespaceId, baseSkill, dstGroup, uniformId);
+        writeSkillToStorage(namespaceId, baseSkill, newVersion, uniformId);
 
         // 2) insert draft version row
         AiResourceVersion v = new AiResourceVersion();
@@ -398,7 +397,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         v.setStatus(VERSION_STATUS_DRAFT);
         v.setVersion(newVersion);
         v.setDesc(baseSkill.getDescription());
-        v.setStorage(buildStorageJson(dstGroup));
+        v.setStorage(buildStorageJson(namespaceId, name, newVersion));
         aiResourceVersionPersistService.insert(v);
 
         // 3) update meta pointers (editingVersion)
@@ -426,10 +425,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Current editing version is not draft: " + editing);
         }
 
-        String draftGroup = buildSkillVersionGroup(name, editing);
         long uniformId = System.currentTimeMillis();
-        writeSkillToGroup(namespaceId, draftSkill, draftGroup, uniformId);
-        aiResourceVersionPersistService.updateStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing, buildStorageJson(draftGroup));
+        writeSkillToStorage(namespaceId, draftSkill, editing, uniformId);
+        aiResourceVersionPersistService.updateStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
+                buildStorageJson(namespaceId, name, editing));
         bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
     }
 
@@ -570,17 +569,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
     
     /**
-     * Build main config form.
+     * Build main skill content as JSON bytes (storage-agnostic).
      */
-    private ConfigForm buildMainConfigForm(Skill skill, String namespaceId, String skillGroup, long uniformId) {
-        // Build main config (only references, no content)
+    private static byte[] buildMainContent(Skill skill, long uniformId) {
         SkillMainConfig mainConfig = new SkillMainConfig();
         mainConfig.setName(skill.getName());
         mainConfig.setDescription(skill.getDescription());
         mainConfig.setInstruction(skill.getInstruction());
         mainConfig.setUniformId(uniformId);
-        
-        // Build resource references (without content)
         List<SkillResourceRef> resourceRefs = new ArrayList<>(
                 skill.getResource() != null ? skill.getResource().size() : 16);
         if (skill.getResource() != null) {
@@ -593,49 +589,25 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
         mainConfig.setResources(resourceRefs);
-        
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(mainConfigInfo.getDataId());
-        configForm.setGroup(skillGroup);
-        configForm.setNamespaceId(namespaceId);
-        configForm.setContent(JacksonUtils.toJson(mainConfig));
-        configForm.setConfigTags("nacos.internal.config=skill");
-        configForm.setSrcUser("nacos");
-        
-        return configForm;
+        return JacksonUtils.toJson(mainConfig).getBytes(StandardCharsets.UTF_8);
     }
-    
+
     /**
-     * Build resource config form.
+     * Build resource content as JSON bytes (storage-agnostic).
      */
-    private ConfigForm buildResourceConfigForm(SkillResource resource, String namespaceId, String skillGroup,
-            String resourceDataId, long uniformId) {
-        // Add uniformId to resource metadata
+    private static byte[] buildResourceContent(SkillResource resource, long uniformId) {
         Map<String, Object> metadata = resource.getMetadata();
         if (metadata == null) {
             metadata = new HashMap<>(4);
             resource.setMetadata(metadata);
         }
         metadata.put("uniformId", uniformId);
-        
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(resourceDataId);
-        configForm.setGroup(skillGroup);
-        configForm.setNamespaceId(namespaceId);
-        configForm.setContent(JacksonUtils.toJson(resource));
-        configForm.setConfigTags("nacos.internal.config=skill-resource");
-        configForm.setSrcUser("nacos");
-        
-        return configForm;
+        return JacksonUtils.toJson(resource).getBytes(StandardCharsets.UTF_8);
     }
 
-    private static StorageKey nacosConfigKey(String namespaceId, String group, String dataId) {
-        return new StorageKey(STORAGE_PROVIDER_NACOS_CONFIG, namespaceId + ":" + group + ":" + dataId);
-    }
-
-    private static String buildSkillVersionGroup(String skillName, String version) {
-        return SkillUtils.SKILL_GROUP_PREFIX + skillName + "__" + version;
+    private static String resolveSkillStorageProvider() {
+        String provider = EnvUtil.getProperty(SKILL_STORAGE_PROVIDER_CONFIG_KEY, STORAGE_PROVIDER_NACOS_CONFIG);
+        return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
     }
 
     private String resolveVersion(AiResource meta, String explicitVersion, String label) {
@@ -672,10 +644,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
     }
 
-    private static String buildStorageJson(String versionGroup) {
+    /**
+     * Build storage metadata JSON for version row (provider + scope, storage-agnostic).
+     */
+    private static String buildStorageJson(String namespaceId, String skillName, String version) {
         Map<String, Object> json = new HashMap<>(4);
-        json.put("provider", STORAGE_PROVIDER_NACOS_CONFIG);
-        json.put("group", versionGroup);
+        json.put("provider", resolveSkillStorageProvider());
+        json.put("scope", namespaceId + ":" + skillName + ":" + version);
         return JacksonUtils.toJson(json);
     }
 
@@ -779,23 +754,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return "v" + (max + 1);
     }
 
-    private void writeSkillToGroup(String namespaceId, Skill skill, String versionGroup, long uniformId) throws NacosException {
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skill.getName());
-        ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, versionGroup, uniformId);
-        StorageKey mainKey = nacosConfigKey(namespaceId, versionGroup, mainConfigInfo.getDataId());
-        storageRouter.route(mainKey).save(mainKey, mainConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
+    private void writeSkillToStorage(String namespaceId, Skill skill, String version, long uniformId) throws NacosException {
+        byte[] mainContent = buildMainContent(skill, uniformId);
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
+                skill.getName(), version, NacosConfigAiResourceStorage.getMainFilePath());
+        storageRouter.route(mainKey).save(mainKey, mainContent);
         if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skill.getName(), resource.getType(), resource.getName());
-                ConfigForm resourceConfigForm = buildResourceConfigForm(resource, namespaceId, versionGroup,
-                        resourceConfigInfo.getDataId(), uniformId);
-                StorageKey resourceKey = nacosConfigKey(namespaceId, versionGroup, resourceConfigInfo.getDataId());
-                storageRouter.route(resourceKey).save(resourceKey, resourceConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
+                String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
+                byte[] content = buildResourceContent(resource, uniformId);
+                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
+                        namespaceId, skill.getName(), version, path);
+                storageRouter.route(resourceKey).save(resourceKey, content);
             }
         }
-        syncEffectService.toSync(mainConfigForm, System.currentTimeMillis());
     }
 
     private List<PublishPipelineService> findSkillPipelines() {
@@ -926,9 +899,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     private Skill loadSkillFromStorage(String namespaceId, String skillName, String version) throws NacosException {
-        String versionGroup = buildSkillVersionGroup(skillName, version);
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        StorageKey mainKey = nacosConfigKey(namespaceId, versionGroup, mainConfigInfo.getDataId());
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
+                skillName, version, NacosConfigAiResourceStorage.getMainFilePath());
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
         if (mainBytes == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -947,9 +919,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
             for (SkillResourceRef resourceRef : mainConfig.getResources()) {
                 String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skillName, resourceRef.getType(), resourceRef.getName());
-                StorageKey resourceKey = nacosConfigKey(namespaceId, versionGroup, resourceConfigInfo.getDataId());
+                String path = NacosConfigAiResourceStorage.getResourceFilePath(resourceRef.getType(), resourceRef.getName());
+                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
+                        namespaceId, skillName, version, path);
                 byte[] resourceBytes = storageRouter.route(resourceKey).get(resourceKey);
                 if (resourceBytes != null) {
                     SkillResource resource = JacksonUtils.toObj(new String(resourceBytes, StandardCharsets.UTF_8), SkillResource.class);
@@ -962,17 +934,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     private void deleteSkillStorageForVersion(String namespaceId, String skillName, String version) throws NacosException {
-        String versionGroup = buildSkillVersionGroup(skillName, version);
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        StorageKey mainKey = nacosConfigKey(namespaceId, versionGroup, mainConfigInfo.getDataId());
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
+                skillName, version, NacosConfigAiResourceStorage.getMainFilePath());
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
         if (mainBytes != null) {
             SkillMainConfig mainConfig = JacksonUtils.toObj(new String(mainBytes, StandardCharsets.UTF_8), SkillMainConfig.class);
             if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
                 for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                            skillName, resourceRef.getType(), resourceRef.getName());
-                    StorageKey resourceKey = nacosConfigKey(namespaceId, versionGroup, resourceConfigInfo.getDataId());
+                    String path = NacosConfigAiResourceStorage.getResourceFilePath(resourceRef.getType(), resourceRef.getName());
+                    StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
+                            namespaceId, skillName, version, path);
                     storageRouter.route(resourceKey).delete(resourceKey);
                 }
             }

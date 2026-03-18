@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -49,12 +47,7 @@ public class SkillRemoteHandler implements SkillHandler {
     public SkillRemoteHandler(NacosMaintainerClientHolder clientHolder) {
         this.clientHolder = clientHolder;
     }
-    
-    @Override
-    public void registerSkill(Skill skill, SkillDetailForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().registerSkill(form.getNamespaceId(), skill);
-    }
-    
+
     @Override
     public Skill getSkill(SkillForm form) throws NacosException {
         return clientHolder.getAiMaintainerService().getSkillDetail(
@@ -70,12 +63,7 @@ public class SkillRemoteHandler implements SkillHandler {
                 form.getSkillName()
         );
     }
-    
-    @Override
-    public void updateSkill(Skill skill, SkillUpdateForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().updateSkill(form.getNamespaceId(), skill);
-    }
-    
+
     @Override
     public Page<SkillBasicInfo> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return clientHolder.getAiMaintainerService().listSkills(

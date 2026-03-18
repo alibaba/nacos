@@ -17,10 +17,8 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -40,7 +38,6 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,22 +62,6 @@ public class ConsoleSkillController {
     }
     
     /**
-     * Register skill.
-     *
-     * @param form the skill detail form to register
-     * @return result of the registration operation
-     * @throws NacosException if the skill registration fails
-     */
-    @PostMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> registerSkill(SkillDetailForm form) throws NacosException {
-        form.validate();
-        Skill skill = SkillRequestUtil.parseSkill(form);
-        skillProxy.registerSkill(skill, form);
-        return Result.success("ok");
-    }
-    
-    /**
      * Get skill.
      *
      * @param form the skill form to get
@@ -92,22 +73,6 @@ public class ConsoleSkillController {
     public Result<Skill> getSkill(SkillForm form) throws NacosException {
         form.validate();
         return Result.success(skillProxy.getSkill(form));
-    }
-    
-    /**
-     * Update skill.
-     *
-     * @param form the skill update form to update
-     * @return result of the update operation
-     * @throws NacosException if the skill update fails
-     */
-    @PutMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<String> updateSkill(SkillUpdateForm form) throws NacosException {
-        form.validate();
-        Skill skill = SkillRequestUtil.parseSkill(form);
-        skillProxy.updateSkill(skill, form);
-        return Result.success("ok");
     }
     
     /**

@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
@@ -42,27 +40,12 @@ public class SkillProxy {
         this.skillHandler = skillHandler;
     }
     
-    /**
-     * Register skill.
-     *
-     * @param skill skill to register
-     * @param form skill detail form
-     * @throws NacosException exception when register skill
-     */
-    public void registerSkill(Skill skill, SkillDetailForm form) throws NacosException {
-        skillHandler.registerSkill(skill, form);
-    }
-    
     public Skill getSkill(SkillForm form) throws NacosException {
         return skillHandler.getSkill(form);
     }
     
     public void deleteSkill(SkillForm form) throws NacosException {
         skillHandler.deleteSkill(form);
-    }
-    
-    public void updateSkill(Skill skill, SkillUpdateForm form) throws NacosException {
-        skillHandler.updateSkill(skill, form);
     }
     
     public Page<SkillBasicInfo> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {

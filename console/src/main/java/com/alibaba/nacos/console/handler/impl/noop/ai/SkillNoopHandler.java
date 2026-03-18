@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -43,13 +41,7 @@ public class SkillNoopHandler implements SkillHandler {
     
     private static final String SKILL_NOT_ENABLED_MESSAGE = 
             "Nacos AI Skill module and API required both `naming` and `config` module.";
-    
-    @Override
-    public void registerSkill(Skill skill, SkillDetailForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                SKILL_NOT_ENABLED_MESSAGE);
-    }
-    
+
     @Override
     public Skill getSkill(SkillForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
@@ -61,13 +53,7 @@ public class SkillNoopHandler implements SkillHandler {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 SKILL_NOT_ENABLED_MESSAGE);
     }
-    
-    @Override
-    public void updateSkill(Skill skill, SkillUpdateForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                SKILL_NOT_ENABLED_MESSAGE);
-    }
-    
+
     @Override
     public Page<SkillBasicInfo> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,

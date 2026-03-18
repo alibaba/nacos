@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -51,11 +49,6 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public void registerSkill(Skill skill, SkillDetailForm form) throws NacosException {
-        skillOperationService.registerSkill(skill, form.getNamespaceId());
-    }
-    
-    @Override
     public Skill getSkill(SkillForm form) throws NacosException {
         return skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName());
     }
@@ -63,11 +56,6 @@ public class SkillInnerHandler implements SkillHandler {
     @Override
     public void deleteSkill(SkillForm form) throws NacosException {
         skillOperationService.deleteSkill(form.getNamespaceId(), form.getSkillName());
-    }
-    
-    @Override
-    public void updateSkill(Skill skill, SkillUpdateForm form) throws NacosException {
-        skillOperationService.updateSkill(skill, form.getNamespaceId());
     }
     
     @Override
