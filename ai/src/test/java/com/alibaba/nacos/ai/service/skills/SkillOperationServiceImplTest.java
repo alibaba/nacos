@@ -76,7 +76,7 @@ class SkillOperationServiceImplTest {
     
     @Mock
     private PublishPipelineExecutor publishPipelineExecutor;
-    
+
     @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
 
