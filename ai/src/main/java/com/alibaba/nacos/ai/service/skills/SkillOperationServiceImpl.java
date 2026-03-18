@@ -114,34 +114,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
     }
     
-    @Override
-    public String registerSkill(Skill skill, String namespaceId) throws NacosException {
-        // 1. Validate skill name (only allow English letters, underscore, hyphen)
-        if (StringUtils.isBlank(skill.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill name is required");
-        }
-        if (!skill.getName().matches(SKILL_NAME_PATTERN)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill name can only contain English letters, underscore, and hyphen");
-        }
-
+    private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
+            boolean isNewSkill) throws NacosException {
         String skillName = skill.getName();
-        AiResource existed = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
-        if (existed != null) {
-            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
-                    String.format("Skill name %s already exists", skillName));
-        }
-
-        String version = "v1";
         long uniformId = System.currentTimeMillis();
         String versionGroup = buildSkillVersionGroup(skillName, version);
 
-        // 2. Build main config (skill.json) for version group
+        // 1) write storage for draft version
         SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
         ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, versionGroup, uniformId);
 
-        // 3. Save configs via Storage (version scoped)
         StorageKey mainKey = nacosConfigKey(namespaceId, versionGroup, mainConfigInfo.getDataId());
         storageRouter.route(mainKey).save(mainKey, mainConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
 
@@ -159,34 +141,40 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
 
-        // 4. Insert ai_resource_version
+        // 2) insert draft version row
         AiResourceVersion versionRow = new AiResourceVersion();
         versionRow.setNamespaceId(namespaceId);
         versionRow.setName(skillName);
         versionRow.setType(RESOURCE_TYPE_SKILL);
         versionRow.setAuthor(DEFAULT_AUTHOR);
-        versionRow.setStatus(VERSION_STATUS_ONLINE);
+        versionRow.setStatus(VERSION_STATUS_DRAFT);
         versionRow.setVersion(version);
         versionRow.setDesc(skill.getDescription());
         versionRow.setStorage(buildStorageJson(versionGroup));
         aiResourceVersionPersistService.insert(versionRow);
 
-        // 5. Insert ai_resource meta
-        AiResource meta = new AiResource();
-        meta.setNamespaceId(namespaceId);
-        meta.setName(skillName);
-        meta.setType(RESOURCE_TYPE_SKILL);
-        meta.setStatus(META_STATUS_ENABLE);
-        meta.setDesc(skill.getDescription());
-        SkillVersionInfo info = new SkillVersionInfo();
-        info.setOnlineCnt(1);
-        info.setLabels(Map.of("latest", version));
-        meta.setVersionInfo(JacksonUtils.toJson(info));
-        meta.setMetaVersion(1L);
-        aiResourcePersistService.insert(meta);
+        // 3) create or update meta for editingVersion
+        if (isNewSkill) {
+            AiResource meta = new AiResource();
+            meta.setNamespaceId(namespaceId);
+            meta.setName(skillName);
+            meta.setType(RESOURCE_TYPE_SKILL);
+            meta.setStatus(META_STATUS_ENABLE);
+            meta.setDesc(skill.getDescription());
+            SkillVersionInfo info = new SkillVersionInfo();
+            info.setEditingVersion(version);
+            info.setOnlineCnt(0);
+            info.setLabels(new HashMap<>(4));
+            meta.setVersionInfo(JacksonUtils.toJson(info));
+            meta.setMetaVersion(1L);
+            aiResourcePersistService.insert(meta);
+        } else if (existedMeta != null) {
+            SkillVersionInfo info = requireVersionInfo(existedMeta);
+            info.setEditingVersion(version);
+            updateMetaVersionInfoCas(namespaceId, existedMeta, info);
+        }
 
         syncEffectService.toSync(mainConfigForm, System.currentTimeMillis());
-        return skillName;
     }
     
     @Override
@@ -202,44 +190,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill version not found: " + skillName);
         }
         return loadSkillFromStorage(namespaceId, skillName, version);
-    }
-    
-    @Override
-    public void updateSkill(Skill skill, String namespaceId) throws NacosException {
-        String skillName = skill.getName();
-        AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
-        if (meta == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill not found: " + skillName);
-        }
-        String version = resolveVersion(meta, null, null);
-        if (StringUtils.isBlank(version)) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill version not found: " + skillName);
-        }
-
-        String versionGroup = buildSkillVersionGroup(skillName, version);
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        StorageKey mainKey = nacosConfigKey(namespaceId, versionGroup, mainConfigInfo.getDataId());
-        byte[] existingMainBytes = storageRouter.route(mainKey).get(mainKey);
-        if (existingMainBytes == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill storage not found: " + skillName);
-        }
-
-        SkillMainConfig existingMainConfig = JacksonUtils.toObj(new String(existingMainBytes, StandardCharsets.UTF_8),
-                SkillMainConfig.class);
-
-        long uniformId = System.currentTimeMillis();
-        ConfigForm mainConfigForm = buildMainConfigForm(skill, namespaceId, versionGroup, uniformId);
-        storageRouter.route(mainKey).save(mainKey, mainConfigForm.getContent().getBytes(StandardCharsets.UTF_8));
-
-        updateSkillResourcesInGroup(storageRouter, skill, namespaceId, versionGroup, uniformId);
-        deleteRemovedResourcesInGroup(storageRouter, skillName, namespaceId, versionGroup, existingMainConfig,
-                skill.getResource() == null ? Map.of() : skill.getResource());
-
-        bumpMetaDescription(namespaceId, meta, skill.getDescription());
-        syncEffectService.toSync(mainConfigForm, System.currentTimeMillis());
     }
     
     private void updateSkillResourcesInGroup(AiResourceStorageRouter router, Skill skill, String namespaceId,
@@ -336,7 +286,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
-        return registerSkill(skill, namespaceId);
+        if (skill == null || StringUtils.isBlank(skill.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
+        }
+        String name = skill.getName();
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            // New skill: create meta row and first draft version v1
+            String version = "v1";
+            createDraftWithSkill(namespaceId, skill, version, null, true);
+            return name;
+        }
+
+        SkillVersionInfo info = requireVersionInfo(meta);
+        if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    "There is already a working version (editing/reviewing), cannot upload");
+        }
+
+        String newVersion = nextVersion(namespaceId, name);
+        createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
+        return name;
     }
 
     @Override

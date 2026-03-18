@@ -31,16 +31,6 @@ import java.util.Map;
 public interface SkillOperationService {
     
     /**
-     * Register a new skill.
-     *
-     * @param skill skill object
-     * @param namespaceId namespace ID
-     * @return skill ID
-     * @throws NacosException if registration failed
-     */
-    String registerSkill(Skill skill, String namespaceId) throws NacosException;
-    
-    /**
      * Get skill detail.
      *
      * @param namespaceId namespace ID
@@ -49,15 +39,6 @@ public interface SkillOperationService {
      * @throws NacosException if skill not found
      */
     Skill getSkillDetail(String namespaceId, String skillName) throws NacosException;
-    
-    /**
-     * Update skill.
-     *
-     * @param skill skill object
-     * @param namespaceId namespace ID
-     * @throws NacosException if update failed
-     */
-    void updateSkill(Skill skill, String namespaceId) throws NacosException;
     
     /**
      * Delete skill.

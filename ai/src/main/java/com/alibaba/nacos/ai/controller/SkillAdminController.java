@@ -72,22 +72,6 @@ public class SkillAdminController {
     }
     
     /**
-     * Register skill.
-     *
-     * @param form the skill detail form to register
-     * @return result of the registration operation
-     * @throws NacosException if the skill registration fails
-     */
-    @PostMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> registerSkill(SkillDetailForm form) throws NacosException {
-        form.validate();
-        Skill skill = SkillRequestUtil.parseSkill(form);
-        String skillName = skillOperationService.registerSkill(skill, form.getNamespaceId());
-        return Result.success(skillName);
-    }
-    
-    /**
      * Get skill.
      *
      * @param form the skill form to get
@@ -100,22 +84,6 @@ public class SkillAdminController {
         form.validate();
         return Result.success(
                 skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
-    }
-    
-    /**
-     * Update skill.
-     *
-     * @param form the skill update form to update
-     * @return result of the update operation
-     * @throws NacosException if the skill update fails
-     */
-    @PutMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> updateSkill(SkillUpdateForm form) throws NacosException {
-        form.validate();
-        Skill skill = SkillRequestUtil.parseSkill(form);
-        skillOperationService.updateSkill(skill, form.getNamespaceId());
-        return Result.success("ok");
     }
     
     /**

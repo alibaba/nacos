@@ -164,8 +164,14 @@ class SkillOperationServiceImplTest {
         // Given
         Skill skill = createValidSkill();
         String namespaceId = "test-namespace";
+        com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
+        meta.setName(skill.getName());
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"onlineCnt\":0}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skill.getName()), anyString()))
-                .thenReturn(new com.alibaba.nacos.ai.model.AiResource());
+                .thenReturn(meta);
         
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
