@@ -36,12 +36,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillResource;
-import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -59,19 +56,16 @@ import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
+import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -100,25 +94,26 @@ public class NacosAiService implements AiService {
     
     private final AiChangeNotifier aiChangeNotifier;
     
-    private final ConfigService configService;
+    private final ConfigService skillConfigService;
     
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
-        this.configService = NacosFactory.createConfigService(clientProperties.asProperties());
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         String transportMode = clientProperties.getProperty(AiConstants.AI_TRANSPORT_MODE,
                 AiConstants.AI_TRANSPORT_MODE_GRPC);
         if (AiConstants.AI_TRANSPORT_MODE_HTTP.equalsIgnoreCase(transportMode)) {
             LOGGER.info("AI transport mode is HTTP, using AiHttpClientProxy for prompt operations.");
-            this.aiClientProxy = new AiHttpClientProxy(namespaceId, clientProperties);
+            AiHttpClientProxy httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
+            this.aiClientProxy = httpProxy;
         } else {
             this.aiClientProxy = this.grpcClient;
         }
+        this.skillConfigService = new NacosConfigService(properties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
-        this.skillCacheHolder = new NacosSkillCacheHolder(configService, this.namespaceId);
+        this.skillCacheHolder = new NacosSkillCacheHolder(this.skillConfigService, this.namespaceId);
         this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
@@ -369,141 +364,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        
-        // Build main config info
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        
-        // Query main config (skill.json)
-        String mainConfigContent;
-        try {
-            mainConfigContent = configService.getConfig(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), 3000);
-        } catch (NacosException e) {
-            throw new NacosException(NacosException.NOT_FOUND,
-                    "Skill main configuration not found for skillName: " + skillName + ", error: " + e.getMessage());
-        }
-        
-        if (StringUtils.isBlank(mainConfigContent)) {
-            throw new NacosException(NacosException.NOT_FOUND,
-                    "Skill main configuration not found for skillName: " + skillName);
-        }
-        
-        // Parse main config
-        SkillMainConfig mainConfig;
-        try {
-            mainConfig = JacksonUtils.toObj(mainConfigContent, SkillMainConfig.class);
-        } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR,
-                    "Failed to parse  skill main configuration: " + e.getMessage(), e);
-        }
-        
-        // Build Skill object
-        Skill skill = new Skill();
-        skill.setNamespaceId(this.namespaceId);
-        skill.setName(mainConfig.getName());
-        skill.setDescription(mainConfig.getDescription());
-        skill.setInstruction(mainConfig.getInstruction());
-        
-        // Query all Resource configs
-        Map<String, SkillResource> resourceMap = new HashMap<>(
-                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
-        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
-            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                // Generate resourceId from type and name
-                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                
-                // Query resource config using resourceRef info
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skillName, resourceRef.getType(), resourceRef.getName());
-                String resourceContent;
-                try {
-                    resourceContent = configService.getConfig(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), 3000);
-                } catch (NacosException e) {
-                    LOGGER.warn("Resource configuration not found: dataId={}, group={}, error={}",
-                            resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
-                    continue;
-                }
-                
-                if (StringUtils.isNotBlank(resourceContent)) {
-                    try {
-                        SkillResource resource = JacksonUtils.toObj(resourceContent, SkillResource.class);
-                        // Use resource name as key (from resource object, not resourceId)
-                        resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to parse resource configuration: dataId={}, group={}, error={}",
-                                resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
-                    }
-                }
-            }
-        }
-        skill.setResource(resourceMap);
-        
-        return skill;
-    }
-    
-    /**
-     * Skill main config (from skill.json).
-     */
-    private static class SkillMainConfig {
-        private String name;
-        private String description;
-        private String instruction;
-        private List<SkillResourceRef> resources;
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void setName(String name) {
-            this.name = name;
-        }
-        
-        public String getDescription() {
-            return description;
-        }
-        
-        public void setDescription(String description) {
-            this.description = description;
-        }
-        
-        public String getInstruction() {
-            return instruction;
-        }
-        
-        public void setInstruction(String instruction) {
-            this.instruction = instruction;
-        }
-        
-        public List<SkillResourceRef> getResources() {
-            return resources;
-        }
-        
-        public void setResources(List<SkillResourceRef> resources) {
-            this.resources = resources;
-        }
-    }
-    
-    /**
-     * Skill resource reference (in skill.json).
-     */
-    private static class SkillResourceRef {
-        private String name;
-        private String type;
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void setName(String name) {
-            this.name = name;
-        }
-        
-        public String getType() {
-            return type;
-        }
-        
-        public void setType(String type) {
-            this.type = type;
-        }
+        return skillCacheHolder.querySkill(skillName);
     }
     
     @Override
@@ -622,6 +483,7 @@ public class NacosAiService implements AiService {
         if (this.aiClientProxy != this.grpcClient) {
             this.aiClientProxy.shutdown();
         }
+        this.skillConfigService.shutDown();
         this.mcpServerCacheHolder.shutdown();
         this.skillCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();

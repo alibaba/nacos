@@ -37,7 +37,8 @@ import java.nio.charset.StandardCharsets;
  * Nacos Config based {@link AiResourceStorage} implementation.
  *
  * <p>StorageKey.key format (for Skill resources): {@code namespaceId:skillName:version:filePath}.
- * File path convention: main = {@link #getMainFilePath()}, resources = {@link #getResourceFilePath(String, String)}.</p>
+ * File path convention: resources = {@link #getResourceFilePath(String, String)},
+ * manifest = {@link #buildManifestStorageKey(String, String, String)}.</p>
  */
 public class NacosConfigAiResourceStorage implements AiResourceStorage {
 
@@ -50,7 +51,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
      * @param namespaceId namespace
      * @param skillName   skill name
      * @param version     version
-     * @param filePath    file path (use {@link #getMainFilePath()} or {@link #getResourceFilePath(String, String)})
+     * @param filePath    file path (use {@link #getResourceFilePath(String, String)})
      * @return StorageKey for route and save/get/delete
      */
     public static StorageKey buildStorageKey(String provider, String namespaceId, String skillName, String version,
@@ -60,18 +61,25 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     }
 
     /**
-     * Main skill file path (dataId) for Nacos Config.
-     */
-    public static String getMainFilePath() {
-        return SkillUtils.SKILL_MAIN_DATA_ID;
-    }
-
-    /**
      * Resource file path (dataId) for Nacos Config, from type and name.
      */
     public static String getResourceFilePath(String type, String name) {
         String resourceId = SkillUtils.generateResourceId(type, name);
         return SkillUtils.RESOURCE_DATA_ID_PREFIX + resourceId + SkillUtils.RESOURCE_DATA_ID_SUFFIX;
+    }
+
+    /**
+     * Build StorageKey for skill manifest (index) config. The version part is left blank so the
+     * config group has no version suffix, i.e. group = "skill_{skillName}".
+     *
+     * @param provider    storage provider (e.g. {@link #TYPE})
+     * @param namespaceId namespace
+     * @param skillName   skill name
+     * @return StorageKey for manifest config
+     */
+    public static StorageKey buildManifestStorageKey(String provider, String namespaceId, String skillName) {
+        String key = namespaceId + ":" + skillName + "::" + SkillUtils.SKILL_INDEX_DATA_ID;
+        return new StorageKey(provider, key);
     }
 
     private final ConfigQueryChainService configQueryChainService;
@@ -158,8 +166,9 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             throw new IllegalArgumentException("StorageKey.key is blank");
         }
         String[] parts = storageKey.getKey().split(":", 4);
+        // parts[2] (version) may be blank for manifest keys
         if (parts.length != 4 || StringUtils.isBlank(parts[0]) || StringUtils.isBlank(parts[1])
-                || StringUtils.isBlank(parts[2]) || StringUtils.isBlank(parts[3])) {
+                || StringUtils.isBlank(parts[3])) {
             throw new IllegalArgumentException(
                     "Invalid StorageKey.key, expected namespaceId:skillName:version:filePath, got: "
                             + storageKey.getKey());
@@ -168,7 +177,12 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         String skillName = parts[1];
         String version = parts[2];
         String filePath = parts[3];
-        String group = SkillUtils.SKILL_GROUP_PREFIX + skillName + "__" + version;
+        String group;
+        if (StringUtils.isBlank(version)) {
+            group = SkillUtils.buildSkillGroup(skillName);
+        } else {
+            group = SkillUtils.buildSkillVersionGroup(skillName, version);
+        }
         String dataId = filePath;
         return new KeyParts(namespaceId, group, dataId);
     }
