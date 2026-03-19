@@ -17,13 +17,10 @@
 package com.alibaba.nacos.plugin.ai.storage;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorageBuilder;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>Upper layers (Skill/Prompt etc.) should only depend on this router and construct a {@link StorageKey}
  * with provider + opaque key, then delegate read/write to the router.</p>
  *
- * <p>Storage implementations are discovered via {@link NacosServiceLoader} on {@link AiResourceStorageBuilder}.</p>
+ * <p>Storage implementations are registered via {@link #join(AiResourceStorage)} by external initializer
+ * (e.g. {@code AiResourceStorageInitializer} in ai module) after Spring context is ready.</p>
  *
  * @author nacos
  * @since 3.2.0
@@ -46,7 +44,7 @@ public class AiResourceStorageRouter {
     private static final Map<String, AiResourceStorage> STORAGES_BY_TYPE = new ConcurrentHashMap<>(8);
 
     private AiResourceStorageRouter() {
-        loadStoragesBySpi();
+        // Storage implementations are registered via join() by external initializer
     }
 
     /**
@@ -69,11 +67,6 @@ public class AiResourceStorageRouter {
             throw new IllegalArgumentException("StorageKey.provider is blank");
         }
         AiResourceStorage storage = STORAGES_BY_TYPE.get(storageKey.getProvider());
-        if (storage == null) {
-            // Retry: Spring context may not have been ready during initial SPI load
-            loadStoragesBySpi();
-            storage = STORAGES_BY_TYPE.get(storageKey.getProvider());
-        }
         if (storage == null) {
             throw new IllegalStateException("No AiResourceStorage for provider: " + storageKey.getProvider());
         }
@@ -103,21 +96,5 @@ public class AiResourceStorageRouter {
     @JustForTest
     public static synchronized void reset() {
         STORAGES_BY_TYPE.clear();
-        INSTANCE.loadStoragesBySpi();
-    }
-
-    private void loadStoragesBySpi() {
-        Collection<AiResourceStorageBuilder> builders = NacosServiceLoader.load(AiResourceStorageBuilder.class);
-        for (AiResourceStorageBuilder builder : builders) {
-            if (builder == null || StringUtils.isBlank(builder.type())) {
-                continue;
-            }
-            try {
-                STORAGES_BY_TYPE.put(builder.type(), builder.build());
-            } catch (Throwable ignored) {
-                // ignore broken storage builder
-            }
-        }
     }
 }
-
