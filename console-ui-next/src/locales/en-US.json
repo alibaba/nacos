@@ -65,6 +65,8 @@
     "back": "Back",
     "success": "Success",
     "failed": "Failed",
+    "legacyConsole": "Legacy Console",
+    "switchToLegacy": "Switch to legacy console",
     "collapse": "Collapse",
     "expand": "Expand",
     "mode": "Mode",

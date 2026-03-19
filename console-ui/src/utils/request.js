@@ -32,7 +32,9 @@ function goLogin() {
 }
 
 const request = () => {
-  const instance = axios.create();
+  const instance = axios.create({
+    baseURL: '/',
+  });
 
   instance.interceptors.request.use(
     config => {

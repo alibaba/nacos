@@ -65,6 +65,8 @@
     "back": "返回",
     "success": "操作成功",
     "failed": "操作失败",
+    "legacyConsole": "旧版控制台",
+    "switchToLegacy": "切换到旧版控制台",
     "collapse": "收起侧栏",
     "expand": "展开侧栏",
     "mode": "模式",

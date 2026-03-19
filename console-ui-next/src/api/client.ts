@@ -24,8 +24,12 @@ const SESSION_EXPIRED_MESSAGES = [
   'session expired!',
 ];
 
+// Compute API base URL: strip /next/ or /legacy/ prefix, then apply /nacos/ suffix
+const deployRoot = window.location.pathname.replace(/^\/(next|legacy)(\/|$)/, '/');
+const apiBaseURL = deployRoot.replace(/\/[^/]*$/, '/nacos/');
+
 const client = axios.create({
-  baseURL: window.location.pathname.replace(/\/[^/]*$/, '/nacos/'),
+  baseURL: apiBaseURL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded',

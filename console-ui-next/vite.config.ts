@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/next/' : '/',
   plugins: [react(), tailwindcss()],
   define: {
     // Polyfill Node.js `process` global for browser-incompatible libs (e.g. swagger2openapi)
@@ -58,4 +59,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

@@ -31,12 +31,16 @@ public class ConsoleModuleStateBuilder extends AbstractConsoleModuleStateBuilder
     
     private static final String CONSOLE_UI_ENABLED = "console_ui_enabled";
     
+    private static final String CONSOLE_UI_DEFAULT = "console_ui_default";
+    
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(CONSOLE_MODULE);
         try {
             boolean consoleUiEnabled = EnvUtil.getProperty("nacos.console.ui.enabled", Boolean.class, true);
             result.newState(CONSOLE_UI_ENABLED, consoleUiEnabled);
+            String defaultUi = EnvUtil.getProperty("nacos.console.ui.default", "next");
+            result.newState(CONSOLE_UI_DEFAULT, defaultUi);
         } catch (Exception ignored) {
         }
         return result;
