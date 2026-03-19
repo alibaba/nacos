@@ -177,6 +177,20 @@ export const routes: RouteObject[] = [
             element: lazyPage(() => import('@/pages/agentDetail')),
           },
           
+          // AgentSpec Management
+          {
+            path: 'agentspec',
+            element: lazyPage(() => import('@/pages/agentSpecManagement')),
+          },
+          {
+            path: 'agentspec/new',
+            element: lazyPage(() => import('@/pages/newAgentSpec')),
+          },
+          {
+            path: 'agentspec/:name',
+            element: lazyPage(() => import('@/pages/agentSpecDetail')),
+          },
+          
           // Skill Management
           {
             path: 'skillManagement',

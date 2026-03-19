@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -5,12 +6,22 @@ import path from 'path';
 
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? './' : '/',
+const isTest = !!process.env.VITEST;
+
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? './' : '/',
   plugins: [react(), tailwindcss()],
-  define: {
-    // Polyfill Node.js `process` global for browser-incompatible libs (e.g. swagger2openapi)
-    'process.env': {},
-    'process.version': JSON.stringify(''),
+  test: {
+    globals: true,
+    environment: 'node',
   },
+  define: isTest
+    ? {}
+    : {
+        // Polyfill Node.js `process` global for browser-incompatible libs (e.g. swagger2openapi)
+        'process.env': {},
+        'process.version': JSON.stringify(''),
+      },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
