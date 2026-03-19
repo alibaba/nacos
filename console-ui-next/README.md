@@ -1,53 +1,47 @@
 # Nacos Console UI (Next)
 
-新版 Nacos 控制台前端，基于 React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + Shadcn/ui 构建。
+The new Nacos console frontend, built with React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + Shadcn/ui.
 
-## 环境要求
+## Prerequisites
 
 - Node.js >= 18
 - npm >= 9
 
-## 安装依赖
+## Install Dependencies
 
 ```bash
 npm install
 ```
 
-国内可使用镜像加速：
-
-```bash
-npm install --registry=https://registry.npmmirror.com
-```
-
-## 本地开发
+## Local Development
 
 ```bash
 npm run dev
 ```
 
-访问 http://localhost:8000 ，Vite 代理规则：
+Visit http://localhost:8000. Vite proxy rules:
 
-- `/nacos/v1/auth/*`、`/nacos/v3/auth/*` 转发至 Admin Server（localhost:8848）
-- 其余 `/nacos/*` 转发至 Console Server（localhost:8080，去除 `/nacos` 前缀）
+- `/nacos/v1/auth/*`, `/nacos/v3/auth/*` are forwarded to Admin Server (localhost:8848)
+- All other `/nacos/*` requests are forwarded to Console Server (localhost:8080, with `/nacos` prefix stripped)
 
-## 构建
+## Build
 
 ```bash
 npm run build
 ```
 
-构建流程：`tsc -b`（TypeScript 类型检查）+ `vite build`（生产构建），产物输出到 `dist/` 目录。
+Build pipeline: `tsc -b` (TypeScript type checking) + `vite build` (production build). Output goes to the `dist/` directory.
 
-## 部署
+## Deploy
 
-将构建产物复制到后端静态资源目录：
+Copy build artifacts to the backend static resources directory:
 
 ```bash
 rm -rf ../console/src/main/resources/static/next/*
 cp -r dist/* ../console/src/main/resources/static/next/
 ```
 
-部署后目录结构：
+Deployed directory structure:
 
 ```
 console/src/main/resources/static/next/
@@ -59,10 +53,10 @@ console/src/main/resources/static/next/
 └── icons.svg
 ```
 
-## contextPath 适配
+## contextPath Adaptation
 
-构建产物使用相对路径（`./`），可适配任意 `nacos.console.contextPath` 配置值。无需针对不同 contextPath 重新构建。
+Build artifacts use relative paths (`./`), adapting to any `nacos.console.contextPath` configuration value. No rebuild is needed for different contextPath settings.
 
-## 代理配置
+## Proxy Configuration
 
-开发代理规则在 `vite.config.ts` 的 `server.proxy` 中配置。
+Development proxy rules are configured in `vite.config.ts` under `server.proxy`.

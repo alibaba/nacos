@@ -1,36 +1,30 @@
 # Nacos Console UI (Legacy)
 
-旧版 Nacos 控制台前端，基于 React + Webpack 4 构建。
+The legacy Nacos console frontend, built with React + Webpack 4.
 
-## 环境要求
+## Prerequisites
 
-- Node.js >= 14（推荐 14.x ~ 22.x）
+- Node.js >= 14 (recommended 14.x ~ 22.x)
 - npm
-- 全局安装 CLI 工具：
+- Global CLI tools:
 
 ```bash
 npm install -g cross-env webpack webpack-cli
 ```
 
-## 安装依赖
+## Install Dependencies
 
 ```bash
 npm install
 ```
 
-国内可使用镜像加速：
-
-```bash
-npm install --registry=https://registry.npmmirror.com
-```
-
-## 本地开发
+## Local Development
 
 ```bash
 npm start
 ```
 
-代理配置在 `build/webpack.dev.conf.js` 的 `proxy` 属性中修改：
+Proxy configuration is in `build/webpack.dev.conf.js` under the `proxy` property:
 
 ```js
 proxy: [{
@@ -41,26 +35,26 @@ proxy: [{
 }],
 ```
 
-## 构建
+## Build
 
 ```bash
 npm run build
 ```
 
-构建产物输出到 `dist/` 目录。
+Build output goes to the `dist/` directory.
 
-> 注：Node.js 17+ 版本需要 `--openssl-legacy-provider` 参数（已在 package.json 的 build 脚本中配置）。
+> Note: Node.js 17+ requires the `--openssl-legacy-provider` flag (already configured in the package.json build script).
 
-## 部署
+## Deploy
 
-将构建产物复制到后端静态资源目录：
+Copy build artifacts to the backend static resources directory:
 
 ```bash
 rm -rf ../console/src/main/resources/static/legacy/*
 cp -r dist/* ../console/src/main/resources/static/legacy/
 ```
 
-部署后目录结构：
+Deployed directory structure:
 
 ```
 console/src/main/resources/static/legacy/
@@ -69,6 +63,6 @@ console/src/main/resources/static/legacy/
 └── js/
 ```
 
-## contextPath 适配
+## contextPath Adaptation
 
-构建产物使用相对路径（`../`），可适配任意 `nacos.console.contextPath` 配置值。无需针对不同 contextPath 重新构建。
+Build artifacts use relative paths (`../`), adapting to any `nacos.console.contextPath` configuration value. No rebuild is needed for different contextPath settings.
