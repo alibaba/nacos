@@ -18,12 +18,10 @@ package com.alibaba.nacos.client.ai.cache;
 
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-
-import java.util.concurrent.Executor;
-import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.client.ai.event.SkillChangedEvent;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -39,31 +37,40 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 /**
  * Nacos AI module skill cache holder.
  *
+ * <p>Reads skill data from Nacos Config via {@link ConfigService}, leveraging its local cache
+ * and push notifications for real-time updates. The server writes a manifest config
+ * ({@code skill_index.json}) at group {@code skill_{name}} containing the current online
+ * version and file list. Each resource file is stored under group {@code skill_{name}__{version}}
+ * with the file path as dataId.</p>
+ *
  * @author nacos
  */
 public class NacosSkillCacheHolder implements Closeable {
-    
+
     private static final Logger LOGGER = LogUtils.logger(NacosSkillCacheHolder.class);
-    
+
+    private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
+
+    private static final long CONFIG_TIMEOUT = 3000L;
+
     private final ConfigService configService;
-    
+
     private final String namespaceId;
-    
+
     private final Map<String, Skill> skillCache;
-    
+
     private final Map<String, SkillSubscriptionInfo> subscriptionMap;
-    
+
     private final ObjectMapper objectMapper;
-    
+
     public NacosSkillCacheHolder(ConfigService configService, String namespaceId) {
         this.configService = configService;
         this.namespaceId = namespaceId;
@@ -73,9 +80,20 @@ public class NacosSkillCacheHolder implements Closeable {
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     /**
-     * Subscribe skill and start listening for configuration changes.
+     * Load skill from Nacos Config (leverages ConfigService local cache).
+     *
+     * @param skillName name of skill
+     * @return Skill object, null if skill not found or manifest missing
+     * @throws NacosException if error occurs
+     */
+    public Skill querySkill(String skillName) throws NacosException {
+        return loadSkillFromConfig(skillName);
+    }
+
+    /**
+     * Subscribe to skill changes via Nacos Config listeners.
      *
      * @param skillName name of skill
      * @return current Skill object, nullable if skill not found
@@ -86,67 +104,50 @@ public class NacosSkillCacheHolder implements Closeable {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Required parameter `skillName` not present");
         }
-        
-        // Check if already subscribed
+
         if (subscriptionMap.containsKey(skillName)) {
             return skillCache.get(skillName);
         }
-        
-        // Load skill initially
-        Skill skill = loadSkill(skillName);
-        
-        // Create subscription info
-        SkillSubscriptionInfo subscriptionInfo = new SkillSubscriptionInfo(skillName);
-        subscriptionInfo.setCurrentSkill(skill);
-        
-        // Build main config info
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        
-        // Add listener for main config
-        Listener mainConfigListener = new SkillConfigListener(skillName, true, null);
-        try {
-            configService.addListener(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), mainConfigListener);
-            subscriptionInfo.setMainConfigListener(mainConfigListener);
-        } catch (NacosException e) {
-            LOGGER.warn("Failed to add listener for main config: skillName={}, error={}", skillName, e.getMessage());
-        }
-        
-        // Add listeners for all resource configs
-        if (skill != null && skill.getResource() != null && !skill.getResource().isEmpty()) {
-            // Load main config to get resourceId mapping
-            SkillMainConfig mainConfig = loadMainConfig(skillName, mainConfigInfo.getGroup());
-            if (mainConfig != null && mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
-                for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                    // Generate resourceId from type and name
-                    String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                    
-                    // Build resource config info using resourceRef
-                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                            skillName, resourceRef.getType(), resourceRef.getName());
-                    Listener resourceListener = new SkillConfigListener(skillName, false, resourceId);
-                    try {
-                        configService.addListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), resourceListener);
-                        subscriptionInfo.getResourceListeners().put(resourceId, resourceListener);
-                    } catch (NacosException e) {
-                        LOGGER.warn("Failed to add listener for resource config: skillName={}, resourceId={}, error={}",
-                                skillName, resourceId, e.getMessage());
-                    }
-                }
-            }
-        }
-        
-        // Cache skill and subscription info
+
+        // Initial load
+        Skill skill = loadSkillFromConfig(skillName);
         if (skill != null) {
             skillCache.put(skillName, skill);
         }
-        subscriptionMap.put(skillName, subscriptionInfo);
-        
-        LOGGER.info("Subscribed skill: {}", skillName);
+
+        // Set up subscription
+        SkillSubscriptionInfo sub = new SkillSubscriptionInfo(skillName);
+        subscriptionMap.put(skillName, sub);
+
+        SkillIndex index = loadSkillIndex(skillName);
+        if (index != null && index.files != null) {
+            sub.currentVersion = index.version;
+            sub.currentFiles = index.files;
+            subscribeResources(sub, index);
+        }
+
+        // Listen to manifest for version changes
+        Listener manifestListener = new Listener() {
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                onManifestChanged(skillName, configInfo);
+            }
+        };
+        sub.manifestListener = manifestListener;
+        configService.addListener(SkillUtils.SKILL_INDEX_DATA_ID,
+                SkillUtils.buildSkillGroup(skillName), manifestListener);
+
+        LOGGER.info("Subscribed skill via config: {}", skillName);
         return skill;
     }
-    
+
     /**
-     * Unsubscribe skill and remove all listeners.
+     * Unsubscribe from skill changes.
      *
      * @param skillName name of skill
      */
@@ -154,287 +155,186 @@ public class NacosSkillCacheHolder implements Closeable {
         if (StringUtils.isBlank(skillName)) {
             return;
         }
-        
-        SkillSubscriptionInfo subscriptionInfo = subscriptionMap.remove(skillName);
-        if (subscriptionInfo == null) {
-            return;
-        }
-        
-        // Build main config info
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        
-        // Remove main config listener
-        if (subscriptionInfo.getMainConfigListener() != null) {
-            try {
-                configService.removeListener(mainConfigInfo.getDataId(), mainConfigInfo.getGroup(), 
-                        subscriptionInfo.getMainConfigListener());
-            } catch (Exception e) {
-                LOGGER.warn("Failed to remove listener for main config: skillName={}, error={}", skillName, e.getMessage());
+
+        SkillSubscriptionInfo sub = subscriptionMap.remove(skillName);
+        if (sub != null) {
+            if (sub.manifestListener != null) {
+                configService.removeListener(SkillUtils.SKILL_INDEX_DATA_ID,
+                        SkillUtils.buildSkillGroup(skillName), sub.manifestListener);
             }
+            unsubscribeResources(sub);
         }
-        
-        // Remove all resource config listeners
-        // Note: We need to load mainConfig to get resourceRef info for building ConfigInfo
-        SkillMainConfig mainConfig = loadMainConfig(skillName, mainConfigInfo.getGroup());
-        if (mainConfig != null && mainConfig.getResources() != null) {
-            Map<String, SkillResourceRef> resourceRefMap = new HashMap<>(
-                    mainConfig.getResources().size() > 0 ? (int) (mainConfig.getResources().size() / 0.75f + 1) : 16);
-            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                resourceRefMap.put(resourceId, resourceRef);
-            }
-            for (Map.Entry<String, Listener> entry : subscriptionInfo.getResourceListeners().entrySet()) {
-                String resourceId = entry.getKey();
-                Listener listener = entry.getValue();
-                SkillResourceRef resourceRef = resourceRefMap.get(resourceId);
-                if (resourceRef != null) {
-                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                            skillName, resourceRef.getType(), resourceRef.getName());
-                    try {
-                        configService.removeListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), listener);
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to remove listener for resource config: skillName={}, resourceId={}, error={}",
-                                skillName, resourceId, e.getMessage());
-                    }
-                }
-            }
-        }
-        
-        // Clear cache
         skillCache.remove(skillName);
-        
+
         LOGGER.info("Unsubscribed skill: {}", skillName);
     }
-    
-    /**
-     * Load skill from configuration.
-     *
-     * @param skillName name of skill
-     * @return Skill object, nullable if skill not found
-     */
-    private Skill loadSkill(String skillName) {
-        // Build main config info
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        
-        // Load main config
-        SkillMainConfig mainConfig = loadMainConfig(skillName, mainConfigInfo.getGroup());
-        if (mainConfig == null) {
-            return null;
-        }
-        
-        // Build Skill object
-        Skill skill = new Skill();
-        skill.setNamespaceId(this.namespaceId);
-        skill.setName(mainConfig.getName());
-        skill.setDescription(mainConfig.getDescription());
-        skill.setInstruction(mainConfig.getInstruction());
-        
-        // Query all Resource configs
-        Map<String, SkillResource> resourceMap = new HashMap<>(
-                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
-        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
-            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                // Generate resourceId from type and name
-                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                
-                // Query resource config using resourceRef info
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skillName, resourceRef.getType(), resourceRef.getName());
-                String resourceContent;
-                try {
-                    resourceContent = configService.getConfig(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), 3000);
-                } catch (NacosException e) {
-                    LOGGER.warn("Resource configuration not found: dataId={}, group={}, error={}",
-                            resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
-                    continue;
-                }
-                
-                if (StringUtils.isNotBlank(resourceContent)) {
-                    try {
-                        SkillResource resource = JacksonUtils.toObj(resourceContent, SkillResource.class);
-                        // Use resource name as key (from resource object, not resourceId)
-                        resourceMap.put(resource.getName() != null ? resource.getName() : resourceId, resource);
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to parse resource configuration: dataId={}, group={}, error={}",
-                                resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), e.getMessage());
-                    }
-                }
-            }
-        }
-        skill.setResource(resourceMap);
-        
-        return skill;
-    }
-    
-    /**
-     * Load main config from configuration.
-     *
-     * @param skillName name of skill
-     * @param skillGroup group of skill
-     * @return SkillMainConfig object, nullable if not found
-     */
-    private SkillMainConfig loadMainConfig(String skillName, String skillGroup) {
-        // Query main config (skill.json)
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        String mainConfigContent;
-        try {
-            mainConfigContent = configService.getConfig(mainConfigInfo.getDataId(), skillGroup, 3000);
-        } catch (NacosException e) {
-            LOGGER.warn("Skill main configuration not found: skillName={}, error={}", skillName, e.getMessage());
-            return null;
-        }
-        
-        if (StringUtils.isBlank(mainConfigContent)) {
-            LOGGER.warn("Skill main configuration is blank: skillName={}", skillName);
-            return null;
-        }
-        
-        // Parse main config
-        try {
-            return JacksonUtils.toObj(mainConfigContent, SkillMainConfig.class);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to parse skill main configuration: skillName={}, error={}", skillName, e.getMessage());
-            return null;
+
+    @Override
+    public void shutdown() throws NacosException {
+        for (String skillName : new java.util.HashSet<>(subscriptionMap.keySet())) {
+            unsubscribeSkill(skillName);
         }
     }
-    
-    /**
-     * Reload skill and check for changes.
-     *
-     * @param skillName name of skill
-     */
-    private void reloadSkill(String skillName) {
+
+    // ======================== Private methods ========================
+
+    private void onManifestChanged(String skillName, String configInfo) {
         try {
-            SkillSubscriptionInfo subscriptionInfo = subscriptionMap.get(skillName);
-            if (subscriptionInfo == null) {
+            SkillSubscriptionInfo sub = subscriptionMap.get(skillName);
+            if (sub == null) {
                 return;
             }
-            
-            Skill oldSkill = subscriptionInfo.getCurrentSkill();
-            Skill newSkill = loadSkill(skillName);
-            
+
+            SkillIndex newIndex = parseSkillIndex(configInfo);
+            String newVersion = newIndex != null ? newIndex.version : null;
+
+            if (!StringUtils.equals(sub.currentVersion, newVersion)) {
+                LOGGER.info("Skill {} manifest version changed: {} -> {}", skillName,
+                        sub.currentVersion, newVersion);
+                unsubscribeResources(sub);
+                if (newIndex != null && newIndex.files != null) {
+                    sub.currentVersion = newIndex.version;
+                    sub.currentFiles = newIndex.files;
+                    subscribeResources(sub, newIndex);
+                } else {
+                    sub.currentVersion = null;
+                    sub.currentFiles = null;
+                }
+            }
+
+            reloadAndPublish(skillName);
+        } catch (Exception e) {
+            LOGGER.error("Failed to handle manifest change for skill: {}", skillName, e);
+        }
+    }
+
+    private void onResourceChanged(String skillName) {
+        reloadAndPublish(skillName);
+    }
+
+    private void reloadAndPublish(String skillName) {
+        try {
+            Skill oldSkill = skillCache.get(skillName);
+            Skill newSkill = loadSkillFromConfig(skillName);
+
             if (isSkillChanged(oldSkill, newSkill)) {
-                LOGGER.info("Skill {} changed.", skillName);
-                subscriptionInfo.setCurrentSkill(newSkill);
+                LOGGER.info("Skill {} changed, publishing event.", skillName);
                 if (newSkill != null) {
                     skillCache.put(skillName, newSkill);
                 } else {
                     skillCache.remove(skillName);
                 }
-                
-                // Update resource listeners if resource list changed
-                updateResourceListeners(skillName, oldSkill, newSkill);
-                
-                // Publish change event
                 NotifyCenter.publishEvent(new SkillChangedEvent(skillName, newSkill));
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to reload skill: skillName={}, error={}", skillName, e.getMessage(), e);
+            LOGGER.error("Failed to reload skill: {}", skillName, e);
         }
     }
-    
-    /**
-     * Update resource listeners based on resource list changes.
-     *
-     * @param skillName name of skill
-     * @param oldSkill  old skill object
-     * @param newSkill  new skill object
-     */
-    private void updateResourceListeners(String skillName, Skill oldSkill, Skill newSkill) {
-        SkillSubscriptionInfo subscriptionInfo = subscriptionMap.get(skillName);
-        if (subscriptionInfo == null) {
+
+    private Skill loadSkillFromConfig(String skillName) throws NacosException {
+        SkillIndex index = loadSkillIndex(skillName);
+        if (index == null || StringUtils.isBlank(index.version) || index.files == null || index.files.isEmpty()) {
+            return null;
+        }
+
+        String versionGroup = SkillUtils.buildSkillVersionGroup(skillName, index.version);
+        Skill skill = new Skill();
+        skill.setNamespaceId(namespaceId);
+        Map<String, SkillResource> resourceMap = new HashMap<>(index.files.size());
+
+        for (String filePath : index.files) {
+            String content = configService.getConfig(filePath, versionGroup, CONFIG_TIMEOUT);
+            if (StringUtils.isBlank(content)) {
+                continue;
+            }
+            SkillResource resource = JacksonUtils.toObj(content, SkillResource.class);
+            if (resource == null) {
+                continue;
+            }
+
+            if (SKILL_MD_RESOURCE_NAME.equals(resource.getName())) {
+                Map<String, Object> metadata = resource.getMetadata();
+                if (metadata != null) {
+                    skill.setName((String) metadata.get("name"));
+                    skill.setDescription((String) metadata.get("description"));
+                    skill.setInstruction((String) metadata.get("instruction"));
+                }
+            } else {
+                String resourceId = SkillUtils.generateResourceId(resource.getType(), resource.getName());
+                resourceMap.put(resourceId, resource);
+            }
+        }
+
+        skill.setResource(resourceMap);
+        return skill;
+    }
+
+    private SkillIndex loadSkillIndex(String skillName) throws NacosException {
+        String group = SkillUtils.buildSkillGroup(skillName);
+        String indexContent = configService.getConfig(SkillUtils.SKILL_INDEX_DATA_ID, group, CONFIG_TIMEOUT);
+        return parseSkillIndex(indexContent);
+    }
+
+    private static SkillIndex parseSkillIndex(String json) {
+        if (StringUtils.isBlank(json)) {
+            return null;
+        }
+        try {
+            return JacksonUtils.toObj(json, SkillIndex.class);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse skill index: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private void subscribeResources(SkillSubscriptionInfo sub, SkillIndex index) {
+        if (index.files == null || index.files.isEmpty() || StringUtils.isBlank(index.version)) {
             return;
         }
-        
-        SkillUtils.ConfigInfo mainConfigInfo = SkillUtils.buildSkillMainConfigInfo(skillName);
-        
-        // Load main configs to get resourceId mappings
-        SkillMainConfig oldMainConfig = oldSkill != null ? loadMainConfig(skillName, mainConfigInfo.getGroup()) : null;
-        SkillMainConfig newMainConfig = newSkill != null ? loadMainConfig(skillName, mainConfigInfo.getGroup()) : null;
-        
-        int oldResourceSize = oldMainConfig != null && oldMainConfig.getResources() != null 
-                ? oldMainConfig.getResources().size() : 0;
-        int newResourceSize = newMainConfig != null && newMainConfig.getResources() != null 
-                ? newMainConfig.getResources().size() : 0;
-        
-        Set<String> oldResourceIds = new HashSet<>(oldResourceSize > 0 ? (int) (oldResourceSize / 0.75f + 1) : 16);
-        Map<String, SkillResourceRef> oldResourceRefMap = new HashMap<>(
-                oldResourceSize > 0 ? (int) (oldResourceSize / 0.75f + 1) : 16);
-        if (oldMainConfig != null && oldMainConfig.getResources() != null) {
-            for (SkillResourceRef ref : oldMainConfig.getResources()) {
-                String resourceId = SkillUtils.generateResourceId(ref.getType(), ref.getName());
-                oldResourceIds.add(resourceId);
-                oldResourceRefMap.put(resourceId, ref);
-            }
-        }
-        Set<String> newResourceIds = new HashSet<>(newResourceSize > 0 ? (int) (newResourceSize / 0.75f + 1) : 16);
-        Map<String, SkillResourceRef> newResourceRefMap = new HashMap<>(
-                newResourceSize > 0 ? (int) (newResourceSize / 0.75f + 1) : 16);
-        if (newMainConfig != null && newMainConfig.getResources() != null) {
-            for (SkillResourceRef ref : newMainConfig.getResources()) {
-                String resourceId = SkillUtils.generateResourceId(ref.getType(), ref.getName());
-                newResourceIds.add(resourceId);
-                newResourceRefMap.put(resourceId, ref);
-            }
-        }
-        
-        // Remove listeners for deleted resources
-        Set<String> toRemove = new HashSet<>(oldResourceIds);
-        toRemove.removeAll(newResourceIds);
-        for (String resourceId : toRemove) {
-            Listener listener = subscriptionInfo.getResourceListeners().remove(resourceId);
-            if (listener != null) {
-                SkillResourceRef resourceRef = oldResourceRefMap.get(resourceId);
-                if (resourceRef != null) {
-                    SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                            skillName, resourceRef.getType(), resourceRef.getName());
-                    try {
-                        configService.removeListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), listener);
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to remove listener for deleted resource: skillName={}, resourceId={}, error={}",
-                                skillName, resourceId, e.getMessage());
-                    }
+        String versionGroup = SkillUtils.buildSkillVersionGroup(sub.skillName, index.version);
+        sub.resourceGroup = versionGroup;
+        for (String filePath : index.files) {
+            Listener listener = new Listener() {
+                @Override
+                public Executor getExecutor() {
+                    return null;
                 }
-            }
-        }
-        
-        // Add listeners for new resources
-        Set<String> toAdd = new HashSet<>(newResourceIds);
-        toAdd.removeAll(oldResourceIds);
-        for (String resourceId : toAdd) {
-            SkillResourceRef resourceRef = newResourceRefMap.get(resourceId);
-            if (resourceRef != null) {
-                SkillUtils.ConfigInfo resourceConfigInfo = SkillUtils.buildSkillResourceConfigInfo(
-                        skillName, resourceRef.getType(), resourceRef.getName());
-                Listener resourceListener = new SkillConfigListener(skillName, false, resourceId);
-                try {
-                    configService.addListener(resourceConfigInfo.getDataId(), resourceConfigInfo.getGroup(), resourceListener);
-                    subscriptionInfo.getResourceListeners().put(resourceId, resourceListener);
-                } catch (NacosException e) {
-                    LOGGER.warn("Failed to add listener for new resource: skillName={}, resourceId={}, error={}",
-                            skillName, resourceId, e.getMessage());
+
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                    onResourceChanged(sub.skillName);
                 }
+            };
+            try {
+                configService.addListener(filePath, versionGroup, listener);
+                sub.resourceListeners.put(filePath, listener);
+            } catch (NacosException e) {
+                LOGGER.warn("Failed to add listener for {}:{}", versionGroup, filePath, e);
             }
         }
     }
-    
-    /**
-     * Check if skill has changed by comparing JSON serialization.
-     *
-     * @param oldSkill old skill object
-     * @param newSkill new skill object
-     * @return true if changed, false otherwise
-     */
+
+    private void unsubscribeResources(SkillSubscriptionInfo sub) {
+        if (StringUtils.isBlank(sub.resourceGroup)) {
+            return;
+        }
+        for (Map.Entry<String, Listener> entry : sub.resourceListeners.entrySet()) {
+            configService.removeListener(entry.getKey(), sub.resourceGroup, entry.getValue());
+        }
+        sub.resourceListeners.clear();
+        sub.resourceGroup = null;
+    }
+
     private boolean isSkillChanged(Skill oldSkill, Skill newSkill) {
         try {
             String newJson = objectMapper.writeValueAsString(newSkill);
             if (null == oldSkill) {
-                LOGGER.info("init new skill: {} -> {}", newSkill != null ? newSkill.getName() : "null", newJson);
+                LOGGER.info("Init new skill: {} -> {}", newSkill != null ? newSkill.getName() : "null", newJson);
                 return true;
             }
             String oldJson = objectMapper.writeValueAsString(oldSkill);
             if (!StringUtils.equals(oldJson, newJson)) {
-                LOGGER.info("skill changed: {} -> {}", oldJson, newJson);
+                LOGGER.info("Skill changed: {} -> {}", oldJson, newJson);
                 return true;
             }
         } catch (JsonProcessingException e) {
@@ -442,153 +342,48 @@ public class NacosSkillCacheHolder implements Closeable {
         }
         return false;
     }
-    
-    @Override
-    public void shutdown() throws NacosException {
-        // Unsubscribe all skills
-        Set<String> skillNames = new HashSet<>(subscriptionMap.keySet());
-        for (String skillName : skillNames) {
-            unsubscribeSkill(skillName);
-        }
-    }
-    
-    /**
-     * Skill configuration listener.
-     */
-    private class SkillConfigListener implements Listener {
-        
-        private final String skillName;
-        
-        private final boolean isMainConfig;
-        
-        private final String resourceName;
-        
-        public SkillConfigListener(String skillName, boolean isMainConfig, String resourceName) {
-            this.skillName = skillName;
-            this.isMainConfig = isMainConfig;
-            this.resourceName = resourceName;
-        }
-        
-        @Override
-        public Executor getExecutor() {
-            return null;
-        }
-        
-        @Override
-        public void receiveConfigInfo(String configInfo) {
-            LOGGER.info("Skill configuration changed: skillName={}, isMainConfig={}, resourceName={}",
-                    skillName, isMainConfig, resourceName);
-            // Reload skill when any configuration changes
-            reloadSkill(skillName);
-        }
-    }
-    
-    /**
-     * Skill subscription information.
-     */
+
+    // ======================== Inner classes ========================
+
     private static class SkillSubscriptionInfo {
-        
-        private final String skillName;
-        
-        private Listener mainConfigListener;
-        
-        private final Map<String, Listener> resourceListeners;
-        
-        private Skill currentSkill;
-        
-        public SkillSubscriptionInfo(String skillName) {
+
+        final String skillName;
+
+        String currentVersion;
+
+        List<String> currentFiles;
+
+        Listener manifestListener;
+
+        String resourceGroup;
+
+        final Map<String, Listener> resourceListeners = new ConcurrentHashMap<>(4);
+
+        SkillSubscriptionInfo(String skillName) {
             this.skillName = skillName;
-            this.resourceListeners = new ConcurrentHashMap<>();
-        }
-        
-        public String getSkillName() {
-            return skillName;
-        }
-        
-        public Listener getMainConfigListener() {
-            return mainConfigListener;
-        }
-        
-        public void setMainConfigListener(Listener mainConfigListener) {
-            this.mainConfigListener = mainConfigListener;
-        }
-        
-        public Map<String, Listener> getResourceListeners() {
-            return resourceListeners;
-        }
-        
-        public Skill getCurrentSkill() {
-            return currentSkill;
-        }
-        
-        public void setCurrentSkill(Skill currentSkill) {
-            this.currentSkill = currentSkill;
         }
     }
-    
-    /**
-     * Skill main config (from skill.json).
-     */
-    private static class SkillMainConfig {
-        private String name;
-        private String description;
-        private String instruction;
-        private List<SkillResourceRef> resources;
-        
-        public String getName() {
-            return name;
+
+    private static class SkillIndex {
+
+        private String version;
+
+        private List<String> files;
+
+        public String getVersion() {
+            return version;
         }
-        
-        public void setName(String name) {
-            this.name = name;
+
+        public void setVersion(String version) {
+            this.version = version;
         }
-        
-        public String getDescription() {
-            return description;
+
+        public List<String> getFiles() {
+            return files;
         }
-        
-        public void setDescription(String description) {
-            this.description = description;
-        }
-        
-        public String getInstruction() {
-            return instruction;
-        }
-        
-        public void setInstruction(String instruction) {
-            this.instruction = instruction;
-        }
-        
-        public List<SkillResourceRef> getResources() {
-            return resources;
-        }
-        
-        public void setResources(List<SkillResourceRef> resources) {
-            this.resources = resources;
-        }
-    }
-    
-    /**
-     * Skill resource reference (in skill.json).
-     */
-    private static class SkillResourceRef {
-        private String name;
-        private String type;
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void setName(String name) {
-            this.name = name;
-        }
-        
-        public String getType() {
-            return type;
-        }
-        
-        public void setType(String type) {
-            this.type = type;
+
+        public void setFiles(List<String> files) {
+            this.files = files;
         }
     }
 }
