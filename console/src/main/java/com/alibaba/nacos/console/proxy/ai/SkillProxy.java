@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -48,6 +49,10 @@ public class SkillProxy {
     
     public SkillAdminDetail getSkill(SkillForm form) throws NacosException {
         return skillHandler.getSkill(form);
+    }
+
+    public Skill getSkillVersion(SkillForm form) throws NacosException {
+        return skillHandler.getSkillVersion(form);
     }
     
     public void deleteSkill(SkillForm form) throws NacosException {

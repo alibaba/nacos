@@ -160,24 +160,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill not found: " + skillName);
         }
         SkillVersionInfo versionInfo = requireVersionInfo(meta);
-        String version = resolveVersion(meta, null, null);
-
-        // Load version row first (needed for storage JSON and status info)
-        AiResourceVersion versionRow = null;
-        String versionStatus = null;
-        if (StringUtils.isNotBlank(version)) {
-            versionRow = aiResourceVersionPersistService.find(namespaceId, skillName,
-                    RESOURCE_TYPE_SKILL, version);
-            if (versionRow != null) {
-                versionStatus = versionRow.getStatus();
-            }
-        }
-
-        // Load skill content from storage
-        Skill skill = null;
-        if (versionRow != null) {
-            skill = loadSkillFromStorage(namespaceId, skillName, version, versionRow.getStorage());
-        }
 
         // Load all version summaries
         Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
@@ -200,10 +182,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
 
         SkillAdminDetail detail = new SkillAdminDetail();
-        detail.setSkill(skill);
         detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
-        detail.setVersion(version);
-        detail.setVersionStatus(versionStatus);
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
         detail.setLabels(versionInfo.getLabels());
@@ -211,6 +190,26 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setVersions(versionSummaries);
         return detail;
+    }
+
+    @Override
+    public Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException {
+        AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill not found: " + skillName);
+        }
+        if (StringUtils.isBlank(version)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Version is required for skill version detail");
+        }
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, skillName,
+                RESOURCE_TYPE_SKILL, version);
+        if (versionRow == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill version not found: " + skillName + "@" + version);
+        }
+        return loadSkillFromStorage(namespaceId, skillName, version, versionRow.getStorage());
     }
 
     @Override

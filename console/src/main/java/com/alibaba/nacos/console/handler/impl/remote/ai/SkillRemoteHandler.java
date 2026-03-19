@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -57,14 +58,17 @@ public class SkillRemoteHandler implements SkillHandler {
 
     @Override
     public SkillAdminDetail getSkill(SkillForm form) throws NacosException {
-        // Remote maintainer client returns Skill; wrap into SkillAdminDetail for handler contract
-        com.alibaba.nacos.api.ai.model.skills.Skill skill = clientHolder.getAiMaintainerService().getSkillDetail(
+        // Remote maintainer client currently does not support full admin detail;
+        // return empty detail as placeholder.
+        return new SkillAdminDetail();
+    }
+
+    @Override
+    public Skill getSkillVersion(SkillForm form) throws NacosException {
+        return clientHolder.getAiMaintainerService().getSkillDetail(
                 form.getNamespaceId(),
                 form.getSkillName()
         );
-        SkillAdminDetail detail = new SkillAdminDetail();
-        detail.setSkill(skill);
-        return detail;
     }
     
     @Override

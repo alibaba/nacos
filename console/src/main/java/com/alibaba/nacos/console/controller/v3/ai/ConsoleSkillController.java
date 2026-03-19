@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.console.proxy.ai.SkillProxy;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -80,6 +81,20 @@ public class ConsoleSkillController {
     public Result<SkillAdminDetail> getSkill(SkillForm form) throws NacosException {
         form.validate();
         return Result.success(skillProxy.getSkill(form));
+    }
+
+    /**
+     * Get specific version detail of a skill for viewing or editing.
+     *
+     * @param form the skill form containing skillName and version
+     * @return full skill content for the specified version
+     * @throws NacosException if the skill or version not found
+     */
+    @GetMapping("/version")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<Skill> getSkillVersion(SkillForm form) throws NacosException {
+        form.validate();
+        return Result.success(skillProxy.getSkillVersion(form));
     }
     
     /**

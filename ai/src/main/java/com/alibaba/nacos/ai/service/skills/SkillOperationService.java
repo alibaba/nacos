@@ -45,14 +45,25 @@ public interface SkillOperationService {
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
 
     /**
-     * Get skill detail for admin usage. Returns full skill content plus version governance info.
+     * Get skill detail for admin usage. Returns version governance metadata and all version summaries.
      *
      * @param namespaceId namespace ID
      * @param skillName skill name
-     * @return skill admin detail (skill content + governance info)
+     * @return skill admin detail (governance info + version summaries)
      * @throws NacosException if skill not found
      */
     SkillAdminDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
+
+    /**
+     * Get skill version detail for admin usage. Returns full skill content for a specific version, used for viewing or editing.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name
+     * @param version target version
+     * @return full skill content for the specified version
+     * @throws NacosException if skill or version not found
+     */
+    Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException;
 
     /**
      * Delete skill.

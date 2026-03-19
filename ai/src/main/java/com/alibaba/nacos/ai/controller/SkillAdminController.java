@@ -72,7 +72,7 @@ public class SkillAdminController {
     }
 
     /**
-     * Get skill detail for admin (includes version governance info).
+     * Get skill detail for admin (includes version governance info and all version summaries).
      *
      * @param form the skill form to get
      * @return result of the get operation
@@ -84,6 +84,21 @@ public class SkillAdminController {
         form.validate();
         return Result.success(
                 skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
+    }
+
+    /**
+     * Get specific version detail of a skill for viewing or editing.
+     *
+     * @param form the skill form containing skillName and version
+     * @return full skill content for the specified version
+     * @throws NacosException if the skill or version not found
+     */
+    @GetMapping("/version")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<Skill> getSkillVersion(SkillForm form) throws NacosException {
+        form.validate();
+        return Result.success(
+                skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(), form.getVersion()));
     }
 
     /**

@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.ai.model.skills;
 
-import com.alibaba.nacos.api.ai.model.skills.Skill;
-
 import java.util.List;
 import java.util.Map;
 
 /**
- * Skill detail for admin API response. Contains full skill content plus version governance info.
+ * Skill detail for admin API response. Contains version governance metadata and all version summaries.
  *
  * @author nacos
  * @since 3.2.0
@@ -30,24 +28,9 @@ import java.util.Map;
 public class SkillAdminDetail {
 
     /**
-     * Full skill content (instruction, resources, etc.).
-     */
-    private Skill skill;
-
-    /**
      * Whether the skill is enabled globally.
      */
     private boolean enable;
-
-    /**
-     * Current resolved version (latest label or editing version).
-     */
-    private String version;
-
-    /**
-     * Version status: draft / reviewing / online / offline.
-     */
-    private String versionStatus;
 
     /**
      * The version currently being edited (draft).
@@ -79,36 +62,12 @@ public class SkillAdminDetail {
      */
     private List<SkillVersionSummary> versions;
 
-    public Skill getSkill() {
-        return skill;
-    }
-
-    public void setSkill(Skill skill) {
-        this.skill = skill;
-    }
-
     public boolean isEnable() {
         return enable;
     }
 
     public void setEnable(boolean enable) {
         this.enable = enable;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getVersionStatus() {
-        return versionStatus;
-    }
-
-    public void setVersionStatus(String versionStatus) {
-        this.versionStatus = versionStatus;
     }
 
     public String getEditingVersion() {
