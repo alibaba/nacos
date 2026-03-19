@@ -18,7 +18,6 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
@@ -26,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +38,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link HealthOperatorV2Impl} unit tests.
@@ -62,31 +65,41 @@ class HealthOperatorV2ImplTest {
     private ClientOperationServiceProxy clientOperationService;
     
     @Test
-    void testUpdateHealthStatusForPersistentInstance() {
-        try {
-            ServiceMetadata metadata = new ServiceMetadata();
-            Map<String, ClusterMetadata> clusterMap = new HashMap<>(2);
-            ClusterMetadata cluster = Mockito.mock(ClusterMetadata.class);
-            clusterMap.put("C", cluster);
-            metadata.setClusters(clusterMap);
-            Instance instance = new Instance();
-            instance.setIp("1.1.1.1");
-            instance.setPort(8080);
-            Mockito.when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.NONE.name());
-            Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
-            
-            ConnectionBasedClient client = Mockito.mock(ConnectionBasedClient.class);
-            Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(client);
-            
-            InstancePublishInfo instancePublishInfo = new InstancePublishInfo();
-            instancePublishInfo.setExtendDatum(new HashMap<>(2));
-            Mockito.when(client.getInstancePublishInfo(Mockito.any())).thenReturn(instancePublishInfo);
-            
-            healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "1.1.1.1", 8080, true);
-        } catch (NacosException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+    void testUpdateHealthStatusForPersistentInstance() throws NacosException {
+        ServiceMetadata metadata = new ServiceMetadata();
+        Map<String, ClusterMetadata> clusterMap = new HashMap<>(2);
+        ClusterMetadata cluster = Mockito.mock(ClusterMetadata.class);
+        clusterMap.put("cluster-a", cluster);
+        metadata.setClusters(clusterMap);
+        when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.NONE.name());
+        when(metadataManager.getServiceMetadata(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+                .thenReturn(Optional.of(metadata));
+        
+        ConnectionBasedClient client = Mockito.mock(ConnectionBasedClient.class);
+        when(clientManager.getClient(anyString())).thenReturn(client);
+        
+        InstancePublishInfo instancePublishInfo = new InstancePublishInfo();
+        instancePublishInfo.setIp("1.1.1.1");
+        instancePublishInfo.setPort(8080);
+        instancePublishInfo.setHealthy(false);
+        instancePublishInfo.setCluster("cluster-a");
+        instancePublishInfo.setExtendDatum(new HashMap<>(2));
+        when(client.getInstancePublishInfo(argThat(service -> isPersistentService(service, "A", "B", "C"))))
+                .thenReturn(instancePublishInfo);
+        
+        healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "cluster-a", "1.1.1.1", 8080,
+                true);
+        
+        verify(clientOperationService).registerInstance(
+                argThat(service -> isPersistentService(service, "A", "B", "C")),
+                argThat(instance -> !instance.isEphemeral() && instance.isHealthy() && "1.1.1.1".equals(instance.getIp())
+                        && instance.getPort() == 8080 && "cluster-a".equals(instance.getClusterName())),
+                anyString());
+    }
+
+    private boolean isPersistentService(Service service, String namespace, String groupName, String serviceName) {
+        return null != service && namespace.equals(service.getNamespace()) && groupName.equals(service.getGroup())
+                && serviceName.equals(service.getName()) && !service.isEphemeral();
     }
     
 }
