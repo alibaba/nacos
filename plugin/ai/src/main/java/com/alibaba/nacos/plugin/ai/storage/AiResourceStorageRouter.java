@@ -70,6 +70,11 @@ public class AiResourceStorageRouter {
         }
         AiResourceStorage storage = STORAGES_BY_TYPE.get(storageKey.getProvider());
         if (storage == null) {
+            // Retry: Spring context may not have been ready during initial SPI load
+            loadStoragesBySpi();
+            storage = STORAGES_BY_TYPE.get(storageKey.getProvider());
+        }
+        if (storage == null) {
             throw new IllegalStateException("No AiResourceStorage for provider: " + storageKey.getProvider());
         }
         return storage;

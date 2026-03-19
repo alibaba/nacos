@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -25,6 +24,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,7 +56,9 @@ public class AiResourceMapperByMySql extends AbstractMapperByMysql implements Ai
 
         MapperResult built = where.build();
         String sql = built.getSql() + " ORDER BY gmt_modified DESC LIMIT ?,?";
-        List<Object> params = CollectionUtils.list(built.getParamList(), context.getStartRow(), context.getPageSize());
+        List<Object> params = new ArrayList<>(built.getParamList());
+        params.add(context.getStartRow());
+        params.add(context.getPageSize());
         return new MapperResult(sql, params);
     }
 
