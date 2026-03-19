@@ -33,13 +33,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAgentStore } from '@/stores/agent-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { cn } from '@/lib/utils';
@@ -75,6 +75,7 @@ export default function AgentDetailPage() {
 
   const [selectedVersion, setSelectedVersion] = useState<string | undefined>(versionParam);
   const [iconError, setIconError] = useState(false);
+  const [versionSheetOpen, setVersionSheetOpen] = useState(false);
 
   const loadDetail = useCallback(
     (version?: string) => {
@@ -98,6 +99,7 @@ export default function AgentDetailPage() {
   const handleVersionChange = (version: string) => {
     setSelectedVersion(version);
     loadDetail(version);
+    setVersionSheetOpen(false);
   };
 
   const handleEdit = () => {
@@ -193,6 +195,11 @@ export default function AgentDetailPage() {
                   </SelectContent>
                 </Select>
               )}
+
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setVersionSheetOpen(true)}>
+                <History className="mr-1 h-3 w-3" />
+                {t('agent.versionHistory')}
+              </Button>
 
               <Button size="sm" className="h-7 text-xs" onClick={handleEdit}>
                 <Pencil className="mr-1 h-3 w-3" />
@@ -534,55 +541,61 @@ export default function AgentDetailPage() {
               </CardContent>
             </Card>
           )}
+        </div>
+      </div>
 
-          {/* Version List */}
-          {versionList.length > 0 && (
-            <Card className="overflow-hidden py-0 gap-0">
-              <div className="px-5 py-3.5 border-b bg-muted/30">
-                <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  {t('agent.versionHistory')}
-                </h2>
-              </div>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/20">
-                      <TableHead className="pl-5">{t('agent.version')}</TableHead>
-                      <TableHead>{t('agent.isLatest')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {versionList.map((v) => (
-                      <TableRow
-                        key={v.version}
-                        className={cn(
-                          'cursor-pointer hover:bg-muted/40',
-                          v.version === (selectedVersion || agent.version) && 'bg-primary/5'
-                        )}
-                        onClick={() => handleVersionChange(v.version)}
-                      >
-                        <TableCell className="font-mono text-xs pl-5">
-                          v{v.version}
-                        </TableCell>
-                        <TableCell>
-                          {v.latest ? (
+      {/* ===== Version History Sheet ===== */}
+      <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
+        <SheetContent className="flex flex-col p-0 sm:max-w-md">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <SheetTitle className="flex items-center gap-2">
+              <History className="h-4.5 w-4.5 text-violet-500" />
+              {t('agent.versionHistory')}
+            </SheetTitle>
+            <SheetDescription>
+              {t('agent.totalVersions', { count: versionList.length })}
+            </SheetDescription>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-2">
+              {versionList.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-12">{t('agent.noVersions', { defaultValue: '暂无版本历史' })}</p>
+              ) : (
+                versionList.map((v) => {
+                  const isCurrent = v.version === (selectedVersion || agent.version);
+                  return (
+                    <div
+                      key={v.version}
+                      className={cn(
+                        'rounded-lg border px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50',
+                        isCurrent && 'border-violet-500/50 bg-violet-50/50 dark:bg-violet-950/20'
+                      )}
+                      onClick={() => handleVersionChange(v.version)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono font-semibold">v{v.version}</span>
+                          {v.latest && (
                             <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1.5 py-0 border-0">
                               Latest
                             </Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+                          {isCurrent && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-violet-500/50 text-violet-600 dark:text-violet-400">
+                              {t('agent.currentVersion', { defaultValue: '当前版本' })}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

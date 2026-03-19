@@ -28,7 +28,10 @@ export interface NamespaceUpdateData {
 export const namespaceApi = {
   list: (): AxiosPromise<NamespaceListResponse> =>
     client.get('v3/console/core/namespace/list'),
-  
+
+  detail: (namespaceId: string): AxiosPromise<Namespace> =>
+    client.get('v3/console/core/namespace', { params: { namespaceId } }),
+
   create: (data: NamespaceCreateData): AxiosPromise<void> =>
     client.post('v3/console/core/namespace', data),
   

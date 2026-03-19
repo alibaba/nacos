@@ -4,8 +4,7 @@ import { toast } from 'sonner';
 
 // Auth endpoints that don't need username param
 const AUTH_ENDPOINTS = [
-  'v3/auth/user/login',
-  'v3/auth/user/admin',
+  'v3/auth/',
   'v1/auth',
 ];
 
@@ -75,6 +74,7 @@ client.interceptors.request.use(
       config.data &&
       typeof config.data === 'object' &&
       !(config.data instanceof FormData) &&
+      !(config.data instanceof URLSearchParams) &&
       !config.headers?.['Content-Type']?.toString().includes('application/json')
     ) {
       config.data = qs.stringify(config.data);

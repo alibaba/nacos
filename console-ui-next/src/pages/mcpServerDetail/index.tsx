@@ -24,6 +24,7 @@ import {
   GitBranch,
   Hash,
   RefreshCw,
+  History,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { McpToolList } from '@/components/ai/mcp/McpToolList';
 import { useMcpStore } from '@/stores/mcp-store';
@@ -101,6 +110,8 @@ export default function McpServerDetailPage() {
     clearError,
   } = useMcpStore();
 
+  const [versionSheetOpen, setVersionSheetOpen] = useState(false);
+
   const loadDetail = useCallback(
     (version?: string) => {
       if (mcpName) {
@@ -120,6 +131,7 @@ export default function McpServerDetailPage() {
   const handleVersionChange = (version: string) => {
     setSelectedVersion(version);
     loadDetail(version);
+    setVersionSheetOpen(false);
   };
 
   const handleToggleEnabled = async () => {
@@ -268,6 +280,11 @@ export default function McpServerDetailPage() {
                   </SelectContent>
                 </Select>
               )}
+
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setVersionSheetOpen(true)}>
+                <History className="mr-1 h-3 w-3" />
+                {t('mcp.versionHistory')}
+              </Button>
 
               {/* Enable/disable */}
               <div
@@ -730,6 +747,59 @@ export default function McpServerDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ===== Version History Sheet ===== */}
+      <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
+        <SheetContent className="flex flex-col p-0 sm:max-w-md">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <SheetTitle className="flex items-center gap-2">
+              <History className="h-4.5 w-4.5 text-blue-500" />
+              {t('mcp.versionHistory')}
+            </SheetTitle>
+            <SheetDescription>
+              {t('mcp.totalVersions', { count: allVersions.length })}
+            </SheetDescription>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-2">
+              {allVersions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-12">{t('mcp.noVersions', { defaultValue: '暂无版本历史' })}</p>
+              ) : (
+                allVersions.map((v) => {
+                  const isCurrent = v.version === (selectedVersion || mcp.versionDetail?.version);
+                  return (
+                    <div
+                      key={v.version}
+                      className={cn(
+                        'rounded-lg border px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50',
+                        isCurrent && 'border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20'
+                      )}
+                      onClick={() => handleVersionChange(v.version)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono font-semibold">v{v.version}</span>
+                          {v.is_latest && (
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1.5 py-0 border-0">
+                              Latest
+                            </Badge>
+                          )}
+                          {isCurrent && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500/50 text-blue-600 dark:text-blue-400">
+                              {t('mcp.currentVersion')}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

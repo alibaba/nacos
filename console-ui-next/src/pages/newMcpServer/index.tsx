@@ -252,10 +252,11 @@ export default function NewMcpServerPage() {
     setEnabled(data.enabled);
 
     if (data.frontProtocol !== 'stdio') {
-      // Determine if restToMcpSwitch mode
-      const hasServiceRef = !!data.remoteServerConfig?.serviceRef;
-      const hasDirectEndpoint = !hasServiceRef && (data.backendEndpoints?.length ?? 0) > 0;
-      setRestToMcpSwitch(hasServiceRef || hasDirectEndpoint);
+      // Determine restToMcpSwitch based on backend protocol field (consistent with original)
+      const isRestToMcp = data.protocol === 'http' || data.protocol === 'https';
+      setRestToMcpSwitch(isRestToMcp);
+
+      const hasServiceRef = !!data.remoteServerConfig?.serviceRef?.serviceName;
       setUseExistService(hasServiceRef);
 
       if (hasServiceRef) {
@@ -263,7 +264,7 @@ export default function NewMcpServerPage() {
         setSelectedService(`${ref.groupName || 'DEFAULT_GROUP'}@@${ref.serviceName}`);
         setTransportProtocol(ref.transportProtocol || 'http');
         setExportPath(data.remoteServerConfig!.exportPath || '');
-      } else if (hasDirectEndpoint) {
+      } else if (isRestToMcp && (data.backendEndpoints?.length ?? 0) > 0) {
         const ep = data.backendEndpoints![0];
         setAddress(ep.address);
         setPort(ep.port);
@@ -687,7 +688,7 @@ export default function NewMcpServerPage() {
                 value={serverName}
                 onChange={(e) => setServerName(e.target.value)}
                 placeholder={t('mcp.serverName')}
-                disabled={isEdit}
+                disabled={isEdit || isVersion}
                 maxLength={255}
               />
             </div>
@@ -714,7 +715,7 @@ export default function NewMcpServerPage() {
                 value={frontProtocol}
                 onValueChange={(v) => setFrontProtocol(v as McpProtocol)}
                 className="grid grid-cols-3 gap-3"
-                disabled={isEdit}
+                disabled={isEdit || isVersion}
               >
                 {(['stdio', 'mcp-sse', 'mcp-streamable'] as const).map((proto) => {
                   const cfg = PROTOCOL_CARD_CONFIG[proto];
@@ -729,7 +730,7 @@ export default function NewMcpServerPage() {
                         isSelected
                           ? cn('bg-primary/[0.06] shadow-sm ring-1', cfg.ring, 'border-transparent')
                           : 'hover:bg-muted/50',
-                        isEdit && 'opacity-60 cursor-not-allowed'
+                        (isEdit || isVersion) && 'opacity-60 cursor-not-allowed'
                       )}
                     >
                       <RadioGroupItem value={proto} id={`proto-${proto}`} className="sr-only" />
@@ -830,7 +831,7 @@ export default function NewMcpServerPage() {
                   <TooltipContent>{t('mcp.restToMcpSwitchTip')}</TooltipContent>
                 </Tooltip>
               </div>
-              <Switch checked={restToMcpSwitch} onCheckedChange={setRestToMcpSwitch} />
+              <Switch checked={restToMcpSwitch} onCheckedChange={setRestToMcpSwitch} disabled={isEdit || isVersion} />
             </div>
 
             <Separator />
