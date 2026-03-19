@@ -43,7 +43,7 @@ export default function AppLayout() {
         <Tooltip>
           <TooltipTrigger asChild>
             <a
-              href="/legacy/"
+              href="../legacy/"
               className="fixed right-5 bottom-5 z-50 flex items-center gap-1.5 rounded-full bg-muted/80 backdrop-blur px-3 py-1.5 text-xs text-muted-foreground shadow-md border hover:bg-muted hover:text-foreground transition-colors"
             >
               <ArrowLeftRight className="h-3.5 w-3.5" />

@@ -579,8 +579,8 @@ class PromptDetail extends React.Component {
       debugError: null,
     });
 
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/v3/console/copilot/prompt/debug`;
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/prompt/debug`;
     const token = localStorage.getItem('token');
 
     const payload = {

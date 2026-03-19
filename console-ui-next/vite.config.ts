@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/next/' : '/',
+  base: command === 'build' ? './' : '/',
   plugins: [react(), tailwindcss()],
   define: {
     // Polyfill Node.js `process` global for browser-incompatible libs (e.g. swagger2openapi)
@@ -19,30 +19,29 @@ export default defineConfig(({ command }) => ({
   server: {
     port: 8000,
     proxy: {
-      // Auth/admin endpoints → 8848 (keep /nacos prefix, admin server has contextPath=/nacos)
-      '/nacos/v1/auth': {
+      // Auth/admin endpoints → 8848 (server has contextPath=/nacos, so add prefix)
+      '/v1/auth': {
         target: 'http://localhost:8848',
         changeOrigin: true,
+        rewrite: (path) => `/nacos${path}`,
       },
-      '/nacos/v3/auth': {
+      '/v3/auth': {
         target: 'http://localhost:8848',
         changeOrigin: true,
+        rewrite: (path) => `/nacos${path}`,
       },
-      // Console endpoints → 8080 (strip /nacos prefix, console server has empty contextPath)
-      '/nacos/v1': {
+      // Console endpoints → 8080 (console has empty contextPath, no rewrite needed)
+      '/v1': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/nacos/, ''),
       },
-      '/nacos/v2': {
+      '/v2': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/nacos/, ''),
       },
-      '/nacos/v3': {
+      '/v3': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/nacos/, ''),
       },
     },
   },

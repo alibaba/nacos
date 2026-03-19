@@ -106,7 +106,6 @@ export default function McpServerDetailPage() {
     error,
     fetchMcpDetail,
     setSelectedVersion,
-    clearCurrentMcp,
     clearError,
   } = useMcpStore();
 

@@ -56,7 +56,7 @@ export default function RegisterPage() {
       <Card className="relative z-10 w-full max-w-md mx-4 border-0 bg-white shadow-2xl shadow-blue-200/40">
         <CardContent className="p-8">
           <div className="flex items-center gap-3 mb-6">
-            <img src="/img/nacos-logo-dark.svg" alt="Nacos" className="h-8" />
+            <img src={`${import.meta.env.BASE_URL}img/nacos-logo-dark.svg`} alt="Nacos" className="h-8" />
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">{t('login.initPassword')}</h2>
 

@@ -85,8 +85,8 @@ class PromptOptimizeDialog extends React.Component {
       error: null,
     });
 
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/v3/console/copilot/prompt/optimize`;
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/prompt/optimize`;
     const token = localStorage.getItem('token');
 
     const payload = {

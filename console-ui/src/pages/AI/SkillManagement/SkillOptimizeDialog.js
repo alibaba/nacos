@@ -351,8 +351,8 @@ class SkillOptimizeDialog extends React.Component {
     }
 
     // Use EventSource for SSE
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/v3/console/copilot/skill/optimize`;
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/skill/optimize`;
     const token = localStorage.getItem('token');
 
     // Create EventSource with POST support (using fetch + ReadableStream)

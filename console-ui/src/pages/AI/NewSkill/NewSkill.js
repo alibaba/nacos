@@ -936,8 +936,8 @@ class NewSkill extends React.Component {
     }
 
     // Use SSE stream
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/v3/console/copilot/skill/generate`;
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/skill/generate`;
     const token = localStorage.getItem('token');
 
     this.startSSEStream(url, payload, token);

@@ -15,7 +15,6 @@ import {
   Play,
   Eraser,
   Sparkles,
-  Hash,
   X,
   ChevronLeft,
   ChevronRight,
@@ -239,8 +238,8 @@ export default function PromptDetailPage() {
     setDebugContent('');
     setDebugError(null);
 
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/nacos/v3/console/copilot/prompt/debug`;
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/prompt/debug`;
     const token = getAccessToken();
 
     fetch(url, {
@@ -293,8 +292,8 @@ export default function PromptDetailPage() {
     setOptimizedResult(null);
     setOptimizeError(null);
 
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/nacos/v3/console/copilot/prompt/optimize`;
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/prompt/optimize`;
     const token = getAccessToken();
 
     fetch(url, {

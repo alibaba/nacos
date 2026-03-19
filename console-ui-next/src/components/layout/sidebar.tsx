@@ -186,7 +186,7 @@ export function Sidebar() {
       <div className="flex h-14 items-center justify-center border-b border-sidebar-border">
         {!sidebarCollapsed ? (
           <img
-            src="/img/nacos-logo-dark.svg"
+            src={`${import.meta.env.BASE_URL}img/nacos-logo-dark.svg`}
             alt="Nacos"
             className="h-6 w-auto max-w-[140px] object-contain"
           />
@@ -194,7 +194,7 @@ export function Sidebar() {
           <Tooltip>
             <TooltipTrigger asChild>
               <img
-                src="/img/nacos-icon.png"
+                src={`${import.meta.env.BASE_URL}img/nacos-icon.png`}
                 alt="Nacos"
                 className="h-7 w-7 object-contain cursor-default"
               />
@@ -396,7 +396,7 @@ function NavGroup({
 }) {
   const [open, setOpen] = useState(isGroupActive);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isGroupActive) setOpen(true);

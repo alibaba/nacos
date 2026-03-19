@@ -56,7 +56,7 @@ request.middleWare((_config = {}) => {
  * 配置 monaco
  */
 window.require.config({
-  paths: { vs: process.env.NODE_ENV === 'production' ? 'console-ui/public/js/vs' : 'js/vs' },
+  paths: { vs: process.env.NODE_ENV === 'production' ? '../console-ui/public/js/vs' : 'js/vs' },
 });
 window.require.config({
   'vs/nls': {
