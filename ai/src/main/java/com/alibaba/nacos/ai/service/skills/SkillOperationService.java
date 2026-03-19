@@ -31,7 +31,19 @@ import java.util.Map;
  * @author nacos
  */
 public interface SkillOperationService {
-    
+
+    // ========== Admin APIs ==========
+
+    /**
+     * Upload skill from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+
     /**
      * Get skill detail for admin usage. Returns full skill content plus version governance info.
      *
@@ -41,7 +53,7 @@ public interface SkillOperationService {
      * @throws NacosException if skill not found
      */
     SkillAdminDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
-    
+
     /**
      * Delete skill.
      *
@@ -50,7 +62,7 @@ public interface SkillOperationService {
      * @throws NacosException if delete failed
      */
     void deleteSkill(String namespaceId, String skillName) throws NacosException;
-    
+
     /**
      * List skills with pagination for admin usage. Returns full governance metadata.
      *
@@ -63,40 +75,10 @@ public interface SkillOperationService {
      * @throws NacosException if query failed
      */
     Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
-    
-    /**
-     * Upload skill from zip file.
-     *
-     * @param namespaceId namespace ID
-     * @param zipBytes zip file bytes
-     * @return skill name
-     * @throws NacosException if upload failed
-     */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
-
-    /**
-     * Search skills for runtime client usage. Only returns enabled skills that have at least one online version.
-     * Returns only name and description for client consumption.
-     *
-     * @param namespaceId namespace ID
-     * @param keyword keyword (optional)
-     * @param pageNo page number
-     * @param pageSize page size
-     */
-    Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize) throws NacosException;
-
-    /**
-     * Query skill for runtime client usage. Priority: label > version > latest(label).
-     *
-     * @param namespaceId namespace ID
-     * @param name skill name
-     * @param version explicit version (optional)
-     * @param label route label, e.g. latest/stable (optional)
-     */
-    Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException;
 
     /**
      * Create a new draft version based on latest or specified version.
+     * If no base version is specified and no online version exists, an empty skill draft will be created.
      *
      * @param namespaceId namespace ID
      * @param name skill name
@@ -143,4 +125,27 @@ public interface SkillOperationService {
      * @param online true means online/enable, false means offline/disable
      */
     void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online) throws NacosException;
+
+    // ========== Client APIs ==========
+
+    /**
+     * Search skills for runtime client usage. Only returns enabled skills that have at least one online version.
+     * Returns only name and description for client consumption.
+     *
+     * @param namespaceId namespace ID
+     * @param keyword keyword (optional)
+     * @param pageNo page number
+     * @param pageSize page size
+     */
+    Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize) throws NacosException;
+
+    /**
+     * Query skill for runtime client usage. Priority: label > version > latest(label).
+     *
+     * @param namespaceId namespace ID
+     * @param name skill name
+     * @param version explicit version (optional)
+     * @param label route label, e.g. latest/stable (optional)
+     */
+    Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException;
 }

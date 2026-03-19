@@ -99,6 +99,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     private static final String LABEL_LATEST = "latest";
 
+    private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
+
     private static final String SCOPE_SKILL = "skill";
 
     private static final int MAX_WORKING_VERSION_RETRY = 3;
@@ -124,62 +126,32 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.pipelineExecutionRepository = pipelineExecutionRepository;
     }
 
-    private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
-            boolean isNewSkill) throws NacosException {
-        String skillName = skill.getName();
-        long uniformId = System.currentTimeMillis();
-
-        // 1) write storage for draft version (provider + key, raw bytes)
-        byte[] mainContent = buildMainContent(skill, uniformId);
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
-                skillName, version, NacosConfigAiResourceStorage.getMainFilePath());
-        storageRouter.route(mainKey).save(mainKey, mainContent);
-
-        if (skill.getResource() != null && !skill.getResource().isEmpty()) {
-            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                SkillResource resource = entry.getValue();
-                String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
-                byte[] resourceContent = buildResourceContent(resource, uniformId);
-                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
-                        namespaceId, skillName, version, path);
-                storageRouter.route(resourceKey).save(resourceKey, resourceContent);
-            }
+    @Override
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
+        if (skill == null || StringUtils.isBlank(skill.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
+        }
+        String name = skill.getName();
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            // New skill: create meta row and first draft version v1
+            String version = "v1";
+            createDraftWithSkill(namespaceId, skill, version, null, true);
+            return name;
         }
 
-        // 2) insert draft version row
-        AiResourceVersion versionRow = new AiResourceVersion();
-        versionRow.setNamespaceId(namespaceId);
-        versionRow.setName(skillName);
-        versionRow.setType(RESOURCE_TYPE_SKILL);
-        versionRow.setAuthor(DEFAULT_AUTHOR);
-        versionRow.setStatus(VERSION_STATUS_DRAFT);
-        versionRow.setVersion(version);
-        versionRow.setDesc(skill.getDescription());
-        versionRow.setStorage(buildStorageJson(namespaceId, skillName, version));
-        aiResourceVersionPersistService.insert(versionRow);
-
-        // 3) create or update meta for editingVersion
-        if (isNewSkill) {
-            AiResource meta = new AiResource();
-            meta.setNamespaceId(namespaceId);
-            meta.setName(skillName);
-            meta.setType(RESOURCE_TYPE_SKILL);
-            meta.setStatus(META_STATUS_ENABLE);
-            meta.setDesc(skill.getDescription());
-            SkillVersionInfo info = new SkillVersionInfo();
-            info.setEditingVersion(version);
-            info.setOnlineCnt(0);
-            info.setLabels(new HashMap<>(4));
-            meta.setVersionInfo(JacksonUtils.toJson(info));
-            meta.setMetaVersion(1L);
-            aiResourcePersistService.insert(meta);
-        } else if (existedMeta != null) {
-            SkillVersionInfo info = requireVersionInfo(existedMeta);
-            info.setEditingVersion(version);
-            updateMetaVersionInfoCas(namespaceId, existedMeta, info);
+        SkillVersionInfo info = requireVersionInfo(meta);
+        if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    "There is already a working version (editing/reviewing), cannot upload");
         }
+
+        String newVersion = nextVersion(namespaceId, name);
+        createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
+        return name;
     }
-    
+
     @Override
     public SkillAdminDetail getSkillDetail(String namespaceId, String skillName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
@@ -190,24 +162,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillVersionInfo versionInfo = requireVersionInfo(meta);
         String version = resolveVersion(meta, null, null);
 
-        // Load skill content from storage (best-effort, may be blank if no published version yet)
-        Skill skill = null;
-        if (StringUtils.isNotBlank(version)) {
-            try {
-                skill = loadSkillFromStorage(namespaceId, skillName, version);
-            } catch (NacosException ignored) {
-                // version row exists but storage missing, return meta info only
-            }
-        }
-
-        // Load version row for status info
+        // Load version row first (needed for storage JSON and status info)
+        AiResourceVersion versionRow = null;
         String versionStatus = null;
         if (StringUtils.isNotBlank(version)) {
-            AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, skillName,
+            versionRow = aiResourceVersionPersistService.find(namespaceId, skillName,
                     RESOURCE_TYPE_SKILL, version);
             if (versionRow != null) {
                 versionStatus = versionRow.getStatus();
             }
+        }
+
+        // Load skill content from storage
+        Skill skill = null;
+        if (versionRow != null) {
+            skill = loadSkillFromStorage(namespaceId, skillName, version, versionRow.getStorage());
         }
 
         // Load all version summaries
@@ -251,22 +220,28 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return;
         }
 
-        // Delete in reverse order of creation: meta -> version rows -> storage files
+        // Delete in strict reverse order of creation (storage -> version -> meta -> index):
+        // 1) index config first: cut off client discovery immediately
+        deleteSkillIndexConfig(namespaceId, skillName);
+
+        // 2) meta: admin API can no longer find the skill
         aiResourcePersistService.delete(namespaceId, skillName, RESOURCE_TYPE_SKILL);
 
+        // 3) version rows (list before delete to get storage info)
         Page<AiResourceVersion> versions = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
         aiResourceVersionPersistService.deleteByNameAndType(namespaceId, skillName, RESOURCE_TYPE_SKILL);
 
+        // 4) storage files
         if (versions != null && versions.getPageItems() != null) {
             for (AiResourceVersion v : versions.getPageItems()) {
                 if (v == null || StringUtils.isBlank(v.getVersion())) {
                     continue;
                 }
-                deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion());
+                deleteSkillStorageForVersion(namespaceId, skillName, v.getVersion(), v.getStorage());
             }
         }
     }
-    
+
     @Override
     public Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
@@ -312,126 +287,62 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         result.setPageNumber(pageNo);
         return result;
     }
-    
-    @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
-        if (skill == null || StringUtils.isBlank(skill.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
-        }
-        String name = skill.getName();
-        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
-        if (meta == null) {
-            // New skill: create meta row and first draft version v1
-            String version = "v1";
-            createDraftWithSkill(namespaceId, skill, version, null, true);
-            return name;
-        }
-
-        SkillVersionInfo info = requireVersionInfo(meta);
-        if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
-            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
-                    "There is already a working version (editing/reviewing), cannot upload");
-        }
-
-        String newVersion = nextVersion(namespaceId, name);
-        createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
-        return name;
-    }
-
-    @Override
-    public Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
-            throws NacosException {
-        String nameLike = StringUtils.isBlank(keyword) ? null : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
-        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
-                pageSize);
-        List<SkillBasicInfo> items = new ArrayList<>();
-        if (metaPage != null && metaPage.getPageItems() != null) {
-            for (AiResource meta : metaPage.getPageItems()) {
-                if (meta == null) {
-                    continue;
-                }
-                if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-                    continue;
-                }
-                SkillVersionInfo info = parseVersionInfo(meta.getVersionInfo());
-                if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
-                    continue;
-                }
-                // Client only receives name and description
-                SkillBasicInfo basicInfo = new SkillBasicInfo();
-                basicInfo.setName(meta.getName());
-                basicInfo.setDescription(meta.getDesc());
-                items.add(basicInfo);
-            }
-        }
-        Page<SkillBasicInfo> result = new Page<>();
-        result.setPageItems(items);
-        result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
-        result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
-        result.setPageNumber(pageNo);
-        return result;
-    }
-
-    @Override
-    public Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
-        if (meta == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Skill not found: " + name);
-        }
-        if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Skill disabled: " + name);
-        }
-        String resolved = resolveVersion(meta, version, label);
-        if (StringUtils.isBlank(resolved)) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill version not found: " + name);
-        }
-        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, resolved);
-        if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill version not online: " + name);
-        }
-        return loadSkillFromStorage(namespaceId, name, resolved);
-    }
 
     @Override
     public String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException {
-        AiResource meta = requireMeta(namespaceId, name);
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+
+        if (meta == null) {
+            // Brand-new skill: meta does not exist yet, always create an empty draft
+            if (StringUtils.isNotBlank(basedOnVersion)) {
+                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                        "Skill not found: " + name + ", cannot use basedOnVersion for a brand-new skill");
+            }
+            Skill emptySkill = new Skill();
+            emptySkill.setName(name);
+            emptySkill.setNamespaceId(namespaceId);
+            createDraftWithSkill(namespaceId, emptySkill, "v1", null, true);
+            return "v1";
+        }
+
         SkillVersionInfo info = requireVersionInfo(meta);
         if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     "There is already a working version (editing/reviewing), cannot create draft");
         }
 
-        String base = StringUtils.isBlank(basedOnVersion) ? resolveVersion(meta, null, LABEL_LATEST) : basedOnVersion;
-        if (StringUtils.isBlank(base)) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Base version not found for skill: " + name);
-        }
-
         String newVersion = nextVersion(namespaceId, name);
+        // resolveBaseVersion: explicit param > latest label > max version number; null means no version exists yet
+        String base = resolveBaseVersion(namespaceId, name, meta, basedOnVersion);
 
-        // 1) copy storage content (skill.json + resources)
-        Skill baseSkill = loadSkillFromStorage(namespaceId, name, base);
-        long uniformId = System.currentTimeMillis();
-        writeSkillToStorage(namespaceId, baseSkill, newVersion, uniformId);
+        if (StringUtils.isBlank(base)) {
+            // No version exists yet: create an empty draft
+            Skill emptySkill = new Skill();
+            emptySkill.setName(name);
+            emptySkill.setNamespaceId(namespaceId);
+            createDraftWithSkill(namespaceId, emptySkill, newVersion, meta, false);
+        } else {
+            // Copy storage content from base version
+            AiResourceVersion baseVersionRow = aiResourceVersionPersistService.find(namespaceId, name,
+                    RESOURCE_TYPE_SKILL, base);
+            Skill baseSkill = loadSkillFromStorage(namespaceId, name, base,
+                    baseVersionRow != null ? baseVersionRow.getStorage() : null);
+            List<String> files = writeSkillToStorage(namespaceId, baseSkill, newVersion);
 
-        // 2) insert draft version row
-        AiResourceVersion v = new AiResourceVersion();
-        v.setNamespaceId(namespaceId);
-        v.setName(name);
-        v.setType(RESOURCE_TYPE_SKILL);
-        v.setAuthor(DEFAULT_AUTHOR);
-        v.setStatus(VERSION_STATUS_DRAFT);
-        v.setVersion(newVersion);
-        v.setDesc(baseSkill.getDescription());
-        v.setStorage(buildStorageJson(namespaceId, name, newVersion));
-        aiResourceVersionPersistService.insert(v);
+            AiResourceVersion v = new AiResourceVersion();
+            v.setNamespaceId(namespaceId);
+            v.setName(name);
+            v.setType(RESOURCE_TYPE_SKILL);
+            v.setAuthor(DEFAULT_AUTHOR);
+            v.setStatus(VERSION_STATUS_DRAFT);
+            v.setVersion(newVersion);
+            v.setDesc(baseSkill.getDescription());
+            v.setStorage(buildStorageJson(namespaceId, name, newVersion, files));
+            aiResourceVersionPersistService.insert(v);
 
-        // 3) update meta pointers (editingVersion)
-        info.setEditingVersion(newVersion);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
+            info.setEditingVersion(newVersion);
+            updateMetaVersionInfoCas(namespaceId, meta, info);
+        }
         return newVersion;
     }
 
@@ -454,10 +365,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Current editing version is not draft: " + editing);
         }
 
-        long uniformId = System.currentTimeMillis();
-        writeSkillToStorage(namespaceId, draftSkill, editing, uniformId);
+        List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
         aiResourceVersionPersistService.updateStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
-                buildStorageJson(namespaceId, name, editing));
+                buildStorageJson(namespaceId, name, editing, files));
         bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
     }
 
@@ -469,13 +379,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (StringUtils.isBlank(editing)) {
             return;
         }
+        // Read version row upfront (need status check and storage info before modifying)
         AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
-        if (v != null && VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
-            deleteSkillStorageForVersion(namespaceId, name, editing);
-            aiResourceVersionPersistService.delete(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
-        }
+
+        // Delete in reverse order of creation (storage -> version -> meta):
+        // 1) meta: clear editingVersion reference first
         info.setEditingVersion(null);
         updateMetaVersionInfoCas(namespaceId, meta, info);
+
+        // 2) version row, then storage files
+        if (v != null && VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
+            aiResourceVersionPersistService.delete(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
+            deleteSkillStorageForVersion(namespaceId, name, editing, v.getStorage());
+        }
     }
 
     @Override
@@ -501,7 +417,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         final String finalTarget = target;
         
         // Build context for pipeline execution (multi-file skill representation).
-        Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget);
+        Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
         SkillPipelineContext ctx = new SkillPipelineContext();
         ctx.setNamespaceId(namespaceId);
         ctx.setResourceName(name);
@@ -581,6 +497,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             info.getLabels().put(LABEL_LATEST, version);
         }
         updateMetaVersionInfoCas(namespaceId, meta, info);
+
+        // Write skill index config for client-side config caching
+        writeSkillIndexConfig(namespaceId, name, version, parseStorageFiles(v.getStorage()));
     }
 
     @Override
@@ -600,6 +519,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         boolean skillScope = SCOPE_SKILL.equalsIgnoreCase(scope) || StringUtils.isBlank(version);
         if (skillScope) {
             metaEnableDisable(namespaceId, meta, online);
+            if (online) {
+                refreshSkillIndexConfig(namespaceId, name);
+            } else {
+                deleteSkillIndexConfig(namespaceId, name);
+            }
             return;
         }
 
@@ -619,42 +543,104 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         updateMetaVersionInfoCas(namespaceId, meta, info);
     }
-    
-    /**
-     * Build main skill content as JSON bytes (storage-agnostic).
-     */
-    private static byte[] buildMainContent(Skill skill, long uniformId) {
-        SkillMainConfig mainConfig = new SkillMainConfig();
-        mainConfig.setName(skill.getName());
-        mainConfig.setDescription(skill.getDescription());
-        mainConfig.setInstruction(skill.getInstruction());
-        mainConfig.setUniformId(uniformId);
-        List<SkillResourceRef> resourceRefs = new ArrayList<>(
-                skill.getResource() != null ? skill.getResource().size() : 16);
-        if (skill.getResource() != null) {
-            for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
-                SkillResource resource = entry.getValue();
-                SkillResourceRef ref = new SkillResourceRef();
-                ref.setName(resource.getName());
-                ref.setType(resource.getType());
-                resourceRefs.add(ref);
+
+    @Override
+    public Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
+            throws NacosException {
+        String nameLike = StringUtils.isBlank(keyword) ? null : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
+        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
+                pageSize);
+        List<SkillBasicInfo> items = new ArrayList<>();
+        if (metaPage != null && metaPage.getPageItems() != null) {
+            for (AiResource meta : metaPage.getPageItems()) {
+                if (meta == null) {
+                    continue;
+                }
+                if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
+                    continue;
+                }
+                SkillVersionInfo info = parseVersionInfo(meta.getVersionInfo());
+                if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
+                    continue;
+                }
+                // Client only receives name and description
+                SkillBasicInfo basicInfo = new SkillBasicInfo();
+                basicInfo.setName(meta.getName());
+                basicInfo.setDescription(meta.getDesc());
+                items.add(basicInfo);
             }
         }
-        mainConfig.setResources(resourceRefs);
-        return JacksonUtils.toJson(mainConfig).getBytes(StandardCharsets.UTF_8);
+        Page<SkillBasicInfo> result = new Page<>();
+        result.setPageItems(items);
+        result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
+        result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
+        result.setPageNumber(pageNo);
+        return result;
     }
 
-    /**
-     * Build resource content as JSON bytes (storage-agnostic).
-     */
-    private static byte[] buildResourceContent(SkillResource resource, long uniformId) {
-        Map<String, Object> metadata = resource.getMetadata();
-        if (metadata == null) {
-            metadata = new HashMap<>(4);
-            resource.setMetadata(metadata);
+    @Override
+    public Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException {
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Skill not found: " + name);
         }
-        metadata.put("uniformId", uniformId);
-        return JacksonUtils.toJson(resource).getBytes(StandardCharsets.UTF_8);
+        if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Skill disabled: " + name);
+        }
+        String resolved = resolveVersion(meta, version, label);
+        if (StringUtils.isBlank(resolved)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill version not found: " + name);
+        }
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, resolved);
+        if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill version not online: " + name);
+        }
+        return loadSkillFromStorage(namespaceId, name, resolved, versionRow.getStorage());
+    }
+
+    // ========== Private methods ==========
+
+    private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
+            boolean isNewSkill) throws NacosException {
+        String skillName = skill.getName();
+
+        // 1) write all resources (including SKILL.md) to storage
+        List<String> files = writeSkillToStorage(namespaceId, skill, version);
+
+        // 2) insert draft version row
+        AiResourceVersion versionRow = new AiResourceVersion();
+        versionRow.setNamespaceId(namespaceId);
+        versionRow.setName(skillName);
+        versionRow.setType(RESOURCE_TYPE_SKILL);
+        versionRow.setAuthor(DEFAULT_AUTHOR);
+        versionRow.setStatus(VERSION_STATUS_DRAFT);
+        versionRow.setVersion(version);
+        versionRow.setDesc(skill.getDescription());
+        versionRow.setStorage(buildStorageJson(namespaceId, skillName, version, files));
+        aiResourceVersionPersistService.insert(versionRow);
+
+        // 3) create or update meta for editingVersion
+        if (isNewSkill) {
+            AiResource meta = new AiResource();
+            meta.setNamespaceId(namespaceId);
+            meta.setName(skillName);
+            meta.setType(RESOURCE_TYPE_SKILL);
+            meta.setStatus(META_STATUS_ENABLE);
+            meta.setDesc(skill.getDescription());
+            SkillVersionInfo info = new SkillVersionInfo();
+            info.setEditingVersion(version);
+            info.setOnlineCnt(0);
+            info.setLabels(new HashMap<>(4));
+            meta.setVersionInfo(JacksonUtils.toJson(info));
+            meta.setMetaVersion(1L);
+            aiResourcePersistService.insert(meta);
+        } else if (existedMeta != null) {
+            SkillVersionInfo info = requireVersionInfo(existedMeta);
+            info.setEditingVersion(version);
+            updateMetaVersionInfoCas(namespaceId, existedMeta, info);
+        }
     }
 
     private static String resolveSkillStorageProvider() {
@@ -685,6 +671,27 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return null;
     }
 
+    /**
+     * Resolves the base version to copy from when creating a draft.
+     * Priority: explicit basedOnVersion > "latest" label > highest numeric version.
+     * Returns null if no version exists yet (empty draft should be created).
+     * Throws NOT_FOUND if an explicit basedOnVersion was given but cannot be resolved.
+     */
+    private String resolveBaseVersion(String namespaceId, String name, AiResource meta, String basedOnVersion)
+            throws NacosException {
+        if (StringUtils.isNotBlank(basedOnVersion)) {
+            String resolved = resolveVersion(meta, basedOnVersion, null);
+            if (StringUtils.isBlank(resolved)) {
+                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                        "Base version not found for skill: " + name + ", basedOnVersion: " + basedOnVersion);
+            }
+            return resolved;
+        }
+        // No explicit base: try latest label first, then fall back to highest numbered version
+        String latest = resolveVersion(meta, null, LABEL_LATEST);
+        return StringUtils.isNotBlank(latest) ? latest : maxVersionByNumber(namespaceId, name);
+    }
+
     private static SkillVersionInfo parseVersionInfo(String json) {
         if (StringUtils.isBlank(json)) {
             return null;
@@ -697,13 +704,90 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     /**
-     * Build storage metadata JSON for version row (provider + scope, storage-agnostic).
+     * Build storage metadata JSON for version row (provider + scope + file list).
      */
-    private static String buildStorageJson(String namespaceId, String skillName, String version) {
+    private static String buildStorageJson(String namespaceId, String skillName, String version, List<String> files) {
         Map<String, Object> json = new HashMap<>(4);
         json.put("provider", resolveSkillStorageProvider());
         json.put("scope", namespaceId + ":" + skillName + ":" + version);
+        json.put("files", files);
         return JacksonUtils.toJson(json);
+    }
+
+    /**
+     * Parse the file path list from storage JSON.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> parseStorageFiles(String storageJson) {
+        if (StringUtils.isBlank(storageJson)) {
+            return null;
+        }
+        try {
+            Map<String, Object> map = JacksonUtils.toObj(storageJson, Map.class);
+            Object files = map.get("files");
+            if (files instanceof List) {
+                return (List<String>) files;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * Write skill index config (manifest) to Nacos Config for client-side caching.
+     * Stored at group={@code skill_{name}}, dataId={@code skill_index.json}.
+     */
+    private void writeSkillIndexConfig(String namespaceId, String skillName, String version, List<String> files)
+            throws NacosException {
+        Map<String, Object> index = new HashMap<>(4);
+        index.put("version", version);
+        index.put("files", files);
+        String provider = resolveSkillStorageProvider();
+        StorageKey key = NacosConfigAiResourceStorage.buildManifestStorageKey(provider, namespaceId, skillName);
+        byte[] content = JacksonUtils.toJson(index).getBytes(StandardCharsets.UTF_8);
+        storageRouter.route(key).save(key, content);
+    }
+
+    /**
+     * Delete skill index config.
+     */
+    private void deleteSkillIndexConfig(String namespaceId, String skillName) throws NacosException {
+        String provider = resolveSkillStorageProvider();
+        StorageKey key = NacosConfigAiResourceStorage.buildManifestStorageKey(provider, namespaceId, skillName);
+        storageRouter.route(key).delete(key);
+    }
+
+    /**
+     * Refresh skill index config from current meta (used when skill is re-enabled).
+     * Best-effort: failures are logged but not propagated.
+     */
+    private void refreshSkillIndexConfig(String namespaceId, String name) {
+        try {
+            AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+            if (meta == null) {
+                return;
+            }
+            SkillVersionInfo vInfo = parseVersionInfo(meta.getVersionInfo());
+            if (vInfo == null || vInfo.getLabels() == null) {
+                return;
+            }
+            String latestVersion = vInfo.getLabels().get(LABEL_LATEST);
+            if (StringUtils.isBlank(latestVersion)) {
+                return;
+            }
+            AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, name,
+                    RESOURCE_TYPE_SKILL, latestVersion);
+            if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())) {
+                return;
+            }
+            List<String> files = parseStorageFiles(versionRow.getStorage());
+            if (files == null || files.isEmpty()) {
+                return;
+            }
+            writeSkillIndexConfig(namespaceId, name, latestVersion, files);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh skill index config for {}: {}", name, e.getMessage());
+        }
     }
 
     private AiResource requireMeta(String namespaceId, String name) throws NacosException {
@@ -783,6 +867,23 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     private String nextVersion(String namespaceId, String name) {
+        return "v" + (maxVersionNumber(namespaceId, name) + 1);
+    }
+
+    /**
+     * Returns the version string with the highest numeric suffix (e.g. "v3" when versions are v1/v2/v3),
+     * or null if no numeric versions exist.
+     */
+    private String maxVersionByNumber(String namespaceId, String name) {
+        int max = maxVersionNumber(namespaceId, name);
+        return max == 0 ? null : "v" + max;
+    }
+
+    /**
+     * Returns the highest numeric version number across all existing version rows.
+     * Returns 0 if no numeric version exists.
+     */
+    private int maxVersionNumber(String namespaceId, String name) {
         Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
         int max = 0;
         if (page != null && page.getPageItems() != null) {
@@ -803,24 +904,57 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 }
             }
         }
-        return "v" + (max + 1);
+        return max;
     }
 
-    private void writeSkillToStorage(String namespaceId, Skill skill, String version, long uniformId) throws NacosException {
-        byte[] mainContent = buildMainContent(skill, uniformId);
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
-                skill.getName(), version, NacosConfigAiResourceStorage.getMainFilePath());
-        storageRouter.route(mainKey).save(mainKey, mainContent);
+    /**
+     * Write all skill resources to storage uniformly, including SKILL.md as a SkillResource.
+     *
+     * @return list of stored file paths (for use in buildStorageJson)
+     */
+    private List<String> writeSkillToStorage(String namespaceId, Skill skill, String version) throws NacosException {
+        String provider = resolveSkillStorageProvider();
+        String skillName = skill.getName();
+        List<String> files = new ArrayList<>();
+
+        // 1) Store SKILL.md as a SkillResource (carries name/description/instruction in metadata)
+        SkillResource skillMdResource = buildSkillMdResource(skill);
+        String mdPath = NacosConfigAiResourceStorage.getResourceFilePath(null, SKILL_MD_RESOURCE_NAME);
+        byte[] mdBytes = JacksonUtils.toJson(skillMdResource).getBytes(StandardCharsets.UTF_8);
+        StorageKey mdKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName, version,
+                mdPath);
+        storageRouter.route(mdKey).save(mdKey, mdBytes);
+        files.add(mdPath);
+
+        // 2) Store each resource file
         if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
                 String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
-                byte[] content = buildResourceContent(resource, uniformId);
-                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
-                        namespaceId, skill.getName(), version, path);
+                byte[] content = JacksonUtils.toJson(resource).getBytes(StandardCharsets.UTF_8);
+                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName,
+                        version, path);
                 storageRouter.route(resourceKey).save(resourceKey, content);
+                files.add(path);
             }
         }
+
+        return files;
+    }
+
+    /**
+     * Build SKILL.md as a SkillResource with markdown content and metadata for name/description/instruction.
+     */
+    private static SkillResource buildSkillMdResource(Skill skill) {
+        SkillResource resource = new SkillResource();
+        resource.setName(SKILL_MD_RESOURCE_NAME);
+        resource.setContent(SkillUtils.toMarkdown(skill));
+        Map<String, Object> metadata = new HashMap<>(4);
+        metadata.put("name", skill.getName());
+        metadata.put("description", skill.getDescription());
+        metadata.put("instruction", skill.getInstruction());
+        resource.setMetadata(metadata);
+        return resource;
     }
 
     private void onPipelineComplete(String namespaceId, String name, String version, PipelineExecutionResult result) {
@@ -897,57 +1031,67 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
     }
 
-    private Skill loadSkillFromStorage(String namespaceId, String skillName, String version) throws NacosException {
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
-                skillName, version, NacosConfigAiResourceStorage.getMainFilePath());
-        byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
-        if (mainBytes == null) {
+    /**
+     * Load skill from storage by reading all resource files listed in storageJson.
+     * SKILL.md resource provides name/description/instruction; others populate the resource map.
+     */
+    private Skill loadSkillFromStorage(String namespaceId, String skillName, String version, String storageJson)
+            throws NacosException {
+        List<String> files = parseStorageFiles(storageJson);
+        if (files == null || files.isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill not found: " + skillName);
+                    "No files found in storage for skill: " + skillName + "@" + version);
         }
 
-        SkillMainConfig mainConfig = JacksonUtils.toObj(new String(mainBytes, StandardCharsets.UTF_8), SkillMainConfig.class);
+        String provider = resolveSkillStorageProvider();
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
-        skill.setName(mainConfig.getName());
-        skill.setDescription(mainConfig.getDescription());
-        skill.setInstruction(mainConfig.getInstruction());
+        Map<String, SkillResource> resourceMap = new HashMap<>(files.size());
 
-        Map<String, SkillResource> resourceMap = new HashMap<>(
-                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
-        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
-            for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                String resourceId = SkillUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
-                String path = NacosConfigAiResourceStorage.getResourceFilePath(resourceRef.getType(), resourceRef.getName());
-                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
-                        namespaceId, skillName, version, path);
-                byte[] resourceBytes = storageRouter.route(resourceKey).get(resourceKey);
-                if (resourceBytes != null) {
-                    SkillResource resource = JacksonUtils.toObj(new String(resourceBytes, StandardCharsets.UTF_8), SkillResource.class);
-                    resourceMap.put(resourceId, resource);
+        for (String filePath : files) {
+            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName, version,
+                    filePath);
+            byte[] bytes = storageRouter.route(key).get(key);
+            if (bytes == null) {
+                continue;
+            }
+            SkillResource resource = JacksonUtils.toObj(new String(bytes, StandardCharsets.UTF_8), SkillResource.class);
+            if (resource == null) {
+                continue;
+            }
+            if (SKILL_MD_RESOURCE_NAME.equals(resource.getName())) {
+                // Extract name/description/instruction from SKILL.md metadata
+                Map<String, Object> metadata = resource.getMetadata();
+                if (metadata != null) {
+                    skill.setName((String) metadata.get("name"));
+                    skill.setDescription((String) metadata.get("description"));
+                    skill.setInstruction((String) metadata.get("instruction"));
                 }
+            } else {
+                String resourceId = SkillUtils.generateResourceId(resource.getType(), resource.getName());
+                resourceMap.put(resourceId, resource);
             }
         }
+
         skill.setResource(resourceMap);
         return skill;
     }
 
-    private void deleteSkillStorageForVersion(String namespaceId, String skillName, String version) throws NacosException {
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(), namespaceId,
-                skillName, version, NacosConfigAiResourceStorage.getMainFilePath());
-        byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
-        if (mainBytes != null) {
-            SkillMainConfig mainConfig = JacksonUtils.toObj(new String(mainBytes, StandardCharsets.UTF_8), SkillMainConfig.class);
-            if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
-                for (SkillResourceRef resourceRef : mainConfig.getResources()) {
-                    String path = NacosConfigAiResourceStorage.getResourceFilePath(resourceRef.getType(), resourceRef.getName());
-                    StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(resolveSkillStorageProvider(),
-                            namespaceId, skillName, version, path);
-                    storageRouter.route(resourceKey).delete(resourceKey);
-                }
-            }
+    /**
+     * Delete all storage files for a given skill version using the file list from storageJson.
+     */
+    private void deleteSkillStorageForVersion(String namespaceId, String skillName, String version, String storageJson)
+            throws NacosException {
+        List<String> files = parseStorageFiles(storageJson);
+        if (files == null || files.isEmpty()) {
+            return;
         }
-        storageRouter.route(mainKey).delete(mainKey);
+        String provider = resolveSkillStorageProvider();
+        for (String filePath : files) {
+            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName, version,
+                    filePath);
+            storageRouter.route(key).delete(key);
+        }
     }
 
     private void bumpMetaDescription(String namespaceId, AiResource meta, String description) {
@@ -980,81 +1124,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
     }
     
-    /**
-     * Skill main config (from skill.json).
-     */
-    private static class SkillMainConfig {
-        private String name;
-        private String description;
-        private String instruction;
-        private Long uniformId;
-        private List<SkillResourceRef> resources;
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void setName(String name) {
-            this.name = name;
-        }
-        
-        public String getDescription() {
-            return description;
-        }
-        
-        public void setDescription(String description) {
-            this.description = description;
-        }
-        
-        public String getInstruction() {
-            return instruction;
-        }
-        
-        public void setInstruction(String instruction) {
-            this.instruction = instruction;
-        }
-        
-        public Long getUniformId() {
-            return uniformId;
-        }
-        
-        public void setUniformId(Long uniformId) {
-            this.uniformId = uniformId;
-        }
-        
-        public List<SkillResourceRef> getResources() {
-            return resources;
-        }
-        
-        public void setResources(List<SkillResourceRef> resources) {
-            this.resources = resources;
-        }
-    }
-    
-    /**
-     * Skill resource reference (in skill.json).
-     */
-    private static class SkillResourceRef {
-        private String name;
-        private String type;
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void setName(String name) {
-            this.name = name;
-        }
-        
-        public String getType() {
-            return type;
-        }
-        
-        public void setType(String type) {
-            this.type = type;
-        }
-    }
-
     private static class SkillVersionInfo {
         private String editingVersion;
         private String reviewingVersion;
