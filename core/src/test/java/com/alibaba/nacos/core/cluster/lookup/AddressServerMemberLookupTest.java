@@ -39,6 +39,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.Map;
 
@@ -130,7 +131,37 @@ class AddressServerMemberLookupTest {
         RestResult<String> result = restTemplate.get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
         assertEquals("1.1.1.1:8848", result.getData());
     }
-    
+
+    @Test
+    void testAddressServerSyncTaskRun() throws Exception {
+        Class<?> taskClass = Class.forName("com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
+        Constructor<?> ctor = taskClass.getDeclaredConstructor(AddressServerMemberLookup.class);
+        ctor.setAccessible(true);
+        Runnable task = (Runnable) ctor.newInstance(addressServerMemberLookup);
+        task.run();
+    }
+
+    @Test
+    void testAddressServerSyncTaskRunWhenShutdown() throws Exception {
+        ReflectionTestUtils.setField(addressServerMemberLookup, "shutdown", true);
+        Class<?> taskClass = Class.forName("com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
+        Constructor<?> ctor = taskClass.getDeclaredConstructor(AddressServerMemberLookup.class);
+        ctor.setAccessible(true);
+        Runnable task = (Runnable) ctor.newInstance(addressServerMemberLookup);
+        task.run();
+    }
+
+    @Test
+    void testAddressServerSyncTaskRunWhenSyncThrows() throws Exception {
+        when(restTemplate.get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()),
+                any(Type.class))).thenThrow(new RuntimeException("mock error"));
+        Class<?> taskClass = Class.forName("com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup$AddressServerSyncTask");
+        Constructor<?> ctor = taskClass.getDeclaredConstructor(AddressServerMemberLookup.class);
+        ctor.setAccessible(true);
+        Runnable task = (Runnable) ctor.newInstance(addressServerMemberLookup);
+        task.run();
+    }
+
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {

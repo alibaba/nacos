@@ -27,7 +27,8 @@ import com.alibaba.nacos.api.remote.response.Response;
 public class AgentEndpointResponse extends Response {
     
     /**
-     * Should be {@link AiRemoteConstants#REGISTER_ENDPOINT} or {@link AiRemoteConstants#DE_REGISTER_ENDPOINT}.
+     * Should be {@link AiRemoteConstants#REGISTER_ENDPOINT}, {@link AiRemoteConstants#DE_REGISTER_ENDPOINT},
+     * {@link AiRemoteConstants#BATCH_REGISTER_ENDPOINT}.
      */
     private String type;
     

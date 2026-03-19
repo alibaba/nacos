@@ -150,7 +150,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
     /**
      * Query config info.
      * The default sql:
-     * SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content
+     * SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type,a.md5
      * FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id
      *
      * @param context the keys and values are dataId and group.

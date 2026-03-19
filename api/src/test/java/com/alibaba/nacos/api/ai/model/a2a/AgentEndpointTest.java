@@ -37,6 +37,8 @@ class AgentEndpointTest extends BasicRequestTest {
         agentEndpoint.setPath("/test");
         agentEndpoint.setSupportTls(true);
         agentEndpoint.setVersion("1.0.0");
+        agentEndpoint.setProtocol("HTTP");
+        agentEndpoint.setQuery("param1=value1&param2=value2");
         
         String json = mapper.writeValueAsString(agentEndpoint);
         assertNotNull(json);
@@ -46,12 +48,14 @@ class AgentEndpointTest extends BasicRequestTest {
         assertTrue(json.contains("\"path\":\"/test\""));
         assertTrue(json.contains("\"supportTls\":true"));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
+        assertTrue(json.contains("\"protocol\":\"HTTP\""));
+        assertTrue(json.contains("\"query\":\"param1=value1&param2=value2\""));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"address\":\"127.0.0.1\",\"port\":8080,\"transport\":\"JSONRPC\","
-                + "\"path\":\"/test\",\"supportTls\":true,\"version\":\"1.0.0\"}";
+                + "\"path\":\"/test\",\"supportTls\":true,\"version\":\"1.0.0\",\"protocol\":\"HTTP\",\"query\":\"param1=value1&param2=value2\"}";
         
         AgentEndpoint agentEndpoint = mapper.readValue(json, AgentEndpoint.class);
         assertNotNull(agentEndpoint);
@@ -59,8 +63,10 @@ class AgentEndpointTest extends BasicRequestTest {
         assertEquals(8080, agentEndpoint.getPort());
         assertEquals("JSONRPC", agentEndpoint.getTransport());
         assertEquals("/test", agentEndpoint.getPath());
-        assertEquals(true, agentEndpoint.isSupportTls());
+        assertTrue(agentEndpoint.isSupportTls());
         assertEquals("1.0.0", agentEndpoint.getVersion());
+        assertEquals("HTTP", agentEndpoint.getProtocol());
+        assertEquals("param1=value1&param2=value2", agentEndpoint.getQuery());
     }
     
     @Test
@@ -72,6 +78,8 @@ class AgentEndpointTest extends BasicRequestTest {
         endpoint1.setPath("/test");
         endpoint1.setSupportTls(true);
         endpoint1.setVersion("1.0.0");
+        endpoint1.setProtocol("HTTP");
+        endpoint1.setQuery("param1=value1");
         
         AgentEndpoint endpoint2 = new AgentEndpoint();
         endpoint2.setAddress("127.0.0.1");
@@ -80,9 +88,13 @@ class AgentEndpointTest extends BasicRequestTest {
         endpoint2.setPath("/test");
         endpoint2.setSupportTls(true);
         endpoint2.setVersion("1.0.0");
+        endpoint2.setProtocol("HTTP");
+        endpoint2.setQuery("param1=value1");
         
         AgentEndpoint endpoint3 = new AgentEndpoint();
         endpoint3.setAddress("127.0.0.2");
+        endpoint3.setProtocol("HTTPS");
+        endpoint3.setQuery("param1=value2");
         
         assertEquals(endpoint1, endpoint1);
         assertEquals(endpoint1, endpoint2);
@@ -125,6 +137,8 @@ class AgentEndpointTest extends BasicRequestTest {
         agentEndpoint.setPath("/test");
         agentEndpoint.setSupportTls(true);
         agentEndpoint.setVersion("1.0.0");
+        agentEndpoint.setProtocol("HTTP");
+        agentEndpoint.setQuery("param1=value1");
         
         String toStringResult = agentEndpoint.toString();
         assertNotNull(toStringResult);
@@ -134,5 +148,7 @@ class AgentEndpointTest extends BasicRequestTest {
         assertTrue(toStringResult.contains("path='/test'"));
         assertTrue(toStringResult.contains("supportTls=true"));
         assertTrue(toStringResult.contains("version='1.0.0'"));
+        assertTrue(toStringResult.contains("protocol='HTTP'"));
+        assertTrue(toStringResult.contains("query='param1=value1'"));
     }
 }

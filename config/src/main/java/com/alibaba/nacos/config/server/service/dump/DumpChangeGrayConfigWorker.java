@@ -61,7 +61,6 @@ public class DumpChangeGrayConfigWorker implements Runnable {
     }
     
     @Override
-    @SuppressWarnings("PMD.MethodTooLongRule")
     public void run() {
         try {
             if (!PropertyUtil.isDumpChangeOn()) {
@@ -90,7 +89,7 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                                 configInfo.getTenant(), grayName);
                         LogUtil.DEFAULT_LOG.info("[dump-gray-delete-ok], groupKey: {}, tenant: {}, grayName: {}",
                                 GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup()), configInfo.getTenant(), grayName);
-                        configMigrateService.checkDeletedConfigGrayMigrateState(configInfoStateWrapper);
+                        configMigrateService.checkDeletedConfigGrayMigrateState(configInfo);
                     }
                 }
                 if (configDeleted.size() < pageSize) {

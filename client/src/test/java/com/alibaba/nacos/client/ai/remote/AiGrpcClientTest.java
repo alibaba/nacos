@@ -23,12 +23,15 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
+import com.alibaba.nacos.api.ai.remote.request.QueryPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
+import com.alibaba.nacos.api.ai.remote.response.QueryPromptResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
@@ -48,12 +51,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -155,6 +161,69 @@ class AiGrpcClientTest {
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY)).thenReturn(AbilityStatus.SUPPORTED);
         when(rpcClient.request(any(QueryMcpServerRequest.class))).thenThrow(new RuntimeException("test"));
         assertThrows(NacosException.class, () -> aiGrpcClient.queryMcpServer("test", "1.0.0"));
+    }
+    
+    @Test
+    void queryPromptShouldBuildRequestWithVersionLabelMd5() throws Exception {
+        injectMock();
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        QueryPromptResponse response = new QueryPromptResponse();
+        Prompt prompt = new Prompt();
+        prompt.setPromptKey("p1");
+        prompt.setVersion("1.0.0");
+        response.setPromptInfo(prompt);
+        when(rpcClient.request(any(QueryPromptRequest.class))).thenReturn(response);
+        
+        Prompt actual = aiGrpcClient.queryPrompt("p1", "1.0.0", "prod", "m1");
+        
+        assertEquals("p1", actual.getPromptKey());
+        ArgumentCaptor<QueryPromptRequest> reqCaptor = ArgumentCaptor.forClass(QueryPromptRequest.class);
+        verify(rpcClient).request(reqCaptor.capture());
+        QueryPromptRequest captured = reqCaptor.getValue();
+        assertEquals("test", captured.getNamespaceId());
+        assertEquals("p1", captured.getPromptKey());
+        assertEquals("1.0.0", captured.getVersion());
+        assertEquals("prod", captured.getLabel());
+        assertEquals("m1", captured.getMd5());
+    }
+    
+    @Test
+    void requestToServerShouldInjectSecurityHeaderForPromptRequest() throws Exception {
+        injectMock();
+        Map<String, String> headers = new HashMap<>();
+        headers.put("k", "v");
+        when(securityProxy.getIdentityContext(any())).thenReturn(headers);
+        QueryPromptResponse response = new QueryPromptResponse();
+        response.setPromptInfo(new Prompt("p1", "1.0.0", "hello"));
+        when(rpcClient.request(any(QueryPromptRequest.class))).thenReturn(response);
+        
+        aiGrpcClient.queryPrompt("p1", "1.0.0", null, null);
+        
+        verify(securityProxy).getIdentityContext(any());
+        ArgumentCaptor<QueryPromptRequest> reqCaptor = ArgumentCaptor.forClass(QueryPromptRequest.class);
+        verify(rpcClient).request(reqCaptor.capture());
+        assertEquals("v", reqCaptor.getValue().getHeader("k"));
+    }
+    
+    @Test
+    void queryPromptShouldReloginWhen403() throws Exception {
+        injectMock();
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        Response response = ErrorResponse.build(NacosException.NO_RIGHT, "no right");
+        when(rpcClient.request(any(QueryPromptRequest.class))).thenReturn(response);
+        
+        assertThrows(NacosException.class, () -> aiGrpcClient.queryPrompt("p1", null, null, null));
+        verify(securityProxy).reLogin();
+    }
+    
+    @Test
+    void queryPromptShouldThrowWhenResponseTypeMismatch() throws Exception {
+        injectMock();
+        when(securityProxy.getIdentityContext(any())).thenReturn(new HashMap<>());
+        QueryMcpServerResponse response = new QueryMcpServerResponse();
+        when(rpcClient.request(any(QueryPromptRequest.class))).thenReturn(response);
+        
+        assertThrows(NacosException.class, () -> aiGrpcClient.queryPrompt("p1", null, null, null));
     }
     
     @Test

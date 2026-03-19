@@ -219,6 +219,76 @@ class AgentCardUtilTest {
     }
     
     @Test
+    void testBuildAgentInterfaceWithProtocolField() {
+        // Given
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "GRPC");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY, "grpc");
+        instance.setMetadata(metadata);
+        
+        // When
+        AgentInterface result = AgentCardUtil.buildAgentInterface(instance);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals("grpc://127.0.0.1:8080/agent", result.getUrl());
+        assertEquals("GRPC", result.getTransport());
+    }
+    
+    @Test
+    void testBuildAgentInterfaceWithQueryField() {
+        // Given
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY, "param1=value1&param2=value2");
+        instance.setMetadata(metadata);
+        
+        // When
+        AgentInterface result = AgentCardUtil.buildAgentInterface(instance);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals("http://127.0.0.1:8080/agent?param1=value1&param2=value2", result.getUrl());
+        assertEquals("JSONRPC", result.getTransport());
+    }
+    
+    @Test
+    void testBuildAgentInterfaceWithProtocolAndQueryFields() {
+        // Given
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "true");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, "/agent");
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY, "https");
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY, "token=abc123");
+        instance.setMetadata(metadata);
+        
+        // When
+        AgentInterface result = AgentCardUtil.buildAgentInterface(instance);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals("https://127.0.0.1:8080/agent?token=abc123", result.getUrl());
+        assertEquals("JSONRPC", result.getTransport());
+    }
+    
+    @Test
     void testBuildAgentInterfaceWithEmptyMetadata() {
         // Given
         Instance instance = new Instance();

@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -112,7 +113,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
             }
             if (bodyStr != null) {
                 conn.setDoOutput(true);
-                byte[] b = bodyStr.getBytes();
+                byte[] b = bodyStr.getBytes(StandardCharsets.UTF_8);
                 conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
                 OutputStream outputStream = conn.getOutputStream();
                 outputStream.write(b, 0, b.length);
@@ -135,11 +136,11 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         sb.append("Content-Type: ").append(Files.probeContentType(file.toPath())).append(LINE_FEED).append(LINE_FEED);
         
         byte[] fileBytes = Files.readAllBytes(file.toPath());
-        byte[] boundaryBytes = (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes();
+        byte[] boundaryBytes = (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
         
         conn.setDoOutput(true);
         try (OutputStream outputStream = conn.getOutputStream()) {
-            outputStream.write(sb.toString().getBytes());
+            outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
             outputStream.write(fileBytes);
             outputStream.write(boundaryBytes);
             outputStream.flush();

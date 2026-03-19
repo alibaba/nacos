@@ -18,8 +18,8 @@ package com.alibaba.nacos.ai.remote.handler.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
+import com.alibaba.nacos.ai.utils.AgentEndpointUtil;
 import com.alibaba.nacos.ai.utils.AgentRequestUtil;
-import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
@@ -29,6 +29,10 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -36,13 +40,12 @@ import com.alibaba.nacos.core.paramcheck.impl.AgentRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 /**
  * Register or Deregister endpoint for agent to nacos AI module request handler.
@@ -101,17 +104,7 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     }
     
     private Instance transferInstance(AgentEndpointRequest request) throws NacosApiException {
-        Instance instance = new Instance();
-        AgentEndpoint endpoint = request.getEndpoint();
-        instance.setIp(endpoint.getAddress());
-        instance.setPort(endpoint.getPort());
-        String path = StringUtils.isBlank(endpoint.getPath()) ? StringUtils.EMPTY : endpoint.getPath();
-        Map<String, String> metadata = Map.of(Constants.A2A.AGENT_ENDPOINT_PATH_KEY, path,
-                Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, endpoint.getTransport(),
-                Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, String.valueOf(endpoint.isSupportTls()));
-        instance.setMetadata(metadata);
-        instance.validate();
-        return instance;
+        return AgentEndpointUtil.transferToInstance(request.getEndpoint());
     }
     
     private void validateRequest(AgentEndpointRequest request) throws NacosApiException {
@@ -131,10 +124,17 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     
     private void doRegisterEndpoint(Service service, Instance instance, RequestMeta meta) throws NacosException {
         clientOperationService.registerInstance(service, instance, meta.getConnectionId());
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
+                service.getName(), instance.getIp(), instance.getPort()));
         
     }
     
     private void doDeregisterEndpoint(Service service, Instance instance, RequestMeta meta) {
         clientOperationService.deregisterInstance(service, instance, meta.getConnectionId());
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
+                service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
+                instance.getPort()));
     }
 }

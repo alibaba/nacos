@@ -89,9 +89,11 @@
             <artifactId>httpclient5</artifactId>
         </dependency>
         
+        <!-- TODO: Refactor MySQL health check into a plugin so nacos-naming can drop direct mysql driver dependency. -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <scope>provided</scope>
         </dependency>
         
         <!-- log -->

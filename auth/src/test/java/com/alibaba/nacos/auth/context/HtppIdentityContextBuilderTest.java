@@ -91,6 +91,16 @@ class HtppIdentityContextBuilderTest {
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
     }
     
+    @Test
+    void testBuildWithXForwardedFor() {
+        when(request.getHeader("X-Forwarded-For")).thenReturn("10.0.0.1, 10.0.0.2");
+        mockHeader(false);
+        mockParameter(false);
+        when(authConfig.getNacosAuthSystemType()).thenReturn("non-exist");
+        IdentityContext actual = identityContextBuilder.build(request);
+        assertEquals("10.0.0.1", actual.getParameter(Constants.Identity.REMOTE_IP));
+    }
+    
     private void mockHeader(boolean contained) {
         when(request.getHeaderNames()).thenReturn(headerNames);
         if (contained) {

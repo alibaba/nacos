@@ -55,7 +55,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
@@ -375,8 +375,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 }
             }
         } else {
-            Random random = new Random();
-            int index = random.nextInt(servers.size());
+            int index = ThreadLocalRandom.current().nextInt(servers.size());
             
             for (int i = 0; i < servers.size(); i++) {
                 String server = servers.get(index);

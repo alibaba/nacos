@@ -17,6 +17,8 @@ import PropTypes from 'prop-types';
 import { generateUrl } from '../../../utils/nacosutil';
 import ShowTools from './ShowTools';
 import './McpDetail.css';
+
+const KNOWN_SECURITY_FIELDS = ['id', 'passthrough', 'credential'];
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -52,6 +54,10 @@ class McpDetail extends React.Component {
       parameterContainersExpanded: {},
       // 当前选中的Tool索引
       activeToolIndex: 0,
+      defaultSecurityCollapsed: {
+        downstream: true,
+        upstream: true,
+      },
     };
     this.toolsRef = React.createRef();
   }
@@ -159,6 +165,15 @@ class McpDetail extends React.Component {
           ...prevState.parameterContainersExpanded[packageIndex],
           [containerType]: !prevState.parameterContainersExpanded[packageIndex]?.[containerType],
         },
+      },
+    }));
+  };
+
+  toggleDefaultSecuritySection = sectionKey => {
+    this.setState(prevState => ({
+      defaultSecurityCollapsed: {
+        ...prevState.defaultSecurityCollapsed,
+        [sectionKey]: !prevState.defaultSecurityCollapsed?.[sectionKey],
       },
     }));
   };
@@ -426,6 +441,7 @@ class McpDetail extends React.Component {
         docker: 'docker',
         uv: 'uvx',
         dnx: 'dnx',
+        oci: 'docker',
       };
       serverConfig.command = registryCommands[this.getRegistryType(packageDef)] || 'npx';
     }
@@ -465,7 +481,10 @@ class McpDetail extends React.Component {
         } else {
           args.push(pkgName);
         }
-      } else if (this.getRegistryType(packageDef) === 'docker') {
+      } else if (
+        this.getRegistryType(packageDef) === 'docker' ||
+        this.getRegistryType(packageDef) === 'oci'
+      ) {
         args.push('run', '--rm', '-i');
         if (packageDef.version && packageDef.version !== 'latest') {
           args.push(`${pkgName}:${packageDef.version}`);
@@ -651,7 +670,7 @@ class McpDetail extends React.Component {
             </Col>
             <Col span={24} className="mcp-form-col">
               <p className="mcp-label">{locale.version || '版本'}:</p>
-              <p className="mcp-monospace">{packageDef.version || 'latest'}</p>
+              <p className="mcp-monospace">{packageDef.version || '无'}</p>
             </Col>
             <Col span={24} className="mcp-form-col">
               <p className="mcp-label">{locale.registryType || '注册表类型'}:</p>
@@ -882,6 +901,7 @@ class McpDetail extends React.Component {
       pip: '#3776ab',
       uv: '#6b73ff',
       dnx: '#512bd4',
+      oci: '#009688',
     };
     return colors[registryType] || '#666666';
   };
@@ -1037,6 +1057,18 @@ class McpDetail extends React.Component {
       packageConfigs.push(packageConfig);
     }
 
+    const securitySchemes = this.state.serverConfig?.toolSpec?.securitySchemes || [];
+    const securitySchemeMap = securitySchemes.reduce((acc, scheme) => {
+      if (scheme && scheme.id) {
+        acc[scheme.id] = scheme;
+      }
+      return acc;
+    }, {});
+    const toolSpecExtensions = this.state.serverConfig?.toolSpec?.extensions || {};
+    const defaultDownstreamSecurity = toolSpecExtensions['server.defaultDownstreamSecurity'];
+    const defaultUpstreamSecurity = toolSpecExtensions['server.defaultUpstreamSecurity'];
+    const hasDefaultSecurity = defaultDownstreamSecurity || defaultUpstreamSecurity;
+
     const versionSelections = [];
     for (let i = 0; i < versions.length; i++) {
       const item = versions[i];
@@ -1091,6 +1123,145 @@ class McpDetail extends React.Component {
       };
       endpoints.push(serverConfig);
     }
+
+    const buildDefaultSecurityFields = (sectionKey, security = {}) => {
+      const safeSecurity = security || {};
+
+      const fields = [];
+      const pushField = (key, label, value, options = {}) => {
+        if (value === undefined || value === null || value === '') {
+          return;
+        }
+        fields.push({ key, label, value, ...options });
+      };
+
+      pushField('scheme-id', locale.schemeId || 'ID', safeSecurity.id, { monospace: true });
+
+      if (sectionKey === 'downstream') {
+        const passthroughLabel = safeSecurity.passthrough
+          ? locale.downstreamPassthroughEnabled || '启用'
+          : locale.downstreamPassthroughDisabled || '禁用';
+        if (safeSecurity.passthrough !== undefined) {
+          pushField(
+            'downstream-passthrough',
+            locale.downstreamPassthroughLabel || '透明认证',
+            passthroughLabel
+          );
+        }
+      }
+
+      if (sectionKey === 'upstream') {
+        pushField(
+          'upstream-credential',
+          locale.upstreamCredentialLabel || '覆盖凭证',
+          safeSecurity.credential,
+          { code: true, noBg: true }
+        );
+      }
+
+      Object.keys(safeSecurity).forEach(key => {
+        if (KNOWN_SECURITY_FIELDS.includes(key)) {
+          return;
+        }
+        const value = safeSecurity[key];
+        const displayValue =
+          typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
+        pushField(`extension-${key}`, key, displayValue, {
+          code: typeof value === 'object',
+          fullWidth: typeof value === 'object',
+        });
+      });
+
+      let message = null;
+      if (!safeSecurity.id) {
+        message = (
+          <p className="mcp-description-small">
+            {locale.securitySchemeNotConfigured || '未配置认证方案'}
+          </p>
+        );
+      } else if (!securitySchemeMap[safeSecurity.id]) {
+        message = (
+          <p className="mcp-description-small">
+            {(locale.securitySchemeNotFound || '未找到对应的认证方案') + ` (${safeSecurity.id})`}
+          </p>
+        );
+      }
+
+      return { fields, message };
+    };
+
+    const renderFieldColumns = fields => {
+      if (!Array.isArray(fields) || fields.length === 0) {
+        return [];
+      }
+
+      const columns = [];
+      fields
+        .filter(field => field && field.value !== undefined && field.value !== null && field.value !== '')
+        .forEach(field => {
+          const span = field.fullWidth ? 24 : 12;
+          const valueClassNames = ['mcp-field-value'];
+          if (field.monospace) {
+            valueClassNames.push('mcp-monospace');
+          }
+          if (field.code) {
+            valueClassNames.push('mcp-monospace-code');
+          }
+          if (field.noBg) {
+            valueClassNames.push('mcp-no-bg');
+          }
+          columns.push(
+            <Col span={span} className="mcp-form-col mcp-default-security-field" key={field.key}>
+              <p className="mcp-scheme-label">{field.label}:</p>
+              <p className={valueClassNames.join(' ')}>{field.value}</p>
+            </Col>
+          );
+        });
+      return columns;
+    };
+
+    const renderDefaultSecurityCard = (sectionKey, title, description, security) => {
+      const defaultSecurityInfo = buildDefaultSecurityFields(sectionKey, security);
+      const allFields = defaultSecurityInfo.fields || [];
+      const isCollapsed = this.state.defaultSecurityCollapsed?.[sectionKey] !== false;
+      const BASIC_FIELD_COUNT = 3;
+      const visibleFields = isCollapsed ? allFields.slice(0, BASIC_FIELD_COUNT) : allFields;
+      const rows = renderFieldColumns(visibleFields);
+      const hasMore = allFields.length > visibleFields.length;
+      return (
+        <div className="mcp-card mcp-default-security-card">
+          <div className="mcp-default-security-card-header">
+            <div className="mcp-default-security-card-text">
+              <div className="mcp-default-security-card-title">{title}</div>
+              <div className="mcp-default-security-card-desc">{description}</div>
+            </div>
+            {allFields.length > BASIC_FIELD_COUNT && (
+              <div className="mcp-default-security-card-actions">
+                <Button
+                  text
+                  size="small"
+                  className="mcp-card-toggle-btn"
+                  onClick={() => this.toggleDefaultSecuritySection(sectionKey)}
+                >
+                  {isCollapsed ? locale.expand || '展开' : locale.collapse || '收起'}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="mcp-default-security-meta">
+            {defaultSecurityInfo.message}
+            {rows.length > 0 && (
+              <Row wrap className="mcp-form-row-aligned mcp-default-security-row">{rows}</Row>
+            )}
+            {isCollapsed && hasMore && (
+              <p className="mcp-default-security-hint">
+                {locale.defaultSecurityCollapsedHint || '展开查看更多详细配置'}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    };
 
     return (
       <div>
@@ -1187,8 +1358,12 @@ class McpDetail extends React.Component {
                     </h2>
                     <div className="mcp-margin-bottom-24">
                       {this.state.serverConfig.toolSpec.securitySchemes.map((scheme, index) => (
-                        <div key={index} className="mcp-security-scheme-item">
+                        <div key={index} className="mcp-card mcp-security-scheme-card">
                           <Row wrap className="mcp-form-row-aligned">
+                            <Col span={12} className="mcp-form-col">
+                              <p className="mcp-scheme-label">{locale.schemeId || 'ID'}:</p>
+                              <p className="mcp-monospace">{scheme.id || '-'}</p>
+                            </Col>
                             <Col span={12} className="mcp-form-col">
                               <p className="mcp-scheme-label">{locale.authType || '认证类型'}:</p>
                               <p>{scheme.type}</p>
@@ -1220,7 +1395,7 @@ class McpDetail extends React.Component {
                                 <p className="mcp-scheme-label">
                                   {locale.defaultCredential || '默认凭证'}:
                                 </p>
-                                <p className="mcp-monospace-code">{scheme.defaultCredential}</p>
+                                <p className="mcp-monospace-code mcp-no-bg">{scheme.defaultCredential}</p>
                               </Col>
                             )}
                           </Row>
@@ -1229,6 +1404,30 @@ class McpDetail extends React.Component {
                     </div>
                   </>
                 )}
+
+              {hasDefaultSecurity && (
+                <>
+                  <h2 className="mcp-section-title mcp-margin-bottom-16">
+                    {locale.defaultSecurityHeading || '默认安全配置'}
+                  </h2>
+                  <div className="mcp-default-security-sections">
+                    {renderDefaultSecurityCard(
+                      'downstream',
+                      locale.defaultDownstreamSecurityTitle || '客户端到网关认证',
+                      locale.defaultDownstreamSecurityDesc ||
+                        '作用于客户端到网关的请求以及未配置 security 的工具。',
+                      defaultDownstreamSecurity || {}
+                    )}
+                    {renderDefaultSecurityCard(
+                      'upstream',
+                      locale.defaultUpstreamSecurityTitle || '网关到后端认证',
+                      locale.defaultUpstreamSecurityDesc ||
+                        '作用于网关访问后端时的默认配置。',
+                      defaultUpstreamSecurity || {}
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Tools 展示 */}
               <ShowTools

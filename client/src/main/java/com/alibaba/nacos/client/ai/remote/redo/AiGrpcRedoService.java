@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
-import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -92,37 +91,37 @@ public class AiGrpcRedoService extends AbstractRedoService {
         return result;
     }
     
-    public void cachedAgentEndpointForRedo(String agentName, AgentEndpoint agentEndpoint) {
-        AgentEndpointRedoData redoData = new AgentEndpointRedoData(agentName, agentEndpoint);
-        super.cachedRedoData(agentName, redoData, AgentEndpoint.class);
+    public void cachedAgentEndpointForRedo(String agentName, AgentEndpointWrapper wrapper) {
+        AgentEndpointRedoData redoData = new AgentEndpointRedoData(agentName, wrapper);
+        super.cachedRedoData(agentName, redoData, AgentEndpointWrapper.class);
     }
     
     public void removeAgentEndpointForRedo(String agentName) {
-        super.removeRedoData(agentName, AgentEndpoint.class);
+        super.removeRedoData(agentName, AgentEndpointWrapper.class);
     }
     
     public void agentEndpointRegistered(String agentName) {
-        super.dataRegistered(agentName, AgentEndpoint.class);
+        super.dataRegistered(agentName, AgentEndpointWrapper.class);
     }
     
     public void agentEndpointDeregister(String agentName) {
-        super.dataDeregister(agentName, AgentEndpoint.class);
+        super.dataDeregister(agentName, AgentEndpointWrapper.class);
     }
     
     public void agentEndpointDeregistered(String agentName) {
-        super.dataDeregistered(agentName, AgentEndpoint.class);
+        super.dataDeregistered(agentName, AgentEndpointWrapper.class);
     }
     
     public boolean isAgentEndpointRegistered(String agentName) {
-        return super.isDataRegistered(agentName, AgentEndpoint.class);
+        return super.isDataRegistered(agentName, AgentEndpointWrapper.class);
     }
     
-    public Set<RedoData<AgentEndpoint>> findAgentEndpointRedoData() {
-        return super.findRedoData(AgentEndpoint.class);
+    public Set<RedoData<AgentEndpointWrapper>> findAgentEndpointRedoData() {
+        return super.findRedoData(AgentEndpointWrapper.class);
     }
     
-    public AgentEndpoint getAgentEndpoint(String agentName) {
-        RedoData<AgentEndpoint> redoData = super.getRedoData(agentName, AgentEndpoint.class);
+    public AgentEndpointWrapper getAgentEndpoint(String agentName) {
+        RedoData<AgentEndpointWrapper> redoData = super.getRedoData(agentName, AgentEndpointWrapper.class);
         return redoData == null ? null : redoData.get();
     }
 }

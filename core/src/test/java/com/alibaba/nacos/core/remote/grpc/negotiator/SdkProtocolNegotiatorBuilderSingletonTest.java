@@ -67,4 +67,18 @@ class SdkProtocolNegotiatorBuilderSingletonTest {
         assertNotNull(type);
         assertEquals(SdkProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, type);
     }
+
+    @Test
+    void testBuildWhenActualBuilderNotInMapUsesDefault() throws Exception {
+        AbstractProtocolNegotiatorBuilderSingleton singleton = SdkProtocolNegotiatorBuilderSingleton.getSingleton();
+        java.lang.reflect.Field actualTypeField = AbstractProtocolNegotiatorBuilderSingleton.class.getDeclaredField("actualType");
+        actualTypeField.setAccessible(true);
+        String original = (String) actualTypeField.get(singleton);
+        try {
+            actualTypeField.set(singleton, "nonexistentType");
+            singleton.build();
+        } finally {
+            actualTypeField.set(singleton, original);
+        }
+    }
 }

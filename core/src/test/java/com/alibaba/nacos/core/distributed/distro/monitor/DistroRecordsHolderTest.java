@@ -51,22 +51,17 @@ class DistroRecordsHolderTest {
     
     @Test
     void testGetFailedSyncCount() {
-        DistroRecordsHolder.getInstance().getRecord("testGetFailedSyncCount");
-        Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedSyncCount");
-        assertTrue(actual.isPresent());
-        assertEquals(0, DistroRecordsHolder.getInstance().getFailedSyncCount());
-        actual.get().syncFail();
-        assertEquals(1, DistroRecordsHolder.getInstance().getFailedSyncCount());
-        
+        long expected = DistroRecordsHolder.getInstance().getFailedSyncCount() + 1;
+        DistroRecord record = DistroRecordsHolder.getInstance().getRecord("testGetFailedSyncCount");
+        record.syncFail();
+        assertEquals(expected, DistroRecordsHolder.getInstance().getFailedSyncCount());
     }
     
     @Test
     void testGetFailedVerifyCount() {
-        DistroRecordsHolder.getInstance().getRecord("testGetFailedVerifyCount");
-        Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedVerifyCount");
-        assertTrue(actual.isPresent());
-        assertEquals(0, DistroRecordsHolder.getInstance().getFailedVerifyCount());
-        actual.get().verifyFail();
-        assertEquals(1, DistroRecordsHolder.getInstance().getFailedVerifyCount());
+        long expected = DistroRecordsHolder.getInstance().getFailedVerifyCount() + 1;
+        DistroRecord record = DistroRecordsHolder.getInstance().getRecord("testGetFailedVerifyCount");
+        record.verifyFail();
+        assertEquals(expected, DistroRecordsHolder.getInstance().getFailedVerifyCount());
     }
 }

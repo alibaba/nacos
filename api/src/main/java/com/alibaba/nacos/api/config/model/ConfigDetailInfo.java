@@ -27,15 +27,11 @@ public class ConfigDetailInfo extends ConfigBasicInfo {
     
     private String content;
     
-    private String desc;
-    
     private String encryptedDataKey;
     
     private String createUser;
     
     private String createIp;
-    
-    private String configTags;
     
     public String getContent() {
         return content;
@@ -43,14 +39,6 @@ public class ConfigDetailInfo extends ConfigBasicInfo {
     
     public void setContent(String content) {
         this.content = content;
-    }
-    
-    public String getDesc() {
-        return desc;
-    }
-    
-    public void setDesc(String desc) {
-        this.desc = desc;
     }
     
     public String getEncryptedDataKey() {
@@ -75,13 +63,5 @@ public class ConfigDetailInfo extends ConfigBasicInfo {
     
     public void setCreateIp(String createIp) {
         this.createIp = createIp;
-    }
-    
-    public String getConfigTags() {
-        return configTags;
-    }
-    
-    public void setConfigTags(String configTags) {
-        this.configTags = configTags;
     }
 }

@@ -36,8 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings({"PMD.ThreadPoolCreationRule", "checkstyle:overloadmethodsdeclarationorder",
-        "checkstyle:missingjavadocmethod"})
+@SuppressWarnings({"checkstyle:overloadmethodsdeclarationorder", "checkstyle:missingjavadocmethod"})
 public final class ExecutorFactory {
     
     public static ExecutorService newSingleExecutorService() {

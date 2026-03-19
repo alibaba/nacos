@@ -60,4 +60,8 @@ public class ParamCheckRule {
     public String agentNamePatternString = "^[\\x20-\\x7E]+$";
  
     public int maxAgentNameLength = 64;
+
+    public String mcpNamePatternString = "^[a-zA-Z0-9-_\\/\\.]+$";
+
+    public int maxMcpNameLength = 128;
 }

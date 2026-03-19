@@ -35,6 +35,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -171,6 +172,8 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
         
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
@@ -182,6 +185,42 @@ class UserControllerV3Test {
         assertEquals("update user ok!", result.getData());
     }
     
+    @Test
+    void testUpdateUserFromServerIdentitySuccess() throws IOException {
+        // 测试通过服务器身份验证的情况
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "nacos"); // 添加服务器身份标识
+        
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        when(userDetailsService.getUser("anyUser")).thenReturn(new User());
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        
+        Result<String> result = userControllerV3.updateUser("anyUser", "newPass", response, request);
+        
+        verify(userDetailsService, times(1)).updateUserPassword(eq("anyUser"), anyString());
+        assertEquals("update user ok!", result.getData());
+    }
+    
+    @Test
+    void testUpdateUserFromServerIdentityFailure() throws IOException {
+        // 测试服务器身份验证失败的情况
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("nacos", "invalid"); // 错误的服务器身份标识
+        
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        when(authConfigs.getServerIdentityKey()).thenReturn("nacos");
+        when(authConfigs.getServerIdentityValue()).thenReturn("nacos");
+        // 不设置用户上下文，模拟无权限情况
+        
+        Result<String> result = userControllerV3.updateUser("anyUser", "newPass", response, request);
+        
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        assertEquals(null, result);
+    }
+
     @Test
     void testLoginSuccess() throws AccessException, IOException {
         NacosUser user = new NacosUser();

@@ -46,6 +46,8 @@ public class McpToolSpecification {
     private Map<String, McpToolMeta> toolsMeta = new HashMap<>(1);
     
     private List<SecurityScheme> securitySchemes = new ArrayList<>();
+
+    private Map<String, Object> extensions = new HashMap<>(1);
     
     public String getSpecificationType() {
         return specificationType;
@@ -85,5 +87,13 @@ public class McpToolSpecification {
 
     public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
         this.securitySchemes = securitySchemes;
+    }
+
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(Map<String, Object> extensions) {
+        this.extensions = extensions;
     }
 }

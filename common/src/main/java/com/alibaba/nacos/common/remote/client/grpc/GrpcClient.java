@@ -76,7 +76,6 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: GrpcClient.java, v 0.1 2020年07月13日 9:16 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class GrpcClient extends RpcClient {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
@@ -167,7 +166,7 @@ public abstract class GrpcClient extends RpcClient {
                 new LinkedBlockingQueue<>(clientConfig.threadPoolQueueSize()),
                 new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
                         .build());
-        grpcExecutor.allowCoreThreadTimeOut(true);
+        grpcExecutor.allowCoreThreadTimeOut(clientConfig.allowCoreThreadTimeOut());
         return grpcExecutor;
     }
     

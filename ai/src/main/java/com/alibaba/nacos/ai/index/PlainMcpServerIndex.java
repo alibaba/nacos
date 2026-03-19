@@ -129,6 +129,6 @@ public class PlainMcpServerIndex extends AbstractMcpServerIndex {
     }
 
     @Override
-    protected void afterSearch(List<McpServerIndexData> searchResult, String name) {
+    protected void afterSearch(McpServerIndexData searchResult, String name) {
     }
 }

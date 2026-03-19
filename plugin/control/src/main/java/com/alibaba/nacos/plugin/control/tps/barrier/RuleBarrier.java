@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RuleBarrier {
     
     private TimeUnit period;

@@ -38,14 +38,19 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -68,9 +73,8 @@ class NacosHttpTpsFilterTest {
     void before() {
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         controlManagerCenterMockedStatic.when(() -> ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
-        when(controlManagerCenter.getTpsControlManager()).thenReturn(tpsControlManager);
+        org.mockito.Mockito.lenient().when(controlManagerCenter.getTpsControlManager()).thenReturn(tpsControlManager);
         nacosHttpTpsFilter = new NacosHttpTpsFilter(controllerMethodsCache);
-        
     }
     
     @AfterEach
@@ -200,6 +204,32 @@ class NacosHttpTpsFilterTest {
         
         //verify
         Mockito.verify(filterChain, Mockito.times(1)).doFilter(httpServletRequest, httpServletResponse);
-        
+    }
+    
+    @Test
+    void testInitAndDestroy() throws Exception {
+        FilterConfig filterConfig = Mockito.mock(FilterConfig.class);
+        nacosHttpTpsFilter.init(filterConfig);
+        nacosHttpTpsFilter.destroy();
+    }
+    
+    @Test
+    void testDoFilterWhenMethodIsNullContinuesChain() throws Exception {
+        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
+        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
+        FilterChain filterChain = Mockito.mock(FilterChain.class);
+        when(controllerMethodsCache.getMethod(eq(httpServletRequest))).thenReturn(null);
+        nacosHttpTpsFilter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+        Mockito.verify(filterChain, Mockito.times(1)).doFilter(httpServletRequest, httpServletResponse);
+    }
+    
+    @Test
+    void testGenerate503ResponseExceptionPath() throws Exception {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        jakarta.servlet.AsyncContext asyncContext = Mockito.mock(jakarta.servlet.AsyncContext.class);
+        doThrow(new IOException("getOutputStream failed")).when(response).getOutputStream();
+        nacosHttpTpsFilter.generate503Response(request, response, "rejected", asyncContext);
+        // When getOutputStream() throws, catch block runs and asyncContext.complete() is not called
     }
 }

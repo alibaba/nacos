@@ -29,11 +29,14 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -201,5 +204,198 @@ class ServiceInfoTest {
         // 测试name中已经包含@@的情况
         ServiceInfo serviceInfo3 = new ServiceInfo("group@@name@@cluster", "");
         assertEquals("group@@name@@cluster", serviceInfo3.getKeyWithoutClusters());
+    }
+    
+    @Test
+    void testCloneBasicFields() {
+        // Setup original ServiceInfo with all fields
+        ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        original.setCacheMillis(2000L);
+        original.setLastRefTime(1234567890L);
+        original.setChecksum("testChecksum");
+        original.setAllIps(true);
+        original.setReachProtectionThreshold(true);
+        original.setJsonFromServer("testJson");
+        
+        // Clone
+        ServiceInfo cloned = original.clone();
+        
+        // Verify it's a different object
+        assertNotSame(original, cloned);
+        
+        // Verify all basic fields are copied
+        assertEquals(original.getName(), cloned.getName());
+        assertEquals(original.getGroupName(), cloned.getGroupName());
+        assertEquals(original.getClusters(), cloned.getClusters());
+        assertEquals(original.getCacheMillis(), cloned.getCacheMillis());
+        assertEquals(original.getLastRefTime(), cloned.getLastRefTime());
+        assertEquals(original.getChecksum(), cloned.getChecksum());
+        assertEquals(original.isAllIps(), cloned.isAllIps());
+        assertEquals(original.isReachProtectionThreshold(), cloned.isReachProtectionThreshold());
+        assertEquals(original.getJsonFromServer(), cloned.getJsonFromServer());
+    }
+    
+    @Test
+    void testCloneWithNullHosts() {
+        final ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        original.setHosts(null);
+        
+        ServiceInfo cloned = original.clone();
+        
+        assertNotSame(original, cloned);
+        // Clone method initializes hosts to empty list even if original is null
+        assertTrue(cloned.getHosts().isEmpty());
+    }
+    
+    @Test
+    void testCloneWithEmptyHosts() {
+        ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        original.setHosts(new LinkedList<>());
+        
+        ServiceInfo cloned = original.clone();
+        
+        assertNotSame(original, cloned);
+        assertNotSame(original.getHosts(), cloned.getHosts());
+        assertTrue(cloned.getHosts().isEmpty());
+    }
+    
+    @Test
+    void testCloneWithHosts() {
+        // Setup original ServiceInfo with hosts
+        final ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        
+        Instance instance1 = new Instance();
+        instance1.setInstanceId("instance1");
+        instance1.setIp("192.168.1.1");
+        instance1.setPort(8080);
+        instance1.setWeight(1.0);
+        instance1.setHealthy(true);
+        instance1.setEnabled(true);
+        instance1.setEphemeral(true);
+        instance1.setClusterName("cluster1");
+        instance1.setServiceName("service1");
+        
+        Instance instance2 = new Instance();
+        instance2.setInstanceId("instance2");
+        instance2.setIp("192.168.1.2");
+        instance2.setPort(8081);
+        instance2.setWeight(2.0);
+        instance2.setHealthy(false);
+        instance2.setEnabled(false);
+        instance2.setEphemeral(false);
+        instance2.setClusterName("cluster2");
+        instance2.setServiceName("service2");
+        
+        original.addHost(instance1);
+        original.addHost(instance2);
+        
+        // Clone
+        ServiceInfo cloned = original.clone();
+        
+        // Verify it's a different object
+        assertNotSame(original, cloned);
+        
+        // Verify hosts list is different
+        assertNotSame(original.getHosts(), cloned.getHosts());
+        assertEquals(original.getHosts().size(), cloned.getHosts().size());
+        
+        // Verify each host is a different object but with same values
+        for (int i = 0; i < original.getHosts().size(); i++) {
+            Instance originalHost = original.getHosts().get(i);
+            Instance clonedHost = cloned.getHosts().get(i);
+            
+            assertNotSame(originalHost, clonedHost);
+            assertEquals(originalHost.getInstanceId(), clonedHost.getInstanceId());
+            assertEquals(originalHost.getIp(), clonedHost.getIp());
+            assertEquals(originalHost.getPort(), clonedHost.getPort());
+            assertEquals(originalHost.getWeight(), clonedHost.getWeight());
+            assertEquals(originalHost.isHealthy(), clonedHost.isHealthy());
+            assertEquals(originalHost.isEnabled(), clonedHost.isEnabled());
+            assertEquals(originalHost.isEphemeral(), clonedHost.isEphemeral());
+            assertEquals(originalHost.getClusterName(), clonedHost.getClusterName());
+            assertEquals(originalHost.getServiceName(), clonedHost.getServiceName());
+        }
+    }
+    
+    @Test
+    void testCloneWithHostsMetadata() {
+        final ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        
+        Instance instance = new Instance();
+        instance.setIp("192.168.1.1");
+        instance.setPort(8080);
+        
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key1", "value1");
+        metadata.put("key2", "value2");
+        instance.setMetadata(metadata);
+        
+        original.addHost(instance);
+        
+        // Clone
+        ServiceInfo cloned = original.clone();
+        
+        // Verify metadata is deep copied
+        Instance originalHost = original.getHosts().get(0);
+        Instance clonedHost = cloned.getHosts().get(0);
+        
+        assertNotSame(originalHost.getMetadata(), clonedHost.getMetadata());
+        assertEquals(originalHost.getMetadata(), clonedHost.getMetadata());
+        assertEquals(originalHost.getMetadata().size(), clonedHost.getMetadata().size());
+        assertEquals("value1", clonedHost.getMetadata().get("key1"));
+        assertEquals("value2", clonedHost.getMetadata().get("key2"));
+    }
+    
+    @Test
+    void testCloneWithHostsNullMetadata() {
+        final ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        
+        Instance instance = new Instance();
+        instance.setIp("192.168.1.1");
+        instance.setPort(8080);
+        instance.setMetadata(null);
+        
+        original.addHost(instance);
+        
+        ServiceInfo cloned = original.clone();
+        
+        Instance clonedHost = cloned.getHosts().get(0);
+        // Instance metadata is initialized to empty HashMap by default
+        // When clone method doesn't set metadata (because original is null),
+        // the cloned Instance keeps its default empty HashMap
+        assertTrue(clonedHost.getMetadata() != null && clonedHost.getMetadata().isEmpty());
+    }
+    
+    @Test
+    void testCloneModificationDoesNotAffectOriginal() {
+        ServiceInfo original = new ServiceInfo("testGroup@@testName", "testClusters");
+        original.setCacheMillis(1000L);
+        original.setAllIps(false);
+        
+        Instance instance = new Instance();
+        instance.setIp("192.168.1.1");
+        instance.setPort(8080);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key1", "value1");
+        instance.setMetadata(metadata);
+        original.addHost(instance);
+        
+        // Clone
+        ServiceInfo cloned = original.clone();
+        
+        // Modify cloned object
+        cloned.setCacheMillis(2000L);
+        cloned.setAllIps(true);
+        cloned.setName("modifiedName");
+        cloned.getHosts().get(0).setIp("10.0.0.1");
+        cloned.getHosts().get(0).getMetadata().put("key2", "value2");
+        
+        // Verify original is not affected
+        assertEquals(1000L, original.getCacheMillis());
+        assertFalse(original.isAllIps());
+        assertEquals("testGroup@@testName", original.getName());
+        assertEquals("192.168.1.1", original.getHosts().get(0).getIp());
+        assertEquals(1, original.getHosts().get(0).getMetadata().size());
+        assertFalse(original.getHosts().get(0).getMetadata().containsKey("key2"));
     }
 }

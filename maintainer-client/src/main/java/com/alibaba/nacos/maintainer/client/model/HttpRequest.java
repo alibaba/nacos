@@ -40,14 +40,28 @@ public class HttpRequest {
     
     private RequestResource resource;
     
+    private byte[] fileBytes;
+    
+    private String fileName;
+    
+    private String fileFieldName;
+    
     public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
             String body, RequestResource resource) {
+        this(httpMethod, path, headers, paramValues, body, resource, null, null, null);
+    }
+    
+    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
+            String body, RequestResource resource, byte[] fileBytes, String fileName, String fileFieldName) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
         this.paramValues = paramValues;
         this.body = body;
         this.resource = resource;
+        this.fileBytes = fileBytes;
+        this.fileName = fileName;
+        this.fileFieldName = fileFieldName;
     }
     
     public String getHttpMethod() {
@@ -98,6 +112,22 @@ public class HttpRequest {
         this.resource = resource;
     }
     
+    public byte[] getFileBytes() {
+        return fileBytes;
+    }
+    
+    public String getFileName() {
+        return fileName;
+    }
+    
+    public String getFileFieldName() {
+        return fileFieldName;
+    }
+    
+    public boolean isFileUpload() {
+        return fileBytes != null && fileBytes.length > 0;
+    }
+    
     public static class Builder {
         
         private String httpMethod;
@@ -111,6 +141,12 @@ public class HttpRequest {
         private String body;
         
         private RequestResource resource;
+        
+        private byte[] fileBytes;
+        
+        private String fileName;
+        
+        private String fileFieldName;
         
         public Builder setHttpMethod(String httpMethod) {
             this.httpMethod = httpMethod;
@@ -142,8 +178,24 @@ public class HttpRequest {
             return this;
         }
         
+        /**
+         * Set file upload data for multipart/form-data requests.
+         *
+         * @param fileBytes     raw bytes of the file
+         * @param fileName      file name sent in Content-Disposition
+         * @param fileFieldName form field name (e.g. "file")
+         * @return this builder
+         */
+        public Builder setFileUpload(byte[] fileBytes, String fileName, String fileFieldName) {
+            this.fileBytes = fileBytes;
+            this.fileName = fileName;
+            this.fileFieldName = fileFieldName;
+            return this;
+        }
+        
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, body, resource);
+            return new HttpRequest(httpMethod, path, headers, paramValues, body, resource, fileBytes, fileName,
+                    fileFieldName);
         }
     }
 }

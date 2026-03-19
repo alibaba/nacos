@@ -24,7 +24,8 @@ cssLoader.use.push({
   options: {
     modifyVars: {
       '$icon-font-path': '"/icons/icon-font"',
-      '$font-custom-path': '"/fonts/"'
+      '$font-custom-path': '"/fonts/"',
+      '$adv-icon-font-path': '"/fonts/font_1533967_slipq25tezj"'
     }
   }
 })

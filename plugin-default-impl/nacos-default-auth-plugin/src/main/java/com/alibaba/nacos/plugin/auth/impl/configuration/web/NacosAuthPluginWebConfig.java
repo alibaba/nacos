@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,12 +36,16 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Nacos Auth http config.
+ * Only activated when auth system type is NOT 'oauth2'.
+ * When system.type is 'nacos', 'ldap', or missing (defaults to nacos), this config is loaded.
+ * When system.type is 'oauth2', this config is skipped to avoid filter chain conflicts.
  *
  * @author xiweng.yy
  */
 @NacosWebBean
 @EnableWebSecurity
 @Import({NacosAuthPluginControllerConfig.class, NacosAuthPluginOldControllerConfig.class})
+@ConditionalOnExpression("!'oidc'.equalsIgnoreCase('${nacos.core.auth.system.type:nacos}')")
 public class NacosAuthPluginWebConfig {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";

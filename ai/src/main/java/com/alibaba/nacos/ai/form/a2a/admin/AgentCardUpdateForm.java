@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.ai.form.a2a.admin;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.io.Serial;
 
 /**
@@ -41,5 +44,14 @@ public class AgentCardUpdateForm extends AgentCardForm {
     @Override
     protected void fillDefaultRegistrationType() {
         // Update does not need to fill registration type
+    }
+    
+    @Override
+    protected void validateRegistrationType() throws NacosApiException {
+        // Update request if no set registration type, means not change the registration type
+        if (StringUtils.isEmpty(getRegistrationType())) {
+            return;
+        }
+        super.validateRegistrationType();
     }
 }

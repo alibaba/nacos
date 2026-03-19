@@ -101,6 +101,9 @@ if [[ "${NACOS_TYPE}" == "Java" ]]; then
     JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
     if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]]; then
         RUN_CMD="${RUN_CMD} -Xlog:gc*:file=${BASE_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=102400"
+        RUN_CMD="${RUN_CMD} --add-opens=java.base/java.lang=ALL-UNNAMED"
+        RUN_CMD="${RUN_CMD} --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+        RUN_CMD="${RUN_CMD} --add-opens=java.base/java.util=ALL-UNNAMED"
     else
         JAVA_OPT_EXT_FIX="-Djava.ext.dirs=${JAVA_HOME}/jre/lib/ext:${JAVA_HOME}/lib/ext"
         RUN_CMD="${RUN_CMD} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"

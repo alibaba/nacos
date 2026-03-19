@@ -82,6 +82,9 @@ public class GrpcConstants {
     @GRpcConfigLabel
     public static final String GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT = NACOS_CLIENT_GRPC + ".channel.capability.negotiation.timeout";
 
+    @GRpcConfigLabel
+    public static final String GRPC_THREADPOOL_ALLOW_CORE_THREAD_TIMEOUT = NACOS_CLIENT_GRPC + ".pool.core.timeout";
+
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
     
     @Documented

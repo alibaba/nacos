@@ -18,7 +18,6 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
 import com.alibaba.nacos.core.exception.NacosApiExceptionHandler;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
@@ -41,7 +40,6 @@ import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.time.ZoneId;
-import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -82,6 +80,21 @@ class ConsoleWebConfigTest {
     }
     
     @Test
+    void corsFilterWithCustomConfiguration() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        environment.setProperty("nacos.console.cors.allow-credentials", "false");
+        environment.setProperty("nacos.console.cors.allowed-headers", "Content-Type");
+        environment.setProperty("nacos.console.cors.max-age", "3600");
+        environment.setProperty("nacos.console.cors.allowed-methods", "GET,POST");
+        environment.setProperty("nacos.console.cors.allowed-origins", "http://localhost:8080");
+        EnvUtil.setEnvironment(environment);
+        
+        assertNotNull(consoleWebConfig.corsFilter());
+        EnvUtil.setEnvironment(cachedEnvironment);
+    }
+    
+    @Test
     void xssFilter() {
         assertNotNull(consoleWebConfig.xssFilter());
     }
@@ -106,19 +119,6 @@ class ConsoleWebConfigTest {
         assertEquals(8, registration.getOrder());
         assertEquals(1, registration.getUrlPatterns().size());
         assertEquals("/*", registration.getUrlPatterns().iterator().next());
-    }
-    
-    @Test
-    void consoleApiCompatibilityFilterRegistration() {
-        FilterRegistrationBean<ApiCompatibilityFilter> registration = consoleWebConfig.consoleApiCompatibilityFilterRegistration(
-                consoleWebConfig.consoleApiCompatibilityFilter(methodsCache));
-        assertInstanceOf(ApiCompatibilityFilter.class, registration.getFilter());
-        assertEquals("consoleApiCompatibilityFilter", registration.getFilterName());
-        assertEquals(5, registration.getOrder());
-        assertEquals(2, registration.getUrlPatterns().size());
-        Iterator<String> iterator = registration.getUrlPatterns().iterator();
-        assertEquals("/v1/*", iterator.next());
-        assertEquals("/v2/*", iterator.next());
     }
     
     @Test

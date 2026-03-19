@@ -166,6 +166,49 @@
   margin-bottom: 10px;
 }
 
+.default-security-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.default-security-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fafbfd;
+  flex: 1 1 calc(50% - 8px);
+  min-width: 280px;
+}
+
+.default-security-card-header {
+  margin-bottom: 12px;
+}
+
+.default-security-card-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1c1f23;
+}
+
+.default-security-card-desc {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .default-security-sections {
+    flex-direction: column;
+  }
+
+  .default-security-card {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+}
+
 /* Security Scheme Item Styles */
 .security-scheme-item {
   border: 1px solid rgba(0, 0, 0, 0.06);

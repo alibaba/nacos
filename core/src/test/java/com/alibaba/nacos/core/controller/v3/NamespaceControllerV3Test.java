@@ -129,6 +129,65 @@ class NamespaceControllerV3Test {
     }
     
     @Test
+    void testCreateNamespaceWithBlankNamespaceId() throws Exception {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId("");
+        form.setNamespaceName(TEST_NAMESPACE_NAME);
+        form.setNamespaceDesc(TEST_NAMESPACE_DESC);
+        
+        when(namespaceOperationService.createNamespace(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_NAME), org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_DESC))).thenReturn(true);
+        
+        Result<Boolean> result = namespaceControllerV3.createNamespace(form);
+        
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(ErrorCode.SUCCESS.getCode(), (int) result.getCode());
+        Assertions.assertTrue(result.getData());
+    }
+    
+    @Test
+    void testCreateNamespaceWithTooLongNamespaceId() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId("a".repeat(129));
+        form.setNamespaceName(TEST_NAMESPACE_NAME);
+        form.setNamespaceDesc(TEST_NAMESPACE_DESC);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> namespaceControllerV3.createNamespace(form));
+        
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getErrCode());
+        Assertions.assertTrue(exception.getErrMsg().contains("too long namespaceId"));
+    }
+    
+    @Test
+    void testCreateNamespaceWithInvalidNamespaceName() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId(TEST_NAMESPACE_ID);
+        form.setNamespaceName("name@with#illegal");
+        form.setNamespaceDesc(TEST_NAMESPACE_DESC);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> namespaceControllerV3.createNamespace(form));
+        
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getErrCode());
+        Assertions.assertTrue(exception.getErrMsg().contains("contains illegal char"));
+    }
+    
+    @Test
+    void testUpdateNamespaceWithInvalidNamespaceName() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId(TEST_NAMESPACE_ID);
+        form.setNamespaceName("name$invalid");
+        form.setNamespaceDesc("desc");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> namespaceControllerV3.updateNamespace(form));
+        
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getErrCode());
+        Assertions.assertTrue(exception.getErrMsg().contains("contains illegal char"));
+    }
+    
+    @Test
     void testUpdateNamespace() throws NacosException {
         NamespaceForm form = new NamespaceForm();
         form.setNamespaceId(TEST_NAMESPACE_ID);

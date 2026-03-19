@@ -26,17 +26,22 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.request.QueryPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
+import com.alibaba.nacos.api.ai.remote.response.QueryPromptResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
@@ -51,6 +56,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.remote.redo.AgentEndpointWrapper;
 import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
@@ -58,7 +64,6 @@ import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
@@ -70,6 +75,7 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -84,7 +90,7 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
  *
  * @author xiweng.yy
  */
-public class AiGrpcClient implements Closeable {
+public class AiGrpcClient implements AiClientProxy {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AiGrpcClient.class);
     
@@ -176,6 +182,40 @@ public class AiGrpcClient implements Closeable {
         request.setVersion(version);
         QueryMcpServerResponse response = requestToServer(request, QueryMcpServerResponse.class);
         return response.getMcpServerDetailInfo();
+    }
+    
+    /**
+     * Query prompt by latest/version/label.
+     *
+     * @param promptKey prompt key
+     * @param version prompt version, optional
+     * @param label prompt label, optional
+     * @return prompt detail
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public Prompt queryPrompt(String promptKey, String version, String label) throws NacosException {
+        return queryPrompt(promptKey, version, label, null);
+    }
+    
+    /**
+     * Query prompt by latest/version/label with optional md5.
+     *
+     * @param promptKey prompt key
+     * @param version prompt version, optional
+     * @param label prompt label, optional
+     * @param md5 client md5 for conditional query, optional
+     * @return prompt detail
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException {
+        QueryPromptRequest request = new QueryPromptRequest();
+        request.setNamespaceId(namespaceId);
+        request.setPromptKey(promptKey);
+        request.setVersion(version);
+        request.setLabel(label);
+        request.setMd5(md5);
+        QueryPromptResponse response = requestToServer(request, QueryPromptResponse.class);
+        return response.getPromptInfo();
     }
     
     /**
@@ -396,8 +436,25 @@ public class AiGrpcClient implements Closeable {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                     "Request Nacos server version is too low, not support agent registry feature.");
         }
-        redoService.cachedAgentEndpointForRedo(agentName, endpoint);
+        redoService.cachedAgentEndpointForRedo(agentName, AgentEndpointWrapper.wrap(endpoint));
         doRegisterAgentEndpoint(agentName, endpoint);
+    }
+    
+    /**
+     * Batch Register agent endpoint into agent.
+     *
+     * @param agentName agent name
+     * @param endpoints agent endpoints
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void registerAgentEndpoints(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+        LOGGER.info("[{}] BATCH REGISTER Agent endpoint size: {} into agent {}", uuid, endpoints.size(), agentName);
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_AGENT_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support agent registry feature.");
+        }
+        redoService.cachedAgentEndpointForRedo(agentName, AgentEndpointWrapper.wrap(endpoints));
+        doRegisterAgentEndpoint(agentName, endpoints);
     }
     
     /**
@@ -413,6 +470,22 @@ public class AiGrpcClient implements Closeable {
         request.setAgentName(agentName);
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         request.setEndpoint(endpoint);
+        requestToServer(request, AgentEndpointResponse.class);
+        redoService.agentEndpointRegistered(agentName);
+    }
+    
+    /**
+     * Actual do batch register agent endpoint into agent.
+     *
+     * @param agentName agent name
+     * @param endpoints agent endpoints
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void doRegisterAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+        BatchAgentEndpointRequest request = new BatchAgentEndpointRequest();
+        request.setNamespaceId(this.namespaceId);
+        request.setAgentName(agentName);
+        request.setEndpoints(endpoints);
         requestToServer(request, AgentEndpointResponse.class);
         redoService.agentEndpointRegistered(agentName);
     }
@@ -517,6 +590,9 @@ public class AiGrpcClient implements Closeable {
             } else if (request instanceof AbstractAgentRequest) {
                 AbstractAgentRequest agentRequest = (AbstractAgentRequest) request;
                 request.putAllHeader(getSecurityHeaders(agentRequest.getNamespaceId(), agentRequest.getAgentName()));
+            } else if (request instanceof AbstractPromptRequest) {
+                AbstractPromptRequest promptRequest = (AbstractPromptRequest) request;
+                request.putAllHeader(getSecurityHeaders(promptRequest.getNamespaceId(), promptRequest.getPromptKey()));
             } else {
                 throw new NacosException(400,
                         String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));

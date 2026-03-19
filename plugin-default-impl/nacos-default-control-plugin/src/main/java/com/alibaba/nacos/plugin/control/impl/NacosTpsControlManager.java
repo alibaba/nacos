@@ -91,7 +91,7 @@ public class NacosTpsControlManager extends TpsControlManager {
      * @param rule      rule.
      */
     public synchronized void applyTpsRule(String pointName, TpsControlRule rule) {
-        if (rule == null) {
+        if (rule == null || rule.getPointRule() == null) {
             rules.remove(pointName);
         } else {
             rules.put(pointName, rule);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Form, Table, Button } from '@alifd/next';
+import PropTypes from 'prop-types';
 
 // 表单布局
 export const formitemLayout = {
@@ -28,6 +29,15 @@ export const GetTitle = ({
     )}
   </Form.Item>
 );
+
+GetTitle.propTypes = {
+  label: PropTypes.string,
+  onClick: PropTypes.func,
+  text: PropTypes.string,
+  locale: PropTypes.object,
+  disabled: PropTypes.bool,
+  required: PropTypes.bool,
+};
 
 // 表格操作组件
 export const tableOperation = ({ onClick, locale, disabled = false }) => {

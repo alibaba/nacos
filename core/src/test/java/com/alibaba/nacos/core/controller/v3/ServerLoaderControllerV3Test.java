@@ -79,6 +79,23 @@ class ServerLoaderControllerV3Test {
     }
     
     @Test
+    void testSmartReloadWithDefaultLoaderFactor() throws NacosException {
+        when(serverLoaderService.smartReload(0.1f)).thenReturn(true);
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+        Result<String> result = serverLoaderControllerV3.smartReload(httpServletRequest, "0.1");
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+    }
+    
+    @Test
+    void testSmartReloadFailure() throws NacosException {
+        when(serverLoaderService.smartReload(0.1f)).thenReturn(false);
+        MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
+        Result<String> result = serverLoaderControllerV3.smartReload(httpServletRequest, "0.1");
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertEquals("Smart reload failed, please try again later.", result.getData());
+    }
+    
+    @Test
     void testReloadSingle() {
         Result<String> result = serverLoaderControllerV3.reloadSingle("111", "1.1.1.1");
         verify(serverLoaderService).reloadClient("111", "1.1.1.1");

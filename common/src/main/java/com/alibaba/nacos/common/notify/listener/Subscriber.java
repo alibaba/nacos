@@ -26,7 +26,6 @@ import java.util.concurrent.Executor;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Subscriber<T extends Event> {
     
     /**

@@ -57,16 +57,17 @@ class TpsControlRequestFilterTest {
     
     @BeforeEach
     void before() {
+        RemoteTpsCheckRequestParserRegistry.PARSER_MAP.clear();
         tpsControlRequestFilter = new TpsControlRequestFilter();
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         controlManagerCenterMockedStatic.when(() -> ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
-        Mockito.when(controlManagerCenter.getTpsControlManager()).thenReturn(tpsControlManager);
-        
+        org.mockito.Mockito.lenient().when(controlManagerCenter.getTpsControlManager()).thenReturn(tpsControlManager);
     }
     
     @AfterEach
     void after() {
         controlManagerCenterMockedStatic.close();
+        RemoteTpsCheckRequestParserRegistry.PARSER_MAP.clear();
     }
     
     /**
@@ -124,5 +125,62 @@ class TpsControlRequestFilterTest {
         Response filterResponse = tpsControlRequestFilter.filter(healthCheckRequest, requestMeta, HealthCheckRequestHandler.class);
         assertNull(filterResponse);
     }
+    
+    /**
+     * test when getHandleMethod throws (handler class has no handle method), returns null.
+     */
+    @Test
+    void testFilterWhenGetHandleMethodThrowsReturnsNull() {
+        HealthCheckRequest request = new HealthCheckRequest();
+        RequestMeta meta = new RequestMeta();
+        Response response = tpsControlRequestFilter.filter(request, meta, String.class);
+        assertNull(response);
+    }
+    
+    /**
+     * test when parser returns request with blank pointName, filter sets pointName.
+     */
+    @Test
+    void testFilterWhenParserReturnsRequestWithBlankPointNameSetsPointName() {
+        RemoteTpsCheckRequestParserRegistry.register(new RemoteTpsCheckRequestParser() {
+            @Override
+            public TpsCheckRequest parse(Request request, RequestMeta meta) {
+                TpsCheckRequest req = new TpsCheckRequest();
+                req.setPointName("");
+                return req;
+            }
+            
+            @Override
+            public String getPointName() {
+                return "HealthCheck";
+            }
+            
+            @Override
+            public String getName() {
+                return "HealthCheck";
+            }
+        });
+        Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class))).thenAnswer(invocation -> {
+            TpsCheckRequest req = invocation.getArgument(0);
+            assertEquals("HealthCheck", req.getPointName());
+            return new TpsCheckResponse(true, 200, "success");
+        });
+        Response filterResponse = tpsControlRequestFilter.filter(new HealthCheckRequest(), new RequestMeta(),
+                HealthCheckRequestHandler.class);
+        assertNull(filterResponse);
+    }
+    
+    /**
+     * test when no parser registered, uses default TpsCheckRequest.
+     */
+    @Test
+    void testFilterWhenNoParserRegistersAndUsesDefaultRequest() {
+        Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(new TpsCheckResponse(true, 200, "ok"));
+        Response filterResponse = tpsControlRequestFilter.filter(new HealthCheckRequest(), new RequestMeta(),
+                HealthCheckRequestHandler.class);
+        assertNull(filterResponse);
+        Mockito.verify(tpsControlManager).check(any(TpsCheckRequest.class));
+    }
 }
+
 

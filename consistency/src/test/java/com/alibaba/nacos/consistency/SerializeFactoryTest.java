@@ -32,6 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SerializeFactoryTest {
     
     @Test
+    void testConstructor() {
+        new SerializeFactory();
+    }
+    
+    @Test
     void testListSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
         

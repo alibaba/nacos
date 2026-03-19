@@ -16,4 +16,5 @@
 
 <configuration>
     <root level="INFO"/>
+    <logger name="com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator" level="DEBUG"/>
 </configuration>

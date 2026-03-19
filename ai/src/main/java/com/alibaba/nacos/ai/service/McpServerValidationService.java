@@ -17,13 +17,13 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.McpServerValidationConstants;
-import com.alibaba.nacos.ai.index.McpServerIndex;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerValidationItem;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +41,9 @@ import java.util.Set;
  */
 @Service
 public class McpServerValidationService {
-    
+
     @Autowired
-    private McpServerIndex mcpServerIndex;
+    private McpServerOperationService mcpServerOperationService;
     
     /**
      * Validate MCP servers for import.
@@ -136,17 +136,15 @@ public class McpServerValidationService {
         }
         
         // Check for duplicates in current batch
-        if (existingNames.contains(serverName)) {
+        if (existingNames.contains(serverName + server.getVersionDetail().getVersion())) {
             errors.add("Duplicate server name in import batch: " + serverName);
             item.setStatus(McpServerValidationConstants.STATUS_DUPLICATE);
         } else {
-            existingNames.add(serverName);
+            existingNames.add(serverName + server.getVersionDetail().getVersion());
         }
         
-        // Check if server already exists
         try {
-            McpServerIndexData existingServer = mcpServerIndex.getMcpServerByName(namespaceId, serverName);
-            if (existingServer != null) {
+            if (isVersionedServerExist(namespaceId, serverName, server.getVersionDetail().getVersion())) {
                 item.setExists(true);
                 if (!McpServerValidationConstants.STATUS_DUPLICATE.equals(item.getStatus())) {
                     item.setStatus(McpServerValidationConstants.STATUS_DUPLICATE);
@@ -169,6 +167,18 @@ public class McpServerValidationService {
         
         item.setErrors(errors);
         return item;
+    }
+
+    private boolean isVersionedServerExist(String namespaceId, String serverName, String version) throws NacosException {
+        try {
+            McpServerDetailInfo existingServer = mcpServerOperationService.getMcpServerDetail(namespaceId, version, serverName, null);
+            return existingServer != null;
+        } catch (NacosApiException e) {
+            if (e.getDetailErrCode() == ErrorCode.MCP_SERVER_NOT_FOUND.getCode()) {
+                return false;
+            }
+            throw e;
+        }
     }
     
     /**

@@ -34,7 +34,7 @@ class PageTitle extends React.Component {
 
   getNameSpace(locale, namespaceId, namespaceName, desc, nameSpace) {
     if (!nameSpace) {
-      return namespaceId;
+      return null; // Don't display namespace when nameSpace is false or not provided
     }
     return (
       <span style={{ display: 'flex', alignItems: 'center', marginLeft: 16 }}>
@@ -66,7 +66,7 @@ class PageTitle extends React.Component {
       >
         <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>{title}</span>
         <span style={{ marginLeft: 4 }}>
-          {namespaceId && namespaceId !== 'undefined'
+          {namespaceId && namespaceId !== 'undefined' && nameSpace
             ? this.getNameSpace(locale, namespaceId, namespaceName, desc, nameSpace)
             : ''}
         </span>

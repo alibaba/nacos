@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -120,5 +121,33 @@ class NacosClusterControllerV3Test {
         verify(nacosClusterOperationService).updateLookup(any());
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertTrue(result.getData());
+    }
+    
+    @Test
+    void testListNodesWithIllegalState() {
+        assertThrows(NacosApiException.class,
+                () -> nacosClusterControllerV3.listNodes(null, "INVALID_STATE"));
+    }
+    
+    @Test
+    void testUpdateNodesWithNullList() {
+        assertThrows(NacosApiException.class, () -> nacosClusterControllerV3.updateNodes(null));
+    }
+    
+    @Test
+    void testUpdateNodesWithEmptyList() {
+        assertThrows(NacosApiException.class, () -> nacosClusterControllerV3.updateNodes(Collections.emptyList()));
+    }
+    
+    @Test
+    void testUpdateLookupWithNullRequest() {
+        assertThrows(NacosApiException.class, () -> nacosClusterControllerV3.updateLookup(null));
+    }
+    
+    @Test
+    void testUpdateLookupWithNullType() {
+        LookupUpdateRequest request = new LookupUpdateRequest();
+        request.setType(null);
+        assertThrows(NacosApiException.class, () -> nacosClusterControllerV3.updateLookup(request));
     }
 }

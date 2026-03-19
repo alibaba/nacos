@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.config;
 
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.console.handler.impl.remote.RemoteServerConnector;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NacosMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
@@ -62,7 +64,7 @@ import static org.mockito.Mockito.when;
 class ConfigImportAndExportServiceTest {
     
     @Mock
-    NacosMemberManager memberManager;
+    RemoteServerConnector remoteServerConnector;
     
     @Mock
     CloseableHttpClient httpClient;
@@ -74,18 +76,20 @@ class ConfigImportAndExportServiceTest {
     private ConfigurableEnvironment cachedEnvironment;
     
     @BeforeEach
-    void setUp() {
+    void setUp() throws NacosException {
         cachedEnvironment = EnvUtil.getEnvironment();
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty("nacos.core.auth.admin.enabled", "false");
         EnvUtil.setEnvironment(environment);
-        service = new ConfigImportAndExportService(memberManager);
+        service = new ConfigImportAndExportService(remoteServerConnector);
         httpClientMock = Mockito.mockStatic(HttpClients.class);
         httpClientMock.when(HttpClients::createDefault).thenReturn(httpClient);
         Member member = new Member();
         member.setIp("127.0.0.1");
         member.setPort(8080);
-        when(memberManager.allMembers()).thenReturn(Collections.singleton(member));
+        member.setState(NodeState.UP);
+        Mockito.lenient().when(remoteServerConnector.randomOneHealthyMember()).thenReturn(member);
+        Mockito.lenient().when(remoteServerConnector.getServerContextPath()).thenReturn("/nacos");
     }
     
     @AfterEach
@@ -95,7 +99,7 @@ class ConfigImportAndExportServiceTest {
     }
     
     @Test
-    void importConfig() throws IOException {
+    void importConfig() throws IOException, NacosException {
         MultipartFile mockFile = Mockito.mock(MultipartFile.class);
         when(mockFile.getContentType()).thenReturn(MediaType.MULTIPART_FORM_DATA_VALUE);
         when(mockFile.getOriginalFilename()).thenReturn("file");
@@ -167,9 +171,7 @@ class ConfigImportAndExportServiceTest {
     }
     
     @Test
-    void exportHttpClientResponseHandlerHandleResponse() throws ProtocolException, IOException {
-        // remove lenient warning
-        memberManager.allMembers();
+    void exportHttpClientResponseHandlerHandleResponse() throws ProtocolException, IOException, NacosException {
         ClassicHttpResponse mockResponse = Mockito.mock(ClassicHttpResponse.class);
         when(mockResponse.getHeader("Content-Disposition")).thenReturn(
                 new BasicHeader("Content-Disposition", "testDisposition"));
@@ -186,9 +188,7 @@ class ConfigImportAndExportServiceTest {
     }
     
     @Test
-    void exportHttpClientResponseHandlerHandleResponseWithException() throws ProtocolException {
-        // remove lenient warning
-        memberManager.allMembers();
+    void exportHttpClientResponseHandlerHandleResponseWithException() throws ProtocolException, NacosException {
         ClassicHttpResponse mockResponse = Mockito.mock(ClassicHttpResponse.class);
         when(mockResponse.getHeader("Content-Disposition")).thenThrow(new ProtocolException());
         ConfigImportAndExportService.ExportHttpClientResponseHandler handler = new ConfigImportAndExportService.ExportHttpClientResponseHandler();

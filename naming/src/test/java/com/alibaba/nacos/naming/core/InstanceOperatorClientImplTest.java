@@ -37,7 +37,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
-import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -98,10 +97,7 @@ class InstanceOperatorClientImplTest {
     
     @Mock
     private SwitchDomain switchDomain;
-    
-    @Mock
-    private UdpPushService pushService;
-    
+
     @Mock
     private SelectorManager selectorManager;
     
@@ -135,11 +131,11 @@ class InstanceOperatorClientImplTest {
     @Test
     void testRegisterInstanceWithInvalidClusterName() throws NacosException {
         Throwable exception = assertThrows(NacosException.class, () -> {
-            
+
             Instance instance = new Instance();
             instance.setEphemeral(true);
             instance.setClusterName("cluster1,cluster2");
-            new InstanceOperatorClientImpl(null, null, null, null, null, null, null).registerInstance("ns-01",
+            new InstanceOperatorClientImpl(null, null, null, null, null, null).registerInstance("ns-01",
                     "serviceName01", instance);
         });
         assertTrue(exception.getMessage().contains(
@@ -196,19 +192,17 @@ class InstanceOperatorClientImplTest {
     
     @Test
     void testListInstance() {
-        when(pushService.canEnablePush(Mockito.anyString())).thenReturn(true);
-        
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setGroupName("DEFAULT_GROUP");
         serviceInfo.setName("B");
         when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
-        
+
         ServiceMetadata metadata = new ServiceMetadata();
         when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
-        
+
         Subscriber subscriber = new Subscriber("2.2.2.2", "", "app", "1.1.1.1", "A", "B", 8848);
         instanceOperatorClient.listInstance("A", Constants.DEFAULT_GROUP, "B", subscriber, "C", true);
-        
+
         Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
     }
     

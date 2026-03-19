@@ -681,7 +681,9 @@ public interface NamingService {
      * @return list of service names
      * @throws NacosException nacos exception
      * @since 0.7.0
+     * @deprecated after 3.3.0.
      */
+    @Deprecated
     ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
     
     /**
@@ -693,7 +695,9 @@ public interface NamingService {
      * @param selector  selector to filter the resource
      * @return list of service names
      * @throws NacosException nacos exception
+     * @deprecated after 3.3.0.
      */
+    @Deprecated
     ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException;
     

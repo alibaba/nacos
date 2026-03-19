@@ -78,7 +78,7 @@ public interface ConfigInfoMapper extends Mapper {
      * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=? LIMIT startRow, pageSize
      *
      * @param context The context of startRow, pageSize
-     * @return The sql of querying configration information based on group.
+     * @return The sql of querying configuration information based on group.
      */
     MapperResult findConfigInfoByAppFetchRows(MapperContext context);
     
@@ -411,7 +411,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Query config info. <br/>The default sql: <br/>SELECT
-     * id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info ...
+     * id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type,md5 FROM config_info ...
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying config info
@@ -487,26 +487,36 @@ public interface ConfigInfoMapper extends Mapper {
     default MapperResult updateConfigInfoAtomicCas(MapperContext context) {
         List<Object> paramList = new ArrayList<>();
         
+        StringBuilder sql = new StringBuilder("UPDATE config_info SET content=?, md5=?, src_ip=?, src_user=?, gmt_modified=");
+        sql.append(getFunction("NOW()"));
+        sql.append(", app_name=?");
+        
         paramList.add(context.getUpdateParameter(FieldConstant.CONTENT));
         paramList.add(context.getUpdateParameter(FieldConstant.MD5));
         paramList.add(context.getUpdateParameter(FieldConstant.SRC_IP));
         paramList.add(context.getUpdateParameter(FieldConstant.SRC_USER));
         paramList.add(context.getUpdateParameter(FieldConstant.APP_NAME));
-        paramList.add(context.getUpdateParameter(FieldConstant.C_DESC));
+        
+        // Only update c_desc when parameter exists (not null)
+        if (context.getUpdateParameter(FieldConstant.C_DESC) != null) {
+            sql.append(", c_desc=?");
+            paramList.add(context.getUpdateParameter(FieldConstant.C_DESC));
+        }
+        
+        sql.append(", c_use=?, effect=?, type=?, c_schema=?, encrypted_data_key=?");
         paramList.add(context.getUpdateParameter(FieldConstant.C_USE));
         paramList.add(context.getUpdateParameter(FieldConstant.EFFECT));
         paramList.add(context.getUpdateParameter(FieldConstant.TYPE));
         paramList.add(context.getUpdateParameter(FieldConstant.C_SCHEMA));
         paramList.add(context.getUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY));
+        
+        sql.append(" WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
         paramList.add(context.getWhereParameter(FieldConstant.DATA_ID));
         paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
         paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
         paramList.add(context.getWhereParameter(FieldConstant.MD5));
-        String sql = "UPDATE config_info SET " + "content=?, md5=?, src_ip=?, src_user=?, gmt_modified="
-                + getFunction("NOW()")
-                + ", app_name=?, c_desc=?, c_use=?, effect=?, type=?, c_schema=?, encrypted_data_key=? "
-                + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
-        return new MapperResult(sql, paramList);
+        
+        return new MapperResult(sql.toString(), paramList);
     }
     
     /**

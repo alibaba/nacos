@@ -53,7 +53,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
-import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.ClientAttributesFilter;
 
@@ -81,22 +80,19 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     private final NamingMetadataOperateService metadataOperateService;
     
     private final NamingMetadataManager metadataManager;
-    
+
     private final SwitchDomain switchDomain;
-    
-    private final UdpPushService pushService;
-    
+
     public InstanceOperatorClientImpl(ClientManagerDelegate clientManager,
             ClientOperationServiceProxy clientOperationService, ServiceStorage serviceStorage,
             NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
-            SwitchDomain switchDomain, UdpPushService pushService) {
+            SwitchDomain switchDomain) {
         this.clientManager = clientManager;
         this.clientOperationService = clientOperationService;
         this.serviceStorage = serviceStorage;
         this.metadataOperateService = metadataOperateService;
         this.metadataManager = metadataManager;
         this.switchDomain = switchDomain;
-        this.pushService = pushService;
     }
     
     /**
@@ -192,7 +188,11 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             String cluster, boolean healthOnly) {
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         // For adapt 1.X subscribe logic
-        if (null != subscriber && subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
+        if (null != subscriber && subscriber.getPort() > 0) {
+            Loggers.SRV_LOG.warn("[DEPRECATED] UDP push has been removed in Nacos 3.2.0. "
+                    + "Client {} is using legacy HTTP API for subscription which will not receive push notifications. "
+                    + "Please upgrade to Nacos 2.x client with gRPC support. Subscriber: {}",
+                    subscriber.getAgent(), subscriber.getAddrStr());
             String clientId = IpPortBasedClient.getClientId(subscriber.getAddrStr(), true);
             createIpPortClientIfAbsent(clientId);
             clientOperationService.subscribeService(service, subscriber, clientId);

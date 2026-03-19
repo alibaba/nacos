@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.Collection;
+
 /**
  * Nacos AI A2A client service interface.
  *
@@ -57,10 +59,11 @@ public interface A2aService {
     /**
      * Get agent card with nacos extension detail with target version.
      *
-     * @param agentName name of agent card
-     * @param version   target version, if null or empty, get latest version
-     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
-     *                              default is empty, means use agent card setting in nacos.
+     * @param agentName        name of agent card
+     * @param version          target version, if null or empty, get latest version
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE} default is empty, means use agent card
+     *                         setting in nacos.
      * @return agent card with nacos extension detail
      * @throws NacosException if request parameter is invalid or agent card not found or handle error
      */
@@ -70,12 +73,12 @@ public interface A2aService {
      * Release new agent card or new version with default service type endpoint.
      *
      * <p>
-     *     If current agent card and version exist, This API will do nothing.
-     *     If current agent card exist but version not exist, This API will release new version.
-     *     If current t agent card not exist, This API will release new agent card.
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
      * </p>
      *
-     * @param agentCard         agent card need to release
+     * @param agentCard agent card need to release
      * @throws NacosException if request parameter is invalid or handle error
      */
     default void releaseAgentCard(AgentCard agentCard) throws NacosException {
@@ -86,13 +89,14 @@ public interface A2aService {
      * Release new agent card or new version.
      *
      * <p>
-     *     If current agent card and version exist, This API will do nothing.
-     *     If current agent card exist but version not exist, This API will release new version.
-     *     If current t agent card not exist, This API will release new agent card.
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
      * </p>
      *
-     * @param agentCard         agent card need to release
-     * @param registrationType  {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @param agentCard        agent card need to release
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
      * @throws NacosException if request parameter is invalid or handle error
      */
     default void releaseAgentCard(AgentCard agentCard, String registrationType) throws NacosException {
@@ -103,15 +107,17 @@ public interface A2aService {
      * Release new agent card or new version.
      *
      * <p>
-     *     If current agent card and version exist, This API will do nothing.
-     *     If current agent card exist but version not exist, This API will release new version.
-     *     If current t agent card not exist, This API will release new agent card.
+     * If current agent card and version exist, This API will do nothing. If current agent card exist but version not
+     * exist, This API will release new version. If current t agent card not exist, This API will release new agent
+     * card.
      * </p>
      *
-     * @param agentCard         agent card need to release
-     * @param registrationType  {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
-     * @param setAsLatest       whether set new version as latest, default is false. This parameter is only effect when new version is released.
-     *                          If current agent card not exist, whatever this parameter is, it will be set as latest.
+     * @param agentCard        agent card need to release
+     * @param registrationType {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_URL} or
+     *                         {@link AiConstants.A2a#A2A_ENDPOINT_TYPE_SERVICE}
+     * @param setAsLatest      whether set new version as latest, default is false. This parameter is only effect when
+     *                         new version is released. If current agent card not exist, whatever this parameter is, it
+     *                         will be set as latest.
      * @throws NacosException if request parameter is invalid or handle error
      */
     void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest) throws NacosException;
@@ -164,12 +170,12 @@ public interface A2aService {
     /**
      * Register endpoint to agent card.
      *
-     * @param agentName name of agent
-     * @param version   version of this endpoint
-     * @param address   address for this endpoint
-     * @param port      port of this endpoint
-     * @param transport supported transport, according to A2A protocol, it should be `JSONRPC`, `GRPC` and `HTTP+JSON`
-     * @param path      The path of endpoint request
+     * @param agentName  name of agent
+     * @param version    version of this endpoint
+     * @param address    address for this endpoint
+     * @param port       port of this endpoint
+     * @param transport  supported transport, according to A2A protocol, it should be `JSONRPC`, `GRPC` and `HTTP+JSON`
+     * @param path       The path of endpoint request
      * @param supportTls whether support tls
      * @throws NacosException if request parameter is invalid or handle error or agent not found
      */
@@ -195,11 +201,26 @@ public interface A2aService {
     void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException;
     
     /**
+     * Batch register endpoints to agent card.
+     *
+     * <p>
+     * Conflict with {@link #registerAgentEndpoint(String, AgentEndpoint)}, this API will overwrite all endpoint
+     * registered by {@link #registerAgentEndpoint(String, AgentEndpoint)}.
+     * </p>
+     *
+     * @param agentName name of agent
+     * @param endpoints collection of endpoints
+     * @throws NacosException if request parameter is invalid or handle error or agent not found
+     * @since 3.1.1
+     */
+    void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException;
+    
+    /**
      * Deregister endpoint from agent card which registered by this client.
      *
      * <p>
-     *     Only endpoint registered by this client can be deregistered.
-     *     Other endpoint registered by other clients, call this API will no any effect.
+     * Only endpoint registered by this client can be deregistered. Other endpoint registered by other clients, call
+     * this API will no any effect.
      * </p>
      *
      * @param agentName name of agent
@@ -221,8 +242,8 @@ public interface A2aService {
      * Deregister endpoint from agent card which registered by this client.
      *
      * <p>
-     *     Only endpoint registered by this client can be deregistered.
-     *     Other endpoint registered by other clients, call this API will no any effect.
+     * Only endpoint registered by this client can be deregistered. Other endpoint registered by other clients, call
+     * this API will no any effect.
      * </p>
      *
      * @param agentName name of agent

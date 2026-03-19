@@ -102,6 +102,8 @@ class ResponseUtilTest {
         configInfo.setContent("testContent");
         configInfo.setType("text");
         configInfo.setAppName("testAppName");
+        configInfo.setDesc("testDesc");
+        configInfo.setConfigTags("tag1,tag2");
         ConfigBasicInfo configBasicInfo = ResponseUtil.transferToConfigBasicInfo(configInfo);
         assertEquals(configInfo.getId(), configBasicInfo.getId());
         assertEquals(configInfo.getTenant(), configBasicInfo.getNamespaceId());
@@ -110,6 +112,8 @@ class ResponseUtilTest {
         assertEquals(configInfo.getMd5(), configBasicInfo.getMd5());
         assertEquals(configInfo.getType(), configBasicInfo.getType());
         assertEquals(configInfo.getAppName(), configBasicInfo.getAppName());
+        assertEquals(configInfo.getDesc(), configBasicInfo.getDesc());
+        assertEquals(configInfo.getConfigTags(), configBasicInfo.getConfigTags());
         assertEquals(0L, configBasicInfo.getCreateTime());
         assertEquals(0L, configBasicInfo.getModifyTime());
     }
@@ -126,6 +130,8 @@ class ResponseUtilTest {
         configInfo.setContent("testContent");
         configInfo.setType("text");
         configInfo.setAppName("testAppName");
+        configInfo.setDesc("testDesc");
+        configInfo.setConfigTags("tag1,tag2");
         configInfo.setLastModified(System.currentTimeMillis());
         ConfigBasicInfo configBasicInfo = ResponseUtil.transferToConfigBasicInfo(configInfo);
         assertEquals(configInfo.getId(), configBasicInfo.getId());
@@ -135,6 +141,8 @@ class ResponseUtilTest {
         assertEquals(configInfo.getMd5(), configBasicInfo.getMd5());
         assertEquals(configInfo.getType(), configBasicInfo.getType());
         assertEquals(configInfo.getAppName(), configBasicInfo.getAppName());
+        assertEquals(configInfo.getDesc(), configBasicInfo.getDesc());
+        assertEquals(configInfo.getConfigTags(), configBasicInfo.getConfigTags());
         assertEquals(0L, configBasicInfo.getCreateTime());
         assertEquals(configInfo.getLastModified(), configBasicInfo.getModifyTime());
     }

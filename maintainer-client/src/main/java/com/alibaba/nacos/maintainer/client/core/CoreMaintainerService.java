@@ -220,4 +220,82 @@ public interface CoreMaintainerService extends Closeable {
      * @throws NacosException Thrown if any error occurs during the check.
      */
     Boolean checkNamespaceIdExist(String namespaceId) throws NacosException;
+
+    /**
+     * List all plugins with optional type filter.
+     *
+     * @param pluginType optional plugin type filter, null or empty to list all
+     * @return list of plugin information
+     * @throws NacosException if the operation fails
+     */
+    List<Map<String, Object>> listPlugins(String pluginType) throws NacosException;
+
+    /**
+     * Get plugin detail by type and name.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @return plugin detail information
+     * @throws NacosException if the operation fails
+     */
+    Map<String, Object> getPluginDetail(String pluginType, String pluginName) throws NacosException;
+
+    /**
+     * Update plugin enabled/disabled status.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param enabled    whether to enable
+     * @throws NacosException if the operation fails
+     */
+    default void updatePluginStatus(String pluginType, String pluginName, boolean enabled) throws NacosException {
+        updatePluginStatus(pluginType, pluginName, enabled, false);
+    }
+
+    /**
+     * Update plugin enabled/disabled status.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param enabled    whether to enable
+     * @param localOnly  whether only apply to local node
+     * @throws NacosException if the operation fails
+     */
+    void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+            throws NacosException;
+
+    /**
+     * Update plugin configuration.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param config     configuration map
+     * @throws NacosException if the operation fails
+     */
+    default void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config)
+            throws NacosException {
+        updatePluginConfig(pluginType, pluginName, config, false);
+    }
+
+    /**
+     * Update plugin configuration.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @param config     configuration map
+     * @param localOnly  whether only apply to local node
+     * @throws NacosException if the operation fails
+     */
+    void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config, boolean localOnly)
+            throws NacosException;
+
+    /**
+     * Get plugin availability across cluster nodes.
+     *
+     * @param pluginType plugin type
+     * @param pluginName plugin name
+     * @return node availability map (node address to availability)
+     * @throws NacosException if the operation fails
+     */
+    Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException;
 }

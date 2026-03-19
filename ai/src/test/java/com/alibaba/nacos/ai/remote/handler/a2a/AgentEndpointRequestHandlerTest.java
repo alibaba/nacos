@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.remote.handler.a2a;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
@@ -34,9 +35,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,9 +59,12 @@ class AgentEndpointRequestHandlerTest {
     
     private AgentEndpointRequestHandler requestHandler;
     
+    private Instance capturedInstance;
+    
     @BeforeEach
     void setUp() {
         requestHandler = new AgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
+        capturedInstance = null;
     }
     
     @AfterEach
@@ -120,10 +128,19 @@ class AgentEndpointRequestHandlerTest {
         endpoint.setPath("/test");
         endpoint.setTransport("JSONRPC");
         endpoint.setSupportTls(false);
+        endpoint.setProtocol("HTTP");
+        endpoint.setQuery("param1=value1&param2=value2");
         request.setEndpoint(endpoint);
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         when(agentIdCodecHolder.encode("test")).thenReturn("test");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+        // Mock the registerInstance method to capture the Instance argument
+        doAnswer(invocation -> {
+            capturedInstance = invocation.getArgument(1);
+            validateInstanceMetadata(capturedInstance);
+            return null;
+        }).when(clientOperationService).registerInstance(any(Service.class), any(Instance.class), eq("TEST_CONNECTION_ID"));
+        
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertEquals(AiRemoteConstants.REGISTER_ENDPOINT, response.getType());
         verify(clientOperationService).registerInstance(any(Service.class), any(Instance.class),
@@ -142,10 +159,19 @@ class AgentEndpointRequestHandlerTest {
         endpoint.setPath("/test");
         endpoint.setTransport("JSONRPC");
         endpoint.setSupportTls(false);
+        endpoint.setProtocol("HTTPS");
+        endpoint.setQuery("token=abc123");
         request.setEndpoint(endpoint);
         request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
         when(agentIdCodecHolder.encode("test")).thenReturn("test");
         when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+        // Mock the deregisterInstance method to capture the Instance argument
+        doAnswer(invocation -> {
+            capturedInstance = invocation.getArgument(1);
+            validateInstanceMetadata(capturedInstance);
+            return null;
+        }).when(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class), eq("TEST_CONNECTION_ID"));
+        
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         assertEquals(AiRemoteConstants.DE_REGISTER_ENDPOINT, response.getType());
         verify(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class),
@@ -156,5 +182,14 @@ class AgentEndpointRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(code, response.getErrorCode());
         assertEquals(message, response.getMessage());
+    }
+    
+    private void validateInstanceMetadata(Instance instance) {
+        Map<String, String> metadata = instance.getMetadata();
+        assertTrue(metadata.containsKey(Constants.A2A.AGENT_ENDPOINT_PATH_KEY));
+        assertTrue(metadata.containsKey(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
+        assertTrue(metadata.containsKey(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
+        assertTrue(metadata.containsKey(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
+        assertTrue(metadata.containsKey(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY));
     }
 }

@@ -19,8 +19,10 @@ package com.alibaba.nacos.persistence.model.event;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EventTest {
@@ -41,8 +43,22 @@ class EventTest {
     void testRaftDbErrorEvent() {
         RaftDbErrorEvent event = new RaftDbErrorEvent(new Exception("test"));
         assertNotNull(event);
+        assertEquals("test", event.getEx().getMessage());
         String json = JacksonUtils.toJson(event);
         RaftDbErrorEvent deserialized = JacksonUtils.toObj(json, RaftDbErrorEvent.class);
         assertInstanceOf(Throwable.class, deserialized.getEx());
+    }
+
+    @Test
+    void testRaftDbErrorEventNoArg() {
+        RaftDbErrorEvent event = new RaftDbErrorEvent();
+        assertNotNull(event);
+        assertNull(event.getEx());
+    }
+
+    @Test
+    void testDerbyImportEventNotFinished() {
+        DerbyImportEvent event = new DerbyImportEvent(false);
+        assertTrue(!event.isFinished());
     }
 }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -31,6 +30,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -177,7 +177,8 @@ public class UserControllerV3 {
      */
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE, tags = {
-            com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
+            com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY,
+            AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
     public Result<String> updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         try {
@@ -208,6 +209,10 @@ public class UserControllerV3 {
         if (!NacosAuthConfigHolder.getInstance().isAnyAuthEnabled()) {
             return true;
         }
+        // Fixes #13959. If the user is server identity, should not check permission.
+        if (isFromServerIdentity(request)) {
+            return true;
+        }
         IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
         if (identityContext == null) {
             throw new HttpSessionRequiredException("session expired!");
@@ -218,9 +223,9 @@ public class UserControllerV3 {
             if (user == null) {
                 throw new HttpSessionRequiredException("session expired!");
             }
-            //get user form jwt need check permission
-            iAuthenticationManager.hasGlobalAdminRole(user);
         }
+        //get user form jwt need check permission
+        iAuthenticationManager.hasGlobalAdminRole(user);
         // admin
         if (user.isGlobalAdmin()) {
             return true;
@@ -294,6 +299,12 @@ public class UserControllerV3 {
         }
         return Result.failure(ErrorCode.ILLEGAL_STATE.getCode(),
                 "Current Nacos auth plugin type is not `nacos` or `nacos-ldap`, don't support login API.", null);
+    }
+    
+    private boolean isFromServerIdentity(HttpServletRequest request) {
+        String serverIdentityKey = authConfigs.getServerIdentityKey();
+        String serverIdentityValue = request.getHeader(serverIdentityKey);
+        return authConfigs.getServerIdentityValue().equals(serverIdentityValue);
     }
 }
 

@@ -94,7 +94,7 @@ import static com.alibaba.nacos.config.server.utils.PropertyUtil.CONFIG_MIGRATE_
  *
  * @author lixiaoshuang
  */
-@SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service("externalConfigInfoPersistServiceImpl")
 public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistService {
@@ -132,6 +132,10 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
@@ -201,7 +205,6 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             }
         });
     }
-    
     
     /**
      * insert or update config.
@@ -659,16 +662,16 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         try {
-            ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO);
-            
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5Tmp);
             context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
             context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
             context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
-            context.putUpdateParameter(FieldConstant.C_DESC, desc);
+            // Only update c_desc when desc is not null (empty string will also update)
+            if (desc != null) {
+                context.putUpdateParameter(FieldConstant.C_DESC, desc);
+            }
             context.putUpdateParameter(FieldConstant.C_USE, use);
             context.putUpdateParameter(FieldConstant.EFFECT, effect);
             context.putUpdateParameter(FieldConstant.TYPE, type);
@@ -679,6 +682,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
             
+            ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.CONFIG_INFO);
             MapperResult mapperResult = configInfoMapper.updateConfigInfoAtomicCas(context);
             return jt.update(mapperResult.getSql(), mapperResult.getParamList().toArray());
         } catch (CannotGetJdbcConnectionException e) {
@@ -703,12 +708,26 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
-            jt.update(configInfoMapper.update(
-                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
-                                    "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
-                            Arrays.asList("data_id", "group_id", "tenant_id")), configInfo.getContent(), md5Tmp, srcIp, srcUser,
-                    appNameTmp, desc, use, effect, type, schema, encryptedDataKey, configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp);
+            
+            // Build update columns and parameters dynamically
+            List<String> updateColumns = new ArrayList<>(Arrays.asList("content", "md5", "src_ip", "src_user", 
+                    "gmt_modified@NOW()", "app_name"));
+            List<Object> updateParams = new ArrayList<>(Arrays.asList(configInfo.getContent(), md5Tmp, srcIp, 
+                    srcUser, appNameTmp));
+            
+            // Only update c_desc when desc is not null (empty string will also update)
+            if (desc != null) {
+                updateColumns.add("c_desc");
+                updateParams.add(desc);
+            }
+            updateColumns.addAll(Arrays.asList("c_use", "effect", "type", "c_schema", "encrypted_data_key"));
+            updateParams.addAll(Arrays.asList(use, effect, type, schema, encryptedDataKey));
+            
+            // Add where parameters
+            updateParams.addAll(Arrays.asList(configInfo.getDataId(), configInfo.getGroup(), tenantTmp));
+            
+            jt.update(configInfoMapper.update(updateColumns, Arrays.asList("data_id", "group_id", "tenant_id")), 
+                    updateParams.toArray());
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;

@@ -56,11 +56,19 @@ public class AiConstants {
         public static final String OFFICIAL_TRANSPORT_STREAMABLE = "streamable-http";
     }
     
+    public static final String AI_TRANSPORT_MODE = "nacosAiTransportMode";
+    
+    public static final String AI_TRANSPORT_MODE_GRPC = "grpc";
+    
+    public static final String AI_TRANSPORT_MODE_HTTP = "http";
+    
     public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
     
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL = "nacosAiMcpServerCacheUpdateInterval";
     
     public static final String AI_AGENT_CARD_CACHE_UPDATE_INTERVAL = "nacosAiAgentCardCacheUpdateInterval";
+    
+    public static final String AI_PROMPT_CACHE_UPDATE_INTERVAL = "nacosAiPromptCacheUpdateInterval";
     
     public static final long DEFAULT_AI_CACHE_UPDATE_INTERVAL = 10000L;
     
@@ -81,5 +89,7 @@ public class AiConstants {
         public static final String A2A_ENDPOINT_TYPE_SERVICE = "SERVICE";
         
         public static final String A2A_ENDPOINT_DEFAULT_TRANSPORT = "JSONRPC";
+        
+        public static final String A2A_ENDPOINT_DEFAULT_PROTOCOL = "HTTP";
     }
 }

@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link LocalFileMeta} unit test.
@@ -41,5 +43,12 @@ class LocalFileMetaTest {
     void testAppendAndGet() {
         fileMeta.append("key", "value");
         assertEquals("value", fileMeta.get("key"));
+    }
+    
+    @Test
+    void testToString() {
+        LocalFileMeta meta = new LocalFileMeta();
+        assertNotNull(meta.toString());
+        assertTrue(meta.toString().contains("LocalFileMeta"));
     }
 }

@@ -138,13 +138,10 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     }
 
     @Override
-    protected void afterSearch(List<McpServerIndexData> indexDataList, String name) {
+    protected void afterSearch(McpServerIndexData indexData, String name) {
         // Update cache
         if (cacheEnabled) {
-            for (McpServerIndexData indexData : indexDataList) {
-                cacheIndex.updateIndex(indexData.getNamespaceId(), name, indexData.getId());
-            }
-            LOGGER.debug("Updated cache with {} entries from search results", indexDataList.size());
+            cacheIndex.updateIndex(indexData.getNamespaceId(), name, indexData.getId());
         }
     }
     

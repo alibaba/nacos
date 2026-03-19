@@ -269,7 +269,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         }
     }
     
-    @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     class CheckDbHealthTask implements Runnable {
         
         @Override

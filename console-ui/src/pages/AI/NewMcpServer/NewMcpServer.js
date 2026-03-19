@@ -64,6 +64,10 @@ class NewMcpServer extends React.Component {
       values: {
         securitySchemes: [],
         localServerConfig: localServerConfigDesc,
+        defaultDownstreamSecurityId: '',
+        defaultDownstreamSecurityPassthrough: false,
+        defaultUpstreamSecurityId: '',
+        defaultUpstreamSecurityCredential: '',
       },
     });
     this.tenant = getParams('namespace') || '';
@@ -194,6 +198,8 @@ class NewMcpServer extends React.Component {
           ...this.field.getValues(),
           securitySchemes: securitySchemesFormData,
         });
+
+        this.setDefaultSecurityFields(result.data?.toolSpec?.extensions);
 
         let restToMcpSwitchValue = false;
         if (protocol === 'https' || protocol === 'http') {
@@ -607,28 +613,45 @@ class NewMcpServer extends React.Component {
             : '{}',
         };
 
-        // 如果是 stdio 协议，从 localServerConfig 生成 packages
-        if (values?.frontProtocol === 'stdio' && values?.localServerConfig) {
-          try {
-            const localConfig = JSON.parse(values.localServerConfig);
-            const packages = this.convertServerConfigToPackages(localConfig);
-            if (packages && packages.length > 0) {
-              serverSpec.packages = packages;
+        // 如果是 stdio 协议，优先使用 localServerConfig 生成 packages，否则回退到查询结果
+        if (values?.frontProtocol === 'stdio') {
+          let generatedPackages = [];
+
+          if (values?.localServerConfig) {
+            try {
+              const localConfig = JSON.parse(values.localServerConfig);
+              generatedPackages = this.convertServerConfigToPackages(localConfig) || [];
+            } catch (error) {
+              console.error('Failed to parse localServerConfig or convert to packages:', error);
             }
-          } catch (error) {
-            console.error('Failed to parse localServerConfig or convert to packages:', error);
           }
+
+          if (generatedPackages.length > 0) {
+            serverSpec.packages = generatedPackages;
+          } else if (
+            Array.isArray(this.state?.serverConfig?.packages) &&
+            this.state.serverConfig.packages.length > 0
+          ) {
+            // 深拷贝，避免直接引用 state
+            serverSpec.packages = JSON.parse(JSON.stringify(this.state.serverConfig.packages));
+          }
+        }
+
+        const extensions = this.collectExtensionsPayload(values?.extensions);
+        const toolSpecPayload = {
+          ...(this.state?.serverConfig?.toolSpec || {}),
+          securitySchemes: securitySchemes,
+        };
+        if (extensions) {
+          toolSpecPayload.extensions = extensions;
+        } else {
+          delete toolSpecPayload.extensions;
         }
 
         const params = {
           id: mcpServerId,
           serverSpecification: JSON.stringify(serverSpec, null, 2),
-          toolSpecification: JSON.stringify(
-            {
-              ...this.state?.serverConfig?.toolSpec,
-              securitySchemes: securitySchemes,
-            } || {}
-          ),
+          toolSpecification: JSON.stringify(toolSpecPayload || {}, null, 2),
         };
 
         if (values?.frontProtocol !== 'stdio') {
@@ -937,6 +960,88 @@ class NewMcpServer extends React.Component {
     }
   };
 
+  setDefaultSecurityFields = extensions => {
+    const downstream = extensions?.['server.defaultDownstreamSecurity'] || {};
+    const upstream = extensions?.['server.defaultUpstreamSecurity'] || {};
+
+    this.field.setValues({
+      defaultDownstreamSecurityId: downstream.id || '',
+      defaultDownstreamSecurityPassthrough:
+        typeof downstream.passthrough === 'boolean' ? downstream.passthrough : false,
+      defaultUpstreamSecurityId: upstream.id || '',
+      defaultUpstreamSecurityCredential: upstream.credential || '',
+    });
+  };
+
+  collectExtensionsPayload = baseExtensions => {
+    const sourceExtensions =
+      baseExtensions != null
+        ? baseExtensions
+        : this.state?.serverConfig?.toolSpec?.extensions || {};
+
+    const preservedExtensions = {};
+    Object.keys(sourceExtensions || {}).forEach(key => {
+      if (
+        key !== 'server.defaultDownstreamSecurity' &&
+        key !== 'server.defaultUpstreamSecurity'
+      ) {
+        preservedExtensions[key] = sourceExtensions[key];
+      }
+    });
+
+    const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
+    const downstreamPassthrough = this.field.getValue(
+      'defaultDownstreamSecurityPassthrough'
+    );
+    if (downstreamId) {
+      preservedExtensions['server.defaultDownstreamSecurity'] = {
+        id: downstreamId,
+        passthrough: Boolean(downstreamPassthrough),
+      };
+    }
+
+    const upstreamId = this.field.getValue('defaultUpstreamSecurityId');
+    const upstreamCredential = this.field.getValue('defaultUpstreamSecurityCredential');
+    if (upstreamId) {
+      preservedExtensions['server.defaultUpstreamSecurity'] = {
+        id: upstreamId,
+        ...(upstreamCredential ? { credential: upstreamCredential } : {}),
+      };
+    }
+
+    return Object.keys(preservedExtensions).length ? preservedExtensions : {};
+  };
+
+  handleExtensionsFieldChange = (options = {}) => {
+    const { skipServerConfigUpdate = false } = options;
+    const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
+    if (!downstreamId && this.field.getValue('defaultDownstreamSecurityPassthrough')) {
+      this.field.setValue('defaultDownstreamSecurityPassthrough', false);
+    }
+    const upstreamId = this.field.getValue('defaultUpstreamSecurityId');
+    if (!upstreamId && this.field.getValue('defaultUpstreamSecurityCredential')) {
+      this.field.setValue('defaultUpstreamSecurityCredential', '');
+    }
+    const extensions = this.collectExtensionsPayload();
+    if (!skipServerConfigUpdate) {
+      this.setState(prevState => {
+        const nextToolSpec = {
+          ...(prevState.serverConfig?.toolSpec || {}),
+          extensions,
+        };
+        return {
+          serverConfig: {
+            ...prevState.serverConfig,
+            toolSpec: nextToolSpec,
+          },
+        };
+      });
+    }
+
+    return extensions;
+
+  };
+
   // 切换高级配置展开/折叠状态
   toggleAdvancedConfig = () => {
     this.setState({
@@ -981,6 +1086,19 @@ class NewMcpServer extends React.Component {
     // 延迟执行，确保表单字段已经更新
     setTimeout(() => {
       if (!this._mounted) return;
+      const currentSchemes = this.field.getValue('securitySchemes') || [];
+      const availableIds = currentSchemes.map(item => item?.id).filter(Boolean);
+      const downstreamId = this.field.getValue('defaultDownstreamSecurityId');
+      const upstreamId = this.field.getValue('defaultUpstreamSecurityId');
+      if (downstreamId && !availableIds.includes(downstreamId)) {
+        this.field.setValue('defaultDownstreamSecurityId', '');
+        this.field.setValue('defaultDownstreamSecurityPassthrough', false);
+      }
+      if (upstreamId && !availableIds.includes(upstreamId)) {
+        this.field.setValue('defaultUpstreamSecurityId', '');
+        this.field.setValue('defaultUpstreamSecurityCredential', '');
+      }
+      this.handleExtensionsFieldChange({ skipServerConfigUpdate: true });
       this.toolsChange();
     }, 100);
   };
@@ -1043,22 +1161,33 @@ class NewMcpServer extends React.Component {
     // 同步 internal 计数器，便于后续新增时生成唯一行 id
     this.setState({ securitySchemeIdx: mergedSecuritySchemes.length });
 
+    const incomingExtensions = _toolSpec?.extensions;
+    if (incomingExtensions) {
+      this.setDefaultSecurityFields(incomingExtensions);
+    }
+    const extensions = this.collectExtensionsPayload(incomingExtensions);
+
     await new Promise(resolve => {
-      this.setState(
-        {
+      this.setState(prevState => {
+        const prevToolSpec = prevState.serverConfig?.toolSpec || {};
+        const nextToolSpec = {
+          ...prevToolSpec,
+          tools: _toolSpec?.tools || prevToolSpec.tools || [],
+          toolsMeta: _toolSpec?.toolsMeta || prevToolSpec.toolsMeta || {},
+          securitySchemes: mergedSecuritySchemes,
+        };
+        if (extensions) {
+          nextToolSpec.extensions = extensions;
+        } else {
+          delete nextToolSpec.extensions;
+        }
+        return {
           serverConfig: {
-            ...this.state?.serverConfig,
-            toolSpec: {
-              ...this.state?.serverConfig?.toolSpec,
-              tools: _toolSpec?.tools || this.state?.serverConfig?.toolSpec?.tools || [],
-              toolsMeta:
-                _toolSpec?.toolsMeta || this.state?.serverConfig?.toolSpec?.toolsMeta || {},
-              securitySchemes: mergedSecuritySchemes,
-            },
+            ...prevState.serverConfig,
+            toolSpec: nextToolSpec,
           },
-        },
-        resolve
-      );
+        };
+      }, resolve);
     });
   };
 
@@ -1101,6 +1230,14 @@ class NewMcpServer extends React.Component {
     const versions = this.state.serverConfig?.allVersions
       ? this.state.serverConfig?.allVersions
       : [];
+
+    const securitySchemesData = this.field.getValue('securitySchemes') || [];
+    const availableSecuritySchemeOptions = securitySchemesData
+      .filter(item => item?.id)
+      .map(item => ({
+        label: item.id,
+        value: item.id,
+      }));
 
     let hasDraftVersion = false;
     if (versions.length > 0) {
@@ -1819,6 +1956,107 @@ class NewMcpServer extends React.Component {
 
               {!this.state.advancedConfigCollapsed && (
                 <div className="advanced-config-content">
+                  <div className="default-security-sections">
+                    <div className="default-security-card">
+                      <div className="default-security-card-header">
+                        <div className="default-security-card-title">
+                          {locale.defaultDownstreamSecurityTitle || 'Default Downstream Security'}
+                        </div>
+                        <div className="default-security-card-desc">
+                          {locale.defaultDownstreamSecurityDesc ||
+                            'Applies to client-to-gateway requests (e.g., tools/list) when no tool override exists.'}
+                        </div>
+                      </div>
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <FormItem label={locale.selectSecurityScheme || 'Select Security Scheme'}>
+                            <Select
+                              {...init('defaultDownstreamSecurityId', {
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              dataSource={availableSecuritySchemeOptions}
+                              placeholder={
+                                locale.defaultDownstreamSecurityPlaceholder ||
+                                locale.pleaseSelectSecurityScheme ||
+                                'Select security scheme'
+                              }
+                              hasClear
+                              showSearch
+                            />
+                          </FormItem>
+                        </Col>
+                        <Col span={12}>
+                          <FormItem label={locale.transparentAuth || 'Enable Transparent Auth'}>
+                            <Switch
+                              {...init('defaultDownstreamSecurityPassthrough', {
+                                valueName: 'checked',
+                                initValue: false,
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              disabled={!this.field.getValue('defaultDownstreamSecurityId')}
+                            />
+                            <span className="switch-label">
+                              {this.field.getValue('defaultDownstreamSecurityPassthrough')
+                                ? locale.enable || 'Enable'
+                                : locale.disable || 'Disable'}
+                            </span>
+                          </FormItem>
+                        </Col>
+                      </Row>
+                    </div>
+                    <div className="default-security-card">
+                      <div className="default-security-card-header">
+                        <div className="default-security-card-title">
+                          {locale.defaultUpstreamSecurityTitle || 'Default Upstream Security'}
+                        </div>
+                        <div className="default-security-card-desc">
+                          {locale.defaultUpstreamSecurityDesc ||
+                            'Applies to gateway-to-backend calls (e.g., default requestTemplate.security).'}
+                        </div>
+                      </div>
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <FormItem label={locale.selectSecurityScheme || 'Select Security Scheme'}>
+                            <Select
+                              {...init('defaultUpstreamSecurityId', {
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              dataSource={availableSecuritySchemeOptions}
+                              placeholder={
+                                locale.defaultUpstreamSecurityPlaceholder ||
+                                locale.pleaseSelectSecurityScheme ||
+                                'Select security scheme'
+                              }
+                              hasClear
+                              showSearch
+                            />
+                          </FormItem>
+                        </Col>
+                        <Col span={12}>
+                          <FormItem label={locale.upstreamCredentialLabel || 'Override Credential'}>
+                            <Input.TextArea
+                              {...init('defaultUpstreamSecurityCredential', {
+                                props: {
+                                  onChange: () => this.handleExtensionsFieldChange(),
+                                },
+                              })}
+                              placeholder={
+                                locale.upstreamCredentialPlaceholder || 'Optional credential override'
+                              }
+                              autoHeight={{ minRows: 2, maxRows: 4 }}
+                              disabled={!this.field.getValue('defaultUpstreamSecurityId')}
+                            />
+                          </FormItem>
+                        </Col>
+                      </Row>
+                    </div>
+                  </div>
                   <Button
                     type="primary"
                     size="small"

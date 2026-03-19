@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.ai.remote.redo;
 
-import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.client.redo.data.RedoData;
 
 import java.util.Objects;
@@ -26,11 +25,11 @@ import java.util.Objects;
  *
  * @author xiweng.yy
  */
-public class AgentEndpointRedoData extends RedoData<AgentEndpoint> {
+public class AgentEndpointRedoData extends RedoData<AgentEndpointWrapper> {
     
     private final String agentName;
     
-    public AgentEndpointRedoData(String agentName, AgentEndpoint agentEndpoint) {
+    public AgentEndpointRedoData(String agentName, AgentEndpointWrapper agentEndpoint) {
         this.agentName = agentName;
         this.set(agentEndpoint);
     }
