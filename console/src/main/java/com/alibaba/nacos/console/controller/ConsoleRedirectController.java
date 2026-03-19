@@ -42,4 +42,14 @@ public class ConsoleRedirectController {
         String defaultUi = EnvUtil.getProperty(PROPERTY_DEFAULT_UI, UI_NEXT);
         return UI_LEGACY.equals(defaultUi) ? "redirect:/legacy/" : "redirect:/next/";
     }
+    
+    @GetMapping("/next/")
+    public String next() {
+        return "forward:/next/index.html";
+    }
+    
+    @GetMapping("/legacy/")
+    public String legacy() {
+        return "forward:/legacy/index.html";
+    }
 }
