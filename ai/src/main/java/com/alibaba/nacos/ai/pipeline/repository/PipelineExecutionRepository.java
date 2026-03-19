@@ -18,6 +18,8 @@ package com.alibaba.nacos.ai.pipeline.repository;
 
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 
+import java.util.List;
+
 /**
  * Repository interface for pipeline execution record persistence.
  *
@@ -58,4 +60,34 @@ public interface PipelineExecutionRepository {
      * @return the most recent matching execution record, or null if not found
      */
     PipelineExecution findByResource(String resourceType, String resourceName, String namespaceId, String version);
+    
+    /**
+     * Find pipeline execution records by resource information with pagination support.
+     *
+     * <p>Supports optional filtering by resourceName, namespaceId, and version.
+     * Results are ordered by create_time DESC.</p>
+     *
+     * @param resourceType the resource type (required)
+     * @param resourceName the resource name (optional, ignored if blank)
+     * @param namespaceId  the namespace ID (optional, ignored if blank)
+     * @param version      the resource version (optional, ignored if blank)
+     * @param offset       the offset for pagination
+     * @param limit        the maximum number of records to return
+     * @return list of matching execution records
+     */
+    List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName, String namespaceId,
+            String version, int offset, int limit);
+    
+    /**
+     * Count pipeline execution records by resource information.
+     *
+     * <p>Uses the same filtering logic as {@link #findByResourceWithPage}.</p>
+     *
+     * @param resourceType the resource type (required)
+     * @param resourceName the resource name (optional, ignored if blank)
+     * @param namespaceId  the namespace ID (optional, ignored if blank)
+     * @param version      the resource version (optional, ignored if blank)
+     * @return the count of matching execution records
+     */
+    int countByResource(String resourceType, String resourceName, String namespaceId, String version);
 }

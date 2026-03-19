@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.io.Serializable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -84,4 +85,44 @@ class HessianSerializerTest {
     void testName() {
         assertEquals("Hessian", hessianSerializer.name());
     }
+    
+    @Test
+    void testDeserializeWithEmptyData() {
+        assertNull(hessianSerializer.deserialize(new byte[0], String.class));
+    }
+    
+    @Test
+    void testDeserializeWithType() {
+        String data = "testType";
+        byte[] bytes = hessianSerializer.serialize(data);
+        String result = hessianSerializer.deserialize(bytes, (java.lang.reflect.Type) String.class);
+        assertEquals(data, result);
+    }
+    
+    @Test
+    void testDeserializeWithNullData() {
+        assertNull(hessianSerializer.deserialize(null, String.class));
+    }
+    
+    @Test
+    void testDeserializeWithInvalidData() {
+        byte[] validBytes = hessianSerializer.serialize("test");
+        byte[] invalidBytes = new byte[validBytes.length];
+        System.arraycopy(validBytes, 0, invalidBytes, 0, validBytes.length);
+        invalidBytes[validBytes.length / 2] = (byte) 0xff;
+        try {
+            hessianSerializer.deserialize(invalidBytes);
+            fail("Should throw RuntimeException");
+        } catch (RuntimeException e) {
+            assertTrue(e.getMessage().contains("IOException"));
+        }
+    }
+    
+    @Test
+    void testDeserializeWithInvalidClassName() {
+        byte[] bytes = hessianSerializer.serialize("test");
+        Object result = hessianSerializer.deserialize(bytes, "com.nonexistent.ClassName");
+        assertNull(result);
+    }
+    
 }

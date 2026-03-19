@@ -20,15 +20,23 @@ import com.alibaba.nacos.common.http.HttpUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartHttpServletRequest;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -72,5 +80,29 @@ class ReuseUploadFileHttpServletRequestTest {
         Object body = reuseUploadFileHttpServletRequest.getBody();
         assertEquals(HttpUtils.encodingParams(HttpUtils.translateParameterMap(new HashMap<>()), StandardCharsets.UTF_8.name()), body);
     }
-    
+
+    @Test
+    void testGetParameterAndValuesWhenPresent() {
+        Map<String, String[]> paramMap = new HashMap<>();
+        paramMap.put("k", new String[] {"v1", "v2"});
+        when(mockMultipartHttpServletRequest.getParameterMap()).thenReturn(paramMap);
+        ReuseUploadFileHttpServletRequest wrapper = new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
+        assertEquals("v1", wrapper.getParameter("k"));
+        assertEquals(2, wrapper.getParameterValues("k").length);
+        assertEquals("v1", wrapper.getParameterValues("k")[0]);
+    }
+
+    @Test
+    void testGetBodyWithFileViaSpyGetFile() throws Exception {
+        ReuseUploadFileHttpServletRequest real = new ReuseUploadFileHttpServletRequest(mockMultipartHttpServletRequest);
+        ReuseUploadFileHttpServletRequest spy = Mockito.spy(real);
+        MultipartFile mockFile = mock(MultipartFile.class);
+        Resource mockResource = mock(Resource.class);
+        when(mockFile.getResource()).thenReturn(mockResource);
+        doReturn(mockFile).when(spy).getFile(eq("file"));
+        Object body = spy.getBody();
+        assertNotNull(body);
+        assertTrue(body instanceof MultiValueMap);
+        assertEquals(mockResource, ((MultiValueMap<String, Object>) body).getFirst("file"));
+    }
 }

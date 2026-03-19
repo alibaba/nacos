@@ -61,6 +61,12 @@
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-core</artifactId>
             <version>1.0.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.networknt</groupId>
+                    <artifactId>json-schema-validator</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.agentscope</groupId>

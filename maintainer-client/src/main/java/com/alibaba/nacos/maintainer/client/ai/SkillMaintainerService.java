@@ -28,28 +28,6 @@ import com.alibaba.nacos.api.model.Page;
  * @author nacos
  */
 public interface SkillMaintainerService {
-    
-    /**
-     * Register a new skill.
-     *
-     * @param namespaceId namespace ID
-     * @param skill       skill object to register
-     * @return skill name
-     * @throws NacosException if fail to register skill
-     */
-    String registerSkill(String namespaceId, Skill skill) throws NacosException;
-    
-    /**
-     * Register skill with default namespace.
-     *
-     * @param skill skill object to register
-     * @return skill name
-     * @throws NacosException if fail to register skill
-     */
-    default String registerSkill(Skill skill) throws NacosException {
-        return registerSkill(Constants.DEFAULT_NAMESPACE_ID, skill);
-    }
-    
     /**
      * Get skill detail.
      *
@@ -69,27 +47,6 @@ public interface SkillMaintainerService {
      */
     default Skill getSkillDetail(String skillName) throws NacosException {
         return getSkillDetail(Constants.DEFAULT_NAMESPACE_ID, skillName);
-    }
-    
-    /**
-     * Update skill.
-     *
-     * @param namespaceId namespace ID
-     * @param skill       skill object to update
-     * @return true if update success
-     * @throws NacosException if fail to update skill
-     */
-    boolean updateSkill(String namespaceId, Skill skill) throws NacosException;
-    
-    /**
-     * Update skill with default namespace.
-     *
-     * @param skill skill object to update
-     * @return true if update success
-     * @throws NacosException if fail to update skill
-     */
-    default boolean updateSkill(Skill skill) throws NacosException {
-        return updateSkill(Constants.DEFAULT_NAMESPACE_ID, skill);
     }
     
     /**
@@ -160,4 +117,84 @@ public interface SkillMaintainerService {
     default String uploadSkillFromZip(byte[] zipBytes) throws NacosException {
         return uploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes);
     }
+
+    /**
+     * Create draft version for a skill.
+     *
+     * @param namespaceId     namespace ID
+     * @param skillName       skill name
+     * @param basedOnVersion  base version (optional)
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
+    String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException;
+
+    /**
+     * Update current draft content.
+     *
+     * @param namespaceId namespace ID
+     * @param skillCard   skill card JSON string
+     * @param setAsLatest whether set as latest (optional)
+     * @return true if update success
+     * @throws NacosException if fail to update draft
+     */
+    boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException;
+
+    /**
+     * Delete current draft version.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @return true if delete success
+     * @throws NacosException if fail to delete draft
+     */
+    boolean deleteDraft(String namespaceId, String skillName) throws NacosException;
+
+    /**
+     * Submit a version for pipeline review.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @param version     version (optional, server may choose current editing)
+     * @return submit result (e.g. pipeline id)
+     * @throws NacosException if fail to submit
+     */
+    String submit(String namespaceId, String skillName, String version) throws NacosException;
+
+    /**
+     * Publish an approved reviewing version.
+     *
+     * @param namespaceId        namespace ID
+     * @param skillName          skill name
+     * @param version            version
+     * @param updateLatestLabel  update latest label, default true if null
+     * @return true if publish success
+     * @throws NacosException if fail to publish
+     */
+    boolean publish(String namespaceId, String skillName, String version, Boolean updateLatestLabel) throws NacosException;
+
+    /**
+     * Update runtime labels mapping JSON.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @param labels      JSON string
+     * @return true if update success
+     * @throws NacosException if fail to update labels
+     */
+    boolean updateLabels(String namespaceId, String skillName, String labels) throws NacosException;
+
+    /**
+     * Online/offline operation.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @param scope       "skill" for skill-level enable/disable; otherwise version-level
+     * @param version     version for version-level (optional)
+     * @param online      true for online(enable), false for offline(disable)
+     * @return true if operation success
+     * @throws NacosException if fail to change status
+     */
+    boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version, boolean online)
+            throws NacosException;
 }

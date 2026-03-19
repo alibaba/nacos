@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -119,6 +121,54 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+    
+    @Override
+    public List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName,
+            String namespaceId, String version, int offset, int limit) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM pipeline_execution WHERE resource_type = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(resourceType);
+        
+        if (StringUtils.isNotBlank(resourceName)) {
+            sql.append(" AND resource_name = ?");
+            params.add(resourceName);
+        }
+        if (StringUtils.isNotBlank(namespaceId)) {
+            sql.append(" AND namespace_id = ?");
+            params.add(namespaceId);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            sql.append(" AND version = ?");
+            params.add(version);
+        }
+        sql.append(" ORDER BY create_time DESC LIMIT ? OFFSET ?");
+        params.add(limit);
+        params.add(offset);
+        
+        return getJdbcTemplate().query(sql.toString(), ROW_MAPPER, params.toArray());
+    }
+    
+    @Override
+    public int countByResource(String resourceType, String resourceName, String namespaceId, String version) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM pipeline_execution WHERE resource_type = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(resourceType);
+        
+        if (StringUtils.isNotBlank(resourceName)) {
+            sql.append(" AND resource_name = ?");
+            params.add(resourceName);
+        }
+        if (StringUtils.isNotBlank(namespaceId)) {
+            sql.append(" AND namespace_id = ?");
+            params.add(namespaceId);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            sql.append(" AND version = ?");
+            params.add(version);
+        }
+        
+        return getJdbcTemplate().queryForObject(sql.toString(), Integer.class, params.toArray());
     }
     
     /**

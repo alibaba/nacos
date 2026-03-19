@@ -21,6 +21,7 @@ package com.alibaba.nacos.maintainer.client.ai;
  *
  * @author xiweng.yy
  */
-public interface AiMaintainerService extends McpMaintainerService, A2aMaintainerService, PromptMaintainerService, SkillMaintainerService {
+public interface AiMaintainerService extends McpMaintainerService, A2aMaintainerService,
+        PromptMaintainerService, SkillMaintainerService, PipelineMaintainerService {
 
 }

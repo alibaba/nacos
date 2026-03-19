@@ -20,7 +20,12 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
+import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
+import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.jupiter.api.AfterAll;
@@ -39,12 +44,17 @@ import org.springframework.mock.env.MockEnvironment;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link ConnectionManager} unit test.
@@ -171,6 +181,98 @@ class ConnectionManagerTest {
     void testCurrentSdkCount() {
         assertEquals(1, connectionManager.currentSdkClientCount());
     }
-    
+
+    @Test
+    void testRegisterWhenAlreadyContainedReturnsTrue() {
+        boolean again = connectionManager.register(connectId, connection);
+        assertTrue(again);
+    }
+
+    @Test
+    void testGetConnectionForClientIpAndCurrentClients() {
+        assertNotNull(connectionManager.getConnectionForClientIp());
+        assertEquals(1, connectionManager.getConnectionForClientIp().get(clientIp).get());
+        assertTrue(connectionManager.currentClients().containsKey(connectId));
+    }
+
+    @Test
+    void testLoadSingleWithRedirectAddressContainingColon() throws NacosException {
+        Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
+        connectionManager.loadSingle(connectId, "127.0.0.1:8848");
+    }
+
+    @Test
+    void testUnregisterRemovesFromConnectionForClientIp() {
+        connectionManager.unregister(connectId);
+        assertFalse(connectionManager.getConnectionForClientIp().containsKey(clientIp));
+    }
+
+    @Test
+    void testTracedReturnsTrueWhenIpInMonitorList() {
+        try (MockedStatic<ControlManagerCenter> cmMock = Mockito.mockStatic(ControlManagerCenter.class)) {
+            ConnectionControlManager connectionControlManager = Mockito.mock(ConnectionControlManager.class);
+            ConnectionControlRule rule = new ConnectionControlRule();
+            rule.setMonitorIpList(Set.of(clientIp));
+            when(connectionControlManager.getConnectionLimitRule()).thenReturn(rule);
+            ControlManagerCenter center = Mockito.mock(ControlManagerCenter.class);
+            when(center.getConnectionControlManager()).thenReturn(connectionControlManager);
+            cmMock.when(ControlManagerCenter::getInstance).thenReturn(center);
+            assertTrue(connectionManager.traced(clientIp));
+        }
+    }
+
+    @Test
+    void testRegisterReturnsFalseWhenCheckLimitFails() {
+        String connectionId2 = UUID.randomUUID().toString();
+        try (MockedStatic<ControlManagerCenter> cmMock = Mockito.mockStatic(ControlManagerCenter.class)) {
+            ConnectionControlManager connectionControlManager = Mockito.mock(ConnectionControlManager.class);
+            ConnectionCheckResponse checkResponse = new ConnectionCheckResponse();
+            checkResponse.setSuccess(false);
+            when(connectionControlManager.check(any(ConnectionCheckRequest.class))).thenReturn(checkResponse);
+            ControlManagerCenter center = Mockito.mock(ControlManagerCenter.class);
+            when(center.getConnectionControlManager()).thenReturn(connectionControlManager);
+            cmMock.when(ControlManagerCenter::getInstance).thenReturn(center);
+            assertFalse(connectionManager.register(connectionId2, connection));
+        }
+    }
+
+    @Test
+    void testLoadSingleWhenConnectionNullReturnsTrue() {
+        boolean result = connectionManager.loadSingle("absent-conn-id", "127.0.0.1:8848");
+        assertTrue(result);
+    }
+
+    @Test
+    void testLoadSingleWhenNotSdkSourceReturnsTrue() {
+        Mockito.when(connectionMeta.isSdkSource()).thenReturn(false);
+        boolean result = connectionManager.loadSingle(connectId, "127.0.0.1:8848");
+        assertTrue(result);
+    }
+
+    @Test
+    void testLoadSingleWithBlankRedirectAddress() {
+        Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
+        boolean result = connectionManager.loadSingle(connectId, "");
+        assertFalse(result);
+    }
+
+    @Test
+    void testCurrentClientsCountWithFilterLabelsMismatch() {
+        Map<String, String> filterLabels = new HashMap<>();
+        filterLabels.put("key", "other-value");
+        assertEquals(0, connectionManager.currentClientsCount(filterLabels));
+    }
+
+    @Test
+    void testGetConnectionWhenAbsentReturnsNull() {
+        assertNotNull(connectionManager.getConnection(connectId));
+        assertNull(connectionManager.getConnection("absent-id"));
+    }
+
+    @Test
+    void testUnregisterNotifiesClientDisConnected() {
+        connectionManager.unregister(connectId);
+        Mockito.verify(clientConnectionEventListenerRegistry).notifyClientDisConnected(connection);
+    }
 }
 

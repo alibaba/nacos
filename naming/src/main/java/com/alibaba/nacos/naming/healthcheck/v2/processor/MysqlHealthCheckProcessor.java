@@ -58,6 +58,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
     
     public static final int CONNECT_TIMEOUT_MS = 500;
     
+    // TODO: Move MySQL health check capability to a dedicated plugin so naming no longer needs mysql driver visibility.
     private static final String CHECK_MYSQL_MASTER_SQL = "show global variables where variable_name='read_only'";
     
     private static final String MYSQL_SLAVE_READONLY = "ON";

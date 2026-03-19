@@ -44,13 +44,103 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>default-datasource-plugin</artifactId>
+            <artifactId>nacos-datasource-plugin-mysql</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-derby</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-postgresql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datasource-plugin-oracle</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-db-schema-sql-to-distribution-conf</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.basedir}/../../distribution/conf"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/derby-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/mysql-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/pg-schema.sql" overwrite="true"/>
+                                <copy file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
+                                      tofile="${project.basedir}/../../distribution/conf/oracle-schema.sql" overwrite="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>verify-db-schema-sql-source-and-output</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-derby/src/main/resources/META-INF/derby-schema.sql"
+                                           property="schema.source.derby.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-mysql/src/main/resources/META-INF/mysql-schema.sql"
+                                           property="schema.source.mysql.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-postgresql/src/main/resources/META-INF/pg-schema.sql"
+                                           property="schema.source.pg.exists"/>
+                                <available file="${project.basedir}/../nacos-default-datasource-plugin/nacos-datasource-plugin-oracle/src/main/resources/META-INF/oracle-schema.sql"
+                                           property="schema.source.oracle.exists"/>
+                                <fail unless="schema.source.derby.exists" message="Missing derby schema source in datasource plugin."/>
+                                <fail unless="schema.source.mysql.exists" message="Missing mysql schema source in datasource plugin."/>
+                                <fail unless="schema.source.pg.exists" message="Missing postgresql schema source in datasource plugin."/>
+                                <fail unless="schema.source.oracle.exists" message="Missing oracle schema source in datasource plugin."/>
+
+                                <available file="${project.basedir}/../../distribution/conf/derby-schema.sql"
+                                           property="schema.output.derby.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/mysql-schema.sql"
+                                           property="schema.output.mysql.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/pg-schema.sql"
+                                           property="schema.output.pg.exists"/>
+                                <available file="${project.basedir}/../../distribution/conf/oracle-schema.sql"
+                                           property="schema.output.oracle.exists"/>
+                                <fail unless="schema.output.derby.exists" message="Missing derby schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.mysql.exists" message="Missing mysql schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.pg.exists" message="Missing postgresql schema in distribution/conf after packaging."/>
+                                <fail unless="schema.output.oracle.exists" message="Missing oracle schema in distribution/conf after packaging."/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -63,7 +153,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/../../distribution/plugins</outputDirectory>
-                            <includeArtifactIds>default-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,default-datasource-plugin</includeArtifactIds>
+                            <includeArtifactIds>default-auth-plugin,nacos-oidc-auth-plugin,default-control-plugin,nacos-datasource-plugin-mysql,nacos-datasource-plugin-derby,nacos-datasource-plugin-postgresql,nacos-datasource-plugin-oracle,mysql-connector-j,derby,postgresql</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

@@ -328,6 +328,7 @@
                         <exclude>**/*.txt</exclude>
                         <exclude>**/*.factories</exclude>
                         <exclude>/console-ui/**</exclude>
+                        <exclude>/console-ui-next/**</exclude>
                         <exclude>**/gogo.proto</exclude>
                         <exclude>**/any.proto</exclude>
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
@@ -348,6 +349,7 @@
                         <exclude>.cursor/**</exclude>
                         <exclude>.agents/**</exclude>
                         <exclude>.qoder/**</exclude>
+                        <exclude>.tools/**</exclude>
                         <exclude>skills/**</exclude>
                     </excludes>
                 </configuration>

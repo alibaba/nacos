@@ -48,18 +48,10 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>default-auth-plugin</artifactId>
+            <artifactId>nacos-datasource-plugin-base</artifactId>
             <version>${revision}</version>
 
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>default-datasource-plugin</artifactId>
-            <version>${revision}</version>
-
-        </dependency>
-
-
     </dependencies>
     
     <profiles>

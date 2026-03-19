@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
-import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
+import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
+import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -34,23 +39,23 @@ import com.alibaba.nacos.core.model.form.PageForm;
 public interface SkillHandler {
     
     /**
-     * Register skill.
-     *
-     * @param skill skill to register
-     * @param form skill detail form
-     * @throws NacosException nacos exception
-     */
-    void registerSkill(Skill skill, SkillDetailForm form) throws NacosException;
-    
-    /**
      * Get skill.
      *
      * @param form skill form
      * @return skill
      * @throws NacosException nacos exception
      */
-    Skill getSkill(SkillForm form) throws NacosException;
-    
+    SkillAdminDetail getSkill(SkillForm form) throws NacosException;
+
+    /**
+     * Get skill version detail. Returns full skill content for a specific version.
+     *
+     * @param form skill form (with version)
+     * @return full skill content
+     * @throws NacosException nacos exception
+     */
+    Skill getSkillVersion(SkillForm form) throws NacosException;
+
     /**
      * Delete skill.
      *
@@ -60,15 +65,6 @@ public interface SkillHandler {
     void deleteSkill(SkillForm form) throws NacosException;
     
     /**
-     * Update skill.
-     *
-     * @param skill skill to update
-     * @param form skill update form
-     * @throws NacosException nacos exception
-     */
-    void updateSkill(Skill skill, SkillUpdateForm form) throws NacosException;
-    
-    /**
      * List skills.
      *
      * @param skillListForm skill list form
@@ -76,7 +72,7 @@ public interface SkillHandler {
      * @return skill list
      * @throws NacosException nacos exception
      */
-    Page<SkillBasicInfo> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException;
+    Page<SkillAdminListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException;
     
     /**
      * Upload skill from zip file.
@@ -87,4 +83,63 @@ public interface SkillHandler {
      * @throws NacosException if upload failed
      */
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+
+    /**
+     * Create draft version based on latest or a specified version.
+     *
+     * @param form draft create form
+     * @return created draft version
+     * @throws NacosException if operation failed
+     */
+    String createDraft(SkillDraftCreateForm form) throws NacosException;
+
+    /**
+     * Update current draft content.
+     *
+     * @param form update form
+     * @throws NacosException if operation failed
+     */
+    void updateDraft(SkillUpdateForm form) throws NacosException;
+
+    /**
+     * Delete current draft version.
+     *
+     * @param form skill form
+     * @throws NacosException if operation failed
+     */
+    void deleteDraft(SkillForm form) throws NacosException;
+
+    /**
+     * Submit a version for pipeline review.
+     *
+     * @param form submit form
+     * @return submit result (e.g. pipeline id)
+     * @throws NacosException if operation failed
+     */
+    String submit(SkillSubmitForm form) throws NacosException;
+
+    /**
+     * Publish an approved reviewing version.
+     *
+     * @param form publish form
+     * @throws NacosException if operation failed
+     */
+    void publish(SkillPublishForm form) throws NacosException;
+
+    /**
+     * Update runtime route labels without changing version status.
+     *
+     * @param form labels update form
+     * @throws NacosException if operation failed
+     */
+    void updateLabels(SkillLabelsUpdateForm form) throws NacosException;
+
+    /**
+     * Change online/offline status.
+     *
+     * @param form online form
+     * @param online true for online, false for offline
+     * @throws NacosException if operation failed
+     */
+    void changeOnlineStatus(SkillOnlineForm form, boolean online) throws NacosException;
 }

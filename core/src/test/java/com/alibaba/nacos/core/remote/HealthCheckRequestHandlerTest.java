@@ -17,9 +17,15 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
+import com.alibaba.nacos.api.remote.response.Response;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -29,11 +35,47 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @date 2021-07-02 19:17
  */
 class HealthCheckRequestHandlerTest {
-    
+
     @Test
     void testHandle() {
         HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
         HealthCheckResponse response = handler.handle(null, null);
         assertNotNull(response);
+    }
+
+    @Test
+    void testHandleRequestWhenFilterThrowsStillCallsHandle() throws NacosException {
+        HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
+        RequestFilters filters = new RequestFilters();
+        filters.registerFilter(new AbstractRequestFilter() {
+            @Override
+            protected Response filter(com.alibaba.nacos.api.remote.request.Request request, RequestMeta meta,
+                    Class handlerClazz) throws NacosException {
+                throw new RuntimeException("filter throw");
+            }
+        });
+        ReflectionTestUtils.setField(handler, "requestFilters", filters);
+        Response result = handler.handleRequest(null, null);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testHandleRequestWhenFilterReturnsErrorResponse() throws NacosException {
+        HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
+        RequestFilters filters = new RequestFilters();
+        filters.registerFilter(new AbstractRequestFilter() {
+            @Override
+            protected Response filter(com.alibaba.nacos.api.remote.request.Request request, RequestMeta meta,
+                    Class handlerClazz) throws NacosException {
+                HealthCheckResponse err = new HealthCheckResponse();
+                err.setErrorInfo(403, "forbidden");
+                return err;
+            }
+        });
+        ReflectionTestUtils.setField(handler, "requestFilters", filters);
+        Response result = handler.handleRequest(null, null);
+        assertNotNull(result);
+        assertFalse(result.isSuccess());
+        assertEquals(403, result.getErrorCode());
     }
 }

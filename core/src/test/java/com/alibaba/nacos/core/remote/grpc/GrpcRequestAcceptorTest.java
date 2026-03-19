@@ -262,6 +262,41 @@ public class GrpcRequestAcceptorTest {
         streamStub.request(request, streamObserver);
         ApplicationUtils.setStarted(false);
     }
+
+    @Test
+    void testGetConnectionNullCausesErrorResponse() {
+        ApplicationUtils.setStarted(true);
+        Mockito.when(requestHandlerRegistry.getByRequestType(Mockito.anyString())).thenReturn(mockHandler);
+        Mockito.when(connectionManager.checkValid(Mockito.any())).thenReturn(true);
+        Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(null);
+
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        InstanceRequest instanceRequest = new InstanceRequest();
+        instanceRequest.setRequestId(requestId);
+        Payload request = GrpcUtils.convert(instanceRequest, metadata);
+
+        StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
+            @Override
+            public void onNext(Payload payload) {
+                Object res = GrpcUtils.parse(payload);
+                assertTrue(res instanceof ErrorResponse);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                fail(throwable.getMessage());
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        };
+
+        streamStub.request(request, streamObserver);
+        ApplicationUtils.setStarted(false);
+    }
     
     @Test
     void testRequestContentError() {

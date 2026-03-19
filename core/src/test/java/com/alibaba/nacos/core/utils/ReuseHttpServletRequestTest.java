@@ -21,13 +21,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -108,9 +112,74 @@ class ReuseHttpServletRequestTest {
     void testGetInputStream() throws IOException {
         ServletInputStream inputStream = reuseHttpServletRequest.getInputStream();
         assertNotNull(inputStream);
+        assertFalse(inputStream.isFinished());
+        assertFalse(inputStream.isReady());
+        inputStream.setReadListener(new ReadListener() {
+            @Override
+            public void onDataAvailable() {
+            }
+
+            @Override
+            public void onAllDataRead() {
+            }
+
+            @Override
+            public void onError(Throwable t) {
+            }
+        });
         int read = inputStream.read();
         while (read != -1) {
             read = inputStream.read();
         }
+    }
+
+    @Test
+    void testGetParameterWhenKeyNotPresent() {
+        assertNull(reuseHttpServletRequest.getParameter("absent"));
+    }
+
+    @Test
+    void testGetBodyWithBlankBodyUsesParamMap() throws Exception {
+        MockHttpServletRequest emptyRequest = new MockHttpServletRequest();
+        emptyRequest.setContentType("application/x-www-form-urlencoded");
+        emptyRequest.setParameter("a", "1");
+        emptyRequest.setContent(new byte[0]);
+        ReuseHttpServletRequest wrapper = new ReuseHttpServletRequest(emptyRequest);
+        Object body = wrapper.getBody();
+        assertNotNull(body);
+        assertTrue(body.toString().contains("a=1"));
+    }
+
+    @Test
+    void testGetBodyWithNonBlankBodyReturnsBodyString() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setContentType("application/json");
+        String json = "{\"a\":1}";
+        request.setContent(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ReuseHttpServletRequest wrapper = new ReuseHttpServletRequest(request);
+        Object body = wrapper.getBody();
+        assertNotNull(body);
+        assertEquals(json, body);
+    }
+
+    @Test
+    void testToBytesReadsMultipleChunks() throws IOException {
+        byte[] largeBody = new byte[2048];
+        for (int i = 0; i < largeBody.length; i++) {
+            largeBody[i] = (byte) ('a' + (i % 26));
+        }
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setContentType("application/json");
+        request.setContent(largeBody);
+        request.setParameter("p", "v");
+        ReuseHttpServletRequest wrapper = new ReuseHttpServletRequest(request);
+        int total = 0;
+        try (ServletInputStream is = wrapper.getInputStream()) {
+            int b;
+            while ((b = is.read()) != -1) {
+                total++;
+            }
+        }
+        assertEquals(2048, total);
     }
 }

@@ -28,7 +28,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolMeta;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -387,22 +386,8 @@ public class NacosAiMaintainerServiceImplTest {
     // ========== Skill Maintainer Service Tests ==========
     
     @Test
-    void registerSkill() throws NacosException {
-        Skill skill = new Skill();
-        skill.setName("testSkill");
-        skill.setDescription("Test skill description");
-        
-        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success("testSkill")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-        
-        String skillName = aiMaintainerService.registerSkill("public", skill);
-        assertEquals("testSkill", skillName);
-    }
-    
-    @Test
     void getSkillDetail() throws NacosException {
-        Skill skill = new Skill();
+        com.alibaba.nacos.api.ai.model.skills.Skill skill = new com.alibaba.nacos.api.ai.model.skills.Skill();
         skill.setName("testSkill");
         skill.setDescription("Test skill description");
         
@@ -410,24 +395,10 @@ public class NacosAiMaintainerServiceImplTest {
         mockRestResult.setData(JacksonUtils.toJson(Result.success(skill)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         
-        Skill actual = aiMaintainerService.getSkillDetail("public", "testSkill");
+        com.alibaba.nacos.api.ai.model.skills.Skill actual = aiMaintainerService.getSkillDetail("public", "testSkill");
         assertNotNull(actual);
         assertEquals("testSkill", actual.getName());
         assertEquals("Test skill description", actual.getDescription());
-    }
-    
-    @Test
-    void updateSkill() throws NacosException {
-        Skill skill = new Skill();
-        skill.setName("testSkill");
-        skill.setDescription("Updated description");
-        
-        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-        
-        boolean result = aiMaintainerService.updateSkill("public", skill);
-        assertTrue(result);
     }
     
     @Test

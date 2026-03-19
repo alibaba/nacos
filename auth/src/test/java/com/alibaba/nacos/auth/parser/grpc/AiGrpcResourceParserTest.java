@@ -20,7 +20,9 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
+import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -50,7 +52,9 @@ class AiGrpcResourceParserTest {
                 ReleaseAgentCardRequest.class.getSimpleName());
         Arguments case4 = Arguments.of(mockOtherRequest("testNs", "testName"),
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "", NotifySubscriberRequest.class.getSimpleName());
-        return Stream.of(case1, case2, case3);
+        Arguments case5 = Arguments.of(makeReleaseMcpServerRequest("testNs", "testName", "testSpecName"), "testNs",
+                "testSpecName", ReleaseMcpServerRequest.class.getSimpleName());
+        return Stream.of(case1, case2, case3, case5);
     }
 
     private static Stream<Arguments> withoutNamespaceRequests() {
@@ -113,6 +117,17 @@ class AiGrpcResourceParserTest {
         AgentCard agentCard = new AgentCard();
         agentCard.setName(cardName);
         result.setAgentCard(agentCard);
+        return result;
+    }
+
+    private static ReleaseMcpServerRequest makeReleaseMcpServerRequest(String testNs, String mcpName,
+            String specName) {
+        ReleaseMcpServerRequest result = new ReleaseMcpServerRequest();
+        result.setNamespaceId(testNs);
+        result.setMcpName(mcpName);
+        McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
+        serverSpecification.setName(specName);
+        result.setServerSpecification(serverSpecification);
         return result;
     }
     
