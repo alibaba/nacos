@@ -61,7 +61,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
     
-    private static final String SKILL_NAME_PATTERN = "^[a-zA-Z_-]+$";
+    private static final String SKILL_NAME_PATTERN = "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$";
+    
+    private static final int SKILL_NAME_MAX_LENGTH = 64;
     
     /**
      * Parse resource ID to get type and resource name.
@@ -107,14 +109,22 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public String registerSkill(Skill skill, String namespaceId) throws NacosException {
         try {
-            // 1. Validate skill name (only allow English letters, underscore, hyphen)
+            // 1. Validate skill name per Agent Skills specification (https://agentskills.io/specification)
             if (StringUtils.isBlank(skill.getName())) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "Skill name is required");
             }
+            if (skill.getName().length() > SKILL_NAME_MAX_LENGTH) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "Skill name must be 1-64 characters");
+            }
             if (!skill.getName().matches(SKILL_NAME_PATTERN)) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                        "Skill name can only contain English letters, underscore, and hyphen");
+                        "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen");
+            }
+            if (skill.getName().contains("--")) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "Skill name must not contain consecutive hyphens (--)");
             }
             
             // 2. Build main config (skill.json)
