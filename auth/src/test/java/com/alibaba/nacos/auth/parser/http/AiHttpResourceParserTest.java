@@ -161,6 +161,68 @@ class AiHttpResourceParserTest {
 
     @Test
     @Secured(signType = "ai")
+    void testParseWithSkillPath() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/skills/list");
+        when(request.getParameter(eq("skillName"))).thenReturn("my-skill");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+
+        Resource actual = resourceParser.parse(request, secured);
+
+        assertEquals("testNs", actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertEquals("my-skill", actual.getName());
+    }
+
+    @Test
+    @Secured(signType = "ai")
+    void testParseWithSkillPathWithoutName() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/skills/list");
+        when(request.getParameter(eq("skillName"))).thenReturn(null);
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+
+        Resource actual = resourceParser.parse(request, secured);
+
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getName());
+    }
+
+    @Test
+    @Secured(signType = "ai")
+    void testParseWithPromptPath() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/prompt/publish");
+        when(request.getParameter(eq("promptKey"))).thenReturn("my-prompt");
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+
+        Resource actual = resourceParser.parse(request, secured);
+
+        assertEquals("testNs", actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertEquals("my-prompt", actual.getName());
+    }
+
+    @Test
+    @Secured(signType = "ai")
+    void testParseWithPromptPathWithoutKey() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
+        when(request.getRequestURI()).thenReturn("/v3/admin/ai/prompt/list");
+        when(request.getParameter(eq("promptKey"))).thenReturn(null);
+        when(request.getParameterMap()).thenReturn(new HashMap<>());
+
+        Resource actual = resourceParser.parse(request, secured);
+
+        assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getName());
+    }
+
+    @Test
+    @Secured(signType = "ai")
     void testParseWithUnknownPath() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         when(request.getParameter(eq(Constants.NAMESPACE_ID))).thenReturn("testNs");
