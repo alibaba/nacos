@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+
 import {
   ArrowLeft,
   Pencil,
@@ -69,7 +69,6 @@ export default function AgentDetailPage() {
     error,
     fetchAgentDetail,
     fetchVersionList,
-    clearCurrentAgent,
     clearError,
   } = useAgentStore();
 
@@ -349,7 +348,7 @@ export default function AgentDetailPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {skills.map((skill, index) => (
-                    <SkillCard key={skill.id || index} skill={skill} t={t} />
+                    <SkillCard key={skill.id || index} skill={skill} />
                   ))}
                 </div>
               )}
@@ -357,7 +356,7 @@ export default function AgentDetailPage() {
           </Card>
 
           {/* Security Schemes */}
-          {agent.securitySchemes && (
+          {!!agent.securitySchemes && (
             <Card className="overflow-hidden py-0 gap-0">
               <div className="px-5 py-3.5 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -376,7 +375,7 @@ export default function AgentDetailPage() {
           )}
 
           {/* Security */}
-          {agent.security && (
+          {!!agent.security && (
             <Card className="overflow-hidden py-0 gap-0">
               <div className="px-5 py-3.5 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -654,7 +653,7 @@ function CapabilityRow({
   );
 }
 
-function SkillCard({ skill, t }: { skill: AgentSkill; t: (key: string) => string }) {
+function SkillCard({ skill }: { skill: AgentSkill }) {
   const tags = skill.tags || [];
   const inputModes = skill.inputModes || [];
   const outputModes = skill.outputModes || [];

@@ -438,9 +438,9 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
 
   const inputSchema = activeTool?.inputSchema as SchemaProperty | undefined;
   const outputSchema = activeTool?.outputSchema as SchemaProperty | undefined;
-  const inputProperties = inputSchema?.properties || {};
+  const inputProperties: Record<string, SchemaProperty> = inputSchema?.properties || {};
   const inputRequired = (inputSchema?.required as string[]) || [];
-  const outputProperties = outputSchema?.properties || {};
+  const outputProperties: Record<string, SchemaProperty> = outputSchema?.properties || {};
   const outputRequired = (outputSchema?.required as string[]) || [];
 
   const annotations = activeTool?.annotations;
@@ -457,7 +457,7 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
     tmpl?.requestTemplate && Object.keys(tmpl.requestTemplate).length > 0;
   const hasResponseTemplate =
     tmpl?.responseTemplate && Object.keys(tmpl.responseTemplate).length > 0;
-  const hasTemplates = hasRequestTemplate || hasResponseTemplate || security;
+  const hasTemplates = hasRequestTemplate || hasResponseTemplate || !!security;
 
   return (
     <div
@@ -659,7 +659,7 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
                   </div>
 
                   {/* Transparent Auth */}
-                  {security && (
+                  {!!security && (
                     <div>
                       <div className="flex items-center gap-2 mb-2.5">
                         <ShieldCheck className="h-3.5 w-3.5 text-violet-500" />
@@ -681,7 +681,7 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
                               : t('mcp.disabled')}
                           </span>
                         </div>
-                        {(security as Record<string, unknown>).id && (
+                        {!!(security as Record<string, unknown>).id && (
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground">ID:</span>
                             <code className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
@@ -689,7 +689,7 @@ export function McpToolList({ tools, toolsMeta, className }: McpToolListProps) {
                             </code>
                           </div>
                         )}
-                        {(security as Record<string, unknown>).type && (
+                        {!!(security as Record<string, unknown>).type && (
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground">Type:</span>
                             <span className="font-medium">

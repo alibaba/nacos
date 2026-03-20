@@ -65,6 +65,8 @@
     "back": "Back",
     "success": "Success",
     "failed": "Failed",
+    "legacyConsole": "Legacy Console",
+    "switchToLegacy": "Switch to legacy console",
     "collapse": "Collapse",
     "expand": "Expand",
     "mode": "Mode",
@@ -758,16 +760,14 @@
   },
   "settings": {
     "title": "Settings",
+    "description": "Manage Nacos console preferences and integrations",
     "copilotConfig": "Copilot Configuration",
+    "copilotConfigDesc": "Configure the AI assistant model and credentials for intelligent configuration management",
     "apiKey": "API Key",
-    "apiKeyHint": "Recommended to set via environment variable COPILOT_API_KEY",
+    "apiKeyHint": "Recommended to set via environment variable COPILOT_API_KEY, which takes precedence over this setting",
     "apiKeyPlaceholder": "Enter API Key",
     "model": "Model",
     "modelPlaceholder": "Select a model",
-    "studioUrl": "Studio URL",
-    "studioUrlPlaceholder": "e.g. http://localhost:3000",
-    "studioProject": "Studio Project Name",
-    "studioProjectPlaceholder": "e.g. NacosCopilot",
     "saveSuccess": "Saved successfully"
   }
 }

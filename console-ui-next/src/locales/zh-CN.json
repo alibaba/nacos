@@ -65,6 +65,8 @@
     "back": "返回",
     "success": "操作成功",
     "failed": "操作失败",
+    "legacyConsole": "旧版控制台",
+    "switchToLegacy": "切换到旧版控制台",
     "collapse": "收起侧栏",
     "expand": "展开侧栏",
     "mode": "模式",
@@ -758,16 +760,14 @@
   },
   "settings": {
     "title": "设置",
+    "description": "管理 Nacos 控制台的偏好与集成配置",
     "copilotConfig": "Copilot 配置",
+    "copilotConfigDesc": "配置 AI 助手的模型与密钥，用于智能化配置管理",
     "apiKey": "API 密钥",
-    "apiKeyHint": "建议通过环境变量 COPILOT_API_KEY 设置",
+    "apiKeyHint": "建议通过环境变量 COPILOT_API_KEY 设置，优先级高于此处配置",
     "apiKeyPlaceholder": "请输入 API Key",
     "model": "模型",
     "modelPlaceholder": "请选择模型",
-    "studioUrl": "Studio URL",
-    "studioUrlPlaceholder": "例如: http://localhost:3000",
-    "studioProject": "Studio 项目名称",
-    "studioProjectPlaceholder": "例如: NacosCopilot",
     "saveSuccess": "保存成功"
   }
 }

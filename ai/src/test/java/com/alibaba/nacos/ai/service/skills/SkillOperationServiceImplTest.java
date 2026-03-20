@@ -19,6 +19,9 @@ package com.alibaba.nacos.ai.service.skills;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
+import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
+import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -31,6 +34,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,12 +47,16 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import org.springframework.core.env.StandardEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -71,25 +80,39 @@ class SkillOperationServiceImplTest {
 
     @Mock
     private AiResourcePersistService aiResourcePersistService;
-    
+
     @Mock
     private AiResourceVersionPersistService aiResourceVersionPersistService;
 
     @Mock
-    private PublishPipelineExecutor publishPipelineExecutor;
+    private PipelineConfigProvider pipelineConfigProvider;
 
     @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
 
     private SkillOperationServiceImpl skillOperationService;
 
+    private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
+
     @BeforeEach
     void setUp() {
+        EnvUtil.setEnvironment(new StandardEnvironment());
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
+        PipelineConfig disabledConfig = new PipelineConfig();
+        disabledConfig.setEnabled(false);
+        lenient().when(pipelineConfigProvider.getConfig()).thenReturn(disabledConfig);
+        PublishPipelineExecutor publishPipelineExecutor = new PublishPipelineExecutor(
+                new PublishPipelineManager(), pipelineConfigProvider, pipelineExecutionRepository,
+                Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository);
+    }
+
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     
     @Test
@@ -103,15 +126,19 @@ class SkillOperationServiceImplTest {
         meta.setStatus("enable");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
-        when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skillName).getBytes());
-        
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
+        vPage.setPageItems(List.of());
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
+
         // When
         SkillAdminDetail skillAdminDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
-        
+
         // Then
         assertNotNull(skillAdminDetail);
-        assertEquals(skillName, skillAdminDetail.getSkill().getName());
-        assertEquals("Test description", skillAdminDetail.getSkill().getDescription());
+        assertTrue(skillAdminDetail.isEnable());
+        assertEquals(1, skillAdminDetail.getOnlineCnt());
+        assertEquals("v1", skillAdminDetail.getLabels().get("latest"));
+        assertNotNull(skillAdminDetail.getVersions());
     }
     
     @Test
@@ -142,13 +169,13 @@ class SkillOperationServiceImplTest {
         v1.setVersion("v1");
         vPage.setPageItems(List.of(v1));
         when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
-        when(storage.get(any(StorageKey.class))).thenReturn(createMainConfigJson(skillName).getBytes());
-        
+
         // When
         skillOperationService.deleteSkill(namespaceId, skillName);
-        
+
         // Then
         verify(storage, times(1)).delete(any(StorageKey.class));
+        verify(aiResourcePersistService).delete(eq(namespaceId), eq(skillName), anyString());
     }
     
     @Test

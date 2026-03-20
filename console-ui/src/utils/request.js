@@ -31,8 +31,14 @@ function goLogin() {
   window.location.href = `${base_url}#/login`;
 }
 
+function getContextPath() {
+  return window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+}
+
 const request = () => {
-  const instance = axios.create();
+  const instance = axios.create({
+    baseURL: getContextPath(),
+  });
 
   instance.interceptors.request.use(
     config => {

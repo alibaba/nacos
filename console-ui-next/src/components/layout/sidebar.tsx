@@ -50,6 +50,7 @@ interface NavItem {
   badge?: string;
   children?: { key: string; label: string; path: string }[];
   adminOnly?: boolean;
+  defaultOpen?: boolean;
 }
 
 export function Sidebar() {
@@ -71,6 +72,23 @@ export function Sidebar() {
   }, [location.pathname]);
 
   const coreItems: NavItem[] = [];
+
+  // AI Registry - show in mixed mode (top priority)
+  if (functionMode !== 'naming' && functionMode !== 'config') {
+    coreItems.push({
+      key: 'ai',
+      label: t('menu.aiRegistry'),
+      icon: <Bot size={18} />,
+      badge: 'new',
+      defaultOpen: true,
+      children: [
+        { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skillManagement' },
+        { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement' },
+        { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
+        { key: 'mcpRegistry', label: t('menu.mcpRegistry'), path: '/mcpServerManagement' },
+      ],
+    });
+  }
 
   // Config Management - show unless mode is 'naming'
   if (functionMode !== 'naming') {
@@ -95,22 +113,6 @@ export function Sidebar() {
       children: [
         { key: 'serviceList', label: t('menu.serviceList'), path: '/serviceManagement' },
         { key: 'subscriberList', label: t('menu.subscriberList'), path: '/subscriberList' },
-      ],
-    });
-  }
-
-  // AI Registry - show in mixed mode
-  if (functionMode !== 'naming' && functionMode !== 'config') {
-    coreItems.push({
-      key: 'ai',
-      label: t('menu.aiRegistry'),
-      icon: <Bot size={18} />,
-      badge: 'new',
-      children: [
-        { key: 'mcpRegistry', label: t('menu.mcpRegistry'), path: '/mcpServerManagement' },
-        { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
-        { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skillManagement' },
-        { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement' },
       ],
     });
   }
@@ -186,7 +188,7 @@ export function Sidebar() {
       <div className="flex h-14 items-center justify-center border-b border-sidebar-border">
         {!sidebarCollapsed ? (
           <img
-            src="/img/nacos-logo-dark.svg"
+            src={`${import.meta.env.BASE_URL}img/nacos-logo-dark.svg`}
             alt="Nacos"
             className="h-6 w-auto max-w-[140px] object-contain"
           />
@@ -194,7 +196,7 @@ export function Sidebar() {
           <Tooltip>
             <TooltipTrigger asChild>
               <img
-                src="/img/nacos-icon.png"
+                src={`${import.meta.env.BASE_URL}img/nacos-icon.png`}
                 alt="Nacos"
                 className="h-7 w-7 object-contain cursor-default"
               />
@@ -394,9 +396,9 @@ function NavGroup({
   onNavigate: (path: string) => void;
   iconForChild: (key: string) => React.ReactNode;
 }) {
-  const [open, setOpen] = useState(isGroupActive);
+  const [open, setOpen] = useState(isGroupActive || !!item.defaultOpen);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isGroupActive) setOpen(true);

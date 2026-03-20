@@ -24,7 +24,7 @@ import { PromptCard } from '@/components/ai/prompt/PromptCard';
 import { usePromptStore } from '@/stores/prompt-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { promptApi } from '@/api/prompt';
-import type { PromptMetaSummary, PromptMetaInfo } from '@/types/prompt';
+import type { PromptMetaInfo } from '@/types/prompt';
 
 export default function PromptManagementPage() {
   const { t } = useTranslation();

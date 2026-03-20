@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  Plus, Search, RotateCcw, ChevronLeft, ChevronRight, Globe, Info,
+  Plus, RotateCcw, Globe, Info,
 } from 'lucide-react';
 
 import { namespaceApi } from '@/api/namespace';

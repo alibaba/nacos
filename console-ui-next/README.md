@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# Nacos Console UI (Next)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The new Nacos console frontend, built with React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + Shadcn/ui.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js >= 18
+- npm >= 9
 
-## React Compiler
+## Install Dependencies
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Local Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Visit http://localhost:8000. Vite proxy rules:
+
+- `/nacos/v1/auth/*`, `/nacos/v3/auth/*` are forwarded to Admin Server (localhost:8848)
+- All other `/nacos/*` requests are forwarded to Console Server (localhost:8080, with `/nacos` prefix stripped)
+
+## Build
+
+```bash
+npm run build
+```
+
+Build pipeline: `tsc -b` (TypeScript type checking) + `vite build` (production build). Output goes to the `dist/` directory.
+
+## Deploy
+
+Copy build artifacts to the backend static resources directory:
+
+```bash
+rm -rf ../console/src/main/resources/static/next/*
+cp -r dist/* ../console/src/main/resources/static/next/
+```
+
+Deployed directory structure:
+
+```
+console/src/main/resources/static/next/
+├── index.html
+├── css/
+├── js/
+├── img/
+├── favicon.svg
+└── icons.svg
+```
+
+## contextPath Adaptation
+
+Build artifacts use relative paths (`./`), adapting to any `nacos.console.contextPath` configuration value. No rebuild is needed for different contextPath settings.
+
+## Proxy Configuration
+
+Development proxy rules are configured in `vite.config.ts` under `server.proxy`.

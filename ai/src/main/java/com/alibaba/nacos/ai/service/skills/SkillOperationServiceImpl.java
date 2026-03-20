@@ -415,6 +415,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         final String finalTarget = target;
         
+        // Move to reviewing before pipeline execution to ensure consistent state.
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, VERSION_STATUS_REVIEWING);
+        info.setEditingVersion(null);
+        info.setReviewingVersion(finalTarget);
+        updateMetaVersionInfoCas(namespaceId, meta, info);
+
         // Build context for pipeline execution (multi-file skill representation).
         Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
         SkillPipelineContext ctx = new SkillPipelineContext();
@@ -432,12 +438,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return finalTarget;
         }
 
-        // Move to reviewing and record pipeline execution id.
-        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, VERSION_STATUS_REVIEWING);
-        info.setEditingVersion(null);
-        info.setReviewingVersion(finalTarget);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
-
+        // Record pipeline execution id.
         SkillPublishPipelineInfo pipelineInfo = new SkillPublishPipelineInfo();
         pipelineInfo.setExecutionId(executionId);
         pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);

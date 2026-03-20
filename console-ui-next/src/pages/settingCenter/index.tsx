@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  Bot, Save, Info, Eye, EyeOff, Loader2,
+  Bot, Save, Eye, EyeOff, Loader2,
 } from 'lucide-react';
 
 import client from '@/api/client';
@@ -15,13 +15,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CopilotConfig {
   apiKey: string;
   model: string;
-  studioUrl: string;
-  studioProject: string;
 }
 
 const QWEN_MODELS = [
@@ -47,11 +44,8 @@ export default function SettingCenterPage() {
   const [saving, setSaving] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
-  // Form state
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('qwen-turbo');
-  const [studioUrl, setStudioUrl] = useState('');
-  const [studioProject, setStudioProject] = useState('NacosCopilot');
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
@@ -61,11 +55,6 @@ export default function SettingCenterPage() {
       const config = body.data || ({} as CopilotConfig);
       setApiKey(config.apiKey || '');
       setModel(config.model || 'qwen-turbo');
-      // Remove trailing slash from studioUrl
-      let url = config.studioUrl || '';
-      if (url.endsWith('/')) url = url.slice(0, -1);
-      setStudioUrl(url);
-      setStudioProject(config.studioProject || 'NacosCopilot');
     } catch {
       // Error handled by interceptor
     } finally {
@@ -80,14 +69,9 @@ export default function SettingCenterPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      let url = studioUrl.trim();
-      if (url.endsWith('/')) url = url.slice(0, -1);
-
       const config: CopilotConfig = {
         apiKey: apiKey.trim(),
         model: model || 'qwen-turbo',
-        studioUrl: url,
-        studioProject: studioProject.trim() || 'NacosCopilot',
       };
 
       await client.post('v3/console/copilot/config', JSON.stringify(config), {
@@ -103,24 +87,31 @@ export default function SettingCenterPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6 max-w-3xl">
+      {/* Page Header */}
+      <div>
         <h1 className="text-2xl font-semibold text-foreground">{t('settings.title')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('settings.description')}</p>
       </div>
 
       {/* Copilot Config Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Bot className="h-5 w-5 text-primary" />
-            <h2 className="text-base font-semibold">{t('settings.copilotConfig')}</h2>
+      <Card className="py-0">
+        <CardContent className="py-6">
+          {/* Section Header */}
+          <div className="flex items-start gap-3 mb-6">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Bot className="h-[18px] w-[18px] text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold leading-none mt-0.5">{t('settings.copilotConfig')}</h2>
+              <p className="text-sm text-muted-foreground mt-1.5">{t('settings.copilotConfigDesc')}</p>
+            </div>
           </div>
 
           {loading ? (
             <div className="space-y-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2.5">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-10 w-full" />
                 </div>
@@ -129,18 +120,8 @@ export default function SettingCenterPage() {
           ) : (
             <div className="flex flex-col gap-5">
               {/* API Key */}
-              <div className="flex flex-col gap-2">
-                <Label className="flex items-center gap-1.5">
-                  {t('settings.apiKey')}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[260px]">
-                      {t('settings.apiKeyHint')}
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
+              <div className="space-y-2.5">
+                <Label>{t('settings.apiKey')}</Label>
                 <div className="relative">
                   <Input
                     type={showApiKey ? 'text' : 'password'}
@@ -157,10 +138,11 @@ export default function SettingCenterPage() {
                     {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground">{t('settings.apiKeyHint')}</p>
               </div>
 
               {/* Model */}
-              <div className="flex flex-col gap-2">
+              <div className="space-y-2.5">
                 <Label>{t('settings.model')}</Label>
                 <Select value={model} onValueChange={setModel}>
                   <SelectTrigger>
@@ -176,38 +158,18 @@ export default function SettingCenterPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Studio URL */}
-              <div className="flex flex-col gap-2">
-                <Label>{t('settings.studioUrl')}</Label>
-                <Input
-                  placeholder={t('settings.studioUrlPlaceholder')}
-                  value={studioUrl}
-                  onChange={(e) => setStudioUrl(e.target.value)}
-                />
-              </div>
-
-              {/* Studio Project */}
-              <div className="flex flex-col gap-2">
-                <Label>{t('settings.studioProject')}</Label>
-                <Input
-                  placeholder={t('settings.studioProjectPlaceholder')}
-                  value={studioProject}
-                  onChange={(e) => setStudioProject(e.target.value)}
-                />
-              </div>
             </div>
           )}
+
+          {/* Save Action */}
+          <div className="flex justify-end mt-6 pt-5 border-t">
+            <Button onClick={handleSave} disabled={saving || loading} className="gap-2 min-w-[120px]">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? t('common.loading') : t('common.save')}
+            </Button>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving || loading} className="gap-2 min-w-[100px]">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {saving ? t('common.loading') : t('common.save')}
-        </Button>
-      </div>
     </div>
   );
 }

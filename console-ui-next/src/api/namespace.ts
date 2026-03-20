@@ -4,6 +4,7 @@ import type { AxiosPromise } from 'axios';
 export interface Namespace {
   namespace: string;
   namespaceShowName: string;
+  namespaceDesc?: string;
   quota: number;
   configCount: number;
   type: number;

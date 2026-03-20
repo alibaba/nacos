@@ -24,8 +24,16 @@ const SESSION_EXPIRED_MESSAGES = [
   'session expired!',
 ];
 
+/**
+ * Compute the console servlet context path from current URL.
+ * Strips /next/ or /legacy/ suffix to get the context path prefix.
+ */
+function getContextPath(): string {
+  return window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+}
+
 const client = axios.create({
-  baseURL: window.location.pathname.replace(/\/[^/]*$/, '/nacos/'),
+  baseURL: getContextPath(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded',
