@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
-import com.alibaba.nacos.api.ai.remote.request.AbstractSkillRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.common.Constants;
@@ -43,8 +42,6 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             namespaceId = ((AbstractAgentRequest) request).getNamespaceId();
         } else if (request instanceof AbstractPromptRequest) {
             namespaceId = ((AbstractPromptRequest) request).getNamespaceId();
-        } else if (request instanceof AbstractSkillRequest) {
-            namespaceId = ((AbstractSkillRequest) request).getNamespaceId();
         }
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
@@ -65,8 +62,6 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             return getAgentName((AbstractAgentRequest) request);
         } else if (request instanceof AbstractPromptRequest) {
             return getPromptName((AbstractPromptRequest) request);
-        } else if (request instanceof AbstractSkillRequest) {
-            return getSkillName((AbstractSkillRequest) request);
         }
         return StringUtils.EMPTY;
     }
@@ -96,10 +91,5 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
     private String getPromptName(AbstractPromptRequest request) {
         String promptKey = request.getPromptKey();
         return StringUtils.isBlank(promptKey) ? StringUtils.EMPTY : promptKey;
-    }
-    
-    private String getSkillName(AbstractSkillRequest request) {
-        String skillName = request.getSkillName();
-        return StringUtils.isBlank(skillName) ? StringUtils.EMPTY : skillName;
     }
 }
