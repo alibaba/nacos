@@ -61,9 +61,6 @@ public abstract class AbstractCachedUserService implements NacosUserService {
     }
 
     /**
-     * [ISSUE #13625] check username and password is blank.
-     */
-    /**
      * Reject reserved system usernames from being created or deleted.
      *
      * @param username the username to check
@@ -75,6 +72,9 @@ public abstract class AbstractCachedUserService implements NacosUserService {
         }
     }
     
+    /**
+     * [ISSUE #13625] check username and password is blank.
+     */
     protected void validateUserCredentials(String username, String password) {
         if (StringUtils.isBlank(username)) {
             throw new IllegalArgumentException("username is blank");
