@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoAggrMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoBetaMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoMapperByOracle
 com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoTagMapperByOracle
