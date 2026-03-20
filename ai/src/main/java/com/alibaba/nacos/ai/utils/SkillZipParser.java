@@ -53,6 +53,8 @@ public class SkillZipParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillZipParser.class);
     
     private static final String SKILL_MD_FILE = "SKILL.md";
+    /** UTF-8 BOM character that some editors prepend to files. Must be stripped before parsing. */
+    private static final char UTF8_BOM = '\uFEFF';
     /** macOS AppleDouble/resource fork metadata file prefix (e.g. ._LICENSE.txt). Should be excluded from skill zip. */
     private static final String MACOS_METADATA_PREFIX = "._";
     private static final String INSTRUCTIONS_HEADER_WITH_SPACE = "## Instructions";
@@ -124,7 +126,7 @@ public class SkillZipParser {
                 boolean endsWithSkillMd = name.endsWith(SKILL_MD_FILE);
                 boolean isSkillMd = isSkillMdFile || isSkillMdInSubdir;
                 if (endsWithSkillMd && isSkillMd) {
-                    skillMdContent = new String(entry.data, StandardCharsets.UTF_8);
+                    skillMdContent = stripBom(new String(entry.data, StandardCharsets.UTF_8));
                     break;
                 }
             }
@@ -376,5 +378,18 @@ public class SkillZipParser {
         int lastSlash = itemName.lastIndexOf('/');
         String fileName = lastSlash >= 0 ? itemName.substring(lastSlash + 1) : itemName;
         return fileName.startsWith(MACOS_METADATA_PREFIX);
+    }
+    
+    /**
+     * Strip UTF-8 BOM character from the beginning of a string if present.
+     *
+     * @param content the string to strip BOM from
+     * @return the string without leading BOM
+     */
+    private static String stripBom(String content) {
+        if (content != null && !content.isEmpty() && content.charAt(0) == UTF8_BOM) {
+            return content.substring(1);
+        }
+        return content;
     }
 }

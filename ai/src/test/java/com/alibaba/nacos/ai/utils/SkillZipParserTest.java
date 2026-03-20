@@ -483,4 +483,82 @@ class SkillZipParserTest {
         }
         return baos.toByteArray();
     }
+
+    @Test
+    void testParseSkillFromZipWithUtf8Bom() throws Exception {
+        // Given: SKILL.md content starts with UTF-8 BOM (EF BB BF)
+        byte[] zipBytes = createSkillZipWithUtf8Bom();
+
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then: BOM is stripped and skill parses correctly
+        assertNotNull(skill);
+        assertEquals("test-skill", skill.getName());
+        assertEquals("Test skill description", skill.getDescription());
+        assertEquals("This is a test instruction", skill.getInstruction().trim());
+    }
+
+    @Test
+    void testParseSkillFromZipWithUtf8BomInSubdir() throws Exception {
+        // Given: SKILL.md in subdirectory with UTF-8 BOM
+        byte[] zipBytes = createSkillZipWithUtf8BomInSubdir();
+
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then: BOM is stripped and skill parses correctly
+        assertNotNull(skill);
+        assertEquals("test-skill", skill.getName());
+        assertEquals("Test skill description", skill.getDescription());
+    }
+
+    /**
+     * Create a skill zip where SKILL.md content starts with UTF-8 BOM (EF BB BF).
+     */
+    private byte[] createSkillZipWithUtf8Bom() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            // UTF-8 BOM bytes followed by normal SKILL.md content
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: Test skill description\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            byte[] bom = new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF };
+            byte[] content = skillMd.getBytes("UTF-8");
+            byte[] withBom = new byte[bom.length + content.length];
+            System.arraycopy(bom, 0, withBom, 0, bom.length);
+            System.arraycopy(content, 0, withBom, bom.length, content.length);
+            zos.write(withBom);
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Create a skill zip where SKILL.md in subdirectory has UTF-8 BOM.
+     */
+    private byte[] createSkillZipWithUtf8BomInSubdir() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: Test skill description\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            byte[] bom = new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF };
+            byte[] content = skillMd.getBytes("UTF-8");
+            byte[] withBom = new byte[bom.length + content.length];
+            System.arraycopy(bom, 0, withBom, 0, bom.length);
+            System.arraycopy(content, 0, withBom, bom.length, content.length);
+            zos.write(withBom);
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
 }
