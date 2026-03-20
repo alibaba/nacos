@@ -28,15 +28,19 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Nacos default auth plugin service implementation.
@@ -44,6 +48,8 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class NacosAuthPluginService implements AuthPluginService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosAuthPluginService.class);
     
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
@@ -73,7 +79,32 @@ public class NacosAuthPluginService implements AuthPluginService {
             NacosUser nacosUser = validateUser(identityContext);
             return AuthResult.successResult(nacosUser);
         } catch (AccessException e) {
+            if (isAnonymousAllowed(resource)) {
+                LOGGER.debug("Anonymous access granted for resource: {}", resource);
+                NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
+                identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
+                identityContext.setParameter(
+                        com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
+                        AuthConstants.ANONYMOUS_USER);
+                return AuthResult.successResult(anonymousUser);
+            }
             return AuthResult.failureResult(HttpStatus.UNAUTHORIZED.value(), e.getErrMsg());
+        }
+    }
+    
+    private boolean isAnonymousAllowed(Resource resource) {
+        if (resource == null || resource.getProperties() == null) {
+            return false;
+        }
+        Properties props = resource.getProperties();
+        if (!props.containsKey(AuthConstants.TAG_ALLOW_ANONYMOUS)) {
+            return false;
+        }
+        try {
+            AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
+            return authConfigs.isAiAnonymousEnabled();
+        } catch (Exception e) {
+            return false;
         }
     }
     

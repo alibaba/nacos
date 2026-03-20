@@ -53,7 +53,8 @@ public class SkillClientController {
      * Get an online skill version by label/version/latest.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+            tags = {"allowAnonymous"})
     public Result<Skill> get(SkillQueryForm form) throws NacosException {
         form.validate();
         return Result.success(skillOperationService.querySkill(form.getNamespaceId(), form.getName(), form.getVersion(),

@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -73,5 +74,23 @@ class NacosUserServiceDirectImplTest {
         
         assertEquals("password is blank", exception.getMessage());
         verify(userPersistService, never()).createUser(anyString(), anyString());
+    }
+    
+    @Test
+    void testCreateUserWithReservedAnonymousUsername() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> nacosUserService.createUser("__nacos_anonymous__", "password"));
+        
+        assertTrue(exception.getMessage().contains("reserved by the system"));
+        verify(userPersistService, never()).createUser(anyString(), anyString());
+    }
+    
+    @Test
+    void testDeleteUserWithReservedAnonymousUsername() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> nacosUserService.deleteUser("__nacos_anonymous__"));
+        
+        assertTrue(exception.getMessage().contains("reserved by the system"));
+        verify(userPersistService, never()).deleteUser(anyString());
     }
 }

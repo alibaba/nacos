@@ -54,7 +54,7 @@ public class QuerySkillRequestHandler extends RequestHandler<QuerySkillRequest, 
     @Override
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = SkillRequestParamExtractor.class)
-    @Secured(action = ActionTypes.READ, signType = SignType.AI)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, tags = {"allowAnonymous"})
     public QuerySkillResponse handle(QuerySkillRequest request, RequestMeta meta) {
         request.setNamespaceId(NamespaceUtil.processNamespaceParameter(request.getNamespaceId()));
         if (StringUtils.isBlank(request.getSkillName())) {

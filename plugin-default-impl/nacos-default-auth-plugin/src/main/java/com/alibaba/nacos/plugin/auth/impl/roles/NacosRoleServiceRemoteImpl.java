@@ -164,6 +164,10 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService imple
             throw new IllegalArgumentException(
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
+        if (AuthConstants.ANONYMOUS_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.ANONYMOUS_ROLE + "' is reserved by the system");
+        }
         Map<String, String> body = Map.of("role", role, "username", username);
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.postForm(
@@ -180,10 +184,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService imple
     
     @Override
     public void deleteRole(String role, String userName) {
-        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
-        }
+        rejectReservedRole(role);
         Query query = Query.newInstance().addParam("role", role).addParam("userName", userName);
         try {
             HttpRestResult<String> result = nacosRestTemplate.delete(buildRemoteRoleUrlPath(AuthConstants.ROLE_PATH),
@@ -198,10 +199,7 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService imple
     
     @Override
     public void deleteRole(String role) {
-        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
-        }
+        rejectReservedRole(role);
         Query query = Query.newInstance().addParam("role", role);
         try {
             HttpRestResult<String> result = nacosRestTemplate.delete(buildRemoteRoleUrlPath(AuthConstants.ROLE_PATH),
