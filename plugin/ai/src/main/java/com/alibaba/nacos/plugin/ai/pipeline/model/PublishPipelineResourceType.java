@@ -38,6 +38,11 @@ public enum PublishPipelineResourceType {
     /**
      * Prompt resource type.
      */
-    PROMPT
+    PROMPT,
+
+    /**
+     * AgentSpec resource type.
+     */
+    AGENTSPEC
 }
 

@@ -571,7 +571,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         // Build context for pipeline execution
         PublishPipelineContext ctx = new PublishPipelineContext();
-        ctx.setResourceType(PublishPipelineResourceType.SKILL);
+        ctx.setResourceType(PublishPipelineResourceType.AGENTSPEC);
         ctx.setNamespaceId(namespaceId);
         ctx.setResourceName(name);
         ctx.setVersion(finalTarget);
@@ -579,7 +579,12 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String executionId = publishPipelineExecutor.execute(ctx,
                 result -> onPipelineComplete(namespaceId, name, finalTarget, result));
         if (StringUtils.isBlank(executionId)) {
-            // Pipeline disabled or no matched nodes -> publish directly
+            // Pipeline disabled or no matched nodes -> transition to reviewing then publish directly
+            aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, finalTarget,
+                    VERSION_STATUS_REVIEWING);
+            info.setEditingVersion(null);
+            info.setReviewingVersion(finalTarget);
+            updateMetaVersionInfoCas(namespaceId, meta, info);
             publish(namespaceId, name, finalTarget, true);
             return finalTarget;
         }
