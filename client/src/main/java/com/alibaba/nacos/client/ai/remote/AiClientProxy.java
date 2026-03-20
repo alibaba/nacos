@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
@@ -41,15 +40,18 @@ public interface AiClientProxy extends Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException;
-    
+
     /**
-     * Query skill from server by name with optional version/label routing.
+     * Download skill as ZIP byte array from server.
+     *
+     * <p>The ZIP contains the skill directory structure: SKILL.md and all resource files.
+     * Binary resources are decoded from Base64 back to raw bytes.</p>
      *
      * @param skillName skill name
      * @param version   explicit version (optional)
      * @param label     route label, e.g. "latest", "stable" (optional)
-     * @return complete Skill object with all resources
+     * @return ZIP file as byte array
      * @throws NacosException if request parameter is invalid or handle error
      */
-    Skill querySkill(String skillName, String version, String label) throws NacosException;
+    byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException;
 }

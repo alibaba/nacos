@@ -36,7 +36,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -362,30 +361,30 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public Skill loadSkill(String skillName) throws NacosException {
+    public byte[] downloadSkillZip(String skillName) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return aiClientProxy.querySkill(skillName, null, null);
+        return aiClientProxy.downloadSkillZip(skillName, null, null);
     }
     
     @Override
-    public Skill loadSkillByVersion(String skillName, String version) throws NacosException {
+    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return aiClientProxy.querySkill(skillName, version, null);
+        return aiClientProxy.downloadSkillZip(skillName, version, null);
     }
     
     @Override
-    public Skill loadSkillByLabel(String skillName, String label) throws NacosException {
+    public byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return aiClientProxy.querySkill(skillName, null, label);
+        return aiClientProxy.downloadSkillZip(skillName, null, label);
     }
     
     // ==================== AgentSpec Methods ====================

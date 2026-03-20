@@ -130,18 +130,18 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public com.alibaba.nacos.api.ai.model.skills.Skill loadSkill(String skillName) throws NacosException {
-        return null;
+    public byte[] downloadSkillZip(String skillName) throws NacosException {
+        return new byte[0];
     }
     
     @Override
-    public com.alibaba.nacos.api.ai.model.skills.Skill loadSkillByVersion(String skillName, String version) throws NacosException {
-        return null;
+    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
+        return new byte[0];
     }
     
     @Override
-    public com.alibaba.nacos.api.ai.model.skills.Skill loadSkillByLabel(String skillName, String label) throws NacosException {
-        return null;
+    public byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
+        return new byte[0];
     }
     
     @Override

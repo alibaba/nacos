@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -180,38 +179,36 @@ public interface AiService extends A2aService {
             throws NacosException;
     
     /**
-     * Load skill by skill name.
-     * 
-     * <p>
-     * This method will query the skill main configuration and all resource configurations,
-     * then assemble them into a complete Skill object. Defaults to loading the latest version.
-     * </p>
+     * Download skill as ZIP byte array by skill name. Defaults to latest version.
+     *
+     * <p>The ZIP contains the skill directory structure: SKILL.md and all resource files.
+     * Binary resources are decoded from Base64 back to raw bytes.</p>
      *
      * @param skillName skill name (unique identifier)
-     * @return complete Skill object with all resources
+     * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
-    Skill loadSkill(String skillName) throws NacosException;
-    
+    byte[] downloadSkillZip(String skillName) throws NacosException;
+
     /**
-     * Load skill by skill name and target version.
+     * Download skill as ZIP byte array by skill name and target version.
      *
      * @param skillName skill name (unique identifier)
      * @param version   target skill version, if null, will get latest version
-     * @return complete Skill object with all resources
+     * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
-    Skill loadSkillByVersion(String skillName, String version) throws NacosException;
-    
+    byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException;
+
     /**
-     * Load skill by skill name and target label.
+     * Download skill as ZIP byte array by skill name and target label.
      *
      * @param skillName skill name (unique identifier)
      * @param label     target skill label (e.g. "latest", "stable")
-     * @return complete Skill object with all resources
+     * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
-    Skill loadSkillByLabel(String skillName, String label) throws NacosException;
+    byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException;
     
     // ==================== AgentSpec Management APIs ====================
     

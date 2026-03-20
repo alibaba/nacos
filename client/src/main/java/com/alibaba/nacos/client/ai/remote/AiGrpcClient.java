@@ -27,17 +27,14 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
-import com.alibaba.nacos.api.ai.remote.request.AbstractSkillRequest;
 import com.alibaba.nacos.api.ai.remote.request.AgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.BatchAgentEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryPromptRequest;
-import com.alibaba.nacos.api.ai.remote.request.QuerySkillRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
@@ -45,7 +42,6 @@ import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.AgentEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryPromptResponse;
-import com.alibaba.nacos.api.ai.remote.response.QuerySkillResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryAgentCardResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseAgentCardResponse;
@@ -221,25 +217,11 @@ public class AiGrpcClient implements AiClientProxy {
         QueryPromptResponse response = requestToServer(request, QueryPromptResponse.class);
         return response.getPromptInfo();
     }
-    
-    /**
-     * Query skill from server via gRPC.
-     *
-     * @param skillName skill name
-     * @param version   explicit version (optional)
-     * @param label     route label, e.g. "latest", "stable" (optional)
-     * @return complete Skill object
-     * @throws NacosException if request parameter is invalid or handle error
-     */
+
     @Override
-    public Skill querySkill(String skillName, String version, String label) throws NacosException {
-        QuerySkillRequest request = new QuerySkillRequest();
-        request.setNamespaceId(namespaceId);
-        request.setSkillName(skillName);
-        request.setVersion(version);
-        request.setLabel(label);
-        QuerySkillResponse response = requestToServer(request, QuerySkillResponse.class);
-        return response.getSkill();
+    public byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+                "Skill download via gRPC is not supported. Set AI_TRANSPORT_MODE=http.");
     }
 
     /**
@@ -617,9 +599,6 @@ public class AiGrpcClient implements AiClientProxy {
             } else if (request instanceof AbstractPromptRequest) {
                 AbstractPromptRequest promptRequest = (AbstractPromptRequest) request;
                 request.putAllHeader(getSecurityHeaders(promptRequest.getNamespaceId(), promptRequest.getPromptKey()));
-            } else if (request instanceof AbstractSkillRequest) {
-                AbstractSkillRequest skillRequest = (AbstractSkillRequest) request;
-                request.putAllHeader(getSecurityHeaders(skillRequest.getNamespaceId(), skillRequest.getSkillName()));
             } else {
                 throw new NacosException(400,
                         String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));
