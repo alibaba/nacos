@@ -22,3 +22,4 @@ lefthook.yml
 distribution/conf/*.sql
 distribution/plugins/*.jar
 dependency-reduced-pom.xml
+.jqwik-database
