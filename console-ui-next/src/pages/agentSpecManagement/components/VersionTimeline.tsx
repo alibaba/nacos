@@ -13,17 +13,19 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import type { AgentSpecVersionSummary } from '@/types/agentspec';
-import { getValidActions } from './version-utils';
+import { getValidActions, sortVersionsDescending } from './version-utils';
 
 interface VersionTimelineProps {
   versions: AgentSpecVersionSummary[];
   currentVersion: string;
   onSelectVersion: (version: string) => void;
   onCreateDraft: (basedOnVersion?: string) => void;
+  onDeleteDraft: (version: string) => void;
   onSubmit: (version: string) => void;
   onPublish: (version: string) => void;
   onOnline: (version: string) => void;
   onOffline: (version: string) => void;
+  showCreateDraftButton?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -49,15 +51,16 @@ export function VersionTimeline({
   currentVersion,
   onSelectVersion,
   onCreateDraft,
+  onDeleteDraft,
   onSubmit,
   onPublish,
   onOnline,
   onOffline,
+  showCreateDraftButton = true,
 }: VersionTimelineProps) {
   const { t } = useTranslation();
 
-  // Sort by updateTime descending
-  const sorted = [...versions].sort((a, b) => b.updateTime - a.updateTime);
+  const sorted = sortVersionsDescending(versions);
 
   const actionHandlers: Record<string, (version: string) => void> = {
     submit: onSubmit,
@@ -77,15 +80,17 @@ export function VersionTimeline({
   return (
     <div className="space-y-1">
       {/* Create draft button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="mb-3 w-full"
-        onClick={() => onCreateDraft()}
-      >
-        <Plus className="h-3.5 w-3.5 mr-1" />
-        {t('agentSpec.createDraft')}
-      </Button>
+      {showCreateDraftButton && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-3 w-full"
+          onClick={() => onCreateDraft()}
+        >
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          {t('agentSpec.createDraft')}
+        </Button>
+      )}
 
       {/* Timeline */}
       <div className="relative">
@@ -128,7 +133,7 @@ export function VersionTimeline({
                       STATUS_STYLES[v.status],
                     )}
                   >
-                    {t(`agentSpec.status.${v.status}`)}
+                    {t(`agentSpec.versionStatus.${v.status}`)}
                   </Badge>
                 </div>
 
@@ -159,7 +164,7 @@ export function VersionTimeline({
 
                       const handler =
                         action === 'deleteDraft'
-                          ? () => onCreateDraft(undefined) // deleteDraft is handled externally; we expose via onCreateDraft pattern
+                          ? onDeleteDraft
                           : actionHandlers[action];
 
                       return (

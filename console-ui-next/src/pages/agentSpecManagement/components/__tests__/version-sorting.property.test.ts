@@ -9,18 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import type { AgentSpecVersionSummary } from '@/types/agentspec';
-
-// ── Sorting logic extracted from VersionTimeline ───────────────────────────
-
-/**
- * The same sorting logic used by the VersionTimeline component:
- *   `[...versions].sort((a, b) => b.updateTime - a.updateTime)`
- */
-function sortVersionsDescending(
-  versions: AgentSpecVersionSummary[],
-): AgentSpecVersionSummary[] {
-  return [...versions].sort((a, b) => b.updateTime - a.updateTime);
-}
+import { sortVersionsDescending } from '../version-utils';
 
 // ── Arbitrary generators ───────────────────────────────────────────────────
 

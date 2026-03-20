@@ -63,11 +63,11 @@ export const useAgentSpecStore = create<AgentSpecStore>((set, get) => ({
       const response = await agentSpecApi.list({
         namespaceId,
         agentSpecName: searchName || undefined,
+        search: searchName ? 'blur' : undefined,
         pageNo,
         pageSize,
       });
-      const result = response as unknown as { data: { totalCount: number; pageItems: AgentSpecListItem[] } };
-      const data = result.data;
+      const data = response.data;
       const newItems = data.pageItems || [];
       const itemNames = new Set(newItems.map((item) => item.name));
       set((state) => ({
@@ -97,9 +97,8 @@ export const useAgentSpecStore = create<AgentSpecStore>((set, get) => ({
         agentSpecName: name,
         version,
       });
-      const result = response as unknown as { data: AgentSpecDetail };
       set({
-        currentDetail: result.data,
+        currentDetail: response.data,
         detailLoading: false,
       });
     } catch (error) {

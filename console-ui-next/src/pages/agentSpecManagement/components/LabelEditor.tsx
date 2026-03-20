@@ -1,16 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Save, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { isValidLabelKey } from './label-utils';
 
 interface LabelEditorProps {
   labels: Record<string, string>;
   onSave: (labels: Record<string, string>) => void;
+  onChange?: (labels: Record<string, string>) => void;
+  showSaveButton?: boolean;
 }
 
-export function LabelEditor({ labels, onSave }: LabelEditorProps) {
+export function LabelEditor({
+  labels,
+  onSave,
+  onChange,
+  showSaveButton = true,
+}: LabelEditorProps) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<Record<string, string>>({ ...labels });
   const [newKey, setNewKey] = useState('');
@@ -19,6 +27,15 @@ export function LabelEditor({ labels, onSave }: LabelEditorProps) {
 
   const dirty =
     JSON.stringify(draft) !== JSON.stringify(labels);
+
+  useEffect(() => {
+    setDraft({ ...labels });
+  }, [labels]);
+
+  const updateDraft = (nextDraft: Record<string, string>) => {
+    setDraft(nextDraft);
+    onChange?.(nextDraft);
+  };
 
   const handleAdd = () => {
     const trimmedKey = newKey.trim();
@@ -39,7 +56,7 @@ export function LabelEditor({ labels, onSave }: LabelEditorProps) {
       return;
     }
 
-    setDraft({ ...draft, [trimmedKey]: trimmedValue });
+    updateDraft({ ...draft, [trimmedKey]: trimmedValue });
     setNewKey('');
     setNewValue('');
     setError('');
@@ -48,11 +65,7 @@ export function LabelEditor({ labels, onSave }: LabelEditorProps) {
   const handleDelete = (key: string) => {
     const next = { ...draft };
     delete next[key];
-    setDraft(next);
-  };
-
-  const handleValueChange = (key: string, value: string) => {
-    setDraft({ ...draft, [key]: value });
+    updateDraft(next);
   };
 
   const handleSave = () => {
@@ -65,29 +78,25 @@ export function LabelEditor({ labels, onSave }: LabelEditorProps) {
     <div className="space-y-3">
       {/* Existing labels */}
       {entries.length > 0 && (
-        <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
           {entries.map(([key, value]) => (
-            <div key={key} className="flex items-center gap-2">
-              <Input
-                value={key}
-                disabled
-                className="flex-1 font-mono text-xs"
-              />
-              <Input
-                value={value}
-                onChange={(e) => handleValueChange(key, e.target.value)}
-                className="flex-1 font-mono text-xs"
-                placeholder={t('agentSpec.labelValue')}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+            <Badge
+              key={key}
+              variant="secondary"
+              className="max-w-full gap-1 rounded-md px-2 py-1 text-[11px] font-mono"
+            >
+              <span className="truncate">{key}</span>
+              <span className="text-muted-foreground">=</span>
+              <span className="truncate">{value || '-'}</span>
+              <button
+                type="button"
+                className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
                 onClick={() => handleDelete(key)}
+                aria-label={t('agentSpec.deleteNode', { name: key })}
               >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
           ))}
         </div>
       )}
@@ -125,7 +134,7 @@ export function LabelEditor({ labels, onSave }: LabelEditorProps) {
       )}
 
       {/* Save button */}
-      {dirty && (
+      {showSaveButton && dirty && (
         <Button size="sm" onClick={handleSave} className="gap-1.5">
           <Save className="h-3.5 w-3.5" />
           {t('agentSpec.saveLabels')}

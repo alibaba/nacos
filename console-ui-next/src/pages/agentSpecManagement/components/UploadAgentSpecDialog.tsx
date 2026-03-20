@@ -52,7 +52,7 @@ export function UploadAgentSpecDialog({
       const selected = e.target.files?.[0] ?? null;
       setError(null);
       if (selected && !isValidZipFile(selected)) {
-        setError(t('agentSpec.invalidZipFile', 'Please select a valid .zip file'));
+        setError(t('agentSpec.invalidZipFile'));
         setFile(null);
         return;
       }
@@ -66,12 +66,12 @@ export function UploadAgentSpecDialog({
     setLoading(true);
     try {
       await agentSpecApi.upload(namespaceId, file);
-      toast.success(t('agentSpec.uploadSuccess', 'Upload successful'));
+      toast.success(t('agentSpec.uploadSuccess'));
       handleClose(false);
       onSuccess();
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : t('agentSpec.uploadFailed', 'Upload failed');
+        err instanceof Error ? err.message : t('agentSpec.uploadFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -82,9 +82,9 @@ export function UploadAgentSpecDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('agentSpec.uploadZip', 'Upload AgentSpec ZIP')}</DialogTitle>
+          <DialogTitle>{t('agentSpec.uploadZip')}</DialogTitle>
           <DialogDescription>
-            {t('agentSpec.uploadZipDesc', 'Select a .zip file to import an AgentSpec package.')}
+            {t('agentSpec.uploadZipDesc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -97,7 +97,7 @@ export function UploadAgentSpecDialog({
             <p className="text-sm text-muted-foreground">
               {file
                 ? file.name
-                : t('agentSpec.dragOrClick', 'Click to select a .zip file')}
+                : t('agentSpec.dragOrClick')}
             </p>
             <input
               ref={inputRef}
@@ -116,7 +116,7 @@ export function UploadAgentSpecDialog({
             {t('common.cancel')}
           </Button>
           <Button onClick={handleUpload} disabled={!file || !!error || loading}>
-            {loading ? t('common.loading') : t('agentSpec.upload', 'Upload')}
+            {loading ? t('common.loading') : t('agentSpec.upload')}
           </Button>
         </DialogFooter>
       </DialogContent>

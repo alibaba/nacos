@@ -51,10 +51,11 @@ async function callAllApiMethods(): Promise<string[]> {
   await Promise.allSettled([
     agentSpecApi.list({ namespaceId: 'public' }),
     agentSpecApi.getDetail({ agentSpecName: 'test' }),
+    agentSpecApi.getVersion({ agentSpecName: 'test', version: 'v1' }),
     agentSpecApi.delete({ agentSpecName: 'test' }),
     agentSpecApi.upload('public', fakeFile),
     agentSpecApi.createDraft({ agentSpecName: 'test' }),
-    agentSpecApi.updateDraft({ agentSpecName: 'test' }),
+    agentSpecApi.updateDraft({ agentSpecCard: '{"name":"test"}' }),
     agentSpecApi.deleteDraft({ agentSpecName: 'test' }),
     agentSpecApi.submit({ agentSpecName: 'test', version: 'v1' }),
     agentSpecApi.publish({ agentSpecName: 'test', version: 'v1' }),
@@ -75,8 +76,8 @@ describe('Property 13: API 基础路径一致性', () => {
   it('all agentSpecApi methods use the correct base path prefix', async () => {
     const urls = await callAllApiMethods();
 
-    // Ensure we captured URLs from all 12 API methods
-    expect(urls.length).toBe(12);
+    // Ensure we captured URLs from all 13 API methods
+    expect(urls.length).toBe(13);
 
     // Every URL must start with the expected base path
     for (const url of urls) {
@@ -91,10 +92,11 @@ describe('Property 13: API 基础路径一致性', () => {
     const apiMethods: Array<{ name: string; call: () => Promise<unknown> }> = [
       { name: 'list', call: () => agentSpecApi.list({}) },
       { name: 'getDetail', call: () => agentSpecApi.getDetail({ agentSpecName: 'x' }) },
+      { name: 'getVersion', call: () => agentSpecApi.getVersion({ agentSpecName: 'x', version: 'v1' }) },
       { name: 'delete', call: () => agentSpecApi.delete({ agentSpecName: 'x' }) },
       { name: 'upload', call: () => agentSpecApi.upload('ns', fakeFile) },
       { name: 'createDraft', call: () => agentSpecApi.createDraft({ agentSpecName: 'x' }) },
-      { name: 'updateDraft', call: () => agentSpecApi.updateDraft({ agentSpecName: 'x' }) },
+      { name: 'updateDraft', call: () => agentSpecApi.updateDraft({ agentSpecCard: '{"name":"x"}' }) },
       { name: 'deleteDraft', call: () => agentSpecApi.deleteDraft({ agentSpecName: 'x' }) },
       { name: 'submit', call: () => agentSpecApi.submit({ agentSpecName: 'x', version: 'v1' }) },
       { name: 'publish', call: () => agentSpecApi.publish({ agentSpecName: 'x', version: 'v1' }) },

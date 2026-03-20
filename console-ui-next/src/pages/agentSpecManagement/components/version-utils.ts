@@ -17,6 +17,10 @@ const STATE_ACTIONS: Record<string, string[]> = {
   offline: ['online'],
 };
 
+export function sortVersionsDescending<T extends { updateTime: number }>(versions: T[]): T[] {
+  return [...versions].sort((a, b) => b.updateTime - a.updateTime);
+}
+
 /**
  * Returns the list of valid action names for a given version status.
  * Unknown statuses return an empty array.

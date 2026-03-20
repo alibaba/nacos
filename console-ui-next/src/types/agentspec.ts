@@ -28,20 +28,22 @@ export interface AgentSpecVersionSummary {
 /** 资源 */
 export interface AgentSpecResource {
   name: string;
-  type: 'config' | 'skill' | 'cron' | 'dockerfile' | 'other';
+  type: string;
   content: string;
   metadata: Record<string, unknown> | null;
 }
 
+export interface AgentSpecDocument {
+  namespaceId: string;
+  name: string;
+  description: string;
+  content: string;
+  resource: Record<string, AgentSpecResource>;
+}
+
 /** 详情 */
 export interface AgentSpecDetail {
-  agentSpec: {
-    namespaceId: string;
-    name: string;
-    description: string;
-    content: string; // manifest.json raw JSON string
-    resource: Record<string, AgentSpecResource>;
-  };
+  agentSpec: AgentSpecDocument | null;
   enable: boolean;
   version: string;
   versionStatus: 'draft' | 'reviewing' | 'online' | 'offline';
