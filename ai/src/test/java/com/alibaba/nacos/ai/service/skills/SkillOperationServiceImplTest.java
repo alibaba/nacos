@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
+import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
@@ -31,22 +32,33 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.context.addition.AuthContext;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
+import com.alibaba.nacos.plugin.datafilter.spi.DataFilterService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -59,13 +71,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.lenient;
 
 /**
  * Test for SkillOperationServiceImpl.
@@ -97,6 +112,10 @@ class SkillOperationServiceImplTest {
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
+    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+
+    private DataFilterPluginManager mockDataFilterManager;
+
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -111,10 +130,17 @@ class SkillOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository, manifestService);
+        mockDataFilterManager = mock(DataFilterPluginManager.class);
+        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
+        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
+        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
     }
 
     @AfterEach
     void tearDown() {
+        if (dataFilterManagerStatic != null) {
+            dataFilterManagerStatic.close();
+        }
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
     
@@ -287,5 +313,170 @@ class SkillOperationServiceImplTest {
             zos.closeEntry();
         }
         return baos.toByteArray();
+    }
+
+    // ========== Data filter integration tests ==========
+
+    private void setupRequestContext(String username) {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        AuthContext authContext = requestContext.getAuthContext();
+        IdentityContext identityContext = new IdentityContext();
+        identityContext.setParameter(Constants.Identity.IDENTITY_ID, username);
+        authContext.setIdentityContext(identityContext);
+    }
+
+    @Test
+    void testListSkillsFilteredByReadFilter() throws NacosException {
+        String namespaceId = "test-ns";
+        AiResource meta1 = new AiResource();
+        meta1.setName("skill-public");
+        meta1.setNamespaceId(namespaceId);
+        meta1.setType("skill");
+        meta1.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta1.setOwner("userA");
+        AiResource meta2 = new AiResource();
+        meta2.setName("skill-private");
+        meta2.setNamespaceId(namespaceId);
+        meta2.setType("skill");
+        meta2.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta2.setOwner("userA");
+
+        Page<AiResource> metaPage = new Page<>();
+        metaPage.setPageItems(List.of(meta1, meta2));
+        metaPage.setTotalCount(2);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+                .thenReturn(metaPage);
+
+        DataFilterService mockFilter = mock(DataFilterService.class);
+        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
+                .thenReturn(Collections.singletonList(meta1));
+        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("userB");
+        Page<SkillAdminListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("skill-public", result.getPageItems().get(0).getName());
+        assertEquals(1, result.getTotalCount());
+    }
+
+    @Test
+    void testGetSkillDetailDeniedByReadFilter() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        DataFilterService mockFilter = mock(DataFilterService.class);
+        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
+                .thenReturn(Collections.emptyList());
+        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.getSkillDetail(namespaceId, skillName));
+        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+    }
+
+    @Test
+    void testDeleteSkillDeniedByWriteFilter() {
+        String namespaceId = "test-ns";
+        String skillName = "protected-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        DataFilterService mockFilter = mock(DataFilterService.class);
+        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
+                .thenReturn(Collections.emptyList());
+        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("attackerUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.deleteSkill(namespaceId, skillName));
+        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void testUploadSkillSetsOwnerOnCreation() throws NacosException, IOException {
+        String namespaceId = "test-ns";
+        byte[] zipBytes = createValidZipBytes();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+        setupRequestContext("creatorUser");
+
+        skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
+
+        org.mockito.ArgumentCaptor<AiResource> captor = org.mockito.ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).insert(captor.capture());
+        assertEquals("creatorUser", captor.getValue().getOwner());
+    }
+
+    @Test
+    void testListSkillsNoFilterServiceAvailable() throws NacosException {
+        String namespaceId = "test-ns";
+        AiResource meta = new AiResource();
+        meta.setName("my-skill");
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        Page<AiResource> metaPage = new Page<>();
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+                .thenReturn(metaPage);
+
+        Page<SkillAdminListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        assertEquals(1, result.getPageItems().size());
+    }
+
+    @Test
+    void testCreateDraftOnExistingSkillDeniedByWriteFilter() {
+        String namespaceId = "test-ns";
+        String skillName = "protected-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        DataFilterService mockFilter = mock(DataFilterService.class);
+        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
+                .thenReturn(Collections.emptyList());
+        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("attackerUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.createDraft(namespaceId, skillName, null));
+        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+    }
+
+    @Test
+    void testCreateDraftAuthorIsCurrentUser() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "brand-new-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
+        setupRequestContext("myUser");
+
+        String version = skillOperationService.createDraft(namespaceId, skillName, null);
+        assertEquals("v1", version);
+
+        org.mockito.ArgumentCaptor<com.alibaba.nacos.ai.model.AiResourceVersion> vCaptor =
+                org.mockito.ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.AiResourceVersion.class);
+        verify(aiResourceVersionPersistService).insert(vCaptor.capture());
+        assertEquals("myUser", vCaptor.getValue().getAuthor());
     }
 }

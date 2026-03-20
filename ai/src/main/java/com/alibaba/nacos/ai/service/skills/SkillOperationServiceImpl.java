@@ -28,6 +28,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
+import com.alibaba.nacos.ai.service.DataFilterHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -145,6 +147,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return name;
         }
 
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
         if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
@@ -162,6 +165,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
+        }
+        List<AiResource> filtered = DataFilterHelper.doReadFilter(Collections.singletonList(meta));
+        if (filtered.isEmpty()) {
+            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
+                    "No permission to read skill: " + skillName);
         }
         SkillVersionInfo versionInfo = requireVersionInfo(meta);
 
@@ -203,6 +211,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
         }
+        List<AiResource> filtered = DataFilterHelper.doReadFilter(Collections.singletonList(meta));
+        if (filtered.isEmpty()) {
+            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
+                    "No permission to read skill: " + skillName);
+        }
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Version is required for skill version detail");
@@ -222,6 +235,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (meta == null) {
             return;
         }
+        DataFilterHelper.doWriteCheck(meta);
 
         // Delete in strict reverse order of creation (storage -> version -> meta -> index):
         // 1) index config first: cut off client discovery immediately
@@ -259,33 +273,33 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
                 pageSize);
+        List<AiResource> filtered = DataFilterHelper.doReadFilter(
+                metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>() : metaPage.getPageItems());
         List<SkillAdminListItem> items = new ArrayList<>();
-        if (metaPage != null && metaPage.getPageItems() != null) {
-            for (AiResource meta : metaPage.getPageItems()) {
-                if (meta == null) {
-                    continue;
-                }
-                SkillVersionInfo versionInfo = parseVersionInfo(meta.getVersionInfo());
-                SkillAdminListItem item = new SkillAdminListItem();
-                item.setNamespaceId(namespaceId);
-                item.setName(meta.getName());
-                item.setDescription(meta.getDesc());
-                item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
-                item.setBizTags(meta.getBizTags());
-                item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
-                if (versionInfo != null) {
-                    item.setLabels(versionInfo.getLabels());
-                    item.setEditingVersion(versionInfo.getEditingVersion());
-                    item.setReviewingVersion(versionInfo.getReviewingVersion());
-                    item.setOnlineCnt(versionInfo.getOnlineCnt());
-                }
-                items.add(item);
+        for (AiResource meta : filtered) {
+            if (meta == null) {
+                continue;
             }
+            SkillVersionInfo versionInfo = parseVersionInfo(meta.getVersionInfo());
+            SkillAdminListItem item = new SkillAdminListItem();
+            item.setNamespaceId(namespaceId);
+            item.setName(meta.getName());
+            item.setDescription(meta.getDesc());
+            item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
+            item.setBizTags(meta.getBizTags());
+            item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+            if (versionInfo != null) {
+                item.setLabels(versionInfo.getLabels());
+                item.setEditingVersion(versionInfo.getEditingVersion());
+                item.setReviewingVersion(versionInfo.getReviewingVersion());
+                item.setOnlineCnt(versionInfo.getOnlineCnt());
+            }
+            items.add(item);
         }
 
         Page<SkillAdminListItem> result = new Page<>();
         result.setPageItems(items);
-        result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
+        result.setTotalCount(items.size());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
         result.setPageNumber(pageNo);
         return result;
@@ -296,7 +310,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
 
         if (meta == null) {
-            // Brand-new skill: meta does not exist yet, always create an empty draft
+            // Brand-new skill: no existing resource to check write permission against
             if (StringUtils.isNotBlank(basedOnVersion)) {
                 throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                         "Skill not found: " + name + ", cannot use basedOnVersion for a brand-new skill");
@@ -308,6 +322,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return "v1";
         }
 
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
         if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
@@ -332,11 +347,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     baseVersionRow != null ? baseVersionRow.getStorage() : null);
             List<String> files = writeSkillToStorage(namespaceId, baseSkill, newVersion);
 
+            String currentUser = DataFilterHelper.resolveCurrentUser();
             AiResourceVersion v = new AiResourceVersion();
             v.setNamespaceId(namespaceId);
             v.setName(name);
             v.setType(RESOURCE_TYPE_SKILL);
-            v.setAuthor(DEFAULT_AUTHOR);
+            v.setAuthor(StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser);
             v.setStatus(VERSION_STATUS_DRAFT);
             v.setVersion(newVersion);
             v.setDesc(baseSkill.getDescription());
@@ -356,6 +372,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         String name = draftSkill.getName();
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         if (StringUtils.isBlank(editing)) {
@@ -377,6 +394,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void deleteDraft(String namespaceId, String name) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         if (StringUtils.isBlank(editing)) {
@@ -400,6 +418,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public String submit(String namespaceId, String name, String version) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
 
         String target = version;
@@ -456,6 +475,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void publish(String namespaceId, String name, String version, boolean updateLatestLabel) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
 
         AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, version);
@@ -514,6 +534,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateMetaVersionInfoCas(namespaceId, meta, info);
@@ -530,6 +551,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online)
             throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         SkillVersionInfo info = requireVersionInfo(meta);
 
         boolean skillScope = SCOPE_SKILL.equalsIgnoreCase(scope) || StringUtils.isBlank(version);
@@ -582,29 +604,28 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String nameLike = StringUtils.isBlank(keyword) ? null : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
                 pageSize);
+        List<AiResource> filtered = DataFilterHelper.doReadFilter(
+                metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>() : metaPage.getPageItems());
         List<SkillBasicInfo> items = new ArrayList<>();
-        if (metaPage != null && metaPage.getPageItems() != null) {
-            for (AiResource meta : metaPage.getPageItems()) {
-                if (meta == null) {
-                    continue;
-                }
-                if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-                    continue;
-                }
-                SkillVersionInfo info = parseVersionInfo(meta.getVersionInfo());
-                if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
-                    continue;
-                }
-                // Client only receives name and description
-                SkillBasicInfo basicInfo = new SkillBasicInfo();
-                basicInfo.setName(meta.getName());
-                basicInfo.setDescription(meta.getDesc());
-                items.add(basicInfo);
+        for (AiResource meta : filtered) {
+            if (meta == null) {
+                continue;
             }
+            if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
+                continue;
+            }
+            SkillVersionInfo info = parseVersionInfo(meta.getVersionInfo());
+            if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
+                continue;
+            }
+            SkillBasicInfo basicInfo = new SkillBasicInfo();
+            basicInfo.setName(meta.getName());
+            basicInfo.setDescription(meta.getDesc());
+            items.add(basicInfo);
         }
         Page<SkillBasicInfo> result = new Page<>();
         result.setPageItems(items);
-        result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
+        result.setTotalCount(items.size());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
         result.setPageNumber(pageNo);
         return result;
@@ -612,6 +633,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException {
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta != null) {
+            List<AiResource> filtered = DataFilterHelper.doReadFilter(Collections.singletonList(meta));
+            if (filtered.isEmpty()) {
+                throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
+                        "No permission to read skill: " + name);
+            }
+        }
         SkillIndexManifest manifest = manifestService.query(namespaceId, name);
         if (manifest == null || manifest.getVersions() == null || manifest.getVersions().isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -638,6 +667,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
             boolean isNewSkill) throws NacosException {
         String skillName = skill.getName();
+        String currentUser = DataFilterHelper.resolveCurrentUser();
 
         // 1) write all resources (including SKILL.md) to storage
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
@@ -647,7 +677,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         versionRow.setNamespaceId(namespaceId);
         versionRow.setName(skillName);
         versionRow.setType(RESOURCE_TYPE_SKILL);
-        versionRow.setAuthor(DEFAULT_AUTHOR);
+        versionRow.setAuthor(StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser);
         versionRow.setStatus(VERSION_STATUS_DRAFT);
         versionRow.setVersion(version);
         versionRow.setDesc(skill.getDescription());
@@ -662,6 +692,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             meta.setType(RESOURCE_TYPE_SKILL);
             meta.setStatus(META_STATUS_ENABLE);
             meta.setDesc(skill.getDescription());
+            meta.setOwner(currentUser);
             SkillVersionInfo info = new SkillVersionInfo();
             info.setEditingVersion(version);
             info.setOnlineCnt(0);
