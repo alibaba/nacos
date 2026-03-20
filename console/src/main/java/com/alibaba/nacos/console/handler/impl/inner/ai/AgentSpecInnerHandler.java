@@ -61,7 +61,14 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     
     @Override
     public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
-        return agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName());
+        return agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion());
+    }
+    
+    @Override
+    public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
+        return agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion());
     }
     
     @Override

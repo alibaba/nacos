@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.AgentSpecHandler;
@@ -48,6 +49,10 @@ public class AgentSpecProxy {
     
     public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
         return agentSpecHandler.getAgentSpec(form);
+    }
+    
+    public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
+        return agentSpecHandler.getAgentSpecVersion(form);
     }
     
     public void deleteAgentSpec(AgentSpecForm form) throws NacosException {
@@ -89,5 +94,13 @@ public class AgentSpecProxy {
     
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, online);
+    }
+    
+    public void online(AgentSpecOnlineForm form) throws NacosException {
+        agentSpecHandler.changeOnlineStatus(form, true);
+    }
+    
+    public void offline(AgentSpecOnlineForm form) throws NacosException {
+        agentSpecHandler.changeOnlineStatus(form, false);
     }
 }

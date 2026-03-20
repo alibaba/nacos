@@ -129,7 +129,7 @@ public interface AgentSpecMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
-    String createAgentSpecDraft(String namespaceId, String agentSpecName, String basedOnVersion) throws NacosException;
+    String createDraft(String namespaceId, String agentSpecName, String basedOnVersion) throws NacosException;
     
     /**
      * Update current draft content.
@@ -140,7 +140,7 @@ public interface AgentSpecMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update draft
      */
-    boolean updateAgentSpecDraft(String namespaceId, String agentSpecCard, Boolean setAsLatest) throws NacosException;
+    boolean updateDraft(String namespaceId, String agentSpecCard, Boolean setAsLatest) throws NacosException;
     
     /**
      * Delete current draft version.
@@ -150,7 +150,7 @@ public interface AgentSpecMaintainerService {
      * @return true if delete success
      * @throws NacosException if fail to delete draft
      */
-    boolean deleteAgentSpecDraft(String namespaceId, String agentSpecName) throws NacosException;
+    boolean deleteDraft(String namespaceId, String agentSpecName) throws NacosException;
     
     /**
      * Submit a version for pipeline review.
@@ -161,7 +161,7 @@ public interface AgentSpecMaintainerService {
      * @return submit result (e.g. pipeline id)
      * @throws NacosException if fail to submit
      */
-    String submitAgentSpec(String namespaceId, String agentSpecName, String version) throws NacosException;
+    String submit(String namespaceId, String agentSpecName, String version) throws NacosException;
     
     /**
      * Publish an approved reviewing version.
@@ -173,7 +173,7 @@ public interface AgentSpecMaintainerService {
      * @return true if publish success
      * @throws NacosException if fail to publish
      */
-    boolean publishAgentSpec(String namespaceId, String agentSpecName, String version, Boolean updateLatestLabel)
+    boolean publish(String namespaceId, String agentSpecName, String version, Boolean updateLatestLabel)
             throws NacosException;
     
     /**
@@ -185,7 +185,7 @@ public interface AgentSpecMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update labels
      */
-    boolean updateAgentSpecLabels(String namespaceId, String agentSpecName, String labels) throws NacosException;
+    boolean updateLabels(String namespaceId, String agentSpecName, String labels) throws NacosException;
     
     /**
      * Online/offline operation.
@@ -198,6 +198,6 @@ public interface AgentSpecMaintainerService {
      * @return true if operation success
      * @throws NacosException if fail to change status
      */
-    boolean changeAgentSpecOnlineStatus(String namespaceId, String agentSpecName, String scope, String version,
+    boolean changeOnlineStatus(String namespaceId, String agentSpecName, String scope, String version,
             boolean online) throws NacosException;
 }

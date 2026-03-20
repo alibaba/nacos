@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.ai.param.AgentSpecHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.AgentSpecRequestUtil;
 import com.alibaba.nacos.api.annotation.NacosApi;
@@ -81,6 +82,20 @@ public class ConsoleAgentSpecController {
     public Result<AgentSpecAdminDetail> getAgentSpec(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(agentSpecProxy.getAgentSpec(form));
+    }
+    
+    /**
+     * Get specific version detail of an agentspec for viewing or editing.
+     *
+     * @param form the agentspec form containing agentSpecName and version
+     * @return full agentspec content for the specified version
+     * @throws NacosException if the agentspec or version not found
+     */
+    @GetMapping("/version")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<AgentSpec> getAgentSpecVersion(AgentSpecForm form) throws NacosException {
+        form.validate();
+        return Result.success(agentSpecProxy.getAgentSpecVersion(form));
     }
     
     /**
@@ -235,7 +250,7 @@ public class ConsoleAgentSpecController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> online(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
-        agentSpecProxy.changeOnlineStatus(form, true);
+        agentSpecProxy.online(form);
         return Result.success("ok");
     }
     
@@ -250,7 +265,7 @@ public class ConsoleAgentSpecController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> offline(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
-        agentSpecProxy.changeOnlineStatus(form, false);
+        agentSpecProxy.offline(form);
         return Result.success("ok");
     }
 }

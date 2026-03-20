@@ -45,6 +45,8 @@ public interface AiResourceVersionPersistService {
 
     int updateStorage(String namespaceId, String name, String type, String version, String storage);
 
+    int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage, String desc);
+
     int updatePublishPipelineInfo(String namespaceId, String name, String type, String version, String publishPipelineInfo);
 }
 

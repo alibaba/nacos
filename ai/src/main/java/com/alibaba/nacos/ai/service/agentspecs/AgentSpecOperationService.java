@@ -37,10 +37,36 @@ public interface AgentSpecOperationService {
      *
      * @param namespaceId namespace ID
      * @param agentSpecName agentspec name
+     * @param version explicit version to query, optional
      * @return agentspec admin detail (agentspec content + governance info)
      * @throws NacosException if agentspec not found
      */
+    AgentSpecAdminDetail getAgentSpecDetail(String namespaceId, String agentSpecName, String version)
+            throws NacosException;
+    
+    /**
+     * Get agentspec detail for admin usage. Returns version governance metadata and all version summaries, without
+     * specific version content. Mirrors {@code SkillOperationService#getSkillDetail(String, String)}.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @return agentspec admin detail (governance info + version summaries)
+     * @throws NacosException if agentspec not found
+     */
     AgentSpecAdminDetail getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException;
+    
+    /**
+     * Get agentspec version detail for admin usage. Returns full agentspec content for a specific version, used for
+     * viewing or editing. Mirrors {@code SkillOperationService#getSkillVersionDetail(String, String, String)}.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version target version
+     * @return full agentspec content for the specified version
+     * @throws NacosException if agentspec or version not found
+     */
+    AgentSpec getAgentSpecVersionDetail(String namespaceId, String agentSpecName, String version)
+            throws NacosException;
     
     /**
      * Delete agentspec.

@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -50,6 +51,12 @@ public class AgentSpecNoopHandler implements AgentSpecHandler {
 
     @Override
     public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                AGENTSPEC_NOT_ENABLED_MESSAGE);
+    }
+
+    @Override
+    public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 AGENTSPEC_NOT_ENABLED_MESSAGE);
     }

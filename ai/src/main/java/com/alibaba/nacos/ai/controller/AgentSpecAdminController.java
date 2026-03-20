@@ -72,7 +72,7 @@ public class AgentSpecAdminController {
     }
     
     /**
-     * Get agentspec detail for admin (includes version governance info).
+     * Get agentspec detail for admin (includes version governance info and all version summaries).
      *
      * @param form the agentspec form to get
      * @return result of the get operation
@@ -84,6 +84,22 @@ public class AgentSpecAdminController {
         form.validate();
         return Result.success(
                 agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName()));
+    }
+    
+    /**
+     * Get specific version detail of an agentspec for viewing or editing.
+     *
+     * @param form the agentspec form containing agentSpecName and version
+     * @return full agentspec content for the specified version
+     * @throws NacosException if the agentspec or version not found
+     */
+    @GetMapping("/version")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AgentSpec> getAgentSpecVersion(AgentSpecForm form) throws NacosException {
+        form.validate();
+        return Result.success(
+                agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(), form.getAgentSpecName(),
+                        form.getVersion()));
     }
     
     /**

@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -45,6 +46,15 @@ public interface AgentSpecHandler {
      * @throws NacosException nacos exception
      */
     AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException;
+    
+    /**
+     * Get agentspec version detail. Returns full agentspec content for a specific version.
+     *
+     * @param form agentspec form (with version)
+     * @return full agentspec content
+     * @throws NacosException nacos exception
+     */
+    AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException;
     
     /**
      * Delete agentspec.

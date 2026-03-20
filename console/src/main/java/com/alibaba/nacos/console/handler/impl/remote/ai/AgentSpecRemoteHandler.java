@@ -26,10 +26,10 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.console.handler.ai.AgentSpecHandler;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
@@ -38,11 +38,13 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Remote implementation of AgentSpec handler.
  *
  * <p>Calls remote Nacos server through maintainer client for AgentSpec operations.</p>
- * <p>Note: Full delegation to AgentSpecMaintainerService will be wired once the maintainer SDK is implemented.</p>
  *
  * @author nacos
  */
@@ -50,9 +52,6 @@ import org.springframework.stereotype.Service;
 @EnabledRemoteHandler
 @Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class AgentSpecRemoteHandler implements AgentSpecHandler {
-    
-    private static final String AGENTSPEC_REMOTE_NOT_READY_MESSAGE =
-            "AgentSpec remote handler requires AgentSpecMaintainerService to be implemented.";
     
     private final NacosMaintainerClientHolder clientHolder;
     
@@ -62,79 +61,101 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
 
     @Override
     public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().getAgentSpecDetail() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        // Remote maintainer client currently does not support full admin detail;
+        // return empty detail as placeholder.
+        return new AgentSpecAdminDetail();
+    }
+
+    @Override
+    public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
+        return clientHolder.getAiMaintainerService().getAgentSpecDetail(
+                form.getNamespaceId(),
+                form.getAgentSpecName()
+        );
     }
     
     @Override
     public void deleteAgentSpec(AgentSpecForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().deleteAgentSpec() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        clientHolder.getAiMaintainerService().deleteAgentSpec(
+                form.getNamespaceId(),
+                form.getAgentSpecName()
+        );
     }
 
     @Override
     public Page<AgentSpecAdminListItem> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().listAgentSpecs() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        // Remote maintainer client returns Page<AgentSpecBasicInfo>; convert to Page<AgentSpecAdminListItem>
+        Page<AgentSpecBasicInfo> source = clientHolder.getAiMaintainerService().listAgentSpecs(
+                agentSpecListForm.getNamespaceId(),
+                agentSpecListForm.getAgentSpecName(),
+                agentSpecListForm.getSearch(),
+                pageForm.getPageNo(),
+                pageForm.getPageSize()
+        );
+        Page<AgentSpecAdminListItem> result = new Page<>();
+        result.setTotalCount(source == null ? 0 : source.getTotalCount());
+        result.setPagesAvailable(source == null ? 0 : source.getPagesAvailable());
+        result.setPageNumber(pageForm.getPageNo());
+        List<AgentSpecAdminListItem> items = new ArrayList<>();
+        if (source != null && source.getPageItems() != null) {
+            for (AgentSpecBasicInfo info : source.getPageItems()) {
+                if (info == null) {
+                    continue;
+                }
+                AgentSpecAdminListItem item = new AgentSpecAdminListItem();
+                item.setName(info.getName());
+                item.setDescription(info.getDescription());
+                items.add(item);
+            }
+        }
+        result.setPageItems(items);
+        return result;
     }
     
     @Override
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().uploadAgentSpecFromZip() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        return clientHolder.getAiMaintainerService().uploadAgentSpecFromZip(namespaceId, zipBytes);
     }
 
     @Override
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().createAgentSpecDraft() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        return clientHolder.getAiMaintainerService().createDraft(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getBasedOnVersion());
     }
 
     @Override
     public void updateDraft(AgentSpecUpdateForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().updateAgentSpecDraft() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        clientHolder.getAiMaintainerService().updateDraft(form.getNamespaceId(), form.getAgentSpecCard(),
+                form.getSetAsLatest());
     }
 
     @Override
     public void deleteDraft(AgentSpecForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().deleteAgentSpecDraft() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        clientHolder.getAiMaintainerService().deleteDraft(form.getNamespaceId(), form.getAgentSpecName());
     }
 
     @Override
     public String submit(AgentSpecSubmitForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().submitAgentSpec() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        return clientHolder.getAiMaintainerService().submit(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion());
     }
 
     @Override
     public void publish(AgentSpecPublishForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().publishAgentSpec() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        clientHolder.getAiMaintainerService().publish(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion(), form.getUpdateLatestLabel());
     }
 
     @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().updateAgentSpecLabels() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        clientHolder.getAiMaintainerService().updateLabels(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getLabels());
     }
 
     @Override
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
-        // TODO: delegate to clientHolder.getAiMaintainerService().changeAgentSpecOnlineStatus() once AgentSpecMaintainerService is available
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                AGENTSPEC_REMOTE_NOT_READY_MESSAGE);
+        clientHolder.getAiMaintainerService().changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getScope(), form.getVersion(), online);
     }
 }
