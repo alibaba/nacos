@@ -90,6 +90,9 @@ class SkillOperationServiceImplTest {
     @Mock
     private PipelineExecutionRepository pipelineExecutionRepository;
 
+    @Mock
+    private SkillIndexManifestService manifestService;
+
     private SkillOperationServiceImpl skillOperationService;
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
@@ -107,7 +110,7 @@ class SkillOperationServiceImplTest {
                 new PublishPipelineManager(), pipelineConfigProvider, pipelineExecutionRepository,
                 Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
-                publishPipelineExecutor, pipelineExecutionRepository);
+                publishPipelineExecutor, pipelineExecutionRepository, manifestService);
     }
 
     @AfterEach
@@ -174,7 +177,7 @@ class SkillOperationServiceImplTest {
         skillOperationService.deleteSkill(namespaceId, skillName);
 
         // Then
-        verify(storage, times(1)).delete(any(StorageKey.class));
+        verify(manifestService).delete(anyString(), anyString());
         verify(aiResourcePersistService).delete(eq(namespaceId), eq(skillName), anyString());
     }
     

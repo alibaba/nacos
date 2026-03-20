@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
@@ -57,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
+import static com.alibaba.nacos.ai.model.skills.SkillIndexManifest.LABEL_LATEST;
 
 /**
  * Skill operation service implementation.
@@ -97,8 +99,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     private static final String META_STATUS_DISABLE = "disable";
 
-    private static final String LABEL_LATEST = "latest";
-
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
 
     private static final String SCOPE_SKILL = "skill";
@@ -115,15 +115,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     private final PipelineExecutionRepository pipelineExecutionRepository;
 
+    private final SkillIndexManifestService manifestService;
+
     public SkillOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
             AiResourceVersionPersistService aiResourceVersionPersistService,
             PublishPipelineExecutor publishPipelineExecutor,
-            PipelineExecutionRepository pipelineExecutionRepository) {
+            PipelineExecutionRepository pipelineExecutionRepository,
+            SkillIndexManifestService manifestService) {
         this.storageRouter = AiResourceStorageRouter.getInstance();
         this.aiResourcePersistService = aiResourcePersistService;
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.pipelineExecutionRepository = pipelineExecutionRepository;
+        this.manifestService = manifestService;
     }
 
     @Override
@@ -221,7 +225,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Delete in strict reverse order of creation (storage -> version -> meta -> index):
         // 1) index config first: cut off client discovery immediately
-        deleteSkillIndexConfig(namespaceId, skillName);
+        manifestService.delete(namespaceId, skillName);
 
         // 2) meta: admin API can no longer find the skill
         aiResourcePersistService.delete(namespaceId, skillName, RESOURCE_TYPE_SKILL);
@@ -498,8 +502,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         updateMetaVersionInfoCas(namespaceId, meta, info);
 
-        // Write skill index config for client-side config caching
-        writeSkillIndexConfig(namespaceId, name, version, parseStorageFiles(v.getStorage()));
+        // Update skill index manifest: add version files and update labels
+        SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
+        manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
+        if (updateLatestLabel) {
+            manifest.getLabels().put(LABEL_LATEST, version);
+        }
+        manifestService.write(namespaceId, name, manifest);
     }
 
     @Override
@@ -508,6 +517,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillVersionInfo info = requireVersionInfo(meta);
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateMetaVersionInfoCas(namespaceId, meta, info);
+
+        // Sync labels to manifest
+        SkillIndexManifest manifest = manifestService.query(namespaceId, name);
+        if (manifest != null) {
+            manifest.setLabels(labels == null ? new HashMap<>(4) : new LinkedHashMap<>(labels));
+            manifestService.write(namespaceId, name, manifest);
+        }
     }
 
     @Override
@@ -520,9 +536,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (skillScope) {
             metaEnableDisable(namespaceId, meta, online);
             if (online) {
-                refreshSkillIndexConfig(namespaceId, name);
+                refreshSkillIndexManifest(namespaceId, name);
             } else {
-                deleteSkillIndexConfig(namespaceId, name);
+                manifestService.delete(namespaceId, name);
             }
             return;
         }
@@ -542,6 +558,22 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             info.setOnlineCnt(Math.max(0, cnt - 1));
         }
         updateMetaVersionInfoCas(namespaceId, meta, info);
+
+        // Sync version to manifest
+        if (online) {
+            List<String> files = parseStorageFiles(v.getStorage());
+            if (files != null && !files.isEmpty()) {
+                SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
+                manifest.getVersions().put(version, files);
+                manifestService.write(namespaceId, name, manifest);
+            }
+        } else {
+            SkillIndexManifest manifest = manifestService.query(namespaceId, name);
+            if (manifest != null && manifest.getVersions() != null) {
+                manifest.getVersions().remove(version);
+                manifestService.write(namespaceId, name, manifest);
+            }
+        }
     }
 
     @Override
@@ -580,24 +612,25 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
-        if (meta == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Skill not found: " + name);
+        SkillIndexManifest manifest = manifestService.query(namespaceId, name);
+        if (manifest == null || manifest.getVersions() == null || manifest.getVersions().isEmpty()) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill not found: " + name);
         }
-        if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Skill disabled: " + name);
-        }
-        String resolved = resolveVersion(meta, version, label);
+
+        String resolved = SkillIndexManifestService.resolveVersion(manifest, version, label);
         if (StringUtils.isBlank(resolved)) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill version not found: " + name);
         }
-        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, resolved);
-        if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())) {
+
+        List<String> files = manifest.getVersions().get(resolved);
+        if (files == null || files.isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Skill version not online: " + name);
+                    "Skill version not found: " + name + "@" + resolved);
         }
-        return loadSkillFromStorage(namespaceId, name, resolved, versionRow.getStorage());
+
+        return loadSkillFromFiles(namespaceId, name, resolved, files);
     }
 
     // ========== Private methods ==========
@@ -734,59 +767,41 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     /**
-     * Write skill index config (manifest) to Nacos Config for client-side caching.
-     * Stored at group={@code skill_{name}}, dataId={@code skill_index.json}.
-     */
-    private void writeSkillIndexConfig(String namespaceId, String skillName, String version, List<String> files)
-            throws NacosException {
-        Map<String, Object> index = new HashMap<>(4);
-        index.put("version", version);
-        index.put("files", files);
-        String provider = resolveSkillStorageProvider();
-        StorageKey key = NacosConfigAiResourceStorage.buildManifestStorageKey(provider, namespaceId, skillName);
-        byte[] content = JacksonUtils.toJson(index).getBytes(StandardCharsets.UTF_8);
-        storageRouter.route(key).save(key, content);
-    }
-
-    /**
-     * Delete skill index config.
-     */
-    private void deleteSkillIndexConfig(String namespaceId, String skillName) throws NacosException {
-        String provider = resolveSkillStorageProvider();
-        StorageKey key = NacosConfigAiResourceStorage.buildManifestStorageKey(provider, namespaceId, skillName);
-        storageRouter.route(key).delete(key);
-    }
-
-    /**
-     * Refresh skill index config from current meta (used when skill is re-enabled).
+     * Refresh skill index manifest from current DB state (used when skill is re-enabled).
+     * Rebuilds manifest with all online versions and labels from meta.
      * Best-effort: failures are logged but not propagated.
      */
-    private void refreshSkillIndexConfig(String namespaceId, String name) {
+    private void refreshSkillIndexManifest(String namespaceId, String name) {
         try {
             AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
             if (meta == null) {
                 return;
             }
             SkillVersionInfo vInfo = parseVersionInfo(meta.getVersionInfo());
-            if (vInfo == null || vInfo.getLabels() == null) {
-                return;
+
+            SkillIndexManifest manifest = new SkillIndexManifest();
+            manifest.setLabels(vInfo != null && vInfo.getLabels() != null
+                    ? new HashMap<>(vInfo.getLabels()) : new HashMap<>(4));
+            manifest.setVersions(new HashMap<>(4));
+
+            Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
+            if (versionPage != null && versionPage.getPageItems() != null) {
+                for (AiResourceVersion v : versionPage.getPageItems()) {
+                    if (v == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+                        continue;
+                    }
+                    List<String> files = parseStorageFiles(v.getStorage());
+                    if (files != null && !files.isEmpty()) {
+                        manifest.getVersions().put(v.getVersion(), files);
+                    }
+                }
             }
-            String latestVersion = vInfo.getLabels().get(LABEL_LATEST);
-            if (StringUtils.isBlank(latestVersion)) {
-                return;
+
+            if (!manifest.getVersions().isEmpty()) {
+                manifestService.write(namespaceId, name, manifest);
             }
-            AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, name,
-                    RESOURCE_TYPE_SKILL, latestVersion);
-            if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())) {
-                return;
-            }
-            List<String> files = parseStorageFiles(versionRow.getStorage());
-            if (files == null || files.isEmpty()) {
-                return;
-            }
-            writeSkillIndexConfig(namespaceId, name, latestVersion, files);
         } catch (Exception e) {
-            LOGGER.warn("Failed to refresh skill index config for {}: {}", name, e.getMessage());
+            LOGGER.warn("Failed to refresh skill index manifest for {}: {}", name, e.getMessage());
         }
     }
 
@@ -1042,7 +1057,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "No files found in storage for skill: " + skillName + "@" + version);
         }
+        return loadSkillFromFiles(namespaceId, skillName, version, files);
+    }
 
+    /**
+     * Load skill from storage by reading all resource files from the given file list.
+     * SKILL.md resource provides name/description/instruction; others populate the resource map.
+     */
+    private Skill loadSkillFromFiles(String namespaceId, String skillName, String version, List<String> files)
+            throws NacosException {
         String provider = resolveSkillStorageProvider();
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
