@@ -425,7 +425,24 @@ class AgentSpecDeletionPropertyTest {
 
         @Override
         public int updateStorage(String namespaceId, String name, String type, String version, String storage) {
-            return 0;
+            AiResourceVersion found = find(namespaceId, name, type, version);
+            if (found == null) {
+                return 0;
+            }
+            found.setStorage(storage);
+            return 1;
+        }
+
+        @Override
+        public int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage,
+                String desc) {
+            AiResourceVersion found = find(namespaceId, name, type, version);
+            if (found == null) {
+                return 0;
+            }
+            found.setStorage(storage);
+            found.setDesc(desc);
+            return 1;
         }
 
         @Override
