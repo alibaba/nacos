@@ -20,7 +20,7 @@ import com.alibaba.nacos.plugin.datasource.constants.DatabaseTypeConstant;
 import com.alibaba.nacos.plugin.datasource.impl.base.BaseTenantInfoMapper;
 
 /**
- * The postgresql implementation of ConfigInfoAggrMapper.
+ * The postgresql implementation of TenantInfoMapper.
  *
  * @author Long Yu
  **/

@@ -44,5 +44,4 @@ public class TableConstant {
     
     public static final String MIGRATE_CONFIG = "migrate_config";
     
-    public static final String CONFIG_INFO_AGGR = "config_info_aggr";
 }
