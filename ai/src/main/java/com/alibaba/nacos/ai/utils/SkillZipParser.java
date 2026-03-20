@@ -71,6 +71,16 @@ public class SkillZipParser {
     
     /** File extensions treated as binary; content will be stored as Base64. */
     private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
+
+    /**
+     * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
+     */
+    private static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
+
+    /**
+     * Maximum number of entries allowed in a ZIP file.
+     */
+    private static final int MAX_ZIP_ENTRIES = 500;
     
     static {
         BINARY_EXTENSIONS.add("ttf");
@@ -152,9 +162,17 @@ public class SkillZipParser {
      * Unzip to list of (name, raw bytes). Does not decode as text so binary files are preserved.
      * Uses Apache Commons Compress to support zip files with STORED entries that have data descriptor
      * (e.g. created on macOS or by some tools), which JDK ZipInputStream rejects.
+     *
+     * <p>Security hardening:
+     * <ul>
+     *   <li>Rejects entries with path traversal sequences (..) or absolute paths</li>
+     *   <li>Enforces maximum total decompressed size ({@link #MAX_TOTAL_UNCOMPRESSED_BYTES})</li>
+     *   <li>Enforces maximum number of entries ({@link #MAX_ZIP_ENTRIES})</li>
+     * </ul>
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         List<ZipEntryData> result = new ArrayList<>();
+        long totalSize = 0;
         try (ZipArchiveInputStream zis = new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
                 StandardCharsets.UTF_8.name(), true, true)) {
             ZipArchiveEntry entry;
@@ -164,13 +182,25 @@ public class SkillZipParser {
                     continue;
                 }
                 String name = entry.getName();
+                // Security: reject path traversal and absolute paths
+                SkillUtils.validatePathSafety(name);
                 boolean isMacOsxEntry = name != null && (name.contains("__MACOSX") || name.contains("/__MACOSX/"));
                 if (isMacOsxEntry) {
                     continue;
                 }
+                if (result.size() >= MAX_ZIP_ENTRIES) {
+                    throw new IOException(
+                            "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
+                }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
+                    totalSize += n;
+                    if (totalSize > MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                        throw new IOException(
+                                "ZIP decompressed size exceeds limit ("
+                                        + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
+                    }
                     out.write(buffer, 0, n);
                 }
                 result.add(new ZipEntryData(name, out.toByteArray()));
