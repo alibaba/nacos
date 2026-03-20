@@ -43,14 +43,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class CopilotAgentManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CopilotAgentManager.class);
-
+    
     private final CopilotConfigStorage configStorage;
     private final CopilotProperties defaultProperties;
     private final Environment environment;
-
+    
     private volatile CopilotProperties currentConfig;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-
+    
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
                                CopilotProperties defaultProperties,
@@ -69,13 +69,13 @@ public class CopilotAgentManager {
         if (config == null) {
             return;
         }
-
+        
         String studioUrl = config.getStudioUrl();
         if (StringUtils.isBlank(studioUrl)) {
             LOGGER.debug("Studio URL is not configured, skipping Studio initialization");
             return;
         }
-
+        
         try {
             String studioProject = config.getStudioProject();
             if (StringUtils.isBlank(studioProject)) {
@@ -93,13 +93,13 @@ public class CopilotAgentManager {
             LOGGER.warn("Failed to initialize AgentScope Studio: {}", e.getMessage(), e);
         }
     }
-
+    
     @PostConstruct
     public void init() {
         refreshConfig();
         initStudio();
     }
-
+    
     /**
      * Get current configuration.
      *
@@ -113,7 +113,7 @@ public class CopilotAgentManager {
             lock.readLock().unlock();
         }
     }
-
+    
     /**
      * Refresh configuration from storage.
      */
@@ -129,7 +129,7 @@ public class CopilotAgentManager {
         // Re-initialize Studio if URL changed (outside lock to avoid blocking)
         initStudio();
     }
-
+    
     /**
      * Create AgentScope agent with current effective configuration.
      * 使用当前生效配置创建 AgentScope Agent。
@@ -163,7 +163,7 @@ public class CopilotAgentManager {
             LOGGER.warn("Copilot is disabled or not configured");
             return null;
         }
-
+        
         // 2. Resolve the effective API key.
         //    Environment variable takes precedence over config value.
         // 2. 获取真正生效的 API Key。
@@ -173,7 +173,7 @@ public class CopilotAgentManager {
             LOGGER.warn("Copilot API Key is not configured");
             return null;
         }
-
+        
         // 3. Create the underlying model client based on current configuration.
         // 3. 基于当前配置创建底层模型客户端。
         DashScopeChatModel model = DashScopeChatModel.builder()
@@ -182,24 +182,24 @@ public class CopilotAgentManager {
                 .stream(true)
                 .enableThinking(true)
                 .build();
-
+        
         // 4. Create the agent based on the model client.
         // 4. 基于模型客户端创建 Agent。
         ReActAgent.Builder agentBuilder = ReActAgent.builder()
                 .name("CopilotAgent")
                 .model(model);
-
+        
         // 5. Apply system prompt when it is provided.
         // 5. 如果传入了 system prompt，则设置到 agent 中。
         if (StringUtils.isNotBlank(systemPrompt)) {
             agentBuilder.sysPrompt(systemPrompt);
         }
-
+        
         // 6. Return the constructed agent.
         // 6. 返回构建完成的 agent。
         return agentBuilder.build();
     }
-
+    
     /**
      * Check if Copilot is enabled and configured.
      *
@@ -210,11 +210,11 @@ public class CopilotAgentManager {
         if (config == null || !config.isEnabled()) {
             return false;
         }
-
+        
         String apiKey = getApiKey(config);
         return StringUtils.isNotBlank(apiKey);
     }
-
+    
     /**
      * Get effective configuration (from Nacos Config or default).
      *
@@ -229,12 +229,12 @@ public class CopilotAgentManager {
                 return config;
             }
         }
-
+        
         // Fallback to default properties
         LOGGER.debug("Using default Copilot config");
         return defaultProperties;
     }
-
+    
     /**
      * Get API key from environment variable or config.
      *
@@ -247,12 +247,12 @@ public class CopilotAgentManager {
         if (StringUtils.isNotBlank(apiKey)) {
             return apiKey;
         }
-
+        
         // Then try config property
         if (config != null) {
             return config.getApiKey();
         }
-
+        
         return null;
     }
 
@@ -276,13 +276,13 @@ public class CopilotAgentManager {
         if (StringUtils.isNotBlank(apiKey)) {
             return "ENV";
         }
-
+        
         // 2. If not found in environment, check the submitted configuration.
         // 2. 如果没有，则判断配置中是否配置了 API Key。
         if (config != null && StringUtils.isNotBlank(config.getApiKey())) {
             return "CONFIG";
         }
-
+        
         // 3. Return NONE when neither environment nor config provides API key.
         // 3. 如果环境变量和配置里都没有，则返回 NONE。
         return "NONE";
@@ -299,7 +299,7 @@ public class CopilotAgentManager {
      */
     public CopilotConfigTestResponse verifyConfig(CopilotProperties config) {
         CopilotConfigTestResponse result = new CopilotConfigTestResponse();
-
+        
         // 0. Return failure immediately when request body is null.
         // 0. 请求体为空，直接返回失败结果。
         if (config == null) {
@@ -311,20 +311,20 @@ public class CopilotAgentManager {
             result.setMessage("Configuration cannot be null");
             return result;
         }
-
+        
         // 1. Resolve the source of effective API key.
         // 1. 解析当前生效 API Key 的来源。
         String apiKeySource = resolveApiKeySource(config);
-
+        
         // 2. Check whether Studio URL is configured.
         // 2. 判断是否配置了 Studio URL。
         boolean studioConfigured = StringUtils.isNotBlank(config.getStudioUrl());
-
+        
         // 3. Fill basic result fields before validation.
         // 3. 将基础信息先写入返回结果。
         result.setApiKeySource(apiKeySource);
         result.setStudioConfigured(studioConfigured);
-
+        
         // 4. Validate that model name is provided.
         // 4. 校验模型名称是否为空。
         if (StringUtils.isBlank(config.getModel())) {
@@ -334,7 +334,7 @@ public class CopilotAgentManager {
             result.setMessage("Model is required");
             return result;
         }
-
+        
         // 5. Validate that an effective API key is available.
         // 5. 校验当前是否存在可用的 API Key。
         if ("NONE".equals(apiKeySource)) {
@@ -344,11 +344,11 @@ public class CopilotAgentManager {
             result.setMessage("API Key is required");
             return result;
         }
-
+        
         // 6. Reaching here means basic configuration validation passes.
         // 6. 如果走到这里，说明基础配置校验通过。
         result.setConfigValid(true);
-
+        
         try {
             // 7. Create a test agent with the submitted configuration.
             // 7. 使用当前请求中的配置创建测试 agent。
@@ -359,24 +359,24 @@ public class CopilotAgentManager {
                 result.setMessage("Failed to create Copilot agent");
                 return result;
             }
-
+            
             // 8. Build a minimal test request.
             // 8. 构造一个最小测试请求。
             Msg userMsg = Msg.builder()
                     .textContent("ping")
                     .build();
-
+            
             // 9. Configure stream options with reasoning and tool result events in incremental mode.
             // 9. 设置流式调用参数：关注推理事件和工具结果事件，并启用增量返回。
             StreamOptions streamOptions = StreamOptions.builder()
                     .eventTypes(EventType.REASONING, EventType.TOOL_RESULT)
                     .incremental(true)
                     .build();
-
+            
             // 10. Send a lightweight test request and wait up to 15 seconds.
             // 10. 发起一次轻量调用，最多等待 15 秒。
             agent.stream(userMsg, streamOptions).blockLast(Duration.ofSeconds(15));
-
+            
             // 11. If no exception is thrown, the LLM service is reachable.
             // 11. 如果没有抛异常，说明 LLM 服务可达。
             result.setSuccess(true);
