@@ -24,6 +24,7 @@ import com.alibaba.nacos.copilot.config.CopilotProperties;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.copilot.model.CopilotConfigTestResponse;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -127,5 +128,21 @@ public class ConsoleCopilotConfigController {
         }
         
         return Result.success(success);
+    }
+
+    /**
+     * Test whether the submitted Copilot configuration is usable.
+     *
+     * @param config submitted copilot configuration
+     * @return connection test result
+     * @throws NacosException if request body is invalid
+     */
+    @PostMapping("/test")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<CopilotConfigTestResponse> testConfig(@RequestBody CopilotProperties config) throws NacosException {
+        if (config == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Configuration cannot be null");
+        }
+        return Result.success(agentManager.testConfig(config));
     }
 }
