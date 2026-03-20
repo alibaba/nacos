@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.repository;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
@@ -73,7 +74,7 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
     public long insert(AiResource resource) {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.insert(Arrays.asList("name", "type", "c_desc", "status", "namespace_id", "biz_tags", "ext",
-                "version_info", "meta_version", "gmt_create@NOW()", "gmt_modified@NOW()"));
+                "version_info", "meta_version", "scope", "owner", "gmt_create@NOW()", "gmt_modified@NOW()"));
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jt.update(connection -> {
@@ -87,6 +88,8 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
             ps.setString(7, resource.getExt());
             ps.setString(8, resource.getVersionInfo());
             ps.setLong(9, resource.getMetaVersion() == null ? 1L : resource.getMetaVersion());
+            ps.setString(10, resource.getScope() == null ? DataFilterConstants.SCOPE_PRIVATE : resource.getScope());
+            ps.setString(11, resource.getOwner() == null ? "" : resource.getOwner());
             return ps;
         }, keyHolder);
 
@@ -102,7 +105,7 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.select(
                 Arrays.asList("id", "gmt_create", "gmt_modified", "name", "type", "c_desc", "status", "namespace_id",
-                        "biz_tags", "ext", "version_info", "meta_version"),
+                        "biz_tags", "ext", "version_info", "meta_version", "scope", "owner"),
                 Arrays.asList("namespace_id", "name", "type"));
         try {
             return jt.queryForObject(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type},
@@ -155,6 +158,15 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
         return jt.update(sql, StringUtils.defaultEmptyIfBlank(namespaceId), name, type);
+    }
+    
+    @Override
+    public boolean updateScope(String namespaceId, String name, String type, String scope) {
+        AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
+        String sql = "UPDATE ai_resource SET scope=?, gmt_modified=" + mapper.getFunction("NOW()")
+                + " WHERE namespace_id=? AND name=? AND type=?";
+        int rows = jt.update(sql, scope, StringUtils.defaultEmptyIfBlank(namespaceId), name, type);
+        return rows == 1;
     }
 }
 

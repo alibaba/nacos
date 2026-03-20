@@ -210,6 +210,8 @@ CREATE TABLE `ai_resource` (
     `ext` longtext DEFAULT NULL COMMENT '扩展信息(JSON)',
     `version_info` longtext DEFAULT NULL COMMENT '版本信息(JSON)',
     `meta_version` bigint(20) NOT NULL DEFAULT 1 COMMENT '元数据版本(乐观锁)',
+    `scope` varchar(16) NOT NULL DEFAULT 'PRIVATE' COMMENT '可见性: PUBLIC/PRIVATE',
+    `owner` varchar(128) NOT NULL DEFAULT '' COMMENT '创建者用户名',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_ai_resource_ns_name_type` (`namespace_id`,`name`,`type`),
     KEY `idx_ai_resource_name` (`name`),

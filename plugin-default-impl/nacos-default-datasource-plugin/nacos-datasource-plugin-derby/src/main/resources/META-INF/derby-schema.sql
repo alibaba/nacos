@@ -231,6 +231,8 @@ CREATE TABLE ai_resource (
     ext CLOB DEFAULT NULL,
     version_info CLOB DEFAULT NULL,
     meta_version bigint NOT NULL DEFAULT 1,
+    scope varchar(16) NOT NULL DEFAULT 'PRIVATE',
+    owner varchar(128) NOT NULL DEFAULT '',
     CONSTRAINT uk_ai_resource_ns_name_type UNIQUE (namespace_id, name, type)
 );
 

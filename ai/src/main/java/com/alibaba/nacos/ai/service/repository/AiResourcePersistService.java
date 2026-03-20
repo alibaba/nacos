@@ -41,5 +41,12 @@ public interface AiResourcePersistService {
     boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion, AiResource newValue);
 
     int delete(String namespaceId, String name, String type);
+    
+    /**
+     * Update the scope (visibility) of a resource.
+     *
+     * @return true if updated successfully (affectedRows == 1)
+     */
+    boolean updateScope(String namespaceId, String name, String type, String scope);
 }
 

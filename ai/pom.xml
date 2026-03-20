@@ -51,6 +51,10 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-ai-plugin</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-datafilter-plugin</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>org.apache.commons</groupId>

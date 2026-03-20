@@ -36,7 +36,7 @@ public class AiResourceMapperByPostgresql extends AbstractMapper implements AiRe
     @Override
     public MapperResult findAiResourceFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,biz_tags,ext,version_info,meta_version "
+                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,biz_tags,ext,version_info,meta_version,scope,owner "
                         + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
 

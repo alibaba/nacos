@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.model;
 
+import com.alibaba.nacos.plugin.datafilter.model.FilterableResource;
+
 import java.sql.Timestamp;
 
 /**
@@ -24,7 +26,7 @@ import java.sql.Timestamp;
  * @author nacos
  * @since 3.2.0
  */
-public class AiResource {
+public class AiResource extends FilterableResource {
 
     private Long id;
 
@@ -106,12 +108,23 @@ public class AiResource {
         this.status = status;
     }
 
+    @Override
     public String getNamespaceId() {
         return namespaceId;
     }
 
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
+    }
+
+    @Override
+    public String getResourceName() {
+        return name;
+    }
+
+    @Override
+    public String getResourceType() {
+        return type;
     }
 
     public String getBizTags() {

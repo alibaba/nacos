@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.service.repository;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -67,11 +68,13 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
     public long insert(AiResource resource) {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.insert(Arrays.asList("name", "type", "c_desc", "status", "namespace_id", "biz_tags", "ext",
-                "version_info", "meta_version", "gmt_create@NOW()", "gmt_modified@NOW()"));
+                "version_info", "meta_version", "scope", "owner", "gmt_create@NOW()", "gmt_modified@NOW()"));
 
         Object[] args = new Object[] {resource.getName(), resource.getType(), resource.getDesc(), resource.getStatus(),
                 StringUtils.defaultEmptyIfBlank(resource.getNamespaceId()), resource.getBizTags(), resource.getExt(),
-                resource.getVersionInfo(), resource.getMetaVersion() == null ? 1L : resource.getMetaVersion()};
+                resource.getVersionInfo(), resource.getMetaVersion() == null ? 1L : resource.getMetaVersion(),
+                resource.getScope() == null ? DataFilterConstants.SCOPE_PRIVATE : resource.getScope(),
+                resource.getOwner() == null ? "" : resource.getOwner()};
 
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         Boolean success = databaseOperate.blockUpdate();
@@ -91,7 +94,7 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.select(
                 Arrays.asList("id", "gmt_create", "gmt_modified", "name", "type", "c_desc", "status", "namespace_id",
-                        "biz_tags", "ext", "version_info", "meta_version"),
+                        "biz_tags", "ext", "version_info", "meta_version", "scope", "owner"),
                 Arrays.asList("namespace_id", "name", "type"));
         return databaseOperate.queryOne(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type},
                 AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
@@ -157,6 +160,17 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
             return 0;
         }
         return 1;
+    }
+    
+    @Override
+    public boolean updateScope(String namespaceId, String name, String type, String scope) {
+        AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
+        String sql = "UPDATE ai_resource SET scope=?, gmt_modified=" + mapper.getFunction("NOW()")
+                + " WHERE namespace_id=? AND name=? AND type=?";
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {scope, StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+        Boolean success = databaseOperate.blockUpdate();
+        return success != null && success;
     }
 }
 

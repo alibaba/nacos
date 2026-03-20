@@ -408,3 +408,110 @@ CREATE UNIQUE INDEX "uk_tenant_info_kptenantid" ON "tenant_info" USING btree (
   "kp",
   "tenant_id"
 );
+
+-- ----------------------------
+-- Table structure for ai_resource
+-- ----------------------------
+DROP TABLE IF EXISTS "ai_resource";
+CREATE TABLE "ai_resource" (
+  "id" bigserial NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "name" varchar(256) NOT NULL,
+  "type" varchar(32) NOT NULL,
+  "c_desc" varchar(512),
+  "status" varchar(32),
+  "namespace_id" varchar(128) NOT NULL DEFAULT '',
+  "biz_tags" varchar(1024),
+  "ext" text,
+  "version_info" text,
+  "meta_version" bigint NOT NULL DEFAULT 1,
+  "scope" varchar(16) NOT NULL DEFAULT 'PRIVATE',
+  "owner" varchar(128) NOT NULL DEFAULT ''
+)
+;
+
+COMMENT ON COLUMN "ai_resource"."id" IS 'id';
+COMMENT ON COLUMN "ai_resource"."gmt_create" IS '创建时间';
+COMMENT ON COLUMN "ai_resource"."gmt_modified" IS '修改时间';
+COMMENT ON COLUMN "ai_resource"."name" IS '资源名称';
+COMMENT ON COLUMN "ai_resource"."type" IS '资源类型';
+COMMENT ON COLUMN "ai_resource"."c_desc" IS '资源描述';
+COMMENT ON COLUMN "ai_resource"."status" IS '资源状态';
+COMMENT ON COLUMN "ai_resource"."namespace_id" IS '命名空间ID';
+COMMENT ON COLUMN "ai_resource"."biz_tags" IS '业务标签';
+COMMENT ON COLUMN "ai_resource"."ext" IS '扩展信息(JSON)';
+COMMENT ON COLUMN "ai_resource"."version_info" IS '版本信息(JSON)';
+COMMENT ON COLUMN "ai_resource"."meta_version" IS '元数据版本(乐观锁)';
+COMMENT ON COLUMN "ai_resource"."scope" IS '可见性: PUBLIC/PRIVATE';
+COMMENT ON COLUMN "ai_resource"."owner" IS '创建者用户名';
+COMMENT ON TABLE "ai_resource" IS 'AI资源元数据表';
+
+-- ----------------------------
+-- Primary Key structure for table ai_resource
+-- ----------------------------
+ALTER TABLE "ai_resource" ADD CONSTRAINT "ai_resource_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table ai_resource
+-- ----------------------------
+CREATE UNIQUE INDEX "uk_ai_resource_ns_name_type" ON "ai_resource" USING btree (
+  "namespace_id",
+  "name",
+  "type"
+);
+CREATE INDEX "idx_ai_resource_name" ON "ai_resource" USING btree ("name");
+CREATE INDEX "idx_ai_resource_type" ON "ai_resource" USING btree ("type");
+CREATE INDEX "idx_ai_resource_gmt_modified" ON "ai_resource" USING btree ("gmt_modified");
+
+-- ----------------------------
+-- Table structure for ai_resource_version
+-- ----------------------------
+DROP TABLE IF EXISTS "ai_resource_version";
+CREATE TABLE "ai_resource_version" (
+  "id" bigserial NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "type" varchar(32) NOT NULL,
+  "author" varchar(128),
+  "name" varchar(256) NOT NULL,
+  "c_desc" varchar(512),
+  "status" varchar(32) NOT NULL,
+  "version" varchar(64) NOT NULL,
+  "namespace_id" varchar(128) NOT NULL DEFAULT '',
+  "storage" text,
+  "publish_pipeline_info" text
+)
+;
+
+COMMENT ON COLUMN "ai_resource_version"."id" IS 'id';
+COMMENT ON COLUMN "ai_resource_version"."gmt_create" IS '创建时间';
+COMMENT ON COLUMN "ai_resource_version"."gmt_modified" IS '修改时间';
+COMMENT ON COLUMN "ai_resource_version"."type" IS '资源类型';
+COMMENT ON COLUMN "ai_resource_version"."author" IS '作者';
+COMMENT ON COLUMN "ai_resource_version"."name" IS '资源名称';
+COMMENT ON COLUMN "ai_resource_version"."c_desc" IS '版本描述';
+COMMENT ON COLUMN "ai_resource_version"."status" IS '版本状态';
+COMMENT ON COLUMN "ai_resource_version"."version" IS '版本号';
+COMMENT ON COLUMN "ai_resource_version"."namespace_id" IS '命名空间ID';
+COMMENT ON COLUMN "ai_resource_version"."storage" IS '存储信息(JSON)';
+COMMENT ON COLUMN "ai_resource_version"."publish_pipeline_info" IS '发布流水线信息(JSON)';
+COMMENT ON TABLE "ai_resource_version" IS 'AI资源版本表';
+
+-- ----------------------------
+-- Primary Key structure for table ai_resource_version
+-- ----------------------------
+ALTER TABLE "ai_resource_version" ADD CONSTRAINT "ai_resource_version_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table ai_resource_version
+-- ----------------------------
+CREATE UNIQUE INDEX "uk_ai_resource_ver_ns_name_type_ver" ON "ai_resource_version" USING btree (
+  "namespace_id",
+  "name",
+  "type",
+  "version"
+);
+CREATE INDEX "idx_ai_resource_ver_name" ON "ai_resource_version" USING btree ("name");
+CREATE INDEX "idx_ai_resource_ver_status" ON "ai_resource_version" USING btree ("status");
+CREATE INDEX "idx_ai_resource_ver_gmt_modified" ON "ai_resource_version" USING btree ("gmt_modified");

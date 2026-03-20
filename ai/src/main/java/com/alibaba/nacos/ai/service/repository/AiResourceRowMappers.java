@@ -42,6 +42,8 @@ final class AiResourceRowMappers {
         r.setExt(rs.getString("ext"));
         r.setVersionInfo(rs.getString("version_info"));
         r.setMetaVersion(rs.getLong("meta_version"));
+        r.setScope(rs.getString("scope"));
+        r.setOwner(rs.getString("owner"));
         return r;
     };
 
