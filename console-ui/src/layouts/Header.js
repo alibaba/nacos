@@ -132,6 +132,15 @@ class Header extends React.Component {
             <span className="language-switch language-switch-primary" onClick={this.switchLang}>
               {languageSwitchButton}
             </span>
+            {pathname !== '/login' && (
+              <a
+                href="../next/"
+                className="ui-switch-btn"
+                title="Switch to new console"
+              >
+                &#8599; {locale.newConsole || '新版控制台'}
+              </a>
+            )}
             <div className="header-menu header-menu-open">
               <ul>
                 {NAV_MENU.map(item => (

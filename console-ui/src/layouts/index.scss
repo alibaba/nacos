@@ -131,6 +131,32 @@
   color: #333;
 }
 
+.header-container .header-body .ui-switch-btn {
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  line-height: 26px;
+  margin-top: 20px;
+  margin-right: 30px;
+  padding: 0 12px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  opacity: 0.7;
+  font-size: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.header-container .header-body .ui-switch-btn:hover {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
 @media screen and (max-width: 640px) {
   .header-container .header-body .logo {
     margin-left: 20px;

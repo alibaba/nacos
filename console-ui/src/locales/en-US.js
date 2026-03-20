@@ -25,6 +25,7 @@ const I18N_CONF = {
     languageSwitchButton: '中',
     logout: 'logout',
     changePassword: 'modify password',
+    newConsole: 'New Console',
     passwordRequired: 'password should not be empty',
     usernameRequired: 'username should not be empty',
   },
