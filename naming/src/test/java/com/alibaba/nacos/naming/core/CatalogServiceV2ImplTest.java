@@ -117,7 +117,28 @@ class CatalogServiceV2ImplTest {
         List<? extends Instance> instances = catalogServiceV2Impl.listInstances("A", "B", "C", "D");
         assertEquals(1, instances.size());
     }
-    
+
+    /**
+     * Verify that a blank cluster name means no cluster filtering and returns all instances.
+     */
+    @Test
+    void testListInstancesWithBlankClusterName() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setGroupName("B");
+        serviceInfo.setName("C");
+        Instance instance1 = new Instance();
+        instance1.setClusterName("D");
+        instance1.setIp("1.1.1.1");
+        Instance instance2 = new Instance();
+        instance2.setClusterName("E");
+        instance2.setIp("2.2.2.2");
+        serviceInfo.setHosts(List.of(instance1, instance2));
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+
+        List<? extends Instance> instances = catalogServiceV2Impl.listInstances("A", "B", "C", "");
+        assertEquals(2, instances.size());
+    }
+
     @Test
     void testListInstancesNonExistService() throws NacosException {
         assertThrows(NacosException.class, () -> {

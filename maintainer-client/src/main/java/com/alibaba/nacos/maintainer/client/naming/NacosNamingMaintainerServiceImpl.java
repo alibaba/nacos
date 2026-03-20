@@ -352,14 +352,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     public List<Instance> listInstances(Service service, String clusterName, boolean healthyOnly)
             throws NacosException {
         service.validate();
-        if (StringUtils.isBlank(clusterName)) {
-            clusterName = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
-        }
         Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", service.getNamespaceId());
         params.put("groupName", service.getGroupName());
         params.put("serviceName", service.getName());
-        params.put("clusterName", clusterName);
+        if (StringUtils.isNotBlank(clusterName)) {
+            params.put("clusterName", clusterName);
+        }
         params.put("healthyOnly", String.valueOf(healthyOnly));
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)

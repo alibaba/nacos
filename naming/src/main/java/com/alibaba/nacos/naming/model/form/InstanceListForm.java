@@ -68,9 +68,6 @@ public class InstanceListForm implements NacosForm {
         if (StringUtils.isBlank(groupName)) {
             groupName = Constants.DEFAULT_GROUP;
         }
-        if (StringUtils.isBlank(clusterName)) {
-            clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-        }
         if (null == healthyOnly) {
             healthyOnly = false;
         }

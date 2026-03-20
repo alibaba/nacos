@@ -119,7 +119,7 @@ class InstanceOpenApiControllerTest {
         serviceInfo.setName("test");
         serviceInfo.setHosts(Collections.singletonList(instance));
         when(instanceOperator.listInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "test", null,
-                Constants.DEFAULT_CLUSTER_NAME, false)).thenReturn(serviceInfo);
+                null, false)).thenReturn(serviceInfo);
         Result<List<Instance>> actual = instanceOpenApiController.list(instanceForm);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), actual.getMessage());

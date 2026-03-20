@@ -73,6 +73,7 @@ public class NacosTpsControlManager extends TpsControlManager {
      *
      * @param pointName pointName.
      */
+    @Override
     public synchronized void registerTpsPoint(String pointName) {
         if (!points.containsKey(pointName)) {
             points.put(pointName, tpsBarrierCreator.createTpsBarrier(pointName));
@@ -90,6 +91,7 @@ public class NacosTpsControlManager extends TpsControlManager {
      * @param pointName pointName.
      * @param rule      rule.
      */
+    @Override
     public synchronized void applyTpsRule(String pointName, TpsControlRule rule) {
         if (rule == null || rule.getPointRule() == null) {
             rules.remove(pointName);
@@ -101,10 +103,12 @@ public class NacosTpsControlManager extends TpsControlManager {
         }
     }
     
+    @Override
     public Map<String, TpsBarrier> getPoints() {
         return points;
     }
     
+    @Override
     public Map<String, TpsControlRule> getRules() {
         return rules;
     }
@@ -115,6 +119,7 @@ public class NacosTpsControlManager extends TpsControlManager {
      * @param tpsRequest TpsRequest.
      * @return check current tps is allowed.
      */
+    @Override
     public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
         
         if (points.containsKey(tpsRequest.getPointName())) {

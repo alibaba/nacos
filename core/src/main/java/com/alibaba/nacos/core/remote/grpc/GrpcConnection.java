@@ -68,6 +68,7 @@ public class GrpcConnection extends Connection {
      * @param request request data.
      * @throws NacosException NacosException
      */
+    @Override
     public void sendRequestNoAck(Request request) throws NacosException {
         sendQueueBlockCheck();
         Future<Boolean> executeFuture = this.channel.eventLoop().submit(() -> {

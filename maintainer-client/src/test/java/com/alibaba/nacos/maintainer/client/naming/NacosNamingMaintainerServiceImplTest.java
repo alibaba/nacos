@@ -36,11 +36,13 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
+import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -53,10 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -539,7 +538,6 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testListInstances() throws Exception {
         // Arrange
-        
         List<Instance> expectedInfo = new ArrayList<>();
         expectedInfo.add(new Instance());
         expectedInfo.get(0).setIp("11.1.1.1");
@@ -555,11 +553,13 @@ public class NacosNamingMaintainerServiceImplTest {
         List<Instance> result = nacosNamingMaintainerService.listInstances(serviceName, "", healthyOnly);
         
         // Assert
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("11.1.1.1", result.get(0).getIp());
         assertEquals(8848, result.get(0).getPort());
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(requestCaptor.capture());
+        assertFalse(requestCaptor.getValue().getParamValues().containsKey("clusterName"));
     }
     
     @Test

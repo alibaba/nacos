@@ -240,7 +240,33 @@ class InstanceControllerV3Test extends BaseTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(instance, result.getData().get(0));
     }
-    
+
+    /**
+     * Verify that the list API preserves a blank cluster filter and delegates the all-cluster
+     * query semantics to the catalog service.
+     */
+    @Test
+    void listInstanceWithoutClusterName() throws Exception {
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(3306);
+        List<Instance> expected = new LinkedList<>();
+        expected.add(instance);
+
+        doReturn(expected).when(catalogService)
+                .listInstances(eq(TEST_NAMESPACE), eq(TEST_GROUP_NAME), eq("test-service"), eq(null));
+
+        InstanceListForm instanceForm = new InstanceListForm();
+        instanceForm.setNamespaceId(TEST_NAMESPACE);
+        instanceForm.setGroupName(TEST_GROUP_NAME);
+        instanceForm.setServiceName("test-service");
+
+        Result<List<? extends Instance>> result = instanceControllerV3.list(instanceForm);
+
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(instance, result.getData().get(0));
+    }
+
     @Test
     void detail() throws Exception {
         
