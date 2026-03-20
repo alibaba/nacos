@@ -60,6 +60,12 @@ public class SkillNoopHandler implements SkillHandler {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 SKILL_NOT_ENABLED_MESSAGE);
     }
+
+    @Override
+    public Skill downloadSkillVersion(SkillForm form) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                SKILL_NOT_ENABLED_MESSAGE);
+    }
     
     @Override
     public void deleteSkill(SkillForm form) throws NacosException {

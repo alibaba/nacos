@@ -66,6 +66,18 @@ public interface SkillOperationService {
     Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException;
 
     /**
+     * Download skill version. Semantically identical to {@link #getSkillVersionDetail} but provides a separate
+     * entry point so that download events can be tracked independently (e.g. download count statistics).
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name
+     * @param version target version
+     * @return full skill content for the specified version
+     * @throws NacosException if skill or version not found
+     */
+    Skill downloadSkillVersion(String namespaceId, String skillName, String version) throws NacosException;
+
+    /**
      * Delete skill.
      *
      * @param namespaceId namespace ID

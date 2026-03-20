@@ -57,6 +57,16 @@ public interface SkillHandler {
     Skill getSkillVersion(SkillForm form) throws NacosException;
 
     /**
+     * Download skill version. Provides a separate entry point from {@link #getSkillVersion}
+     * so that download events can be tracked independently.
+     *
+     * @param form skill form (with version)
+     * @return full skill content
+     * @throws NacosException nacos exception
+     */
+    Skill downloadSkillVersion(SkillForm form) throws NacosException;
+
+    /**
      * Delete skill.
      *
      * @param form skill form

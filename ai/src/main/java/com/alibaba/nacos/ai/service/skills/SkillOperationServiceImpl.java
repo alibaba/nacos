@@ -230,6 +230,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
+    public Skill downloadSkillVersion(String namespaceId, String skillName, String version) throws NacosException {
+        // TODO: add download count tracking here
+        return getSkillVersionDetail(namespaceId, skillName, version);
+    }
+
+    @Override
     public void deleteSkill(String namespaceId, String skillName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {

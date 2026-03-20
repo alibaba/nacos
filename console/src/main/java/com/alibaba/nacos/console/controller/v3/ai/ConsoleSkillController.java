@@ -43,6 +43,7 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -97,6 +98,21 @@ public class ConsoleSkillController {
         return Result.success(skillProxy.getSkillVersion(form));
     }
     
+    /**
+     * Download a specific version of a skill as ZIP file.
+     *
+     * @param form the skill form containing skillName and version
+     * @return ZIP file as ResponseEntity
+     * @throws NacosException if the skill or version not found
+     */
+    @GetMapping("/version/download")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public ResponseEntity<byte[]> downloadSkillVersion(SkillForm form) throws NacosException {
+        form.validate();
+        Skill skill = skillProxy.downloadSkillVersion(form);
+        return SkillRequestUtil.buildSkillZipResponse(skill);
+    }
+
     /**
      * Delete skill.
      *

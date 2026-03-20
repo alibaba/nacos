@@ -70,6 +70,11 @@ public class SkillRemoteHandler implements SkillHandler {
                 form.getSkillName()
         );
     }
+
+    @Override
+    public Skill downloadSkillVersion(SkillForm form) throws NacosException {
+        return getSkillVersion(form);
+    }
     
     @Override
     public void deleteSkill(SkillForm form) throws NacosException {

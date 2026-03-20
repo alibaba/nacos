@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDetailForm;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
@@ -28,6 +29,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -41,6 +45,27 @@ public class SkillRequestUtil {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillRequestUtil.class);
     
+    /**
+     * Build a ZIP download {@link ResponseEntity} from a {@link Skill} object.
+     *
+     * <p>Shared by all controllers that need to export a skill as ZIP.</p>
+     *
+     * @param skill the Skill object
+     * @return ResponseEntity containing ZIP bytes with proper headers
+     * @throws NacosException if ZIP creation fails
+     */
+    public static ResponseEntity<byte[]> buildSkillZipResponse(Skill skill) throws NacosException {
+        try {
+            byte[] zipBytes = SkillUtils.toZipBytes(skill);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment;filename=" + skill.getName() + ".zip");
+            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Failed to create skill zip: " + e.getMessage(), e);
+        }
+    }
+
     /**
      * Parse Skill request form to {@link Skill}.
      *
