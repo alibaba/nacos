@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.event;
 
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
+import com.alibaba.nacos.api.ai.listener.NacosAgentSpecEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
 import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
 import com.alibaba.nacos.client.ai.utils.CacheKeyUtils;
@@ -44,10 +45,13 @@ public class AiChangeNotifier extends SmartSubscriber {
     
     private final Map<String, Set<PromptListenerInvoker>> promptListenerInvokers;
     
+    private final Map<String, Set<AgentSpecListenerInvoker>> agentSpecListenerInvokers;
+    
     public AiChangeNotifier() {
         this.mcpServerListenerInvokers = new ConcurrentHashMap<>(2);
         this.agentCardListenerInvokers = new ConcurrentHashMap<>(2);
         this.promptListenerInvokers = new ConcurrentHashMap<>(2);
+        this.agentSpecListenerInvokers = new ConcurrentHashMap<>(2);
     }
     
     @Override
@@ -58,6 +62,8 @@ public class AiChangeNotifier extends SmartSubscriber {
             handleAgentCardChangedEvent((AgentCardChangedEvent) event);
         } else if (event instanceof PromptChangedEvent) {
             handlePromptChangedEvent((PromptChangedEvent) event);
+        } else if (event instanceof AgentSpecChangedEvent) {
+            handleAgentSpecChangedEvent((AgentSpecChangedEvent) event);
         }
     }
     
@@ -94,12 +100,24 @@ public class AiChangeNotifier extends SmartSubscriber {
         }
     }
     
+    private void handleAgentSpecChangedEvent(AgentSpecChangedEvent event) {
+        String agentSpecKey = CacheKeyUtils.buildAgentSpecKey(event.getAgentSpecName());
+        if (!isSubscribed(agentSpecKey, agentSpecListenerInvokers)) {
+            return;
+        }
+        NacosAgentSpecEvent notifiedEvent = new NacosAgentSpecEvent(event.getAgentSpecName(), event.getAgentSpec());
+        for (AgentSpecListenerInvoker each : agentSpecListenerInvokers.get(agentSpecKey)) {
+            each.invoke(notifiedEvent);
+        }
+    }
+    
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> listenedEventTypes = new LinkedList<>();
         listenedEventTypes.add(McpServerChangedEvent.class);
         listenedEventTypes.add(AgentCardChangedEvent.class);
         listenedEventTypes.add(PromptChangedEvent.class);
+        listenedEventTypes.add(AgentSpecChangedEvent.class);
         return listenedEventTypes;
     }
     
@@ -166,6 +184,26 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     /**
+     * register agent spec listener.
+     *
+     * @param agentSpecName   name of agent spec
+     * @param listenerInvoker listener invoker
+     */
+    public void registerListener(String agentSpecName, AgentSpecListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String agentSpecKey = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        agentSpecListenerInvokers.compute(agentSpecKey, (key, agentSpecListenerInvokers) -> {
+            if (null == agentSpecListenerInvokers) {
+                agentSpecListenerInvokers = new ConcurrentHashSet<>();
+            }
+            agentSpecListenerInvokers.add(listenerInvoker);
+            return agentSpecListenerInvokers;
+        });
+    }
+    
+    /**
      * deregister mcp server listener.
      *
      * @param mcpName           name of mcp server
@@ -225,6 +263,37 @@ public class AiChangeNotifier extends SmartSubscriber {
             promptListenerInvokers.remove(listenerInvoker);
             return promptListenerInvokers.isEmpty() ? null : promptListenerInvokers;
         });
+    }
+    
+    /**
+     * deregister agent spec listener.
+     *
+     * @param agentSpecName   name of agent spec
+     * @param listenerInvoker listener invoker
+     */
+    public void deregisterListener(String agentSpecName, AgentSpecListenerInvoker listenerInvoker) {
+        if (listenerInvoker == null) {
+            return;
+        }
+        String agentSpecKey = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        agentSpecListenerInvokers.compute(agentSpecKey, (key, agentSpecListenerInvokers) -> {
+            if (null == agentSpecListenerInvokers) {
+                return null;
+            }
+            agentSpecListenerInvokers.remove(listenerInvoker);
+            return agentSpecListenerInvokers.isEmpty() ? null : agentSpecListenerInvokers;
+        });
+    }
+    
+    /**
+     * check agent spec is subscribed.
+     *
+     * @param agentSpecName name of agent spec
+     * @return is agent spec subscribed
+     */
+    public boolean isAgentSpecSubscribed(String agentSpecName) {
+        String agentSpecKey = CacheKeyUtils.buildAgentSpecKey(agentSpecName);
+        return isSubscribed(agentSpecKey, agentSpecListenerInvokers);
     }
     
     /**

@@ -18,11 +18,13 @@ package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -140,6 +142,22 @@ public class NacosAiService implements AiService {
     @Override
     public com.alibaba.nacos.api.ai.model.skills.Skill loadSkillByLabel(String skillName, String label) throws NacosException {
         return null;
+    }
+    
+    @Override
+    public AgentSpec loadAgentSpec(String agentSpecName) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException {
     }
     
     @Override

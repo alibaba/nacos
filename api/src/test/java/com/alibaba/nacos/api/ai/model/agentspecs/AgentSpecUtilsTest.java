@@ -35,6 +35,7 @@ class AgentSpecUtilsTest {
         assertEquals("agentspec__", AgentSpecUtils.AGENTSPEC_GROUP_PREFIX);
         assertEquals("resource_", AgentSpecUtils.RESOURCE_DATA_ID_PREFIX);
         assertEquals(".json", AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX);
+        assertEquals("agentspec_index.json", AgentSpecUtils.AGENTSPEC_INDEX_DATA_ID);
     }
     
     @Test
@@ -118,5 +119,52 @@ class AgentSpecUtilsTest {
     void testBuildAgentSpecResourceConfigInfoWithBlankResourceName() {
         assertThrows(IllegalArgumentException.class,
                 () -> AgentSpecUtils.buildAgentSpecResourceConfigInfo("my-worker", "config", ""));
+    }
+    
+    @Test
+    void testBuildAgentSpecGroup() {
+        assertEquals("agentspec__my-worker", AgentSpecUtils.buildAgentSpecGroup("my-worker"));
+    }
+    
+    @Test
+    void testBuildAgentSpecGroupWithBlankName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> AgentSpecUtils.buildAgentSpecGroup(""));
+    }
+    
+    @Test
+    void testBuildAgentSpecGroupWithNullName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> AgentSpecUtils.buildAgentSpecGroup(null));
+    }
+    
+    @Test
+    void testBuildAgentSpecVersionGroup() {
+        assertEquals("agentspec__my-worker__v1",
+                AgentSpecUtils.buildAgentSpecVersionGroup("my-worker", "v1"));
+    }
+    
+    @Test
+    void testBuildAgentSpecVersionGroupWithBlankName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> AgentSpecUtils.buildAgentSpecVersionGroup("", "v1"));
+    }
+    
+    @Test
+    void testBuildAgentSpecVersionGroupWithNullName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> AgentSpecUtils.buildAgentSpecVersionGroup(null, "v1"));
+    }
+    
+    @Test
+    void testBuildAgentSpecVersionGroupWithBlankVersion() {
+        assertThrows(IllegalArgumentException.class,
+                () -> AgentSpecUtils.buildAgentSpecVersionGroup("my-worker", ""));
+    }
+    
+    @Test
+    void testBuildAgentSpecVersionGroupWithNullVersion() {
+        assertThrows(IllegalArgumentException.class,
+                () -> AgentSpecUtils.buildAgentSpecVersionGroup("my-worker", null));
     }
 }

@@ -39,4 +39,10 @@ class CacheKeyUtilsTest {
         String key = CacheKeyUtils.buildPromptKey("p1", null, null);
         assertEquals("p1::latest", key);
     }
+    
+    @Test
+    void buildAgentSpecKeyShouldReturnNameItself() {
+        String key = CacheKeyUtils.buildAgentSpecKey("my-agent-spec");
+        assertEquals("my-agent-spec", key);
+    }
 }

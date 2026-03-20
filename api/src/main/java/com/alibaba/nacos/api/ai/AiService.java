@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -210,6 +212,43 @@ public interface AiService extends A2aService {
      * @throws NacosException if skill not found or query error
      */
     Skill loadSkillByLabel(String skillName, String label) throws NacosException;
+    
+    // ==================== AgentSpec Management APIs ====================
+    
+    /**
+     * Load agent spec by agent spec name.
+     *
+     * <p>
+     * This method will query the agent spec main configuration and all resource configurations,
+     * then assemble them into a complete AgentSpec object.
+     * </p>
+     *
+     * @param agentSpecName agent spec name (unique identifier)
+     * @return complete AgentSpec object with all resources
+     * @throws NacosException if agent spec not found or query error
+     */
+    AgentSpec loadAgentSpec(String agentSpecName) throws NacosException;
+    
+    /**
+     * Subscribe agent spec.
+     *
+     * @param agentSpecName       name of agent spec
+     * @param agentSpecListener   listener of agent spec, callback when agent spec configuration is changed
+     * @return The agent spec object at current time, nullable if agent spec not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException;
+    
+    /**
+     * Un-subscribe agent spec.
+     *
+     * @param agentSpecName       name of agent spec
+     * @param agentSpecListener   listener of agent spec
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException;
     
     // ==================== Prompt Management APIs ====================
     

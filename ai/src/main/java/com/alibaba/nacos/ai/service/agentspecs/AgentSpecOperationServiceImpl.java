@@ -457,27 +457,40 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
 
     @Override
     public String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException {
-        AiResource meta = requireMeta(namespaceId, name);
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
+        if (meta == null) {
+            if (StringUtils.isNotBlank(basedOnVersion)) {
+                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                        "AgentSpec not found: " + name + ", cannot use basedOnVersion for a brand-new agentspec");
+            }
+            AgentSpec emptyAgentSpec = new AgentSpec();
+            emptyAgentSpec.setName(name);
+            emptyAgentSpec.setNamespaceId(namespaceId);
+            createDraftWithAgentSpec(namespaceId, emptyAgentSpec, "v1", null, true);
+            return "v1";
+        }
+
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     "There is already a working version (editing/reviewing), cannot create draft");
         }
-        
-        String base = StringUtils.isBlank(basedOnVersion) ? resolveVersion(meta, null, LABEL_LATEST)
-                : basedOnVersion;
-        if (StringUtils.isBlank(base)) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "Base version not found for agentspec: " + name);
-        }
-        
+
         String newVersion = nextVersion(namespaceId, name);
-        
+        String base = resolveBaseVersion(namespaceId, name, meta, basedOnVersion);
+        if (StringUtils.isBlank(base)) {
+            AgentSpec emptyAgentSpec = new AgentSpec();
+            emptyAgentSpec.setName(name);
+            emptyAgentSpec.setNamespaceId(namespaceId);
+            createDraftWithAgentSpec(namespaceId, emptyAgentSpec, newVersion, meta, false);
+            return newVersion;
+        }
+
         // 1) copy storage content
         AgentSpec baseAgentSpec = loadAgentSpecFromStorage(namespaceId, name, base);
         long uniformId = System.currentTimeMillis();
         writeAgentSpecToStorage(namespaceId, baseAgentSpec, newVersion, uniformId);
-        
+
         // 2) insert draft version row
         AiResourceVersion v = new AiResourceVersion();
         v.setNamespaceId(namespaceId);
@@ -489,7 +502,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         v.setDesc(baseAgentSpec.getDescription());
         v.setStorage(buildStorageJson(namespaceId, name, newVersion));
         aiResourceVersionPersistService.insert(v);
-        
+
         // 3) update meta pointers
         info.setEditingVersion(newVersion);
         updateMetaVersionInfoCas(namespaceId, meta, info);
@@ -742,6 +755,25 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 STORAGE_PROVIDER_NACOS_CONFIG);
         return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
     }
+
+    /**
+     * Resolves the base version to copy from when creating a draft.
+     * Priority: explicit basedOnVersion > latest label > highest numeric version.
+     * Returns null if no version exists yet.
+     */
+    private String resolveBaseVersion(String namespaceId, String name, AiResource meta, String basedOnVersion)
+            throws NacosException {
+        if (StringUtils.isNotBlank(basedOnVersion)) {
+            String resolved = resolveVersion(meta, basedOnVersion, null);
+            if (StringUtils.isBlank(resolved)) {
+                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                        "Base version not found for agentspec: " + name + ", basedOnVersion: " + basedOnVersion);
+            }
+            return resolved;
+        }
+        String latest = resolveVersion(meta, null, LABEL_LATEST);
+        return StringUtils.isNotBlank(latest) ? latest : maxVersionByNumber(namespaceId, name);
+    }
     
     private String resolveVersion(AiResource meta, String explicitVersion, String label) {
         if (StringUtils.isNotBlank(label)) {
@@ -888,6 +920,33 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         }
         return "v" + (max + 1);
+    }
+
+    private String maxVersionByNumber(String namespaceId, String name) {
+        Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
+        int max = 0;
+        String resolved = null;
+        if (page != null && page.getPageItems() != null) {
+            for (AiResourceVersion v : page.getPageItems()) {
+                if (v == null || StringUtils.isBlank(v.getVersion())) {
+                    continue;
+                }
+                String current = v.getVersion().trim();
+                if (!current.startsWith("v")) {
+                    continue;
+                }
+                try {
+                    int numeric = Integer.parseInt(current.substring(1));
+                    if (numeric > max) {
+                        max = numeric;
+                        resolved = current;
+                    }
+                } catch (Exception ignored) {
+                    // ignore non-numeric version
+                }
+            }
+        }
+        return resolved;
     }
     
     private void writeAgentSpecToStorage(String namespaceId, AgentSpec agentSpec, String version, long uniformId)

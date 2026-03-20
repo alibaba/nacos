@@ -42,6 +42,13 @@ public class AgentSpecUtils {
     public static final String RESOURCE_DATA_ID_SUFFIX = ".json";
     
     /**
+     * AgentSpec index config dataId for client-side config caching.
+     * Server writes a manifest config with this dataId at group {@code agentspec__{name}}
+     * containing the current online version and file list.
+     */
+    public static final String AGENTSPEC_INDEX_DATA_ID = "agentspec_index.json";
+    
+    /**
      * AgentSpec group prefix.
      */
     public static final String AGENTSPEC_GROUP_PREFIX = "agentspec__";
@@ -117,6 +124,38 @@ public class AgentSpecUtils {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
         return new ConfigInfo(AGENTSPEC_MAIN_DATA_ID, AGENTSPEC_GROUP_PREFIX + agentSpecName);
+    }
+    
+    /**
+     * Build the Nacos Config group for an AgentSpec (no version suffix).
+     *
+     * @param agentSpecName name of AgentSpec
+     * @return config group string, e.g. "agentspec__myworker"
+     * @throws IllegalArgumentException if agentSpecName is blank
+     */
+    public static String buildAgentSpecGroup(String agentSpecName) {
+        if (StringUtils.isBlank(agentSpecName)) {
+            throw new IllegalArgumentException("AgentSpec name cannot be blank");
+        }
+        return AGENTSPEC_GROUP_PREFIX + agentSpecName;
+    }
+    
+    /**
+     * Build the Nacos Config group for a specific AgentSpec version.
+     *
+     * @param agentSpecName name of AgentSpec
+     * @param version       version string, e.g. "v1"
+     * @return config group string, e.g. "agentspec__myworker__v1"
+     * @throws IllegalArgumentException if agentSpecName or version is blank
+     */
+    public static String buildAgentSpecVersionGroup(String agentSpecName, String version) {
+        if (StringUtils.isBlank(agentSpecName)) {
+            throw new IllegalArgumentException("AgentSpec name cannot be blank");
+        }
+        if (StringUtils.isBlank(version)) {
+            throw new IllegalArgumentException("Version cannot be blank");
+        }
+        return AGENTSPEC_GROUP_PREFIX + agentSpecName + DOUBLE_UNDERSCORE + version;
     }
     
     /**

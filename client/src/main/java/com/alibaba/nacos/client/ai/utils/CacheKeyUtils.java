@@ -50,6 +50,26 @@ public class CacheKeyUtils {
     }
     
     /**
+     * Build skill key.
+     *
+     * @param skillName name of skill
+     * @return skill key, pattern ${skillName}
+     */
+    public static String buildSkillKey(String skillName) {
+        return skillName;
+    }
+    
+    /**
+     * Build agent spec key.
+     *
+     * @param agentSpecName name of agent spec
+     * @return agent spec key, pattern ${agentSpecName}
+     */
+    public static String buildAgentSpecKey(String agentSpecName) {
+        return agentSpecName;
+    }
+
+    /**
      * Build prompt key.
      *
      * @param promptKey prompt key
