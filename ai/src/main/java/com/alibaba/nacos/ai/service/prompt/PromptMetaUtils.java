@@ -233,7 +233,7 @@ public final class PromptMetaUtils {
     }
     
     /**
-     * Resolve target version with precedence label > version > latest.
+     * Resolve target version with precedence version > label (default "latest") > latestVersion.
      *
      * @param meta prompt meta
      * @param version requested version
@@ -254,7 +254,7 @@ public final class PromptMetaUtils {
     }
     
     /**
-     * Resolve target version with precedence label > version > latest.
+     * Resolve target version with precedence version > label (default "latest") > latestVersion.
      *
      * @param mapping prompt label/version mapping
      * @param version requested version
@@ -268,14 +268,6 @@ public final class PromptMetaUtils {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "prompt latest version not found");
         }
-        if (StringUtils.isNotBlank(label)) {
-            String target = mapping.getLabels().get(label);
-            if (StringUtils.isBlank(target)) {
-                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                        String.format("prompt label `%s` not found", label));
-            }
-            return target;
-        }
         if (StringUtils.isNotBlank(version)) {
             if (!PromptVersionUtils.isValidVersion(version)) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
@@ -286,6 +278,14 @@ public final class PromptMetaUtils {
                         String.format("prompt version `%s` not found", version));
             }
             return version;
+        }
+        if (StringUtils.isNotBlank(label)) {
+            String target = mapping.getLabels().get(label);
+            if (StringUtils.isBlank(target)) {
+                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                        String.format("prompt label `%s` not found", label));
+            }
+            return target;
         }
         if (StringUtils.isBlank(mapping.getLatestVersion())) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,

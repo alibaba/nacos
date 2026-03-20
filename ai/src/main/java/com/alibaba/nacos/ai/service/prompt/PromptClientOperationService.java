@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 public interface PromptClientOperationService {
     
     /**
-     * Query prompt by label/version/latest with priority label > version > latest.
+     * Query prompt by version/label/latest with priority version > label > latest.
      *
      * @param namespaceId the namespace id
      * @param promptKey   the prompt key
@@ -42,7 +42,7 @@ public interface PromptClientOperationService {
             throws NacosException;
     
     /**
-     * Query prompt by label/version/latest with priority label > version > latest.
+     * Query prompt by version/label/latest with priority version > label > latest.
      *
      * @param namespaceId the namespace id
      * @param promptKey   the prompt key

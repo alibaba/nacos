@@ -185,7 +185,7 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     /**
-     * Query prompt by latest/version/label.
+     * Query prompt by version/label/latest.
      *
      * @param promptKey prompt key
      * @param version prompt version, optional
@@ -198,7 +198,7 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     /**
-     * Query prompt by latest/version/label with optional md5.
+     * Query prompt by version/label/latest with optional md5.
      *
      * @param promptKey prompt key
      * @param version prompt version, optional

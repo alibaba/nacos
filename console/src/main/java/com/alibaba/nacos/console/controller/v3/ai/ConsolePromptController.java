@@ -94,7 +94,7 @@ public class ConsolePromptController {
     }
     
     /**
-     * Query prompt detail by label/version/latest with priority label > version > latest.
+     * Query prompt detail by version/label/latest with priority version > label > latest.
      */
     @GetMapping("/detail")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)

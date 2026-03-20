@@ -60,14 +60,14 @@ class PromptMetaUtilsTest {
     }
     
     @Test
-    void resolveTargetVersionShouldPreferLabelOverVersion() throws NacosException {
+    void resolveTargetVersionShouldPreferVersionOverLabel() throws NacosException {
         PromptMetaInfo meta = new PromptMetaInfo();
         meta.setLabels(new HashMap<>());
         meta.getLabels().put("prod", "2.0.0");
         meta.setVersions(new ArrayList<>(List.of("1.0.0", "2.0.0")));
         meta.setLatestVersion("2.0.0");
         String actual = PromptMetaUtils.resolveTargetVersion(meta, "1.0.0", "prod");
-        assertEquals("2.0.0", actual);
+        assertEquals("1.0.0", actual);
     }
     
     @Test

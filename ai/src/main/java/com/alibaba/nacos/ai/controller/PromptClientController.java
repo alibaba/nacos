@@ -53,7 +53,7 @@ public class PromptClientController {
     }
     
     /**
-     * Query prompt by label/version/latest with priority label > version > latest.
+     * Query prompt by version/label/latest with priority version > label > latest.
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
