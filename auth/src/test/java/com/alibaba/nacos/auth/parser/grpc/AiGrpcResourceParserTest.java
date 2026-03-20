@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
+import com.alibaba.nacos.api.ai.remote.request.QuerySkillRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.common.Constants;
@@ -55,7 +56,9 @@ class AiGrpcResourceParserTest {
                 MockPromptRequest.class.getSimpleName());
         Arguments case5 = Arguments.of(makeReleaseMcpServerRequest("testNs", "testName", "testSpecName"), "testNs",
                 "testSpecName", ReleaseMcpServerRequest.class.getSimpleName());
-        return Stream.of(case1, case2, case3, case4, case5);
+        Arguments case6 = Arguments.of(mockSkillRequest("testNs", "testSkill"), "testNs", "testSkill",
+                QuerySkillRequest.class.getSimpleName());
+        return Stream.of(case1, case2, case3, case4, case5, case6);
     }
 
     private static Stream<Arguments> withoutNamespaceRequests() {
@@ -65,9 +68,11 @@ class AiGrpcResourceParserTest {
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testName", MockAgentRequest.class.getSimpleName());
         Arguments case3 = Arguments.of(mockPromptRequest(null, "testPrompt"),
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testPrompt", MockPromptRequest.class.getSimpleName());
-        Arguments case4 = Arguments.of(mockOtherRequest(null, "testName"),
+        Arguments case4 = Arguments.of(mockSkillRequest(null, "testSkill"),
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testSkill", QuerySkillRequest.class.getSimpleName());
+        Arguments case5 = Arguments.of(mockOtherRequest(null, "testName"),
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "", NotifySubscriberRequest.class.getSimpleName());
-        return Stream.of(case1, case2, case3, case4);
+        return Stream.of(case1, case2, case3, case4, case5);
     }
 
     private static Stream<Arguments> withoutNameRequests() {
@@ -77,9 +82,11 @@ class AiGrpcResourceParserTest {
                 MockAgentRequest.class.getSimpleName());
         Arguments case3 = Arguments.of(mockPromptRequest("testNs", ""), "testNs", "",
                 MockPromptRequest.class.getSimpleName());
-        Arguments case4 = Arguments.of(mockOtherRequest("testNs", ""),
+        Arguments case4 = Arguments.of(mockSkillRequest("testNs", ""), "testNs", "",
+                QuerySkillRequest.class.getSimpleName());
+        Arguments case5 = Arguments.of(mockOtherRequest("testNs", ""),
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "", NotifySubscriberRequest.class.getSimpleName());
-        return Stream.of(case1, case2, case3, case4);
+        return Stream.of(case1, case2, case3, case4, case5);
     }
     
     @BeforeEach
@@ -141,6 +148,13 @@ class AiGrpcResourceParserTest {
         MockPromptRequest result = new MockPromptRequest();
         result.setNamespaceId(testNs);
         result.setPromptKey(promptKey);
+        return result;
+    }
+    
+    private static QuerySkillRequest mockSkillRequest(String testNs, String skillName) {
+        QuerySkillRequest result = new QuerySkillRequest();
+        result.setNamespaceId(testNs);
+        result.setSkillName(skillName);
         return result;
     }
     
