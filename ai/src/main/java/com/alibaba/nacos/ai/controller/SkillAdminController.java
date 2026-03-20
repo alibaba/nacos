@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
@@ -235,6 +236,21 @@ public class SkillAdminController {
         form.validate();
         skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
                 form.getVersion(), true);
+        return Result.success("ok");
+    }
+    
+    /**
+     * Update skill visibility scope (PUBLIC or PRIVATE).
+     *
+     * @param form the scope update form
+     * @return result of the update operation
+     * @throws NacosException if the skill not found or no permission
+     */
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> updateScope(SkillScopeForm form) throws NacosException {
+        form.validate();
+        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(), form.getScope());
         return Result.success("ok");
     }
     

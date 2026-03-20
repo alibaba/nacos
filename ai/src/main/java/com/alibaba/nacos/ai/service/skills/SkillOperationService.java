@@ -137,6 +137,17 @@ public interface SkillOperationService {
      */
     void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online) throws NacosException;
 
+    /**
+     * Update skill visibility scope (PUBLIC or PRIVATE). Only the owner or users with explicit write permission can
+     * change the scope.
+     *
+     * @param namespaceId namespace ID
+     * @param name        skill name
+     * @param scope       target scope: PUBLIC or PRIVATE
+     * @throws NacosException if skill not found or no permission
+     */
+    void updateScope(String namespaceId, String name, String scope) throws NacosException;
+
     // ========== Client APIs ==========
 
     /**

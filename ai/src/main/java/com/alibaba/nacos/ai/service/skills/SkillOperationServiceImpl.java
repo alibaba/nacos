@@ -599,6 +599,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
+    public void updateScope(String namespaceId, String name, String scope) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
+        boolean ok = aiResourcePersistService.updateScope(namespaceId, name, RESOURCE_TYPE_SKILL, scope.toUpperCase());
+        if (!ok) {
+            LOGGER.error("Failed to update scope for skill: {}, namespace: {}, scope: {}", name, namespaceId, scope);
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                    "Failed to update scope for skill: " + name);
+        }
+    }
+
+    @Override
     public Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
             throws NacosException {
         String nameLike = StringUtils.isBlank(keyword) ? null : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);

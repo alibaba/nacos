@@ -479,4 +479,57 @@ class SkillOperationServiceImplTest {
         verify(aiResourceVersionPersistService).insert(vCaptor.capture());
         assertEquals("myUser", vCaptor.getValue().getAuthor());
     }
+
+    @Test
+    void testUpdateScopeSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateScope(eq(namespaceId), eq(skillName), eq("skill"), eq("PUBLIC")))
+                .thenReturn(true);
+
+        skillOperationService.updateScope(namespaceId, skillName, "PUBLIC");
+        verify(aiResourcePersistService).updateScope(namespaceId, skillName, "skill", "PUBLIC");
+    }
+
+    @Test
+    void testUpdateScopeDeniedByWriteFilter() {
+        String namespaceId = "test-ns";
+        String skillName = "protected-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        DataFilterService mockFilter = mock(DataFilterService.class);
+        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
+                .thenReturn(Collections.emptyList());
+        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+
+        setupRequestContext("attackerUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.updateScope(namespaceId, skillName, "PUBLIC"));
+        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        verify(aiResourcePersistService, never()).updateScope(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void testUpdateScopeNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "nonexistent";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.updateScope(namespaceId, skillName, "PUBLIC"));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
 }
