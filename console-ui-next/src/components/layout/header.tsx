@@ -6,6 +6,7 @@ import {
   LogOut,
   KeyRound,
   Layers,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -27,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 function getBaseUrl(language: string) {
@@ -124,6 +126,21 @@ export function Header() {
 
       {/* Right actions */}
       <div className="flex items-center gap-1 shrink-0">
+        {/* Switch to legacy console */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" asChild>
+              <a href="../legacy/">
+                <ArrowLeftRight size={14} />
+                {t('common.legacyConsole')}
+              </a>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('common.switchToLegacy')}</TooltipContent>
+        </Tooltip>
+
+        <Separator orientation="vertical" className="mx-1 h-5" />
+
         {/* Language switch */}
         <Tooltip>
           <TooltipTrigger asChild>

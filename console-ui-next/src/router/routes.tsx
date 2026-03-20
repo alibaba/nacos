@@ -57,7 +57,7 @@ export const routes: RouteObject[] = [
           // Default redirect
           {
             index: true,
-            element: <Navigate to="/welcome" replace />,
+            element: <Navigate to="/skillManagement" replace />,
           },
           
           // Welcome page
