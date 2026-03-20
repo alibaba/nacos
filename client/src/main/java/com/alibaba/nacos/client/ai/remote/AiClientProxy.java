@@ -17,14 +17,14 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 /**
  * AI client proxy interface for abstracting transport layer (gRPC / HTTP).
  *
- * <p>Defines AI operations that support switching between gRPC and HTTP transport.
- * Currently covers Prompt operations; extensible for Skill and other capabilities.</p>
+ * <p>Defines AI operations that support switching between gRPC and HTTP transport.</p>
  *
  * @author nacos
  */
@@ -41,4 +41,15 @@ public interface AiClientProxy extends Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException;
+    
+    /**
+     * Query skill from server by name with optional version/label routing.
+     *
+     * @param skillName skill name
+     * @param version   explicit version (optional)
+     * @param label     route label, e.g. "latest", "stable" (optional)
+     * @return complete Skill object with all resources
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    Skill querySkill(String skillName, String version, String label) throws NacosException;
 }

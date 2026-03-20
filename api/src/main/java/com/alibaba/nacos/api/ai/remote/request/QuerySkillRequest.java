@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.listener;
-
-import com.alibaba.nacos.api.ai.model.skills.Skill;
+package com.alibaba.nacos.api.ai.remote.request;
 
 /**
- * Nacos AI Module skill event.
+ * Nacos AI module query skill request.
  *
  * @author nacos
  */
-public class NacosSkillEvent implements NacosAiEvent {
+public class QuerySkillRequest extends AbstractSkillRequest {
     
-    private final String skillName;
+    private String version;
     
-    private final Skill skill;
+    private String label;
     
-    public NacosSkillEvent(String skillName, Skill skill) {
-        this.skillName = skillName;
-        this.skill = skill;
+    public String getVersion() {
+        return version;
     }
     
-    public String getSkillName() {
-        return skillName;
+    public void setVersion(String version) {
+        this.version = version;
     }
     
-    public Skill getSkill() {
-        return skill;
+    public String getLabel() {
+        return label;
+    }
+    
+    public void setLabel(String label) {
+        this.label = label;
     }
 }

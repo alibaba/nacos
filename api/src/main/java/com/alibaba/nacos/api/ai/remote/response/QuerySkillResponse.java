@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.listener;
+package com.alibaba.nacos.api.ai.remote.response;
+
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Nacos AI module skill event listener.
+ * Nacos AI module query skill response.
  *
  * @author nacos
  */
-public abstract class AbstractNacosSkillListener implements NacosAiListener<NacosSkillEvent> {
+public class QuerySkillResponse extends Response {
+    
+    private Skill skill;
+    
+    public Skill getSkill() {
+        return skill;
+    }
+    
+    public void setSkill(Skill skill) {
+        this.skill = skill;
+    }
 }

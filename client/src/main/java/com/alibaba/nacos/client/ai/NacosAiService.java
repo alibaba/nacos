@@ -22,11 +22,9 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
-import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
 import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
-import com.alibaba.nacos.api.ai.listener.NacosSkillEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
@@ -37,7 +35,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -45,18 +42,15 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosPromptCacheHolder;
-import com.alibaba.nacos.client.ai.cache.NacosSkillCacheHolder;
 import com.alibaba.nacos.client.ai.event.AgentCardListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
 import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
 import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
-import com.alibaba.nacos.client.ai.event.SkillListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
-import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -88,13 +82,9 @@ public class NacosAiService implements AiService {
     
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
     
-    private final NacosSkillCacheHolder skillCacheHolder;
-    
     private final NacosPromptCacheHolder promptCacheHolder;
     
     private final AiChangeNotifier aiChangeNotifier;
-    
-    private final ConfigService skillConfigService;
     
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
@@ -110,10 +100,8 @@ public class NacosAiService implements AiService {
         } else {
             this.aiClientProxy = this.grpcClient;
         }
-        this.skillConfigService = new NacosConfigService(properties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
-        this.skillCacheHolder = new NacosSkillCacheHolder(this.skillConfigService, this.namespaceId);
         this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
@@ -364,43 +352,25 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return skillCacheHolder.querySkill(skillName);
+        return aiClientProxy.querySkill(skillName, null, null);
     }
     
     @Override
-    public Skill subscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException {
+    public Skill loadSkillByVersion(String skillName, String version) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `skillName` can't be empty or null");
+                    "Required parameter `skillName` not present");
         }
-        if (null == skillListener) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `skillListener` can't be empty or null");
-        }
-        
-        SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
-        aiChangeNotifier.registerListener(skillName, listenerInvoker);
-        Skill result = skillCacheHolder.subscribeSkill(skillName);
-        if (null != result && !listenerInvoker.isInvoked()) {
-            listenerInvoker.invoke(new NacosSkillEvent(skillName, result));
-        }
-        return result;
+        return aiClientProxy.querySkill(skillName, version, null);
     }
     
     @Override
-    public void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException {
+    public Skill loadSkillByLabel(String skillName, String label) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `skillName` can't be empty or null");
+                    "Required parameter `skillName` not present");
         }
-        if (null == skillListener) {
-            return;
-        }
-        SkillListenerInvoker listenerInvoker = new SkillListenerInvoker(skillListener);
-        aiChangeNotifier.deregisterListener(skillName, listenerInvoker);
-        if (!aiChangeNotifier.isSkillSubscribed(skillName)) {
-            skillCacheHolder.unsubscribeSkill(skillName);
-        }
+        return aiClientProxy.querySkill(skillName, null, label);
     }
     
     // ==================== Prompt Methods ====================
@@ -483,9 +453,7 @@ public class NacosAiService implements AiService {
         if (this.aiClientProxy != this.grpcClient) {
             this.aiClientProxy.shutdown();
         }
-        this.skillConfigService.shutDown();
         this.mcpServerCacheHolder.shutdown();
-        this.skillCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();
     }
 }

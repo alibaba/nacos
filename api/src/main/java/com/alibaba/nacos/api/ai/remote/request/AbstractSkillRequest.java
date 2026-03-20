@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.ai.event;
+package com.alibaba.nacos.api.ai.remote.request;
 
-import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.request.Request;
 
 /**
- * Nacos AI module skill changed event in nacos-client.
+ * Nacos AI module skill request.
  *
  * @author nacos
  */
-public class SkillChangedEvent extends Event {
+public abstract class AbstractSkillRequest extends Request {
     
-    private static final long serialVersionUID = 2010793364377243018L;
+    private String namespaceId;
     
-    private final String skillName;
+    private String skillName;
     
-    private final Skill skill;
+    @Override
+    public String getModule() {
+        return Constants.AI.AI_MODULE;
+    }
     
-    public SkillChangedEvent(String skillName, Skill skill) {
-        this.skillName = skillName;
-        this.skill = skill;
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
     
     public String getSkillName() {
         return skillName;
     }
     
-    public Skill getSkill() {
-        return skill;
+    public void setSkillName(String skillName) {
+        this.skillName = skillName;
     }
 }

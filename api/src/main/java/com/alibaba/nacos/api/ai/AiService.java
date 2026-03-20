@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
-import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -183,7 +182,7 @@ public interface AiService extends A2aService {
      * 
      * <p>
      * This method will query the skill main configuration and all resource configurations,
-     * then assemble them into a complete Skill object.
+     * then assemble them into a complete Skill object. Defaults to loading the latest version.
      * </p>
      *
      * @param skillName skill name (unique identifier)
@@ -193,23 +192,24 @@ public interface AiService extends A2aService {
     Skill loadSkill(String skillName) throws NacosException;
     
     /**
-     * Subscribe skill.
+     * Load skill by skill name and target version.
      *
-     * @param skillName       name of skill
-     * @param skillListener   listener of skill, callback when skill configuration is changed
-     * @return The skill object at current time, nullable if skill not found
-     * @throws NacosException if request parameter is invalid or handle error
+     * @param skillName skill name (unique identifier)
+     * @param version   target skill version, if null, will get latest version
+     * @return complete Skill object with all resources
+     * @throws NacosException if skill not found or query error
      */
-    Skill subscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
+    Skill loadSkillByVersion(String skillName, String version) throws NacosException;
     
     /**
-     * Un-subscribe skill.
+     * Load skill by skill name and target label.
      *
-     * @param skillName       name of skill
-     * @param skillListener   listener of skill
-     * @throws NacosException if request parameter is invalid or handle error
+     * @param skillName skill name (unique identifier)
+     * @param label     target skill label (e.g. "latest", "stable")
+     * @return complete Skill object with all resources
+     * @throws NacosException if skill not found or query error
      */
-    void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
+    Skill loadSkillByLabel(String skillName, String label) throws NacosException;
     
     // ==================== Prompt Management APIs ====================
     
