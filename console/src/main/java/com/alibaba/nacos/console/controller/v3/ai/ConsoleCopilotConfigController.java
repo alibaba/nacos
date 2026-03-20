@@ -134,15 +134,15 @@ public class ConsoleCopilotConfigController {
      * Test whether the submitted Copilot configuration is usable.
      *
      * @param config submitted copilot configuration
-     * @return connection test result
+     * @return configuration verification result
      * @throws NacosException if request body is invalid
      */
-    @PostMapping("/test")
+    @PostMapping("/verify")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<CopilotConfigTestResponse> testConfig(@RequestBody CopilotProperties config) throws NacosException {
+    public Result<CopilotConfigTestResponse> verifyConfig(@RequestBody CopilotProperties config) throws NacosException {
         if (config == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "Configuration cannot be null");
         }
-        return Result.success(agentManager.testConfig(config));
+        return Result.success(agentManager.verifyConfig(config));
     }
 }

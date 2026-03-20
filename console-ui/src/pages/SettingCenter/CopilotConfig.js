@@ -120,7 +120,7 @@ class CopilotConfig extends React.Component {
     }
   };
 
-  testConnection = async () => {
+  verifyConnection = async () => {
     const { locale = {} } = this.props;
     const values = this.field.getValues();
 
@@ -138,7 +138,7 @@ class CopilotConfig extends React.Component {
       };
 
       const response = await requestUtils.post(
-        'v3/console/copilot/config/test',
+        'v3/console/copilot/config/verify',
         JSON.stringify(config),
         {
           headers: {
@@ -156,7 +156,7 @@ class CopilotConfig extends React.Component {
       return result.success;
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Failed to test Copilot connection:', error);
+      console.error('Failed to verify Copilot connection:', error);
       this.setState({
         testResult: {
           success: false,
@@ -288,7 +288,7 @@ class CopilotConfig extends React.Component {
           <FormItem label={locale.copilotConnectionTest || '检测连接'}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Button type="primary" text loading={testing} onClick={this.testConnection}>
+                <Button type="primary" text loading={testing} onClick={this.verifyConnection}>
                   {locale.copilotConnectionTest || '检测连接'}
                 </Button>
                 {testResult && (

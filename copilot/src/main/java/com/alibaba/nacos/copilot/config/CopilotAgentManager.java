@@ -294,10 +294,10 @@ public class CopilotAgentManager {
      *
      * @param config submitted copilot configuration
      *               当前提交的 Copilot 配置
-     * @return connection test result
-     *         连接检测结果
+     * @return configuration verification result
+     *         配置校验结果
      */
-    public CopilotConfigTestResponse testConfig(CopilotProperties config) {
+    public CopilotConfigTestResponse verifyConfig(CopilotProperties config) {
         CopilotConfigTestResponse result = new CopilotConfigTestResponse();
 
         // 0. Return failure immediately when request body is null.
@@ -384,7 +384,7 @@ public class CopilotAgentManager {
             result.setMessage("Copilot configuration is valid and LLM service is reachable.");
             return result;
         } catch (Exception e) {
-            LOGGER.warn("Failed to test Copilot configuration", e);
+            LOGGER.warn("Failed to verify Copilot configuration", e);
             result.setSuccess(false);
             result.setLlmReachable(false);
             result.setMessage("Failed to access LLM service. Please check the API key and model configuration.");
