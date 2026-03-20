@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
@@ -69,7 +70,6 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;

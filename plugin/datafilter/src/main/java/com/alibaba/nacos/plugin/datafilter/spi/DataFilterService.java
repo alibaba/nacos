@@ -35,11 +35,14 @@ public interface DataFilterService {
      *
      * @param currentUser identity of the current authenticated user
      * @param action      {@code "r"} for read or {@code "w"} for write
+     * @param apiType     API type scope used to determine the auth-enabled switch, e.g. {@code "ADMIN_API"},
+     *                    {@code "OPEN_API"}
      * @param candidates  candidate resources (must extend FilterableResource)
      * @param <T>         resource type
      * @return filtered list containing only permitted resources
      */
-    <T extends FilterableResource> List<T> filter(String currentUser, String action, List<T> candidates);
+    <T extends FilterableResource> List<T> filter(String currentUser, String action, String apiType,
+            List<T> candidates);
     
     /**
      * Get the name identifier of this data filter service, e.g. "nacos-default-ai".

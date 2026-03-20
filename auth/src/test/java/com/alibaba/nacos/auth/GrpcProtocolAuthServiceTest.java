@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
@@ -29,7 +30,6 @@ import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.lang.reflect.Method;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,11 +59,11 @@ class GrpcProtocolAuthServiceTest {
     private AbstractNamingRequest namingRequest;
     
     private AbstractMcpRequest mcpRequest;
-
+    
     private AbstractAgentRequest agentRequest;
-
+    
     private GrpcProtocolAuthService protocolAuthService;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         protocolAuthService = new GrpcProtocolAuthService(authConfig);
@@ -86,14 +88,14 @@ class GrpcProtocolAuthServiceTest {
         namingRequest.setGroupName("testNG");
         namingRequest.setServiceName("testS");
     }
-
+    
     private void mockMcpRequest() {
         mcpRequest = new AbstractMcpRequest() {
         };
         mcpRequest.setNamespaceId("testNNs");
         mcpRequest.setMcpName("testS");
     }
-
+    
     private void mockAgentRequest() {
         agentRequest = new AbstractAgentRequest() {
         };
@@ -153,7 +155,7 @@ class GrpcProtocolAuthServiceTest {
         assertEquals("testCG", actual.getGroup());
         assertNotNull(actual.getProperties());
     }
-
+    
     @Test
     @Secured(signType = SignType.AI)
     void testParseResourceWithMcpType() throws NoSuchMethodException {
@@ -165,7 +167,7 @@ class GrpcProtocolAuthServiceTest {
         assertEquals(Constants.DEFAULT_GROUP, actual.getGroup());
         assertNotNull(actual.getProperties());
     }
-
+    
     @Test
     @Secured(signType = SignType.AI)
     void testParseResourceWithAgentType() throws NoSuchMethodException {

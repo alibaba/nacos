@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.controller.v3.naming;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -37,7 +38,6 @@ import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,7 +69,7 @@ public class ConsoleInstanceController {
      * List instances of special service.
      *
      * @param instanceForm instance list form
-     * @param pageForm Page form
+     * @param pageForm     Page form
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)

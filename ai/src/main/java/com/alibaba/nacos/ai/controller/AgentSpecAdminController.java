@@ -31,18 +31,19 @@ import com.alibaba.nacos.ai.param.AgentSpecHttpParamExtractor;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.utils.AgentSpecRequestUtil;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,7 +52,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.Map;
 
 /**
@@ -121,7 +122,7 @@ public class AgentSpecAdminController {
      * List agentspecs for admin (includes governance metadata: status, tags, labels, etc.).
      *
      * @param agentSpecListForm the agentspec list form to list
-     * @param pageForm the page form to list
+     * @param pageForm          the page form to list
      * @return result of the list operation
      * @throws NacosException if the agentspec list fails
      */
@@ -131,18 +132,17 @@ public class AgentSpecAdminController {
             throws NacosException {
         agentSpecListForm.validate();
         pageForm.validate();
-        return Result.success(
-                agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
-                        agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
-                        pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
+                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(), pageForm.getPageNo(),
+                pageForm.getPageSize()));
     }
     
     /**
      * Upload agentspec from zip file.
      *
-     * @param request HTTP servlet request
+     * @param request     HTTP servlet request
      * @param namespaceId namespace ID
-     * @param file zip file containing agentspec
+     * @param file        zip file containing agentspec
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */

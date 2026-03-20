@@ -16,16 +16,16 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -45,9 +45,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 /**
- * V1 auth user API - login only. Other v1 user/role/permission APIs have been
- * moved to nacos-api-legacy-adapter and are loaded when this plugin (new version)
- * is present.
+ * V1 auth user API - login only. Other v1 user/role/permission APIs have been moved to nacos-api-legacy-adapter and are
+ * loaded when this plugin (new version) is present.
  *
  * @author wfnuser
  * @author nkorange
@@ -55,14 +54,16 @@ import java.io.IOException;
 @RestController
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
-
+    
     private final TokenManagerDelegate jwtTokenManager;
+    
     private final AuthConfigs authConfigs;
+    
     private final IAuthenticationManager iAuthenticationManager;
-
+    
     @Deprecated
     private final AuthenticationManager authenticationManager;
-
+    
     public UserController(TokenManagerDelegate jwtTokenManager, AuthConfigs authConfigs,
             IAuthenticationManager iAuthenticationManager, AuthenticationManager authenticationManager) {
         this.jwtTokenManager = jwtTokenManager;
@@ -70,7 +71,7 @@ public class UserController {
         this.iAuthenticationManager = iAuthenticationManager;
         this.authenticationManager = authenticationManager;
     }
-
+    
     /**
      * Login to Nacos (v1 API, kept for old clients).
      *
@@ -85,14 +86,14 @@ public class UserController {
     @Compatibility(apiType = ApiType.OPEN_API, alternatives = "POST ${contextPath:nacos}/v3/auth/user/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
             HttpServletRequest request) throws AccessException, IOException {
-
+        
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-
+            
             NacosUser user = iAuthenticationManager.authenticate(request);
-
+            
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
-
+            
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
@@ -100,10 +101,10 @@ public class UserController {
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
-
+        
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
                 password);
-
+        
         try {
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
             SecurityContextHolder.getContext().setAuthentication(authentication);

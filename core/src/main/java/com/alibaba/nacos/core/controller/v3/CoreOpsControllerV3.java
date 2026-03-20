@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
@@ -24,11 +26,9 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.model.form.v3.RaftCommandForm;
 import com.alibaba.nacos.core.model.request.LogUpdateRequest;
-import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

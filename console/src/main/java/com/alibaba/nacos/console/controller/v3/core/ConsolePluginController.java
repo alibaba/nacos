@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.core;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.core.plugin.model.form.PluginConfigForm;
 import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,13 +52,13 @@ import java.util.Map;
 @RequestMapping("/v3/console/plugin")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class ConsolePluginController {
-
+    
     private final PluginProxy pluginProxy;
-
+    
     public ConsolePluginController(PluginProxy pluginProxy) {
         this.pluginProxy = pluginProxy;
     }
-
+    
     /**
      * Get plugin list.
      *
@@ -71,7 +71,7 @@ public class ConsolePluginController {
             @RequestParam(value = "pluginType", required = false) String pluginType) throws NacosException {
         return Result.success(pluginProxy.listPlugins(pluginType));
     }
-
+    
     /**
      * Get plugin detail.
      *
@@ -81,12 +81,11 @@ public class ConsolePluginController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<PluginDetailVO> getPluginDetail(
-            @RequestParam("pluginType") String pluginType,
+    public Result<PluginDetailVO> getPluginDetail(@RequestParam("pluginType") String pluginType,
             @RequestParam("pluginName") String pluginName) throws NacosException {
         return Result.success(pluginProxy.getPluginDetail(pluginType, pluginName));
     }
-
+    
     /**
      * Enable or disable plugin.
      *
@@ -97,15 +96,13 @@ public class ConsolePluginController {
      */
     @PutMapping("/status")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<String> updatePluginStatus(
-            @RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName,
-            @RequestParam("enabled") boolean enabled,
+    public Result<String> updatePluginStatus(@RequestParam("pluginType") String pluginType,
+            @RequestParam("pluginName") String pluginName, @RequestParam("enabled") boolean enabled,
             @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosException {
         pluginProxy.updatePluginStatus(pluginType, pluginName, enabled, localOnly);
         return Result.success("Plugin status updated successfully");
     }
-
+    
     /**
      * Update plugin configuration.
      *
@@ -127,7 +124,7 @@ public class ConsolePluginController {
                 form.isLocalOnly());
         return Result.success("Plugin configuration updated successfully");
     }
-
+    
     /**
      * Get plugin availability across cluster nodes.
      *
@@ -137,8 +134,7 @@ public class ConsolePluginController {
      */
     @GetMapping("/availability")
     @Secured(action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Map<String, Boolean>> getPluginAvailability(
-            @RequestParam("pluginType") String pluginType,
+    public Result<Map<String, Boolean>> getPluginAvailability(@RequestParam("pluginType") String pluginType,
             @RequestParam("pluginName") String pluginName) throws NacosException {
         return Result.success(pluginProxy.getPluginAvailability(pluginType, pluginName));
     }

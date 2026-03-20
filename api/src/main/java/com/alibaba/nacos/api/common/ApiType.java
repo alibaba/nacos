@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.constant;
+package com.alibaba.nacos.api.common;
 
 /**
  * The type of Nacos API.

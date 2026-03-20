@@ -17,9 +17,9 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.auth.config.AuthErrorCode;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -42,33 +42,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(MockitoExtension.class)
 class NacosServerAdminAuthConfigTest {
-
+    
     private MockEnvironment environment;
-
+    
     @BeforeEach
     void setUp() {
         environment = new MockEnvironment();
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
         EnvUtil.setEnvironment(environment);
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void testGetAuthScope() {
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();
         assertEquals(ApiType.ADMIN_API.name(), config.getAuthScope());
     }
-
+    
     @Test
     void testIsAuthEnabledWhenDisabled() {
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();
         assertFalse(config.isAuthEnabled());
     }
-
+    
     @Test
     void testIsAuthEnabledWhenEnabled() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
@@ -78,20 +78,20 @@ class NacosServerAdminAuthConfigTest {
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();
         assertTrue(config.isAuthEnabled());
     }
-
+    
     @Test
     void testGetNacosAuthSystemType() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "ldap");
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();
         assertEquals("ldap", config.getNacosAuthSystemType());
     }
-
+    
     @Test
     void testIsSupportServerIdentity() {
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();
         assertTrue(config.isSupportServerIdentity());
     }
-
+    
     @Test
     void testGetServerIdentityKeyAndValue() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "admin-key");
@@ -100,7 +100,7 @@ class NacosServerAdminAuthConfigTest {
         assertEquals("admin-key", config.getServerIdentityKey());
         assertEquals("admin-value", config.getServerIdentityValue());
     }
-
+    
     @Test
     void testValidateThrowsWhenAuthEnabledButEmptyType() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
@@ -108,7 +108,7 @@ class NacosServerAdminAuthConfigTest {
         assertEquals(AuthErrorCode.INVALID_TYPE.getCode(), ex.getErrCode());
         assertTrue(ex.getMessage().contains(AuthErrorCode.INVALID_TYPE.getMsg()));
     }
-
+    
     @Test
     void testValidateThrowsWhenAuthEnabledButEmptyIdentity() {
         environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "true");
@@ -117,7 +117,7 @@ class NacosServerAdminAuthConfigTest {
         assertEquals(AuthErrorCode.EMPTY_IDENTITY.getCode(), ex.getErrCode());
         assertTrue(ex.getMessage().contains(AuthErrorCode.EMPTY_IDENTITY.getMsg()));
     }
-
+    
     @Test
     void testToString() {
         NacosServerAdminAuthConfig config = new NacosServerAdminAuthConfig();

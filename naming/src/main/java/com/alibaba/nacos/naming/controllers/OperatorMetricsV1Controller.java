@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.web.bind.annotation.GetMapping;

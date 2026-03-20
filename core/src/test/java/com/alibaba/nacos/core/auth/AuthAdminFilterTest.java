@@ -17,11 +17,11 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.context.RequestContextHolder;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,34 +46,34 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class AuthAdminFilterTest {
-
+    
     private AuthAdminFilter authAdminFilter;
-
+    
     @Mock
     private NacosAuthConfig authConfig;
-
+    
     @Mock
     private ControllerMethodsCache methodsCache;
-
+    
     @Mock
     private FilterChain filterChain;
-
+    
     @Mock
     private HttpServletRequest request;
-
+    
     @Mock
     private HttpServletResponse response;
-
+    
     @BeforeEach
     void setUp() {
         authAdminFilter = new AuthAdminFilter(authConfig, methodsCache);
     }
-
+    
     @AfterEach
     void tearDown() {
         RequestContextHolder.removeContext();
     }
-
+    
     @Test
     void testIsMatchFilterReturnsTrueForAdminApi() throws NoSuchMethodException, ServletException, IOException {
         when(authConfig.isAuthEnabled()).thenReturn(true);
@@ -81,44 +81,44 @@ class AuthAdminFilterTest {
         when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(request.getHeader("1")).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredAdminApi());
-
+        
         authAdminFilter.doFilter(request, response, filterChain);
-
+        
         verify(filterChain).doFilter(request, response);
     }
-
+    
     @Test
     void testIsMatchFilterSkipsNonAdminApi() throws NoSuchMethodException, ServletException, IOException {
         when(authConfig.isAuthEnabled()).thenReturn(true);
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredOpenApi());
-
+        
         authAdminFilter.doFilter(request, response, filterChain);
-
+        
         verify(filterChain).doFilter(request, response);
     }
-
+    
     @Test
     void testDoFilterWhenAuthDisabledPassesThrough() throws ServletException, IOException {
         when(authConfig.isAuthEnabled()).thenReturn(false);
-
+        
         authAdminFilter.doFilter(request, response, filterChain);
-
+        
         verify(filterChain).doFilter(request, response);
         verify(methodsCache, never()).getMethod(request);
     }
-
+    
     @Secured(apiType = ApiType.ADMIN_API)
     private static void methodWithAdminApi() {
     }
-
+    
     @Secured(apiType = ApiType.OPEN_API)
     private static void methodWithOpenApi() {
     }
-
+    
     private java.lang.reflect.Method getMethodWithSecuredAdminApi() throws NoSuchMethodException {
         return AuthAdminFilterTest.class.getDeclaredMethod("methodWithAdminApi");
     }
-
+    
     private java.lang.reflect.Method getMethodWithSecuredOpenApi() throws NoSuchMethodException {
         return AuthAdminFilterTest.class.getDeclaredMethod("methodWithOpenApi");
     }

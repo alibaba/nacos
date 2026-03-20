@@ -25,23 +25,24 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
-import com.alibaba.nacos.ai.utils.SkillRequestUtil;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.console.proxy.ai.SkillProxy;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
 import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
+import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.console.proxy.ai.SkillProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,7 +51,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Console skill controller.
@@ -82,7 +82,7 @@ public class ConsoleSkillController {
         form.validate();
         return Result.success(skillProxy.getSkill(form));
     }
-
+    
     /**
      * Get specific version detail of a skill for viewing or editing.
      *
@@ -116,7 +116,7 @@ public class ConsoleSkillController {
      * List skills.
      *
      * @param skillListForm the skill list form to list
-     * @param pageForm the page form to list
+     * @param pageForm      the page form to list
      * @return result of the list operation
      * @throws NacosException if the skill list fails
      */
@@ -132,9 +132,9 @@ public class ConsoleSkillController {
     /**
      * Upload skill from zip file.
      *
-     * @param request HTTP servlet request
+     * @param request     HTTP servlet request
      * @param namespaceId namespace ID
-     * @param file zip file containing skill
+     * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */
@@ -149,7 +149,7 @@ public class ConsoleSkillController {
         String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes);
         return Result.success(skillName);
     }
-
+    
     /**
      * Create draft version.
      */
@@ -159,7 +159,7 @@ public class ConsoleSkillController {
         form.validate();
         return Result.success(skillProxy.createDraft(form));
     }
-
+    
     /**
      * Update current draft content.
      */
@@ -170,7 +170,7 @@ public class ConsoleSkillController {
         skillProxy.updateDraft(form);
         return Result.success("ok");
     }
-
+    
     /**
      * Delete current draft version.
      */
@@ -181,7 +181,7 @@ public class ConsoleSkillController {
         skillProxy.deleteDraft(form);
         return Result.success("ok");
     }
-
+    
     /**
      * Submit a version for pipeline review.
      */
@@ -191,7 +191,7 @@ public class ConsoleSkillController {
         form.validate();
         return Result.success(skillProxy.submit(form));
     }
-
+    
     /**
      * Publish an approved reviewing version.
      */
@@ -202,7 +202,7 @@ public class ConsoleSkillController {
         skillProxy.publish(form);
         return Result.success("ok");
     }
-
+    
     /**
      * Update runtime route labels without changing version status.
      */
@@ -213,7 +213,7 @@ public class ConsoleSkillController {
         skillProxy.updateLabels(form);
         return Result.success("ok");
     }
-
+    
     /**
      * Online operation (version-level or skill-level by scope).
      */
@@ -224,7 +224,7 @@ public class ConsoleSkillController {
         skillProxy.online(form);
         return Result.success("ok");
     }
-
+    
     /**
      * Offline operation (version-level or skill-level by scope).
      */

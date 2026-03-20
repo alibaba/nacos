@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.stereotype.Component;
 
 /**

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.core;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,8 +54,8 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
         serverLoaderInfoResponse.putMetricsValue("conCount", String.valueOf(connectionManager.currentClientsCount()));
         Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
-        serverLoaderInfoResponse
-                .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
+        serverLoaderInfoResponse.putMetricsValue("sdkConCount",
+                String.valueOf(connectionManager.currentClientsCount(filter)));
         serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
         serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCpu()));
         

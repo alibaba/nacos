@@ -23,12 +23,12 @@ import com.alibaba.nacos.ai.service.prompt.PromptClientOperationService;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,8 +60,8 @@ public class PromptClientController {
     public Result<Prompt> queryPrompt(PromptQueryForm form, HttpServletResponse response) throws NacosException {
         form.validate();
         try {
-            PromptVersionInfo result = promptOperationService.queryPrompt(
-                    form.getNamespaceId(), form.getPromptKey(), form.getVersion(), form.getLabel(), form.getMd5());
+            PromptVersionInfo result = promptOperationService.queryPrompt(form.getNamespaceId(), form.getPromptKey(),
+                    form.getVersion(), form.getLabel(), form.getMd5());
             return Result.success(convertToClientPrompt(result));
         } catch (NacosException ex) {
             if (ex.getErrCode() == NacosException.NOT_MODIFIED) {

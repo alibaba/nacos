@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -37,7 +38,6 @@ import com.alibaba.nacos.console.proxy.ai.A2aProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -130,7 +130,7 @@ public class ConsoleA2aController {
      * list agents.
      *
      * @param agentListForm the agent list form to list
-     * @param pageForm the page form to list
+     * @param pageForm      the page form to list
      * @return result of the list operation
      * @throws NacosException if the agent list fails due to invalid input or internal error
      */
