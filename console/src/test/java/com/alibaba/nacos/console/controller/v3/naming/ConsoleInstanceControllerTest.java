@@ -74,7 +74,7 @@ public class ConsoleInstanceControllerTest {
     void testGetInstanceList() throws Exception {
         Page<? extends Instance> page = new Page<>();
         doReturn(page).when(instanceProxy)
-                .listInstances(anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt());
+                .listInstances(anyString(), anyString(), anyString(), any(), anyInt(), anyInt());
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/ns/instance/list")
                 .param("namespaceId", "default").param("serviceName", "testService").param("pageNo", "1")
