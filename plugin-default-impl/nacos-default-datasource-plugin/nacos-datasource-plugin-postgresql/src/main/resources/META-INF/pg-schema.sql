@@ -427,7 +427,8 @@ CREATE TABLE "ai_resource" (
   "version_info" text,
   "meta_version" bigint NOT NULL DEFAULT 1,
   "scope" varchar(16) NOT NULL DEFAULT 'PRIVATE',
-  "owner" varchar(128) NOT NULL DEFAULT ''
+  "owner" varchar(128) NOT NULL DEFAULT '',
+  "download_count" bigint NOT NULL DEFAULT 0
 )
 ;
 
@@ -445,6 +446,7 @@ COMMENT ON COLUMN "ai_resource"."version_info" IS '版本信息(JSON)';
 COMMENT ON COLUMN "ai_resource"."meta_version" IS '元数据版本(乐观锁)';
 COMMENT ON COLUMN "ai_resource"."scope" IS '可见性: PUBLIC/PRIVATE';
 COMMENT ON COLUMN "ai_resource"."owner" IS '创建者用户名';
+COMMENT ON COLUMN "ai_resource"."download_count" IS '下载次数';
 COMMENT ON TABLE "ai_resource" IS 'AI资源元数据表';
 
 -- ----------------------------
@@ -480,7 +482,8 @@ CREATE TABLE "ai_resource_version" (
   "version" varchar(64) NOT NULL,
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "storage" text,
-  "publish_pipeline_info" text
+  "publish_pipeline_info" text,
+  "download_count" bigint NOT NULL DEFAULT 0
 )
 ;
 
@@ -496,6 +499,7 @@ COMMENT ON COLUMN "ai_resource_version"."version" IS '版本号';
 COMMENT ON COLUMN "ai_resource_version"."namespace_id" IS '命名空间ID';
 COMMENT ON COLUMN "ai_resource_version"."storage" IS '存储信息(JSON)';
 COMMENT ON COLUMN "ai_resource_version"."publish_pipeline_info" IS '发布流水线信息(JSON)';
+COMMENT ON COLUMN "ai_resource_version"."download_count" IS '下载次数';
 COMMENT ON TABLE "ai_resource_version" IS 'AI资源版本表';
 
 -- ----------------------------

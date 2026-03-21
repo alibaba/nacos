@@ -34,6 +34,11 @@ public class SkillListForm extends SkillForm {
     private static final long serialVersionUID = 1L;
     
     private String search;
+
+    /**
+     * Sort field. Supported values: "download_count". Defaults to gmt_modified when null or empty.
+     */
+    private String orderBy;
     
     @Override
     public void validate() throws NacosApiException {
@@ -53,5 +58,13 @@ public class SkillListForm extends SkillForm {
     
     public void setSearch(String search) {
         this.search = search;
+    }
+
+    public String getOrderBy() {
+        return orderBy;
+    }
+
+    public void setOrderBy(String orderBy) {
+        this.orderBy = orderBy;
     }
 }

@@ -34,7 +34,8 @@ public class AiResourceMapperByOracle extends AbstractMapperByOracle implements 
     @Override
     public MapperResult findAiResourceFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,biz_tags,ext,version_info,meta_version,scope,owner "
+                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
+                        + "biz_tags,ext,version_info,meta_version,scope,owner,download_count "
                         + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
 
@@ -52,7 +53,7 @@ public class AiResourceMapperByOracle extends AbstractMapperByOracle implements 
         }
 
         MapperResult built = where.build();
-        String sql = built.getSql() + " ORDER BY gmt_modified DESC OFFSET " + context.getStartRow()
+        String sql = built.getSql() + resolveOrderByClause(context) + " OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, built.getParamList());
     }

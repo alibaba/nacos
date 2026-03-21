@@ -298,6 +298,12 @@ class AgentSpecClientVisibilityPropertyTest {
         }
         
         @Override
+        public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike,
+                String orderBy, int pageNo, int pageSize) {
+            return list(namespaceId, type, nameLike, bizTagsLike, pageNo, pageSize);
+        }
+        
+        @Override
         public boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion,
                 AiResource newValue) {
             return false;
@@ -312,6 +318,11 @@ class AgentSpecClientVisibilityPropertyTest {
         
         @Override
         public boolean updateScope(String namespaceId, String name, String type, String scope) {
+            return false;
+        }
+        
+        @Override
+        public boolean incrementDownloadCount(String namespaceId, String name, String type, long increment) {
             return false;
         }
     }

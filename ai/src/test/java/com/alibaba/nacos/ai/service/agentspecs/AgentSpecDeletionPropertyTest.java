@@ -319,6 +319,12 @@ class AgentSpecDeletionPropertyTest {
         }
         
         @Override
+        public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike,
+                String orderBy, int pageNo, int pageSize) {
+            return list(namespaceId, type, nameLike, bizTagsLike, pageNo, pageSize);
+        }
+        
+        @Override
         public boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion,
                 AiResource newValue) {
             return false;
@@ -333,6 +339,11 @@ class AgentSpecDeletionPropertyTest {
         
         @Override
         public boolean updateScope(String namespaceId, String name, String type, String scope) {
+            return false;
+        }
+        
+        @Override
+        public boolean incrementDownloadCount(String namespaceId, String name, String type, long increment) {
             return false;
         }
     }
@@ -433,6 +444,12 @@ class AgentSpecDeletionPropertyTest {
         @Override
         public int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
                 String publishPipelineInfo) {
+            return 0;
+        }
+        
+        @Override
+        public int incrementDownloadCount(String namespaceId, String name, String type, String version,
+                long increment) {
             return 0;
         }
     }

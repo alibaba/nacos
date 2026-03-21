@@ -212,6 +212,7 @@ CREATE TABLE ai_resource (
     meta_version NUMBER(20) DEFAULT 1 NOT NULL,
     scope VARCHAR2(16) DEFAULT 'PRIVATE' NOT NULL,
     owner VARCHAR2(128) DEFAULT '' NOT NULL,
+    download_count NUMBER(20) DEFAULT 0 NOT NULL,
     CONSTRAINT uk_ai_resource_ns_name_type UNIQUE (namespace_id, name, type)
 );
 
@@ -235,6 +236,7 @@ CREATE TABLE ai_resource_version (
     namespace_id VARCHAR2(128) DEFAULT '' NOT NULL,
     storage CLOB DEFAULT NULL,
     publish_pipeline_info CLOB DEFAULT NULL,
+    download_count NUMBER(20) DEFAULT 0 NOT NULL,
     CONSTRAINT uk_ai_res_ver_ns_nm_tp_ver UNIQUE (namespace_id, name, type, version)
 );
 

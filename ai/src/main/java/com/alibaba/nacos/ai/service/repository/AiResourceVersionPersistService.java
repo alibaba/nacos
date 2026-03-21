@@ -48,5 +48,17 @@ public interface AiResourceVersionPersistService {
     int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage, String desc);
 
     int updatePublishPipelineInfo(String namespaceId, String name, String type, String version, String publishPipelineInfo);
+
+    /**
+     * Increment download count for a specific version.
+     *
+     * @param namespaceId namespace ID
+     * @param name        resource name
+     * @param type        resource type
+     * @param version     version string
+     * @param increment   amount to add
+     * @return number of rows affected
+     */
+    int incrementDownloadCount(String namespaceId, String name, String type, String version, long increment);
 }
 

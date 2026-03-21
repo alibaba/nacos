@@ -82,7 +82,7 @@ public class SkillInnerHandler implements SkillHandler {
     @Override
     public Page<SkillAdminListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
-                skillListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize());
+                skillListForm.getSearch(), skillListForm.getOrderBy(), pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override

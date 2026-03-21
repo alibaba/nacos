@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
@@ -43,6 +44,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -189,6 +191,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 summary.setCreateTime(v.getGmtCreate() == null ? null : v.getGmtCreate().getTime());
                 summary.setUpdateTime(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
                 summary.setPublishPipelineInfo(v.getPublishPipelineInfo());
+                summary.setDownloadCount(v.getDownloadCount());
                 versionSummaries.add(summary);
             }
         }
@@ -201,6 +204,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setOnlineCnt(versionInfo.getOnlineCnt());
         detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setVersions(versionSummaries);
+        detail.setDownloadCount(meta.getDownloadCount());
         return detail;
     }
 
@@ -231,8 +235,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     @Override
     public Skill downloadSkillVersion(String namespaceId, String skillName, String version) throws NacosException {
-        // TODO: add download count tracking here
-        return getSkillVersionDetail(namespaceId, skillName, version);
+        Skill skill = getSkillVersionDetail(namespaceId, skillName, version);
+        NotifyCenter.publishEvent(
+                new SkillDownloadEvent(namespaceId, skillName, RESOURCE_TYPE_SKILL, version));
+        return skill;
     }
 
     @Override
@@ -268,6 +274,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
+        return listSkills(namespaceId, skillName, search, null, pageNo, pageSize);
+    }
+
+    @Override
+    public Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            int pageNo, int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
             if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
@@ -277,8 +289,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
 
-        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
-                pageSize);
+        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null,
+                orderBy, pageNo, pageSize);
         List<AiResource> filtered = DataFilterHelper.doReadFilter(
                 metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>() : metaPage.getPageItems());
         List<SkillAdminListItem> items = new ArrayList<>();
@@ -294,6 +306,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
             item.setBizTags(meta.getBizTags());
             item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+            item.setDownloadCount(meta.getDownloadCount());
             if (versionInfo != null) {
                 item.setLabels(versionInfo.getLabels());
                 item.setEditingVersion(versionInfo.getEditingVersion());
@@ -677,7 +690,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill version not found: " + name + "@" + resolved);
         }
 
-        return loadSkillFromFiles(namespaceId, name, resolved, files);
+        Skill skill = loadSkillFromFiles(namespaceId, name, resolved, files);
+        NotifyCenter.publishEvent(
+                new SkillDownloadEvent(namespaceId, name, RESOURCE_TYPE_SKILL, resolved));
+        return skill;
     }
 
     // ========== Private methods ==========

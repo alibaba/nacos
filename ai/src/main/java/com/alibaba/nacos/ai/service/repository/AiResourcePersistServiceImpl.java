@@ -105,7 +105,7 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
         String sql = mapper.select(
                 Arrays.asList("id", "gmt_create", "gmt_modified", "name", "type", "c_desc", "status", "namespace_id",
-                        "biz_tags", "ext", "version_info", "meta_version", "scope", "owner"),
+                        "biz_tags", "ext", "version_info", "meta_version", "scope", "owner", "download_count"),
                 Arrays.asList("namespace_id", "name", "type"));
         try {
             return jt.queryForObject(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type},
@@ -118,6 +118,12 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
     @Override
     public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo,
             int pageSize) {
+        return list(namespaceId, type, nameLike, bizTagsLike, null, pageNo, pageSize);
+    }
+
+    @Override
+    public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, String orderBy,
+            int pageNo, int pageSize) {
         PaginationHelper<AiResource> helper = new ExternalStoragePaginationHelperImpl<>(jt);
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
 
@@ -131,6 +137,9 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         }
         if (StringUtils.isNotBlank(bizTagsLike)) {
             context.putWhereParameter(FieldConstant.BIZ_TAGS, bizTagsLike);
+        }
+        if (StringUtils.isNotBlank(orderBy)) {
+            context.putWhereParameter(FieldConstant.ORDER_BY, orderBy);
         }
 
         MapperResult count = mapper.findAiResourceCountRows(context);
@@ -166,6 +175,15 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         String sql = "UPDATE ai_resource SET scope=?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=?";
         int rows = jt.update(sql, scope, StringUtils.defaultEmptyIfBlank(namespaceId), name, type);
+        return rows == 1;
+    }
+
+    @Override
+    public boolean incrementDownloadCount(String namespaceId, String name, String type, long increment) {
+        AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
+        String sql = "UPDATE ai_resource SET download_count = download_count + ?, gmt_modified=" + mapper.getFunction("NOW()")
+                + " WHERE namespace_id=? AND name=? AND type=?";
+        int rows = jt.update(sql, increment, StringUtils.defaultEmptyIfBlank(namespaceId), name, type);
         return rows == 1;
     }
 }

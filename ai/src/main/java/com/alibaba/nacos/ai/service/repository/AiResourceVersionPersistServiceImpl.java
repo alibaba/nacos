@@ -102,7 +102,7 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.select(
                 Arrays.asList("id", "gmt_create", "gmt_modified", "type", "author", "name", "c_desc", "status", "version",
-                        "namespace_id", "storage", "publish_pipeline_info"),
+                        "namespace_id", "storage", "publish_pipeline_info", "download_count"),
                 Arrays.asList("namespace_id", "name", "type", "version"));
         try {
             return jt.queryForObject(sql,
@@ -201,6 +201,15 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
         String sql = "UPDATE ai_resource_version SET publish_pipeline_info=?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
         return jt.update(sql, publishPipelineInfo, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version);
+    }
+
+    @Override
+    public int incrementDownloadCount(String namespaceId, String name, String type, String version, long increment) {
+        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql = "UPDATE ai_resource_version SET download_count = download_count + ?, gmt_modified="
+                + mapper.getFunction("NOW()") + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+        return jt.update(sql, increment, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version);
     }
 }
 

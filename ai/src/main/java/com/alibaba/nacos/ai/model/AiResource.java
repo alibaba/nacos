@@ -52,6 +52,8 @@ public class AiResource extends FilterableResource {
 
     private Long metaVersion;
 
+    private Long downloadCount;
+
     public Long getId() {
         return id;
     }
@@ -157,6 +159,14 @@ public class AiResource extends FilterableResource {
 
     public void setMetaVersion(Long metaVersion) {
         this.metaVersion = metaVersion;
+    }
+
+    public Long getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(Long downloadCount) {
+        this.downloadCount = downloadCount;
     }
 }
 

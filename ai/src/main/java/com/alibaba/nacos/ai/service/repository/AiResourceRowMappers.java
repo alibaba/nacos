@@ -44,6 +44,7 @@ final class AiResourceRowMappers {
         r.setMetaVersion(rs.getLong("meta_version"));
         r.setScope(rs.getString("scope"));
         r.setOwner(rs.getString("owner"));
+        r.setDownloadCount(rs.getLong("download_count"));
         return r;
     };
 
@@ -61,6 +62,7 @@ final class AiResourceRowMappers {
         v.setNamespaceId(rs.getString("namespace_id"));
         v.setStorage(rs.getString("storage"));
         v.setPublishPipelineInfo(rs.getString("publish_pipeline_info"));
+        v.setDownloadCount(rs.getLong("download_count"));
         return v;
     };
 }

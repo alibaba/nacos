@@ -100,6 +100,21 @@ public interface SkillOperationService {
     Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
 
     /**
+     * List skills with pagination and optional ordering for admin usage.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name (for search)
+     * @param search search type (accurate/blur)
+     * @param orderBy sort field (e.g. "download_count"), null defaults to gmt_modified
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return skill admin list page with governance metadata
+     * @throws NacosException if query failed
+     */
+    Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            int pageNo, int pageSize) throws NacosException;
+
+    /**
      * Create a new draft version based on latest or specified version.
      * If no base version is specified and no online version exists, an empty skill draft will be created.
      *

@@ -36,7 +36,7 @@ public class AiResourceVersionMapperByPostgresql extends AbstractMapper implemen
     @Override
     public MapperResult findAiResourceVersionFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info "
+                "SELECT id,gmt_create,gmt_modified,type,author,name,c_desc,status,version,namespace_id,storage,publish_pipeline_info,download_count "
                         + "FROM ai_resource_version");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
         where.and().eq("name", context.getWhereParameter(FieldConstant.NAME));

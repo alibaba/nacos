@@ -73,6 +73,6 @@ class AgentSpecUtilsPropertyTest {
     Arbitrary<String> nonBlankStrings() {
         return Arbitraries.strings().alpha().numeric().withChars('-', '_', '.')
                 .ofMinLength(1).ofMaxLength(50)
-                .filter(s -> !s.isBlank());
+                .filter(s -> !s.trim().isEmpty());
     }
 }

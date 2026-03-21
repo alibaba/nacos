@@ -37,7 +37,8 @@ public class AiResourceMapperByMySql extends AbstractMapperByMysql implements Ai
     @Override
     public MapperResult findAiResourceFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,biz_tags,ext,version_info,meta_version,scope,owner "
+                "SELECT id,gmt_create,gmt_modified,name,type,c_desc,status,namespace_id,"
+                        + "biz_tags,ext,version_info,meta_version,scope,owner,download_count "
                         + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
 
@@ -55,7 +56,7 @@ public class AiResourceMapperByMySql extends AbstractMapperByMysql implements Ai
         }
 
         MapperResult built = where.build();
-        String sql = built.getSql() + " ORDER BY gmt_modified DESC LIMIT ?,?";
+        String sql = built.getSql() + resolveOrderByClause(context) + " LIMIT ?,?";
         List<Object> params = new ArrayList<>(built.getParamList());
         params.add(context.getStartRow());
         params.add(context.getPageSize());

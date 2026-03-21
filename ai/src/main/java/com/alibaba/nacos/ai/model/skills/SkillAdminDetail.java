@@ -62,6 +62,11 @@ public class SkillAdminDetail {
      */
     private List<SkillVersionSummary> versions;
 
+    /**
+     * Total download count across all versions.
+     */
+    private Long downloadCount;
+
     public boolean isEnable() {
         return enable;
     }
@@ -118,6 +123,14 @@ public class SkillAdminDetail {
         this.versions = versions;
     }
 
+    public Long getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(Long downloadCount) {
+        this.downloadCount = downloadCount;
+    }
+
     /**
      * Summary of a single skill version for admin display.
      */
@@ -136,6 +149,11 @@ public class SkillAdminDetail {
         private Long updateTime;
 
         private String publishPipelineInfo;
+
+        /**
+         * Download count for this version.
+         */
+        private Long downloadCount;
 
         public String getVersion() {
             return version;
@@ -191,6 +209,14 @@ public class SkillAdminDetail {
 
         public void setPublishPipelineInfo(String publishPipelineInfo) {
             this.publishPipelineInfo = publishPipelineInfo;
+        }
+
+        public Long getDownloadCount() {
+            return downloadCount;
+        }
+
+        public void setDownloadCount(Long downloadCount) {
+            this.downloadCount = downloadCount;
         }
     }
 }
