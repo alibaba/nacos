@@ -117,9 +117,6 @@ public class CatalogServiceV2Impl implements CatalogService {
         if (StringUtils.isNotBlank(actualCluster) && !serviceStorage.getClusters(service).contains(actualCluster)) {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + actualCluster + " is not found!");
         }
-        if (!serviceStorage.getClusters(service).contains(clusterName)) {
-            throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
-        }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, clusterName);
         return result.getHosts();
