@@ -143,22 +143,88 @@ class SkillOperationServiceImplTest {
     }
     
     @Test
-    void testRegisterSkillWithInvalidName() {
-        // Given
+    void testRegisterSkillWithUppercaseName() {
+        // Given: uppercase letters are not allowed per agentskills.io spec
         Skill skill = createValidSkill();
-        skill.setName("invalid-name-123"); // Contains numbers
+        skill.setName("Test-Skill");
         String namespaceId = "test-namespace";
         
         // When & Then
-        assertThrows(NacosApiException.class,
+        NacosApiException exception = assertThrows(NacosApiException.class,
                 () -> skillOperationService.registerSkill(skill, namespaceId));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
     }
     
     @Test
-    void testRegisterSkillWithDoubleUnderscore() throws NacosException {
-        // Given: skill name and resource names may contain double underscores
+    void testRegisterSkillWithUnderscoreName() {
+        // Given: underscores are not allowed per agentskills.io spec
         Skill skill = createValidSkill();
-        skill.setName("test__skill"); // Contains double underscore
+        skill.setName("test_skill");
+        String namespaceId = "test-namespace";
+        
+        // When & Then
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.registerSkill(skill, namespaceId));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void testRegisterSkillWithLeadingHyphen() {
+        // Given: name must not start with a hyphen
+        Skill skill = createValidSkill();
+        skill.setName("-test-skill");
+        String namespaceId = "test-namespace";
+        
+        // When & Then
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.registerSkill(skill, namespaceId));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void testRegisterSkillWithTrailingHyphen() {
+        // Given: name must not end with a hyphen
+        Skill skill = createValidSkill();
+        skill.setName("test-skill-");
+        String namespaceId = "test-namespace";
+        
+        // When & Then
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.registerSkill(skill, namespaceId));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void testRegisterSkillWithConsecutiveHyphens() {
+        // Given: consecutive hyphens (--) are not allowed
+        Skill skill = createValidSkill();
+        skill.setName("test--skill");
+        String namespaceId = "test-namespace";
+        
+        // When & Then
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.registerSkill(skill, namespaceId));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void testRegisterSkillWithNameExceeding64Characters() {
+        // Given: name must be 1-64 characters
+        Skill skill = createValidSkill();
+        skill.setName("a".repeat(65));
+        String namespaceId = "test-namespace";
+        
+        // When & Then
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.registerSkill(skill, namespaceId));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+    }
+    
+    @Test
+    void testRegisterSkillWithNameExactly64Characters() throws NacosException {
+        // Given: 64 characters is the max allowed length
+        Skill skill = createValidSkill();
+        skill.setName("a".repeat(64));
         String namespaceId = "test-namespace";
         when(configOperationService.publishConfig(any(ConfigForm.class),
                 any(ConfigRequestInfo.class), isNull()))
@@ -168,7 +234,53 @@ class SkillOperationServiceImplTest {
         String result = skillOperationService.registerSkill(skill, namespaceId);
         
         // Then
-        assertEquals("test__skill", result);
+        assertEquals("a".repeat(64), result);
+    }
+    
+    @Test
+    void testRegisterSkillWithNumbersInName() throws NacosException {
+        // Given: lowercase letters and numbers are allowed
+        Skill skill = createValidSkill();
+        skill.setName("skill-v2");
+        String namespaceId = "test-namespace";
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
+        
+        // When
+        String result = skillOperationService.registerSkill(skill, namespaceId);
+        
+        // Then
+        assertEquals("skill-v2", result);
+    }
+    
+    @Test
+    void testRegisterSkillWithSingleCharacterName() throws NacosException {
+        // Given: single character name is valid
+        Skill skill = createValidSkill();
+        skill.setName("a");
+        String namespaceId = "test-namespace";
+        when(configOperationService.publishConfig(any(ConfigForm.class),
+                any(ConfigRequestInfo.class), isNull()))
+                .thenReturn(Boolean.TRUE);
+        
+        // When
+        String result = skillOperationService.registerSkill(skill, namespaceId);
+        
+        // Then
+        assertEquals("a", result);
+    }
+    
+    @Test
+    void testRegisterSkillWithSpecialCharacters() {
+        // Given: special characters like dots, spaces are not allowed
+        Skill skill = createValidSkill();
+        skill.setName("test.skill");
+        String namespaceId = "test-namespace";
+        
+        // When & Then
+        assertThrows(NacosApiException.class,
+                () -> skillOperationService.registerSkill(skill, namespaceId));
     }
     
     @Test
