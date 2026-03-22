@@ -120,6 +120,13 @@ public class ConfigOperationService {
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
+        // generic gray publish
+        if (isGenericGrayPublish(configForm)) {
+            validateGenericGrayPublish(configForm);
+            configMigrateService.publishConfigGrayMigrate(configForm.getGrayType(), configForm, configRequestInfo);
+            publishConfigGray(configForm.getGrayType(), configForm, configRequestInfo);
+            return Boolean.TRUE;
+        }
         
         ConfigOperateResult configOperateResult;
         
@@ -171,6 +178,31 @@ public class ConfigOperationService {
                 configForm.getContent());
         
         return true;
+    }
+    
+    private boolean isGenericGrayPublish(ConfigForm configForm) {
+        return StringUtils.isNotBlank(configForm.getGrayType()) || StringUtils.isNotBlank(configForm.getGrayName())
+                || StringUtils.isNotBlank(configForm.getGrayRuleExp())
+                || StringUtils.isNotBlank(configForm.getGrayVersion());
+    }
+    
+    private void validateGenericGrayPublish(ConfigForm configForm) throws NacosApiException {
+        if (StringUtils.isBlank(configForm.getGrayType())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'grayType' type String is not present");
+        }
+        if (StringUtils.isBlank(configForm.getGrayName())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'grayName' type String is not present");
+        }
+        if (StringUtils.isBlank(configForm.getGrayRuleExp())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'grayRuleExp' type String is not present");
+        }
+        if (StringUtils.isBlank(configForm.getGrayVersion())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'grayVersion' type String is not present");
+        }
     }
     
     /**

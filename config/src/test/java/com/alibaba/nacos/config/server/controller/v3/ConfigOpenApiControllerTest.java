@@ -30,10 +30,13 @@ import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
@@ -44,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,6 +63,11 @@ class ConfigOpenApiControllerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
         EnvUtil.setEnvironment(mockEnvironment);
         configOpenApiController = new ConfigOpenApiController(configQueryChainService);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.removeContext();
     }
     
     @Test
@@ -152,5 +161,34 @@ class ConfigOpenApiControllerTest {
         assertEquals(response.getLastModified(), actual.getData().getLastModified());
         assertFalse(actual.getData().isBeta());
         assertEquals("1.1.1.1", actual.getData().getTag());
+    }
+    
+    @Test
+    void testGetConfigShouldBuildAppLabelsFromLabelsAndClientIp() throws NacosApiException,
+            UnsupportedEncodingException {
+        RequestContextHolder.getContext().getBasicContext().getAddressContext().setSourceIp("127.0.0.1");
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setContent("test");
+        response.setMd5("testMd5");
+        response.setConfigType("text");
+        response.setEncryptedDataKey(null);
+        response.setLastModified(System.currentTimeMillis());
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
+        
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId("test");
+        configForm.setGroupName("test");
+        configForm.setLabels("region=hz,env=prod,appVersion=2.3.1");
+        
+        configOpenApiController.getConfig(configForm);
+        
+        ArgumentCaptor<ConfigQueryChainRequest> captor = ArgumentCaptor.forClass(ConfigQueryChainRequest.class);
+        verify(configQueryChainService).handle(captor.capture());
+        ConfigQueryChainRequest actualRequest = captor.getValue();
+        assertEquals("hz", actualRequest.getAppLabels().get("region"));
+        assertEquals("prod", actualRequest.getAppLabels().get("env"));
+        assertEquals("2.3.1", actualRequest.getAppLabels().get("appVersion"));
+        assertEquals("127.0.0.1", actualRequest.getAppLabels().get(BetaGrayRule.CLIENT_IP_LABEL));
     }
 }

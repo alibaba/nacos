@@ -18,3 +18,4 @@
 
 com.alibaba.nacos.config.server.model.gray.BetaGrayRule
 com.alibaba.nacos.config.server.model.gray.TagGrayRule
+com.alibaba.nacos.config.server.model.gray.LabelExpressionGrayRule

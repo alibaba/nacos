@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -216,6 +217,49 @@ class ConfigOperationServiceTest {
         assertEquals("test", capturedConfigInfo.getDataId());
         assertEquals("test", capturedConfigInfo.getGroup());
         assertEquals("test content", capturedConfigInfo.getContent());
+    }
+    
+    @Test
+    void testPublishConfigGenericGray() throws NacosException {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setGrayType("label_expr");
+        configForm.setGrayName("gray-rule-1");
+        configForm.setGrayRuleExp("region == 'hz'");
+        configForm.setGrayVersion("1.0.0");
+        configForm.setGrayPriority(100);
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        
+        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("gray-rule-1"), anyString(),
+                eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
+        
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        
+        assertTrue(result);
+        verify(configMigrateService).publishConfigGrayMigrate(eq("label_expr"), eq(configForm), eq(configRequestInfo));
+        verify(configInfoGrayPersistService).insertOrUpdateGray(any(ConfigInfo.class), eq("gray-rule-1"), anyString(),
+                eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()));
+    }
+    
+    @Test
+    void testPublishConfigGenericGrayWithMissingGrayType() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
+        configForm.setGrayName("gray-rule-1");
+        configForm.setGrayRuleExp("region == 'hz'");
+        configForm.setGrayVersion("1.0.0");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> configOperationService.publishConfig(configForm, configRequestInfo, ""));
+        
+        assertEquals("Required parameter 'grayType' type String is not present", exception.getErrMsg());
     }
     
     @Test

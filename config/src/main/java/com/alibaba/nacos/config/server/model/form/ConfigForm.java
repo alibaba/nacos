@@ -44,6 +44,8 @@ public class ConfigForm implements NacosForm, Cloneable {
     
     private String content;
     
+    private String labels;
+    
     private String tag;
     
     private String appName;
@@ -53,6 +55,8 @@ public class ConfigForm implements NacosForm, Cloneable {
     private String configTags;
     
     private String encryptedDataKey;
+    
+    private String grayType;
     
     private String grayName;
     
@@ -135,6 +139,14 @@ public class ConfigForm implements NacosForm, Cloneable {
         this.content = content;
     }
     
+    public String getLabels() {
+        return labels;
+    }
+    
+    public void setLabels(String labels) {
+        this.labels = labels;
+    }
+    
     public String getTag() {
         return tag;
     }
@@ -213,6 +225,14 @@ public class ConfigForm implements NacosForm, Cloneable {
     
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public String getGrayType() {
+        return grayType;
+    }
+    
+    public void setGrayType(String grayType) {
+        this.grayType = grayType;
     }
     
     public String getGrayName() {
