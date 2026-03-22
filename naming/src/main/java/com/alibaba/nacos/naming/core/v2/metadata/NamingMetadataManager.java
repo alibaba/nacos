@@ -252,6 +252,12 @@ public class NamingMetadataManager extends SmartSubscriber {
         Service service = event.getService();
         String metadataId = event.getMetadataId();
         if (containInstanceMetadata(service, metadataId)) {
+            // When instance re-register (expired=false), remove the old metadata to allow
+            // new registration values (like enabled) to take effect.
+            // Fix issue #14648: old metadata should not override new registration values
+            if (!event.isExpired()) {
+                removeInstanceMetadata(service, metadataId);
+            }
             updateExpiredInfo(event.isExpired(),
                     ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getMetadataId()));
         }

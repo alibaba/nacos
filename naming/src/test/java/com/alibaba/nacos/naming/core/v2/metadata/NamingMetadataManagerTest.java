@@ -226,15 +226,56 @@ class NamingMetadataManagerTest {
         Mockito.when(instanceMetadataEvent.getMetadataId()).thenReturn(METADATA_ID);
         Mockito.when(serviceMetadataEvent.getService()).thenReturn(service);
         Mockito.when(clientDisconnectEvent.getClient()).thenReturn(client);
-        
+
         namingMetadataManager.onEvent(instanceMetadataEvent);
         Mockito.verify(instanceMetadataEvent, Mockito.times(2)).getMetadataId();
         Mockito.verify(instanceMetadataEvent, Mockito.times(2)).getService();
-        
+
         namingMetadataManager.onEvent(serviceMetadataEvent);
         Mockito.verify(serviceMetadataEvent).getService();
-        
+
         namingMetadataManager.onEvent(clientDisconnectEvent);
         Mockito.verify(clientDisconnectEvent).getClient();
+    }
+
+    @Test
+    void testOnEventForReRegisterShouldRemoveOldMetadata() {
+        // Test for issue #14648: When instance re-register (expired=false),
+        // old metadata should be removed to allow new registration values to take effect.
+        Mockito.when(instanceMetadataEvent.getService()).thenReturn(service);
+        Mockito.when(instanceMetadataEvent.getMetadataId()).thenReturn(METADATA_ID);
+        // expired=false means re-register
+        Mockito.when(instanceMetadataEvent.isExpired()).thenReturn(false);
+
+        // Verify metadata exists before event
+        assertTrue(namingMetadataManager.containInstanceMetadata(service, METADATA_ID));
+
+        // Trigger event
+        namingMetadataManager.onEvent(instanceMetadataEvent);
+
+        // Verify old metadata is removed after re-register event
+        assertFalse(namingMetadataManager.containInstanceMetadata(service, METADATA_ID));
+    }
+
+    @Test
+    void testOnEventForExpiredShouldNotRemoveMetadata() {
+        // Test that expired=true (instance removed) should not remove metadata from instanceMetadataMap
+        // but should add to expiredMetadataInfos
+        Mockito.when(instanceMetadataEvent.getService()).thenReturn(service);
+        Mockito.when(instanceMetadataEvent.getMetadataId()).thenReturn(METADATA_ID);
+        // expired=true means instance removed
+        Mockito.when(instanceMetadataEvent.isExpired()).thenReturn(true);
+
+        // Verify metadata exists before event
+        assertTrue(namingMetadataManager.containInstanceMetadata(service, METADATA_ID));
+
+        // Trigger event
+        namingMetadataManager.onEvent(instanceMetadataEvent);
+
+        // Verify metadata is still in instanceMetadataMap (not removed)
+        assertTrue(namingMetadataManager.containInstanceMetadata(service, METADATA_ID));
+        // Verify it's added to expiredMetadataInfos
+        assertTrue(namingMetadataManager.getExpiredMetadataInfos().stream()
+                .anyMatch(info -> info.getService().equals(service) && METADATA_ID.equals(info.getMetadataId())));
     }
 }
