@@ -22,6 +22,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,14 +33,18 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Publish pipeline service that integrates Cisco AI Defense skill-scanner for security scanning
  * of AI Agent Skills before publishing.
  *
- * <p>Uses skill-scanner (https://github.com/cisco-ai-defense/skill-scanner) to detect prompt
- * injection, data exfiltration, and malicious code patterns. Rejects publishing if HIGH/CRITICAL
+ * <p>Uses <a href="https://github.com/cisco-ai-defense/skill-scanner">skill-scanner</a> to detect prompt
+ * injection, data exfiltration, and malicious code patterns. Optional LLM semantic analysis via
+ * node property {@code useLlm=true} and {@code llmApiKey}/{@code llmModel} (mapped to
+ * {@code SKILL_SCANNER_LLM_*} in the subprocess environment). Rejects publishing if HIGH/CRITICAL
  * findings are detected.</p>
  *
  * @author qiacheng.cxy
@@ -65,8 +70,15 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     private final boolean installed;
 
+    private final SkillScannerScanOptions scanOptions;
+
     public SkillScannerPipelineService(boolean installed) {
+        this(installed, SkillScannerScanOptions.none());
+    }
+
+    SkillScannerPipelineService(boolean installed, SkillScannerScanOptions scanOptions) {
         this.installed = installed;
+        this.scanOptions = scanOptions != null ? scanOptions : SkillScannerScanOptions.none();
     }
 
     @Override
@@ -95,13 +107,10 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             tempDir = Files.createTempDirectory("nacos-skill-scanner-");
             writeSkillFiles(tempDir, files);
 
-            ProcessBuilder pb = new ProcessBuilder(
-                    SKILL_SCANNER_CMD,
-                    "scan",
-                    tempDir.toAbsolutePath().toString(),
-                    "--fail-on-severity", "high",
-                    "--lenient"
-            );
+            List<String> command = buildScanCommand(tempDir);
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Map<String, String> env = pb.environment();
+            scanOptions.applyLlmEnvironment(env);
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -137,6 +146,27 @@ public class SkillScannerPipelineService implements PublishPipelineService {
                 deleteRecursively(tempDir.toFile());
             }
         }
+    }
+
+    List<String> buildScanCommand(Path tempDir) {
+        List<String> command = new ArrayList<>();
+        command.add(SKILL_SCANNER_CMD);
+        command.add("scan");
+        command.add(tempDir.toAbsolutePath().toString());
+        command.add("--fail-on-severity");
+        command.add("high");
+        command.add("--lenient");
+        if (scanOptions.isUseLlm()) {
+            command.add("--use-llm");
+            if (StringUtils.isNotBlank(scanOptions.getLlmProvider())) {
+                command.add("--llm-provider");
+                command.add(scanOptions.getLlmProvider());
+            }
+        }
+        if (scanOptions.isEnableMeta()) {
+            command.add("--enable-meta");
+        }
+        return command;
     }
 
     private void writeSkillFiles(Path baseDir, List<ResourceFileContent> files) throws IOException {

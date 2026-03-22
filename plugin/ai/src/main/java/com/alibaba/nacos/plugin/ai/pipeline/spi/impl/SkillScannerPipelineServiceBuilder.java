@@ -28,6 +28,15 @@ import java.util.concurrent.TimeUnit;
  * Builder for {@link SkillScannerPipelineService}. Checks if skill-scanner is installed
  * during initialization and logs installation instructions if not found.
  *
+ * <p>Optional node properties (via {@code nacos.ai.pipeline.node.skill-scanner.*}):</p>
+ * <ul>
+ *   <li>{@code useLlm} — {@code true} to pass {@code --use-llm} (semantic analysis; requires API key in properties or parent env)</li>
+ *   <li>{@code llmApiKey} — sets subprocess {@code SKILL_SCANNER_LLM_API_KEY}</li>
+ *   <li>{@code llmModel} — sets subprocess {@code SKILL_SCANNER_LLM_MODEL}</li>
+ *   <li>{@code llmProvider} — {@code anthropic} or {@code openai} for {@code --llm-provider}</li>
+ *   <li>{@code enableMeta} — {@code true} to pass {@code --enable-meta}</li>
+ * </ul>
+ *
  * @author qiacheng.cxy
  */
 public class SkillScannerPipelineServiceBuilder implements PublishPipelineServiceBuilder {
@@ -47,12 +56,17 @@ public class SkillScannerPipelineServiceBuilder implements PublishPipelineServic
     @Override
     public PublishPipelineService build(Properties properties) {
         boolean installed = checkSkillScannerInstalled();
+        SkillScannerScanOptions scanOptions = SkillScannerScanOptions.fromProperties(properties);
         if (!installed) {
             LOGGER.warn("[SkillScannerPipeline] skill-scanner 未安装，插件将拒绝发布。{}", SkillScannerPipelineService.INSTALLATION_HINT);
         } else {
-            LOGGER.info("[SkillScannerPipeline] skill-scanner 已就绪，插件已加载");
+            if (scanOptions.isUseLlm()) {
+                LOGGER.info("[SkillScannerPipeline] skill-scanner 已就绪，已启用 LLM 语义分析（--use-llm）");
+            } else {
+                LOGGER.info("[SkillScannerPipeline] skill-scanner 已就绪，插件已加载（静态扫描）");
+            }
         }
-        return new SkillScannerPipelineService(installed);
+        return new SkillScannerPipelineService(installed, scanOptions);
     }
 
     /**
