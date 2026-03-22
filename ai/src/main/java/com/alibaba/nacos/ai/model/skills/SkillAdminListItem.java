@@ -67,6 +67,11 @@ public class SkillAdminListItem {
      */
     private Long updateTime;
 
+    /**
+     * Total download count across all versions.
+     */
+    private Long downloadCount;
+
     public String getNamespaceId() {
         return namespaceId;
     }
@@ -145,5 +150,13 @@ public class SkillAdminListItem {
 
     public void setUpdateTime(Long updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public Long getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(Long downloadCount) {
+        this.downloadCount = downloadCount;
     }
 }

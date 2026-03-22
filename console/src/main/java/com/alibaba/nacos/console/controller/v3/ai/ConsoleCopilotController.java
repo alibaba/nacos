@@ -16,8 +16,13 @@
 
 package com.alibaba.nacos.console.controller.v3.ai;
 
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.copilot.adapter.StreamResponseCallback;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
 import com.alibaba.nacos.copilot.form.PromptDebugForm;
@@ -36,15 +41,8 @@ import com.alibaba.nacos.copilot.service.PromptDebugService;
 import com.alibaba.nacos.copilot.service.PromptOptimizationService;
 import com.alibaba.nacos.copilot.service.SkillGenerationService;
 import com.alibaba.nacos.copilot.service.SkillOptimizationService;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillResource;
-import java.util.Map;
-import java.util.HashMap;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +55,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Console Copilot controller.
@@ -81,9 +81,8 @@ public class ConsoleCopilotController {
     
     @Autowired
     public ConsoleCopilotController(SkillOptimizationService skillOptimizationService,
-                                    SkillGenerationService skillGenerationService,
-                                    PromptOptimizationService promptOptimizationService,
-                                    PromptDebugService promptDebugService) {
+            SkillGenerationService skillGenerationService, PromptOptimizationService promptOptimizationService,
+            PromptDebugService promptDebugService) {
         this.skillOptimizationService = skillOptimizationService;
         this.skillGenerationService = skillGenerationService;
         this.promptOptimizationService = promptOptimizationService;
@@ -110,9 +109,7 @@ public class ConsoleCopilotController {
                 SkillOptimizationResponse errorResponse = new SkillOptimizationResponse();
                 errorResponse.setDone(true);
                 errorResponse.setExplanation("请求体不能为空");
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send error SSE event", ioException);
@@ -129,9 +126,7 @@ public class ConsoleCopilotController {
                 SkillOptimizationResponse errorResponse = new SkillOptimizationResponse();
                 errorResponse.setDone(true);
                 errorResponse.setExplanation("请求验证失败：" + e.getMessage());
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send validation error SSE event", ioException);
@@ -163,7 +158,8 @@ public class ConsoleCopilotController {
                     if (response != null && response.getOptimizedSkill() != null) {
                         Skill optimizedSkill = response.getOptimizedSkill();
                         if (optimizedSkill.getResource() != null && !optimizedSkill.getResource().isEmpty()) {
-                            Map<String, SkillResource> filteredResources = new HashMap<>(optimizedSkill.getResource().size());
+                            Map<String, SkillResource> filteredResources = new HashMap<>(
+                                    optimizedSkill.getResource().size());
                             boolean hasFiltered = false;
                             
                             for (Map.Entry<String, SkillResource> entry : optimizedSkill.getResource().entrySet()) {
@@ -171,14 +167,14 @@ public class ConsoleCopilotController {
                                 SkillResource resource = entry.getValue();
                                 
                                 // Check if resource name or key is SKILL.md (case-insensitive)
-                                String resourceName = resource != null && resource.getName() != null 
-                                    ? resource.getName() : "";
+                                String resourceName =
+                                        resource != null && resource.getName() != null ? resource.getName() : "";
                                 String resourceKey = key != null ? key : "";
                                 
-                                boolean isSkillMd = "SKILL.MD".equalsIgnoreCase(resourceName) 
-                                    || "SKILL.MD".equalsIgnoreCase(resourceKey)
-                                    || resourceName.toUpperCase().contains("SKILL.MD")
-                                    || resourceKey.toUpperCase().contains("SKILL.MD");
+                                boolean isSkillMd =
+                                        "SKILL.MD".equalsIgnoreCase(resourceName) || "SKILL.MD".equalsIgnoreCase(
+                                                resourceKey) || resourceName.toUpperCase().contains("SKILL.MD")
+                                                || resourceKey.toUpperCase().contains("SKILL.MD");
                                 
                                 if (isSkillMd) {
                                     hasFiltered = true;
@@ -197,18 +193,14 @@ public class ConsoleCopilotController {
                     }
                     
                     // Send SSE event
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(response))
-                            .name("message"));
+                    emitter.send(SseEmitter.event().data(JacksonUtils.toJson(response)).name("message"));
                 } catch (IOException e) {
                     LOGGER.error("Failed to send SSE event", e);
                     try {
                         SkillOptimizationResponse errorResponse = new SkillOptimizationResponse();
                         errorResponse.setDone(true);
                         errorResponse.setExplanation("流式响应发送失败：" + e.getMessage());
-                        emitter.send(SseEmitter.event()
-                                .data(JacksonUtils.toJson(errorResponse))
-                                .name("error"));
+                        emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                         emitter.complete();
                     } catch (IOException ioException) {
                         LOGGER.error("Failed to send error SSE event", ioException);
@@ -225,9 +217,7 @@ public class ConsoleCopilotController {
                     SkillOptimizationResponse errorResponse = new SkillOptimizationResponse();
                     errorResponse.setDone(true);
                     errorResponse.setExplanation("优化失败：" + t.getMessage());
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(errorResponse))
-                            .name("error"));
+                    emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                     emitter.complete();
                 } catch (IOException e) {
                     LOGGER.error("Failed to send error SSE event", e);
@@ -264,9 +254,7 @@ public class ConsoleCopilotController {
                 SkillGenerationResponse errorResponse = new SkillGenerationResponse();
                 errorResponse.setDone(true);
                 errorResponse.setExplanation("请求体不能为空");
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send error SSE event", ioException);
@@ -283,9 +271,7 @@ public class ConsoleCopilotController {
                 SkillGenerationResponse errorResponse = new SkillGenerationResponse();
                 errorResponse.setDone(true);
                 errorResponse.setExplanation("请求验证失败：" + e.getMessage());
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send validation error SSE event", ioException);
@@ -306,18 +292,14 @@ public class ConsoleCopilotController {
             public void onNext(SkillGenerationResponse response) {
                 try {
                     // Send SSE event
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(response))
-                            .name("message"));
+                    emitter.send(SseEmitter.event().data(JacksonUtils.toJson(response)).name("message"));
                 } catch (IOException e) {
                     LOGGER.error("Failed to send SSE event", e);
                     try {
                         SkillGenerationResponse errorResponse = new SkillGenerationResponse();
                         errorResponse.setDone(true);
                         errorResponse.setExplanation("流式响应发送失败：" + e.getMessage());
-                        emitter.send(SseEmitter.event()
-                                .data(JacksonUtils.toJson(errorResponse))
-                                .name("error"));
+                        emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                         emitter.complete();
                     } catch (IOException ioException) {
                         LOGGER.error("Failed to send error SSE event", ioException);
@@ -334,9 +316,7 @@ public class ConsoleCopilotController {
                     SkillGenerationResponse errorResponse = new SkillGenerationResponse();
                     errorResponse.setDone(true);
                     errorResponse.setExplanation("生成失败：" + t.getMessage());
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(errorResponse))
-                            .name("error"));
+                    emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                     emitter.complete();
                 } catch (IOException e) {
                     LOGGER.error("Failed to send error SSE event", e);
@@ -373,9 +353,7 @@ public class ConsoleCopilotController {
                 PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
                 errorResponse.setDone(true);
                 errorResponse.setExplanation("请求体不能为空");
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send error SSE event", ioException);
@@ -392,9 +370,7 @@ public class ConsoleCopilotController {
                 PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
                 errorResponse.setDone(true);
                 errorResponse.setExplanation("请求验证失败：" + e.getMessage());
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send validation error SSE event", ioException);
@@ -409,61 +385,56 @@ public class ConsoleCopilotController {
         request.setOptimizationGoal(form.getOptimizationGoal());
         
         // Call optimization service with stream callback
-        promptOptimizationService.optimizePromptStream(request, new StreamResponseCallback<PromptOptimizationResponse>() {
-            @Override
-            public void onNext(PromptOptimizationResponse response) {
-                try {
-                    // Send SSE event
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(response))
-                            .name("message"));
-                } catch (IOException e) {
-                    LOGGER.error("Failed to send SSE event", e);
-                    try {
-                        PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
-                        errorResponse.setDone(true);
-                        errorResponse.setExplanation("流式响应发送失败：" + e.getMessage());
-                        emitter.send(SseEmitter.event()
-                                .data(JacksonUtils.toJson(errorResponse))
-                                .name("error"));
-                        emitter.complete();
-                    } catch (IOException ioException) {
-                        LOGGER.error("Failed to send error SSE event", ioException);
+        promptOptimizationService.optimizePromptStream(request,
+                new StreamResponseCallback<PromptOptimizationResponse>() {
+                    @Override
+                    public void onNext(PromptOptimizationResponse response) {
+                        try {
+                            // Send SSE event
+                            emitter.send(SseEmitter.event().data(JacksonUtils.toJson(response)).name("message"));
+                        } catch (IOException e) {
+                            LOGGER.error("Failed to send SSE event", e);
+                            try {
+                                PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
+                                errorResponse.setDone(true);
+                                errorResponse.setExplanation("流式响应发送失败：" + e.getMessage());
+                                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
+                                emitter.complete();
+                            } catch (IOException ioException) {
+                                LOGGER.error("Failed to send error SSE event", ioException);
+                                emitter.complete();
+                            }
+                        }
+                    }
+                    
+                    @Override
+                    public void onError(Throwable t) {
+                        LOGGER.error("Error in prompt optimization stream", t);
+                        try {
+                            // Send error response
+                            PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
+                            errorResponse.setDone(true);
+                            errorResponse.setExplanation("优化失败：" + t.getMessage());
+                            emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
+                            emitter.complete();
+                        } catch (IOException e) {
+                            LOGGER.error("Failed to send error SSE event", e);
+                            emitter.complete();
+                        }
+                    }
+                    
+                    @Override
+                    public void onComplete() {
                         emitter.complete();
                     }
-                }
-            }
-            
-            @Override
-            public void onError(Throwable t) {
-                LOGGER.error("Error in prompt optimization stream", t);
-                try {
-                    // Send error response
-                    PromptOptimizationResponse errorResponse = new PromptOptimizationResponse();
-                    errorResponse.setDone(true);
-                    errorResponse.setExplanation("优化失败：" + t.getMessage());
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(errorResponse))
-                            .name("error"));
-                    emitter.complete();
-                } catch (IOException e) {
-                    LOGGER.error("Failed to send error SSE event", e);
-                    emitter.complete();
-                }
-            }
-            
-            @Override
-            public void onComplete() {
-                emitter.complete();
-            }
-        });
+                });
         
         return emitter;
     }
     
     /**
-     * Debug prompt with stream response (SSE).
-     * This allows testing a prompt with user input and returns the model's response including thinking.
+     * Debug prompt with stream response (SSE). This allows testing a prompt with user input and returns the model's
+     * response including thinking.
      *
      * @param form prompt debug form containing prompt and user input
      * @return SSE emitter for stream response
@@ -481,9 +452,7 @@ public class ConsoleCopilotController {
             try {
                 PromptDebugResponse errorResponse = new PromptDebugResponse();
                 errorResponse.setDone(true);
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send error SSE event", ioException);
@@ -499,9 +468,7 @@ public class ConsoleCopilotController {
             try {
                 PromptDebugResponse errorResponse = new PromptDebugResponse();
                 errorResponse.setDone(true);
-                emitter.send(SseEmitter.event()
-                        .data(JacksonUtils.toJson(errorResponse))
-                        .name("error"));
+                emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                 emitter.complete();
             } catch (IOException ioException) {
                 LOGGER.error("Failed to send validation error SSE event", ioException);
@@ -521,17 +488,13 @@ public class ConsoleCopilotController {
             public void onNext(PromptDebugResponse response) {
                 try {
                     // Send SSE event
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(response))
-                            .name("message"));
+                    emitter.send(SseEmitter.event().data(JacksonUtils.toJson(response)).name("message"));
                 } catch (IOException e) {
                     LOGGER.error("Failed to send SSE event", e);
                     try {
                         PromptDebugResponse errorResponse = new PromptDebugResponse();
                         errorResponse.setDone(true);
-                        emitter.send(SseEmitter.event()
-                                .data(JacksonUtils.toJson(errorResponse))
-                                .name("error"));
+                        emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                         emitter.complete();
                     } catch (IOException ioException) {
                         LOGGER.error("Failed to send error SSE event", ioException);
@@ -547,9 +510,7 @@ public class ConsoleCopilotController {
                     // Send error response
                     PromptDebugResponse errorResponse = new PromptDebugResponse();
                     errorResponse.setDone(true);
-                    emitter.send(SseEmitter.event()
-                            .data(JacksonUtils.toJson(errorResponse))
-                            .name("error"));
+                    emitter.send(SseEmitter.event().data(JacksonUtils.toJson(errorResponse)).name("error"));
                     emitter.complete();
                 } catch (IOException e) {
                     LOGGER.error("Failed to send error SSE event", e);

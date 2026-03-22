@@ -68,6 +68,11 @@ public class SkillInnerHandler implements SkillHandler {
     public Skill getSkillVersion(SkillForm form) throws NacosException {
         return skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(), form.getVersion());
     }
+
+    @Override
+    public Skill downloadSkillVersion(SkillForm form) throws NacosException {
+        return skillOperationService.downloadSkillVersion(form.getNamespaceId(), form.getSkillName(), form.getVersion());
+    }
     
     @Override
     public void deleteSkill(SkillForm form) throws NacosException {
@@ -77,7 +82,7 @@ public class SkillInnerHandler implements SkillHandler {
     @Override
     public Page<SkillAdminListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
-                skillListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize());
+                skillListForm.getSearch(), skillListForm.getOrderBy(), pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override

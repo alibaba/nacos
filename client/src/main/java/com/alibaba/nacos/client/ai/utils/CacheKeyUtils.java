@@ -60,6 +60,16 @@ public class CacheKeyUtils {
     }
     
     /**
+     * Build agent spec key.
+     *
+     * @param agentSpecName name of agent spec
+     * @return agent spec key, pattern ${agentSpecName}
+     */
+    public static String buildAgentSpecKey(String agentSpecName) {
+        return agentSpecName;
+    }
+
+    /**
      * Build prompt key.
      *
      * @param promptKey prompt key

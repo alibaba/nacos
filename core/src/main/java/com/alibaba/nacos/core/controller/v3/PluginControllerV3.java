@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.core.plugin.model.vo.PluginDetailVO;
 import com.alibaba.nacos.core.plugin.model.vo.PluginInfoVO;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.http.HttpStatus;
@@ -54,13 +54,13 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 @RestController
 @RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/plugin")
 public class PluginControllerV3 {
-
+    
     private final PluginManager unifiedPluginManager;
-
+    
     public PluginControllerV3(PluginManager unifiedPluginManager) {
         this.unifiedPluginManager = unifiedPluginManager;
     }
-
+    
     /**
      * Get plugin list.
      *
@@ -70,22 +70,19 @@ public class PluginControllerV3 {
     @GetMapping("/list")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<List<PluginInfoVO>> getPluginList(@RequestParam(value = "pluginType", required = false) String pluginType) {
+    public Result<List<PluginInfoVO>> getPluginList(
+            @RequestParam(value = "pluginType", required = false) String pluginType) {
         List<PluginInfo> plugins = unifiedPluginManager.listAllPlugins();
-
+        
         if (StringUtils.isNotBlank(pluginType)) {
-            plugins = plugins.stream()
-                    .filter(p -> pluginType.equals(p.getPluginType().getType()))
-                    .toList();
+            plugins = plugins.stream().filter(p -> pluginType.equals(p.getPluginType().getType())).toList();
         }
-
-        List<PluginInfoVO> vos = plugins.stream()
-                .map(this::convertToVO)
-                .toList();
-
+        
+        List<PluginInfoVO> vos = plugins.stream().map(this::convertToVO).toList();
+        
         return Result.success(vos);
     }
-
+    
     /**
      * Get plugin detail.
      *
@@ -96,19 +93,18 @@ public class PluginControllerV3 {
     @GetMapping("/detail")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<PluginDetailVO> getPluginDetail(
-            @RequestParam("pluginType") String pluginType,
+    public Result<PluginDetailVO> getPluginDetail(@RequestParam("pluginType") String pluginType,
             @RequestParam("pluginName") String pluginName) throws NacosApiException {
-
+        
         String pluginId = pluginType + ":" + pluginName;
-        PluginInfo pluginInfo = unifiedPluginManager.getPlugin(pluginId)
-                .orElseThrow(() -> new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
+        PluginInfo pluginInfo = unifiedPluginManager.getPlugin(pluginId).orElseThrow(
+                () -> new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                         "Plugin not found: " + pluginId));
-
+        
         PluginDetailVO detailVO = convertToDetailVO(pluginInfo);
         return Result.success(detailVO);
     }
-
+    
     /**
      * Enable or disable plugin.
      *
@@ -121,17 +117,15 @@ public class PluginControllerV3 {
     @PutMapping("/status")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<String> updatePluginStatus(
-            @RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName,
-            @RequestParam("enabled") boolean enabled,
+    public Result<String> updatePluginStatus(@RequestParam("pluginType") String pluginType,
+            @RequestParam("pluginName") String pluginName, @RequestParam("enabled") boolean enabled,
             @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosApiException {
         validatePluginIdentifier(pluginType, pluginName);
         String pluginId = pluginType + ":" + pluginName;
         unifiedPluginManager.setPluginEnabled(pluginId, enabled, localOnly);
         return Result.success("Plugin status updated successfully");
     }
-
+    
     /**
      * Update plugin configuration.
      *
@@ -144,13 +138,12 @@ public class PluginControllerV3 {
     @PutMapping("/config")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/plugin", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<String> updatePluginConfig(
-            @RequestParam("pluginType") String pluginType,
-            @RequestParam("pluginName") String pluginName,
-            @RequestParam("config") String configJson,
+    public Result<String> updatePluginConfig(@RequestParam("pluginType") String pluginType,
+            @RequestParam("pluginName") String pluginName, @RequestParam("config") String configJson,
             @RequestParam(value = "localOnly", defaultValue = "false") boolean localOnly) throws NacosApiException {
         validatePluginIdentifier(pluginType, pluginName);
-        Map<String, String> config = JacksonUtils.toObj(configJson, new TypeReference<Map<String, String>>() { });
+        Map<String, String> config = JacksonUtils.toObj(configJson, new TypeReference<Map<String, String>>() {
+        });
         if (config == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Plugin configuration is required");
@@ -159,14 +152,14 @@ public class PluginControllerV3 {
         unifiedPluginManager.updatePluginConfig(pluginId, config, localOnly);
         return Result.success("Plugin configuration updated successfully");
     }
-
+    
     private void validatePluginIdentifier(String pluginType, String pluginName) throws NacosApiException {
         if (StringUtils.isBlank(pluginType) || StringUtils.isBlank(pluginName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Plugin type and name are required");
         }
     }
-
+    
     private PluginInfoVO convertToVO(PluginInfo pluginInfo) {
         PluginInfoVO vo = new PluginInfoVO();
         vo.setPluginId(pluginInfo.getPluginId());
@@ -178,10 +171,10 @@ public class PluginControllerV3 {
         vo.setExclusive(isExclusiveType(pluginInfo.getPluginType()));
         return vo;
     }
-
+    
     /**
-     * Check if the plugin type is exclusive (only one can be active at a time).
-     * Exclusive types: AUTH, DATASOURCE_DIALECT.
+     * Check if the plugin type is exclusive (only one can be active at a time). Exclusive types: AUTH,
+     * DATASOURCE_DIALECT.
      *
      * @param type plugin type
      * @return true if exclusive
@@ -189,7 +182,7 @@ public class PluginControllerV3 {
     private boolean isExclusiveType(PluginType type) {
         return type == PluginType.AUTH || type == PluginType.DATASOURCE_DIALECT;
     }
-
+    
     private PluginDetailVO convertToDetailVO(PluginInfo pluginInfo) {
         PluginDetailVO vo = new PluginDetailVO();
         vo.setPluginId(pluginInfo.getPluginId());

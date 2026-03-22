@@ -38,6 +38,7 @@
         <module>environment</module>
         <module>control</module>
         <module>config</module>
+        <module>datafilter</module>
     </modules>
     <packaging>pom</packaging>
 

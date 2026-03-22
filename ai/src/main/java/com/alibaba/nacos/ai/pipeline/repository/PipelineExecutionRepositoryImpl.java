@@ -22,9 +22,8 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,8 +45,6 @@ import java.util.List;
  */
 public class PipelineExecutionRepositoryImpl implements PipelineExecutionRepository {
     
-    private static final Logger LOG = LoggerFactory.getLogger(PipelineExecutionRepositoryImpl.class);
-    
     private static final String SQL_INSERT = "INSERT INTO pipeline_execution "
             + "(execution_id, resource_type, resource_name, namespace_id, version, status, pipeline, create_time, update_time) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -57,19 +54,18 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
     
     private static final String SQL_FIND_BY_ID = "SELECT * FROM pipeline_execution WHERE execution_id=?";
     
-    private static final String SQL_FIND_BY_RESOURCE = "SELECT * FROM pipeline_execution "
-            + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
-            + "ORDER BY create_time DESC LIMIT 1";
-    
     private static final PipelineExecutionRowMapper ROW_MAPPER = new PipelineExecutionRowMapper();
     
     private final JdbcTemplate injectedJdbcTemplate;
+    
+    private final String injectedDataSourceType;
     
     /**
      * Default constructor. Uses {@link DynamicDataSource} to obtain the JdbcTemplate.
      */
     public PipelineExecutionRepositoryImpl() {
         this.injectedJdbcTemplate = null;
+        this.injectedDataSourceType = null;
     }
     
     /**
@@ -78,7 +74,18 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
      * @param jdbcTemplate the JdbcTemplate to use
      */
     public PipelineExecutionRepositoryImpl(JdbcTemplate jdbcTemplate) {
+        this(jdbcTemplate, null);
+    }
+
+    /**
+     * Constructor for testing. Accepts a JdbcTemplate and datasource type directly.
+     *
+     * @param jdbcTemplate the JdbcTemplate to use
+     * @param dataSourceType datasource type used to build dialect-specific SQL
+     */
+    public PipelineExecutionRepositoryImpl(JdbcTemplate jdbcTemplate, String dataSourceType) {
         this.injectedJdbcTemplate = jdbcTemplate;
+        this.injectedDataSourceType = dataSourceType;
     }
     
     private JdbcTemplate getJdbcTemplate() {
@@ -86,6 +93,40 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
             return injectedJdbcTemplate;
         }
         return DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+    }
+
+    private String getDataSourceType() {
+        if (StringUtils.isNotBlank(injectedDataSourceType)) {
+            return injectedDataSourceType;
+        }
+        if (injectedJdbcTemplate != null) {
+            return DataSourceConstant.MYSQL;
+        }
+        return DynamicDataSource.getInstance().getDataSource().getDataSourceType();
+    }
+
+    String buildSingleLatestSql() {
+        return appendFirstRowClause("SELECT * FROM pipeline_execution "
+                + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
+                + "ORDER BY create_time DESC");
+    }
+
+    String appendPageClause(String baseSql, int offset, int limit) {
+        String dataSourceType = getDataSourceType();
+        if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)
+                || DataSourceConstant.ORACLE.equalsIgnoreCase(dataSourceType)) {
+            return baseSql + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+        }
+        return baseSql + " LIMIT " + limit + " OFFSET " + offset;
+    }
+
+    private String appendFirstRowClause(String baseSql) {
+        String dataSourceType = getDataSourceType();
+        if (DataSourceConstant.DERBY.equalsIgnoreCase(dataSourceType)
+                || DataSourceConstant.ORACLE.equalsIgnoreCase(dataSourceType)) {
+            return baseSql + " FETCH FIRST 1 ROW ONLY";
+        }
+        return baseSql + " LIMIT 1";
     }
     
     @Override
@@ -116,7 +157,7 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
     public PipelineExecution findByResource(String resourceType, String resourceName, String namespaceId,
             String version) {
         try {
-            return getJdbcTemplate().queryForObject(SQL_FIND_BY_RESOURCE, ROW_MAPPER, resourceType, resourceName,
+            return getJdbcTemplate().queryForObject(buildSingleLatestSql(), ROW_MAPPER, resourceType, resourceName,
                     namespaceId, version);
         } catch (EmptyResultDataAccessException e) {
             return null;
@@ -142,11 +183,9 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
             sql.append(" AND version = ?");
             params.add(version);
         }
-        sql.append(" ORDER BY create_time DESC LIMIT ? OFFSET ?");
-        params.add(limit);
-        params.add(offset);
-        
-        return getJdbcTemplate().query(sql.toString(), ROW_MAPPER, params.toArray());
+
+        return getJdbcTemplate().query(appendPageClause(sql.append(" ORDER BY create_time DESC").toString(), offset, limit),
+                ROW_MAPPER, params.toArray());
     }
     
     @Override

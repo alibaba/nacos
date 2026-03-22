@@ -25,12 +25,13 @@ import com.alibaba.nacos.ai.form.prompt.PromptListForm;
 import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
 import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
 import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
-import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -38,7 +39,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.ai.PromptProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -94,7 +94,7 @@ public class ConsolePromptController {
     }
     
     /**
-     * Query prompt detail by label/version/latest with priority label > version > latest.
+     * Query prompt detail by version/label/latest with priority version > label > latest.
      */
     @GetMapping("/detail")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)

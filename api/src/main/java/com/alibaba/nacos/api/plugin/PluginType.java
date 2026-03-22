@@ -57,7 +57,12 @@ public enum PluginType {
     /**
      * Control plugin.
      */
-    CONTROL("control", "Control plugin");
+    CONTROL("control", "Control plugin"),
+    
+    /**
+     * Data filter plugin.
+     */
+    DATA_FILTER("data-filter", "Data filter plugin");
 
     private final String type;
 

@@ -54,6 +54,10 @@ public class SkillProxy {
     public Skill getSkillVersion(SkillForm form) throws NacosException {
         return skillHandler.getSkillVersion(form);
     }
+
+    public Skill downloadSkillVersion(SkillForm form) throws NacosException {
+        return skillHandler.downloadSkillVersion(form);
+    }
     
     public void deleteSkill(SkillForm form) throws NacosException {
         skillHandler.deleteSkill(form);

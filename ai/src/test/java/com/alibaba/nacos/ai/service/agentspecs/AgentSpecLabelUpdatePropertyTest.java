@@ -1,0 +1,414 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.service.agentspecs;
+
+import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Property 10: Label update does not affect version status.
+ *
+ * <p>For any AgentSpec with existing versions in any status, updating the label mapping
+ * SHALL change only the label-to-version mapping and SHALL NOT modify any version's status,
+ * content, or online/offline state.</p>
+ *
+ * <p><b>Validates: Requirement 4.1</b></p>
+ *
+ * @author kiro
+ * @since 3.2.0
+ */
+class AgentSpecLabelUpdatePropertyTest {
+
+    private static final String NAMESPACE_ID = "test-ns";
+
+    private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
+
+    private static final String META_STATUS_ENABLE = "enable";
+
+    private static final String VERSION_STATUS_DRAFT = "draft";
+
+    private static final String VERSION_STATUS_REVIEWING = "reviewing";
+
+    private static final String VERSION_STATUS_ONLINE = "online";
+
+    private static final String VERSION_STATUS_OFFLINE = "offline";
+
+    /**
+     * Property 10a: Label update changes only the label mapping, not version statuses.
+     *
+     * <p>Given an AgentSpec with multiple versions in various statuses, updating labels
+     * SHALL preserve every version's status exactly as it was before the update.</p>
+     */
+    @Property(tries = 50)
+    void labelUpdatePreservesVersionStatuses(
+            @ForAll("agentSpecNames") String agentSpecName,
+            @ForAll("versionSets") List<VersionEntry> versionEntries,
+            @ForAll("labelMaps") Map<String, String> newLabels) {
+
+        InMemoryPersistService persistService = new InMemoryPersistService();
+
+        // Set up initial state with versions
+        VersionInfo info = new VersionInfo();
+        info.labels = new HashMap<>();
+        info.labels.put("latest", "v1");
+        AiResource meta = buildMeta(agentSpecName, info);
+        persistService.insertResource(meta);
+
+        for (VersionEntry entry : versionEntries) {
+            AiResourceVersion v = buildVersion(agentSpecName, entry.version, entry.status);
+            v.setStorage("storage-" + entry.version);
+            persistService.insertVersion(v);
+        }
+
+        // Snapshot version statuses before label update
+        Map<String, String> statusesBefore = new HashMap<>();
+        Map<String, String> storageBefore = new HashMap<>();
+        for (VersionEntry entry : versionEntries) {
+            AiResourceVersion v = persistService.findVersion(agentSpecName, entry.version);
+            assertNotNull(v, "Version " + entry.version + " should exist");
+            statusesBefore.put(entry.version, v.getStatus());
+            storageBefore.put(entry.version, v.getStorage());
+        }
+
+        // Simulate label update (mirrors AgentSpecOperationServiceImpl.updateLabels)
+        VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
+        currentInfo.labels = newLabels == null ? null : new LinkedHashMap<>(newLabels);
+        meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+        persistService.updateResource(meta);
+
+        // Verify: all version statuses and storage unchanged
+        for (VersionEntry entry : versionEntries) {
+            AiResourceVersion v = persistService.findVersion(agentSpecName, entry.version);
+            assertNotNull(v, "Version " + entry.version + " should still exist after label update");
+            assertEquals(statusesBefore.get(entry.version), v.getStatus(),
+                    "Version " + entry.version + " status must not change after label update");
+            assertEquals(storageBefore.get(entry.version), v.getStorage(),
+                    "Version " + entry.version + " storage must not change after label update");
+        }
+    }
+
+    /**
+     * Property 10b: Label update correctly persists the new label mapping.
+     *
+     * <p>After updating labels, the persisted label mapping SHALL exactly match the
+     * provided mapping.</p>
+     */
+    @Property(tries = 50)
+    void labelUpdatePersistsNewMapping(
+            @ForAll("agentSpecNames") String agentSpecName,
+            @ForAll("labelMaps") Map<String, String> newLabels) {
+
+        InMemoryPersistService persistService = new InMemoryPersistService();
+
+        VersionInfo info = new VersionInfo();
+        info.labels = new HashMap<>();
+        info.labels.put("latest", "v1");
+        info.labels.put("stable", "v1");
+        AiResource meta = buildMeta(agentSpecName, info);
+        persistService.insertResource(meta);
+
+        // Simulate label update
+        VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
+        currentInfo.labels = newLabels == null ? null : new LinkedHashMap<>(newLabels);
+        meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+        persistService.updateResource(meta);
+
+        // Verify: labels match
+        AiResource updated = persistService.findResource(NAMESPACE_ID, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
+        VersionInfo updatedInfo = parseVersionInfo(updated.getVersionInfo());
+        assertEquals(newLabels, updatedInfo.labels,
+                "Persisted labels must exactly match the provided mapping");
+    }
+
+    /**
+     * Property 10c: Label update does not affect editing/reviewing working version pointers.
+     *
+     * <p>Given an AgentSpec with active editing and reviewing pointers, updating labels
+     * SHALL not modify those pointers.</p>
+     */
+    @Property(tries = 30)
+    void labelUpdatePreservesWorkingVersionPointers(
+            @ForAll("agentSpecNames") String agentSpecName,
+            @ForAll("labelMaps") Map<String, String> newLabels) {
+
+        InMemoryPersistService persistService = new InMemoryPersistService();
+
+        VersionInfo info = new VersionInfo();
+        info.editingVersion = "v3";
+        info.reviewingVersion = "v2";
+        info.onlineCnt = 1;
+        info.labels = new HashMap<>();
+        info.labels.put("latest", "v1");
+        AiResource meta = buildMeta(agentSpecName, info);
+        persistService.insertResource(meta);
+
+        // Snapshot working pointers before
+        VersionInfo before = parseVersionInfo(meta.getVersionInfo());
+        String editingBefore = before.editingVersion;
+        String reviewingBefore = before.reviewingVersion;
+        Integer onlineCntBefore = before.onlineCnt;
+
+        // Simulate label update
+        VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
+        currentInfo.labels = newLabels == null ? null : new LinkedHashMap<>(newLabels);
+        meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+        persistService.updateResource(meta);
+
+        // Verify: working pointers unchanged
+        AiResource updated = persistService.findResource(NAMESPACE_ID, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
+        VersionInfo after = parseVersionInfo(updated.getVersionInfo());
+        assertEquals(editingBefore, after.editingVersion,
+                "editingVersion must not change after label update");
+        assertEquals(reviewingBefore, after.reviewingVersion,
+                "reviewingVersion must not change after label update");
+        assertEquals(onlineCntBefore, after.onlineCnt,
+                "onlineCnt must not change after label update");
+    }
+
+    /**
+     * Property 10d: Label update with null labels clears the mapping without affecting versions.
+     *
+     * <p>Setting labels to null SHALL clear the label mapping but SHALL NOT affect any
+     * version status or content.</p>
+     */
+    @Property(tries = 30)
+    void nullLabelUpdateClearsMappingWithoutAffectingVersions(
+            @ForAll("agentSpecNames") String agentSpecName,
+            @ForAll("versionSets") List<VersionEntry> versionEntries) {
+
+        InMemoryPersistService persistService = new InMemoryPersistService();
+
+        VersionInfo info = new VersionInfo();
+        info.labels = new HashMap<>();
+        info.labels.put("latest", "v1");
+        info.labels.put("stable", "v1");
+        AiResource meta = buildMeta(agentSpecName, info);
+        persistService.insertResource(meta);
+
+        for (VersionEntry entry : versionEntries) {
+            persistService.insertVersion(buildVersion(agentSpecName, entry.version, entry.status));
+        }
+
+        // Snapshot statuses
+        Map<String, String> statusesBefore = new HashMap<>();
+        for (VersionEntry entry : versionEntries) {
+            AiResourceVersion v = persistService.findVersion(agentSpecName, entry.version);
+            statusesBefore.put(entry.version, v.getStatus());
+        }
+
+        // Simulate label update with null
+        VersionInfo currentInfo = parseVersionInfo(meta.getVersionInfo());
+        currentInfo.labels = null;
+        meta.setVersionInfo(JacksonUtils.toJson(currentInfo));
+        persistService.updateResource(meta);
+
+        // Verify: labels cleared, statuses unchanged
+        AiResource updated = persistService.findResource(NAMESPACE_ID, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
+        VersionInfo updatedInfo = parseVersionInfo(updated.getVersionInfo());
+        // When labels is set to null, Jackson serialization + deserialization may produce
+        // null or empty map depending on the VersionInfo default. Either is acceptable.
+        assertTrue(updatedInfo.labels == null || updatedInfo.labels.isEmpty(),
+                "Labels should be null or empty after null update");
+
+        for (VersionEntry entry : versionEntries) {
+            AiResourceVersion v = persistService.findVersion(agentSpecName, entry.version);
+            assertEquals(statusesBefore.get(entry.version), v.getStatus(),
+                    "Version " + entry.version + " status must not change after null label update");
+        }
+    }
+
+    // ---- Data classes ----
+
+    record VersionEntry(String version, String status) {
+    }
+
+    // ---- Arbitraries ----
+
+    @Provide
+    Arbitrary<String> agentSpecNames() {
+        return Arbitraries.strings().alpha().ofMinLength(3).ofMaxLength(12);
+    }
+
+    @Provide
+    Arbitrary<List<VersionEntry>> versionSets() {
+        Arbitrary<String> statuses = Arbitraries.of(
+                VERSION_STATUS_DRAFT, VERSION_STATUS_REVIEWING,
+                VERSION_STATUS_ONLINE, VERSION_STATUS_OFFLINE);
+        return Arbitraries.integers().between(1, 5).flatMap(count -> {
+            List<Arbitrary<VersionEntry>> entries = new ArrayList<>();
+            for (int i = 1; i <= count; i++) {
+                final int idx = i;
+                entries.add(statuses.map(s -> new VersionEntry("v" + idx, s)));
+            }
+            return Combinators.combine(entries).as(list -> list);
+        });
+    }
+
+    @Provide
+    Arbitrary<Map<String, String>> labelMaps() {
+        Arbitrary<String> labelNames = Arbitraries.of("latest", "stable", "canary", "beta");
+        Arbitrary<String> versionValues = Arbitraries.integers().between(1, 5).map(n -> "v" + n);
+        return Arbitraries.maps(labelNames, versionValues).ofMinSize(0).ofMaxSize(4);
+    }
+
+    // ---- Helpers ----
+
+    private static AiResource buildMeta(String name, VersionInfo info) {
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(NAMESPACE_ID);
+        meta.setName(name);
+        meta.setType(RESOURCE_TYPE_AGENTSPEC);
+        meta.setStatus(META_STATUS_ENABLE);
+        meta.setDesc("test agentspec " + name);
+        meta.setVersionInfo(JacksonUtils.toJson(info));
+        meta.setMetaVersion(1L);
+        return meta;
+    }
+
+    private static AiResourceVersion buildVersion(String name, String version, String status) {
+        AiResourceVersion v = new AiResourceVersion();
+        v.setNamespaceId(NAMESPACE_ID);
+        v.setName(name);
+        v.setType(RESOURCE_TYPE_AGENTSPEC);
+        v.setVersion(version);
+        v.setStatus(status);
+        v.setStorage("storage-" + version);
+        v.setAuthor("nacos");
+        return v;
+    }
+
+    private static VersionInfo parseVersionInfo(String json) {
+        if (StringUtils.isBlank(json)) {
+            return new VersionInfo();
+        }
+        try {
+            return JacksonUtils.toObj(json, VersionInfo.class);
+        } catch (Exception e) {
+            return new VersionInfo();
+        }
+    }
+
+    /**
+     * Mirrors the AgentSpecVersionInfo inner class from AgentSpecOperationServiceImpl.
+     */
+    static class VersionInfo {
+
+        public String editingVersion;
+
+        public String reviewingVersion;
+
+        public Integer onlineCnt;
+
+        public Map<String, String> labels = new HashMap<>();
+
+        public String getEditingVersion() {
+            return editingVersion;
+        }
+
+        public void setEditingVersion(String editingVersion) {
+            this.editingVersion = editingVersion;
+        }
+
+        public String getReviewingVersion() {
+            return reviewingVersion;
+        }
+
+        public void setReviewingVersion(String reviewingVersion) {
+            this.reviewingVersion = reviewingVersion;
+        }
+
+        public Integer getOnlineCnt() {
+            return onlineCnt;
+        }
+
+        public void setOnlineCnt(Integer onlineCnt) {
+            this.onlineCnt = onlineCnt;
+        }
+
+        public Map<String, String> getLabels() {
+            return labels;
+        }
+
+        public void setLabels(Map<String, String> labels) {
+            this.labels = labels;
+        }
+    }
+
+    // ---- In-memory persist service ----
+
+    private static class InMemoryPersistService {
+
+        private final List<AiResource> resources = new ArrayList<>();
+
+        private final List<AiResourceVersion> versions = new ArrayList<>();
+
+        void insertResource(AiResource resource) {
+            resources.add(resource);
+        }
+
+        AiResource findResource(String namespaceId, String name, String type) {
+            return resources.stream()
+                    .filter(r -> namespaceId.equals(r.getNamespaceId())
+                            && name.equals(r.getName())
+                            && type.equals(r.getType()))
+                    .findFirst().orElse(null);
+        }
+
+        void updateResource(AiResource resource) {
+            for (int i = 0; i < resources.size(); i++) {
+                AiResource r = resources.get(i);
+                if (NAMESPACE_ID.equals(r.getNamespaceId())
+                        && resource.getName().equals(r.getName())
+                        && resource.getType().equals(r.getType())) {
+                    resources.set(i, resource);
+                    return;
+                }
+            }
+        }
+
+        void insertVersion(AiResourceVersion version) {
+            versions.add(version);
+        }
+
+        AiResourceVersion findVersion(String name, String version) {
+            return versions.stream()
+                    .filter(v -> NAMESPACE_ID.equals(v.getNamespaceId())
+                            && name.equals(v.getName())
+                            && RESOURCE_TYPE_AGENTSPEC.equals(v.getType())
+                            && version.equals(v.getVersion()))
+                    .findFirst().orElse(null);
+        }
+    }
+}

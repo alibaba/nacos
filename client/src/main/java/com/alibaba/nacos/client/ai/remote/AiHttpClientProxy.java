@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -69,7 +69,7 @@ public class AiHttpClientProxy implements AiClientProxy {
 
     private static final String PROMPT_CLIENT_PATH = "/v3/client/ai/prompt";
 
-    private static final String SKILL_CLIENT_PATH = "/v3/client/ai/skills";
+    private static final String SKILL_DOWNLOAD_PATH = "/v3/client/ai/skills";
 
     private static final int MAX_RETRY = 3;
 
@@ -133,15 +133,16 @@ public class AiHttpClientProxy implements AiClientProxy {
     }
 
     /**
-     * Query skill from server via HTTP REST API.
+     * Download skill as ZIP byte array via HTTP REST API.
      *
      * @param skillName skill name
      * @param version   explicit version (optional)
      * @param label     route label, e.g. latest/stable (optional)
-     * @return Skill object
+     * @return ZIP file as byte array
      * @throws NacosException if request fails
      */
-    public Skill querySkill(String skillName, String version, String label) throws NacosException {
+    @Override
+    public byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("name", skillName);
@@ -156,10 +157,15 @@ public class AiHttpClientProxy implements AiClientProxy {
                 .setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP)
                 .setResource(null == skillName ? StringUtils.EMPTY : skillName).build();
 
-        String responseBody = reqApi(SKILL_CLIENT_PATH, params, resource);
-        Result<Skill> result = JacksonUtils.toObj(responseBody, new TypeReference<Result<Skill>>() {
-        });
-        return result.getData();
+        byte[] zipBytes = reqApiBytes(SKILL_DOWNLOAD_PATH, params, resource);
+        SkillUtils.validateZipBytes(zipBytes);
+        try {
+            SkillUtils.validateZipEntryPaths(zipBytes);
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Downloaded ZIP contains unsafe entry paths: " + e.getMessage(), e);
+        }
+        return zipBytes;
     }
 
     // ===== Generic HTTP infrastructure =====
@@ -193,6 +199,35 @@ public class AiHttpClientProxy implements AiClientProxy {
                         + exception.getMessage());
     }
 
+    private byte[] reqApiBytes(String api, Map<String, String> params, RequestResource resource) throws NacosException {
+        List<String> servers = serverListManager.getServerList();
+        if (servers.isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM, "no server available");
+        }
+
+        NacosException exception = new NacosException();
+        int index = ThreadLocalRandom.current().nextInt(servers.size());
+
+        for (int i = 0; i < Math.max(servers.size(), MAX_RETRY); i++) {
+            String server = servers.get(index % servers.size());
+            try {
+                return callServerBytes(api, params, server, resource);
+            } catch (NacosException e) {
+                exception = e;
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Request {} to server {} failed.", api, server, e);
+                }
+            }
+            index = (index + 1) % servers.size();
+        }
+
+        LOGGER.error("Request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
+                exception.getErrMsg());
+        throw new NacosException(exception.getErrCode(),
+                "Failed to request API: " + api + " after all servers(" + servers + ") tried: "
+                        + exception.getMessage());
+    }
+
     private String callServer(String api, Map<String, String> params, String server, RequestResource resource)
             throws NacosException {
         Map<String, String> securityHeaders = securityProxy.getIdentityContext(resource);
@@ -210,6 +245,33 @@ public class AiHttpClientProxy implements AiClientProxy {
             }
             if (HttpURLConnection.HTTP_NOT_MODIFIED == restResult.getCode()) {
                 throw new NacosException(NacosException.NOT_MODIFIED, "not modified");
+            }
+            if (HttpURLConnection.HTTP_FORBIDDEN == restResult.getCode()) {
+                securityProxy.reLogin();
+            }
+            throw new NacosException(restResult.getCode(), restResult.getMessage());
+        } catch (NacosException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("[AI-HTTP] Failed to request {}", url, e);
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
+    }
+
+    private byte[] callServerBytes(String api, Map<String, String> params, String server, RequestResource resource)
+            throws NacosException {
+        Map<String, String> securityHeaders = securityProxy.getIdentityContext(resource);
+        Header header = Header.newInstance();
+        header.addAll(securityHeaders);
+
+        String url = buildUrl(server, api);
+
+        try {
+            HttpRestResult<byte[]> restResult = nacosRestTemplate.get(url, header,
+                    Query.newInstance().initParams(params), byte[].class);
+
+            if (restResult.ok()) {
+                return restResult.getData();
             }
             if (HttpURLConnection.HTTP_FORBIDDEN == restResult.getCode()) {
                 securityProxy.reLogin();

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 
 import java.util.HashMap;

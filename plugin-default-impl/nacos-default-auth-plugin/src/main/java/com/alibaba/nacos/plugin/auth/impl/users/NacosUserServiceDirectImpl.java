@@ -87,6 +87,7 @@ public class NacosUserServiceDirectImpl extends AbstractCachedUserService implem
     
     @Override
     public void deleteUser(String username) {
+        rejectReservedUsername(username);
         userPersistService.deleteUser(username);
     }
     

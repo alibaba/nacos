@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -39,7 +40,6 @@ import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
@@ -58,12 +58,11 @@ public class ConfigChangeClusterSyncRequestHandler
     
     private ConfigMigrateService configMigrateService;
     
-    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService,
-            ConfigMigrateService configMigrateService) {
+    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService, ConfigMigrateService configMigrateService) {
         this.dumpService = dumpService;
         this.configMigrateService = configMigrateService;
     }
-
+    
     @Override
     @NamespaceValidation
     @TpsControl(pointName = "ClusterConfigChangeNotify")

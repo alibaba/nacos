@@ -57,7 +57,7 @@ export const routes: RouteObject[] = [
           // Default redirect
           {
             index: true,
-            element: <Navigate to="/welcome" replace />,
+            element: <Navigate to="/skillManagement" replace />,
           },
           
           // Welcome page
@@ -175,6 +175,20 @@ export const routes: RouteObject[] = [
           {
             path: 'agentDetail',
             element: lazyPage(() => import('@/pages/agentDetail')),
+          },
+          
+          // AgentSpec Management
+          {
+            path: 'agentspec',
+            element: lazyPage(() => import('@/pages/agentSpecManagement')),
+          },
+          {
+            path: 'agentspec/new',
+            element: lazyPage(() => import('@/pages/newAgentSpec')),
+          },
+          {
+            path: 'agentspec/:name',
+            element: lazyPage(() => import('@/pages/agentSpecDetail')),
           },
           
           // Skill Management

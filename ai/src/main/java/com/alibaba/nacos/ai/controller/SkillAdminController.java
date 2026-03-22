@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
@@ -31,18 +32,20 @@ import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,7 +54,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.Map;
 
 /**
@@ -70,7 +73,7 @@ public class SkillAdminController {
     public SkillAdminController(SkillOperationService skillOperationService) {
         this.skillOperationService = skillOperationService;
     }
-
+    
     /**
      * Get skill detail for admin (includes version governance info and all version summaries).
      *
@@ -82,10 +85,9 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<SkillAdminDetail> getSkill(SkillForm form) throws NacosException {
         form.validate();
-        return Result.success(
-                skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
+        return Result.success(skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
     }
-
+    
     /**
      * Get specific version detail of a skill for viewing or editing.
      *
@@ -97,10 +99,26 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<Skill> getSkillVersion(SkillForm form) throws NacosException {
         form.validate();
-        return Result.success(
-                skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(), form.getVersion()));
+        return Result.success(skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(),
+                form.getVersion()));
     }
 
+    /**
+     * Download a specific version of a skill as ZIP file.
+     *
+     * @param form the skill form containing skillName and version
+     * @return ZIP file as ResponseEntity
+     * @throws NacosException if the skill or version not found
+     */
+    @GetMapping("/version/download")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public ResponseEntity<byte[]> downloadSkillVersion(SkillForm form) throws NacosException {
+        form.validate();
+        Skill skill = skillOperationService.downloadSkillVersion(form.getNamespaceId(), form.getSkillName(),
+                form.getVersion());
+        return SkillRequestUtil.buildSkillZipResponse(skill);
+    }
+    
     /**
      * Delete skill.
      *
@@ -120,7 +138,7 @@ public class SkillAdminController {
      * List skills for admin (includes governance metadata: status, tags, labels, etc.).
      *
      * @param skillListForm the skill list form to list
-     * @param pageForm the page form to list
+     * @param pageForm      the page form to list
      * @return result of the list operation
      * @throws NacosException if the skill list fails
      */
@@ -134,13 +152,13 @@ public class SkillAdminController {
                 skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
                         skillListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize()));
     }
-
+    
     /**
      * Upload skill from zip file.
      *
-     * @param request HTTP servlet request
+     * @param request     HTTP servlet request
      * @param namespaceId namespace ID
-     * @param file zip file containing skill
+     * @param file        zip file containing skill
      * @return result of the upload operation
      * @throws NacosException if the upload fails
      */
@@ -155,7 +173,7 @@ public class SkillAdminController {
         String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
         return Result.success(skillName);
     }
-
+    
     /**
      * Create draft version.
      */
@@ -163,10 +181,11 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
         form.validate();
-        String v = skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(), form.getBasedOnVersion());
+        String v = skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),
+                form.getBasedOnVersion());
         return Result.success(v);
     }
-
+    
     /**
      * Update current draft content.
      */
@@ -178,7 +197,7 @@ public class SkillAdminController {
         skillOperationService.updateDraft(form.getNamespaceId(), skill);
         return Result.success("ok");
     }
-
+    
     /**
      * Delete current draft version.
      */
@@ -189,7 +208,7 @@ public class SkillAdminController {
         skillOperationService.deleteDraft(form.getNamespaceId(), form.getSkillName());
         return Result.success("ok");
     }
-
+    
     /**
      * Submit a version for pipeline review.
      */
@@ -200,7 +219,7 @@ public class SkillAdminController {
         String result = skillOperationService.submit(form.getNamespaceId(), form.getSkillName(), form.getVersion());
         return Result.success(result);
     }
-
+    
     /**
      * Publish an approved reviewing version.
      */
@@ -212,7 +231,7 @@ public class SkillAdminController {
         skillOperationService.publish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
         return Result.success("ok");
     }
-
+    
     /**
      * Update runtime route labels without changing version status.
      */
@@ -224,7 +243,7 @@ public class SkillAdminController {
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);
         return Result.success("ok");
     }
-
+    
     /**
      * Online operation (version-level or skill-level by scope).
      */
@@ -232,10 +251,26 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(SkillOnlineForm form) throws NacosException {
         form.validate();
-        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(), form.getVersion(), true);
+        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
+                form.getVersion(), true);
         return Result.success("ok");
     }
-
+    
+    /**
+     * Update skill visibility scope (PUBLIC or PRIVATE).
+     *
+     * @param form the scope update form
+     * @return result of the update operation
+     * @throws NacosException if the skill not found or no permission
+     */
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> updateScope(SkillScopeForm form) throws NacosException {
+        form.validate();
+        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(), form.getScope());
+        return Result.success("ok");
+    }
+    
     /**
      * Offline operation (version-level or skill-level by scope).
      */
@@ -243,7 +278,8 @@ public class SkillAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(SkillOnlineForm form) throws NacosException {
         form.validate();
-        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(), form.getVersion(), false);
+        skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
+                form.getVersion(), false);
         return Result.success("ok");
     }
 }

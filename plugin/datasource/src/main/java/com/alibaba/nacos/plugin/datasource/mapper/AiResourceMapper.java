@@ -63,6 +63,21 @@ public interface AiResourceMapper extends Mapper {
      */
     MapperResult findAiResourceFetchRows(MapperContext context);
 
+    /**
+     * Resolve the ORDER BY clause based on the orderBy parameter in the context. Only whitelisted values are accepted to
+     * prevent SQL injection.
+     *
+     * @param context mapper context that may contain an {@link FieldConstant#ORDER_BY} parameter
+     * @return SQL ORDER BY clause, e.g. {@code " ORDER BY download_count DESC"} or {@code " ORDER BY gmt_modified DESC"}
+     */
+    default String resolveOrderByClause(MapperContext context) {
+        Object orderBy = context.getWhereParameter(FieldConstant.ORDER_BY);
+        if (orderBy != null && FieldConstant.ORDER_BY_DOWNLOAD_COUNT.equals(String.valueOf(orderBy))) {
+            return " ORDER BY download_count DESC";
+        }
+        return " ORDER BY gmt_modified DESC";
+    }
+
     @Override
     default String getTableName() {
         return TableConstant.AI_RESOURCE;

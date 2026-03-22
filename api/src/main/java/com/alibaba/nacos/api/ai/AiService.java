@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
-import com.alibaba.nacos.api.ai.listener.AbstractNacosSkillListener;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.prompt.Prompt;
-import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -179,37 +179,73 @@ public interface AiService extends A2aService {
             throws NacosException;
     
     /**
-     * Load skill by skill name.
-     * 
-     * <p>
-     * This method will query the skill main configuration and all resource configurations,
-     * then assemble them into a complete Skill object.
-     * </p>
+     * Download skill as ZIP byte array by skill name. Defaults to latest version.
+     *
+     * <p>The ZIP contains the skill directory structure: SKILL.md and all resource files.
+     * Binary resources are decoded from Base64 back to raw bytes.</p>
      *
      * @param skillName skill name (unique identifier)
-     * @return complete Skill object with all resources
+     * @return ZIP file as byte array
      * @throws NacosException if skill not found or query error
      */
-    Skill loadSkill(String skillName) throws NacosException;
+    byte[] downloadSkillZip(String skillName) throws NacosException;
+
+    /**
+     * Download skill as ZIP byte array by skill name and target version.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param version   target skill version, if null, will get latest version
+     * @return ZIP file as byte array
+     * @throws NacosException if skill not found or query error
+     */
+    byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException;
+
+    /**
+     * Download skill as ZIP byte array by skill name and target label.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param label     target skill label (e.g. "latest", "stable")
+     * @return ZIP file as byte array
+     * @throws NacosException if skill not found or query error
+     */
+    byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException;
+    
+    // ==================== AgentSpec Management APIs ====================
     
     /**
-     * Subscribe skill.
+     * Load agent spec by agent spec name.
      *
-     * @param skillName       name of skill
-     * @param skillListener   listener of skill, callback when skill configuration is changed
-     * @return The skill object at current time, nullable if skill not found
-     * @throws NacosException if request parameter is invalid or handle error
+     * <p>
+     * This method will query the agent spec main configuration and all resource configurations,
+     * then assemble them into a complete AgentSpec object.
+     * </p>
+     *
+     * @param agentSpecName agent spec name (unique identifier)
+     * @return complete AgentSpec object with all resources
+     * @throws NacosException if agent spec not found or query error
      */
-    Skill subscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
+    AgentSpec loadAgentSpec(String agentSpecName) throws NacosException;
     
     /**
-     * Un-subscribe skill.
+     * Subscribe agent spec.
      *
-     * @param skillName       name of skill
-     * @param skillListener   listener of skill
+     * @param agentSpecName       name of agent spec
+     * @param agentSpecListener   listener of agent spec, callback when agent spec configuration is changed
+     * @return The agent spec object at current time, nullable if agent spec not found
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void unsubscribeSkill(String skillName, AbstractNacosSkillListener skillListener) throws NacosException;
+    AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException;
+    
+    /**
+     * Un-subscribe agent spec.
+     *
+     * @param agentSpecName       name of agent spec
+     * @param agentSpecListener   listener of agent spec
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException;
     
     // ==================== Prompt Management APIs ====================
     

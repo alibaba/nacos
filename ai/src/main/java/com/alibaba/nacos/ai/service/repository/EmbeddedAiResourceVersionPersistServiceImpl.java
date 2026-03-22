@@ -94,7 +94,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.select(
                 Arrays.asList("id", "gmt_create", "gmt_modified", "type", "author", "name", "c_desc", "status", "version",
-                        "namespace_id", "storage", "publish_pipeline_info"),
+                        "namespace_id", "storage", "publish_pipeline_info", "download_count"),
                 Arrays.asList("namespace_id", "name", "type", "version"));
         return databaseOperate.queryOne(sql,
                 new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version},
@@ -201,6 +201,23 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
     }
 
     @Override
+    public int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage,
+            String desc) {
+        if (find(namespaceId, name, type, version) == null) {
+            return 0;
+        }
+        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql = "UPDATE ai_resource_version SET storage=?, c_desc=?, gmt_modified=" + mapper.getFunction("NOW()")
+                + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {storage, desc, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
+    }
+
+    @Override
     public int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
             String publishPipelineInfo) {
         if (find(namespaceId, name, type, version) == null) {
@@ -213,6 +230,22 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {publishPipelineInfo, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+        Boolean success = databaseOperate.blockUpdate();
+        return (success != null && success) ? 1 : 0;
+    }
+
+    @Override
+    public int incrementDownloadCount(String namespaceId, String name, String type, String version, long increment) {
+        if (find(namespaceId, name, type, version) == null) {
+            return 0;
+        }
+        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.AI_RESOURCE_VERSION);
+        String sql = "UPDATE ai_resource_version SET download_count = download_count + ?, gmt_modified="
+                + mapper.getFunction("NOW()") + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+
+        EmbeddedStorageContextHolder.addSqlContext(sql,
+                new Object[] {increment, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }

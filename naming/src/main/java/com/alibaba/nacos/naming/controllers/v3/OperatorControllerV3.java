@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -72,7 +72,8 @@ public class OperatorControllerV3 {
     public Result<String> updateSwitch(UpdateSwitchForm updateSwitchForm) throws Exception {
         updateSwitchForm.validate();
         try {
-            operatorV2Impl.updateSwitch(updateSwitchForm.getEntry(), updateSwitchForm.getValue(), updateSwitchForm.getDebug());
+            operatorV2Impl.updateSwitch(updateSwitchForm.getEntry(), updateSwitchForm.getValue(),
+                    updateSwitchForm.getDebug());
             return Result.success("ok");
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,

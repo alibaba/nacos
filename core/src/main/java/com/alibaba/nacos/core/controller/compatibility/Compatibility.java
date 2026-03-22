@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.controller.compatibility;
 
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.api.common.ApiType;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

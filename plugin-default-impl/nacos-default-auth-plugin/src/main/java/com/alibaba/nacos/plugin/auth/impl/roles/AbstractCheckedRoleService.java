@@ -132,6 +132,22 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
     }
     
     /**
+     * Reject deletion or manual creation of system-reserved roles.
+     *
+     * @param role role name to check
+     */
+    protected void rejectReservedRole(String role) {
+        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
+        }
+        if (AuthConstants.ANONYMOUS_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.ANONYMOUS_ROLE + "' is reserved by the system");
+        }
+    }
+    
+    /**
      * If API is update user password, don't do permission check, because there is permission check in API logic.
      */
     private boolean isUpdatePasswordPermission(Permission permission) {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.core;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

@@ -17,10 +17,12 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -35,9 +37,7 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.springframework.dao.DataAccessException;

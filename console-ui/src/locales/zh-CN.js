@@ -25,6 +25,7 @@ const I18N_CONF = {
     languageSwitchButton: 'En',
     logout: '登出',
     changePassword: '修改密码',
+    newConsole: '新版控制台',
   },
   Login: {
     login: '登录',

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.service.NacosServerLoaderService;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

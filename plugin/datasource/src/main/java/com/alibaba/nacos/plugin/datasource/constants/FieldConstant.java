@@ -119,4 +119,8 @@ public class FieldConstant {
     public static final String BIZ_TAGS = "bizTags";
 
     public static final String META_VERSION = "metaVersion";
+
+    public static final String ORDER_BY = "orderBy";
+
+    public static final String ORDER_BY_DOWNLOAD_COUNT = "download_count";
 }

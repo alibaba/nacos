@@ -24,6 +24,7 @@ import {
   Sparkles,
   MessageSquare,
   Wrench,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/app-store';
@@ -85,6 +86,7 @@ export function Sidebar() {
         { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skillManagement' },
         { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement' },
         { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
+        { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec' },
         { key: 'mcpRegistry', label: t('menu.mcpRegistry'), path: '/mcpServerManagement' },
       ],
     });
@@ -168,6 +170,7 @@ export function Sidebar() {
       subscriberList: <Eye size={16} />,
       mcpRegistry: <Cpu size={16} />,
       agentRegistry: <Bot size={16} />,
+      agentSpecRegistry: <Package size={16} />,
       skillRegistry: <Wrench size={16} />,
       promptRegistry: <MessageSquare size={16} />,
       userList: <Users size={16} />,

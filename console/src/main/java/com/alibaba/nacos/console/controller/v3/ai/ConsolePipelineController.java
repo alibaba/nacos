@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.pipeline.PipelineListForm;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.ai.PipelineProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,8 +56,7 @@ public class ConsolePipelineController {
      */
     @GetMapping("/{pipelineId}")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<PipelineExecution> getPipeline(@PathVariable String pipelineId)
-            throws NacosException {
+    public Result<PipelineExecution> getPipeline(@PathVariable String pipelineId) throws NacosException {
         return Result.success(pipelineProxy.getPipeline(pipelineId));
     }
     
@@ -70,8 +69,8 @@ public class ConsolePipelineController {
             throws NacosException {
         form.validate();
         pageForm.validate();
-        return Result.success(pipelineProxy.listPipelines(form.getResourceType(),
-                form.getResourceName(), form.getNamespaceId(), form.getVersion(),
-                pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(
+                pipelineProxy.listPipelines(form.getResourceType(), form.getResourceName(), form.getNamespaceId(),
+                        form.getVersion(), pageForm.getPageNo(), pageForm.getPageSize()));
     }
 }

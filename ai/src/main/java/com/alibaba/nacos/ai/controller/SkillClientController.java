@@ -18,20 +18,17 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
-import com.alibaba.nacos.ai.form.skills.client.SkillSearchForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
+import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -54,28 +51,16 @@ public class SkillClientController {
     }
 
     /**
-     * Search enabled skills for runtime usage.
-     */
-    @GetMapping("/search")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<Page<SkillBasicInfo>> search(SkillSearchForm form, PageForm pageForm) throws NacosException {
-        form.validate();
-        pageForm.validate();
-        return Result.success(
-                skillOperationService.searchSkills(form.getNamespaceId(), form.getKeyword(), pageForm.getPageNo(),
-                        pageForm.getPageSize()));
-    }
-
-    /**
-     * Get an online skill version by label/version/latest.
+     * Download an online skill version as ZIP file by label/version/latest.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
-    public Result<Skill> get(SkillQueryForm form) throws NacosException {
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
+            tags = {"allowAnonymous"})
+    public ResponseEntity<byte[]> get(SkillQueryForm form) throws NacosException {
         form.validate();
-        return Result.success(
-                skillOperationService.querySkill(form.getNamespaceId(), form.getName(), form.getVersion(),
-                        form.getLabel()));
+        Skill skill = skillOperationService.querySkill(form.getNamespaceId(), form.getName(), form.getVersion(),
+                form.getLabel());
+        return SkillRequestUtil.buildSkillZipResponse(skill);
     }
 }
 

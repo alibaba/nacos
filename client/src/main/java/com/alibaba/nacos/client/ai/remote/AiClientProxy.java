@@ -23,8 +23,7 @@ import com.alibaba.nacos.common.lifecycle.Closeable;
 /**
  * AI client proxy interface for abstracting transport layer (gRPC / HTTP).
  *
- * <p>Defines AI operations that support switching between gRPC and HTTP transport.
- * Currently covers Prompt operations; extensible for Skill and other capabilities.</p>
+ * <p>Defines AI operations that support switching between gRPC and HTTP transport.</p>
  *
  * @author nacos
  */
@@ -41,4 +40,18 @@ public interface AiClientProxy extends Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException;
+
+    /**
+     * Download skill as ZIP byte array from server.
+     *
+     * <p>The ZIP contains the skill directory structure: SKILL.md and all resource files.
+     * Binary resources are decoded from Base64 back to raw bytes.</p>
+     *
+     * @param skillName skill name
+     * @param version   explicit version (optional)
+     * @param label     route label, e.g. "latest", "stable" (optional)
+     * @return ZIP file as byte array
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException;
 }

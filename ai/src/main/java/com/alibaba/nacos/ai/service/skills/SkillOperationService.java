@@ -66,6 +66,18 @@ public interface SkillOperationService {
     Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException;
 
     /**
+     * Download skill version. Semantically identical to {@link #getSkillVersionDetail} but provides a separate
+     * entry point so that download events can be tracked independently (e.g. download count statistics).
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name
+     * @param version target version
+     * @return full skill content for the specified version
+     * @throws NacosException if skill or version not found
+     */
+    Skill downloadSkillVersion(String namespaceId, String skillName, String version) throws NacosException;
+
+    /**
      * Delete skill.
      *
      * @param namespaceId namespace ID
@@ -86,6 +98,21 @@ public interface SkillOperationService {
      * @throws NacosException if query failed
      */
     Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
+
+    /**
+     * List skills with pagination and optional ordering for admin usage.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name (for search)
+     * @param search search type (accurate/blur)
+     * @param orderBy sort field (e.g. "download_count"), null defaults to gmt_modified
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return skill admin list page with governance metadata
+     * @throws NacosException if query failed
+     */
+    Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            int pageNo, int pageSize) throws NacosException;
 
     /**
      * Create a new draft version based on latest or specified version.
@@ -136,6 +163,17 @@ public interface SkillOperationService {
      * @param online true means online/enable, false means offline/disable
      */
     void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online) throws NacosException;
+
+    /**
+     * Update skill visibility scope (PUBLIC or PRIVATE). Only the owner or users with explicit write permission can
+     * change the scope.
+     *
+     * @param namespaceId namespace ID
+     * @param name        skill name
+     * @param scope       target scope: PUBLIC or PRIVATE
+     * @throws NacosException if skill not found or no permission
+     */
+    void updateScope(String namespaceId, String name, String scope) throws NacosException;
 
     // ========== Client APIs ==========
 

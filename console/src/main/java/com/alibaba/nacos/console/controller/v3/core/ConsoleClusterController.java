@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.controller.v3.core;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.core.ClusterProxy;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,8 +64,8 @@ public class ConsoleClusterController {
     @GetMapping(value = "/nodes")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT
             + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Collection<NacosMember>> getNodeList(@RequestParam(value = "keyword", required = false) String ipKeyWord)
-            throws NacosException {
+    public Result<Collection<NacosMember>> getNodeList(
+            @RequestParam(value = "keyword", required = false) String ipKeyWord) throws NacosException {
         Collection<NacosMember> result = clusterProxy.getNodeList(ipKeyWord);
         return Result.success(result);
     }

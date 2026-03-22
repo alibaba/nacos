@@ -36,6 +36,10 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
     
     public static final String A2A_PATH = "/ai/a2a";
     
+    public static final String SKILL_PATH = "/ai/skills";
+    
+    public static final String PROMPT_PATH = "/ai/prompt";
+    
     private static final String AGENT_CARD_PARAM = "agentCard";
     
     @Override
@@ -59,6 +63,10 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
             return getMcpName(request);
         } else if (url.contains(A2A_PATH)) {
             return getAgentName(request);
+        } else if (url.contains(SKILL_PATH)) {
+            return getSkillName(request);
+        } else if (url.contains(PROMPT_PATH)) {
+            return getPromptName(request);
         }
         return StringUtils.EMPTY;
     }
@@ -83,6 +91,16 @@ public class AiHttpResourceParser extends AbstractHttpResourceParser {
         } catch (Exception ignored) {
             return StringUtils.EMPTY;
         }
+    }
+    
+    private String getSkillName(HttpServletRequest request) {
+        String skillName = request.getParameter("skillName");
+        return StringUtils.isBlank(skillName) ? StringUtils.EMPTY : skillName;
+    }
+    
+    private String getPromptName(HttpServletRequest request) {
+        String promptKey = request.getParameter("promptKey");
+        return StringUtils.isBlank(promptKey) ? StringUtils.EMPTY : promptKey;
     }
     
     @Override

@@ -224,13 +224,16 @@ CREATE TABLE ai_resource (
     gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
     name varchar(256) NOT NULL,
     type varchar(32) NOT NULL,
-    c_desc varchar(512) DEFAULT NULL,
+    c_desc varchar(2048) DEFAULT NULL,
     status varchar(32) DEFAULT NULL,
     namespace_id varchar(128) NOT NULL DEFAULT '',
     biz_tags varchar(1024) DEFAULT NULL,
     ext CLOB DEFAULT NULL,
     version_info CLOB DEFAULT NULL,
     meta_version bigint NOT NULL DEFAULT 1,
+    scope varchar(16) NOT NULL DEFAULT 'PRIVATE',
+    owner varchar(128) NOT NULL DEFAULT '',
+    download_count bigint NOT NULL DEFAULT 0,
     CONSTRAINT uk_ai_resource_ns_name_type UNIQUE (namespace_id, name, type)
 );
 
@@ -245,12 +248,13 @@ CREATE TABLE ai_resource_version (
     type varchar(32) NOT NULL,
     author varchar(128) DEFAULT NULL,
     name varchar(256) NOT NULL,
-    c_desc varchar(512) DEFAULT NULL,
+    c_desc varchar(2048) DEFAULT NULL,
     status varchar(32) NOT NULL,
     version varchar(64) NOT NULL,
     namespace_id varchar(128) NOT NULL DEFAULT '',
     storage CLOB DEFAULT NULL,
     publish_pipeline_info CLOB DEFAULT NULL,
+    download_count bigint NOT NULL DEFAULT 0,
     CONSTRAINT uk_ai_resource_ver_ns_name_type_ver UNIQUE (namespace_id, name, type, version)
 );
 

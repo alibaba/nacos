@@ -17,15 +17,15 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.copilot.config.CopilotAgentManager;
 import com.alibaba.nacos.copilot.config.CopilotConfigStorage;
 import com.alibaba.nacos.copilot.config.CopilotProperties;
 import com.alibaba.nacos.copilot.constant.CopilotConstants;
-import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,18 +45,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class ConsoleCopilotConfigController {
     
     private final CopilotConfigStorage configStorage;
+    
     private final CopilotAgentManager agentManager;
     
     @Autowired
-    public ConsoleCopilotConfigController(CopilotConfigStorage configStorage,
-                                         CopilotAgentManager agentManager) {
+    public ConsoleCopilotConfigController(CopilotConfigStorage configStorage, CopilotAgentManager agentManager) {
         this.configStorage = configStorage;
         this.agentManager = agentManager;
     }
     
     /**
-     * Get current Copilot configuration.
-     * Only returns apiKey, model, studioUrl and studioProject fields.
+     * Get current Copilot configuration. Only returns apiKey, model, studioUrl and studioProject fields.
      *
      * @return Simplified CopilotProperties with only apiKey, model, studioUrl and studioProject
      */
@@ -80,8 +79,8 @@ public class ConsoleCopilotConfigController {
     }
     
     /**
-     * Create or update Copilot configuration.
-     * Only accepts apiKey, model, studioUrl and studioProject fields, other fields use defaults.
+     * Create or update Copilot configuration. Only accepts apiKey, model, studioUrl and studioProject fields, other
+     * fields use defaults.
      *
      * @param config Simplified CopilotProperties with only apiKey, model, studioUrl and studioProject
      * @return success result

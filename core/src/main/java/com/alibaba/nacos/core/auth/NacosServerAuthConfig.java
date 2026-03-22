@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.auth.config.AuthErrorCode;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;

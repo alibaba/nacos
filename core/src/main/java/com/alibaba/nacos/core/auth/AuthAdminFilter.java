@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 
 /**
  * Unified filter to handle authentication and authorization.

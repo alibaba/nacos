@@ -34,6 +34,14 @@ public interface AiResourcePersistService {
     Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo, int pageSize);
 
     /**
+     * List resources with optional ordering.
+     *
+     * @param orderBy sort field (e.g. "download_count"), null defaults to gmt_modified
+     */
+    Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, String orderBy,
+            int pageNo, int pageSize);
+
+    /**
      * Update meta with optimistic lock on meta_version.
      *
      * @return true if updated successfully (affectedRows == 1)
@@ -41,5 +49,23 @@ public interface AiResourcePersistService {
     boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion, AiResource newValue);
 
     int delete(String namespaceId, String name, String type);
+    
+    /**
+     * Update the scope (visibility) of a resource.
+     *
+     * @return true if updated successfully (affectedRows == 1)
+     */
+    boolean updateScope(String namespaceId, String name, String type, String scope);
+
+    /**
+     * Increment download count for a skill (total).
+     *
+     * @param namespaceId namespace ID
+     * @param name        resource name
+     * @param type        resource type
+     * @param increment   amount to add
+     * @return true if updated successfully
+     */
+    boolean incrementDownloadCount(String namespaceId, String name, String type, long increment);
 }
 

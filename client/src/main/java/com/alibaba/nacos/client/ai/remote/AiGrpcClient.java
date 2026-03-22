@@ -185,7 +185,7 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     /**
-     * Query prompt by latest/version/label.
+     * Query prompt by version/label/latest.
      *
      * @param promptKey prompt key
      * @param version prompt version, optional
@@ -198,7 +198,7 @@ public class AiGrpcClient implements AiClientProxy {
     }
     
     /**
-     * Query prompt by latest/version/label with optional md5.
+     * Query prompt by version/label/latest with optional md5.
      *
      * @param promptKey prompt key
      * @param version prompt version, optional
@@ -217,7 +217,13 @@ public class AiGrpcClient implements AiClientProxy {
         QueryPromptResponse response = requestToServer(request, QueryPromptResponse.class);
         return response.getPromptInfo();
     }
-    
+
+    @Override
+    public byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException {
+        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
+                "Skill download via gRPC is not supported. Set AI_TRANSPORT_MODE=http.");
+    }
+
     /**
      * Do release mcp server.
      *

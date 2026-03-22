@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -33,7 +34,6 @@ import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;

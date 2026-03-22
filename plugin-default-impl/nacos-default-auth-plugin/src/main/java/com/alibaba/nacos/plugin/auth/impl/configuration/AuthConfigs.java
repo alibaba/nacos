@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.slf4j.Logger;
@@ -79,6 +80,12 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE + ":}")
     private String serverIdentityValue;
+    
+    /**
+     * Whether AI resource anonymous access is enabled.
+     */
+    @Value("${" + AuthConstants.NACOS_CORE_AUTH_AI_ANONYMOUS_ENABLED + ":false}")
+    private boolean aiAnonymousEnabled;
     
     private boolean hasGlobalAdminRole;
     
@@ -168,6 +175,15 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
 
     /**
+     * AI anonymous access is open.
+     *
+     * @return AI anonymous access is open
+     */
+    public boolean isAiAnonymousEnabled() {
+        return aiAnonymousEnabled;
+    }
+    
+    /**
      * Whether permission information can be cached.
      *
      * @return bool
@@ -201,6 +217,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+            aiAnonymousEnabled = EnvUtil.getProperty(AuthConstants.NACOS_CORE_AUTH_AI_ANONYMOUS_ENABLED, Boolean.class,
+                    false);
             refreshPluginProperties();
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
