@@ -25,7 +25,7 @@ import java.util.Map;
  * @author nacos
  * @since 3.2.0
  */
-public class SkillAdminDetail {
+public class SkillAdminDetail extends SkillBase {
 
     /**
      * Whether the skill is enabled globally.

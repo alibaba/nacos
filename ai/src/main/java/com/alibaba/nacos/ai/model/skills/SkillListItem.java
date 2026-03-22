@@ -24,13 +24,7 @@ import java.util.Map;
  * @author nacos
  * @since 3.2.0
  */
-public class SkillAdminListItem {
-
-    private String namespaceId;
-
-    private String name;
-
-    private String description;
+public class SkillAdminListItem extends SkillBase {
 
     /**
      * Whether the skill is globally enabled. true=enable, false=disable.
@@ -71,30 +65,6 @@ public class SkillAdminListItem {
      * Total download count across all versions.
      */
     private Long downloadCount;
-
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
 
     public boolean isEnable() {
         return enable;
