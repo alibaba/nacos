@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.RowMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,7 +54,11 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
             + "WHERE execution_id=?";
     
     private static final String SQL_FIND_BY_ID = "SELECT * FROM pipeline_execution WHERE execution_id=?";
-    
+
+    private static final String SQL_FIND_BY_RESOURCE = "SELECT * FROM pipeline_execution "
+            + "WHERE resource_type=? AND resource_name=? AND namespace_id=? AND version=? "
+            + "ORDER BY create_time DESC";
+
     private static final PipelineExecutionRowMapper ROW_MAPPER = new PipelineExecutionRowMapper();
     
     private final JdbcTemplate injectedJdbcTemplate;
@@ -156,12 +161,12 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
     @Override
     public PipelineExecution findByResource(String resourceType, String resourceName, String namespaceId,
             String version) {
-        try {
-            return getJdbcTemplate().queryForObject(buildSingleLatestSql(), ROW_MAPPER, resourceType, resourceName,
-                    namespaceId, version);
-        } catch (EmptyResultDataAccessException e) {
+        List<PipelineExecution> executions = getJdbcTemplate().query(SQL_FIND_BY_RESOURCE, ROW_MAPPER, resourceType,
+                resourceName, namespaceId, version);
+        if (executions.isEmpty()) {
             return null;
         }
+        return executions.get(0);
     }
     
     @Override
@@ -183,9 +188,14 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
             sql.append(" AND version = ?");
             params.add(version);
         }
-
-        return getJdbcTemplate().query(appendPageClause(sql.append(" ORDER BY create_time DESC").toString(), offset, limit),
-                ROW_MAPPER, params.toArray());
+        sql.append(" ORDER BY create_time DESC");
+        
+        List<PipelineExecution> executions = getJdbcTemplate().query(sql.toString(), ROW_MAPPER, params.toArray());
+        if (executions.isEmpty() || offset >= executions.size()) {
+            return Collections.emptyList();
+        }
+        int toIndex = Math.min(executions.size(), offset + limit);
+        return new ArrayList<>(executions.subList(offset, toIndex));
     }
     
     @Override

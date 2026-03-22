@@ -56,7 +56,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     /**
      * skill-scanner CLI command name.
      */
-    private static final String SKILL_SCANNER_CMD = "skill-scanner";
+    static final String DEFAULT_SKILL_SCANNER_CMD = "skill-scanner";
 
     /**
      * Installation hint when skill-scanner is not found.
@@ -68,16 +68,24 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             + "  # 使用 pip\n"
             + "  pip install cisco-ai-skill-scanner";
 
-    private final boolean installed;
+    private final String scannerCommand;
 
     private final SkillScannerScanOptions scanOptions;
 
     public SkillScannerPipelineService(boolean installed) {
-        this(installed, SkillScannerScanOptions.none());
+        this(installed ? DEFAULT_SKILL_SCANNER_CMD : null, SkillScannerScanOptions.none());
+    }
+
+    public SkillScannerPipelineService(String scannerCommand) {
+        this(scannerCommand, SkillScannerScanOptions.none());
     }
 
     SkillScannerPipelineService(boolean installed, SkillScannerScanOptions scanOptions) {
-        this.installed = installed;
+        this(installed ? DEFAULT_SKILL_SCANNER_CMD : null, scanOptions);
+    }
+
+    SkillScannerPipelineService(String scannerCommand, SkillScannerScanOptions scanOptions) {
+        this.scannerCommand = scannerCommand;
         this.scanOptions = scanOptions != null ? scanOptions : SkillScannerScanOptions.none();
     }
 
@@ -88,7 +96,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     @Override
     public PublishPipelineResult execute(PublishPipelineContext context) {
-        if (!installed) {
+        if (scannerCommand == null || scannerCommand.isBlank()) {
             return PublishPipelineResult.reject(INSTALLATION_HINT);
         }
 
@@ -130,7 +138,8 @@ public class SkillScannerPipelineService implements PublishPipelineService {
                 return PublishPipelineResult.pass("skill-scanner 扫描通过，未发现 HIGH/CRITICAL 级别风险");
             } else {
                 String scanOutput = output.toString();
-                LOGGER.warn("[SkillScannerPipeline] Skill {} 扫描发现风险: {}", skillContext.getResourceName(), scanOutput);
+                LOGGER.warn("[SkillScannerPipeline] Skill {} 扫描发现风险, command={}, exitCode={}, output={} ",
+                        skillContext.getResourceName(), scannerCommand, exitCode, scanOutput);
                 return PublishPipelineResult.reject(
                         "skill-scanner 检测到安全风险（HIGH/CRITICAL 级别），发布被拒绝。\n扫描结果:\n" + scanOutput);
             }
@@ -139,7 +148,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             LOGGER.error("[SkillScannerPipeline] 扫描被中断", e);
             return PublishPipelineResult.reject("skill-scanner 扫描被中断: " + e.getMessage());
         } catch (IOException e) {
-            LOGGER.warn("[SkillScannerPipeline] 执行 skill-scanner 失败: {}", e.getMessage());
+            LOGGER.warn("[SkillScannerPipeline] 执行 skill-scanner 失败, command={}: {}", scannerCommand, e.getMessage());
             return PublishPipelineResult.reject("执行 skill-scanner 失败: " + e.getMessage());
         } finally {
             if (tempDir != null) {
@@ -150,7 +159,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     List<String> buildScanCommand(Path tempDir) {
         List<String> command = new ArrayList<>();
-        command.add(SKILL_SCANNER_CMD);
+        command.add(scannerCommand);
         command.add("scan");
         command.add(tempDir.toAbsolutePath().toString());
         command.add("--fail-on-severity");

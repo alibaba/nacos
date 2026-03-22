@@ -53,6 +53,7 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "retry": "Retry",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
@@ -842,6 +843,7 @@
     "batchDeleteConfirm": "Delete {{count}} selected AgentSpecs?",
     "deleteSuccess": "Deleted successfully",
     "batchDeleteSuccess": "Batch delete successful",
+    "loadListError": "Failed to fetch agent specs",
     "loadError": "Failed to load AgentSpec details",
     "nameRequired": "AgentSpec name is required",
     "saveSuccess": "Saved successfully",
