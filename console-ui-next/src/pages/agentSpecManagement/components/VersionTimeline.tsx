@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Send,
@@ -7,13 +8,22 @@ import {
   Trash2,
   Clock,
   Plus,
+  Tag,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import type { AgentSpecVersionSummary } from '@/types/agentspec';
 import { getValidActions, sortVersionsDescending } from './version-utils';
+import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
 
 interface VersionTimelineProps {
   versions: AgentSpecVersionSummary[];
@@ -26,6 +36,8 @@ interface VersionTimelineProps {
   onOnline: (version: string) => void;
   onOffline: (version: string) => void;
   showCreateDraftButton?: boolean;
+  allLabels?: Record<string, string>;
+  onSaveLabels?: (labels: Record<string, string>) => Promise<void>;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -57,10 +69,46 @@ export function VersionTimeline({
   onOnline,
   onOffline,
   showCreateDraftButton = true,
+  allLabels,
+  onSaveLabels,
 }: VersionTimelineProps) {
   const { t } = useTranslation();
+  const [labelEditVersion, setLabelEditVersion] = useState<string | null>(null);
+  const [labelEditSaving, setLabelEditSaving] = useState(false);
 
   const sorted = sortVersionsDescending(versions);
+
+  // Extract labels for a specific version (filter out 'latest')
+  const getLabelsForVersion = (version: string): Record<string, string> => {
+    if (!allLabels) return {};
+    const result: Record<string, string> = {};
+    for (const [key, val] of Object.entries(allLabels)) {
+      if (val === version && key !== 'latest') {
+        result[key] = val;
+      }
+    }
+    return result;
+  };
+
+  const handleLabelSave = async (versionLabels: Record<string, string>) => {
+    if (!onSaveLabels || !labelEditVersion) return;
+    setLabelEditSaving(true);
+    try {
+      const merged: Record<string, string> = {};
+      if (allLabels) {
+        for (const [key, val] of Object.entries(allLabels)) {
+          if (val !== labelEditVersion) {
+            merged[key] = val;
+          }
+        }
+      }
+      Object.assign(merged, versionLabels);
+      await onSaveLabels(merged);
+      setLabelEditVersion(null);
+    } finally {
+      setLabelEditSaving(false);
+    }
+  };
 
   const actionHandlers: Record<string, (version: string) => void> = {
     submit: onSubmit,
@@ -137,6 +185,26 @@ export function VersionTimeline({
                   </Badge>
                 </div>
 
+                {/* Labels for this version */}
+                {allLabels && (() => {
+                  const vLabels = getLabelsForVersion(v.version);
+                  const labelKeys = Object.keys(vLabels);
+                  return labelKeys.length > 0 ? (
+                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                      <Tag className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {labelKeys.map((key) => (
+                        <Badge
+                          key={key}
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 h-4 font-mono"
+                        >
+                          {key}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+
                 {/* Meta */}
                 <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
                   {v.author && <span>{v.author}</span>}
@@ -153,9 +221,9 @@ export function VersionTimeline({
                 )}
 
                 {/* Action buttons */}
-                {actions.length > 0 && (
+                {(actions.length > 0 || onSaveLabels) && (
                   <div
-                    className="flex items-center gap-1.5 mt-2"
+                    className="flex items-center gap-1.5 mt-2 flex-wrap"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {actions.map((action) => {
@@ -180,6 +248,17 @@ export function VersionTimeline({
                         </Button>
                       );
                     })}
+                    {onSaveLabels && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[11px]"
+                        onClick={() => setLabelEditVersion(v.version)}
+                      >
+                        <Tag className="h-3 w-3" />
+                        {t('common.versionLabels.editLabels')}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -193,6 +272,25 @@ export function VersionTimeline({
           </p>
         )}
       </div>
+
+      {/* Label edit dialog */}
+      <Dialog open={!!labelEditVersion} onOpenChange={(open) => !open && setLabelEditVersion(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('common.versionLabels.editLabels')} - {labelEditVersion}</DialogTitle>
+            <DialogDescription>
+              {t('common.versionLabels.title')}
+            </DialogDescription>
+          </DialogHeader>
+          {labelEditVersion && (
+            <VersionLabelEditor
+              labels={getLabelsForVersion(labelEditVersion)}
+              onSave={handleLabelSave}
+              isSaving={labelEditSaving}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

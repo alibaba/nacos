@@ -83,7 +83,7 @@ export function Sidebar() {
       badge: 'new',
       defaultOpen: true,
       children: [
-        { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skillManagement' },
+        { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skill' },
         { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement' },
         { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
         { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec' },

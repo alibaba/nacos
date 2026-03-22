@@ -1,1 +1,0 @@
-import{c}from"./button-D4VgS8ri.js";const e=[["path",{d:"M21.801 10A10 10 0 1 1 17 3.335",key:"yps3ct"}],["path",{d:"m9 11 3 3L22 4",key:"1pflzl"}]],t=c("circle-check-big",e);const i=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"m15 9-6 6",key:"1uzhvr"}],["path",{d:"m9 9 6 6",key:"z0biqf"}]],r=c("circle-x",i);export{t as C,r as a};

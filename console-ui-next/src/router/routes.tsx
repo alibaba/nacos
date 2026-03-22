@@ -57,7 +57,7 @@ export const routes: RouteObject[] = [
           // Default redirect
           {
             index: true,
-            element: <Navigate to="/skillManagement" replace />,
+            element: <Navigate to="/skill" replace />,
           },
           
           // Welcome page
@@ -193,7 +193,7 @@ export const routes: RouteObject[] = [
           
           // Skill Management
           {
-            path: 'skillManagement',
+            path: 'skill',
             element: lazyPage(() => import('@/pages/skillManagement')),
           },
           {
@@ -201,7 +201,7 @@ export const routes: RouteObject[] = [
             element: lazyPage(() => import('@/pages/newSkill')),
           },
           {
-            path: 'skillDetail',
+            path: 'skill/:name',
             element: lazyPage(() => import('@/pages/skillDetail')),
           },
           

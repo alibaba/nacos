@@ -13,6 +13,11 @@ import {
   Tag,
   Globe,
   FileText,
+  Send,
+  CheckCircle2,
+  Power,
+  PowerOff,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +48,7 @@ import { VersionTimeline } from '../agentSpecManagement/components/VersionTimeli
 import { ResourceViewer } from '../agentSpecManagement/components/ResourceViewer';
 import { sortVersionsDescending } from '../agentSpecManagement/components/version-utils';
 import { buildAgentSpecEditorSearch } from './version-workflow';
+import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
 
 export default function AgentSpecDetailPage() {
   const { t } = useTranslation();
@@ -64,6 +70,7 @@ export default function AgentSpecDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
   const [detailDocument, setDetailDocument] = useState<AgentSpecDocument | null>(null);
+  const [labelsSaving, setLabelsSaving] = useState(false);
   const autoLoadedVersionRef = useRef<string | null>(null);
 
   const loadDetail = useCallback(
@@ -177,6 +184,7 @@ export default function AgentSpecDetailPage() {
     setActionLoading(true);
     try {
       await agentSpecApi.deleteDraft({ namespaceId, agentSpecName });
+      toast.success(t('agentSpec.deleteDraftSuccess'));
       loadDetail();
     } catch {
       loadDetail();
@@ -231,6 +239,25 @@ export default function AgentSpecDetailPage() {
 
   const handleSelectVersion = (version: string) => {
     loadDetail(version);
+  };
+
+  const handleSaveLabels = async (newLabels: Record<string, string>) => {
+    setLabelsSaving(true);
+    try {
+      const latestValue = detail?.labels?.latest;
+      const merged = latestValue ? { ...newLabels, latest: latestValue } : newLabels;
+      await agentSpecApi.updateLabels({
+        namespaceId,
+        agentSpecName,
+        labels: JSON.stringify(merged),
+      });
+      toast.success(t('common.versionLabels.updateSuccess'));
+      loadDetail();
+    } catch {
+      // handled by interceptor
+    } finally {
+      setLabelsSaving(false);
+    }
   };
 
   const handleEdit = () => {
@@ -484,6 +511,91 @@ export default function AgentSpecDetailPage() {
                   </span>
                 )}
               </div>
+
+              {/* Version lifecycle action buttons */}
+              {selectedVersion && currentVersionStatus && (
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40">
+                  {/* Draft actions */}
+                  {currentVersionStatus === 'draft' && (
+                    <>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={actionLoading}
+                        onClick={() => handleSubmit(selectedVersion)}
+                      >
+                        <Send className="h-3 w-3" />
+                        {t('agentSpec.submit')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        disabled={actionLoading}
+                        onClick={handleDeleteDraft}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {t('agentSpec.deleteDraft')}
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Reviewing actions */}
+                  {currentVersionStatus === 'reviewing' && (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1.5"
+                      disabled={actionLoading}
+                      onClick={() => handlePublish(selectedVersion)}
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      {t('agentSpec.publish')}
+                    </Button>
+                  )}
+
+                  {/* Online actions */}
+                  {currentVersionStatus === 'online' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1.5"
+                      disabled={actionLoading}
+                      onClick={() => handleOffline(selectedVersion)}
+                    >
+                      <PowerOff className="h-3 w-3" />
+                      {t('agentSpec.offline')}
+                    </Button>
+                  )}
+
+                  {/* Offline actions */}
+                  {currentVersionStatus === 'offline' && (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1.5"
+                      disabled={actionLoading}
+                      onClick={() => handleOnline(selectedVersion)}
+                    >
+                      <Power className="h-3 w-3" />
+                      {t('agentSpec.online')}
+                    </Button>
+                  )}
+
+                  {/* Create new draft (when viewing online/offline and no editing/reviewing version) */}
+                  {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') &&
+                    !detail.editingVersion && !detail.reviewingVersion && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1.5"
+                      disabled={actionLoading}
+                      onClick={() => handleCreateDraft(selectedVersion)}
+                    >
+                      <Plus className="h-3 w-3" />
+                      {t('agentSpec.createDraftFrom')}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -544,32 +656,21 @@ export default function AgentSpecDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Labels card */}
+          {/* Labels card (editable) */}
           <Card className="overflow-hidden py-0 gap-0">
             <div className="px-4 py-3 border-b bg-muted/30">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
-                {t('agentSpec.labels')}
+                {t('common.versionLabels.title')}
               </h2>
             </div>
             <CardContent className="p-3.5">
-              {labelEntries.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {labelEntries.map(([key, value]) => (
-                    <Badge
-                      key={key}
-                      variant="secondary"
-                      className="max-w-full gap-1 rounded-md px-2 py-1 font-mono text-[11px]"
-                    >
-                      <span className="truncate">{key}</span>
-                      <span className="text-muted-foreground">=</span>
-                      <span className="truncate">{value || '-'}</span>
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t('agentSpec.noLabels')}</p>
-              )}
+              <VersionLabelEditor
+                labels={Object.fromEntries(labelEntries)}
+                availableVersions={versions.map((v) => v.version)}
+                onSave={handleSaveLabels}
+                isSaving={labelsSaving}
+              />
             </CardContent>
           </Card>
         </div>
@@ -601,6 +702,8 @@ export default function AgentSpecDetailPage() {
               onOnline={handleOnline}
               onOffline={handleOffline}
               showCreateDraftButton={false}
+              allLabels={detail.labels}
+              onSaveLabels={handleSaveLabels}
             />
           </div>
         </SheetContent>
