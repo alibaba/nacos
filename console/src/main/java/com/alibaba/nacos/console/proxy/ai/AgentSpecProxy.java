@@ -109,7 +109,7 @@ public class AgentSpecProxy {
     public void online(AgentSpecOnlineForm form) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, true);
     }
-    
+
     public void offline(AgentSpecOnlineForm form) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, false);
     }
