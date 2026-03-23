@@ -127,6 +127,9 @@ const I18N_CONF = {
     trace: 'Trace Plugin',
     environment: 'Environment Plugin',
     control: 'Control Plugin',
+    'data-filter': 'Data Filter Plugin',
+    'ai-pipeline': 'AI Pipeline Plugin',
+    'ai-storage': 'AI Storage Plugin',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',

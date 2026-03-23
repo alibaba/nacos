@@ -62,7 +62,17 @@ public enum PluginType {
     /**
      * Data filter plugin.
      */
-    DATA_FILTER("data-filter", "Data filter plugin");
+    DATA_FILTER("data-filter", "Data filter plugin"),
+    
+    /**
+     * AI publish pipeline plugin.
+     */
+    AI_PIPELINE("ai-pipeline", "AI publish pipeline plugin"),
+    
+    /**
+     * AI resource storage plugin.
+     */
+    AI_STORAGE("ai-storage", "AI resource storage plugin");
 
     private final String type;
 

@@ -58,6 +58,8 @@ class CriticalPluginConfigTest {
         assertFalse(CriticalPluginConfig.isCritical("trace:test"));
         assertFalse(CriticalPluginConfig.isCritical("config:test"));
         assertFalse(CriticalPluginConfig.isCritical("encryption:test"));
+        assertFalse(CriticalPluginConfig.isCritical("ai-pipeline:skill-scanner"));
+        assertFalse(CriticalPluginConfig.isCritical("ai-storage:nacos_config"));
     }
 
     @Test
@@ -80,10 +82,11 @@ class CriticalPluginConfigTest {
         Set<String> criticalPlugins = CriticalPluginConfig.getCriticalPlugins();
 
         assertNotNull(criticalPlugins);
-        assertEquals(3, criticalPlugins.size());
+        assertEquals(4, criticalPlugins.size());
         assertTrue(criticalPlugins.contains("datasource-dialect:mysql"));
         assertTrue(criticalPlugins.contains("datasource-dialect:derby"));
         assertTrue(criticalPlugins.contains("datasource-dialect:postgresql"));
+        assertTrue(criticalPlugins.contains("ai-storage:nacos_config"));
     }
 
     @Test

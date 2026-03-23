@@ -32,7 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * with provider + opaque key, then delegate read/write to the router.</p>
  *
  * <p>Storage implementations are registered via {@link #join(AiResourceStorage)} by external initializer
- * (e.g. {@code AiResourceStorageInitializer} in ai module) after Spring context is ready.</p>
+ * (e.g. {@code AiResourceStorageInitializer} in ai module) when the root application context has finished
+ * refreshing.</p>
  *
  * @author nacos
  * @since 3.2.0
