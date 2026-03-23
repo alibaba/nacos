@@ -21,7 +21,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +46,8 @@ public class OidcAuthPluginService implements AuthPluginService {
      * Identity names that this plugin looks for in requests.
      */
     private static final List<String> IDENTITY_NAMES = Arrays.asList(
-            OidcConstants.AUTHORIZATION_HEADER,
-            OidcConstants.ACCESS_TOKEN_PARAM
+            OidcProtocolConstants.AUTHORIZATION_HEADER,
+            OidcProtocolConstants.ACCESS_TOKEN_PARAM
     );
 
     private volatile IdentityProvider identityProvider;
@@ -78,7 +78,7 @@ public class OidcAuthPluginService implements AuthPluginService {
 
     @Override
     public String getAuthServiceName() {
-        return OidcConstants.AUTH_PLUGIN_TYPE;
+        return OidcProtocolConstants.AUTH_PLUGIN_TYPE;
     }
 
     @Override

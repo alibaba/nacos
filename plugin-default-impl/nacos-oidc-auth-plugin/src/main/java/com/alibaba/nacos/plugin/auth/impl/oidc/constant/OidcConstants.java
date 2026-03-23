@@ -17,7 +17,10 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.constant;
 
 /**
- * OIDC authentication plugin constants.
+ * Server-specific OIDC authentication plugin constants.
+ *
+ * <p>Protocol-level constants (Discovery fields, OAuth2 parameters, HTTP headers, etc.)
+ * are defined in {@link com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants}.
  *
  * @author WangzJi
  */
@@ -26,27 +29,6 @@ public final class OidcConstants {
 
     private OidcConstants() {
     }
-
-
-    /**
-     * Plugin type name for configuration.
-     */
-    public static final String AUTH_PLUGIN_TYPE = "oidc";
-
-    /**
-     * Authorization header name.
-     */
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-
-    /**
-     * Bearer token prefix.
-     */
-    public static final String BEARER_PREFIX = "Bearer ";
-
-    /**
-     * Access token parameter name.
-     */
-    public static final String ACCESS_TOKEN_PARAM = "accessToken";
 
     /**
      * OIDC user key in identity context.
@@ -167,44 +149,7 @@ public final class OidcConstants {
      */
     public static final long DEFAULT_AUTHORIZATION_TIMEOUT_MS = 5000L;
 
-    // ==================== OIDC Discovery ====================
-
-    /**
-     * OIDC well-known configuration path.
-     */
-    public static final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
-
-    /**
-     * JWKS URI key in OIDC discovery document.
-     */
-    public static final String DISCOVERY_JWKS_URI = "jwks_uri";
-
-    /**
-     * Authorization endpoint key in OIDC discovery document.
-     */
-    public static final String DISCOVERY_AUTHORIZATION_ENDPOINT = "authorization_endpoint";
-
-    /**
-     * Token endpoint key in OIDC discovery document.
-     */
-    public static final String DISCOVERY_TOKEN_ENDPOINT = "token_endpoint";
-
-    /**
-     * Userinfo endpoint key in OIDC discovery document.
-     */
-    public static final String DISCOVERY_USERINFO_ENDPOINT = "userinfo_endpoint";
-
-    /**
-     * End session endpoint key in OIDC discovery document.
-     */
-    public static final String DISCOVERY_END_SESSION_ENDPOINT = "end_session_endpoint";
-
-    // ==================== HTTP Status Codes ====================
-
-    /**
-     * HTTP 200 OK status code.
-     */
-    public static final int HTTP_STATUS_OK = 200;
+    // ==================== HTTP Status Codes (server-specific) ====================
 
     /**
      * HTTP 401 Unauthorized status code.
@@ -216,7 +161,7 @@ public final class OidcConstants {
      */
     public static final int HTTP_STATUS_FORBIDDEN = 403;
 
-    // ==================== HTTP Constants ====================
+    // ==================== HTTP Constants (server-specific) ====================
 
     /**
      * HTTP protocol prefix.
