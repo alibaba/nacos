@@ -513,7 +513,15 @@ const request = (function(_global) {
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
 
-    const [url, paramsStr] = config.url.split('?');
+    // Resolve relative URLs against the correct base path,
+    // stripping /legacy/ or /next/ prefix that the browser would otherwise prepend.
+    let resolvedUrl = config.url;
+    if (resolvedUrl && !resolvedUrl.startsWith('/') && !resolvedUrl.startsWith('http')) {
+      const basePath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+      resolvedUrl = basePath + resolvedUrl;
+    }
+
+    const [url, paramsStr] = resolvedUrl.split('?');
     const params = paramsStr ? paramsStr.split('&') : [];
 
     const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);

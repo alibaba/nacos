@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Pencil, Trash2, ExternalLink, Tag, Clock } from 'lucide-react';
+import { MessageSquare, Pencil, Trash2, ExternalLink, Clock } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { PromptMetaSummary } from '@/types/prompt';
 
@@ -64,13 +63,7 @@ export function PromptCard({
           <div className="flex items-center gap-1.5 mt-1">
             {prompt.latestVersion && (
               <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">
-                v{prompt.latestVersion}
-              </span>
-            )}
-            {prompt.gmtModified && (
-              <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <Clock className="h-2.5 w-2.5" />
-                {formatDate(prompt.gmtModified)}
+                {prompt.latestVersion}
               </span>
             )}
           </div>
@@ -82,26 +75,14 @@ export function PromptCard({
         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
           {prompt.description || t('prompt.noDescription')}
         </p>
-
-        {prompt.bizTags && prompt.bizTags.length > 0 && (
-          <div className="flex items-center gap-1 mt-2 flex-wrap">
-            {prompt.bizTags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="outline" className="text-[10px] px-1 py-0 h-4 font-normal">
-                <Tag className="h-2.5 w-2.5 mr-0.5" />
-                {tag}
-              </Badge>
-            ))}
-            {prompt.bizTags.length > 3 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{prompt.bizTags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Footer */}
-      <CardFooter className="px-4 py-1.5 border-t bg-muted/20 flex items-center justify-end [.border-t]:pt-1.5">
+      <CardFooter className="px-4 py-1.5 border-t bg-muted/20 flex items-center justify-between [.border-t]:pt-1.5">
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          {prompt.gmtModified ? formatDate(prompt.gmtModified) : '-'}
+        </span>
         <div className="flex items-center -mr-1" onClick={(e) => e.stopPropagation()}>
           <Tooltip>
             <TooltipTrigger asChild>

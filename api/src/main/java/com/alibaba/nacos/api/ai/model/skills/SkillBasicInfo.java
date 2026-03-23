@@ -23,39 +23,9 @@ import java.util.Objects;
  *
  * @author nacos
  */
-public class SkillBasicInfo {
-    
-    private String namespaceId;
-    
-    private String name;
-    
-    private String description;
+public class SkillBasicInfo extends SkillBase {
     
     private Long updateTime;
-    
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-    
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
     
     public Long getUpdateTime() {
         return updateTime;
@@ -74,13 +44,13 @@ public class SkillBasicInfo {
             return false;
         }
         SkillBasicInfo that = (SkillBasicInfo) o;
-        return Objects.equals(namespaceId, that.namespaceId)
-                && Objects.equals(name, that.name) && Objects.equals(description, that.description)
+        return Objects.equals(getNamespaceId(), that.getNamespaceId())
+                && Objects.equals(getName(), that.getName()) && Objects.equals(getDescription(), that.getDescription())
                 && Objects.equals(updateTime, that.updateTime);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, name, description, updateTime);
+        return Objects.hash(getNamespaceId(), getName(), getDescription(), updateTime);
     }
 }

@@ -17,8 +17,8 @@
 package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
-import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.model.skills.SkillDetail;
+import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
 import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
@@ -160,14 +160,14 @@ class SkillOperationServiceImplTest {
         when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
-        SkillAdminDetail skillAdminDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
+        SkillDetail skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
 
         // Then
-        assertNotNull(skillAdminDetail);
-        assertTrue(skillAdminDetail.isEnable());
-        assertEquals(1, skillAdminDetail.getOnlineCnt());
-        assertEquals("v1", skillAdminDetail.getLabels().get("latest"));
-        assertNotNull(skillAdminDetail.getVersions());
+        assertNotNull(skillDetail);
+        assertTrue(skillDetail.isEnable());
+        assertEquals(1, skillDetail.getOnlineCnt());
+        assertEquals("v1", skillDetail.getLabels().get("latest"));
+        assertNotNull(skillDetail.getVersions());
     }
     
     @Test
@@ -237,7 +237,7 @@ class SkillOperationServiceImplTest {
                 .thenReturn(metaPage);
         
         // When
-        Page<SkillAdminListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         
         // Then
         assertNotNull(result);
@@ -354,7 +354,7 @@ class SkillOperationServiceImplTest {
         when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("userB");
-        Page<SkillAdminListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
         assertEquals("skill-public", result.getPageItems().get(0).getName());
         assertEquals(1, result.getTotalCount());
@@ -435,7 +435,7 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
-        Page<SkillAdminListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
     }
 

@@ -25,8 +25,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
-import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.model.skills.SkillDetail;
+import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -79,7 +79,7 @@ public class ConsoleSkillController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<SkillAdminDetail> getSkill(SkillForm form) throws NacosException {
+    public Result<SkillDetail> getSkill(SkillForm form) throws NacosException {
         form.validate();
         return Result.success(skillProxy.getSkill(form));
     }
@@ -138,7 +138,7 @@ public class ConsoleSkillController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<SkillAdminListItem>> listSkills(SkillListForm skillListForm, PageForm pageForm)
+    public Result<Page<SkillListItem>> listSkills(SkillListForm skillListForm, PageForm pageForm)
             throws NacosException {
         skillListForm.validate();
         pageForm.validate();

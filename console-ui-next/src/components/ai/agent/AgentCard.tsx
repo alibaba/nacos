@@ -88,7 +88,7 @@ export function AgentCard({
             {/* Version */}
             {version && (
               <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">
-                v{version}
+                {version}
               </span>
             )}
           </div>

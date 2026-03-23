@@ -3,10 +3,7 @@ import {
   Package,
   Trash2,
   ExternalLink,
-  Pencil,
-  Eye,
-  Globe,
-  Tag,
+  FileEdit,
   Clock,
 } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
@@ -35,7 +32,7 @@ export function AgentSpecCard({
 }: AgentSpecCardProps) {
   const { t } = useTranslation();
 
-  const labelEntries = Object.entries(item.labels || {});
+  const latestVersion = item.labels?.latest;
 
   return (
     <Card
@@ -64,7 +61,7 @@ export function AgentSpecCard({
           <Package className="h-5 w-5 text-white" />
         </div>
 
-        {/* Title + status */}
+        {/* Title + version + status */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm truncate leading-tight">
             {item.name}
@@ -80,6 +77,11 @@ export function AgentSpecCard({
             >
               {item.enable ? t('agentSpec.enabled') : t('agentSpec.disabled')}
             </Badge>
+            {latestVersion && (
+              <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">
+                {latestVersion}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -90,49 +92,13 @@ export function AgentSpecCard({
           {item.description || t('agentSpec.noDescription')}
         </p>
 
-        {/* Version indicators */}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {item.editingVersion && (
+        {/* Meta indicators */}
+        {item.editingVersion && (
+          <div className="flex items-center gap-2 mt-2">
             <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
-              <Pencil className="h-2.5 w-2.5" />
-              {t('agentSpec.editing')} {item.editingVersion}
+              <FileEdit className="h-2.5 w-2.5" />
+              {t('agentSpec.hasDraft')}
             </span>
-          )}
-          {item.reviewingVersion && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
-              <Eye className="h-2.5 w-2.5" />
-              {t('agentSpec.reviewing')} {item.reviewingVersion}
-            </span>
-          )}
-          {item.onlineCnt > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
-              <Globe className="h-2.5 w-2.5" />
-              {item.onlineCnt} {t('agentSpec.online')}
-            </span>
-          )}
-        </div>
-
-        {/* Labels */}
-        {labelEntries.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-            <Tag className="h-3 w-3 text-muted-foreground shrink-0" />
-            {labelEntries.slice(0, 3).map(([key, value]) => (
-              <Tooltip key={key}>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground truncate max-w-[100px]">
-                    {key}={value}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {key}={value}
-                </TooltipContent>
-              </Tooltip>
-            ))}
-            {labelEntries.length > 3 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{labelEntries.length - 3}
-              </span>
-            )}
           </div>
         )}
       </div>

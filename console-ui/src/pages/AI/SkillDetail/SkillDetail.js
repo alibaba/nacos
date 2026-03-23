@@ -20,15 +20,17 @@ import {
   Balloon,
   Button,
   Card,
+  Checkbox,
   Collapse,
   ConfigProvider,
   Dialog,
   Message,
   Tag,
+  Table,
   Grid,
   Icon,
-  Loading,
   Input,
+  Loading,
 } from '@alifd/next';
 import SkillOptimizeDialog from '../SkillManagement/SkillOptimizeDialog';
 import MarkdownRenderer from '../../../components/MarkdownRenderer/MarkdownRenderer';
@@ -59,12 +61,38 @@ class SkillDetail extends React.Component {
       expandedKeys: [],
       fileTree: null,
       selectedFile: null,
-      editingFileName: null, // 正在编辑的文件名（格式：{nodeKey, oldName, type}）
-      editingFileNameValue: '', // 正在编辑的文件名的临时值
-      resources: [], // 资源列表（用于编辑）
-      draggingFile: null, // 正在拖拽的文件（格式：{resourceKey, name, type}）
-      dragOverFolder: null, // 当前拖拽悬停的文件夹名称
-      showOptimizeSuccess: false, // 是否显示优化成功提示
+      editingFileName: null,
+      editingFileNameValue: '',
+      resources: [],
+      draggingFile: null,
+      dragOverFolder: null,
+      showOptimizeSuccess: false,
+      // Version management
+      versions: [],
+      selectedVersion: null,
+      selectedVersionStatus: null,
+      versionPanelVisible: false,
+      labelsMap: {},
+      skillEnable: true,
+      editingVersionStr: null,
+      downloadCount: 0,
+      onlineCnt: 0,
+      // Labels editor
+      labelEditorVisible: false,
+      labelEditorVersion: '',
+      labelEditorSelected: [],
+      labelEditorAll: [],
+      labelEditorNewLabel: '',
+      labelEditorSaving: false,
+      // Version content loading
+      versionLoading: false,
+      pipelineInfo: null,
+      // Operation states
+      submitting: false,
+      publishing: false,
+      onlining: false,
+      creatingDraft: false,
+      publishUpdateLatest: true,
     };
     this.optimizeSuccessTimer = null; // 优化成功提示的定时器
   }
@@ -115,6 +143,10 @@ class SkillDetail extends React.Component {
         this.setState({ loading: false });
         if (data && (data.code === 0 || data.code === 200) && data.data) {
           const skillData = data.data;
+          // SkillAdminDetail may not include name; fill from URL params
+          if (!skillData.name) {
+            skillData.name = skillName;
+          }
           const previewData = this.buildPreviewDataStatic(skillData);
           const fileTree = this.buildFileTree(previewData);
           // Find SKILL.md file in the file list
@@ -124,14 +156,46 @@ class SkillDetail extends React.Component {
               : null;
           // 加载资源列表用于编辑
           const resources = skillData.resource ? Object.values(skillData.resource) : [];
+
+          // Extract version management info from SkillAdminDetail
+          const versions = skillData.versions || [];
+          const labelsMap = skillData.labels || {};
+          const skillEnable = skillData.enable !== false;
+          const editingVersionStr = skillData.editingVersion || null;
+          const downloadCount = skillData.downloadCount || 0;
+          const onlineCnt = skillData.onlineCnt || 0;
+
+          // Auto-select version: draft first, then latest online, then first
+          let autoSelectedVersion = this.state.selectedVersion;
+          let autoSelectedStatus = this.state.selectedVersionStatus;
+          if (!autoSelectedVersion && versions.length > 0) {
+            const draft = versions.find(v => v.status === 'draft');
+            const online = versions.find(v => v.status === 'online');
+            const selected = draft || online || versions[0];
+            autoSelectedVersion = selected.version;
+            autoSelectedStatus = selected.status;
+          }
+
           this.setState(
             {
               skillData,
               fileTree,
               selectedFile: skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
               resources,
+              versions,
+              labelsMap,
+              skillEnable,
+              editingVersionStr,
+              downloadCount,
+              onlineCnt,
+              selectedVersion: autoSelectedVersion,
+              selectedVersionStatus: autoSelectedStatus,
             },
             () => {
+              // If a specific version is selected, load its content
+              if (autoSelectedVersion && versions.length > 0) {
+                this.loadVersionContent(autoSelectedVersion);
+              }
               if (callback && typeof callback === 'function') {
                 callback();
               }
@@ -155,7 +219,15 @@ class SkillDetail extends React.Component {
   handleEdit = () => {
     const namespaceId = getParams('namespace') || 'public';
     const skillName = getParams('name');
-    this.props.history.push(`/newSkill?namespace=${namespaceId}&name=${skillName}&mode=edit`);
+    const { editingVersionStr } = this.state;
+    if (editingVersionStr) {
+      // Has draft, edit it directly
+      this.props.history.push(
+        `/newSkill?namespace=${namespaceId}&name=${skillName}&mode=edit&isDraft=true`
+      );
+    } else {
+      this.props.history.push(`/newSkill?namespace=${namespaceId}&name=${skillName}&mode=edit`);
+    }
   };
 
   handleOptimize = () => {
@@ -175,62 +247,26 @@ class SkillDetail extends React.Component {
     }
 
     // 构建 skillCard 对象用于更新
-    const skillCard = {
+    const updatedSkillData = {
       name: optimizedSkill.name || skillData.name,
       description: optimizedSkill.description || skillData.description || '',
       instruction: optimizedSkill.instruction || skillData.instruction || '',
+      resource:
+        optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0
+          ? optimizedSkill.resource
+          : {},
     };
 
-    // 使用优化后的资源
-    if (optimizedSkill.resource && Object.keys(optimizedSkill.resource).length > 0) {
-      skillCard.resource = optimizedSkill.resource;
-    } else {
-      skillCard.resource = {};
-    }
-
-    // 准备请求数据
-    const namespaceId = getParams('namespace') || '';
-    const skillName = skillData.name;
-    const params = new URLSearchParams();
-    params.append('skillName', skillName);
-    if (namespaceId) {
-      params.append('namespaceId', namespaceId);
-    }
-
-    // 调用更新 API
-    request({
-      url: 'v3/console/ai/skills',
-      method: 'PUT',
-      data: {
-        namespaceId,
-        skillName,
-        skillCard: JSON.stringify(skillCard),
-      },
-      success: data => {
-        if (data && data.code === 0) {
-          // 显示优化成功提示
-          this.setState({ showOptimizeSuccess: true });
-
-          // 清除之前的定时器
-          if (this.optimizeSuccessTimer) {
-            clearTimeout(this.optimizeSuccessTimer);
-          }
-
-          // 重新加载数据
-          this.loadSkillData();
-
-          // 3秒后自动隐藏提示
-          this.optimizeSuccessTimer = setTimeout(() => {
-            this.setState({ showOptimizeSuccess: false });
-            this.optimizeSuccessTimer = null;
-          }, 3000);
-        } else {
-          Message.error(data?.message || locale.optimizeFailed || 'Failed to apply optimization');
-        }
-      },
-      error: () => {
-        Message.error(locale.optimizeFailed || 'Failed to apply optimization');
-      },
+    // Use draft-aware update
+    this.updateSkillContent(updatedSkillData, () => {
+      this.setState({ showOptimizeSuccess: true });
+      if (this.optimizeSuccessTimer) {
+        clearTimeout(this.optimizeSuccessTimer);
+      }
+      this.optimizeSuccessTimer = setTimeout(() => {
+        this.setState({ showOptimizeSuccess: false });
+        this.optimizeSuccessTimer = null;
+      }, 3000);
     });
   };
 
@@ -281,6 +317,567 @@ class SkillDetail extends React.Component {
   handleGoBack = () => {
     const namespaceId = getParams('namespace') || '';
     this.props.history.push(`/skillManagement?namespace=${namespaceId}`);
+  };
+
+  // ===== Version Management Methods =====
+
+  loadVersionContent = version => {
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+    this.setState({ versionLoading: true });
+
+    const params = new URLSearchParams();
+    params.append('skillName', skillName);
+    params.append('version', version);
+    if (namespaceId) {
+      params.append('namespaceId', namespaceId);
+    }
+
+    request({
+      url: `v3/console/ai/skills/version?${params.toString()}`,
+      success: data => {
+        this.setState({ versionLoading: false });
+        if (data && (data.code === 0 || data.code === 200) && data.data) {
+          const versionData = data.data;
+          // Update skillData with version-specific content
+          const updatedSkillData = {
+            ...this.state.skillData,
+            name: versionData.name || this.state.skillData?.name || skillName,
+            instruction: versionData.instruction || '',
+            description: versionData.description || '',
+            resource: versionData.resource || {},
+          };
+          const previewData = this.buildPreviewDataStatic(updatedSkillData);
+          const fileTree = this.buildFileTree(previewData);
+          const resources = updatedSkillData.resource
+            ? Object.values(updatedSkillData.resource)
+            : [];
+
+          // Find version status and pipeline info
+          const versionSummary = (this.state.versions || []).find(v => v.version === version);
+          let pipelineInfo = null;
+          if (versionSummary?.publishPipelineInfo) {
+            try {
+              pipelineInfo = JSON.parse(versionSummary.publishPipelineInfo);
+            } catch (e) {
+              // ignore parse error
+            }
+          }
+
+          const skillMdFile =
+            fileTree && Array.isArray(fileTree)
+              ? fileTree.find(file => file.name === 'SKILL.md' && file.fileType === 'skill-md')
+              : null;
+
+          this.setState({
+            skillData: updatedSkillData,
+            fileTree,
+            selectedFile: skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
+            resources,
+            selectedVersion: version,
+            selectedVersionStatus: versionSummary?.status || null,
+            pipelineInfo,
+          });
+        }
+      },
+      error: () => {
+        this.setState({ versionLoading: false });
+        const { locale = {} } = this.props;
+        Message.error(locale.getSkillInfoFailed || 'Failed to get version content');
+      },
+    });
+  };
+
+  handleOpenVersionPanel = () => {
+    this.setState({ versionPanelVisible: true });
+  };
+
+  handleCloseVersionPanel = () => {
+    this.setState({ versionPanelVisible: false });
+  };
+
+  getLabelsByVersion = version => {
+    const { labelsMap } = this.state;
+    if (!labelsMap || typeof labelsMap !== 'object') return [];
+    return Object.keys(labelsMap).filter(label => labelsMap[label] === version);
+  };
+
+  handleViewVersion = version => {
+    this.loadVersionContent(version);
+    this.handleCloseVersionPanel();
+  };
+
+  getVersionStatusColor = status => {
+    switch (status) {
+      case 'draft':
+        return '#1890ff';
+      case 'reviewing':
+        return '#fa8c16';
+      case 'online':
+        return '#52c41a';
+      case 'offline':
+        return '#999';
+      default:
+        return '#999';
+    }
+  };
+
+  getVersionStatusText = status => {
+    const { locale = {} } = this.props;
+    switch (status) {
+      case 'draft':
+        return locale.versionStatusDraft || 'Draft';
+      case 'reviewing':
+        return locale.versionStatusReviewing || 'Reviewing';
+      case 'online':
+        return locale.versionStatusOnline || 'Online';
+      case 'offline':
+        return locale.versionStatusOffline || 'Offline';
+      default:
+        return status || '--';
+    }
+  };
+
+  // ===== Labels Editor Methods =====
+
+  openLabelEditor = version => {
+    const { labelsMap } = this.state;
+    const allLabels = Object.keys(labelsMap || {});
+    const selectedLabels = allLabels.filter(label => labelsMap[label] === version);
+    this.setState({
+      labelEditorVisible: true,
+      labelEditorVersion: version,
+      labelEditorAll: [...allLabels],
+      labelEditorSelected: [...selectedLabels],
+      labelEditorNewLabel: '',
+    });
+  };
+
+  closeLabelEditor = () => {
+    this.setState({
+      labelEditorVisible: false,
+      labelEditorVersion: '',
+      labelEditorSelected: [],
+      labelEditorAll: [],
+      labelEditorNewLabel: '',
+    });
+  };
+
+  addNewLabelToEditor = () => {
+    const { locale = {} } = this.props;
+    const { labelEditorNewLabel, labelEditorAll, labelEditorSelected } = this.state;
+    const newLabel = (labelEditorNewLabel || '').trim();
+    if (!newLabel) {
+      Message.error(locale.labelRequired || 'Please enter label name');
+      return;
+    }
+    if (!/^[A-Za-z0-9._-]+$/.test(newLabel)) {
+      Message.error(locale.labelInvalid || 'Label only supports letters, numbers, .-_');
+      return;
+    }
+    if (labelEditorAll.includes(newLabel)) {
+      Message.error(locale.labelExists || 'Label already exists');
+      return;
+    }
+    this.setState({
+      labelEditorAll: [...labelEditorAll, newLabel],
+      labelEditorSelected: [...labelEditorSelected, newLabel],
+      labelEditorNewLabel: '',
+    });
+  };
+
+  handleSaveLabelEditor = () => {
+    const { locale = {} } = this.props;
+    const { labelsMap, labelEditorVersion, labelEditorSelected } = this.state;
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    if (!labelEditorVersion) {
+      Message.error(locale.labelRequired || 'Version required');
+      return;
+    }
+
+    // Build new labels map: keep labels for other versions, update for this version
+    const newLabelsMap = {};
+    Object.keys(labelsMap || {}).forEach(label => {
+      if (labelsMap[label] !== labelEditorVersion) {
+        newLabelsMap[label] = labelsMap[label];
+      }
+    });
+    labelEditorSelected.forEach(label => {
+      newLabelsMap[label] = labelEditorVersion;
+    });
+
+    this.setState({ labelEditorSaving: true });
+
+    request({
+      method: 'PUT',
+      url: 'v3/console/ai/skills/labels',
+      data: {
+        skillName,
+        labels: JSON.stringify(newLabelsMap),
+        namespaceId,
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ labelEditorSaving: false });
+        if (data && data.code === 0) {
+          Message.success(locale.bindLabelSuccess || 'Labels updated successfully');
+          this.closeLabelEditor();
+          this.loadSkillData();
+        } else {
+          Message.error(data?.message || locale.bindLabelFailed || 'Failed to update labels');
+        }
+      },
+      error: () => {
+        this.setState({ labelEditorSaving: false });
+        Message.error(locale.bindLabelFailed || 'Failed to update labels');
+      },
+    });
+  };
+
+  // ===== Draft Operations =====
+
+  handleCreateDraft = basedOnVersion => {
+    const { locale = {} } = this.props;
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ creatingDraft: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/console/ai/skills/draft',
+      data: {
+        skillName,
+        basedOnVersion: basedOnVersion || '',
+        namespaceId,
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ creatingDraft: false });
+        if (data && data.code === 0) {
+          Message.success(locale.createDraftSuccess || 'Draft created successfully');
+          // Reset selectedVersion so loadSkillData will auto-select the new draft
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadSkillData();
+          });
+        } else {
+          Message.error(data?.message || locale.createDraftFailed || 'Failed to create draft');
+        }
+      },
+      error: () => {
+        this.setState({ creatingDraft: false });
+        Message.error(locale.createDraftFailed || 'Failed to create draft');
+      },
+    });
+  };
+
+  handleDeleteDraft = () => {
+    const { locale = {} } = this.props;
+    Dialog.confirm({
+      title: locale.deleteDraft || 'Delete Draft',
+      content: locale.deleteDraftConfirm || 'Are you sure you want to delete the current draft?',
+      onOk: () => {
+        const skillName = getParams('name');
+        const namespaceId = getParams('namespace') || '';
+
+        const params = new URLSearchParams();
+        params.append('skillName', skillName);
+        if (namespaceId) {
+          params.append('namespaceId', namespaceId);
+        }
+
+        request({
+          method: 'DELETE',
+          url: `v3/console/ai/skills/draft?${params.toString()}`,
+          success: data => {
+            if (data && data.code === 0) {
+              Message.success(locale.deleteDraftSuccess || 'Draft deleted successfully');
+              this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+                this.loadSkillData();
+              });
+            } else {
+              Message.error(data?.message || locale.deleteDraftFailed || 'Failed to delete draft');
+            }
+          },
+          error: () => {
+            Message.error(locale.deleteDraftFailed || 'Failed to delete draft');
+          },
+        });
+      },
+    });
+  };
+
+  handleEditDraft = () => {
+    const namespaceId = getParams('namespace') || 'public';
+    const skillName = getParams('name');
+    this.props.history.push(
+      `/newSkill?namespace=${namespaceId}&name=${skillName}&mode=edit&isDraft=true`
+    );
+  };
+
+  // ===== Submit & Publish =====
+
+  handleSubmitForReview = () => {
+    const { locale = {} } = this.props;
+    const { selectedVersion, selectedVersionStatus } = this.state;
+
+    if (selectedVersionStatus !== 'draft') return;
+
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ submitting: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/console/ai/skills/submit',
+      data: {
+        skillName,
+        version: selectedVersion,
+        namespaceId,
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ submitting: false });
+        if (data && data.code === 0) {
+          Message.success(locale.submitSuccess || 'Submitted for review successfully');
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadSkillData();
+          });
+        } else {
+          Message.error(data?.message || locale.submitFailed || 'Failed to submit');
+        }
+      },
+      error: () => {
+        this.setState({ submitting: false });
+        Message.error(locale.submitFailed || 'Failed to submit');
+      },
+    });
+  };
+
+  handlePublish = () => {
+    const { locale = {} } = this.props;
+    const { selectedVersion, pipelineInfo } = this.state;
+
+    // Check pipeline status if pipeline exists
+    if (pipelineInfo && pipelineInfo.status !== 'APPROVED') {
+      Message.warning(locale.publishNotApproved || 'Cannot publish: pipeline not approved');
+      return;
+    }
+
+    this.setState({ publishUpdateLatest: true });
+
+    Dialog.confirm({
+      title: locale.publishVersion || 'Publish Version',
+      content: (
+        <div>
+          <p>
+            {(locale.publishConfirm || 'Are you sure you want to publish version {0}?').replace(
+              '{0}',
+              selectedVersion
+            )}
+          </p>
+          <Checkbox
+            defaultChecked
+            onChange={checked => this.setState({ publishUpdateLatest: checked })}
+          >
+            {locale.updateLatestLabel || 'Update latest label'}
+          </Checkbox>
+        </div>
+      ),
+      onOk: () => {
+        const skillName = getParams('name');
+        const namespaceId = getParams('namespace') || '';
+
+        this.setState({ publishing: true });
+
+        request({
+          method: 'POST',
+          url: 'v3/console/ai/skills/publish',
+          data: {
+            skillName,
+            version: selectedVersion,
+            updateLatestLabel: this.state.publishUpdateLatest,
+            namespaceId,
+          },
+          contentType: 'application/x-www-form-urlencoded',
+          success: data => {
+            this.setState({ publishing: false });
+            if (data && data.code === 0) {
+              Message.success(locale.publishSuccess || 'Published successfully');
+              this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+                this.loadSkillData();
+              });
+            } else {
+              Message.error(data?.message || locale.publishFailed || 'Failed to publish');
+            }
+          },
+          error: () => {
+            this.setState({ publishing: false });
+            Message.error(locale.publishFailed || 'Failed to publish');
+          },
+        });
+      },
+    });
+  };
+
+  // ===== Online/Offline Per Version =====
+
+  handleOnlineVersion = version => {
+    const { locale = {} } = this.props;
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ onlining: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/console/ai/skills/online',
+      data: { skillName, version, namespaceId },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ onlining: false });
+        if (data && data.code === 0) {
+          Message.success(locale.onlineSuccess || 'Online successfully');
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadSkillData();
+          });
+        } else {
+          Message.error(data?.message || locale.onlineFailed || 'Failed to go online');
+        }
+      },
+      error: () => {
+        this.setState({ onlining: false });
+        Message.error(locale.onlineFailed || 'Failed to go online');
+      },
+    });
+  };
+
+  handleOfflineVersion = version => {
+    const { locale = {} } = this.props;
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    this.setState({ onlining: true });
+
+    request({
+      method: 'POST',
+      url: 'v3/console/ai/skills/offline',
+      data: { skillName, version, namespaceId },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ onlining: false });
+        if (data && data.code === 0) {
+          Message.success(locale.offlineSuccess || 'Offline successfully');
+          this.setState({ selectedVersion: null, selectedVersionStatus: null }, () => {
+            this.loadSkillData();
+          });
+        } else {
+          Message.error(data?.message || locale.offlineFailed || 'Failed to go offline');
+        }
+      },
+      error: () => {
+        this.setState({ onlining: false });
+        Message.error(locale.offlineFailed || 'Failed to go offline');
+      },
+    });
+  };
+
+  // ===== Version ZIP Download =====
+
+  handleDownloadVersion = version => {
+    const skillName = getParams('name');
+    const namespaceId = getParams('namespace') || '';
+
+    let accessToken = '';
+    try {
+      const tokenObj = JSON.parse(localStorage.getItem('token') || '{}');
+      accessToken = tokenObj.accessToken || '';
+    } catch (e) {
+      // ignore
+    }
+
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const params = new URLSearchParams();
+    params.append('skillName', skillName);
+    params.append('version', version);
+    if (namespaceId) {
+      params.append('namespaceId', namespaceId);
+    }
+    if (accessToken) {
+      params.append('accessToken', accessToken);
+    }
+
+    const url = `${ctxPath}v3/console/ai/skills/version/download?${params.toString()}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${skillName}-${version}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // ===== Draft-aware update helper =====
+
+  updateSkillContent = (updatedSkillData, successCallback) => {
+    const { locale = {} } = this.props;
+    const namespaceId = getParams('namespace') || '';
+    const skillName = this.state.skillData?.name;
+    const { selectedVersionStatus, editingVersionStr } = this.state;
+
+    const skillCard = {
+      name: updatedSkillData.name || skillName,
+      description: updatedSkillData.description || '',
+      instruction: updatedSkillData.instruction || '',
+      resource: updatedSkillData.resource || {},
+    };
+
+    if (selectedVersionStatus === 'draft' || editingVersionStr) {
+      // Update via draft API
+      request({
+        method: 'PUT',
+        url: 'v3/console/ai/skills/draft',
+        data: {
+          namespaceId,
+          skillName,
+          skillCard: JSON.stringify(skillCard),
+        },
+        contentType: 'application/x-www-form-urlencoded',
+        success: data => {
+          if (data && data.code === 0) {
+            Message.success(locale.updateDraftSuccess || 'Draft updated successfully');
+            if (successCallback) successCallback();
+            this.loadSkillData();
+          } else {
+            Message.error(data?.message || locale.updateDraftFailed || 'Failed to update draft');
+          }
+        },
+        error: () => {
+          Message.error(locale.updateDraftFailed || 'Failed to update draft');
+        },
+      });
+    } else {
+      // Fallback: direct update (backward compat)
+      request({
+        method: 'PUT',
+        url: 'v3/console/ai/skills',
+        data: updatedSkillData,
+        success: data => {
+          if (data && (data.code === 0 || data.code === 200)) {
+            Message.success(locale.updateSuccess || 'Update successful');
+            if (successCallback) successCallback();
+            this.loadSkillData();
+          } else {
+            Message.error(data?.message || locale.updateFailed || 'Update failed');
+          }
+        },
+        error: () => {
+          Message.error(locale.updateFailed || 'Update failed');
+        },
+      });
+    }
   };
 
   formatTime = timeStr => {
@@ -561,37 +1158,8 @@ class SkillDetail extends React.Component {
         resource: newResourceMap,
       };
 
-      // 调用更新 API
-      const namespaceId = getParams('namespace') || '';
-      const skillName = skillData.name;
-      const params = new URLSearchParams();
-      params.append('skillName', skillName);
-      if (namespaceId) {
-        params.append('namespaceId', namespaceId);
-      }
-
-      request({
-        method: 'PUT',
-        url: `v3/console/ai/skills?${params.toString()}`,
-        data: updatedSkillData,
-        success: data => {
-          if (data && (data.code === 0 || data.code === 200)) {
-            const { locale = {} } = this.props;
-            Message.success(locale.updateSuccess || 'Update successful');
-            // 重新加载数据（会自动更新文件树和选中文件）
-            this.loadSkillData();
-          } else {
-            const { locale = {} } = this.props;
-            Message.error(data?.message || locale.updateFailed || 'Update failed');
-            this.setState({ editingFileName: null, editingFileNameValue: '' });
-          }
-        },
-        error: () => {
-          const { locale = {} } = this.props;
-          Message.error(locale.updateFailed || 'Update failed');
-          this.setState({ editingFileName: null, editingFileNameValue: '' });
-        },
-      });
+      // Use draft-aware update
+      this.updateSkillContent(updatedSkillData);
     } else {
       this.setState({ editingFileName: null, editingFileNameValue: '' });
     }
@@ -698,35 +1266,8 @@ class SkillDetail extends React.Component {
         resource: newResourceMap,
       };
 
-      // 调用更新 API
-      const namespaceId = getParams('namespace') || '';
-      const skillName = skillData.name;
-      const params = new URLSearchParams();
-      params.append('skillName', skillName);
-      if (namespaceId) {
-        params.append('namespaceId', namespaceId);
-      }
-
-      request({
-        method: 'PUT',
-        url: `v3/console/ai/skills?${params.toString()}`,
-        data: updatedSkillData,
-        success: data => {
-          if (data && (data.code === 0 || data.code === 200)) {
-            const { locale = {} } = this.props;
-            Message.success(locale.updateSuccess || 'Update successful');
-            // 重新加载数据
-            this.loadSkillData();
-          } else {
-            const { locale = {} } = this.props;
-            Message.error(data?.message || locale.updateFailed || 'Update failed');
-          }
-        },
-        error: () => {
-          const { locale = {} } = this.props;
-          Message.error(locale.updateFailed || 'Update failed');
-        },
-      });
+      // Use draft-aware update
+      this.updateSkillContent(updatedSkillData);
 
       this.setState({ draggingFile: null, dragOverFolder: null });
     } else {
@@ -1201,7 +1742,30 @@ class SkillDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { loading, skillData } = this.state;
+    const {
+      loading,
+      skillData,
+      versions,
+      selectedVersion,
+      selectedVersionStatus,
+      versionPanelVisible,
+      labelsMap,
+      downloadCount,
+      onlineCnt,
+      editingVersionStr,
+      versionLoading,
+      pipelineInfo,
+      labelEditorVisible,
+      labelEditorVersion,
+      labelEditorSelected,
+      labelEditorAll,
+      labelEditorNewLabel,
+      labelEditorSaving,
+      submitting,
+      publishing,
+      onlining,
+      creatingDraft,
+    } = this.state;
 
     if (loading) {
       return (
@@ -1221,6 +1785,8 @@ class SkillDetail extends React.Component {
 
     const previewData = this.buildPreviewDataStatic(skillData);
     const fileTree = this.state.fileTree || this.buildFileTree(previewData);
+    const hasVersions = versions && versions.length > 0;
+    const versionLabels = selectedVersion ? this.getLabelsByVersion(selectedVersion) : [];
 
     return (
       <div className="skill-detail">
@@ -1258,38 +1824,207 @@ class SkillDetail extends React.Component {
           </div>
         )}
 
+        {/* Page Header */}
         <div
           className="page-title"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             marginTop: 8,
             marginBottom: 8,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>
-              {locale.skillDetail || 'Skill Detail'}
-            </span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 8,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>
+                {skillData.name || locale.skillDetail || 'Skill Detail'}
+              </span>
+              {selectedVersion && (
+                <Tag
+                  size="small"
+                  color={this.getVersionStatusColor(selectedVersionStatus)}
+                  style={{ borderRadius: 4 }}
+                >
+                  {selectedVersion} - {this.getVersionStatusText(selectedVersionStatus)}
+                </Tag>
+              )}
+              {downloadCount > 0 && (
+                <span style={{ color: '#999', fontSize: 13 }}>
+                  {locale.downloadCount || 'Downloads'}: {downloadCount.toLocaleString()}
+                </span>
+              )}
+              {onlineCnt > 0 && (
+                <span style={{ color: '#52c41a', fontSize: 13 }}>
+                  {locale.onlineCnt || 'Online'}: {onlineCnt}
+                </span>
+              )}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Button type="primary" onClick={this.handleEdit}>
-                <Icon type="edit" /> {locale.edit || 'Edit'}
-              </Button>
+              {hasVersions && (
+                <Button onClick={this.handleOpenVersionPanel}>
+                  {locale.versionManagement || 'Version Management'}
+                </Button>
+              )}
+              {/* Context-sensitive version action buttons */}
+              {selectedVersionStatus === 'draft' && (
+                <>
+                  <Button type="primary" onClick={this.handleEditDraft}>
+                    <Icon type="edit" /> {locale.editDraft || 'Edit Draft'}
+                  </Button>
+                  <Button onClick={this.handleSubmitForReview} loading={submitting}>
+                    {locale.submitForReview || 'Submit for Review'}
+                  </Button>
+                  <Button warning onClick={this.handleDeleteDraft}>
+                    {locale.deleteDraft || 'Delete Draft'}
+                  </Button>
+                </>
+              )}
+              {selectedVersionStatus === 'reviewing' && (
+                <Button
+                  type="primary"
+                  onClick={this.handlePublish}
+                  loading={publishing}
+                  disabled={pipelineInfo && pipelineInfo.status !== 'APPROVED'}
+                >
+                  {locale.publishVersion || 'Publish'}
+                </Button>
+              )}
+              {selectedVersionStatus === 'online' && (
+                <>
+                  <Button
+                    onClick={() => this.handleOfflineVersion(selectedVersion)}
+                    loading={onlining}
+                  >
+                    {locale.offline || 'Offline'}
+                  </Button>
+                  <Button onClick={() => this.handleDownloadVersion(selectedVersion)}>
+                    <Icon type="download" /> {locale.downloadZip || 'Download ZIP'}
+                  </Button>
+                </>
+              )}
+              {selectedVersionStatus === 'offline' && (
+                <>
+                  <Button
+                    type="primary"
+                    onClick={() => this.handleOnlineVersion(selectedVersion)}
+                    loading={onlining}
+                  >
+                    {locale.online || 'Online'}
+                  </Button>
+                  <Button onClick={() => this.handleDownloadVersion(selectedVersion)}>
+                    <Icon type="download" /> {locale.downloadZip || 'Download ZIP'}
+                  </Button>
+                  {!editingVersionStr && (
+                    <Button
+                      onClick={() => this.handleCreateDraft(selectedVersion)}
+                      loading={creatingDraft}
+                    >
+                      {locale.createDraftFromVersion || 'Create Draft from This'}
+                    </Button>
+                  )}
+                </>
+              )}
+              {/* Fallback buttons when no version management */}
+              {!hasVersions && (
+                <>
+                  <Button type="primary" onClick={this.handleEdit}>
+                    <Icon type="edit" /> {locale.edit || 'Edit'}
+                  </Button>
+                  <Button onClick={this.handleExport}>
+                    <Icon type="download" /> {locale.export || 'Export'}
+                  </Button>
+                </>
+              )}
               <Button onClick={this.handleOptimize}>
                 <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
-                {locale.aiOptimize || 'AI 优化'}
+                {locale.aiOptimize || 'AI Optimize'}
               </Button>
-              <Button onClick={this.handleExport}>
-                <Icon type="download" /> {locale.export || 'Export'}
+              <Button warning onClick={this.handleDelete}>
+                <Icon type="delete" /> {locale.delete || 'Delete'}
               </Button>
             </div>
           </div>
-          <div>
-            <Button warning onClick={this.handleDelete}>
-              <Icon type="delete" /> {locale.delete || 'Delete'}
-            </Button>
-          </div>
+
+          {/* Labels row */}
+          {versionLabels.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ color: '#666', fontSize: 13 }}>{locale.labels || 'Labels'}:</span>
+              {versionLabels.map(label => (
+                <Tag
+                  key={label}
+                  size="small"
+                  style={{ cursor: 'pointer', borderRadius: 4 }}
+                  onClick={() => this.openLabelEditor(selectedVersion)}
+                >
+                  {label}
+                </Tag>
+              ))}
+              <a onClick={() => this.openLabelEditor(selectedVersion)} style={{ fontSize: 12 }}>
+                {locale.manageLabels || 'Manage Labels'}
+              </a>
+            </div>
+          )}
+
+          {/* Pipeline status */}
+          {selectedVersionStatus === 'reviewing' && pipelineInfo && (
+            <div
+              style={{
+                padding: '8px 16px',
+                marginBottom: 8,
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor:
+                  pipelineInfo.status === 'APPROVED'
+                    ? '#b7eb8f'
+                    : pipelineInfo.status === 'REJECTED'
+                    ? '#ffa39e'
+                    : '#ffe58f',
+                backgroundColor:
+                  pipelineInfo.status === 'APPROVED'
+                    ? '#f6ffed'
+                    : pipelineInfo.status === 'REJECTED'
+                    ? '#fff1f0'
+                    : '#fffbe6',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <span style={{ fontWeight: 500 }}>{locale.pipelineStatus || 'Pipeline Status'}:</span>
+              <Tag
+                size="small"
+                color={
+                  pipelineInfo.status === 'APPROVED'
+                    ? '#52c41a'
+                    : pipelineInfo.status === 'REJECTED'
+                    ? '#ff4d4f'
+                    : '#fa8c16'
+                }
+              >
+                {pipelineInfo.status === 'APPROVED'
+                  ? locale.pipelineApproved || 'Approved'
+                  : pipelineInfo.status === 'REJECTED'
+                  ? locale.pipelineRejected || 'Rejected'
+                  : locale.pipelinePending || 'Pending'}
+              </Tag>
+              {pipelineInfo.pipeline &&
+                Array.isArray(pipelineInfo.pipeline) &&
+                pipelineInfo.pipeline.map((node, idx) => (
+                  <span key={idx} style={{ fontSize: 12, color: '#666' }}>
+                    {node.nodeId}:{' '}
+                    {node.passed
+                      ? locale.pipelineNodePassed || 'Passed'
+                      : locale.pipelineNodeFailed || 'Failed'}
+                    {node.message ? ` (${node.message})` : ''}
+                  </span>
+                ))}
+            </div>
+          )}
         </div>
 
         <div
@@ -1374,33 +2109,8 @@ class SkillDetail extends React.Component {
                     resource: newResourceMap,
                   };
 
-                  const namespaceId = getParams('namespace') || '';
-                  const skillName = skillData.name;
-                  const params = new URLSearchParams();
-                  params.append('skillName', skillName);
-                  if (namespaceId) {
-                    params.append('namespaceId', namespaceId);
-                  }
-
-                  request({
-                    method: 'PUT',
-                    url: `v3/console/ai/skills?${params.toString()}`,
-                    data: updatedSkillData,
-                    success: data => {
-                      if (data && (data.code === 0 || data.code === 200)) {
-                        const { locale = {} } = this.props;
-                        Message.success(locale.updateSuccess || 'Update successful');
-                        this.loadSkillData();
-                      } else {
-                        const { locale = {} } = this.props;
-                        Message.error(data?.message || locale.updateFailed || 'Update failed');
-                      }
-                    },
-                    error: () => {
-                      const { locale = {} } = this.props;
-                      Message.error(locale.updateFailed || 'Update failed');
-                    },
-                  });
+                  // Use draft-aware update
+                  this.updateSkillContent(updatedSkillData);
 
                   this.setState({ draggingFile: null, dragOverFolder: null });
                 }
@@ -1447,6 +2157,189 @@ class SkillDetail extends React.Component {
           locale={this.props.locale}
           history={this.props.history}
         />
+
+        {/* Version Management Panel */}
+        {versionPanelVisible && (
+          <div
+            className="version-panel-mask"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              zIndex: 1000,
+            }}
+            onClick={this.handleCloseVersionPanel}
+          >
+            <div
+              className="version-panel"
+              style={{
+                position: 'fixed',
+                top: 0,
+                right: 0,
+                width: '700px',
+                height: '100%',
+                backgroundColor: '#fff',
+                boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                zIndex: 1001,
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e8e8e8',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span style={{ fontSize: 16, fontWeight: 500 }}>
+                  {locale.versionManagement || 'Version Management'}
+                </span>
+                <Icon
+                  type="close"
+                  onClick={this.handleCloseVersionPanel}
+                  style={{ cursor: 'pointer' }}
+                />
+              </div>
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid #e8e8e8' }}>
+                {locale.versionList || 'Version List'}
+              </div>
+              <div style={{ flex: 1, overflow: 'auto', padding: '0 20px' }}>
+                <Table dataSource={versions} primaryKey="version">
+                  <Table.Column
+                    title={locale.version || 'Version'}
+                    dataIndex="version"
+                    width={80}
+                    cell={(value, index, record) => (
+                      <a onClick={() => this.handleViewVersion(value)}>{value}</a>
+                    )}
+                  />
+                  <Table.Column
+                    title={locale.versionStatus || 'Status'}
+                    dataIndex="status"
+                    width={80}
+                    cell={value => (
+                      <Tag
+                        size="small"
+                        color={this.getVersionStatusColor(value)}
+                        style={{ borderRadius: 4 }}
+                      >
+                        {this.getVersionStatusText(value)}
+                      </Tag>
+                    )}
+                  />
+                  <Table.Column
+                    title={locale.author || 'Author'}
+                    dataIndex="author"
+                    width={80}
+                    cell={value => value || '--'}
+                  />
+                  <Table.Column
+                    title={locale.downloadCount || 'Downloads'}
+                    dataIndex="downloadCount"
+                    width={80}
+                    cell={value => (value > 0 ? value.toLocaleString() : '--')}
+                  />
+                  <Table.Column
+                    title={locale.updateTime || 'Updated'}
+                    dataIndex="updateTime"
+                    width={120}
+                    cell={value => this.formatTime(value)}
+                  />
+                  <Table.Column
+                    title={locale.labels || 'Labels'}
+                    dataIndex="version"
+                    width={120}
+                    cell={value => {
+                      const tags = this.getLabelsByVersion(value);
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {tags.length === 0 ? (
+                            <span style={{ color: '#999' }}>--</span>
+                          ) : (
+                            tags.map(t => (
+                              <Tag key={t} size="small" style={{ borderRadius: 4 }}>
+                                {t}
+                              </Tag>
+                            ))
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  <Table.Column
+                    title={locale.operation || 'Actions'}
+                    width={160}
+                    cell={(value, index, record) => (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <a onClick={() => this.handleViewVersion(record.version)}>
+                          {locale.view || 'View'}
+                        </a>
+                        <a onClick={() => this.openLabelEditor(record.version)}>
+                          {locale.manageLabels || 'Labels'}
+                        </a>
+                        {record.status === 'online' && (
+                          <a onClick={() => this.handleOfflineVersion(record.version)}>
+                            {locale.offline || 'Offline'}
+                          </a>
+                        )}
+                        {record.status === 'offline' && (
+                          <a onClick={() => this.handleOnlineVersion(record.version)}>
+                            {locale.online || 'Online'}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  />
+                </Table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Labels Editor Dialog */}
+        <Dialog
+          title={locale.manageLabels || 'Manage Labels'}
+          visible={labelEditorVisible}
+          onOk={this.handleSaveLabelEditor}
+          onCancel={this.closeLabelEditor}
+          onClose={this.closeLabelEditor}
+          okProps={{ loading: labelEditorSaving }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 420 }}>
+            <div>{`${locale.version || 'Version'}: ${labelEditorVersion || '--'}`}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontWeight: 500 }}>{locale.customLabels || 'Custom labels'}</div>
+              <Checkbox.Group
+                value={labelEditorSelected}
+                onChange={value => this.setState({ labelEditorSelected: value || [] })}
+              >
+                {(labelEditorAll || []).map(each => (
+                  <div key={each} style={{ marginBottom: 8 }}>
+                    <Checkbox value={each}>{each}</Checkbox>
+                  </div>
+                ))}
+              </Checkbox.Group>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                value={labelEditorNewLabel}
+                onChange={value => this.setState({ labelEditorNewLabel: value })}
+                placeholder={locale.newLabel || 'New label'}
+                onPressEnter={this.addNewLabelToEditor}
+              />
+              <Button onClick={this.addNewLabelToEditor}>
+                <Icon type="add" />
+              </Button>
+            </div>
+          </div>
+        </Dialog>
       </div>
     );
   }
