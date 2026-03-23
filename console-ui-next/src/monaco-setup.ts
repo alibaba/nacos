@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor';
-import { loader } from '@monaco-editor/react';
+import { loader, type Monaco } from '@monaco-editor/react';
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
@@ -15,4 +15,4 @@ self.MonacoEnvironment = {
   },
 };
 
-loader.config({ monaco });
+loader.config({ monaco: monaco as unknown as Monaco });

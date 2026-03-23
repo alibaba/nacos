@@ -3,44 +3,62 @@ import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
-import type { PublishPipelineInfo } from '@/types/skill';
+
+interface PipelineNodeInfo {
+  nodeId: string;
+  executedAt?: string;
+  passed: boolean;
+  message?: string;
+  durationMs?: number;
+}
+
+interface PipelineStatusInfo {
+  executionId: string;
+  status: 'IN_PROGRESS' | 'APPROVED' | 'REJECTED';
+  pipeline: PipelineNodeInfo[];
+}
 
 interface PipelineStatusDisplayProps {
-  pipelineInfo: PublishPipelineInfo | null;
+  pipelineInfo: PipelineStatusInfo | null;
   compact?: boolean;
+  translationPrefix?: 'skill' | 'agentSpec';
 }
 
 const STATUS_CONFIG = {
   IN_PROGRESS: {
     icon: Loader2,
-    labelKey: 'skill.pipelineInProgress',
+    labelSuffix: 'pipelineInProgress',
     badgeClass: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
     iconClass: 'animate-spin text-blue-500',
     dotClass: 'bg-blue-400',
   },
   APPROVED: {
     icon: CheckCircle2,
-    labelKey: 'skill.pipelineApproved',
+    labelSuffix: 'pipelineApproved',
     badgeClass: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
     iconClass: 'text-emerald-500',
     dotClass: 'bg-emerald-400',
   },
   REJECTED: {
     icon: XCircle,
-    labelKey: 'skill.pipelineRejected',
+    labelSuffix: 'pipelineRejected',
     badgeClass: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
     iconClass: 'text-red-500',
     dotClass: 'bg-red-400',
   },
 } as const;
 
-export function PipelineStatusDisplay({ pipelineInfo, compact = false }: PipelineStatusDisplayProps) {
+export function PipelineStatusDisplay({
+  pipelineInfo,
+  compact = false,
+  translationPrefix = 'skill',
+}: PipelineStatusDisplayProps) {
   const { t } = useTranslation();
 
   if (!pipelineInfo) {
     if (compact) return null;
     return (
-      <p className="text-xs text-muted-foreground py-2">{t('skill.pipelineNone')}</p>
+      <p className="text-xs text-muted-foreground py-2">{t(`${translationPrefix}.pipelineNone`)}</p>
     );
   }
 
@@ -52,7 +70,7 @@ export function PipelineStatusDisplay({ pipelineInfo, compact = false }: Pipelin
     return (
       <Badge className={cn('text-[10px] px-1.5 py-0 h-4 font-medium border-0 gap-1', config.badgeClass)}>
         <StatusIcon className={cn('h-2.5 w-2.5', config.iconClass)} />
-        {t(config.labelKey)}
+        {t(`${translationPrefix}.${config.labelSuffix}`)}
       </Badge>
     );
   }
@@ -65,7 +83,7 @@ export function PipelineStatusDisplay({ pipelineInfo, compact = false }: Pipelin
       {/* Overall status */}
       <div className="flex items-center gap-2">
         <StatusIcon className={cn('h-4 w-4', config.iconClass)} />
-        <span className="text-sm font-medium">{t(config.labelKey)}</span>
+        <span className="text-sm font-medium">{t(`${translationPrefix}.${config.labelSuffix}`)}</span>
       </div>
 
       {/* Pipeline nodes */}

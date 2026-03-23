@@ -22,7 +22,9 @@ import {
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import type { AgentSpecVersionSummary } from '@/types/agentspec';
+import { parsePipelineInfo } from '@/types/agentspec';
 import { getValidActions, sortVersionsDescending } from './version-utils';
+import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
 import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
 
 interface VersionTimelineProps {
@@ -145,6 +147,7 @@ export function VersionTimeline({
         {sorted.map((v, idx) => {
           const isActive = v.version === currentVersion;
           const actions = getValidActions(v.status);
+          const pipelineInfo = parsePipelineInfo(v.publishPipelineInfo);
 
           return (
             <div key={v.version} className="relative flex gap-3 pb-4">
@@ -183,6 +186,13 @@ export function VersionTimeline({
                   >
                     {t(`agentSpec.versionStatus.${v.status}`)}
                   </Badge>
+                  {v.status === 'reviewing' && pipelineInfo && (
+                    <PipelineStatusDisplay
+                      pipelineInfo={pipelineInfo}
+                      compact
+                      translationPrefix="agentSpec"
+                    />
+                  )}
                 </div>
 
                 {/* Labels for this version */}
