@@ -203,6 +203,7 @@
     "title": "服务列表",
     "createService": "创建服务",
     "editService": "编辑服务",
+    "serviceDetail": "服务详情",
     "serviceName": "服务名",
     "groupName": "分组名",
     "clusterCount": "集群数",
@@ -1045,6 +1046,10 @@
     "conversationHistoryInvalid": "对话历史 JSON 格式无效",
     "thinking": "思考过程",
     "generatedContent": "生成内容",
-    "streamContent": "流式输出"
+    "streamContent": "流式输出",
+    "selectResource": "选择一个文件查看内容",
+    "editMode": "编辑模式",
+    "binaryFileHint": "该文件为二进制格式，无法在此预览",
+    "imagePreviewUnavailable": "无法预览该图片文件"
   }
 }

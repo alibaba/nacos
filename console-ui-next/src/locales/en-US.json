@@ -203,6 +203,7 @@
     "title": "Service List",
     "createService": "Create Service",
     "editService": "Edit Service",
+    "serviceDetail": "Service Detail",
     "serviceName": "Service Name",
     "groupName": "Group Name",
     "clusterCount": "Cluster Count",
@@ -1045,6 +1046,10 @@
     "conversationHistoryInvalid": "Invalid conversation history JSON format",
     "thinking": "Thinking Process",
     "generatedContent": "Generated Content",
-    "streamContent": "Stream Output"
+    "streamContent": "Stream Output",
+    "selectResource": "Select a file to view its content",
+    "editMode": "Edit Mode",
+    "binaryFileHint": "This file is in binary format and cannot be previewed here",
+    "imagePreviewUnavailable": "Unable to preview this image file"
   }
 }

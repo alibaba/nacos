@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ArrowLeft, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Pencil, ChevronLeft, ChevronRight, Server, Hash, Shield, ToggleLeft, Filter, Braces } from 'lucide-react';
 
 import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
@@ -386,35 +386,107 @@ export default function ServiceDetailPage() {
       </div>
 
       {/* Service Info Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-lg">{t('service.editService')}</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => openEditService(currentService)} className="gap-2">
-            <Pencil className="h-4 w-4" />
-            {t('common.edit')}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <InfoField label={t('service.serviceName')} value={currentService.serviceName} />
-            <InfoField label={t('service.groupName')} value={currentService.groupName} />
-            <InfoField label={t('service.protectThreshold')} value={String(currentService.protectThreshold)} />
-            <InfoField label={t('service.ephemeral')} value={currentService.ephemeral ? 'true' : 'false'} />
-            <InfoField label={t('service.selectorType')} value={currentService.selector?.type || 'none'} />
-            {currentService.selector?.type && currentService.selector.type !== 'none' && (
-              <InfoField label={t('service.selectorExpression')} value={currentService.selector.expression || '-'} />
-            )}
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          {/* Hero identity banner — Service Name + Group prominently displayed */}
+          <div className="px-6 py-5 border-b border-border/60">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1 flex flex-wrap items-start gap-x-10 gap-y-3">
+                {/* Service Name */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Server className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('service.serviceName')}</span>
+                  </div>
+                  <div className="text-base font-semibold tracking-tight break-all leading-snug">
+                    {currentService.serviceName}
+                  </div>
+                </div>
+                {/* Group Name */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Hash className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('service.groupName')}</span>
+                  </div>
+                  <div className="text-base font-semibold tracking-tight break-all">
+                    {currentService.groupName}
+                  </div>
+                </div>
+              </div>
+              {/* Edit button */}
+              <Button variant="outline" size="sm" onClick={() => openEditService(currentService)} className="shrink-0 gap-2">
+                <Pencil className="h-3.5 w-3.5" />
+                {t('common.edit')}
+              </Button>
+            </div>
           </div>
-          {currentService.metadata && Object.keys(currentService.metadata).length > 0 && (
-            <div className="mt-4">
-              <span className="text-sm font-medium text-muted-foreground">{t('service.metadata')}</span>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Object.entries(currentService.metadata).map(([k, v]) => (
-                  <Badge key={k} variant="secondary">{k}: {v}</Badge>
-                ))}
+
+          {/* Metadata grid */}
+          <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Protect Threshold */}
+            <div className="flex items-start gap-3">
+              <Shield className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('service.protectThreshold')}</div>
+                <div className="text-sm font-mono tabular-nums">{currentService.protectThreshold}</div>
               </div>
             </div>
-          )}
+
+            {/* Ephemeral */}
+            <div className="flex items-start gap-3">
+              <ToggleLeft className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-muted-foreground mb-1">{t('service.ephemeral')}</div>
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                  currentService.ephemeral
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                    : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700'
+                }`}>
+                  {currentService.ephemeral ? 'true' : 'false'}
+                </span>
+              </div>
+            </div>
+
+            {/* Selector Type */}
+            <div className="flex items-start gap-3">
+              <Filter className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('service.selectorType')}</div>
+                <div className="text-sm">{currentService.selector?.type || 'none'}</div>
+              </div>
+            </div>
+
+            {/* Selector Expression — conditional */}
+            {currentService.selector?.type && currentService.selector.type !== 'none' && (
+              <div className="flex items-start gap-3 sm:col-span-2 lg:col-span-3">
+                <Filter className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-muted-foreground mb-0.5">{t('service.selectorExpression')}</div>
+                  <div className="text-sm font-mono text-[13px] tracking-tight break-all">{currentService.selector.expression || '-'}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Metadata — conditional, spans full width */}
+            {currentService.metadata && Object.keys(currentService.metadata).length > 0 && (
+              <>
+                <div className="sm:col-span-2 lg:col-span-3 border-t border-dashed border-border/60" />
+                <div className="flex items-start gap-3 sm:col-span-2 lg:col-span-3">
+                  <Braces className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium text-muted-foreground mb-1">{t('service.metadata')}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(currentService.metadata).map(([k, v]) => (
+                        <span key={k} className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground ring-1 ring-inset ring-border/50">
+                          {k}: {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -662,15 +734,6 @@ export default function ServiceDetailPage() {
 }
 
 // ===== Helper Components =====
-
-function InfoField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <p className="mt-0.5 text-sm">{value || '-'}</p>
-    </div>
-  );
-}
 
 function ClusterCard({
   clusterName,
