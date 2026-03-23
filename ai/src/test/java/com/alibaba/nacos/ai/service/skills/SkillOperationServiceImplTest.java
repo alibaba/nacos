@@ -154,6 +154,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setStatus("enable");
+        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
@@ -168,6 +169,7 @@ class SkillOperationServiceImplTest {
         assertTrue(skillDetail.isEnable());
         assertEquals(1, skillDetail.getOnlineCnt());
         assertEquals("v1", skillDetail.getLabels().get("latest"));
+        assertEquals(DataFilterConstants.SCOPE_PUBLIC, skillDetail.getScope());
         assertNotNull(skillDetail.getVersions());
     }
     
@@ -244,6 +246,7 @@ class SkillOperationServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPageItems().size());
+        assertEquals(DataFilterConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
     }
     
     @Test

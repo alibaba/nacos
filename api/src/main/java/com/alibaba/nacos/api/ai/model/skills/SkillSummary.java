@@ -37,6 +37,11 @@ public class SkillSummary extends SkillBasicInfo {
     private String bizTags;
     
     /**
+     * Visibility scope of skill metadata, e.g. PUBLIC or PRIVATE.
+     */
+    private String scope;
+    
+    /**
      * Label -> version mapping, e.g. {"latest":"v3","stable":"v2"}.
      */
     private Map<String, String> labels;
@@ -75,6 +80,14 @@ public class SkillSummary extends SkillBasicInfo {
     
     public void setBizTags(String bizTags) {
         this.bizTags = bizTags;
+    }
+    
+    public String getScope() {
+        return scope;
+    }
+    
+    public void setScope(String scope) {
+        this.scope = scope;
     }
     
     public Map<String, String> getLabels() {

@@ -49,6 +49,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -242,6 +243,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
         detail.setLabels(versionInfo.getLabels());
+        detail.setScope(resolveScope(meta));
         detail.setOnlineCnt(versionInfo.getOnlineCnt());
         detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setVersions(versionSummaries);
@@ -346,6 +348,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setDescription(meta.getDesc());
             item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
             item.setBizTags(meta.getBizTags());
+            item.setScope(resolveScope(meta));
             item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
             item.setDownloadCount(meta.getDownloadCount());
             if (versionInfo != null) {
@@ -363,6 +366,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
         result.setPageNumber(pageNo);
         return result;
+    }
+    
+    private static String resolveScope(AiResource meta) {
+        if (meta == null || StringUtils.isBlank(meta.getScope())) {
+            return DataFilterConstants.SCOPE_PRIVATE;
+        }
+        return meta.getScope();
     }
 
     @Override
