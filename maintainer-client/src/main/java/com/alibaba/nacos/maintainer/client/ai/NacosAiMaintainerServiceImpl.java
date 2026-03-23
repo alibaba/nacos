@@ -32,7 +32,8 @@ import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -155,7 +156,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     
     @Override
     public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest, McpServerBasicInfo serverSpec,
-            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec, boolean overrideExisting) throws NacosException {
+            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec, boolean overrideExisting)
+            throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
@@ -237,8 +239,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType, String version)
-            throws NacosException {
+    public AgentCardDetailInfo getAgentCard(String agentName, String namespaceId, String registrationType,
+            String version) throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentName);
         
         Map<String, String> params = new HashMap<>(1);
@@ -258,7 +260,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest, String registrationType) throws NacosException {
+    public boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
+            String registrationType) throws NacosException {
         RequestResource resource = buildRequestResource(namespaceId, agentCard.getName());
         Map<String, String> params = new HashMap<>(5);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
@@ -344,8 +347,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     // ========== Prompt Maintainer Service Implementation ==========
     
     @Override
-    public Page<PromptMetaSummary> listPrompts(String namespaceId, String promptKey, String search, String bizTags, int pageNo,
-            int pageSize) throws NacosException {
+    public Page<PromptMetaSummary> listPrompts(String namespaceId, String promptKey, String search, String bizTags,
+            int pageNo, int pageSize) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
@@ -481,9 +484,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_PROMPT_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Boolean>>() {
-                });
+        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
         return Boolean.TRUE.equals(result.getData());
     }
     
@@ -499,9 +501,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.AI_PROMPT_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Boolean>>() {
-                });
+        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
         return Boolean.TRUE.equals(result.getData());
     }
     
@@ -545,16 +546,13 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.AI_PROMPT_METADATA_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Boolean>>() {
-                });
+        Result<Boolean> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
         return Boolean.TRUE.equals(result.getData());
     }
     
-    // ========== Skill Maintainer Service Implementation ==========
-    
     @Override
-    public Skill getSkillDetail(String namespaceId, String skillName) throws NacosException {
+    public SkillMeta getSkillMeta(String namespaceId, String skillName) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
@@ -565,9 +563,26 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Skill> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Skill>>() {
-                });
+        Result<SkillMeta> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<SkillMeta>>() {
+        });
+        return result.getData();
+    }
+    
+    @Override
+    public Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("version", version);
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_SKILL_VERSION_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Skill> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<Skill>>() {
+        });
         return result.getData();
     }
     
@@ -583,14 +598,13 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<String>>() {
-                });
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
     @Override
-    public Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo,
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
@@ -605,8 +619,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_SKILL_LIST_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Page<SkillBasicInfo>> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<Page<SkillBasicInfo>>>() {
+        Result<Page<SkillSummary>> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Page<SkillSummary>>>() {
                 });
         return result.getData();
     }
@@ -624,12 +638,11 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_ADMIN_PATH).setParamValue(params)
                 .setFileUpload(zipBytes, "skill.zip", "file").build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<String>>() {
-                });
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
         return result.getData();
     }
-
+    
     @Override
     public String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
@@ -649,7 +662,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return result.getData();
     }
-
+    
     @Override
     public boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
@@ -669,7 +682,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
     public boolean deleteDraft(String namespaceId, String skillName) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
@@ -686,7 +699,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
     public String submit(String namespaceId, String skillName, String version) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
@@ -706,7 +719,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return result.getData();
     }
-
+    
     @Override
     public boolean publish(String namespaceId, String skillName, String version, Boolean updateLatestLabel)
             throws NacosException {
@@ -728,7 +741,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
     public boolean updateLabels(String namespaceId, String skillName, String labels) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
@@ -746,10 +759,10 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-
+    
     @Override
-    public boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version, boolean online)
-            throws NacosException {
+    public boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version,
+            boolean online) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
@@ -772,6 +785,24 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
+    @Override
+    public boolean updateScope(String namespaceId, String skillName, String scope) throws NacosException {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+        }
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("scope", scope);
+        RequestResource resource = buildRequestResource(namespaceId, skillName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.AI_SKILL_SCOPE_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
     // ========== AgentSpec Maintainer Service Implementation ==========
     
     @Override
@@ -786,9 +817,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<AgentSpec> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<AgentSpec>>() {
-                });
+        Result<AgentSpec> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<AgentSpec>>() {
+        });
         return result.getData();
     }
     
@@ -804,9 +834,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<String>>() {
-                });
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
@@ -846,9 +875,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_UPLOAD_ADMIN_PATH).setParamValue(params)
                 .setFileUpload(zipBytes, "agentspec.zip", "file").build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<String>>() {
-                });
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
         return result.getData();
     }
     
@@ -859,18 +887,17 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         Map<String, String> params = new HashMap<>(2);
         RequestResource resource = buildRequestResource("", pipelineId);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH + "/" + pipelineId)
-                .setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH + "/" + pipelineId).setParamValue(params)
+                .build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<JsonNode>>() {
-                });
+        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<JsonNode>>() {
+        });
         return result.getData();
     }
     
     @Override
-    public JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
-            String version, int pageNo, int pageSize) throws NacosException {
+    public JsonNode listPipelines(String resourceType, String resourceName, String namespaceId, String version,
+            int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("resourceType", resourceType);
         if (StringUtils.isNotBlank(resourceName)) {
@@ -884,15 +911,13 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         }
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
-        RequestResource resource = buildRequestResource(
-                StringUtils.isNotBlank(namespaceId) ? namespaceId : "", resourceName);
+        RequestResource resource = buildRequestResource(StringUtils.isNotBlank(namespaceId) ? namespaceId : "",
+                resourceName);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH)
-                .setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<JsonNode>>() {
-                });
+        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<JsonNode>>() {
+        });
         return result.getData();
     }
 }

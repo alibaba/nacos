@@ -14,120 +14,105 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.model.skills;
-
-import com.alibaba.nacos.api.ai.model.skills.SkillBase;
+package com.alibaba.nacos.api.ai.model.skills;
 
 import java.util.Map;
 
 /**
- * Skill list item for admin API response. Contains skill basic info plus governance metadata.
+ * Skill summary for admin list response.
+ * Contains skill basic info plus governance metadata.
  *
  * @author nacos
- * @since 3.2.0
  */
-public class SkillListItem extends SkillBase {
-
+public class SkillSummary extends SkillBasicInfo {
+    
     /**
      * Whether the skill is globally enabled. true=enable, false=disable.
      */
     private boolean enable;
-
+    
     /**
      * Business tags (JSON string), e.g. ["tag1","tag2"].
      */
     private String bizTags;
-
+    
     /**
      * Label -> version mapping, e.g. {"latest":"v3","stable":"v2"}.
      */
     private Map<String, String> labels;
-
+    
     /**
      * The version currently being edited (draft).
      */
     private String editingVersion;
-
+    
     /**
      * The version currently under pipeline review.
      */
     private String reviewingVersion;
-
+    
     /**
      * Number of online versions.
      */
     private Integer onlineCnt;
-
-    /**
-     * Last update time (epoch millis).
-     */
-    private Long updateTime;
-
+    
     /**
      * Total download count across all versions.
      */
     private Long downloadCount;
-
+    
     public boolean isEnable() {
         return enable;
     }
-
+    
     public void setEnable(boolean enable) {
         this.enable = enable;
     }
-
+    
     public String getBizTags() {
         return bizTags;
     }
-
+    
     public void setBizTags(String bizTags) {
         this.bizTags = bizTags;
     }
-
+    
     public Map<String, String> getLabels() {
         return labels;
     }
-
+    
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-
+    
     public String getEditingVersion() {
         return editingVersion;
     }
-
+    
     public void setEditingVersion(String editingVersion) {
         this.editingVersion = editingVersion;
     }
-
+    
     public String getReviewingVersion() {
         return reviewingVersion;
     }
-
+    
     public void setReviewingVersion(String reviewingVersion) {
         this.reviewingVersion = reviewingVersion;
     }
-
+    
     public Integer getOnlineCnt() {
         return onlineCnt;
     }
-
+    
     public void setOnlineCnt(Integer onlineCnt) {
         this.onlineCnt = onlineCnt;
     }
-
-    public Long getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Long updateTime) {
-        this.updateTime = updateTime;
-    }
-
+    
     public Long getDownloadCount() {
         return downloadCount;
     }
-
+    
     public void setDownloadCount(Long downloadCount) {
         this.downloadCount = downloadCount;
     }

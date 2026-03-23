@@ -17,8 +17,6 @@
 package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
 import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
@@ -27,7 +25,9 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -161,7 +161,7 @@ class SkillOperationServiceImplTest {
         when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
-        SkillDetail skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
+        SkillMeta skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
 
         // Then
         assertNotNull(skillDetail);
@@ -234,11 +234,11 @@ class SkillOperationServiceImplTest {
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
         
         // When
-        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         
         // Then
         assertNotNull(result);
@@ -402,7 +402,7 @@ class SkillOperationServiceImplTest {
         metaPage.setPageItems(List.of(meta1, meta2));
         metaPage.setTotalCount(2);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
         DataFilterService mockFilter = mock(DataFilterService.class);
@@ -411,7 +411,7 @@ class SkillOperationServiceImplTest {
         when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("userB");
-        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
         assertEquals("skill-public", result.getPageItems().get(0).getName());
         assertEquals(1, result.getTotalCount());
@@ -489,10 +489,10 @@ class SkillOperationServiceImplTest {
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
-        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
     }
 

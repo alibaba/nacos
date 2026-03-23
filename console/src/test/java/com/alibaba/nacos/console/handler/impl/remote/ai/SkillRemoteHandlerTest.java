@@ -24,10 +24,9 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
@@ -77,14 +76,18 @@ class SkillRemoteHandlerTest {
     }
 
     @Test
-    void testGetSkillReturnsEmptyDetail() throws NacosException {
+    void testGetSkill() throws NacosException {
         SkillForm form = new SkillForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
+        SkillMeta skillMeta = new SkillMeta();
+        skillMeta.setName(SKILL_NAME);
+        when(aiMaintainerService.getSkillMeta(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(skillMeta);
 
-        SkillDetail result = skillRemoteHandler.getSkill(form);
+        SkillMeta result = skillRemoteHandler.getSkill(form);
 
         assertNotNull(result);
+        assertEquals(SKILL_NAME, result.getName());
     }
 
     @Test
@@ -92,14 +95,15 @@ class SkillRemoteHandlerTest {
         SkillForm form = new SkillForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
         Skill skill = new Skill();
         skill.setName(SKILL_NAME);
-        when(aiMaintainerService.getSkillDetail(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(skill);
+        when(aiMaintainerService.getSkillVersionDetail(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn(skill);
 
         Skill result = skillRemoteHandler.getSkillVersion(form);
 
         assertEquals(SKILL_NAME, result.getName());
-        verify(aiMaintainerService).getSkillDetail(NAMESPACE_ID, SKILL_NAME);
+        verify(aiMaintainerService).getSkillVersionDetail(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 
     @Test
@@ -107,14 +111,15 @@ class SkillRemoteHandlerTest {
         SkillForm form = new SkillForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
         Skill skill = new Skill();
         skill.setName(SKILL_NAME);
-        when(aiMaintainerService.getSkillDetail(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(skill);
+        when(aiMaintainerService.getSkillVersionDetail(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn(skill);
 
         Skill result = skillRemoteHandler.downloadSkillVersion(form);
 
         assertEquals(SKILL_NAME, result.getName());
-        verify(aiMaintainerService).getSkillDetail(NAMESPACE_ID, SKILL_NAME);
+        verify(aiMaintainerService).getSkillVersionDetail(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 
     @Test
@@ -138,17 +143,17 @@ class SkillRemoteHandlerTest {
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
-        Page<SkillBasicInfo> sourcePage = new Page<>();
+        Page<SkillSummary> sourcePage = new Page<>();
         sourcePage.setTotalCount(1);
         sourcePage.setPagesAvailable(1);
-        SkillBasicInfo info = new SkillBasicInfo();
+        SkillSummary info = new SkillSummary();
         info.setName(SKILL_NAME);
         info.setDescription("desc");
         sourcePage.setPageItems(List.of(info));
         when(aiMaintainerService.listSkills(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("blur"), eq(1), eq(10)))
                 .thenReturn(sourcePage);
 
-        Page<SkillListItem> result = skillRemoteHandler.listSkills(listForm, pageForm);
+        Page<SkillSummary> result = skillRemoteHandler.listSkills(listForm, pageForm);
 
         assertEquals(1, result.getTotalCount());
         assertEquals(1, result.getPageItems().size());
@@ -165,7 +170,7 @@ class SkillRemoteHandlerTest {
         when(aiMaintainerService.listSkills(eq(NAMESPACE_ID), eq(null), eq(null), eq(1), eq(10)))
                 .thenReturn(null);
 
-        Page<SkillListItem> result = skillRemoteHandler.listSkills(listForm, pageForm);
+        Page<SkillSummary> result = skillRemoteHandler.listSkills(listForm, pageForm);
 
         assertEquals(0, result.getTotalCount());
         assertEquals(0, result.getPageItems().size());

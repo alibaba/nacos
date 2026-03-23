@@ -26,12 +26,12 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -85,7 +85,7 @@ public class SkillAdminController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<SkillDetail> getSkill(SkillForm form) throws NacosException {
+    public Result<SkillMeta> getSkill(SkillForm form) throws NacosException {
         form.validate();
         return Result.success(skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
     }
@@ -146,7 +146,7 @@ public class SkillAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
-    public Result<Page<SkillListItem>> listSkills(SkillListForm skillListForm, PageForm pageForm)
+    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm)
             throws NacosException {
         skillListForm.validate();
         pageForm.validate();

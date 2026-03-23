@@ -14,209 +14,115 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.model.skills;
-
-import com.alibaba.nacos.api.ai.model.skills.SkillBase;
+package com.alibaba.nacos.api.ai.model.skills;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Skill detail for admin API response. Contains version governance metadata and all version summaries.
+ * Skill metadata for admin API response.
+ * Contains governance metadata and all version summaries.
  *
  * @author nacos
- * @since 3.2.0
  */
-public class SkillDetail extends SkillBase {
-
-    /**
-     * Whether the skill is enabled globally.
-     */
-    private boolean enable;
-
-    /**
-     * The version currently being edited (draft).
-     */
-    private String editingVersion;
-
-    /**
-     * The version currently under pipeline review.
-     */
-    private String reviewingVersion;
-
-    /**
-     * Label -> version mapping, e.g. {"latest":"v3","stable":"v2"}.
-     */
-    private Map<String, String> labels;
-
-    /**
-     * Number of online versions.
-     */
-    private Integer onlineCnt;
-
-    /**
-     * Last update time (epoch millis).
-     */
-    private Long updateTime;
-
+public class SkillMeta extends SkillSummary {
+    
     /**
      * All version summaries for this skill.
      */
     private List<SkillVersionSummary> versions;
-
-    /**
-     * Total download count across all versions.
-     */
-    private Long downloadCount;
-
-    public boolean isEnable() {
-        return enable;
-    }
-
-    public void setEnable(boolean enable) {
-        this.enable = enable;
-    }
-
-    public String getEditingVersion() {
-        return editingVersion;
-    }
-
-    public void setEditingVersion(String editingVersion) {
-        this.editingVersion = editingVersion;
-    }
-
-    public String getReviewingVersion() {
-        return reviewingVersion;
-    }
-
-    public void setReviewingVersion(String reviewingVersion) {
-        this.reviewingVersion = reviewingVersion;
-    }
-
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
-    }
-
-    public Integer getOnlineCnt() {
-        return onlineCnt;
-    }
-
-    public void setOnlineCnt(Integer onlineCnt) {
-        this.onlineCnt = onlineCnt;
-    }
-
-    public Long getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Long updateTime) {
-        this.updateTime = updateTime;
-    }
-
+    
     public List<SkillVersionSummary> getVersions() {
         return versions;
     }
-
+    
     public void setVersions(List<SkillVersionSummary> versions) {
         this.versions = versions;
     }
-
-    public Long getDownloadCount() {
-        return downloadCount;
-    }
-
-    public void setDownloadCount(Long downloadCount) {
-        this.downloadCount = downloadCount;
-    }
-
+    
     /**
      * Summary of a single skill version for admin display.
      */
     public static class SkillVersionSummary {
-
+        
         private String version;
-
+        
         private String status;
-
+        
         private String author;
-
+        
         private String description;
-
+        
         private Long createTime;
-
+        
         private Long updateTime;
-
+        
         private String publishPipelineInfo;
-
+        
         /**
          * Download count for this version.
          */
         private Long downloadCount;
-
+        
         public String getVersion() {
             return version;
         }
-
+        
         public void setVersion(String version) {
             this.version = version;
         }
-
+        
         public String getStatus() {
             return status;
         }
-
+        
         public void setStatus(String status) {
             this.status = status;
         }
-
+        
         public String getAuthor() {
             return author;
         }
-
+        
         public void setAuthor(String author) {
             this.author = author;
         }
-
+        
         public String getDescription() {
             return description;
         }
-
+        
         public void setDescription(String description) {
             this.description = description;
         }
-
+        
         public Long getCreateTime() {
             return createTime;
         }
-
+        
         public void setCreateTime(Long createTime) {
             this.createTime = createTime;
         }
-
+        
         public Long getUpdateTime() {
             return updateTime;
         }
-
+        
         public void setUpdateTime(Long updateTime) {
             this.updateTime = updateTime;
         }
-
+        
         public String getPublishPipelineInfo() {
             return publishPipelineInfo;
         }
-
+        
         public void setPublishPipelineInfo(String publishPipelineInfo) {
             this.publishPipelineInfo = publishPipelineInfo;
         }
-
+        
         public Long getDownloadCount() {
             return downloadCount;
         }
-
+        
         public void setDownloadCount(Long downloadCount) {
             this.downloadCount = downloadCount;
         }

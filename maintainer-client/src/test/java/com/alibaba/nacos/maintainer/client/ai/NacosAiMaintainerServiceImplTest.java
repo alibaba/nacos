@@ -28,7 +28,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolMeta;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -386,19 +388,31 @@ public class NacosAiMaintainerServiceImplTest {
     // ========== Skill Maintainer Service Tests ==========
     
     @Test
-    void getSkillDetail() throws NacosException {
-        com.alibaba.nacos.api.ai.model.skills.Skill skill = new com.alibaba.nacos.api.ai.model.skills.Skill();
-        skill.setName("testSkill");
-        skill.setDescription("Test skill description");
+    void getSkillMeta() throws NacosException {
+        SkillMeta skill = new SkillMeta();
+        skill.setEditingVersion("v1");
         
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(skill)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         
-        com.alibaba.nacos.api.ai.model.skills.Skill actual = aiMaintainerService.getSkillDetail("public", "testSkill");
+        SkillMeta actual = aiMaintainerService.getSkillMeta("public", "testSkill");
+        assertNotNull(actual);
+        assertEquals("v1", actual.getEditingVersion());
+    }
+    
+    @Test
+    void getSkillVersionDetail() throws NacosException {
+        Skill skill = new Skill();
+        skill.setName("testSkill");
+        
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(skill)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        
+        Skill actual = aiMaintainerService.getSkillVersionDetail("public", "testSkill", "v1");
         assertNotNull(actual);
         assertEquals("testSkill", actual.getName());
-        assertEquals("Test skill description", actual.getDescription());
     }
     
     @Test
@@ -413,10 +427,10 @@ public class NacosAiMaintainerServiceImplTest {
     
     @Test
     void listSkills() throws NacosException {
-        SkillBasicInfo skillBasicInfo = new SkillBasicInfo();
+        SkillSummary skillBasicInfo = new SkillSummary();
         skillBasicInfo.setName("testSkill");
         
-        Page<SkillBasicInfo> page = new Page<>();
+        Page<SkillSummary> page = new Page<>();
         page.setPagesAvailable(1);
         page.setTotalCount(1);
         page.setPageNumber(1);
@@ -426,11 +440,20 @@ public class NacosAiMaintainerServiceImplTest {
         mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         
-        Page<SkillBasicInfo> actual = aiMaintainerService.listSkills("public", "test", "blur", 1, 10);
+        Page<SkillSummary> actual = aiMaintainerService.listSkills("public", "test", "blur", 1, 10);
         assertNotNull(actual);
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPageItems().size());
         assertEquals("testSkill", actual.getPageItems().get(0).getName());
+    }
+    
+    @Test
+    void updateScope() throws NacosException {
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+        
+        assertTrue(aiMaintainerService.updateScope("public", "testSkill", "PUBLIC"));
     }
     
     @Test

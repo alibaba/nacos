@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
@@ -65,7 +65,7 @@ public interface SkillOperationService {
      * @return skill admin detail (governance info + version summaries)
      * @throws NacosException if skill not found
      */
-    SkillDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
+    SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException;
 
     /**
      * Get skill version detail for admin usage. Returns full skill content for a specific version, used for viewing or editing.
@@ -110,7 +110,7 @@ public interface SkillOperationService {
      * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
+    Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
 
     /**
      * List skills with pagination and optional ordering for admin usage.
@@ -124,7 +124,7 @@ public interface SkillOperationService {
      * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+    Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
                                    int pageNo, int pageSize) throws NacosException;
 
     /**

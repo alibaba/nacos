@@ -20,8 +20,6 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
@@ -36,6 +34,8 @@ import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -200,7 +200,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public SkillDetail getSkillDetail(String namespaceId, String skillName) throws NacosException {
+    public SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -215,13 +215,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Load all version summaries
         Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
-        List<SkillDetail.SkillVersionSummary> versionSummaries = new ArrayList<>();
+        List<SkillMeta.SkillVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
             for (AiResourceVersion v : versionPage.getPageItems()) {
                 if (v == null) {
                     continue;
                 }
-                SkillDetail.SkillVersionSummary summary = new SkillDetail.SkillVersionSummary();
+                SkillMeta.SkillVersionSummary summary = new SkillMeta.SkillVersionSummary();
                 summary.setVersion(v.getVersion());
                 summary.setStatus(v.getStatus());
                 summary.setAuthor(v.getAuthor());
@@ -234,7 +234,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
 
-        SkillDetail detail = new SkillDetail();
+        SkillMeta detail = new SkillMeta();
+        detail.setNamespaceId(namespaceId);
+        detail.setName(skillName);
+        detail.setDescription(meta.getDesc());
         detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
@@ -310,13 +313,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, int pageNo,
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo,
                                           int pageSize) throws NacosException {
         return listSkills(namespaceId, skillName, search, null, pageNo, pageSize);
     }
 
     @Override
-    public Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
                                           int pageNo, int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
@@ -331,13 +334,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 orderBy, pageNo, pageSize);
         List<AiResource> filtered = DataFilterHelper.doReadFilter(
                 metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>() : metaPage.getPageItems());
-        List<SkillListItem> items = new ArrayList<>();
+        List<SkillSummary> items = new ArrayList<>();
         for (AiResource meta : filtered) {
             if (meta == null) {
                 continue;
             }
             SkillVersionInfo versionInfo = parseVersionInfo(meta.getVersionInfo());
-            SkillListItem item = new SkillListItem();
+            SkillSummary item = new SkillSummary();
             item.setNamespaceId(namespaceId);
             item.setName(meta.getName());
             item.setDescription(meta.getDesc());
@@ -354,7 +357,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             items.add(item);
         }
 
-        Page<SkillListItem> result = new Page<>();
+        Page<SkillSummary> result = new Page<>();
         result.setPageItems(items);
         result.setTotalCount(items.size());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());

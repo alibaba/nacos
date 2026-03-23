@@ -17,7 +17,8 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.skills.Skill;
-import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -28,36 +29,50 @@ import com.alibaba.nacos.api.model.Page;
  * @author nacos
  */
 public interface SkillMaintainerService {
-    /**
-     * Get skill detail.
-     *
-     * @param namespaceId namespace ID
-     * @param skillName   skill name
-     * @return skill detail
-     * @throws NacosException if fail to get skill
-     */
-    Skill getSkillDetail(String namespaceId, String skillName) throws NacosException;
     
     /**
-     * Get skill detail with default namespace.
+     * Get skill metadata with default namespace.
      *
      * @param skillName skill name
-     * @return skill detail
-     * @throws NacosException if fail to get skill
+     * @return skill metadata
+     * @throws NacosException if fail to get skill metadata
      */
-    default Skill getSkillDetail(String skillName) throws NacosException {
-        return getSkillDetail(Constants.DEFAULT_NAMESPACE_ID, skillName);
+    default SkillMeta getSkillMeta(String skillName) throws NacosException {
+        return getSkillMeta(Constants.DEFAULT_NAMESPACE_ID, skillName);
     }
     
     /**
-     * Delete skill.
+     * Get skill metadata.
      *
      * @param namespaceId namespace ID
      * @param skillName   skill name
-     * @return true if delete success
-     * @throws NacosException if fail to delete skill
+     * @return skill metadata
+     * @throws NacosException if fail to get skill metadata
      */
-    boolean deleteSkill(String namespaceId, String skillName) throws NacosException;
+    SkillMeta getSkillMeta(String namespaceId, String skillName) throws NacosException;
+    
+    /**
+     * Get specific skill version detail with default namespace.
+     *
+     * @param skillName skill name
+     * @param version   skill version
+     * @return skill version detail
+     * @throws NacosException if fail to get skill version detail
+     */
+    default Skill getSkillVersionDetail(String skillName, String version) throws NacosException {
+        return getSkillVersionDetail(Constants.DEFAULT_NAMESPACE_ID, skillName, version);
+    }
+    
+    /**
+     * Get specific skill version detail.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @param version     skill version
+     * @return skill version detail
+     * @throws NacosException if fail to get skill version detail
+     */
+    Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException;
     
     /**
      * Delete skill with default namespace.
@@ -71,18 +86,14 @@ public interface SkillMaintainerService {
     }
     
     /**
-     * List skills with pagination.
+     * Delete skill.
      *
      * @param namespaceId namespace ID
-     * @param skillName   skill name pattern for filtering
-     * @param search      search mode: "accurate" or "blur"
-     * @param pageNo      page number
-     * @param pageSize    page size
-     * @return paged skill list
-     * @throws NacosException if fail to list skills
+     * @param skillName   skill name
+     * @return true if delete success
+     * @throws NacosException if fail to delete skill
      */
-    Page<SkillBasicInfo> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize)
-            throws NacosException;
+    boolean deleteSkill(String namespaceId, String skillName) throws NacosException;
     
     /**
      * List skills with default namespace.
@@ -93,12 +104,37 @@ public interface SkillMaintainerService {
      * @return paged skill list
      * @throws NacosException if fail to list skills
      */
-    default Page<SkillBasicInfo> listSkills(String skillName, int pageNo, int pageSize) throws NacosException {
+    default Page<SkillSummary> listSkills(String skillName, int pageNo, int pageSize) throws NacosException {
         return listSkills(Constants.DEFAULT_NAMESPACE_ID, skillName, "blur", pageNo, pageSize);
     }
     
     /**
-     * Upload skill from zip file.
+     * List skills with pagination.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name pattern for filtering
+     * @param search      search mode: "accurate" or "blur"
+     * @param pageNo      page number
+     * @param pageSize    page size
+     * @return paged skill list
+     * @throws NacosException if fail to list skills
+     */
+    Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize)
+            throws NacosException;
+
+    /**
+     * Upload skill from zip file with default namespace.
+     *
+     * @param zipBytes zip file bytes
+     * @return skill name
+     * @throws NacosException if fail to upload skill
+     */
+    default String uploadSkillFromZip(byte[] zipBytes) throws NacosException {
+        return uploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
+    }
+    
+    /**
+     * Upload skill from zip file without overwrite.
      *
      * @param namespaceId namespace ID
      * @param zipBytes    zip file bytes
@@ -108,7 +144,7 @@ public interface SkillMaintainerService {
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
         return uploadSkillFromZip(namespaceId, zipBytes, false);
     }
-
+    
     /**
      * Upload skill from zip file.
      *
@@ -121,27 +157,16 @@ public interface SkillMaintainerService {
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
     
     /**
-     * Upload skill from zip file with default namespace.
-     *
-     * @param zipBytes zip file bytes
-     * @return skill name
-     * @throws NacosException if fail to upload skill
-     */
-    default String uploadSkillFromZip(byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
-    }
-
-    /**
      * Create draft version for a skill.
      *
-     * @param namespaceId     namespace ID
-     * @param skillName       skill name
-     * @param basedOnVersion  base version (optional)
+     * @param namespaceId    namespace ID
+     * @param skillName      skill name
+     * @param basedOnVersion base version (optional)
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
     String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException;
-
+    
     /**
      * Update current draft content.
      *
@@ -152,7 +177,7 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to update draft
      */
     boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException;
-
+    
     /**
      * Delete current draft version.
      *
@@ -162,7 +187,7 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to delete draft
      */
     boolean deleteDraft(String namespaceId, String skillName) throws NacosException;
-
+    
     /**
      * Submit a version for pipeline review.
      *
@@ -173,19 +198,20 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to submit
      */
     String submit(String namespaceId, String skillName, String version) throws NacosException;
-
+    
     /**
      * Publish an approved reviewing version.
      *
-     * @param namespaceId        namespace ID
-     * @param skillName          skill name
-     * @param version            version
-     * @param updateLatestLabel  update latest label, default true if null
+     * @param namespaceId       namespace ID
+     * @param skillName         skill name
+     * @param version           version
+     * @param updateLatestLabel update latest label, default true if null
      * @return true if publish success
      * @throws NacosException if fail to publish
      */
-    boolean publish(String namespaceId, String skillName, String version, Boolean updateLatestLabel) throws NacosException;
-
+    boolean publish(String namespaceId, String skillName, String version, Boolean updateLatestLabel)
+            throws NacosException;
+    
     /**
      * Update runtime labels mapping JSON.
      *
@@ -196,7 +222,7 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to update labels
      */
     boolean updateLabels(String namespaceId, String skillName, String labels) throws NacosException;
-
+    
     /**
      * Online/offline operation.
      *
@@ -210,4 +236,15 @@ public interface SkillMaintainerService {
      */
     boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version, boolean online)
             throws NacosException;
+    
+    /**
+     * Update skill visibility scope.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name
+     * @param scope       scope value, e.g. PUBLIC/PRIVATE
+     * @return true if update success
+     * @throws NacosException if fail to update scope
+     */
+    boolean updateScope(String namespaceId, String skillName, String scope) throws NacosException;
 }
