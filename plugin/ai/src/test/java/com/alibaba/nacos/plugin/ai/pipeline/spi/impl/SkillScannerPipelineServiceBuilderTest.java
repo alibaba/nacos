@@ -54,6 +54,7 @@ class SkillScannerPipelineServiceBuilderTest {
         assertNotNull(service);
         assertEquals("skill-scanner", service.pipelineId());
         assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.SKILL));
+        assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.AGENTSPEC));
         assertEquals(100, service.getPreferOrder());
     }
 }

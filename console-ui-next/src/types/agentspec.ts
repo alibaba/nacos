@@ -69,3 +69,37 @@ export interface AgentSpecListParams {
   pageNo?: number;
   pageSize?: number;
 }
+
+// ===== Pipeline Types =====
+
+export type PipelineExecutionStatus = 'IN_PROGRESS' | 'APPROVED' | 'REJECTED';
+
+/** Single pipeline node execution result */
+export interface PipelineNode {
+  nodeId: string;
+  executedAt?: string;
+  passed: boolean;
+  message?: string;
+  durationMs?: number;
+}
+
+/** Pipeline execution info stored in publishPipelineInfo JSON */
+export interface PublishPipelineInfo {
+  executionId: string;
+  status: PipelineExecutionStatus;
+  pipeline: PipelineNode[];
+}
+
+/** Safely parse publishPipelineInfo JSON string */
+export function parsePipelineInfo(raw: string | null | undefined): PublishPipelineInfo | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.executionId === 'string' && typeof parsed.status === 'string') {
+      return parsed as PublishPipelineInfo;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

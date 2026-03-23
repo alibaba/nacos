@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { agentSpecApi } from '@/api/agentspec';
+import i18n from '@/locales';
 import type {
   AgentSpecListItem,
   AgentSpecDetail,
@@ -81,7 +82,7 @@ export const useAgentSpecStore = create<AgentSpecStore>((set, get) => ({
       const axiosError = error as AxiosError<{ message?: string }>;
       set({
         loading: false,
-        error: axiosError.response?.data?.message || 'Failed to fetch agent specs',
+        error: axiosError.response?.data?.message || i18n.t('agentSpec.loadListError'),
         items: [],
         total: 0,
       });
@@ -105,7 +106,7 @@ export const useAgentSpecStore = create<AgentSpecStore>((set, get) => ({
       const axiosError = error as AxiosError<{ message?: string }>;
       set({
         detailLoading: false,
-        error: axiosError.response?.data?.message || 'Failed to fetch agent spec detail',
+        error: axiosError.response?.data?.message || i18n.t('agentSpec.loadError'),
         currentDetail: null,
       });
     }

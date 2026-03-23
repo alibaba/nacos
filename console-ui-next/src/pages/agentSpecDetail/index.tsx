@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import {
   ArrowLeft,
   History,
-  Pencil,
   Plus,
   Package,
   Hash,
@@ -15,6 +14,7 @@ import {
   FileText,
   Send,
   CheckCircle2,
+  GitBranch,
   Power,
   PowerOff,
   Trash2,
@@ -41,14 +41,15 @@ import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { agentSpecApi } from '@/api/agentspec';
 import type { AgentSpecDocument } from '@/types/agentspec';
+import { parsePipelineInfo } from '@/types/agentspec';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
 import { VersionTimeline } from '../agentSpecManagement/components/VersionTimeline';
 import { ResourceViewer } from '../agentSpecManagement/components/ResourceViewer';
 import { sortVersionsDescending } from '../agentSpecManagement/components/version-utils';
-import { buildAgentSpecEditorSearch } from './version-workflow';
 import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
+import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 
 export default function AgentSpecDetailPage() {
   const { t } = useTranslation();
@@ -260,34 +261,6 @@ export default function AgentSpecDetailPage() {
     }
   };
 
-  const handleEdit = () => {
-    if (!currentDetail) return;
-
-    if (currentDetail.editingVersion) {
-      navigate(
-        `/agentspec/new?${buildAgentSpecEditorSearch({
-          mode: 'edit',
-          name: agentSpecName,
-          namespaceId,
-        })}`,
-      );
-      return;
-    }
-
-    if (!currentDetail.version) {
-      return;
-    }
-
-    navigate(
-      `/agentspec/new?${buildAgentSpecEditorSearch({
-        mode: 'version',
-        name: agentSpecName,
-        namespaceId,
-        sourceVersion: currentDetail.version,
-      })}`,
-    );
-  };
-
   const handleNewVersion = () => {
     if (!currentDetail?.version) {
       return;
@@ -386,6 +359,7 @@ export default function AgentSpecDetailPage() {
   })();
   const currentVersionSummary = versionOptions.find((item) => item.version === selectedVersion);
   const currentVersionStatus = currentVersionSummary?.status || detail.versionStatus;
+  const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
   const currentVersionStatusLabel = currentVersionStatus
     ? t(`agentSpec.versionStatus.${currentVersionStatus}`)
     : '-';
@@ -458,12 +432,6 @@ export default function AgentSpecDetailPage() {
                 </Button>
               )}
 
-              {(detail.version || detail.editingVersion) && (
-                <Button size="sm" className="h-7 text-xs" onClick={handleEdit}>
-                  <Pencil className="mr-1 h-3 w-3" />
-                  {t('common.edit')}
-                </Button>
-              )}
             </div>
           </div>
 
@@ -655,6 +623,23 @@ export default function AgentSpecDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {currentVersionStatus === 'reviewing' && (
+            <Card className="overflow-hidden py-0 gap-0">
+              <div className="px-4 py-3 border-b bg-muted/30">
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-muted-foreground" />
+                  {t('agentSpec.pipelineStatus')}
+                </h2>
+              </div>
+              <CardContent className="p-3.5">
+                <PipelineStatusDisplay
+                  pipelineInfo={currentPipelineInfo}
+                  translationPrefix="agentSpec"
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Labels card (editable) */}
           <Card className="overflow-hidden py-0 gap-0">

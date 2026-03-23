@@ -41,8 +41,8 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
-import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
+import com.alibaba.nacos.plugin.ai.pipeline.model.AgentSpecPipelineContext;
+import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -582,23 +582,24 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         final String finalTarget = target;
         
-        // Build context for pipeline execution
-        PublishPipelineContext ctx = new PublishPipelineContext();
-        ctx.setResourceType(PublishPipelineResourceType.AGENTSPEC);
+        // Build context for pipeline execution using the AgentSpec file layout.
+        AgentSpecPipelineContext ctx = new AgentSpecPipelineContext();
         ctx.setNamespaceId(namespaceId);
         ctx.setResourceName(name);
         ctx.setVersion(finalTarget);
+        ctx.setFilesLoader(() -> {
+            try {
+                return buildPipelineFiles(loadAgentSpecFromStorage(namespaceId, name, finalTarget));
+            } catch (NacosException e) {
+                throw new IllegalStateException("Failed to load AgentSpec files for pipeline execution", e);
+            }
+        });
         
         String executionId = publishPipelineExecutor.execute(ctx,
                 result -> onPipelineComplete(namespaceId, name, finalTarget, result));
         if (StringUtils.isBlank(executionId)) {
-            // Pipeline disabled or no matched nodes -> transition to reviewing then publish directly
-            aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, finalTarget,
-                    VERSION_STATUS_REVIEWING);
-            info.setEditingVersion(null);
-            info.setReviewingVersion(finalTarget);
-            updateMetaVersionInfoCas(namespaceId, meta, info);
-            publish(namespaceId, name, finalTarget, true);
+            // Pipeline disabled or no matched nodes -> publish directly.
+            directPublishWithoutPipeline(namespaceId, meta, info, name, finalTarget, true);
             return finalTarget;
         }
         
@@ -617,6 +618,27 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 finalTarget, JacksonUtils.toJson(pipelineInfo));
         
         return finalTarget;
+    }
+
+    private void directPublishWithoutPipeline(String namespaceId, AiResource meta, AgentSpecVersionInfo info,
+            String name, String version, boolean updateLatestLabel) throws NacosException {
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
+                VERSION_STATUS_ONLINE);
+        if (StringUtils.equals(info.getEditingVersion(), version)) {
+            info.setEditingVersion(null);
+        }
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+        }
+        Integer cnt = info.getOnlineCnt();
+        info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        if (info.getLabels() == null) {
+            info.setLabels(new HashMap<>(4));
+        }
+        if (updateLatestLabel) {
+            info.getLabels().put(LABEL_LATEST, version);
+        }
+        updateMetaVersionInfoCas(namespaceId, meta, info);
     }
     
     @Override
@@ -1041,6 +1063,34 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         }
         agentSpec.setResource(resourceMap);
         return agentSpec;
+    }
+
+    private static List<ResourceFileContent> buildPipelineFiles(AgentSpec agentSpec) {
+        List<ResourceFileContent> files = new ArrayList<>();
+        files.add(new ResourceFileContent("manifest.json",
+                agentSpec.getContent() == null ? StringUtils.EMPTY : agentSpec.getContent()));
+        if (agentSpec.getResource() != null && !agentSpec.getResource().isEmpty()) {
+            for (AgentSpecResource resource : agentSpec.getResource().values()) {
+                if (resource == null || StringUtils.isBlank(resource.getName())) {
+                    continue;
+                }
+                files.add(new ResourceFileContent(buildResourcePath(resource),
+                        resource.getContent() == null ? StringUtils.EMPTY : resource.getContent()));
+            }
+        }
+        return files;
+    }
+
+    private static String buildResourcePath(AgentSpecResource resource) {
+        if (StringUtils.isBlank(resource.getType())) {
+            return resource.getName();
+        }
+        String normalizedType = resource.getType().trim();
+        String normalizedName = resource.getName().trim();
+        if (normalizedName.startsWith(normalizedType + "/")) {
+            return normalizedName;
+        }
+        return normalizedType + "/" + normalizedName;
     }
     
     private void deleteAgentSpecStorageForVersion(String namespaceId, String agentSpecName, String version)

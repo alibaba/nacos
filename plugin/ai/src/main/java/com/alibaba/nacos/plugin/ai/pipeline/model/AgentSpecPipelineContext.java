@@ -17,15 +17,13 @@
 package com.alibaba.nacos.plugin.ai.pipeline.model;
 
 /**
- * Skill-specific publish pipeline context, extending common fields with Skill's multi-file structure.
+ * AgentSpec-specific publish pipeline context.
  *
- * @author mosong.lp
- * @since 3.2.0
+ * @author nacos
  */
-public class SkillPipelineContext extends ResourceFilesPipelineContext {
+public class AgentSpecPipelineContext extends ResourceFilesPipelineContext {
 
-    public SkillPipelineContext() {
-        setResourceType(PublishPipelineResourceType.SKILL);
+    public AgentSpecPipelineContext() {
+        setResourceType(PublishPipelineResourceType.AGENTSPEC);
     }
 }
-

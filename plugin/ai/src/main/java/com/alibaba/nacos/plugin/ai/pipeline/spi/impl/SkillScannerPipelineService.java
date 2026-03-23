@@ -20,7 +20,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
-import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
+import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     /**
      * skill-scanner CLI command name.
      */
-    private static final String SKILL_SCANNER_CMD = "skill-scanner";
+    static final String DEFAULT_SKILL_SCANNER_CMD = "skill-scanner";
 
     /**
      * Installation hint when skill-scanner is not found.
@@ -68,16 +68,24 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             + "  # 使用 pip\n"
             + "  pip install cisco-ai-skill-scanner";
 
-    private final boolean installed;
+    private final String scannerCommand;
 
     private final SkillScannerScanOptions scanOptions;
 
     public SkillScannerPipelineService(boolean installed) {
-        this(installed, SkillScannerScanOptions.none());
+        this(installed ? DEFAULT_SKILL_SCANNER_CMD : null, SkillScannerScanOptions.none());
+    }
+
+    public SkillScannerPipelineService(String scannerCommand) {
+        this(scannerCommand, SkillScannerScanOptions.none());
     }
 
     SkillScannerPipelineService(boolean installed, SkillScannerScanOptions scanOptions) {
-        this.installed = installed;
+        this(installed ? DEFAULT_SKILL_SCANNER_CMD : null, scanOptions);
+    }
+
+    SkillScannerPipelineService(String scannerCommand, SkillScannerScanOptions scanOptions) {
+        this.scannerCommand = scannerCommand;
         this.scanOptions = scanOptions != null ? scanOptions : SkillScannerScanOptions.none();
     }
 
@@ -88,24 +96,24 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     @Override
     public PublishPipelineResult execute(PublishPipelineContext context) {
-        if (!installed) {
+        if (scannerCommand == null || scannerCommand.isBlank()) {
             return PublishPipelineResult.reject(INSTALLATION_HINT);
         }
 
-        if (!(context instanceof SkillPipelineContext)) {
-            return PublishPipelineResult.pass("非 Skill 资源，跳过 skill-scanner 扫描");
+        if (!(context instanceof ResourceFilesPipelineContext)) {
+            return PublishPipelineResult.pass("资源不包含可扫描文件，跳过 skill-scanner 扫描");
         }
 
-        SkillPipelineContext skillContext = (SkillPipelineContext) context;
-        List<ResourceFileContent> files = skillContext.getFiles();
+        ResourceFilesPipelineContext resourceContext = (ResourceFilesPipelineContext) context;
+        List<ResourceFileContent> files = resourceContext.getFiles();
         if (files == null || files.isEmpty()) {
-            return PublishPipelineResult.pass("Skill 无文件内容，跳过扫描");
+            return PublishPipelineResult.pass("资源无文件内容，跳过扫描");
         }
 
         Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory("nacos-skill-scanner-");
-            writeSkillFiles(tempDir, files);
+            writeResourceFiles(tempDir, normalizeFilesForScanner(context, files));
 
             List<String> command = buildScanCommand(tempDir);
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -126,11 +134,14 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
-                LOGGER.info("[SkillScannerPipeline] Skill {} 扫描通过", skillContext.getResourceName());
+                LOGGER.info("[SkillScannerPipeline] {} {} 扫描通过", context.getResourceType(),
+                    resourceContext.getResourceName());
                 return PublishPipelineResult.pass("skill-scanner 扫描通过，未发现 HIGH/CRITICAL 级别风险");
             } else {
                 String scanOutput = output.toString();
-                LOGGER.warn("[SkillScannerPipeline] Skill {} 扫描发现风险: {}", skillContext.getResourceName(), scanOutput);
+                LOGGER.warn("[SkillScannerPipeline] {} {} 扫描发现风险, command={}, exitCode={}, output={} ",
+                    context.getResourceType(), resourceContext.getResourceName(), scannerCommand, exitCode,
+                    scanOutput);
                 return PublishPipelineResult.reject(
                         "skill-scanner 检测到安全风险（HIGH/CRITICAL 级别），发布被拒绝。\n扫描结果:\n" + scanOutput);
             }
@@ -139,7 +150,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             LOGGER.error("[SkillScannerPipeline] 扫描被中断", e);
             return PublishPipelineResult.reject("skill-scanner 扫描被中断: " + e.getMessage());
         } catch (IOException e) {
-            LOGGER.warn("[SkillScannerPipeline] 执行 skill-scanner 失败: {}", e.getMessage());
+            LOGGER.warn("[SkillScannerPipeline] 执行 skill-scanner 失败, command={}: {}", scannerCommand, e.getMessage());
             return PublishPipelineResult.reject("执行 skill-scanner 失败: " + e.getMessage());
         } finally {
             if (tempDir != null) {
@@ -150,7 +161,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     List<String> buildScanCommand(Path tempDir) {
         List<String> command = new ArrayList<>();
-        command.add(SKILL_SCANNER_CMD);
+        command.add(scannerCommand);
         command.add("scan");
         command.add(tempDir.toAbsolutePath().toString());
         command.add("--fail-on-severity");
@@ -169,7 +180,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
         return command;
     }
 
-    private void writeSkillFiles(Path baseDir, List<ResourceFileContent> files) throws IOException {
+    private void writeResourceFiles(Path baseDir, List<ResourceFileContent> files) throws IOException {
         for (ResourceFileContent file : files) {
             String filePath = file.getFilePath();
             if (filePath == null || filePath.isEmpty()) {
@@ -184,6 +195,45 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             String content = file.getContent();
             Files.writeString(targetPath, content != null ? content : "", StandardCharsets.UTF_8);
         }
+    }
+
+    private List<ResourceFileContent> normalizeFilesForScanner(PublishPipelineContext context,
+            List<ResourceFileContent> files) {
+        if (context.getResourceType() != PublishPipelineResourceType.AGENTSPEC || containsSkillMarkdown(files)) {
+            return files;
+        }
+
+        List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
+        result.add(new ResourceFileContent("SKILL.md", buildAgentSpecSkillMarkdown(context, files)));
+        result.addAll(files);
+        return result;
+    }
+
+    private boolean containsSkillMarkdown(List<ResourceFileContent> files) {
+        for (ResourceFileContent each : files) {
+            if (each != null && "SKILL.md".equals(each.getFilePath())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String buildAgentSpecSkillMarkdown(PublishPipelineContext context, List<ResourceFileContent> files) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("# AgentSpec ").append(context.getResourceName()).append("\n\n");
+        builder.append("Generated from AgentSpec pipeline context for skill-scanner compatibility.\n");
+        for (ResourceFileContent file : files) {
+            if (file == null || file.getFilePath() == null) {
+                continue;
+            }
+            builder.append("\n## File: ").append(file.getFilePath()).append("\n\n");
+            String content = file.getContent();
+            if (content != null) {
+                builder.append(content);
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
     }
 
     private void deleteRecursively(File file) {
@@ -210,6 +260,9 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     @Override
     public PublishPipelineResourceType[] pipelineResourceTypes() {
-        return new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL};
+        return new PublishPipelineResourceType[] {
+                PublishPipelineResourceType.SKILL,
+                PublishPipelineResourceType.AGENTSPEC
+        };
     }
 }
