@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
@@ -165,4 +166,12 @@ public interface SkillHandler {
      * @throws NacosException if operation failed
      */
     void changeOnlineStatus(SkillOnlineForm form, boolean online) throws NacosException;
+    
+    /**
+     * Update skill visibility scope (PUBLIC/PRIVATE).
+     *
+     * @param form scope update form
+     * @throws NacosException if operation failed
+     */
+    void updateScope(SkillScopeForm form) throws NacosException;
 }

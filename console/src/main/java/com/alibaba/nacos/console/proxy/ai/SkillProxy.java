@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
@@ -105,5 +106,9 @@ public class SkillProxy {
 
     public void offline(SkillOnlineForm form) throws NacosException {
         skillHandler.changeOnlineStatus(form, false);
+    }
+    
+    public void updateScope(SkillScopeForm form) throws NacosException {
+        skillHandler.updateScope(form);
     }
 }

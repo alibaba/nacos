@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -260,5 +261,18 @@ class SkillInnerHandlerTest {
         skillInnerHandler.changeOnlineStatus(form, true);
 
         verify(skillOperationService).changeOnlineStatus(NAMESPACE_ID, SKILL_NAME, "version", "v1", true);
+    }
+    
+    @Test
+    void testUpdateScope() throws NacosException {
+        SkillScopeForm form = new SkillScopeForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setScope("PUBLIC");
+        doNothing().when(skillOperationService).updateScope(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("PUBLIC"));
+        
+        skillInnerHandler.updateScope(form);
+        
+        verify(skillOperationService).updateScope(NAMESPACE_ID, SKILL_NAME, "PUBLIC");
     }
 }

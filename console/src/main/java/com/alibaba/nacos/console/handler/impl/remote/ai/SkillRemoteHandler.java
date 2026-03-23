@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
@@ -147,5 +148,10 @@ public class SkillRemoteHandler implements SkillHandler {
     public void changeOnlineStatus(SkillOnlineForm form, boolean online) throws NacosException {
         clientHolder.getAiMaintainerService().changeOnlineStatus(form.getNamespaceId(), form.getSkillName(),
                 form.getScope(), form.getVersion(), online);
+    }
+    
+    @Override
+    public void updateScope(SkillScopeForm form) throws NacosException {
+        clientHolder.getAiMaintainerService().updateScope(form.getNamespaceId(), form.getSkillName(), form.getScope());
     }
 }

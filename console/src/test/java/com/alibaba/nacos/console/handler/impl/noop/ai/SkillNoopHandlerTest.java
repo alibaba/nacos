@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -135,6 +136,13 @@ class SkillNoopHandlerTest {
     void testChangeOnlineStatusThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> skillNoopHandler.changeOnlineStatus(new SkillOnlineForm(), true));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
+    
+    @Test
+    void testUpdateScopeThrowsNotImplemented() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillNoopHandler.updateScope(new SkillScopeForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
 }

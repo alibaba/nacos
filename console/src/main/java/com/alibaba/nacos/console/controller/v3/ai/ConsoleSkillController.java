@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
@@ -250,6 +251,17 @@ public class ConsoleSkillController {
     public Result<String> offline(SkillOnlineForm form) throws NacosException {
         form.validate();
         skillProxy.offline(form);
+        return Result.success("ok");
+    }
+    
+    /**
+     * Update skill visibility scope (PUBLIC or PRIVATE).
+     */
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateScope(SkillScopeForm form) throws NacosException {
+        form.validate();
+        skillProxy.updateScope(form);
         return Result.success("ok");
     }
 }
