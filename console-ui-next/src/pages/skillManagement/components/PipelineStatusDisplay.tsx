@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
@@ -22,6 +23,8 @@ interface PipelineStatusDisplayProps {
   pipelineInfo: PipelineStatusInfo | null;
   compact?: boolean;
   translationPrefix?: 'skill' | 'agentSpec';
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -52,6 +55,8 @@ export function PipelineStatusDisplay({
   pipelineInfo,
   compact = false,
   translationPrefix = 'skill',
+  onRefresh,
+  refreshing,
 }: PipelineStatusDisplayProps) {
   const { t } = useTranslation();
 
@@ -84,6 +89,17 @@ export function PipelineStatusDisplay({
       <div className="flex items-center gap-2">
         <StatusIcon className={cn('h-4 w-4', config.iconClass)} />
         <span className="text-sm font-medium">{t(`${translationPrefix}.${config.labelSuffix}`)}</span>
+        {pipelineInfo.status === 'IN_PROGRESS' && onRefresh && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 ml-auto"
+            onClick={onRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
+          </Button>
+        )}
       </div>
 
       {/* Pipeline nodes */}

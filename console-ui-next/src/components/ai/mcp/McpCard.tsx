@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Cpu, Pencil, Trash2, ExternalLink, Wrench, MessageSquare, Database, Zap, RefreshCw } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,6 @@ interface McpCardProps {
   onDetail?: (name: string) => void;
   onEdit?: (name: string) => void;
   onDelete?: (name: string) => void;
-  onToggleEnabled?: (server: McpServerBasicInfo) => void;
 }
 
 const PROTOCOL_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
@@ -39,7 +38,6 @@ export function McpCard({
   onDetail,
   onEdit,
   onDelete,
-  onToggleEnabled,
 }: McpCardProps) {
   const { t } = useTranslation();
   const version = server.versionDetail?.version || server.version || '';
@@ -156,19 +154,16 @@ export function McpCard({
 
       {/* Footer */}
       <CardFooter className="px-4 py-1.5 border-t bg-muted/20 flex items-center justify-between [.border-t]:pt-1.5">
-        <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5">
-          <Switch
-            checked={server.enabled}
-            onCheckedChange={() => onToggleEnabled?.(server)}
-            className="scale-[0.7] origin-left"
-          />
-          <span className={cn(
-            'text-[11px] font-medium',
-            server.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
-          )}>
-            {server.enabled ? t('mcp.enabled') : t('mcp.disabled')}
-          </span>
-        </div>
+        <Badge
+          className={cn(
+            'text-[10px] px-1.5 py-0 h-4 font-medium border-0',
+            server.enabled
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+              : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+          )}
+        >
+          {server.enabled ? t('mcp.enabled') : t('mcp.disabled')}
+        </Badge>
 
         <div className="flex items-center -mr-1" onClick={(e) => e.stopPropagation()}>
           <Tooltip>

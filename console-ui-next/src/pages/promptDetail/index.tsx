@@ -63,7 +63,7 @@ import { usePromptStore } from '@/stores/prompt-store';
 import { promptApi } from '@/api/prompt';
 import type { PromptMetaInfo, PromptVersionInfo, PromptVersionSummary } from '@/types/prompt';
 import { cn } from '@/lib/utils';
-import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
+import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 
 // Extract {{variable}} from template
 function extractVariables(template: string): string[] {
@@ -122,8 +122,6 @@ export default function PromptDetailPage() {
   // Label management dialog
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [labelDialogVersion, setLabelDialogVersion] = useState('');
-  const [labelDialogSaving, setLabelDialogSaving] = useState(false);
-  const [labelsSaving, setLabelsSaving] = useState(false);
 
   // Edit metadata dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -354,28 +352,21 @@ export default function PromptDetailPage() {
   };
 
   const handleSaveLabelsBulk = async (newLabels: Record<string, string>) => {
-    setLabelsSaving(true);
-    try {
-      const oldLabels = { ...labelsMap };
-      // Compute diff: unbind labels removed or whose version changed
-      const toUnbind = Object.keys(oldLabels).filter(
-        (l) => !(l in newLabels) || newLabels[l] !== oldLabels[l]
-      );
-      // Compute diff: bind labels added or whose version changed
-      const toBind = Object.entries(newLabels).filter(
-        ([l, v]) => v && oldLabels[l] !== v
-      );
-      await Promise.all([
-        ...toUnbind.map((label) => promptApi.unbindLabel({ promptKey, label, namespaceId })),
-        ...toBind.map(([label, version]) => promptApi.bindLabel({ promptKey, label, version, namespaceId })),
-      ]);
-      toast.success(t('common.versionLabels.updateSuccess'));
-      loadPromptDetail(selectedVersion);
-    } catch (err) {
-      toast.error(String(err));
-    } finally {
-      setLabelsSaving(false);
-    }
+    const oldLabels = { ...labelsMap };
+    // Compute diff: unbind labels removed or whose version changed
+    const toUnbind = Object.keys(oldLabels).filter(
+      (l) => !(l in newLabels) || newLabels[l] !== oldLabels[l]
+    );
+    // Compute diff: bind labels added or whose version changed
+    const toBind = Object.entries(newLabels).filter(
+      ([l, v]) => v && oldLabels[l] !== v
+    );
+    await Promise.all([
+      ...toUnbind.map((label) => promptApi.unbindLabel({ promptKey, label, namespaceId })),
+      ...toBind.map(([label, version]) => promptApi.bindLabel({ promptKey, label, version, namespaceId })),
+    ]);
+    toast.success(t('common.versionLabels.updateSuccess'));
+    await loadPromptDetail(selectedVersion);
   };
 
   // --- Delete ---
@@ -804,21 +795,45 @@ export default function PromptDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Version labels (editable) */}
+          {/* Version labels (read-only for current version) */}
           <Card className="overflow-hidden py-0 gap-0">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
+            <div className="px-5 py-3.5 border-b bg-muted/30 flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
                 {t('common.versionLabels.title')}
               </h2>
+              {selectedVersion && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => openLabelEditor(selectedVersion)}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
             </div>
             <CardContent className="p-4">
-              <VersionLabelEditor
-                labels={labelsMap}
-                availableVersions={versions.map((v) => v.version)}
-                onSave={handleSaveLabelsBulk}
-                isSaving={labelsSaving}
-              />
+              {(() => {
+                const vLabels = getLabelsForVersion(selectedVersion || '');
+                return vLabels.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {vLabels.map((label) => (
+                      <Badge
+                        key={label}
+                        variant="secondary"
+                        className="rounded-md px-2 py-0.5 text-[11px] font-mono"
+                      >
+                        {label}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {t('common.versionLabels.noLabels')}
+                  </p>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
@@ -888,14 +903,18 @@ export default function PromptDetailPage() {
                       )}
 
                       {/* Manage labels button */}
-                      <div className="mt-2 flex items-center justify-between">
-                        <button
-                          className="text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-                          onClick={(e) => { e.stopPropagation(); openLabelEditor(v.version); }}
+                      <div className="mt-2 flex items-center justify-between"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[11px]"
+                          onClick={() => openLabelEditor(v.version)}
                         >
                           <Tag className="h-3 w-3" />
                           {t('common.versionLabels.editLabels')}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   );
@@ -936,47 +955,15 @@ export default function PromptDetailPage() {
       {/* ===== Dialogs ===== */}
 
       {/* Label Management Dialog */}
-      <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('common.versionLabels.editLabels')} - {labelDialogVersion}</DialogTitle>
-            <DialogDescription>
-              {t('common.versionLabels.title')}
-            </DialogDescription>
-          </DialogHeader>
-          {labelDialogVersion && (
-            <VersionLabelEditor
-              labels={(() => {
-                const result: Record<string, string> = {};
-                for (const [key, val] of Object.entries(labelsMap)) {
-                  if (val === labelDialogVersion && key !== 'latest') {
-                    result[key] = val;
-                  }
-                }
-                return result;
-              })()}
-              onSave={async (versionLabels) => {
-                setLabelDialogSaving(true);
-                try {
-                  // Compute the full merged labels: keep labels NOT pointing to this version, add the new ones
-                  const merged: Record<string, string> = {};
-                  for (const [key, val] of Object.entries(labelsMap)) {
-                    if (val !== labelDialogVersion) {
-                      merged[key] = val;
-                    }
-                  }
-                  Object.assign(merged, versionLabels);
-                  await handleSaveLabelsBulk(merged);
-                  setLabelDialogOpen(false);
-                } finally {
-                  setLabelDialogSaving(false);
-                }
-              }}
-              isSaving={labelDialogSaving}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {labelDialogVersion && (
+        <LabelBindDialog
+          open={labelDialogOpen}
+          onOpenChange={setLabelDialogOpen}
+          version={labelDialogVersion}
+          allLabels={labelsMap}
+          onSave={handleSaveLabelsBulk}
+        />
+      )}
 
       {/* Edit Metadata Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!editSaving) setEditDialogOpen(open); }}>

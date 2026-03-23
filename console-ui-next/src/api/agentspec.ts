@@ -51,6 +51,7 @@ export const agentSpecApi = {
     formData.append('namespaceId', namespaceId);
     return client.post(`${BASE}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
     }) as ApiResult<string>;
   },
 

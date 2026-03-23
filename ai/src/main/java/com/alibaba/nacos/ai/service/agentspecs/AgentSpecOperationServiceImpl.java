@@ -332,7 +332,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             if (Constants.AgentSpecs.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
                 nameLike = agentSpecName;
             } else {
-                nameLike = Constants.ALL_PATTERN + agentSpecName + Constants.ALL_PATTERN;
+                nameLike = aiResourcePersistService.generateLikeArgument(
+                        Constants.ALL_PATTERN + agentSpecName + Constants.ALL_PATTERN);
             }
         }
         
@@ -440,7 +441,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public Page<AgentSpecBasicInfo> searchAgentSpecs(String namespaceId, String keyword, int pageNo, int pageSize)
             throws NacosException {
         String nameLike = StringUtils.isBlank(keyword) ? null
-                : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
+                : aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
                 pageNo, pageSize);
         List<AgentSpecBasicInfo> items = new ArrayList<>();

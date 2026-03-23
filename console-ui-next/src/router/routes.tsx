@@ -124,10 +124,15 @@ export const routes: RouteObject[] = [
             element: lazyPage(() => import('@/pages/subscriberList')),
           },
           
-          // Cluster Management
+          // Cluster Management (Admin only)
           {
-            path: 'clusterManagement',
-            element: lazyPage(() => import('@/pages/clusterManagement')),
+            element: <AdminGuard />,
+            children: [
+              {
+                path: 'clusterManagement',
+                element: lazyPage(() => import('@/pages/clusterManagement')),
+              },
+            ],
           },
           
           // User Management (Admin only)
@@ -223,10 +228,15 @@ export const routes: RouteObject[] = [
             element: lazyPage(() => import('@/pages/publishPromptVersion')),
           },
           
-          // Plugin Management
+          // Plugin Management (Admin only)
           {
-            path: 'pluginManagement',
-            element: lazyPage(() => import('@/pages/pluginManagement')),
+            element: <AdminGuard />,
+            children: [
+              {
+                path: 'pluginManagement',
+                element: lazyPage(() => import('@/pages/pluginManagement')),
+              },
+            ],
           },
           
           // Settings

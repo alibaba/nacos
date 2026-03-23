@@ -18,11 +18,13 @@ import {
   Power,
   PowerOff,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -48,7 +50,7 @@ import dayjs from 'dayjs';
 import { VersionTimeline } from '../agentSpecManagement/components/VersionTimeline';
 import { ResourceViewer } from '../agentSpecManagement/components/ResourceViewer';
 import { sortVersionsDescending } from '../agentSpecManagement/components/version-utils';
-import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
+import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 
 export default function AgentSpecDetailPage() {
@@ -71,13 +73,14 @@ export default function AgentSpecDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
   const [detailDocument, setDetailDocument] = useState<AgentSpecDocument | null>(null);
-  const [labelsSaving, setLabelsSaving] = useState(false);
+  const [labelDialogOpen, setLabelDialogOpen] = useState(false);
+  const [enableToggling, setEnableToggling] = useState(false);
   const autoLoadedVersionRef = useRef<string | null>(null);
 
   const loadDetail = useCallback(
     (version?: string) => {
       if (agentSpecName) {
-        fetchDetail(namespaceId, agentSpecName, version);
+        return fetchDetail(namespaceId, agentSpecName, version);
       }
     },
     [fetchDetail, namespaceId, agentSpecName],
@@ -148,6 +151,26 @@ export default function AgentSpecDetailPage() {
     };
   }, [currentDetail, namespaceId, agentSpecName]);
 
+  // ===== Enable/disable handler =====
+
+  const handleToggleEnable = async () => {
+    if (!currentDetail) return;
+    setEnableToggling(true);
+    try {
+      if (currentDetail.enable) {
+        await agentSpecApi.offline({ namespaceId, agentSpecName, scope: 'agentSpec' });
+      } else {
+        await agentSpecApi.online({ namespaceId, agentSpecName, scope: 'agentSpec' });
+      }
+      toast.success(t(currentDetail.enable ? 'agentSpec.disableSuccess' : 'agentSpec.enableSuccess'));
+      await loadDetail();
+    } catch {
+      // handled by interceptor
+    } finally {
+      setEnableToggling(false);
+    }
+  };
+
   // ===== Version lifecycle handlers =====
 
   const handleCreateDraft = async (basedOnVersion?: string) => {
@@ -159,10 +182,10 @@ export default function AgentSpecDetailPage() {
         basedOnVersion,
       });
       toast.success(t('agentSpec.createDraftSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
       // axios interceptor handles toast
-      loadDetail(); // refresh to show latest state
+      await loadDetail(); // refresh to show latest state
     } finally {
       setActionLoading(false);
     }
@@ -173,9 +196,9 @@ export default function AgentSpecDetailPage() {
     try {
       await agentSpecApi.submit({ namespaceId, agentSpecName, version });
       toast.success(t('agentSpec.submitSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -186,9 +209,9 @@ export default function AgentSpecDetailPage() {
     try {
       await agentSpecApi.deleteDraft({ namespaceId, agentSpecName });
       toast.success(t('agentSpec.deleteDraftSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -204,9 +227,9 @@ export default function AgentSpecDetailPage() {
         updateLatestLabel: true,
       });
       toast.success(t('agentSpec.publishSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -217,9 +240,9 @@ export default function AgentSpecDetailPage() {
     try {
       await agentSpecApi.online({ namespaceId, agentSpecName, version });
       toast.success(t('agentSpec.onlineSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -230,9 +253,9 @@ export default function AgentSpecDetailPage() {
     try {
       await agentSpecApi.offline({ namespaceId, agentSpecName, version });
       toast.success(t('agentSpec.offlineSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -243,22 +266,15 @@ export default function AgentSpecDetailPage() {
   };
 
   const handleSaveLabels = async (newLabels: Record<string, string>) => {
-    setLabelsSaving(true);
-    try {
-      const latestValue = detail?.labels?.latest;
-      const merged = latestValue ? { ...newLabels, latest: latestValue } : newLabels;
-      await agentSpecApi.updateLabels({
-        namespaceId,
-        agentSpecName,
-        labels: JSON.stringify(merged),
-      });
-      toast.success(t('common.versionLabels.updateSuccess'));
-      loadDetail();
-    } catch {
-      // handled by interceptor
-    } finally {
-      setLabelsSaving(false);
-    }
+    const latestValue = detail?.labels?.latest;
+    const merged = latestValue ? { ...newLabels, latest: latestValue } : newLabels;
+    await agentSpecApi.updateLabels({
+      namespaceId,
+      agentSpecName,
+      labels: JSON.stringify(merged),
+    });
+    toast.success(t('common.versionLabels.updateSuccess'));
+    await loadDetail();
   };
 
   const handleNewVersion = () => {
@@ -365,7 +381,10 @@ export default function AgentSpecDetailPage() {
     : '-';
   const currentVersionCreateTime = currentVersionSummary?.createTime || 0;
   const onlineVersionCountLabel = t('agentSpec.onlineCount', { count: detail.onlineCnt ?? 0 });
-  const labelEntries = Object.entries(detail.labels || {}).filter(([key]) => key !== 'latest');
+  // Labels bound to the currently selected version
+  const currentVersionLabels = Object.entries(detail.labels || {}).filter(
+    ([, val]) => val === selectedVersion,
+  );
 
   return (
     <div className="flex h-[calc(100vh-88px)] min-h-0 flex-col gap-5 overflow-hidden">
@@ -444,21 +463,32 @@ export default function AgentSpecDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2.5 mb-1">
                 <h1 className="text-xl font-bold tracking-tight">{spec.name}</h1>
-                <Badge
-                  className={cn(
-                    'text-[10px] px-1.5 py-0 h-4 font-medium border-0',
-                    detail.enable
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
-                  )}
-                >
-                  {detail.enable ? t('agentSpec.enabled') : t('agentSpec.disabled')}
-                </Badge>
                 {selectedVersion && (
                   <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
                     {selectedVersion}
                   </span>
                 )}
+              </div>
+              {/* Enable toggle switch */}
+              <div className="flex items-center gap-4 mt-1.5 mb-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <Switch
+                    checked={detail.enable}
+                    disabled={enableToggling}
+                    onCheckedChange={handleToggleEnable}
+                    className={cn(
+                      detail.enable
+                        ? 'data-[state=checked]:bg-emerald-500'
+                        : '',
+                    )}
+                  />
+                  <span className={cn(
+                    'text-xs font-medium',
+                    detail.enable ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground',
+                  )}>
+                    {detail.enable ? t('agentSpec.enabled') : t('agentSpec.disabled')}
+                  </span>
+                </label>
               </div>
               {spec.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
@@ -624,7 +654,7 @@ export default function AgentSpecDetailPage() {
             </CardContent>
           </Card>
 
-          {currentVersionStatus === 'reviewing' && (
+          {currentPipelineInfo && (
             <Card className="overflow-hidden py-0 gap-0">
               <div className="px-4 py-3 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -636,28 +666,61 @@ export default function AgentSpecDetailPage() {
                 <PipelineStatusDisplay
                   pipelineInfo={currentPipelineInfo}
                   translationPrefix="agentSpec"
+                  onRefresh={() => loadDetail()}
                 />
               </CardContent>
             </Card>
           )}
 
-          {/* Labels card (editable) */}
+          {/* Labels card (read-only for current version) */}
           <Card className="overflow-hidden py-0 gap-0">
-            <div className="px-4 py-3 border-b bg-muted/30">
+            <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
                 {t('common.versionLabels.title')}
               </h2>
+              {selectedVersion && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setLabelDialogOpen(true)}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
             </div>
             <CardContent className="p-3.5">
-              <VersionLabelEditor
-                labels={Object.fromEntries(labelEntries)}
-                availableVersions={versions.map((v) => v.version)}
-                onSave={handleSaveLabels}
-                isSaving={labelsSaving}
-              />
+              {currentVersionLabels.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {currentVersionLabels.map(([key]) => (
+                    <Badge
+                      key={key}
+                      variant="secondary"
+                      className="rounded-md px-2 py-0.5 text-[11px] font-mono"
+                    >
+                      {key}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {t('common.versionLabels.noLabels')}
+                </p>
+              )}
             </CardContent>
           </Card>
+
+          {/* Label bind dialog */}
+          {selectedVersion && (
+            <LabelBindDialog
+              open={labelDialogOpen}
+              onOpenChange={setLabelDialogOpen}
+              version={selectedVersion}
+              allLabels={detail.labels ?? {}}
+              onSave={handleSaveLabels}
+            />
+          )}
         </div>
       </div>
 

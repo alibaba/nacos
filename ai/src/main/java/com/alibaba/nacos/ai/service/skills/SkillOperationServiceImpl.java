@@ -328,7 +328,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
                 nameLike = skillName;
             } else {
-                nameLike = Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN;
+                nameLike = aiResourcePersistService.generateLikeArgument(
+                        Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN);
             }
         }
 
@@ -683,7 +684,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
             throws NacosException {
-        String nameLike = StringUtils.isBlank(keyword) ? null : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
+        String nameLike = StringUtils.isBlank(keyword) ? null
+                : aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
                 pageSize);
         List<AiResource> filtered = DataFilterHelper.doReadFilter(

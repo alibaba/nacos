@@ -27,6 +27,31 @@ import com.alibaba.nacos.api.model.Page;
  */
 public interface AiResourcePersistService {
 
+    String PATTERN_STR = "*";
+
+    /**
+     * Convert a search argument that may contain Nacos wildcard ({@code *}) to SQL LIKE syntax ({@code %}).
+     * Also escapes the SQL single-char wildcard ({@code _}) with backslash.
+     *
+     * <p>Aligned with {@code ConfigInfoPersistService#generateLikeArgument}.</p>
+     *
+     * @param s the raw search string, e.g. {@code *keyword*}
+     * @return the SQL-safe LIKE argument, e.g. {@code %keyword%}
+     */
+    default String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
+    }
+
     long insert(AiResource resource);
 
     AiResource find(String namespaceId, String name, String type);
