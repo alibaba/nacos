@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.model.skills;
 
+import com.alibaba.nacos.api.ai.model.skills.SkillBase;
+
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +27,7 @@ import java.util.Map;
  * @author nacos
  * @since 3.2.0
  */
-public class SkillAdminDetail extends SkillBase {
+public class SkillDetail extends SkillBase {
 
     /**
      * Whether the skill is enabled globally.

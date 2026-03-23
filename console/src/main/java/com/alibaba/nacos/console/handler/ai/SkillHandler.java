@@ -24,8 +24,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
-import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.model.skills.SkillDetail;
+import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -45,7 +45,7 @@ public interface SkillHandler {
      * @return skill
      * @throws NacosException nacos exception
      */
-    SkillAdminDetail getSkill(SkillForm form) throws NacosException;
+    SkillDetail getSkill(SkillForm form) throws NacosException;
 
     /**
      * Get skill version detail. Returns full skill content for a specific version.
@@ -82,7 +82,7 @@ public interface SkillHandler {
      * @return skill list
      * @throws NacosException nacos exception
      */
-    Page<SkillAdminListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException;
+    Page<SkillListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException;
     
     /**
      * Upload skill from zip file.

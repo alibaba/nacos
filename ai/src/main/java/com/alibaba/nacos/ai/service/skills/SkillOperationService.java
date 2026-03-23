@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
-import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
-import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.model.skills.SkillDetail;
+import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -52,7 +52,7 @@ public interface SkillOperationService {
      * @return skill admin detail (governance info + version summaries)
      * @throws NacosException if skill not found
      */
-    SkillAdminDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
+    SkillDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
 
     /**
      * Get skill version detail for admin usage. Returns full skill content for a specific version, used for viewing or editing.
@@ -97,7 +97,7 @@ public interface SkillOperationService {
      * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
+    Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
 
     /**
      * List skills with pagination and optional ordering for admin usage.
@@ -111,8 +111,8 @@ public interface SkillOperationService {
      * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillAdminListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
-            int pageNo, int pageSize) throws NacosException;
+    Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+                                   int pageNo, int pageSize) throws NacosException;
 
     /**
      * Create a new draft version based on latest or specified version.

@@ -24,8 +24,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.model.skills.SkillAdminDetail;
-import com.alibaba.nacos.ai.model.skills.SkillAdminListItem;
+import com.alibaba.nacos.ai.model.skills.SkillDetail;
+import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -57,10 +57,10 @@ public class SkillRemoteHandler implements SkillHandler {
     }
 
     @Override
-    public SkillAdminDetail getSkill(SkillForm form) throws NacosException {
+    public SkillDetail getSkill(SkillForm form) throws NacosException {
         // Remote maintainer client currently does not support full admin detail;
         // return empty detail as placeholder.
-        return new SkillAdminDetail();
+        return new SkillDetail();
     }
 
     @Override
@@ -85,7 +85,7 @@ public class SkillRemoteHandler implements SkillHandler {
     }
 
     @Override
-    public Page<SkillAdminListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Page<SkillListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         // Remote maintainer client returns Page<SkillBasicInfo>; convert to Page<SkillAdminListItem>
         Page<SkillBasicInfo> source = clientHolder.getAiMaintainerService().listSkills(
                 skillListForm.getNamespaceId(),
@@ -94,17 +94,17 @@ public class SkillRemoteHandler implements SkillHandler {
                 pageForm.getPageNo(),
                 pageForm.getPageSize()
         );
-        Page<SkillAdminListItem> result = new Page<>();
+        Page<SkillListItem> result = new Page<>();
         result.setTotalCount(source == null ? 0 : source.getTotalCount());
         result.setPagesAvailable(source == null ? 0 : source.getPagesAvailable());
         result.setPageNumber(pageForm.getPageNo());
-        java.util.List<SkillAdminListItem> items = new java.util.ArrayList<>();
+        java.util.List<SkillListItem> items = new java.util.ArrayList<>();
         if (source != null && source.getPageItems() != null) {
             for (SkillBasicInfo info : source.getPageItems()) {
                 if (info == null) {
                     continue;
                 }
-                SkillAdminListItem item = new SkillAdminListItem();
+                SkillListItem item = new SkillListItem();
                 item.setName(info.getName());
                 item.setDescription(info.getDescription());
                 items.add(item);
