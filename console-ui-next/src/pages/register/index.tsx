@@ -75,7 +75,7 @@ export default function RegisterPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder=""
+                placeholder={t('login.pleaseInputPassword')}
                 className="h-10 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
               />
             </div>

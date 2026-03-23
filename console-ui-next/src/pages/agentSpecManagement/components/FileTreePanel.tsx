@@ -186,10 +186,10 @@ function FileNode({
           onCancel={() => setRenaming(false)}
         />
       ) : (
-        <span className="truncate flex-1">{node.name}</span>
+        <span className="truncate flex-1 min-w-0">{node.name}</span>
       )}
       {editable && !isManifest && !renaming && (
-        <div className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="shrink-0 ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             className="p-0.5 rounded hover:bg-accent"
             onClick={(e) => {
@@ -252,9 +252,9 @@ function FolderNode({
         ) : (
           <Folder className="h-4 w-4 shrink-0 text-blue-500" />
         )}
-        <span className="truncate flex-1">{node.name}</span>
+        <span className="truncate flex-1 min-w-0">{node.name}</span>
         {editable && (
-          <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="shrink-0 ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             <TreeActionButton
               label={t('agentSpec.createFileIn', { name: node.name })}
               onClick={(event) => {
@@ -349,7 +349,7 @@ export function FileTreePanel({
         </div>
       )}
       <ScrollArea className="flex-1 bg-inherit">
-        <div className="min-h-full bg-inherit py-2" role="tree" aria-label={t('agentSpec.fileTree')}>
+        <div className="min-h-full bg-inherit py-2 overflow-x-hidden" role="tree" aria-label={t('agentSpec.fileTree')}>
           {nodes.map((node) => (
             <TreeNodeItem
               key={node.key}

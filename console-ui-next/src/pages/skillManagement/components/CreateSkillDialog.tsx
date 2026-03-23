@@ -131,19 +131,25 @@ export function CreateSkillDialog({
       setError(t('skill.nameRequired'));
       return;
     }
+    if (!description.trim()) {
+      setError(t('skill.descriptionRequired'));
+      return;
+    }
+    if (!instruction.trim()) {
+      setError(t('skill.instructionRequired'));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       await skillApi.createDraft({ namespaceId, skillName: trimmedName });
-      if (description.trim() || instruction.trim()) {
-        const skillCard = JSON.stringify({
-          name: trimmedName,
-          description: description.trim(),
-          instruction: instruction.trim(),
-          resource: {},
-        });
-        await skillApi.updateDraft({ namespaceId, skillCard });
-      }
+      const skillCard = JSON.stringify({
+        name: trimmedName,
+        description: description.trim(),
+        instruction: instruction.trim(),
+        resource: {},
+      });
+      await skillApi.updateDraft({ namespaceId, skillCard });
       toast.success(t('skill.createSuccess'));
       handleClose(false);
       onSuccess(trimmedName);
@@ -321,17 +327,20 @@ export function CreateSkillDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="skill-desc">{t('skill.description')}</Label>
+                <Label htmlFor="skill-desc">{t('skill.description')} *</Label>
                 <Input
                   id="skill-desc"
                   placeholder={t('skill.descPlaceholder')}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setError(null);
+                  }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>{t('skill.instruction')}</Label>
+                <Label>{t('skill.instruction')} *</Label>
                 <p className="text-xs text-muted-foreground">
                   {t('skill.instructionHint')}
                 </p>
@@ -365,7 +374,7 @@ export function CreateSkillDialog({
                 </Button>
                 <Button
                   onClick={handleCreate}
-                  disabled={!skillName.trim() || loading}
+                  disabled={!skillName.trim() || !description.trim() || !instruction.trim() || loading}
                 >
                   {loading ? t('common.loading') : t('skill.createSkill')}
                 </Button>

@@ -52,6 +52,7 @@ import { ResourceViewer } from '../agentSpecManagement/components/ResourceViewer
 import { sortVersionsDescending } from '../agentSpecManagement/components/version-utils';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
+import { buildAgentSpecEditorSearch } from './version-workflow';
 
 export default function AgentSpecDetailPage() {
   const { t } = useTranslation();

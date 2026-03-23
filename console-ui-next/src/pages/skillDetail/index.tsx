@@ -131,13 +131,19 @@ export default function SkillDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skillName, namespaceId]);
 
-  // Auto-select first version when detail loads
+  // Auto-select first version when detail loads, or fix stale selection
   useEffect(() => {
     if (!currentDetail || detailLoading) return;
     const versions = sortVersionsDescending(currentDetail.versions || []);
     const first = versions[0]?.version;
+    // If no version selected, auto-select the first one
     if (first && !selectedVersion) {
       setSelectedVersion(first);
+      return;
+    }
+    // If selected version no longer exists (e.g. deleted), switch to first available or clear
+    if (selectedVersion && !versions.some((v) => v.version === selectedVersion)) {
+      setSelectedVersion(first || '');
     }
   }, [currentDetail, detailLoading, selectedVersion]);
 
@@ -191,6 +197,14 @@ export default function SkillDetailPage() {
   };
 
   const handleSaveDraft = async () => {
+    if (!editDescription.trim()) {
+      toast.error(t('skill.descriptionRequired'));
+      return;
+    }
+    if (!editInstruction.trim()) {
+      toast.error(t('skill.instructionRequired'));
+      return;
+    }
     setDraftSaving(true);
     try {
       const skillCard = JSON.stringify({
@@ -305,6 +319,11 @@ export default function SkillDetailPage() {
   };
 
   const handleSubmit = async (version: string) => {
+    // Validate required fields before submit
+    if (versionDoc && (!versionDoc.description?.trim() || !versionDoc.instruction?.trim())) {
+      toast.error(t('skill.submitRequiresFields'));
+      return;
+    }
     setActionLoading(true);
     try {
       await skillApi.submit({ namespaceId, skillName, version });
@@ -322,9 +341,13 @@ export default function SkillDetailPage() {
     try {
       await skillApi.deleteDraft({ namespaceId, skillName });
       toast.success(t('skill.deleteDraftSuccess'));
-      // Clear selection first, then refresh so auto-select picks the first remaining version
-      setSelectedVersion('');
+      // Refresh detail FIRST so currentDetail is up-to-date,
+      // then pick the first remaining version (or '' if none).
+      // This avoids the auto-select effect re-selecting the deleted version from stale data.
       await fetchDetail(namespaceId, skillName);
+      const updated = useSkillStore.getState().currentDetail;
+      const remaining = sortVersionsDescending(updated?.versions || []);
+      setSelectedVersion(remaining[0]?.version || '');
     } catch {
       await loadDetail();
     } finally {
@@ -478,7 +501,7 @@ export default function SkillDetailPage() {
   const resourceEntries = Object.entries(resources);
 
   return (
-    <div className="flex min-h-[calc(100vh-88px)] flex-col gap-5 pb-5">
+    <div className="space-y-5 pb-5">
       {/* ===== Hero Header ===== */}
       <div className="relative rounded-xl border bg-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.04] via-transparent to-fuchsia-500/[0.03]" />
@@ -776,13 +799,30 @@ export default function SkillDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* Empty state: no versions, show create draft button prominently */}
+              {!selectedVersion && !detail.editingVersion && !detail.reviewingVersion && versions.length === 0 && (
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1.5"
+                      disabled={actionLoading}
+                      onClick={() => handleCreateDraft()}
+                    >
+                      <Plus className="h-3 w-3" />
+                      {t('skill.createDraft')}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* ===== Tabs Content ===== */}
-      <Tabs defaultValue="overview" className={cn('flex-1', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
+      <Tabs defaultValue="overview" className={cn((detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
         <TabsList>
           <TabsTrigger value="overview" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" />
@@ -861,7 +901,6 @@ export default function SkillDetailPage() {
                 </div>
                 <CardContent className="p-0">
                   <div className="grid grid-cols-1 divide-y divide-border">
-                    <InfoCell compact label={t('skill.skillName')} value={detail.name || '-'} icon={<Wand2 className="h-3.5 w-3.5" />} />
                     <InfoCell compact label={t('skill.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
                     <InfoCell
                       compact
@@ -876,14 +915,7 @@ export default function SkillDetailPage() {
                     {currentVersionSummary && (
                       <InfoCell compact label={t('skill.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
                     )}
-                    <InfoCell compact label={t('skill.updateTime')} value={detail.updateTime > 0 ? dayjs(detail.updateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
                   </div>
-                  {!isEditingDraft && versionDoc?.description && (
-                    <div className="border-t px-4 py-2.5">
-                      <p className="text-[11px] text-muted-foreground leading-none mb-1">{t('skill.description')}</p>
-                      <div className="text-sm text-foreground whitespace-pre-wrap break-words">{versionDoc.description}</div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 

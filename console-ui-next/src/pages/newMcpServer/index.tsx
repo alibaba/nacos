@@ -613,7 +613,8 @@ export default function NewMcpServerPage() {
   const protoConfig = PROTOCOL_CARD_CONFIG[frontProtocol];
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col min-h-[calc(100vh-120px)]">
+      <div className="space-y-5 grow">
       {/* ===== Hero Header ===== */}
       <div className="relative rounded-xl border bg-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-blue-500/[0.03]" />
@@ -1200,6 +1201,8 @@ export default function NewMcpServerPage() {
           }
         }}
       />
+
+      </div>
 
       {/* Submit — full-width sticky bottom bar */}
       <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-2">

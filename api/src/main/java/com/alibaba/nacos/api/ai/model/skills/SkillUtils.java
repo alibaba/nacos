@@ -603,7 +603,7 @@ public class SkillUtils {
      * @return config group string, e.g. "skill_myskill"
      */
     public static String buildSkillGroup(String skillName) {
-        return SKILL_GROUP_PREFIX + skillName;
+        return SKILL_GROUP_PREFIX + sanitizeNameForGroup(skillName);
     }
 
     /**
@@ -614,7 +614,33 @@ public class SkillUtils {
      * @return config group string, e.g. "skill_myskill__v1"
      */
     public static String buildSkillVersionGroup(String skillName, String version) {
-        return SKILL_GROUP_PREFIX + skillName + DOUBLE_UNDERSCORE + version;
+        return SKILL_GROUP_PREFIX + sanitizeNameForGroup(skillName) + DOUBLE_UNDERSCORE + version;
+    }
+
+    /**
+     * Sanitize a resource name for use in Nacos Config group names.
+     *
+     * <p>Nacos Config group names only allow letters, digits, and the characters {@code _ - . :}.
+     * Any other character (e.g. space) is replaced with {@code -} to avoid storage/query failures
+     * in components like {@code ConfigRawDiskService} that validate group name characters.</p>
+     *
+     * @param name the raw resource name (e.g. skill name or agentspec name)
+     * @return sanitized name safe for use in config group
+     */
+    public static String sanitizeNameForGroup(String name) {
+        if (name == null || name.isEmpty()) {
+            return name;
+        }
+        StringBuilder sb = new StringBuilder(name.length());
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (Character.isLetterOrDigit(ch) || ch == '_' || ch == '-' || ch == '.' || ch == ':') {
+                sb.append(ch);
+            } else {
+                sb.append('-');
+            }
+        }
+        return sb.toString();
     }
 
     private static final String FILE_EXTENSION_PATTERN = ".*\\.[a-zA-Z0-9]+$";
