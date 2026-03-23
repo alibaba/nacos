@@ -22,11 +22,12 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -74,11 +75,11 @@ class SkillInnerHandlerTest {
         SkillForm form = new SkillForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
-        SkillDetail detail = new SkillDetail();
+        SkillMeta detail = new SkillMeta();
         detail.setEnable(true);
         when(skillOperationService.getSkillDetail(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(detail);
 
-        SkillDetail result = skillInnerHandler.getSkill(form);
+        SkillMeta result = skillInnerHandler.getSkill(form);
 
         assertNotNull(result);
         assertEquals(true, result.isEnable());
@@ -141,15 +142,15 @@ class SkillInnerHandlerTest {
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
-        Page<SkillListItem> page = new Page<>();
+        Page<SkillSummary> page = new Page<>();
         page.setTotalCount(1);
-        SkillListItem item = new SkillListItem();
+        SkillSummary item = new SkillSummary();
         item.setName(SKILL_NAME);
         page.setPageItems(List.of(item));
         when(skillOperationService.listSkills(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("blur"),
                 eq("download_count"), eq(1), eq(10))).thenReturn(page);
 
-        Page<SkillListItem> result = skillInnerHandler.listSkills(listForm, pageForm);
+        Page<SkillSummary> result = skillInnerHandler.listSkills(listForm, pageForm);
 
         assertEquals(1, result.getTotalCount());
         verify(skillOperationService).listSkills(NAMESPACE_ID, SKILL_NAME, "blur", "download_count", 1, 10);
@@ -260,5 +261,18 @@ class SkillInnerHandlerTest {
         skillInnerHandler.changeOnlineStatus(form, true);
 
         verify(skillOperationService).changeOnlineStatus(NAMESPACE_ID, SKILL_NAME, "version", "v1", true);
+    }
+    
+    @Test
+    void testUpdateScope() throws NacosException {
+        SkillScopeForm form = new SkillScopeForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setScope("PUBLIC");
+        doNothing().when(skillOperationService).updateScope(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("PUBLIC"));
+        
+        skillInnerHandler.updateScope(form);
+        
+        verify(skillOperationService).updateScope(NAMESPACE_ID, SKILL_NAME, "PUBLIC");
     }
 }

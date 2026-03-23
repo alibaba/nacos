@@ -57,7 +57,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException {
-        return clientHolder.getAiMaintainerService().publishPrompt(
+        return clientHolder.getAiMaintainerService().prompt().publishPrompt(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getVersion(),
@@ -71,7 +71,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().getPromptMeta(
+        return clientHolder.getAiMaintainerService().prompt().getPromptMeta(
                 form.getNamespaceId(),
                 form.getPromptKey()
         );
@@ -79,7 +79,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().queryPromptDetail(
+        return clientHolder.getAiMaintainerService().prompt().queryPromptDetail(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getVersion(),
@@ -89,7 +89,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
-        return clientHolder.getAiMaintainerService().bindLabel(
+        return clientHolder.getAiMaintainerService().prompt().bindLabel(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getLabel(),
@@ -99,7 +99,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
-        return clientHolder.getAiMaintainerService().unbindLabel(
+        return clientHolder.getAiMaintainerService().prompt().unbindLabel(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getLabel()
@@ -108,7 +108,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
-        return clientHolder.getAiMaintainerService().deletePrompt(
+        return clientHolder.getAiMaintainerService().prompt().deletePrompt(
                 form.getNamespaceId(),
                 form.getPromptKey()
         );
@@ -116,7 +116,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().listPrompts(
+        return clientHolder.getAiMaintainerService().prompt().listPrompts(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getSearch(),
@@ -128,7 +128,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().listPromptVersions(
+        return clientHolder.getAiMaintainerService().prompt().listPromptVersions(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getPageNo(),
@@ -138,7 +138,7 @@ public class PromptRemoteHandler implements PromptHandler {
     
     @Override
     public boolean updatePromptMetadata(PromptMetadataForm form, String srcUser, String srcIp) throws NacosException {
-        return clientHolder.getAiMaintainerService().updatePromptMetadata(
+        return clientHolder.getAiMaintainerService().prompt().updatePromptMetadata(
                 form.getNamespaceId(),
                 form.getPromptKey(),
                 form.getDescription(),

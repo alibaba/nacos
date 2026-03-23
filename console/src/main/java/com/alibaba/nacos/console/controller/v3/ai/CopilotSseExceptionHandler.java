@@ -38,7 +38,7 @@ import java.io.IOException;
  * @author nacos
  */
 @Order(-2)
-@ControllerAdvice(basePackages = "com.alibaba.nacos.console.controller.v3.ai")
+@ControllerAdvice(assignableTypes = ConsoleCopilotController.class)
 public class CopilotSseExceptionHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CopilotSseExceptionHandler.class);

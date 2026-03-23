@@ -36,10 +36,12 @@ public final class CriticalPluginConfig {
         // backend.
         // Auth plugins are NOT critical - users can disable default auth to use custom
         // plugins.
+        // TODO should be auto-loaded from Plugin defined, not bind by implementation
         Set<String> plugins = new HashSet<>();
         plugins.add("datasource-dialect:mysql");
         plugins.add("datasource-dialect:derby");
         plugins.add("datasource-dialect:postgresql");
+        plugins.add("ai-storage:nacos_config");
         CRITICAL_PLUGINS = Collections.unmodifiableSet(plugins);
     }
 

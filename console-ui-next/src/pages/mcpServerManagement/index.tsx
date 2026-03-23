@@ -20,7 +20,6 @@ import { McpCard } from '@/components/ai/mcp/McpCard';
 import { ImportMcpDialog } from '@/components/ai/mcp/ImportMcpDialog';
 import { useMcpStore } from '@/stores/mcp-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
-import type { McpServerBasicInfo, McpServerDetailInfo } from '@/types/mcp';
 import { mcpApi } from '@/api/mcp';
 
 export default function McpServerManagementPage() {
@@ -115,31 +114,6 @@ export default function McpServerManagementPage() {
     setBatchDeleteOpen(false);
     setDeleteLoading(false);
     loadData();
-  };
-
-  const handleToggleEnabled = async (server: McpServerBasicInfo) => {
-    try {
-      const response = await mcpApi.getMcpServer({ mcpName: server.name, namespaceId });
-      const detail = (response as unknown as { data: McpServerDetailInfo }).data;
-      const toggled = { ...detail, enabled: !detail.enabled };
-      const { toolSpec, backendEndpoints, frontendEndpoints, allVersions, ...basicInfo } = toggled;
-      await mcpApi.updateMcpServer({
-        mcpName: server.name,
-        namespaceId,
-        serverSpecification: JSON.stringify(basicInfo),
-        toolSpecification: toolSpec ? JSON.stringify(toolSpec) : undefined,
-        endpointSpecification: detail.remoteServerConfig?.serviceRef
-          ? JSON.stringify({ type: 'REF', data: detail.remoteServerConfig.serviceRef })
-          : backendEndpoints?.[0]
-            ? JSON.stringify({ type: 'DIRECT', data: backendEndpoints[0] })
-            : undefined,
-        latest: true,
-      });
-      toast.success(server.enabled ? t('mcp.disableSuccess') : t('mcp.enableSuccess'));
-      loadData();
-    } catch {
-      // handled by interceptor
-    }
   };
 
   const totalPages = Math.ceil(total / pageSize);
@@ -269,7 +243,6 @@ export default function McpServerManagementPage() {
                 onDetail={handleDetail}
                 onEdit={handleEdit}
                 onDelete={setDeleteTarget}
-                onToggleEnabled={handleToggleEnabled}
               />
             ))}
           </div>

@@ -99,7 +99,20 @@ public interface AgentSpecOperationService {
      * @return agentspec name
      * @throws NacosException if upload failed
      */
-    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+    
+    /**
+     * Upload agentspec from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the agentspec already exists
+     * @return agentspec name
+     * @throws NacosException if upload failed
+     */
+    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
     
     /**
      * Search agentspecs for runtime client usage. Only returns enabled agentspecs that have at least one online
@@ -200,4 +213,15 @@ public interface AgentSpecOperationService {
      */
     void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online)
             throws NacosException;
+    
+    /**
+     * Update agentspec visibility scope (PUBLIC or PRIVATE). Only the owner or users with explicit write permission
+     * can change the scope.
+     *
+     * @param namespaceId namespace ID
+     * @param name agentspec name
+     * @param scope target scope: PUBLIC or PRIVATE
+     * @throws NacosException if agentspec not found or no permission
+     */
+    void updateScope(String namespaceId, String name, String scope) throws NacosException;
 }

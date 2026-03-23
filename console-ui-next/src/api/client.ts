@@ -126,8 +126,12 @@ client.interceptors.response.use(
     const requestUrl = error.config?.url || '';
     const isSilent = SILENT_ENDPOINTS.some(ep => requestUrl.includes(ep));
     if (!isSilent) {
-      const errorMessage = error.response?.data?.message || error.message || 'Request failed';
-      toast.error(errorMessage);
+      if (status === 403) {
+        toast.error('无权限执行此操作 / No permission');
+      } else {
+        const errorMessage = error.response?.data?.message || error.message || 'Request failed';
+        toast.error(errorMessage);
+      }
     }
 
     return Promise.reject(error);

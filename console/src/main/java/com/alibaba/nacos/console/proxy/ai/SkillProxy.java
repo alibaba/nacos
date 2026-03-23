@@ -20,14 +20,15 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -47,7 +48,7 @@ public class SkillProxy {
         this.skillHandler = skillHandler;
     }
     
-    public SkillDetail getSkill(SkillForm form) throws NacosException {
+    public SkillMeta getSkill(SkillForm form) throws NacosException {
         return skillHandler.getSkill(form);
     }
 
@@ -63,12 +64,16 @@ public class SkillProxy {
         skillHandler.deleteSkill(form);
     }
     
-    public Page<SkillListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return skillHandler.listSkills(skillListForm, pageForm);
     }
     
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes);
+        return uploadSkillFromZip(namespaceId, zipBytes, false);
+    }
+
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
     }
 
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
@@ -101,5 +106,9 @@ public class SkillProxy {
 
     public void offline(SkillOnlineForm form) throws NacosException {
         skillHandler.changeOnlineStatus(form, false);
+    }
+    
+    public void updateScope(SkillScopeForm form) throws NacosException {
+        skillHandler.updateScope(form);
     }
 }

@@ -33,6 +33,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * Skill client controller for runtime read query.
  *
@@ -43,19 +45,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(Constants.Skills.CLIENT_PATH)
 @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
 public class SkillClientController {
-
+    
     private final SkillOperationService skillOperationService;
-
+    
     public SkillClientController(SkillOperationService skillOperationService) {
         this.skillOperationService = skillOperationService;
     }
-
+    
     /**
      * Download an online skill version as ZIP file by label/version/latest.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
-            tags = {"allowAnonymous"})
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API, tags = {ALLOW_ANONYMOUS})
     public ResponseEntity<byte[]> get(SkillQueryForm form) throws NacosException {
         form.validate();
         Skill skill = skillOperationService.querySkill(form.getNamespaceId(), form.getName(), form.getVersion(),
@@ -63,4 +64,3 @@ public class SkillClientController {
         return SkillRequestUtil.buildSkillZipResponse(skill);
     }
 }
-

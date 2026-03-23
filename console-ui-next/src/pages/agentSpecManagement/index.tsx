@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { AgentSpecCard } from './components/AgentSpecCard';
 import { UploadAgentSpecDialog } from './components/UploadAgentSpecDialog';
 import { useAgentSpecStore } from '@/stores/agentspec-store';
@@ -117,7 +118,12 @@ export default function AgentSpecManagementPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{t('agentSpec.title')}</h1>
+          <h1 className="text-xl font-bold tracking-tight">
+            {t('agentSpec.title')}
+            <Badge className="ml-2 text-[10px] px-1.5 py-0 font-medium bg-amber-500 text-white border-0 hover:bg-amber-500 align-middle">
+              Beta
+            </Badge>
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {t('agentSpec.totalAgentSpecs', { total })}
           </p>

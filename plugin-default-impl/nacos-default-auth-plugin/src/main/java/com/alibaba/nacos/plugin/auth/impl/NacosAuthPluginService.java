@@ -42,6 +42,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID;
+
 /**
  * Nacos default auth plugin service implementation.
  *
@@ -61,6 +63,8 @@ public class NacosAuthPluginService implements AuthPluginService {
     };
     
     protected IAuthenticationManager authenticationManager;
+    
+    private volatile AuthConfigs authConfigs;
     
     @Override
     public Collection<String> identityNames() {
@@ -83,9 +87,7 @@ public class NacosAuthPluginService implements AuthPluginService {
                 LOGGER.debug("Anonymous access granted for resource: {}", resource);
                 NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
                 identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
-                identityContext.setParameter(
-                        com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                        AuthConstants.ANONYMOUS_USER);
+                identityContext.setParameter(IDENTITY_ID, AuthConstants.ANONYMOUS_USER);
                 return AuthResult.successResult(anonymousUser);
             }
             return AuthResult.failureResult(HttpStatus.UNAUTHORIZED.value(), e.getErrMsg());
@@ -101,10 +103,16 @@ public class NacosAuthPluginService implements AuthPluginService {
             return false;
         }
         try {
-            AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
+            checkAuthConfigs();
             return authConfigs.isAiAnonymousEnabled();
         } catch (Exception e) {
             return false;
+        }
+    }
+    
+    private void checkAuthConfigs() {
+        if (null == authConfigs) {
+            authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
         }
     }
     
@@ -120,8 +128,7 @@ public class NacosAuthPluginService implements AuthPluginService {
             nacosUser = authenticationManager.authenticate(userName, password);
         }
         identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
-        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                nacosUser.getUserName());
+        identityContext.setParameter(IDENTITY_ID, nacosUser.getUserName());
         return nacosUser;
     }
     

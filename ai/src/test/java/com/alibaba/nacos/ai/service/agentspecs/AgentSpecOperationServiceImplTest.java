@@ -41,17 +41,27 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import com.alibaba.nacos.api.model.Page;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -168,5 +178,72 @@ class AgentSpecOperationServiceImplTest {
         assertEquals("v1", version);
         verify(aiResourceVersionPersistService).insert(any(AiResourceVersion.class));
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+    }
+
+    @Test
+    void uploadAgentSpecFromZipWithOverwriteUpdatesExistingDraft() throws NacosException, IOException {
+        String namespaceId = "public";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-agentspec");
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        AiResourceVersion version = new AiResourceVersion();
+        version.setVersion("v2");
+        version.setStatus("draft");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-agentspec"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-agentspec"), anyString(), eq("v2")))
+                .thenReturn(version);
+
+        String result = service.uploadAgentSpecFromZip(namespaceId, zipBytes, true);
+
+        assertEquals("test-agentspec", result);
+        verify(aiResourceVersionPersistService).updateStorageAndDesc(eq(namespaceId), eq("test-agentspec"),
+                anyString(), eq("v2"), anyString(), isNull());
+        verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
+                && "test-agentspec".equals(inserted.getName()) && "v2".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void uploadAgentSpecFromZipWithOverwriteCreatesDraftWhenNoEditingDraftExists() throws NacosException,
+            IOException {
+        String namespaceId = "public";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-agentspec");
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setMetaVersion(3L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        Page<AiResourceVersion> versions = new Page<>();
+        AiResourceVersion v2 = new AiResourceVersion();
+        v2.setVersion("v2");
+        versions.setPageItems(java.util.List.of(v2));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-agentspec"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-agentspec"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-agentspec"), anyString(), eq(3L), any()))
+                .thenReturn(true);
+
+        String result = service.uploadAgentSpecFromZip(namespaceId, zipBytes, true);
+
+        assertEquals("test-agentspec", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-agentspec".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+    }
+
+    private byte[] createValidZipBytes() throws IOException {
+        String manifest = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"test-agentspec\"}}";
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            ZipEntry manifestEntry = new ZipEntry("manifest.json");
+            zos.putNextEntry(manifestEntry);
+            zos.write(manifest.getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
     }
 }

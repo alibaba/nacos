@@ -49,7 +49,7 @@ interface NavItem {
   icon: React.ReactNode;
   path?: string;
   badge?: string;
-  children?: { key: string; label: string; path: string }[];
+  children?: { key: string; label: string; path: string; badge?: string }[];
   adminOnly?: boolean;
   defaultOpen?: boolean;
 }
@@ -83,10 +83,10 @@ export function Sidebar() {
       badge: 'new',
       defaultOpen: true,
       children: [
-        { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skill' },
-        { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement' },
+        { key: 'skillRegistry', label: t('menu.skillRegistry'), path: '/skill', badge: 'new' },
+        { key: 'promptRegistry', label: t('menu.promptRegistry'), path: '/promptManagement', badge: 'new' },
         { key: 'agentRegistry', label: t('menu.agentRegistry'), path: '/agentManagement' },
-        { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec' },
+        { key: 'agentSpecRegistry', label: t('menu.agentSpecRegistry'), path: '/agentspec', badge: 'Beta' },
         { key: 'mcpRegistry', label: t('menu.mcpRegistry'), path: '/mcpServerManagement' },
       ],
     });
@@ -121,10 +121,15 @@ export function Sidebar() {
 
   const platformItems: NavItem[] = [
     { key: 'namespace', label: t('menu.namespace'), icon: <Globe size={18} />, path: '/namespace' },
-    { key: 'cluster', label: t('menu.clusterManagement'), icon: <Network size={18} />, path: '/clusterManagement' },
   ];
 
-  if (functionMode !== 'naming' && functionMode !== 'config') {
+  if (globalAdmin) {
+    platformItems.push(
+      { key: 'cluster', label: t('menu.clusterManagement'), icon: <Network size={18} />, path: '/clusterManagement' },
+    );
+  }
+
+  if (globalAdmin && functionMode !== 'naming' && functionMode !== 'config') {
     platformItems.push({
       key: 'plugin',
       label: t('menu.pluginManagement'),
@@ -475,6 +480,14 @@ function NavGroup({
               >
                 <span className="shrink-0 opacity-70">{iconForChild(child.key)}</span>
                 <span className="truncate">{child.label}</span>
+                {child.badge && (
+                  <Badge className={cn(
+                    'text-[9px] px-1 py-0 h-3.5 ml-auto font-medium text-white border-0',
+                    child.badge === 'Beta' ? 'bg-amber-500 hover:bg-amber-500' : 'bg-destructive hover:bg-destructive',
+                  )}>
+                    {child.badge}
+                  </Badge>
+                )}
               </button>
             ))}
           </div>
@@ -509,6 +522,14 @@ function NavGroup({
           >
             <span className="shrink-0 opacity-70">{iconForChild(child.key)}</span>
             <span className="truncate">{child.label}</span>
+            {child.badge && (
+              <Badge className={cn(
+                'text-[9px] px-1 py-0 h-3.5 ml-auto font-medium text-white border-0',
+                child.badge === 'Beta' ? 'bg-amber-500 hover:bg-amber-500' : 'bg-destructive hover:bg-destructive',
+              )}>
+                {child.badge}
+              </Badge>
+            )}
           </button>
         ))}
       </CollapsibleContent>

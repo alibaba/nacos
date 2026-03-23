@@ -285,24 +285,6 @@ export default function McpServerDetailPage() {
                 {t('mcp.versionHistory')}
               </Button>
 
-              {/* Enable/disable */}
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-background/80 border"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Switch
-                  checked={mcp.enabled}
-                  onCheckedChange={handleToggleEnabled}
-                  className="scale-[0.8]"
-                />
-                <span className={cn(
-                  'text-xs font-medium',
-                  mcp.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
-                )}>
-                  {mcp.enabled ? t('mcp.enabled') : t('mcp.disabled')}
-                </span>
-              </div>
-
               <Separator orientation="vertical" className="h-5" />
 
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyConfig}>
@@ -361,6 +343,26 @@ export default function McpServerDetailPage() {
                     Latest
                   </Badge>
                 )}
+              </div>
+              {/* Enable toggle switch */}
+              <div className="flex items-center gap-4 mt-1.5 mb-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <Switch
+                    checked={mcp.enabled}
+                    onCheckedChange={handleToggleEnabled}
+                    className={cn(
+                      mcp.enabled
+                        ? 'data-[state=checked]:bg-emerald-500'
+                        : '',
+                    )}
+                  />
+                  <span className={cn(
+                    'text-xs font-medium',
+                    mcp.enabled ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground',
+                  )}>
+                    {mcp.enabled ? t('mcp.enabled') : t('mcp.disabled')}
+                  </span>
+                </label>
               </div>
               {mcp.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">

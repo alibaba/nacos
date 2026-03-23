@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
@@ -83,7 +84,20 @@ public interface AgentSpecHandler {
      * @return agentspec name
      * @throws NacosException if upload failed
      */
-    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload agentspec from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the agentspec already exists
+     * @return agentspec name
+     * @throws NacosException if upload failed
+     */
+    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
 
     /**
      * Create draft version based on latest or a specified version.
@@ -143,4 +157,12 @@ public interface AgentSpecHandler {
      * @throws NacosException if operation failed
      */
     void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException;
+
+    /**
+     * Update agentspec visibility scope.
+     *
+     * @param form scope update form
+     * @throws NacosException if operation failed
+     */
+    void updateScope(AgentSpecScopeForm form) throws NacosException;
 }

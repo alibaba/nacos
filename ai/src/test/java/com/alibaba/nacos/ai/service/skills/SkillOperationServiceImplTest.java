@@ -17,8 +17,6 @@
 package com.alibaba.nacos.ai.service.skills;
 
 import com.alibaba.nacos.ai.model.AiResource;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineManager;
 import com.alibaba.nacos.ai.pipeline.config.PipelineConfigProvider;
@@ -27,7 +25,9 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -69,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -153,6 +154,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setStatus("enable");
+        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
@@ -160,13 +162,14 @@ class SkillOperationServiceImplTest {
         when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
-        SkillDetail skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
+        SkillMeta skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
 
         // Then
         assertNotNull(skillDetail);
         assertTrue(skillDetail.isEnable());
         assertEquals(1, skillDetail.getOnlineCnt());
         assertEquals("v1", skillDetail.getLabels().get("latest"));
+        assertEquals(DataFilterConstants.SCOPE_PUBLIC, skillDetail.getScope());
         assertNotNull(skillDetail.getVersions());
     }
     
@@ -233,16 +236,17 @@ class SkillOperationServiceImplTest {
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
         
         // When
-        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         
         // Then
         assertNotNull(result);
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPageItems().size());
+        assertEquals(DataFilterConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
     }
     
     @Test
@@ -258,6 +262,62 @@ class SkillOperationServiceImplTest {
         // Then
         assertNotNull(result);
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+    }
+
+    @Test
+    void testUploadSkillFromZipWithOverwriteUpdatesExistingDraft() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v3\",\"labels\":{},\"onlineCnt\":1}");
+        com.alibaba.nacos.ai.model.AiResourceVersion version = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        version.setVersion("v3");
+        version.setStatus("draft");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-skill"), anyString(), eq("v3")))
+                .thenReturn(version);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, true);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq("test-skill"), anyString(),
+                eq("v3"), anyString());
+        verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipWithOverwriteCreatesDraftForExistingSkillWithoutEditing() throws NacosException,
+            IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("v2");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, true);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
     }
     
     /**
@@ -345,7 +405,7 @@ class SkillOperationServiceImplTest {
         metaPage.setPageItems(List.of(meta1, meta2));
         metaPage.setTotalCount(2);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
         DataFilterService mockFilter = mock(DataFilterService.class);
@@ -354,7 +414,7 @@ class SkillOperationServiceImplTest {
         when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("userB");
-        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
         assertEquals("skill-public", result.getPageItems().get(0).getName());
         assertEquals(1, result.getTotalCount());
@@ -432,10 +492,10 @@ class SkillOperationServiceImplTest {
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
-        Page<SkillListItem> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
     }
 

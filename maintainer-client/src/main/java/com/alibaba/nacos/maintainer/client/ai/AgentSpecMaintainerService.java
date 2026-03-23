@@ -49,6 +49,29 @@ public interface AgentSpecMaintainerService {
     default AgentSpec getAgentSpecDetail(String agentSpecName) throws NacosException {
         return getAgentSpecDetail(Constants.DEFAULT_NAMESPACE_ID, agentSpecName);
     }
+
+    /**
+     * Get specific agentspec version detail.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec version detail
+     * @throws NacosException if fail to get agentspec version detail
+     */
+    AgentSpec getAgentSpecVersionDetail(String namespaceId, String agentSpecName, String version) throws NacosException;
+
+    /**
+     * Get specific agentspec version detail with default namespace.
+     *
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec version detail
+     * @throws NacosException if fail to get agentspec version detail
+     */
+    default AgentSpec getAgentSpecVersionDetail(String agentSpecName, String version) throws NacosException {
+        return getAgentSpecVersionDetail(Constants.DEFAULT_NAMESPACE_ID, agentSpecName, version);
+    }
     
     /**
      * Delete agentspec.
@@ -107,7 +130,20 @@ public interface AgentSpecMaintainerService {
      * @return agentspec name
      * @throws NacosException if fail to upload agentspec
      */
-    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload agentspec from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the agentspec already exists
+     * @return agentspec name
+     * @throws NacosException if fail to upload agentspec
+     */
+    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
     
     /**
      * Upload agentspec from zip file with default namespace.
@@ -117,7 +153,7 @@ public interface AgentSpecMaintainerService {
      * @throws NacosException if fail to upload agentspec
      */
     default String uploadAgentSpecFromZip(byte[] zipBytes) throws NacosException {
-        return uploadAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes);
+        return uploadAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
     }
     
     /**
@@ -200,4 +236,15 @@ public interface AgentSpecMaintainerService {
      */
     boolean changeOnlineStatus(String namespaceId, String agentSpecName, String scope, String version,
             boolean online) throws NacosException;
+
+    /**
+     * Update agentspec visibility scope.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param scope scope value, e.g. PUBLIC/PRIVATE
+     * @return true if update success
+     * @throws NacosException if fail to update scope
+     */
+    boolean updateScope(String namespaceId, String agentSpecName, String scope) throws NacosException;
 }

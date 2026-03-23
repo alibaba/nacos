@@ -20,16 +20,17 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.console.handler.ai.SkillHandler;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
@@ -60,7 +61,7 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public SkillDetail getSkill(SkillForm form) throws NacosException {
+    public SkillMeta getSkill(SkillForm form) throws NacosException {
         return skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName());
     }
 
@@ -80,14 +81,14 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public Page<SkillListItem> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
                 skillListForm.getSearch(), skillListForm.getOrderBy(), pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
     }
 
     @Override
@@ -127,5 +128,10 @@ public class SkillInnerHandler implements SkillHandler {
     public void changeOnlineStatus(SkillOnlineForm form, boolean online) throws NacosException {
         skillOperationService.changeOnlineStatus(form.getNamespaceId(), form.getSkillName(), form.getScope(),
                 form.getVersion(), online);
+    }
+    
+    @Override
+    public void updateScope(SkillScopeForm form) throws NacosException {
+        skillOperationService.updateScope(form.getNamespaceId(), form.getSkillName(), form.getScope());
     }
 }

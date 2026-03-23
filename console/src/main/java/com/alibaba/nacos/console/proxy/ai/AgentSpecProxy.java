@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
@@ -65,7 +66,12 @@ public class AgentSpecProxy {
     }
     
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return agentSpecHandler.uploadAgentSpecFromZip(namespaceId, zipBytes);
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        return agentSpecHandler.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
     }
     
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
@@ -94,6 +100,10 @@ public class AgentSpecProxy {
     
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
         agentSpecHandler.changeOnlineStatus(form, online);
+    }
+
+    public void updateScope(AgentSpecScopeForm form) throws NacosException {
+        agentSpecHandler.updateScope(form);
     }
     
     public void online(AgentSpecOnlineForm form) throws NacosException {

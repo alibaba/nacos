@@ -6,6 +6,8 @@ import {
   FileEdit,
   Clock,
   Download,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +80,12 @@ export function SkillCard({
             >
               {item.enable ? t('skill.enabled') : t('skill.disabled')}
             </Badge>
+            {item.scope && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                {item.scope === 'PUBLIC' ? <Globe className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
+                {item.scope === 'PUBLIC' ? t('skill.scopePublic') : t('skill.scopePrivate')}
+              </span>
+            )}
             {latestVersion && (
               <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">
                 {latestVersion}
@@ -94,7 +102,18 @@ export function SkillCard({
         </p>
 
         {/* Meta indicators */}
-        <div className="flex items-center mt-2">
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          <span className={cn(
+            'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+            item.onlineCnt > 0
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+              : 'bg-muted text-muted-foreground',
+          )}>
+            <Globe className="h-2.5 w-2.5" />
+            {item.onlineCnt > 0
+              ? t('skill.onlineCount', { count: item.onlineCnt })
+              : t('skill.noOnlineVersion')}
+          </span>
           {item.editingVersion && (
             <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
               <FileEdit className="h-2.5 w-2.5" />

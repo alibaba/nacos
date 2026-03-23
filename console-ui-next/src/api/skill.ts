@@ -54,6 +54,7 @@ export const skillApi = {
     formData.append('namespaceId', namespaceId);
     return client.post(`${BASE}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
     }) as ApiResult<string>;
   },
 
@@ -70,7 +71,7 @@ export const skillApi = {
     skillName: string;
     basedOnVersion?: string;
   }): ApiResult<string> =>
-    client.post(`${BASE}/draft`, data) as ApiResult<string>,
+    client.post(`${BASE}/draft`, data, { timeout: 60000 }) as ApiResult<string>,
 
   /** Update draft content */
   updateDraft: (data: {

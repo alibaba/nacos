@@ -22,16 +22,16 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -56,6 +56,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 /**
  * Skill admin controller.
@@ -83,7 +85,7 @@ public class SkillAdminController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<SkillDetail> getSkill(SkillForm form) throws NacosException {
+    public Result<SkillMeta> getSkill(SkillForm form) throws NacosException {
         form.validate();
         return Result.success(skillOperationService.getSkillDetail(form.getNamespaceId(), form.getSkillName()));
     }
@@ -102,7 +104,7 @@ public class SkillAdminController {
         return Result.success(skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(),
                 form.getVersion()));
     }
-
+    
     /**
      * Download a specific version of a skill as ZIP file.
      *
@@ -143,8 +145,8 @@ public class SkillAdminController {
      * @throws NacosException if the skill list fails
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<SkillListItem>> listSkills(SkillListForm skillListForm, PageForm pageForm)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
+    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm)
             throws NacosException {
         skillListForm.validate();
         pageForm.validate();
@@ -167,10 +169,11 @@ public class SkillAdminController {
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadSkill(HttpServletRequest request,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
             @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes);
+        String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(skillName);
     }
     

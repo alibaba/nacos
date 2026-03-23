@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
@@ -143,10 +144,11 @@ public class ConsoleAgentSpecController {
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadAgentSpec(HttpServletRequest request,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
             @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = AgentSpecRequestUtil.validateAndExtractZipBytes(file);
-        String agentSpecName = agentSpecProxy.uploadAgentSpecFromZip(namespaceId, zipBytes);
+        String agentSpecName = agentSpecProxy.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(agentSpecName);
     }
     
@@ -250,6 +252,21 @@ public class ConsoleAgentSpecController {
     public Result<String> online(AgentSpecOnlineForm form) throws NacosException {
         form.validate();
         agentSpecProxy.online(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Update agentspec visibility scope.
+     *
+     * @param form scope update form
+     * @return result of the update operation
+     * @throws NacosException if the operation fails
+     */
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateScope(AgentSpecScopeForm form) throws NacosException {
+        form.validate();
+        agentSpecProxy.updateScope(form);
         return Result.success("ok");
     }
     

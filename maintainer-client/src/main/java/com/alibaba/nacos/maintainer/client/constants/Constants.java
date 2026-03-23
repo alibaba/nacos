@@ -81,11 +81,19 @@ public class Constants {
         
         public static final String AI_SKILL_LIST_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/list";
         
+        public static final String AI_SKILL_VERSION_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/version";
+        
+        public static final String AI_SKILL_SCOPE_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/scope";
+        
         public static final String AI_SKILL_UPLOAD_ADMIN_PATH = AI_SKILL_ADMIN_PATH + "/upload";
         
         public static final String AI_AGENTSPEC_ADMIN_PATH = "/v3/admin/ai/agentspecs";
         
         public static final String AI_AGENTSPEC_LIST_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/list";
+
+        public static final String AI_AGENTSPEC_VERSION_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/version";
+
+        public static final String AI_AGENTSPEC_SCOPE_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/scope";
         
         public static final String AI_AGENTSPEC_UPLOAD_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/upload";
         

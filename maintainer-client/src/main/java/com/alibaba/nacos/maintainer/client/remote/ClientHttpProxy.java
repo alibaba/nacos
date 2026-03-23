@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -34,6 +35,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
+import com.alibaba.nacos.api.model.v2.Result;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
@@ -130,7 +133,7 @@ public class ClientHttpProxy implements Closeable {
                 if (result.ok()) {
                     return result;
                 }
-                throw new NacosException(result.getCode(), result.getMessage());
+                throw new NacosException(result.getCode(), resolveErrorMessage(result));
             } catch (NacosException nacosException) {
                 requestException = nacosException;
                 resultCode = nacosException.getErrCode();
@@ -158,6 +161,33 @@ public class ClientHttpProxy implements Closeable {
         }
         throw new NacosException(NacosException.BAD_GATEWAY,
                 "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
+    }
+
+    private String resolveErrorMessage(HttpRestResult<String> result) {
+        String responseBody = result.getData();
+        if (StringUtils.isNotBlank(responseBody)) {
+            try {
+                Result<Object> response = JacksonUtils.toObj(responseBody, new TypeReference<Result<Object>>() {
+                });
+                if (response != null) {
+                    String message = response.getMessage();
+                    Object data = response.getData();
+                    if (data instanceof String && StringUtils.isNotBlank((String) data)) {
+                        if (StringUtils.isNotBlank(message) && !data.equals(message)) {
+                            return message + ": " + data;
+                        }
+                        return (String) data;
+                    }
+                    if (StringUtils.isNotBlank(message)) {
+                        return message;
+                    }
+                }
+            } catch (Exception ignored) {
+                // Fall back to the raw response body for non-Result payloads.
+            }
+            return responseBody;
+        }
+        return result.getMessage();
     }
     
     private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr) throws Exception {

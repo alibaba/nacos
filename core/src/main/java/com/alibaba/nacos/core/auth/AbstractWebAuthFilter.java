@@ -16,15 +16,22 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.HttpProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -90,7 +97,8 @@ public abstract class AbstractWebAuthFilter implements Filter {
             ServerIdentityResult serverIdentityResult = checkServerIdentity(req, secured);
             switch (serverIdentityResult.getStatus()) {
                 case FAIL:
-                    resp.sendError(HttpServletResponse.SC_FORBIDDEN, serverIdentityResult.getMessage());
+                    writeResultResponse(resp, HttpServletResponse.SC_FORBIDDEN,
+                            Result.failure(ErrorCode.ACCESS_DENIED, serverIdentityResult.getMessage()));
                     return;
                 case MATCHED:
                     chain.doFilter(request, response);
@@ -126,18 +134,62 @@ public abstract class AbstractWebAuthFilter implements Filter {
                 throw new AccessException(result.format());
             }
             chain.doFilter(request, response);
-        } catch (AccessException e) {
+        } catch (Exception e) {
+            handleFilterException(req, resp, e);
+        }
+    }
+    
+    private void handleFilterException(HttpServletRequest req, HttpServletResponse resp, Exception e)
+            throws IOException, ServletException {
+        if (e instanceof AccessException accessException) {
             if (Loggers.AUTH.isDebugEnabled()) {
                 Loggers.AUTH.debug("access denied, request: {} {}, reason: {}", req.getMethod(), req.getRequestURI(),
-                        e.getErrMsg());
+                        accessException.getErrMsg());
             }
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
-        } catch (IllegalArgumentException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));
-        } catch (Exception e) {
-            Loggers.AUTH.warn("[AUTH-FILTER] Server failed: ", e);
-            
+            writeResultResponse(resp, HttpServletResponse.SC_FORBIDDEN,
+                    Result.failure(ErrorCode.ACCESS_DENIED, accessException.getErrMsg()));
+            return;
         }
+        if (e instanceof IllegalArgumentException) {
+            writeResultResponse(resp, HttpServletResponse.SC_BAD_REQUEST,
+                    Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, ExceptionUtil.getAllExceptionMsg(e)));
+            return;
+        }
+        if (e instanceof NacosApiException nacosApiException) {
+            writeResultResponse(resp, nacosApiException.getErrCode(),
+                    new Result<>(nacosApiException.getDetailErrCode(), nacosApiException.getErrAbstract(),
+                            nacosApiException.getErrMsg()));
+            return;
+        }
+        if (e instanceof NacosException nacosException) {
+            writeResultResponse(resp, nacosException.getErrCode(),
+                    Result.failure(ErrorCode.SERVER_ERROR, nacosException.getErrMsg()));
+            return;
+        }
+        if (e instanceof NacosRuntimeException nacosRuntimeException) {
+            writeResultResponse(resp, nacosRuntimeException.getErrCode(),
+                    Result.failure(ErrorCode.SERVER_ERROR, nacosRuntimeException.getMessage()));
+            return;
+        }
+        handleUnexpectedException(e);
+    }
+    
+    private void handleUnexpectedException(Exception e) throws IOException, ServletException {
+        Loggers.AUTH.warn("[AUTH-FILTER] Server failed: ", e);
+        if (e instanceof IOException) {
+            throw (IOException) e;
+        }
+        if (e instanceof ServletException) {
+            throw (ServletException) e;
+        }
+        if (e instanceof RuntimeException) {
+            throw (RuntimeException) e;
+        }
+        throw new ServletException(e);
+    }
+    
+    private void writeResultResponse(HttpServletResponse response, int status, Result<?> result) throws IOException {
+        WebUtils.response(response, JacksonUtils.toJson(result), status);
     }
     
     private boolean isIdentityOnlyApi(Secured secured) {

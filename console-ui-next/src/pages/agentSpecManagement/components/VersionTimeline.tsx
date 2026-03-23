@@ -12,20 +12,13 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import type { AgentSpecVersionSummary } from '@/types/agentspec';
 import { parsePipelineInfo } from '@/types/agentspec';
 import { getValidActions, sortVersionsDescending } from './version-utils';
 import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
-import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
+import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 
 interface VersionTimelineProps {
   versions: AgentSpecVersionSummary[];
@@ -76,7 +69,6 @@ export function VersionTimeline({
 }: VersionTimelineProps) {
   const { t } = useTranslation();
   const [labelEditVersion, setLabelEditVersion] = useState<string | null>(null);
-  const [labelEditSaving, setLabelEditSaving] = useState(false);
 
   const sorted = sortVersionsDescending(versions);
 
@@ -90,26 +82,6 @@ export function VersionTimeline({
       }
     }
     return result;
-  };
-
-  const handleLabelSave = async (versionLabels: Record<string, string>) => {
-    if (!onSaveLabels || !labelEditVersion) return;
-    setLabelEditSaving(true);
-    try {
-      const merged: Record<string, string> = {};
-      if (allLabels) {
-        for (const [key, val] of Object.entries(allLabels)) {
-          if (val !== labelEditVersion) {
-            merged[key] = val;
-          }
-        }
-      }
-      Object.assign(merged, versionLabels);
-      await onSaveLabels(merged);
-      setLabelEditVersion(null);
-    } finally {
-      setLabelEditSaving(false);
-    }
   };
 
   const actionHandlers: Record<string, (version: string) => void> = {
@@ -186,7 +158,7 @@ export function VersionTimeline({
                   >
                     {t(`agentSpec.versionStatus.${v.status}`)}
                   </Badge>
-                  {v.status === 'reviewing' && pipelineInfo && (
+                  {pipelineInfo && (
                     <PipelineStatusDisplay
                       pipelineInfo={pipelineInfo}
                       compact
@@ -283,24 +255,16 @@ export function VersionTimeline({
         )}
       </div>
 
-      {/* Label edit dialog */}
-      <Dialog open={!!labelEditVersion} onOpenChange={(open) => !open && setLabelEditVersion(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('common.versionLabels.editLabels')} - {labelEditVersion}</DialogTitle>
-            <DialogDescription>
-              {t('common.versionLabels.title')}
-            </DialogDescription>
-          </DialogHeader>
-          {labelEditVersion && (
-            <VersionLabelEditor
-              labels={getLabelsForVersion(labelEditVersion)}
-              onSave={handleLabelSave}
-              isSaving={labelEditSaving}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Label bind dialog */}
+      {onSaveLabels && labelEditVersion && (
+        <LabelBindDialog
+          open={!!labelEditVersion}
+          onOpenChange={(open) => !open && setLabelEditVersion(null)}
+          version={labelEditVersion}
+          allLabels={allLabels ?? {}}
+          onSave={onSaveLabels}
+        />
+      )}
     </div>
   );
 }

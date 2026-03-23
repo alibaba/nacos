@@ -26,14 +26,10 @@ import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
@@ -60,22 +56,15 @@ class NacosAuthPluginServiceTest {
     
     private NacosAuthPluginService authPluginService;
     
-    private MockedStatic<ApplicationUtils> applicationUtilsMockedStatic;
-    
     @BeforeEach
     void setUp() throws Exception {
         authPluginService = new NacosAuthPluginService();
-        Field field = NacosAuthPluginService.class.getDeclaredField("authenticationManager");
-        field.setAccessible(true);
-        field.set(authPluginService, authenticationManager);
-        
-        applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
-        applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(AuthConfigs.class)).thenReturn(authConfigs);
-    }
-    
-    @AfterEach
-    void tearDown() {
-        applicationUtilsMockedStatic.close();
+        Field amField = NacosAuthPluginService.class.getDeclaredField("authenticationManager");
+        amField.setAccessible(true);
+        amField.set(authPluginService, authenticationManager);
+        Field acField = NacosAuthPluginService.class.getDeclaredField("authConfigs");
+        acField.setAccessible(true);
+        acField.set(authPluginService, authConfigs);
     }
     
     @Test

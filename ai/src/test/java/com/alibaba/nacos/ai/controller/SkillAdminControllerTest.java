@@ -17,10 +17,10 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -105,7 +105,7 @@ class SkillAdminControllerTest {
 
     @Test
     void testGetSkillSuccess() throws Exception {
-        SkillDetail detail = new SkillDetail();
+        SkillMeta detail = new SkillMeta();
         detail.setEnable(true);
         detail.setOnlineCnt(2);
         when(skillOperationService.getSkillDetail(eq("public"), eq("test-skill"))).thenReturn(detail);
@@ -113,7 +113,7 @@ class SkillAdminControllerTest {
                 .param("skillName", "test-skill");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
-        Result<SkillDetail> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+        Result<SkillMeta> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
         });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertNotNull(result.getData());
@@ -154,10 +154,10 @@ class SkillAdminControllerTest {
 
     @Test
     void testListSkillsSuccess() throws Exception {
-        Page<SkillListItem> page = new Page<>();
+        Page<SkillSummary> page = new Page<>();
         page.setTotalCount(1);
         page.setPagesAvailable(1);
-        SkillListItem item = new SkillListItem();
+        SkillSummary item = new SkillSummary();
         item.setName("test-skill");
         page.setPageItems(Collections.singletonList(item));
         when(skillOperationService.listSkills(eq("public"), isNull(), isNull(), isNull(),

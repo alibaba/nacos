@@ -25,13 +25,15 @@ import {
   Trash2,
   Plus,
   Sparkles,
+  AlertTriangle,
+  Lock,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import MDEditor from '@uiw/react-md-editor';
 import {
   Tooltip,
@@ -63,8 +65,8 @@ import dayjs from 'dayjs';
 
 import { SkillVersionTimeline } from '../skillManagement/components/SkillVersionTimeline';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
-import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
 import { SkillOptimizeDialog } from '@/components/ai/skill/SkillOptimizeDialog';
+import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { sortVersionsDescending } from '../skillManagement/components/version-utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SkillResourcePanel } from './SkillResourcePanel';
@@ -103,16 +105,17 @@ export default function SkillDetailPage() {
 
   // Enable/disable toggle state
   const [enableToggling, setEnableToggling] = useState(false);
-
-  // Labels saving state
-  const [labelsSaving, setLabelsSaving] = useState(false);
+  const [scopeToggling, setScopeToggling] = useState(false);
 
   // AI Optimize dialog state
   const [optimizeDialogOpen, setOptimizeDialogOpen] = useState(false);
 
+  // Label bind dialog state
+  const [labelDialogOpen, setLabelDialogOpen] = useState(false);
+
   const loadDetail = useCallback(() => {
     if (skillName) {
-      fetchDetail(namespaceId, skillName);
+      return fetchDetail(namespaceId, skillName);
     }
   }, [fetchDetail, namespaceId, skillName]);
 
@@ -200,7 +203,7 @@ export default function SkillDetailPage() {
       toast.success(t('skill.draftSaveSuccess'));
       setIsEditingDraft(false);
       // Reload both detail and version doc
-      loadDetail();
+      await loadDetail();
       // Re-fetch version doc
       const response = await skillApi.getVersion({ namespaceId, skillName, version: selectedVersion });
       setVersionDoc(response.data);
@@ -223,7 +226,7 @@ export default function SkillDetailPage() {
       });
       await skillApi.updateDraft({ namespaceId, skillCard });
       toast.success(t('skill.optimizeSuccess'));
-      loadDetail();
+      await loadDetail();
       const response = await skillApi.getVersion({ namespaceId, skillName, version: selectedVersion });
       setVersionDoc(response.data);
       setIsEditingDraft(false);
@@ -243,8 +246,8 @@ export default function SkillDetailPage() {
       } else {
         await skillApi.online({ namespaceId, skillName, scope: 'skill' });
       }
-      toast.success(t(currentDetail.enable ? 'skill.offlineSuccess' : 'skill.onlineSuccess'));
-      loadDetail();
+      toast.success(t(currentDetail.enable ? 'skill.disableSuccess' : 'skill.enableSuccess'));
+      await loadDetail();
     } catch {
       // handled by interceptor
     } finally {
@@ -252,23 +255,33 @@ export default function SkillDetailPage() {
     }
   };
 
-  // ===== Labels handler =====
-
-  const handleSaveLabels = async (labels: Record<string, string>) => {
-    setLabelsSaving(true);
+  const handleToggleScope = async () => {
+    if (!currentDetail) return;
+    setScopeToggling(true);
     try {
-      await skillApi.updateLabels({
-        namespaceId,
-        skillName,
-        labels: JSON.stringify(labels),
-      });
-      toast.success(t('common.versionLabels.updateSuccess'));
-      loadDetail();
+      const newScope = currentDetail.scope === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+      const res = await skillApi.updateScope({ namespaceId, skillName, scope: newScope });
+      if (res.code === 0) {
+        toast.success(t('skill.scopeUpdateSuccess'));
+      }
+      await loadDetail();
     } catch {
       // handled by interceptor
     } finally {
-      setLabelsSaving(false);
+      setScopeToggling(false);
     }
+  };
+
+  // ===== Labels handler =====
+
+  const handleSaveLabels = async (labels: Record<string, string>) => {
+    await skillApi.updateLabels({
+      namespaceId,
+      skillName,
+      labels: JSON.stringify(labels),
+    });
+    toast.success(t('common.versionLabels.updateSuccess'));
+    await loadDetail();
   };
 
   // ===== Version lifecycle handlers =====
@@ -285,7 +298,7 @@ export default function SkillDetailPage() {
         setSelectedVersion(updated.editingVersion);
       }
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -296,9 +309,9 @@ export default function SkillDetailPage() {
     try {
       await skillApi.submit({ namespaceId, skillName, version });
       toast.success(t('skill.submitSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -313,7 +326,7 @@ export default function SkillDetailPage() {
       setSelectedVersion('');
       await fetchDetail(namespaceId, skillName);
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -329,9 +342,9 @@ export default function SkillDetailPage() {
         updateLatestLabel: true,
       });
       toast.success(t('skill.publishSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -342,9 +355,9 @@ export default function SkillDetailPage() {
     try {
       await skillApi.online({ namespaceId, skillName, version });
       toast.success(t('skill.onlineSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -355,9 +368,9 @@ export default function SkillDetailPage() {
     try {
       await skillApi.offline({ namespaceId, skillName, version });
       toast.success(t('skill.offlineSuccess'));
-      loadDetail();
+      await loadDetail();
     } catch {
-      loadDetail();
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -452,7 +465,10 @@ export default function SkillDetailPage() {
     ? t(`skill.versionStatus.${currentVersionStatus}`)
     : '-';
   const onlineVersionCountLabel = t('skill.onlineCount', { count: detail.onlineCnt ?? 0 });
-  const labelEntries = Object.entries(detail.labels || {}).filter(([key]) => key !== 'latest');
+  // Labels bound to the currently selected version
+  const currentVersionLabels = Object.entries(detail.labels || {}).filter(
+    ([, val]) => val === selectedVersion,
+  );
 
   // Pipeline info for current version
   const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
@@ -537,29 +553,44 @@ export default function SkillDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2.5 mb-1">
                 <h1 className="text-xl font-bold tracking-tight">{detail.name}</h1>
-                <Badge
-                  className={cn(
-                    'text-[10px] px-1.5 py-0 h-4 font-medium border-0',
-                    detail.enable
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
-                  )}
-                >
-                  {detail.enable ? t('skill.enabled') : t('skill.disabled')}
-                </Badge>
-                {/* Enable/disable switch */}
-                <Switch
-                  checked={detail.enable}
-                  disabled={enableToggling}
-                  onCheckedChange={handleToggleEnable}
-                  aria-label={t('skill.toggleEnable')}
-                  className="scale-75"
-                />
                 {selectedVersion && (
                   <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
                     {selectedVersion}
                   </span>
                 )}
+              </div>
+              {/* Enable & Scope toggle switches */}
+              <div className="flex items-center gap-4 mt-1.5 mb-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <Switch
+                    checked={detail.enable}
+                    disabled={enableToggling}
+                    onCheckedChange={handleToggleEnable}
+                    className={cn(
+                      detail.enable
+                        ? 'data-[state=checked]:bg-emerald-500'
+                        : '',
+                    )}
+                  />
+                  <span className={cn(
+                    'text-xs font-medium',
+                    detail.enable ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground',
+                  )}>
+                    {detail.enable ? t('skill.enabled') : t('skill.disabled')}
+                  </span>
+                </label>
+                <div className="h-4 w-px bg-border" />
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <Switch
+                    checked={detail.scope === 'PUBLIC'}
+                    disabled={scopeToggling}
+                    onCheckedChange={handleToggleScope}
+                  />
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    {detail.scope === 'PUBLIC' ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                    {detail.scope === 'PUBLIC' ? t('skill.scopePublic') : t('skill.scopePrivate')}
+                  </span>
+                </label>
               </div>
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
@@ -597,7 +628,14 @@ export default function SkillDetailPage() {
 
               {/* Version lifecycle action buttons */}
               {selectedVersion && currentVersionStatus && (
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40">
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  {!detail.enable && (
+                    <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 mb-2">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      {t('skill.skillDisabledWarning')}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
                   {/* Draft actions */}
                   {currentVersionStatus === 'draft' && (
                     <>
@@ -735,6 +773,7 @@ export default function SkillDetailPage() {
                       {t('skill.createDraftFrom')}
                     </Button>
                   )}
+                  </div>
                 </div>
               )}
             </div>
@@ -848,8 +887,8 @@ export default function SkillDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Pipeline status card (only for reviewing versions) */}
-              {currentVersionStatus === 'reviewing' && (
+              {/* Pipeline status card */}
+              {currentPipelineInfo && (
                 <Card className="overflow-hidden py-0 gap-0">
                   <div className="px-4 py-3 border-b bg-muted/30">
                     <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -858,28 +897,60 @@ export default function SkillDetailPage() {
                     </h2>
                   </div>
                   <CardContent className="p-3.5">
-                    <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} />
+                    <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} onRefresh={() => loadDetail()} />
                   </CardContent>
                 </Card>
               )}
 
-              {/* Labels card (editable) */}
+              {/* Labels card (read-only for current version) */}
               <Card className="overflow-hidden py-0 gap-0">
-                <div className="px-4 py-3 border-b bg-muted/30">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
                   <h2 className="text-sm font-semibold flex items-center gap-2">
                     <Tag className="h-4 w-4 text-muted-foreground" />
                     {t('common.versionLabels.title')}
                   </h2>
+                  {selectedVersion && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setLabelDialogOpen(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
                 <CardContent className="p-3.5">
-                  <VersionLabelEditor
-                    labels={Object.fromEntries(labelEntries)}
-                    availableVersions={versions.map((v) => v.version)}
-                    onSave={handleSaveLabels}
-                    isSaving={labelsSaving}
-                  />
+                  {currentVersionLabels.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentVersionLabels.map(([key]) => (
+                        <Badge
+                          key={key}
+                          variant="secondary"
+                          className="rounded-md px-2 py-0.5 text-[11px] font-mono"
+                        >
+                          {key}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t('common.versionLabels.noLabels')}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Label bind dialog */}
+              {selectedVersion && (
+                <LabelBindDialog
+                  open={labelDialogOpen}
+                  onOpenChange={setLabelDialogOpen}
+                  version={selectedVersion}
+                  allLabels={detail.labels ?? {}}
+                  onSave={handleSaveLabels}
+                />
+              )}
             </div>
           </div>
         </TabsContent>
@@ -925,6 +996,7 @@ export default function SkillDetailPage() {
               showCreateDraftButton
               allLabels={detail.labels}
               onSaveLabels={handleSaveLabels}
+              skillEnabled={detail.enable}
             />
           </div>
         </SheetContent>

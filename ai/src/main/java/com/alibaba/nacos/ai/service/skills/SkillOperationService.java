@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.ai.service.skills;
 
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
@@ -42,7 +42,20 @@ public interface SkillOperationService {
      * @return skill name
      * @throws NacosException if upload failed
      */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload skill from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the skill already exists
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
 
     /**
      * Get skill detail for admin usage. Returns version governance metadata and all version summaries.
@@ -52,7 +65,7 @@ public interface SkillOperationService {
      * @return skill admin detail (governance info + version summaries)
      * @throws NacosException if skill not found
      */
-    SkillDetail getSkillDetail(String namespaceId, String skillName) throws NacosException;
+    SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException;
 
     /**
      * Get skill version detail for admin usage. Returns full skill content for a specific version, used for viewing or editing.
@@ -97,7 +110,7 @@ public interface SkillOperationService {
      * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
+    Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo, int pageSize) throws NacosException;
 
     /**
      * List skills with pagination and optional ordering for admin usage.
@@ -111,7 +124,7 @@ public interface SkillOperationService {
      * @return skill admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+    Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
                                    int pageNo, int pageSize) throws NacosException;
 
     /**

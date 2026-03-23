@@ -20,8 +20,6 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.event.SkillDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
-import com.alibaba.nacos.ai.model.skills.SkillDetail;
-import com.alibaba.nacos.ai.model.skills.SkillListItem;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
@@ -36,6 +34,8 @@ import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
+import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -49,6 +49,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,10 +136,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
+        }
+        if (overwrite) {
+            return overwriteUploadedSkill(namespaceId, skill);
         }
         String name = skill.getName();
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
@@ -161,8 +165,43 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return name;
     }
 
+    private String overwriteUploadedSkill(String namespaceId, Skill skill) throws NacosException {
+        String name = skill.getName();
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            createDraftWithSkill(namespaceId, skill, "v1", null, true);
+            return name;
+        }
+
+        DataFilterHelper.doWriteCheck(meta);
+        SkillVersionInfo info = requireVersionInfo(meta);
+        String editing = info.getEditingVersion();
+        if (StringUtils.isNotBlank(editing)) {
+            overwriteEditingDraft(namespaceId, skill, meta, editing);
+            return name;
+        }
+
+        String newVersion = nextVersion(namespaceId, name);
+        createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
+        return name;
+    }
+
+    private void overwriteEditingDraft(String namespaceId, Skill skill, AiResource meta, String editing)
+            throws NacosException {
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, skill.getName(),
+                RESOURCE_TYPE_SKILL, editing);
+        if (versionRow == null || !VERSION_STATUS_DRAFT.equalsIgnoreCase(versionRow.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Current editing version is not draft: " + editing);
+        }
+        List<String> files = writeSkillToStorage(namespaceId, skill, editing);
+        aiResourceVersionPersistService.updateStorage(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing,
+                buildStorageJson(namespaceId, skill.getName(), editing, files));
+        bumpMetaDescription(namespaceId, meta, skill.getDescription());
+    }
+
     @Override
-    public SkillDetail getSkillDetail(String namespaceId, String skillName) throws NacosException {
+    public SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -177,13 +216,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Load all version summaries
         Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
-        List<SkillDetail.SkillVersionSummary> versionSummaries = new ArrayList<>();
+        List<SkillMeta.SkillVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
             for (AiResourceVersion v : versionPage.getPageItems()) {
                 if (v == null) {
                     continue;
                 }
-                SkillDetail.SkillVersionSummary summary = new SkillDetail.SkillVersionSummary();
+                SkillMeta.SkillVersionSummary summary = new SkillMeta.SkillVersionSummary();
                 summary.setVersion(v.getVersion());
                 summary.setStatus(v.getStatus());
                 summary.setAuthor(v.getAuthor());
@@ -196,11 +235,15 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             }
         }
 
-        SkillDetail detail = new SkillDetail();
+        SkillMeta detail = new SkillMeta();
+        detail.setNamespaceId(namespaceId);
+        detail.setName(skillName);
+        detail.setDescription(meta.getDesc());
         detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
         detail.setLabels(versionInfo.getLabels());
+        detail.setScope(resolveScope(meta));
         detail.setOnlineCnt(versionInfo.getOnlineCnt());
         detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setVersions(versionSummaries);
@@ -272,20 +315,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, int pageNo,
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo,
                                           int pageSize) throws NacosException {
         return listSkills(namespaceId, skillName, search, null, pageNo, pageSize);
     }
 
     @Override
-    public Page<SkillListItem> listSkills(String namespaceId, String skillName, String search, String orderBy,
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
                                           int pageNo, int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
             if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
                 nameLike = skillName;
             } else {
-                nameLike = Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN;
+                nameLike = aiResourcePersistService.generateLikeArgument(
+                        Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN);
             }
         }
 
@@ -293,18 +337,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 orderBy, pageNo, pageSize);
         List<AiResource> filtered = DataFilterHelper.doReadFilter(
                 metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>() : metaPage.getPageItems());
-        List<SkillListItem> items = new ArrayList<>();
+        List<SkillSummary> items = new ArrayList<>();
         for (AiResource meta : filtered) {
             if (meta == null) {
                 continue;
             }
             SkillVersionInfo versionInfo = parseVersionInfo(meta.getVersionInfo());
-            SkillListItem item = new SkillListItem();
+            SkillSummary item = new SkillSummary();
             item.setNamespaceId(namespaceId);
             item.setName(meta.getName());
             item.setDescription(meta.getDesc());
             item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
             item.setBizTags(meta.getBizTags());
+            item.setScope(resolveScope(meta));
             item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
             item.setDownloadCount(meta.getDownloadCount());
             if (versionInfo != null) {
@@ -316,12 +361,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             items.add(item);
         }
 
-        Page<SkillListItem> result = new Page<>();
+        Page<SkillSummary> result = new Page<>();
         result.setPageItems(items);
         result.setTotalCount(items.size());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
         result.setPageNumber(pageNo);
         return result;
+    }
+    
+    private static String resolveScope(AiResource meta) {
+        if (meta == null || StringUtils.isBlank(meta.getScope())) {
+            return DataFilterConstants.SCOPE_PRIVATE;
+        }
+        return meta.getScope();
     }
 
     @Override
@@ -632,7 +684,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Page<SkillBasicInfo> searchSkills(String namespaceId, String keyword, int pageNo, int pageSize)
             throws NacosException {
-        String nameLike = StringUtils.isBlank(keyword) ? null : (Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
+        String nameLike = StringUtils.isBlank(keyword) ? null
+                : aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
                 pageSize);
         List<AiResource> filtered = DataFilterHelper.doReadFilter(

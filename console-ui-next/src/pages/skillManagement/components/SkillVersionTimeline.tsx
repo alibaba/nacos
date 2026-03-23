@@ -11,24 +11,18 @@ import {
   Plus,
   GitBranch,
   Tag,
+  ShieldOff,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import type { SkillVersionSummary } from '@/types/skill';
 import { parsePipelineInfo } from '@/types/skill';
 import { getValidActionsWithContext, sortVersionsDescending } from './version-utils';
 import { PipelineStatusDisplay } from './PipelineStatusDisplay';
-import { VersionLabelEditor } from '@/components/ai/VersionLabelEditor';
+import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 
 interface SkillVersionTimelineProps {
   versions: SkillVersionSummary[];
@@ -46,6 +40,7 @@ interface SkillVersionTimelineProps {
   showCreateDraftButton?: boolean;
   allLabels?: Record<string, string>;
   onSaveLabels?: (labels: Record<string, string>) => Promise<void>;
+  skillEnabled?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -82,10 +77,10 @@ export function SkillVersionTimeline({
   showCreateDraftButton = true,
   allLabels,
   onSaveLabels,
+  skillEnabled = true,
 }: SkillVersionTimelineProps) {
   const { t } = useTranslation();
   const [labelEditVersion, setLabelEditVersion] = useState<string | null>(null);
-  const [labelEditSaving, setLabelEditSaving] = useState(false);
 
   const sorted = sortVersionsDescending(versions);
 
@@ -99,27 +94,6 @@ export function SkillVersionTimeline({
       }
     }
     return result;
-  };
-
-  const handleLabelSave = async (versionLabels: Record<string, string>) => {
-    if (!onSaveLabels || !labelEditVersion) return;
-    setLabelEditSaving(true);
-    try {
-      // Merge: keep all labels NOT pointing to this version, then add the new ones
-      const merged: Record<string, string> = {};
-      if (allLabels) {
-        for (const [key, val] of Object.entries(allLabels)) {
-          if (val !== labelEditVersion) {
-            merged[key] = val;
-          }
-        }
-      }
-      Object.assign(merged, versionLabels);
-      await onSaveLabels(merged);
-      setLabelEditVersion(null);
-    } finally {
-      setLabelEditSaving(false);
-    }
   };
 
   const actionHandlers: Record<string, (version: string) => void> = {
@@ -152,6 +126,14 @@ export function SkillVersionTimeline({
           <Plus className="h-3.5 w-3.5 mr-1" />
           {t('skill.createDraft')}
         </Button>
+      )}
+
+      {/* Skill disabled banner */}
+      {!skillEnabled && (
+        <div className="flex items-center gap-2 px-3 py-2 mb-2 rounded-md bg-amber-50/60 border border-amber-200/60 dark:bg-amber-950/20 dark:border-amber-800/40">
+          <ShieldOff className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="text-[11px] text-amber-700 dark:text-amber-300">{t('skill.skillDisabledWarning')}</span>
+        </div>
       )}
 
       {/* Timeline */}
@@ -202,8 +184,8 @@ export function SkillVersionTimeline({
                   >
                     {t(`skill.versionStatus.${v.status}`)}
                   </Badge>
-                  {/* Pipeline status badge for reviewing versions */}
-                  {v.status === 'reviewing' && pipelineInfo && (
+                  {/* Pipeline status badge */}
+                  {pipelineInfo && (
                     <PipelineStatusDisplay pipelineInfo={pipelineInfo} compact />
                   )}
                   {v.downloadCount > 0 && (
@@ -325,24 +307,16 @@ export function SkillVersionTimeline({
         )}
       </div>
 
-      {/* Label edit dialog */}
-      <Dialog open={!!labelEditVersion} onOpenChange={(open) => !open && setLabelEditVersion(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('common.versionLabels.editLabels')} - {labelEditVersion}</DialogTitle>
-            <DialogDescription>
-              {t('common.versionLabels.title')}
-            </DialogDescription>
-          </DialogHeader>
-          {labelEditVersion && (
-            <VersionLabelEditor
-              labels={getLabelsForVersion(labelEditVersion)}
-              onSave={handleLabelSave}
-              isSaving={labelEditSaving}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Label bind dialog */}
+      {onSaveLabels && labelEditVersion && (
+        <LabelBindDialog
+          open={!!labelEditVersion}
+          onOpenChange={(open) => !open && setLabelEditVersion(null)}
+          version={labelEditVersion}
+          allLabels={allLabels ?? {}}
+          onSave={onSaveLabels}
+        />
+      )}
     </div>
   );
 }
