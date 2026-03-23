@@ -370,11 +370,15 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     @Override
-    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
         AgentSpec agentSpec = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, namespaceId);
         if (agentSpec == null || StringUtils.isBlank(agentSpec.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "AgentSpec name is required");
+        }
+        if (overwrite) {
+            return overwriteUploadedAgentSpec(namespaceId, agentSpec);
         }
         String name = agentSpec.getName();
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
@@ -393,6 +397,42 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String newVersion = nextVersion(namespaceId, name);
         createDraftWithAgentSpec(namespaceId, agentSpec, newVersion, meta, false);
         return name;
+    }
+
+    private String overwriteUploadedAgentSpec(String namespaceId, AgentSpec agentSpec) throws NacosException {
+        String name = agentSpec.getName();
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
+        if (meta == null) {
+            createDraftWithAgentSpec(namespaceId, agentSpec, "v1", null, true);
+            return name;
+        }
+
+        AgentSpecVersionInfo info = requireVersionInfo(meta);
+        String editing = info.getEditingVersion();
+        if (StringUtils.isNotBlank(editing)) {
+            overwriteEditingDraft(namespaceId, agentSpec, meta, editing);
+            return name;
+        }
+
+        String newVersion = nextVersion(namespaceId, name);
+        createDraftWithAgentSpec(namespaceId, agentSpec, newVersion, meta, false);
+        return name;
+    }
+
+    private void overwriteEditingDraft(String namespaceId, AgentSpec agentSpec, AiResource meta, String editing)
+            throws NacosException {
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, agentSpec.getName(),
+                RESOURCE_TYPE_AGENTSPEC, editing);
+        if (versionRow == null || !VERSION_STATUS_DRAFT.equalsIgnoreCase(versionRow.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Current editing version is not draft: " + editing);
+        }
+        long uniformId = System.currentTimeMillis();
+        writeAgentSpecToStorage(namespaceId, agentSpec, editing, uniformId);
+        aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, agentSpec.getName(),
+                RESOURCE_TYPE_AGENTSPEC, editing, buildStorageJson(namespaceId, agentSpec.getName(), editing),
+                agentSpec.getDescription());
+        bumpMetaDescription(namespaceId, meta, agentSpec.getDescription());
     }
     
     @Override

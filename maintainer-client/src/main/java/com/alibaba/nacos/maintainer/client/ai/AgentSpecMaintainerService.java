@@ -107,7 +107,20 @@ public interface AgentSpecMaintainerService {
      * @return agentspec name
      * @throws NacosException if fail to upload agentspec
      */
-    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload agentspec from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the agentspec already exists
+     * @return agentspec name
+     * @throws NacosException if fail to upload agentspec
+     */
+    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
     
     /**
      * Upload agentspec from zip file with default namespace.
@@ -117,7 +130,7 @@ public interface AgentSpecMaintainerService {
      * @throws NacosException if fail to upload agentspec
      */
     default String uploadAgentSpecFromZip(byte[] zipBytes) throws NacosException {
-        return uploadAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes);
+        return uploadAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
     }
     
     /**

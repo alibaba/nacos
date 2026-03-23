@@ -143,10 +143,11 @@ public class ConsoleAgentSpecController {
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadAgentSpec(HttpServletRequest request,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
             @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = AgentSpecRequestUtil.validateAndExtractZipBytes(file);
-        String agentSpecName = agentSpecProxy.uploadAgentSpecFromZip(namespaceId, zipBytes);
+        String agentSpecName = agentSpecProxy.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
         return Result.success(agentSpecName);
     }
     

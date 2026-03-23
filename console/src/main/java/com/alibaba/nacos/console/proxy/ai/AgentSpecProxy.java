@@ -65,7 +65,12 @@ public class AgentSpecProxy {
     }
     
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return agentSpecHandler.uploadAgentSpecFromZip(namespaceId, zipBytes);
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        return agentSpecHandler.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
     }
     
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {

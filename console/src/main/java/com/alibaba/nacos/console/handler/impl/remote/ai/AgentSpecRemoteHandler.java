@@ -114,8 +114,9 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     }
     
     @Override
-    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return clientHolder.getAiMaintainerService().uploadAgentSpecFromZip(namespaceId, zipBytes);
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        return clientHolder.getAiMaintainerService().uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
     }
 
     @Override

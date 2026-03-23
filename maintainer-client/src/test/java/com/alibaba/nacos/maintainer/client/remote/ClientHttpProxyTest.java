@@ -210,6 +210,30 @@ public class ClientHttpProxyTest {
         
         verify(mockNacosRestTemplate, times(1)).get(anyString(), any(), any(), any(), eq(String.class));
     }
+
+    @Test
+    void testExecuteSyncHttpRequestShouldKeepBusinessErrorMessage() throws Exception {
+        when(mockServerListManager.getCurrentServer()).thenReturn("http://127.0.0.1:8848");
+
+        HttpRestResult<Object> conflictResult = new HttpRestResult<>();
+        conflictResult.setCode(409);
+        conflictResult.setData(
+            "{\"code\":20005,\"message\":\"resource conflict\",\"data\":"
+                + "\"There is already a working version (editing/reviewing), cannot upload\"}");
+        when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(conflictResult);
+
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
+
+        NacosException exception = assertThrows(NacosException.class,
+                () -> clientHttpProxy.executeSyncHttpRequest(request));
+
+        assertEquals(409, exception.getErrCode());
+        assertTrue(exception.getErrMsg().contains("resource conflict"));
+        assertTrue(exception.getErrMsg()
+            .contains("There is already a working version (editing/reviewing), cannot upload"));
+
+        verify(mockNacosRestTemplate, times(4)).get(anyString(), any(), any(), any(), eq(String.class));
+    }
     
     @Test
     void testExecuteSyncHttpRequestRetryOnNoRight() throws Exception {

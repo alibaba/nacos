@@ -83,7 +83,20 @@ public interface AgentSpecHandler {
      * @return agentspec name
      * @throws NacosException if upload failed
      */
-    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload agentspec from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the agentspec already exists
+     * @return agentspec name
+     * @throws NacosException if upload failed
+     */
+    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
 
     /**
      * Create draft version based on latest or a specified version.

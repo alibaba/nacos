@@ -115,8 +115,8 @@ public class SkillRemoteHandler implements SkillHandler {
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return clientHolder.getAiMaintainerService().uploadSkillFromZip(namespaceId, zipBytes);
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+        return clientHolder.getAiMaintainerService().uploadSkillFromZip(namespaceId, zipBytes, overwrite);
     }
 
     @Override

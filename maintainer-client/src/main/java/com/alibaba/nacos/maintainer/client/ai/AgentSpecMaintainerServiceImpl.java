@@ -107,10 +107,12 @@ public class AgentSpecMaintainerServiceImpl implements AgentSpecMaintainerServic
     }
     
     @Override
-    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(4);
         params.put("namespaceId", namespaceId);
+        params.put("overwrite", String.valueOf(overwrite));
         RequestResource resource = buildRequestResource(namespaceId, null);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_UPLOAD_ADMIN_PATH).setParamValue(params)

@@ -68,7 +68,11 @@ public class SkillProxy {
     }
     
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes);
+        return uploadSkillFromZip(namespaceId, zipBytes, false);
+    }
+
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+        return skillHandler.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
     }
 
     public String createDraft(SkillDraftCreateForm form) throws NacosException {

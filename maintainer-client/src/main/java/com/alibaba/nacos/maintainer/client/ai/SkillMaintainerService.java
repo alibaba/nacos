@@ -105,7 +105,20 @@ public interface SkillMaintainerService {
      * @return skill name
      * @throws NacosException if fail to upload skill
      */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload skill from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the skill already exists
+     * @return skill name
+     * @throws NacosException if fail to upload skill
+     */
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
     
     /**
      * Upload skill from zip file with default namespace.
@@ -115,7 +128,7 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to upload skill
      */
     default String uploadSkillFromZip(byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes);
+        return uploadSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, zipBytes, false);
     }
 
     /**

@@ -69,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -258,6 +259,62 @@ class SkillOperationServiceImplTest {
         // Then
         assertNotNull(result);
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+    }
+
+    @Test
+    void testUploadSkillFromZipWithOverwriteUpdatesExistingDraft() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v3\",\"labels\":{},\"onlineCnt\":1}");
+        com.alibaba.nacos.ai.model.AiResourceVersion version = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        version.setVersion("v3");
+        version.setStatus("draft");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-skill"), anyString(), eq("v3")))
+                .thenReturn(version);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, true);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq("test-skill"), anyString(),
+                eq("v3"), anyString());
+        verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipWithOverwriteCreatesDraftForExistingSkillWithoutEditing() throws NacosException,
+            IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("v2");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, true);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
     }
     
     /**

@@ -135,10 +135,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
+        }
+        if (overwrite) {
+            return overwriteUploadedSkill(namespaceId, skill);
         }
         String name = skill.getName();
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
@@ -159,6 +162,41 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String newVersion = nextVersion(namespaceId, name);
         createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
         return name;
+    }
+
+    private String overwriteUploadedSkill(String namespaceId, Skill skill) throws NacosException {
+        String name = skill.getName();
+        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        if (meta == null) {
+            createDraftWithSkill(namespaceId, skill, "v1", null, true);
+            return name;
+        }
+
+        DataFilterHelper.doWriteCheck(meta);
+        SkillVersionInfo info = requireVersionInfo(meta);
+        String editing = info.getEditingVersion();
+        if (StringUtils.isNotBlank(editing)) {
+            overwriteEditingDraft(namespaceId, skill, meta, editing);
+            return name;
+        }
+
+        String newVersion = nextVersion(namespaceId, name);
+        createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
+        return name;
+    }
+
+    private void overwriteEditingDraft(String namespaceId, Skill skill, AiResource meta, String editing)
+            throws NacosException {
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, skill.getName(),
+                RESOURCE_TYPE_SKILL, editing);
+        if (versionRow == null || !VERSION_STATUS_DRAFT.equalsIgnoreCase(versionRow.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Current editing version is not draft: " + editing);
+        }
+        List<String> files = writeSkillToStorage(namespaceId, skill, editing);
+        aiResourceVersionPersistService.updateStorage(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing,
+                buildStorageJson(namespaceId, skill.getName(), editing, files));
+        bumpMetaDescription(namespaceId, meta, skill.getDescription());
     }
 
     @Override

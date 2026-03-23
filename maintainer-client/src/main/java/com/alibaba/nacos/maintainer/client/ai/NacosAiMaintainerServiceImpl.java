@@ -612,12 +612,13 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
         Map<String, String> params = new HashMap<>(4);
         params.put("namespaceId", namespaceId);
+        params.put("overwrite", String.valueOf(overwrite));
         RequestResource resource = buildRequestResource(namespaceId, null);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_SKILL_UPLOAD_ADMIN_PATH).setParamValue(params)
@@ -832,12 +833,14 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
         }
         Map<String, String> params = new HashMap<>(4);
         params.put("namespaceId", namespaceId);
+        params.put("overwrite", String.valueOf(overwrite));
         RequestResource resource = buildRequestResource(namespaceId, null);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_UPLOAD_ADMIN_PATH).setParamValue(params)

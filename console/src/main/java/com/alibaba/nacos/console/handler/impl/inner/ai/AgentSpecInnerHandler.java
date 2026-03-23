@@ -85,8 +85,9 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
     
     @Override
-    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes);
+    public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        return agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
     }
 
     @Override

@@ -42,7 +42,20 @@ public interface SkillOperationService {
      * @return skill name
      * @throws NacosException if upload failed
      */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, false);
+    }
+
+    /**
+     * Upload skill from zip file.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param overwrite whether to overwrite the current editable draft when the skill already exists
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
 
     /**
      * Get skill detail for admin usage. Returns version governance metadata and all version summaries.
