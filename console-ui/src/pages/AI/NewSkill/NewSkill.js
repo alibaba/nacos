@@ -62,23 +62,25 @@ class NewSkill extends React.Component {
     const skillName = getParams('name');
     const mode = getParams('mode');
     const isEdit = mode === 'edit' && !!skillName;
+    const isDraft = getParams('isDraft') === 'true';
 
     this.state = {
       loading: false,
       generating: false,
       streaming: false,
       streamContent: '',
-      thinkingContent: '', // 思考内容
-      thinkingCollapsed: false, // 思考内容是否折叠
-      showInputCollapsed: false, // 用户输入是否折叠
-      inputSectionCollapsed: false, // 输入区域是否折叠（生成开始后折叠）
-      resultContentCollapsed: false, // 结果内容是否折叠
-      inputTooltipVisible: false, // 用户输入tooltip显示状态
-      inputTooltipPosition: { x: 0, y: 0 }, // 用户输入tooltip位置
-      thinkingTooltipVisible: false, // 思考内容tooltip显示状态
-      thinkingTooltipPosition: { x: 0, y: 0 }, // 思考内容tooltip位置
-      parsingResult: false, // 是否正在解析结果
+      thinkingContent: '',
+      thinkingCollapsed: false,
+      showInputCollapsed: false,
+      inputSectionCollapsed: false,
+      resultContentCollapsed: false,
+      inputTooltipVisible: false,
+      inputTooltipPosition: { x: 0, y: 0 },
+      thinkingTooltipVisible: false,
+      thinkingTooltipPosition: { x: 0, y: 0 },
+      parsingResult: false,
       isEdit: isEdit,
+      isDraft: isDraft,
       skillName,
       backgroundInfo: '',
       conversationHistory: null, // 对话历史
@@ -379,7 +381,7 @@ class NewSkill extends React.Component {
   };
 
   loadSkillData = callback => {
-    const { skillName } = this.state;
+    const { skillName, isDraft } = this.state;
     const namespaceId = getParams('namespace') || '';
 
     this.setState({ loading: true });
@@ -391,63 +393,59 @@ class NewSkill extends React.Component {
     request({
       url: `v3/console/ai/skills?${params.toString()}`,
       success: data => {
-        this.setState({ loading: false });
         if (data && (data.code === 0 || data.code === 200) && data.data) {
           const skillData = data.data;
-          const resources = skillData.resource ? Object.values(skillData.resource) : [];
+          // SkillAdminDetail may not include name; fill from URL params
+          if (!skillData.name) {
+            skillData.name = skillName;
+          }
+          const editingVersion = skillData.editingVersion || skillData.editingVersionStr;
 
-          this.field.setValues({
-            name: skillData.name,
-            description: skillData.description || '',
-            instruction: skillData.instruction || '',
-          });
-
-          // 保存原始数据用于比较
-          const originalFormData = {
-            name: skillData.name,
-            description: skillData.description || '',
-            instruction: skillData.instruction || '',
-          };
-          const originalResources = JSON.parse(JSON.stringify(resources)); // 深拷贝
-
-          // 先更新 resources，然后再构建文件树，确保使用最新的数据
-          this.setState(
-            {
-              resources,
-              expandedKeys: resources.map((_, index) => String(index)),
-              currentSkillData: skillData,
-              prevFormValues: originalFormData,
-              originalFormData,
-              originalResources,
-              hasChanges: false, // 初始状态没有变化
-            },
-            () => {
-              // 在 resources 更新后构建文件树
-              const previewData = this.buildPreviewData();
-              const fileTree = this.buildFileTree(previewData);
-              // Find SKILL.md file in the file list
-              const skillMdFile =
-                fileTree && Array.isArray(fileTree)
-                  ? fileTree.find(file => file.name === 'SKILL.md' && file.fileType === 'skill-md')
-                  : null;
-
-              // 更新文件树和选中的文件
-              this.setState(
-                {
-                  editModeFileTree: fileTree,
-                  editModeSelectedFile:
-                    skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
-                },
-                () => {
-                  // 执行回调，允许调用方在数据加载完成后执行额外操作
-                  if (callback && typeof callback === 'function') {
-                    callback();
-                  }
-                }
-              );
+          // If isDraft and there is an editingVersion, load draft version content
+          if (isDraft && editingVersion) {
+            const versionParams = new URLSearchParams();
+            versionParams.append('skillName', skillName);
+            versionParams.append('version', editingVersion);
+            if (namespaceId) {
+              versionParams.append('namespaceId', namespaceId);
             }
-          );
+
+            request({
+              url: `v3/console/ai/skills/version?${versionParams.toString()}`,
+              success: versionData => {
+                this.setState({ loading: false });
+                if (
+                  versionData &&
+                  (versionData.code === 0 || versionData.code === 200) &&
+                  versionData.data
+                ) {
+                  // Use draft version content instead of default content
+                  const draftContent = versionData.data;
+                  const mergedSkillData = {
+                    ...skillData,
+                    name: draftContent.name || skillData.name || skillName,
+                    instruction: draftContent.instruction || '',
+                    description: draftContent.description || '',
+                    resource: draftContent.resource || skillData.resource || {},
+                  };
+                  this._applySkillData(mergedSkillData, callback);
+                } else {
+                  // Fallback: use base skillData if version load fails
+                  this._applySkillData(skillData, callback);
+                }
+              },
+              error: () => {
+                this.setState({ loading: false });
+                // Fallback: use base skillData if version load fails
+                this._applySkillData(skillData, callback);
+              },
+            });
+          } else {
+            this.setState({ loading: false });
+            this._applySkillData(skillData, callback);
+          }
         } else {
+          this.setState({ loading: false });
           Message.error(
             data?.message ||
               this.getLocaleValue('getSkillInfoFailed', 'Failed to get Skill information')
@@ -459,6 +457,62 @@ class NewSkill extends React.Component {
         Message.error(this.getLocaleValue('getSkillInfoFailed', 'Failed to get Skill information'));
       },
     });
+  };
+
+  _applySkillData = (skillData, callback) => {
+    const resources = skillData.resource ? Object.values(skillData.resource) : [];
+
+    this.field.setValues({
+      name: skillData.name,
+      description: skillData.description || '',
+      instruction: skillData.instruction || '',
+    });
+
+    // 保存原始数据用于比较
+    const originalFormData = {
+      name: skillData.name,
+      description: skillData.description || '',
+      instruction: skillData.instruction || '',
+    };
+    const originalResources = JSON.parse(JSON.stringify(resources)); // 深拷贝
+
+    // 先更新 resources，然后再构建文件树，确保使用最新的数据
+    this.setState(
+      {
+        resources,
+        expandedKeys: resources.map((_, index) => String(index)),
+        currentSkillData: skillData,
+        prevFormValues: originalFormData,
+        originalFormData,
+        originalResources,
+        hasChanges: false, // 初始状态没有变化
+      },
+      () => {
+        // 在 resources 更新后构建文件树
+        const previewData = this.buildPreviewData();
+        const fileTree = this.buildFileTree(previewData);
+        // Find SKILL.md file in the file list
+        const skillMdFile =
+          fileTree && Array.isArray(fileTree)
+            ? fileTree.find(file => file.name === 'SKILL.md' && file.fileType === 'skill-md')
+            : null;
+
+        // 更新文件树和选中的文件
+        this.setState(
+          {
+            editModeFileTree: fileTree,
+            editModeSelectedFile:
+              skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
+          },
+          () => {
+            // 执行回调，允许调用方在数据加载完成后执行额外操作
+            if (callback && typeof callback === 'function') {
+              callback();
+            }
+          }
+        );
+      }
+    );
   };
 
   handleSubmit = () => {
@@ -598,42 +652,37 @@ class NewSkill extends React.Component {
         skillCard: JSON.stringify(skillCard),
       };
 
-      const url = 'v3/console/ai/skills';
+      const { isDraft } = this.state;
 
-      request({
-        url: url,
-        method: isEdit ? 'PUT' : 'POST',
-        data: requestData,
-        contentType: 'application/x-www-form-urlencoded',
-        success: data => {
-          this.setState({ loading: false });
-          if (
-            data &&
-            (data.code === 0 ||
-              data.code === 200 ||
-              data.data === 'ok' ||
-              data.message === 'success')
-          ) {
-            Message.success(
-              isEdit
-                ? this.getLocaleValue('updateSuccess', 'Update successful')
-                : this.getLocaleValue('createSuccess', 'Create successful')
-            );
-
-            if (isEdit) {
-              // 更新成功后，重新加载数据并重置变化状态
-              // 保存当前选中的文件信息，以便在重新加载后恢复选中状态
+      if (isEdit && isDraft) {
+        // Edit draft mode: PUT /draft
+        request({
+          url: 'v3/console/ai/skills/draft',
+          method: 'PUT',
+          data: requestData,
+          contentType: 'application/x-www-form-urlencoded',
+          success: data => {
+            this.setState({ loading: false });
+            if (
+              data &&
+              (data.code === 0 ||
+                data.code === 200 ||
+                data.data === 'ok' ||
+                data.message === 'success')
+            ) {
+              Message.success(
+                this.getLocaleValue('updateDraftSuccess', 'Draft updated successfully')
+              );
+              // Reload data and restore selected file
               const { editModeSelectedFile } = this.state;
               const selectedFileName = editModeSelectedFile?.name;
               const selectedFileType = editModeSelectedFile?.fileType;
               const selectedResourceKey = editModeSelectedFile?.resourceKey;
 
               this.loadSkillData(() => {
-                // 在数据加载完成后，尝试恢复之前选中的文件
                 if (selectedFileName && selectedFileType === 'resource') {
                   const { editModeFileTree } = this.state;
                   if (editModeFileTree && Array.isArray(editModeFileTree)) {
-                    // 递归查找文件
                     const findFileInTree = tree => {
                       if (Array.isArray(tree)) {
                         for (const node of tree) {
@@ -652,7 +701,6 @@ class NewSkill extends React.Component {
                       }
                       return null;
                     };
-
                     const restoredFile = findFileInTree(editModeFileTree);
                     if (restoredFile) {
                       this.setState({ editModeSelectedFile: restoredFile });
@@ -661,29 +709,145 @@ class NewSkill extends React.Component {
                 }
               });
             } else {
-              setTimeout(() => {
-                this.handleGoBack();
-              }, 1000);
+              Message.error(
+                data?.message || this.getLocaleValue('updateDraftFailed', 'Failed to update draft')
+              );
             }
-          } else {
-            Message.error(
-              data?.message ||
-                (isEdit
-                  ? this.getLocaleValue('updateFailed', 'Update failed')
-                  : this.getLocaleValue('createFailed', 'Create failed'))
-            );
-          }
-        },
-        error: error => {
-          console.error('Request failed:', error);
-          this.setState({ loading: false });
-          Message.error(
-            isEdit
-              ? this.getLocaleValue('updateFailed', 'Update failed')
-              : this.getLocaleValue('createFailed', 'Create failed')
-          );
-        },
-      });
+          },
+          error: () => {
+            this.setState({ loading: false });
+            Message.error(this.getLocaleValue('updateDraftFailed', 'Failed to update draft'));
+          },
+        });
+      } else if (!isEdit) {
+        // Create mode: POST /draft to create, then PUT /draft to write content
+        request({
+          url: 'v3/console/ai/skills/draft',
+          method: 'POST',
+          data: {
+            skillName: values.name,
+            namespaceId: namespaceId,
+            basedOnVersion: '',
+          },
+          contentType: 'application/x-www-form-urlencoded',
+          success: createData => {
+            if (
+              createData &&
+              (createData.code === 0 ||
+                createData.code === 200 ||
+                createData.data === 'ok' ||
+                createData.message === 'success')
+            ) {
+              // Draft created, now update with content
+              request({
+                url: 'v3/console/ai/skills/draft',
+                method: 'PUT',
+                data: requestData,
+                contentType: 'application/x-www-form-urlencoded',
+                success: updateData => {
+                  this.setState({ loading: false });
+                  if (
+                    updateData &&
+                    (updateData.code === 0 ||
+                      updateData.code === 200 ||
+                      updateData.data === 'ok' ||
+                      updateData.message === 'success')
+                  ) {
+                    Message.success(this.getLocaleValue('createSuccess', 'Create successful'));
+                    setTimeout(() => {
+                      // Navigate to detail page
+                      this.props.history.push(
+                        `/skillDetail?namespace=${namespaceId}&name=${values.name}`
+                      );
+                    }, 1000);
+                  } else {
+                    Message.error(
+                      updateData?.message || this.getLocaleValue('createFailed', 'Create failed')
+                    );
+                  }
+                },
+                error: () => {
+                  this.setState({ loading: false });
+                  Message.error(this.getLocaleValue('createFailed', 'Create failed'));
+                },
+              });
+            } else {
+              this.setState({ loading: false });
+              Message.error(
+                createData?.message ||
+                  this.getLocaleValue('createDraftFailed', 'Failed to create draft')
+              );
+            }
+          },
+          error: () => {
+            this.setState({ loading: false });
+            Message.error(this.getLocaleValue('createDraftFailed', 'Failed to create draft'));
+          },
+        });
+      } else {
+        // Legacy edit mode (e.g., after ZIP upload): PUT /skills (backward compatible)
+        const url = 'v3/console/ai/skills';
+
+        request({
+          url: url,
+          method: 'PUT',
+          data: requestData,
+          contentType: 'application/x-www-form-urlencoded',
+          success: data => {
+            this.setState({ loading: false });
+            if (
+              data &&
+              (data.code === 0 ||
+                data.code === 200 ||
+                data.data === 'ok' ||
+                data.message === 'success')
+            ) {
+              Message.success(this.getLocaleValue('updateSuccess', 'Update successful'));
+
+              const { editModeSelectedFile } = this.state;
+              const selectedFileName = editModeSelectedFile?.name;
+              const selectedFileType = editModeSelectedFile?.fileType;
+              const selectedResourceKey = editModeSelectedFile?.resourceKey;
+
+              this.loadSkillData(() => {
+                if (selectedFileName && selectedFileType === 'resource') {
+                  const { editModeFileTree } = this.state;
+                  if (editModeFileTree && Array.isArray(editModeFileTree)) {
+                    const findFileInTree = tree => {
+                      if (Array.isArray(tree)) {
+                        for (const node of tree) {
+                          if (
+                            node.fileType === 'resource' &&
+                            (node.resourceKey === selectedResourceKey ||
+                              node.name === selectedFileName)
+                          ) {
+                            return node;
+                          }
+                          if (node.children) {
+                            const found = findFileInTree(node.children);
+                            if (found) return found;
+                          }
+                        }
+                      }
+                      return null;
+                    };
+                    const restoredFile = findFileInTree(editModeFileTree);
+                    if (restoredFile) {
+                      this.setState({ editModeSelectedFile: restoredFile });
+                    }
+                  }
+                }
+              });
+            } else {
+              Message.error(data?.message || this.getLocaleValue('updateFailed', 'Update failed'));
+            }
+          },
+          error: () => {
+            this.setState({ loading: false });
+            Message.error(this.getLocaleValue('updateFailed', 'Update failed'));
+          },
+        });
+      }
     });
   };
 
@@ -2535,41 +2699,56 @@ class NewSkill extends React.Component {
     this.setState({ editingFileName: null, editingFileNameValue: '' });
   };
 
-  // 在文件树中新增文件
-  handleAddFileInTree = () => {
+  // 在文件树中新增文件（支持指定目标文件夹）
+  handleAddFileInTree = folderType => {
+    // 确定目标文件夹路径
+    let targetFolder = '';
+    if (typeof folderType === 'string') {
+      // 从文件夹按钮直接传入的路径
+      targetFolder = folderType;
+    } else if (
+      this.state.editModeSelectedFile &&
+      this.state.editModeSelectedFile.fileType === 'resource'
+    ) {
+      // 从当前选中文件推断文件夹
+      targetFolder = this.state.editModeSelectedFile.resource?.type || '';
+    }
+
     const newResource = {
       name: `new_file_${Date.now()}`,
-      type: '',
+      type: targetFolder,
       content: '',
       metadata: null,
     };
-    console.log('[handleAddFileInTree] Adding new resource:', newResource);
-    console.log(
-      '[handleAddFileInTree] Current resources before add:',
-      JSON.stringify(this.state.resources)
-    );
 
     const newResources = [...this.state.resources, newResource];
-    console.log('[handleAddFileInTree] New resources after add:', JSON.stringify(newResources));
+
+    // 递归查找文件树中的文件
+    const findFileInTree = nodes => {
+      if (!nodes || !Array.isArray(nodes)) return null;
+      for (const node of nodes) {
+        if (node.fileType === 'resource' && node.resourceKey === newResource.name) {
+          return node;
+        }
+        if (node.type === 'folder' && node.children) {
+          const found = findFileInTree(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
 
     this.setState(
       {
         resources: newResources,
       },
       () => {
-        console.log(
-          '[handleAddFileInTree] State updated, resources:',
-          JSON.stringify(this.state.resources)
-        );
         // 更新文件树
         if (this.state.isEdit) {
-          // 使用 callback 确保文件树更新完成后再查找新文件
           this.updateEditModeFileTree(fileTree => {
-            // 选中新文件并进入编辑模式
+            // 选中新文件并进入编辑模式（递归查找）
             if (fileTree && Array.isArray(fileTree)) {
-              const newFile = fileTree.find(
-                file => file.fileType === 'resource' && file.resourceKey === newResource.name
-              );
+              const newFile = findFileInTree(fileTree);
               if (newFile) {
                 this.setState({ editModeSelectedFile: newFile });
                 // 自动开始编辑文件名
@@ -2578,9 +2757,9 @@ class NewSkill extends React.Component {
                     editingFileName: {
                       nodeKey: newResource.name,
                       oldName: newResource.name,
-                      type: '',
+                      type: targetFolder,
                     },
-                    editingFileNameValue: newResource.name, // 初始化编辑值
+                    editingFileNameValue: newResource.name,
                   });
                 }, 100);
               }
@@ -2800,7 +2979,18 @@ class NewSkill extends React.Component {
               style={{ marginRight: 4, fontSize: 12, color: '#999' }}
             />
             <Icon type="folder" style={{ marginRight: 8, color: '#666' }} />
-            <span style={{ fontWeight: 600 }}>{node.name}</span>
+            <span style={{ fontWeight: 600, flex: 1 }}>{node.name}</span>
+            {isEditMode && (
+              <Icon
+                type="add"
+                size="xs"
+                style={{ color: '#999', cursor: 'pointer', marginLeft: 4, flexShrink: 0 }}
+                onClick={e => {
+                  e.stopPropagation();
+                  this.handleAddFileInTree(nodeKey);
+                }}
+              />
+            )}
           </div>
           {isExpanded &&
             node.children &&
@@ -3083,6 +3273,7 @@ class NewSkill extends React.Component {
       loading,
       generating,
       isEdit,
+      isDraft,
       resources,
       expandedKeys,
       showAiGenerateInput,
@@ -3111,7 +3302,9 @@ class NewSkill extends React.Component {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>
               {isEdit
-                ? this.getLocaleValue('editSkill', 'Edit Skill')
+                ? isDraft
+                  ? this.getLocaleValue('editDraft', 'Edit Draft')
+                  : this.getLocaleValue('editSkill', 'Edit Skill')
                 : this.getLocaleValue('createSkill', 'Create Skill')}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

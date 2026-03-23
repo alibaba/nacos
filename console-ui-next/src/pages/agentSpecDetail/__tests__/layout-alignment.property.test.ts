@@ -176,10 +176,6 @@ describe('Property 2: 布局结构一致性 (Layout structure consistency)', () 
     ? skeletonSectionMatch[1]
     : '';
 
-  // The loaded state is the main return — everything after the last `return (`
-  const mainReturnMatch = SOURCE.match(
-    /\/\/\s*=+\s*Content Grid\s*=+/i,
-  );
   // Alternatively, find the content grid in the main return
   const contentGridSection = SOURCE.slice(
     SOURCE.indexOf('Content Grid'),

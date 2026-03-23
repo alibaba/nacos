@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Editor } from '@monaco-editor/react';
-import { Save, ArrowLeft, Package, FileText, Settings2 } from 'lucide-react';
+import { Save, ArrowLeft, Package, Settings2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
