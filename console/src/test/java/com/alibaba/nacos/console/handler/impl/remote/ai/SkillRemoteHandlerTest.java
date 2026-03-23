@@ -33,6 +33,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.SkillMaintainerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,11 +69,15 @@ class SkillRemoteHandlerTest {
     @Mock
     private AiMaintainerService aiMaintainerService;
 
+    @Mock
+    private SkillMaintainerService skillMaintainerService;
+
     private SkillRemoteHandler skillRemoteHandler;
 
     @BeforeEach
     void setUp() {
         when(clientHolder.getAiMaintainerService()).thenReturn(aiMaintainerService);
+        when(aiMaintainerService.skill()).thenReturn(skillMaintainerService);
         skillRemoteHandler = new SkillRemoteHandler(clientHolder);
     }
 
@@ -83,7 +88,7 @@ class SkillRemoteHandlerTest {
         form.setSkillName(SKILL_NAME);
         SkillMeta skillMeta = new SkillMeta();
         skillMeta.setName(SKILL_NAME);
-        when(aiMaintainerService.getSkillMeta(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(skillMeta);
+        when(skillMaintainerService.getSkillMeta(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(skillMeta);
 
         SkillMeta result = skillRemoteHandler.getSkill(form);
 
@@ -99,12 +104,12 @@ class SkillRemoteHandlerTest {
         form.setVersion("v1");
         Skill skill = new Skill();
         skill.setName(SKILL_NAME);
-        when(aiMaintainerService.getSkillVersionDetail(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn(skill);
+        when(skillMaintainerService.getSkillVersionDetail(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn(skill);
 
         Skill result = skillRemoteHandler.getSkillVersion(form);
 
         assertEquals(SKILL_NAME, result.getName());
-        verify(aiMaintainerService).getSkillVersionDetail(NAMESPACE_ID, SKILL_NAME, "v1");
+        verify(skillMaintainerService).getSkillVersionDetail(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 
     @Test
@@ -115,12 +120,12 @@ class SkillRemoteHandlerTest {
         form.setVersion("v1");
         Skill skill = new Skill();
         skill.setName(SKILL_NAME);
-        when(aiMaintainerService.getSkillVersionDetail(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn(skill);
+        when(skillMaintainerService.getSkillVersionDetail(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn(skill);
 
         Skill result = skillRemoteHandler.downloadSkillVersion(form);
 
         assertEquals(SKILL_NAME, result.getName());
-        verify(aiMaintainerService).getSkillVersionDetail(NAMESPACE_ID, SKILL_NAME, "v1");
+        verify(skillMaintainerService).getSkillVersionDetail(NAMESPACE_ID, SKILL_NAME, "v1");
     }
 
     @Test
@@ -128,11 +133,11 @@ class SkillRemoteHandlerTest {
         SkillForm form = new SkillForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
-        when(aiMaintainerService.deleteSkill(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(true);
+        when(skillMaintainerService.deleteSkill(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(true);
 
         skillRemoteHandler.deleteSkill(form);
 
-        verify(aiMaintainerService).deleteSkill(NAMESPACE_ID, SKILL_NAME);
+        verify(skillMaintainerService).deleteSkill(NAMESPACE_ID, SKILL_NAME);
     }
 
     @Test
@@ -151,7 +156,7 @@ class SkillRemoteHandlerTest {
         info.setName(SKILL_NAME);
         info.setDescription("desc");
         sourcePage.setPageItems(List.of(info));
-        when(aiMaintainerService.listSkills(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("blur"), eq(1), eq(10)))
+        when(skillMaintainerService.listSkills(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("blur"), eq(1), eq(10)))
                 .thenReturn(sourcePage);
 
         Page<SkillSummary> result = skillRemoteHandler.listSkills(listForm, pageForm);
@@ -168,7 +173,7 @@ class SkillRemoteHandlerTest {
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
-        when(aiMaintainerService.listSkills(eq(NAMESPACE_ID), eq(null), eq(null), eq(1), eq(10)))
+        when(skillMaintainerService.listSkills(eq(NAMESPACE_ID), eq(null), eq(null), eq(1), eq(10)))
                 .thenReturn(null);
 
         Page<SkillSummary> result = skillRemoteHandler.listSkills(listForm, pageForm);
@@ -180,9 +185,9 @@ class SkillRemoteHandlerTest {
     @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = "test".getBytes();
-        when(aiMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes))).thenReturn(SKILL_NAME);
+        when(skillMaintainerService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false))).thenReturn(SKILL_NAME);
 
-        String result = skillRemoteHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes);
+        String result = skillRemoteHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes, false);
 
         assertEquals(SKILL_NAME, result);
     }
@@ -193,7 +198,7 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setBasedOnVersion("v1");
-        when(aiMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn("v2");
+        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn("v2");
 
         String result = skillRemoteHandler.createDraft(form);
 
@@ -206,11 +211,11 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillCard("{\"name\":\"test\"}");
         form.setSetAsLatest(true);
-        when(aiMaintainerService.updateDraft(eq(NAMESPACE_ID), eq("{\"name\":\"test\"}"), eq(true))).thenReturn(true);
+        when(skillMaintainerService.updateDraft(eq(NAMESPACE_ID), eq("{\"name\":\"test\"}"), eq(true))).thenReturn(true);
 
         skillRemoteHandler.updateDraft(form);
 
-        verify(aiMaintainerService).updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true);
+        verify(skillMaintainerService).updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true);
     }
 
     @Test
@@ -218,11 +223,11 @@ class SkillRemoteHandlerTest {
         SkillForm form = new SkillForm();
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
-        when(aiMaintainerService.deleteDraft(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(true);
+        when(skillMaintainerService.deleteDraft(eq(NAMESPACE_ID), eq(SKILL_NAME))).thenReturn(true);
 
         skillRemoteHandler.deleteDraft(form);
 
-        verify(aiMaintainerService).deleteDraft(NAMESPACE_ID, SKILL_NAME);
+        verify(skillMaintainerService).deleteDraft(NAMESPACE_ID, SKILL_NAME);
     }
 
     @Test
@@ -231,7 +236,7 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
-        when(aiMaintainerService.submit(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn("pipeline-1");
+        when(skillMaintainerService.submit(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn("pipeline-1");
 
         String result = skillRemoteHandler.submit(form);
 
@@ -245,11 +250,11 @@ class SkillRemoteHandlerTest {
         form.setSkillName(SKILL_NAME);
         form.setVersion("v1");
         form.setUpdateLatestLabel(true);
-        when(aiMaintainerService.publish(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), eq(true))).thenReturn(true);
+        when(skillMaintainerService.publish(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), eq(true))).thenReturn(true);
 
         skillRemoteHandler.publish(form);
 
-        verify(aiMaintainerService).publish(NAMESPACE_ID, SKILL_NAME, "v1", true);
+        verify(skillMaintainerService).publish(NAMESPACE_ID, SKILL_NAME, "v1", true);
     }
 
     @Test
@@ -258,12 +263,12 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setLabels("{\"latest\":\"v2\"}");
-        when(aiMaintainerService.updateLabels(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("{\"latest\":\"v2\"}")))
+        when(skillMaintainerService.updateLabels(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("{\"latest\":\"v2\"}")))
                 .thenReturn(true);
 
         skillRemoteHandler.updateLabels(form);
 
-        verify(aiMaintainerService).updateLabels(NAMESPACE_ID, SKILL_NAME, "{\"latest\":\"v2\"}");
+        verify(skillMaintainerService).updateLabels(NAMESPACE_ID, SKILL_NAME, "{\"latest\":\"v2\"}");
     }
 
     @Test
@@ -273,12 +278,12 @@ class SkillRemoteHandlerTest {
         form.setSkillName(SKILL_NAME);
         form.setScope("version");
         form.setVersion("v1");
-        when(aiMaintainerService.changeOnlineStatus(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("version"),
+        when(skillMaintainerService.changeOnlineStatus(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("version"),
                 eq("v1"), eq(true))).thenReturn(true);
 
         skillRemoteHandler.changeOnlineStatus(form, true);
 
-        verify(aiMaintainerService).changeOnlineStatus(NAMESPACE_ID, SKILL_NAME, "version", "v1", true);
+        verify(skillMaintainerService).changeOnlineStatus(NAMESPACE_ID, SKILL_NAME, "version", "v1", true);
     }
     
     @Test
@@ -287,10 +292,10 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setScope("PUBLIC");
-        when(aiMaintainerService.updateScope(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("PUBLIC"))).thenReturn(true);
+        when(skillMaintainerService.updateScope(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("PUBLIC"))).thenReturn(true);
         
         skillRemoteHandler.updateScope(form);
         
-        verify(aiMaintainerService).updateScope(NAMESPACE_ID, SKILL_NAME, "PUBLIC");
+        verify(skillMaintainerService).updateScope(NAMESPACE_ID, SKILL_NAME, "PUBLIC");
     }
 }

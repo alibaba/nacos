@@ -33,7 +33,7 @@ import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.core.model.form.PageForm;
-import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.A2aMaintainerService;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
@@ -57,30 +57,30 @@ public class A2aRemoteHandler implements A2aHandler {
     
     @Override
     public void registerAgent(AgentCard agentCard, AgentCardForm agentCardForm) throws NacosException {
-        clientHolder.getAiMaintainerService()
+        clientHolder.getAiMaintainerService().a2a()
                 .registerAgent(agentCard, agentCardForm.getNamespaceId(), agentCardForm.getRegistrationType());
     }
     
     @Override
     public AgentCardDetailInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService()
+        return clientHolder.getAiMaintainerService().a2a()
                 .getAgentCard(form.getAgentName(), form.getNamespaceId(), form.getRegistrationType());
     }
     
     @Override
     public void deleteAgent(AgentForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().deleteAgent(form.getAgentName(), form.getNamespaceId());
+        clientHolder.getAiMaintainerService().a2a().deleteAgent(form.getAgentName(), form.getNamespaceId());
     }
     
     @Override
     public void updateAgentCard(AgentCard agentCard, AgentCardUpdateForm form) throws NacosException {
-        clientHolder.getAiMaintainerService()
+        clientHolder.getAiMaintainerService().a2a()
                 .updateAgentCard(agentCard, form.getNamespaceId(), form.getSetAsLatest(), form.getRegistrationType());
     }
     
     @Override
     public Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
-        AiMaintainerService aiMaintainerService = clientHolder.getAiMaintainerService();
+        A2aMaintainerService aiMaintainerService = clientHolder.getAiMaintainerService().a2a();
         return Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(agentListForm.getSearch())
                 ? aiMaintainerService.searchAgentCardsByName(agentListForm.getNamespaceId(), agentListForm.getAgentName(),
                 pageForm.getPageNo(), pageForm.getPageSize())
@@ -90,6 +90,6 @@ public class A2aRemoteHandler implements A2aHandler {
     
     @Override
     public List<AgentVersionDetail> listAgentVersions(String namespaceId, String name) throws NacosException {
-        return clientHolder.getAiMaintainerService().listAllVersionOfAgent(name, namespaceId);
+        return clientHolder.getAiMaintainerService().a2a().listAllVersionOfAgent(name, namespaceId);
     }
 }

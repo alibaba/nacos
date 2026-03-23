@@ -69,7 +69,7 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
 
     @Override
     public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().getAgentSpecVersionDetail(
+        return clientHolder.getAiMaintainerService().agentSpec().getAgentSpecVersionDetail(
                 form.getNamespaceId(),
                 form.getAgentSpecName(),
                 form.getVersion()
@@ -78,7 +78,7 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     
     @Override
     public void deleteAgentSpec(AgentSpecForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().deleteAgentSpec(
+        clientHolder.getAiMaintainerService().agentSpec().deleteAgentSpec(
                 form.getNamespaceId(),
                 form.getAgentSpecName()
         );
@@ -88,7 +88,7 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     public Page<AgentSpecAdminListItem> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
         // Remote maintainer client returns Page<AgentSpecBasicInfo>; convert to Page<AgentSpecAdminListItem>
-        Page<AgentSpecBasicInfo> source = clientHolder.getAiMaintainerService().listAgentSpecs(
+        Page<AgentSpecBasicInfo> source = clientHolder.getAiMaintainerService().agentSpec().listAgentSpecs(
                 agentSpecListForm.getNamespaceId(),
                 agentSpecListForm.getAgentSpecName(),
                 agentSpecListForm.getSearch(),
@@ -118,53 +118,55 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     @Override
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
             throws NacosException {
-        return clientHolder.getAiMaintainerService().uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
+        return clientHolder.getAiMaintainerService().agentSpec().uploadAgentSpecFromZip(namespaceId, zipBytes,
+            overwrite);
     }
 
     @Override
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().createDraft(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getBasedOnVersion());
+        return clientHolder.getAiMaintainerService().agentSpec()
+            .createDraft(form.getNamespaceId(), form.getAgentSpecName(), form.getBasedOnVersion());
     }
 
     @Override
     public void updateDraft(AgentSpecUpdateForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().updateDraft(form.getNamespaceId(), form.getAgentSpecCard(),
-                form.getSetAsLatest());
+        clientHolder.getAiMaintainerService().agentSpec()
+            .updateDraft(form.getNamespaceId(), form.getAgentSpecCard(), form.getSetAsLatest());
     }
 
     @Override
     public void deleteDraft(AgentSpecForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().deleteDraft(form.getNamespaceId(), form.getAgentSpecName());
+        clientHolder.getAiMaintainerService().agentSpec()
+            .deleteDraft(form.getNamespaceId(), form.getAgentSpecName());
     }
 
     @Override
     public String submit(AgentSpecSubmitForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().submit(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getVersion());
+        return clientHolder.getAiMaintainerService().agentSpec()
+            .submit(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion());
     }
 
     @Override
     public void publish(AgentSpecPublishForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().publish(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getVersion(), form.getUpdateLatestLabel());
+        clientHolder.getAiMaintainerService().agentSpec().publish(form.getNamespaceId(),
+            form.getAgentSpecName(), form.getVersion(), form.getUpdateLatestLabel());
     }
 
     @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().updateLabels(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getLabels());
+        clientHolder.getAiMaintainerService().agentSpec().updateLabels(form.getNamespaceId(),
+            form.getAgentSpecName(), form.getLabels());
     }
 
     @Override
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
-        clientHolder.getAiMaintainerService().changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getScope(), form.getVersion(), online);
+        clientHolder.getAiMaintainerService().agentSpec().changeOnlineStatus(form.getNamespaceId(),
+            form.getAgentSpecName(), form.getScope(), form.getVersion(), online);
     }
 
     @Override
     public void updateScope(AgentSpecScopeForm form) throws NacosException {
-        clientHolder.getAiMaintainerService().updateAgentSpecScope(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getScope());
+        clientHolder.getAiMaintainerService().agentSpec().updateScope(form.getNamespaceId(),
+            form.getAgentSpecName(), form.getScope());
     }
 }

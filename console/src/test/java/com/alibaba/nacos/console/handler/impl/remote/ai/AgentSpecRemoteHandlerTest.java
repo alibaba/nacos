@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.AgentSpecMaintainerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,11 +55,15 @@ class AgentSpecRemoteHandlerTest {
     @Mock
     private AiMaintainerService aiMaintainerService;
 
+    @Mock
+    private AgentSpecMaintainerService agentSpecMaintainerService;
+
     private AgentSpecRemoteHandler agentSpecRemoteHandler;
 
     @BeforeEach
     void setUp() {
         when(clientHolder.getAiMaintainerService()).thenReturn(aiMaintainerService);
+        when(aiMaintainerService.agentSpec()).thenReturn(agentSpecMaintainerService);
         agentSpecRemoteHandler = new AgentSpecRemoteHandler(clientHolder);
     }
 
@@ -70,13 +75,13 @@ class AgentSpecRemoteHandlerTest {
         form.setVersion("v1");
         AgentSpec agentSpec = new AgentSpec();
         agentSpec.setName(AGENT_SPEC_NAME);
-        when(aiMaintainerService.getAgentSpecVersionDetail(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
+        when(agentSpecMaintainerService.getAgentSpecVersionDetail(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1")))
                 .thenReturn(agentSpec);
 
         AgentSpec result = agentSpecRemoteHandler.getAgentSpecVersion(form);
 
         assertEquals(AGENT_SPEC_NAME, result.getName());
-        verify(aiMaintainerService).getAgentSpecVersionDetail(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
+        verify(agentSpecMaintainerService).getAgentSpecVersionDetail(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
     }
 
     @Test
@@ -85,11 +90,11 @@ class AgentSpecRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setScope("PUBLIC");
-        when(aiMaintainerService.updateAgentSpecScope(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("PUBLIC")))
+        when(agentSpecMaintainerService.updateScope(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("PUBLIC")))
                 .thenReturn(true);
 
         agentSpecRemoteHandler.updateScope(form);
 
-        verify(aiMaintainerService).updateAgentSpecScope(NAMESPACE_ID, AGENT_SPEC_NAME, "PUBLIC");
+        verify(agentSpecMaintainerService).updateScope(NAMESPACE_ID, AGENT_SPEC_NAME, "PUBLIC");
     }
 }

@@ -246,5 +246,5 @@ public interface AgentSpecMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update scope
      */
-    boolean updateAgentSpecScope(String namespaceId, String agentSpecName, String scope) throws NacosException;
+    boolean updateScope(String namespaceId, String agentSpecName, String scope) throws NacosException;
 }
