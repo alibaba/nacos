@@ -47,6 +47,9 @@ import java.util.Map;
  * {@code SKILL_SCANNER_LLM_*} in the subprocess environment). Rejects publishing if HIGH/CRITICAL
  * findings are detected.</p>
  *
+ * <p>CLI uses {@code --format markdown --detailed} so stdout matches Cisco skill-scanner report
+ * formats documented in the upstream project.</p>
+ *
  * @author qiacheng.cxy
  */
 public class SkillScannerPipelineService implements PublishPipelineService {
@@ -57,6 +60,13 @@ public class SkillScannerPipelineService implements PublishPipelineService {
      * skill-scanner CLI command name.
      */
     static final String DEFAULT_SKILL_SCANNER_CMD = "skill-scanner";
+
+    /**
+     * Report format for subprocess stdout ({@code skill-scanner --format ...}).
+     *
+     * @see <a href="https://github.com/cisco-ai-defense/skill-scanner">skill-scanner</a> CLI {@code --format}
+     */
+    static final String SCAN_OUTPUT_FORMAT = "markdown";
 
     /**
      * Installation hint when skill-scanner is not found.
@@ -167,6 +177,9 @@ public class SkillScannerPipelineService implements PublishPipelineService {
         command.add("--fail-on-severity");
         command.add("high");
         command.add("--lenient");
+        command.add("--format");
+        command.add(SCAN_OUTPUT_FORMAT);
+        command.add("--detailed");
         if (scanOptions.isUseLlm()) {
             command.add("--use-llm");
             if (StringUtils.isNotBlank(scanOptions.getLlmProvider())) {

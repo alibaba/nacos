@@ -42,7 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link SkillScannerPipelineService} unit test.
  *
  * <p>Uses stub subprocesses to cover scanner pass and reject paths without depending on an installed
- * {@code skill-scanner} executable.</p>
+ * {@code skill-scanner} executable. Those tests override {@link SkillScannerPipelineService#buildScanCommand}
+ * and therefore do not assert Cisco CLI {@code --format}/{@code --detailed}; the argv contract is covered
+ * by {@code buildScanCommand*} tests below.</p>
  *
  * @author qiacheng.cxy
  */
@@ -103,10 +105,21 @@ class SkillScannerPipelineServiceTest {
     @Test
     void buildScanCommandStaticOnlyTest() {
         SkillScannerPipelineService svc = new SkillScannerPipelineService(true, SkillScannerScanOptions.none());
-        List<String> cmd = svc.buildScanCommand(Path.of("/tmp/skill"));
-        assertTrue(cmd.contains("scan"));
-        assertTrue(cmd.contains("--lenient"));
-        assertTrue(cmd.contains("--fail-on-severity"));
+        Path scanRoot = Path.of("/tmp/skill");
+        List<String> cmd = svc.buildScanCommand(scanRoot);
+        assertEquals(SkillScannerPipelineService.DEFAULT_SKILL_SCANNER_CMD, cmd.get(0));
+        assertEquals("scan", cmd.get(1));
+        assertEquals(scanRoot.toAbsolutePath().toString(), cmd.get(2));
+        assertEquals(
+                List.of(
+                        "--fail-on-severity",
+                        "high",
+                        "--lenient",
+                        "--format",
+                        SkillScannerPipelineService.SCAN_OUTPUT_FORMAT,
+                        "--detailed"),
+                cmd.subList(3, cmd.size()),
+                "Cisco skill-scanner: markdown + --detailed for structured stdout in publish reject messages");
         assertFalse(cmd.contains("--use-llm"));
     }
 
@@ -119,7 +132,12 @@ class SkillScannerPipelineServiceTest {
         SkillScannerScanOptions opt = SkillScannerScanOptions.fromProperties(p);
         SkillScannerPipelineService svc = new SkillScannerPipelineService(true, opt);
         List<String> cmd = svc.buildScanCommand(Path.of("/work/s"));
-        assertTrue(cmd.indexOf("--use-llm") > 0);
+        int formatIdx = cmd.indexOf("--format");
+        assertTrue(formatIdx >= 0);
+        assertEquals(SkillScannerPipelineService.SCAN_OUTPUT_FORMAT, cmd.get(formatIdx + 1));
+        assertEquals("--detailed", cmd.get(formatIdx + 2));
+        int useLlmIdx = cmd.indexOf("--use-llm");
+        assertTrue(useLlmIdx > formatIdx);
         assertTrue(cmd.contains("--enable-meta"));
         int i = cmd.indexOf("--llm-provider");
         assertTrue(i >= 0);
@@ -228,6 +246,7 @@ class SkillScannerPipelineServiceTest {
         assertTrue(
                 msg.contains("安全风险") || msg.contains("发布被拒绝"),
                 () -> "拒绝原因应来自 skill-scanner: " + msg);
+        assertTrue(msg.contains("## Findings"), () -> "扫描结果应为 Markdown 形态（与 --format markdown 一致）: " + msg);
     }
 
     @Test
@@ -254,7 +273,9 @@ class SkillScannerPipelineServiceTest {
         assertNotNull(result);
         assertFalse(result.isPassed());
         assertNotNull(result.getMessage());
-        assertTrue(result.getMessage().contains("安全风险") || result.getMessage().contains("发布被拒绝"));
+        String msg = result.getMessage();
+        assertTrue(msg.contains("安全风险") || msg.contains("发布被拒绝"));
+        assertTrue(msg.contains("## Findings"), () -> "扫描结果应为 Markdown 形态（与 --format markdown 一致）: " + msg);
     }
 
     private SkillScannerPipelineService createStubService(StubScanMode mode) {
@@ -356,7 +377,9 @@ class SkillScannerPipelineServiceTest {
                     return;
                 case REJECT_SKILL:
                     requireContains(root.resolve("SKILL.md"), "SYSTEM OVERRIDE");
-                    System.out.println("发现安全风险: prompt injection");
+                    printStubMarkdownScanReject(
+                            "Prompt injection",
+                            "检测到疑似提示注入 / 指令覆盖类内容（stub，模拟 `skill-scanner --format markdown --detailed` 报告形态）。");
                     System.exit(2);
                     return;
                 case PASS_AGENTSPEC:
@@ -368,7 +391,9 @@ class SkillScannerPipelineServiceTest {
                     requireContains(root.resolve("manifest.json"), "risky-agent-spec");
                     requireContains(root.resolve("config/SOUL.md"), "SYSTEM OVERRIDE");
                     requireContains(root.resolve("SKILL.md"), "File: config/SOUL.md");
-                    System.out.println("发现安全风险: agent spec override");
+                    printStubMarkdownScanReject(
+                            "Agent spec override",
+                            "AgentSpec 聚合扫描中发现疑似指令覆盖（stub，模拟 `skill-scanner --format markdown --detailed` 报告形态）。");
                     System.exit(3);
                     return;
                 case VERIFY_LLM_ENV:
@@ -379,6 +404,27 @@ class SkillScannerPipelineServiceTest {
                 default:
                     throw new IllegalStateException("Unsupported mode: " + mode);
             }
+        }
+
+        /**
+         * Prints multi-line Markdown-shaped stdout so {@link SkillScannerPipelineService} reject messages
+         * resemble real Cisco skill-scanner {@code --format markdown --detailed} output in tests.
+         */
+        private static void printStubMarkdownScanReject(String findingTitle, String findingDetail) {
+            System.out.println("# Skill scan report (stub)");
+            System.out.println();
+            System.out.println("## Summary");
+            System.out.println();
+            System.out.println("| Field | Value |");
+            System.out.println("| --- | --- |");
+            System.out.println("| Status | **FAIL** |");
+            System.out.println("| Max severity | **HIGH** |");
+            System.out.println();
+            System.out.println("## Findings");
+            System.out.println();
+            System.out.println("### HIGH — " + findingTitle);
+            System.out.println();
+            System.out.println(findingDetail);
         }
 
         private static void requireContains(Path path, String expected) throws Exception {
