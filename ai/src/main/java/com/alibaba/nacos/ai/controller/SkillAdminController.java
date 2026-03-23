@@ -22,8 +22,8 @@ import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
-import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillScopeForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillSubmitForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillUpdateForm;
 import com.alibaba.nacos.ai.model.skills.SkillDetail;
@@ -56,6 +56,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 /**
  * Skill admin controller.
@@ -102,7 +104,7 @@ public class SkillAdminController {
         return Result.success(skillOperationService.getSkillVersionDetail(form.getNamespaceId(), form.getSkillName(),
                 form.getVersion()));
     }
-
+    
     /**
      * Download a specific version of a skill as ZIP file.
      *
@@ -143,7 +145,7 @@ public class SkillAdminController {
      * @throws NacosException if the skill list fails
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
     public Result<Page<SkillListItem>> listSkills(SkillListForm skillListForm, PageForm pageForm)
             throws NacosException {
         skillListForm.validate();

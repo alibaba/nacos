@@ -42,6 +42,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID;
+
 /**
  * Nacos default auth plugin service implementation.
  *
@@ -85,9 +87,7 @@ public class NacosAuthPluginService implements AuthPluginService {
                 LOGGER.debug("Anonymous access granted for resource: {}", resource);
                 NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
                 identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
-                identityContext.setParameter(
-                        com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                        AuthConstants.ANONYMOUS_USER);
+                identityContext.setParameter(IDENTITY_ID, AuthConstants.ANONYMOUS_USER);
                 return AuthResult.successResult(anonymousUser);
             }
             return AuthResult.failureResult(HttpStatus.UNAUTHORIZED.value(), e.getErrMsg());
@@ -128,8 +128,7 @@ public class NacosAuthPluginService implements AuthPluginService {
             nacosUser = authenticationManager.authenticate(userName, password);
         }
         identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
-        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                nacosUser.getUserName());
+        identityContext.setParameter(IDENTITY_ID, nacosUser.getUserName());
         return nacosUser;
     }
     
