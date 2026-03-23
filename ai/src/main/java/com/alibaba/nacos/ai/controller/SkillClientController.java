@@ -55,7 +55,7 @@ public class SkillClientController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API,
-            tags = {"allowAnonymous"})
+            tags = {com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS})
     public ResponseEntity<byte[]> get(SkillQueryForm form) throws NacosException {
         form.validate();
         Skill skill = skillOperationService.querySkill(form.getNamespaceId(), form.getName(), form.getVersion(),

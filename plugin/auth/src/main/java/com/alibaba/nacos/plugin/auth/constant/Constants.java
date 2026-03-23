@@ -69,6 +69,11 @@ public class Constants {
 
         public static final String ONLY_IDENTITY = "only_identity";
 
+        /**
+         * Tag value that marks a {@link com.alibaba.nacos.auth.annotation.Secured} API as allowing anonymous access.
+         */
+        public static final String ALLOW_ANONYMOUS = "allowAnonymous";
+
         public static final String SECURED_SPECIAL_TAGS = com.alibaba.nacos.api.common.Constants.NAMESPACE_ID
                 + Resource.SPLITTER
                 + com.alibaba.nacos.api.common.Constants.TARGET_NAMESPACE_ID;

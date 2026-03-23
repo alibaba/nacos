@@ -113,11 +113,13 @@ public class AuthConstants {
     
     /**
      * Tag value that marks a {@link com.alibaba.nacos.auth.annotation.Secured} API as allowing anonymous access.
+     *
+     * @see Constants.Tag#ALLOW_ANONYMOUS
      */
-    public static final String TAG_ALLOW_ANONYMOUS = "allowAnonymous";
+    public static final String TAG_ALLOW_ANONYMOUS = Constants.Tag.ALLOW_ANONYMOUS;
     
     /**
      * Configuration key controlling whether anonymous access to AI resources is enabled.
      */
-    public static final String NACOS_CORE_AUTH_AI_ANONYMOUS_ENABLED = "nacos.core.auth.ai.anonymous.enabled";
+    public static final String NACOS_CORE_AUTH_NACOS_ANONYMOUS_AI_ENABLED = "nacos.core.auth.nacos.anonymous.ai.enabled";
 }

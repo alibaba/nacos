@@ -84,7 +84,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     /**
      * Whether AI resource anonymous access is enabled.
      */
-    @Value("${" + AuthConstants.NACOS_CORE_AUTH_AI_ANONYMOUS_ENABLED + ":false}")
+    @Value("${" + AuthConstants.NACOS_CORE_AUTH_NACOS_ANONYMOUS_AI_ENABLED + ":false}")
     private boolean aiAnonymousEnabled;
     
     private boolean hasGlobalAdminRole;
@@ -217,8 +217,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
-            aiAnonymousEnabled = EnvUtil.getProperty(AuthConstants.NACOS_CORE_AUTH_AI_ANONYMOUS_ENABLED, Boolean.class,
-                    false);
+            aiAnonymousEnabled = EnvUtil.getProperty(AuthConstants.NACOS_CORE_AUTH_NACOS_ANONYMOUS_AI_ENABLED,
+                    Boolean.class, false);
             refreshPluginProperties();
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);

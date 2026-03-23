@@ -62,6 +62,8 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     protected IAuthenticationManager authenticationManager;
     
+    private volatile AuthConfigs authConfigs;
+    
     @Override
     public Collection<String> identityNames() {
         return IDENTITY_NAMES;
@@ -101,10 +103,16 @@ public class NacosAuthPluginService implements AuthPluginService {
             return false;
         }
         try {
-            AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
+            checkAuthConfigs();
             return authConfigs.isAiAnonymousEnabled();
         } catch (Exception e) {
             return false;
+        }
+    }
+    
+    private void checkAuthConfigs() {
+        if (null == authConfigs) {
+            authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
         }
     }
     
