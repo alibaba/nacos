@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
@@ -240,6 +241,21 @@ public class AgentSpecAdminController {
         form.validate();
         agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
                 form.getVersion(), true);
+        return Result.success("ok");
+    }
+
+    /**
+     * Update agentspec visibility scope (PUBLIC or PRIVATE).
+     *
+     * @param form the scope update form
+     * @return result of the update operation
+     * @throws NacosException if the agentspec not found or no permission
+     */
+    @PutMapping("/scope")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> updateScope(AgentSpecScopeForm form) throws NacosException {
+        form.validate();
+        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(), form.getScope());
         return Result.success("ok");
     }
     

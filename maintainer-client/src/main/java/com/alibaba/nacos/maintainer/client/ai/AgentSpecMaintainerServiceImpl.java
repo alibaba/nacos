@@ -32,6 +32,7 @@ import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +64,24 @@ public class AgentSpecMaintainerServiceImpl implements AgentSpecMaintainerServic
         RequestResource resource = buildRequestResource(namespaceId, agentSpecName);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(),
+            new TypeReference<Result<JsonNode>>() {
+                });
+        return extractAgentSpec(namespaceId, agentSpecName, result.getData());
+    }
+
+    @Override
+    public AgentSpec getAgentSpecVersionDetail(String namespaceId, String agentSpecName, String version)
+            throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("version", version);
+        RequestResource resource = buildRequestResource(namespaceId, agentSpecName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_AGENTSPEC_VERSION_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<AgentSpec> result = JacksonUtils.toObj(restResult.getData(),
                 new TypeReference<Result<AgentSpec>>() {
@@ -251,6 +270,23 @@ public class AgentSpecMaintainerServiceImpl implements AgentSpecMaintainerServic
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
+
+    @Override
+    public boolean updateAgentSpecScope(String namespaceId, String agentSpecName, String scope)
+            throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("scope", scope);
+        RequestResource resource = buildRequestResource(namespaceId, agentSpecName);
+        HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.AI_AGENTSPEC_SCOPE_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
     
     private String resolveNamespace(String namespaceId) {
         if (StringUtils.isBlank(namespaceId)) {
@@ -269,5 +305,49 @@ public class AgentSpecMaintainerServiceImpl implements AgentSpecMaintainerServic
     
     private HttpRequest.Builder buildHttpRequestBuilder(RequestResource resource) {
         return new HttpRequest.Builder().setResource(resource);
+    }
+
+    private AgentSpec extractAgentSpec(String namespaceId, String agentSpecName, JsonNode dataNode)
+            throws NacosException {
+        if (dataNode == null || dataNode.isNull()) {
+            return null;
+        }
+        JsonNode resolvedNode = dataNode.has("agentSpec") ? dataNode.get("agentSpec") : dataNode;
+        if (resolvedNode != null && !resolvedNode.isNull()) {
+            return JacksonUtils.toObj(resolvedNode.toString(), AgentSpec.class);
+        }
+        String resolvedVersion = resolveAgentSpecVersion(dataNode);
+        if (StringUtils.isBlank(resolvedVersion)) {
+            return null;
+        }
+        return getAgentSpecVersionDetail(namespaceId, agentSpecName, resolvedVersion);
+    }
+
+    private String resolveAgentSpecVersion(JsonNode dataNode) {
+        String currentVersion = readTextField(dataNode, "version");
+        if (StringUtils.isNotBlank(currentVersion)) {
+            return currentVersion;
+        }
+        String editingVersion = readTextField(dataNode, "editingVersion");
+        if (StringUtils.isNotBlank(editingVersion)) {
+            return editingVersion;
+        }
+        String reviewingVersion = readTextField(dataNode, "reviewingVersion");
+        if (StringUtils.isNotBlank(reviewingVersion)) {
+            return reviewingVersion;
+        }
+        JsonNode labelsNode = dataNode.get("labels");
+        if (labelsNode != null && !labelsNode.isNull()) {
+            String latestVersion = readTextField(labelsNode, "latest");
+            if (StringUtils.isNotBlank(latestVersion)) {
+                return latestVersion;
+            }
+        }
+        return null;
+    }
+
+    private String readTextField(JsonNode dataNode, String fieldName) {
+        JsonNode fieldNode = dataNode.get(fieldName);
+        return fieldNode == null || fieldNode.isNull() ? null : fieldNode.asText();
     }
 }

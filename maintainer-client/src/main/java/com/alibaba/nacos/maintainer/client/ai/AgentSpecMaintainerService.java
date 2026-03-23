@@ -49,6 +49,29 @@ public interface AgentSpecMaintainerService {
     default AgentSpec getAgentSpecDetail(String agentSpecName) throws NacosException {
         return getAgentSpecDetail(Constants.DEFAULT_NAMESPACE_ID, agentSpecName);
     }
+
+    /**
+     * Get specific agentspec version detail.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec version detail
+     * @throws NacosException if fail to get agentspec version detail
+     */
+    AgentSpec getAgentSpecVersionDetail(String namespaceId, String agentSpecName, String version) throws NacosException;
+
+    /**
+     * Get specific agentspec version detail with default namespace.
+     *
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec version detail
+     * @throws NacosException if fail to get agentspec version detail
+     */
+    default AgentSpec getAgentSpecVersionDetail(String agentSpecName, String version) throws NacosException {
+        return getAgentSpecVersionDetail(Constants.DEFAULT_NAMESPACE_ID, agentSpecName, version);
+    }
     
     /**
      * Delete agentspec.
@@ -213,4 +236,15 @@ public interface AgentSpecMaintainerService {
      */
     boolean changeOnlineStatus(String namespaceId, String agentSpecName, String scope, String version,
             boolean online) throws NacosException;
+
+    /**
+     * Update agentspec visibility scope.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param scope scope value, e.g. PUBLIC/PRIVATE
+     * @return true if update success
+     * @throws NacosException if fail to update scope
+     */
+    boolean updateAgentSpecScope(String namespaceId, String agentSpecName, String scope) throws NacosException;
 }

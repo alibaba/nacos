@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -455,6 +456,15 @@ public class NacosAiMaintainerServiceImplTest {
         
         assertTrue(aiMaintainerService.updateScope("public", "testSkill", "PUBLIC"));
     }
+
+    @Test
+    void updateAgentSpecScope() throws NacosException {
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        assertTrue(aiMaintainerService.updateAgentSpecScope("public", "testAgentSpec", "PUBLIC"));
+    }
     
     @Test
     void uploadSkillFromZip() throws NacosException {
@@ -466,5 +476,36 @@ public class NacosAiMaintainerServiceImplTest {
         
         String skillName = aiMaintainerService.uploadSkillFromZip("public", zipBytes);
         assertEquals("uploadedSkill", skillName);
+    }
+
+    @Test
+    void getAgentSpecVersionDetail() throws NacosException {
+        AgentSpec agentSpec = new AgentSpec();
+        agentSpec.setName("testAgentSpec");
+
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        AgentSpec actual = aiMaintainerService.getAgentSpecVersionDetail("public", "testAgentSpec", "v1");
+        assertNotNull(actual);
+        assertEquals("testAgentSpec", actual.getName());
+    }
+
+    @Test
+    void getAgentSpecDetail() throws NacosException {
+        AgentSpec agentSpec = new AgentSpec();
+        agentSpec.setName("testAgentSpec");
+
+        final HttpRestResult<String> metadataRestResult = new HttpRestResult<>();
+        metadataRestResult.setData(JacksonUtils.toJson(Result.success(Collections.singletonMap("editingVersion", "v1"))));
+        final HttpRestResult<String> versionRestResult = new HttpRestResult<>();
+        versionRestResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(metadataRestResult,
+                versionRestResult);
+
+        AgentSpec actual = aiMaintainerService.getAgentSpecDetail("public", "testAgentSpec");
+        assertNotNull(actual);
+        assertEquals("testAgentSpec", actual.getName());
     }
 }

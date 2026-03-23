@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
@@ -129,5 +130,10 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
         agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
                 form.getVersion(), online);
+    }
+
+    @Override
+    public void updateScope(AgentSpecScopeForm form) throws NacosException {
+        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(), form.getScope());
     }
 }

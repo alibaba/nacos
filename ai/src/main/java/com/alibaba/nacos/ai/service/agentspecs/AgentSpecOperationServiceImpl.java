@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
+import com.alibaba.nacos.ai.service.DataFilterHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
@@ -770,6 +771,20 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             info.setOnlineCnt(Math.max(0, cnt - 1));
         }
         updateMetaVersionInfoCas(namespaceId, meta, info);
+    }
+
+    @Override
+    public void updateScope(String namespaceId, String name, String scope) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
+        boolean ok = aiResourcePersistService.updateScope(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                scope.toUpperCase());
+        if (!ok) {
+            LOGGER.error("Failed to update scope for agentspec: {}, namespace: {}, scope: {}", name, namespaceId,
+                    scope);
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                    "Failed to update scope for agentspec: " + name);
+        }
     }
 
     

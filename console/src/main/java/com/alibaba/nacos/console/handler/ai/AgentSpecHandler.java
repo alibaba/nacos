@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecOnlineForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
 import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
@@ -156,4 +157,12 @@ public interface AgentSpecHandler {
      * @throws NacosException if operation failed
      */
     void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException;
+
+    /**
+     * Update agentspec visibility scope.
+     *
+     * @param form scope update form
+     * @throws NacosException if operation failed
+     */
+    void updateScope(AgentSpecScopeForm form) throws NacosException;
 }
