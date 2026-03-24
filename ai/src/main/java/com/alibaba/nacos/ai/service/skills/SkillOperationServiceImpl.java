@@ -31,6 +31,7 @@ import com.alibaba.nacos.ai.service.DataFilterHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
@@ -64,7 +65,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 import static com.alibaba.nacos.ai.model.skills.SkillIndexManifest.LABEL_LATEST;
@@ -1161,7 +1161,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<String> files = new ArrayList<>();
 
         // Save concurrently to reduce latency when skill has multiple resource files.
-        Executor executor = ForkJoinPool.commonPool();
+        Executor executor = ExecutorUtils.getSkillStorageIoExecutor();
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
 
         // 1) Store SKILL.md as a SkillResource (carries name/description/instruction in metadata)
@@ -1398,9 +1398,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             meta = latest;
             expected = latest.getMetaVersion();
             newValue.setStatus(meta.getStatus());
-            newValue.setBizTags(meta.getBizTags());
-            newValue.setExt(meta.getExt());
-            newValue.setVersionInfo(meta.getVersionInfo());
+            newValue.setBizTags(latest.getBizTags());
+            newValue.setExt(latest.getExt());
+            newValue.setVersionInfo(latest.getVersionInfo());
         }
     }
     
