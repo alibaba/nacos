@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.storage;
 
+import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link NacosConfigAiResourceStorage} static helper methods and key parsing.
@@ -51,7 +53,7 @@ class NacosConfigAiResourceStorageTest {
         StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE, "ns1:mySkill:v1:skill.json");
         NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
         assertEquals("ns1", parts.namespaceId());
-        assertEquals(SkillUtils.SKILL_GROUP_PREFIX + "mySkill__v1", parts.group());
+        assertEquals(SkillUtils.buildSkillVersionGroup("mySkill", "v1"), parts.group());
         assertEquals("skill.json", parts.dataId());
     }
 
@@ -71,7 +73,7 @@ class NacosConfigAiResourceStorageTest {
         StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE, "ns1:skill:mySkill:v2:skill.json");
         NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
         assertEquals("ns1", parts.namespaceId());
-        assertEquals(SkillUtils.SKILL_GROUP_PREFIX + "mySkill__v2", parts.group());
+        assertEquals(SkillUtils.buildSkillVersionGroup("mySkill", "v2"), parts.group());
         assertEquals("skill.json", parts.dataId());
     }
 
@@ -92,7 +94,7 @@ class NacosConfigAiResourceStorageTest {
                 "ns1:agentspec:myWorker:v1:manifest.json");
         NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
         assertEquals("ns1", parts.namespaceId());
-        assertEquals(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX + "myWorker__v1", parts.group());
+        assertEquals(AgentSpecUtils.buildAgentSpecVersionGroup("myWorker", "v1"), parts.group());
         assertEquals("manifest.json", parts.dataId());
     }
 
@@ -102,7 +104,7 @@ class NacosConfigAiResourceStorageTest {
                 "ns1:agentspec:myWorker:v1:resource_config_SOUL__md.json");
         NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
         assertEquals("ns1", parts.namespaceId());
-        assertEquals(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX + "myWorker__v1", parts.group());
+        assertEquals(AgentSpecUtils.buildAgentSpecVersionGroup("myWorker", "v1"), parts.group());
         assertEquals("resource_config_SOUL__md.json", parts.dataId());
     }
 
@@ -181,5 +183,28 @@ class NacosConfigAiResourceStorageTest {
         assertEquals(legacyParts.group(), typedParts.group());
         assertEquals(legacyParts.namespaceId(), typedParts.namespaceId());
         assertEquals(legacyParts.dataId(), typedParts.dataId());
+    }
+    
+    @Test
+    void testParseTypedSkillKeyDecodesSpecialName() {
+        String skillName = "my skill";
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                NacosConfigAiResourceStorage.TYPE, "ns1",
+                NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, skillName, "v2", "skill.json");
+        NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+        assertEquals(SkillUtils.buildSkillVersionGroup(skillName, "v2"), parts.group());
+        String[] decoded = SkillUtils.decodeSkillGroupToNameAndVersion(parts.group());
+        assertEquals(skillName, decoded[0]);
+        assertEquals("v2", decoded[1]);
+    }
+    
+    @Test
+    void testPhysicalDataIdEncodedWhenLogicalHasInvalidChars() {
+        StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE,
+                "ns1:agentspec:worker:v1:resource_x y.json");
+        NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+        String physical = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(physical));
+        assertEquals("resource_x y.json", NacosAiConfigKeyCodec.decodeSegment(physical));
     }
 }

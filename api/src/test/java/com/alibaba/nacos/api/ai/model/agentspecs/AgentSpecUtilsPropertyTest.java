@@ -22,6 +22,8 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -36,37 +38,37 @@ class AgentSpecUtilsPropertyTest {
     private static final String PREFIX = "agentspec__";
     
     /**
-     * Property 1a: For any non-blank agentSpecName, buildAgentSpecGroup returns a string
-     * that starts with "agentspec__" and contains the agentSpecName.
+     * Property 1a: For any non-blank agentSpecName, buildAgentSpecGroup starts with "agentspec__"
+     * and decodes back to the original name.
      *
      * <p><b>Validates: Requirements 4.2</b></p>
      */
     @Property
-    void buildAgentSpecGroupStartsWithPrefixAndContainsName(@ForAll("nonBlankStrings") String agentSpecName) {
+    void buildAgentSpecGroupStartsWithPrefixAndDecodes(@ForAll("nonBlankStrings") String agentSpecName) {
         String result = AgentSpecUtils.buildAgentSpecGroup(agentSpecName);
         assertTrue(result.startsWith(PREFIX),
                 "buildAgentSpecGroup result should start with 'agentspec__', got: " + result);
-        assertTrue(result.contains(agentSpecName),
-                "buildAgentSpecGroup result should contain agentSpecName '" + agentSpecName + "', got: " + result);
+        String[] parts = AgentSpecUtils.decodeAgentSpecGroupToNameAndVersion(result);
+        assertEquals(agentSpecName, parts[0]);
+        assertNull(parts[1]);
     }
     
     /**
      * Property 1b: For any non-blank agentSpecName and version, buildAgentSpecVersionGroup
-     * returns a string that starts with "agentspec__" and contains both agentSpecName and version.
+     * starts with "agentspec__" and decodes back to the original name and version.
      *
      * <p><b>Validates: Requirements 4.3</b></p>
      */
     @Property
-    void buildAgentSpecVersionGroupStartsWithPrefixAndContainsNameAndVersion(
+    void buildAgentSpecVersionGroupStartsWithPrefixAndDecodes(
             @ForAll("nonBlankStrings") String agentSpecName,
             @ForAll("nonBlankStrings") String version) {
         String result = AgentSpecUtils.buildAgentSpecVersionGroup(agentSpecName, version);
         assertTrue(result.startsWith(PREFIX),
                 "buildAgentSpecVersionGroup result should start with 'agentspec__', got: " + result);
-        assertTrue(result.contains(agentSpecName),
-                "buildAgentSpecVersionGroup result should contain agentSpecName '" + agentSpecName + "', got: " + result);
-        assertTrue(result.contains(version),
-                "buildAgentSpecVersionGroup result should contain version '" + version + "', got: " + result);
+        String[] parts = AgentSpecUtils.decodeAgentSpecGroupToNameAndVersion(result);
+        assertEquals(agentSpecName, parts[0]);
+        assertEquals(version, parts[1]);
     }
     
     @Provide

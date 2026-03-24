@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.api.ai.model.agentspecs;
 
-import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
+import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.utils.StringUtils;
 
 /**
  * Utility class for AgentSpec operations.
- * Mirrors {@link com.alibaba.nacos.api.ai.model.skills.SkillUtils} with AgentSpec-specific constants.
+ * Mirrors {@link com.alibaba.nacos.api.ai.model.skills.SkillUtils} patterns with AgentSpec-specific constants.
  *
  * @author nacos
  */
@@ -124,7 +124,7 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
-        return new ConfigInfo(AGENTSPEC_MAIN_DATA_ID, AGENTSPEC_GROUP_PREFIX + SkillUtils.sanitizeNameForGroup(agentSpecName));
+        return new ConfigInfo(AGENTSPEC_MAIN_DATA_ID, buildAgentSpecGroup(agentSpecName));
     }
     
     /**
@@ -138,7 +138,7 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
-        return AGENTSPEC_GROUP_PREFIX + SkillUtils.sanitizeNameForGroup(agentSpecName);
+        return AGENTSPEC_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(agentSpecName);
     }
     
     /**
@@ -156,7 +156,8 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(version)) {
             throw new IllegalArgumentException("Version cannot be blank");
         }
-        return AGENTSPEC_GROUP_PREFIX + SkillUtils.sanitizeNameForGroup(agentSpecName) + DOUBLE_UNDERSCORE + version;
+        return AGENTSPEC_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(agentSpecName)
+                + DOUBLE_UNDERSCORE + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
     }
     
     /**
@@ -177,9 +178,29 @@ public class AgentSpecUtils {
         }
         
         String resourceId = generateResourceId(type, resourceName);
-        String dataId = RESOURCE_DATA_ID_PREFIX + resourceId + RESOURCE_DATA_ID_SUFFIX;
-        String group = AGENTSPEC_GROUP_PREFIX + agentSpecName;
-        
+        String dataId = NacosAiConfigKeyCodec.encodeSegment(
+                RESOURCE_DATA_ID_PREFIX + resourceId + RESOURCE_DATA_ID_SUFFIX);
+        String group = buildAgentSpecGroup(agentSpecName);
+
         return new ConfigInfo(dataId, group);
+    }
+
+    /**
+     * Decode an AgentSpec Nacos Config {@code group} (as stored) into logical name and optional version.
+     *
+     * @param group physical group, e.g. {@code agentspec__myagent} or {@code agentspec__name__v1}
+     * @return array of length 2: {@code [agentSpecName, version]}; {@code version} is {@code null} when not versioned
+     */
+    public static String[] decodeAgentSpecGroupToNameAndVersion(String group) {
+        if (StringUtils.isBlank(group) || !group.startsWith(AGENTSPEC_GROUP_PREFIX)) {
+            throw new IllegalArgumentException("Not an AgentSpec config group: " + group);
+        }
+        String rest = group.substring(AGENTSPEC_GROUP_PREFIX.length());
+        int idx = rest.lastIndexOf(DOUBLE_UNDERSCORE);
+        if (idx < 0) {
+            return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest), null};
+        }
+        return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest.substring(0, idx)),
+                NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
     }
 }
