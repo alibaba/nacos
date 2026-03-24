@@ -140,7 +140,7 @@ export default function NewAgentSpecPage() {
         const plan = planAgentSpecEditorVersionMode({
           mode,
           editingVersion: detail.editingVersion,
-          currentVersion: detail.version,
+          currentVersion: detail.labels?.latest,
           sourceVersion,
         });
 

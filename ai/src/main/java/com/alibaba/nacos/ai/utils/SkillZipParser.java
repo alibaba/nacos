@@ -348,17 +348,31 @@ public class SkillZipParser {
     private static Map<String, String> parseYamlFrontMatter(String yamlContent) {
         Map<String, String> result = new HashMap<>(4);
         String[] lines = yamlContent.split("\\n");
+        String currentKey = null;
+        StringBuilder currentValue = null;
         
         for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) {
+            if (line.trim().isEmpty()) {
                 continue;
             }
-            
-            int colonIndex = line.indexOf(':');
+            if (Character.isWhitespace(line.charAt(0)) && currentKey != null) {
+                if (currentValue.length() > 0) {
+                    currentValue.append(' ');
+                }
+                currentValue.append(line.trim());
+                result.put(currentKey, currentValue.toString());
+                continue;
+            }
+
+            String trimmedLine = line.trim();
+            if (trimmedLine.startsWith("#")) {
+                continue;
+            }
+
+            int colonIndex = trimmedLine.indexOf(':');
             if (colonIndex > 0) {
-                String key = line.substring(0, colonIndex).trim();
-                String value = line.substring(colonIndex + 1).trim();
+                String key = trimmedLine.substring(0, colonIndex).trim();
+                String value = trimmedLine.substring(colonIndex + 1).trim();
                 boolean hasDoubleQuotes = value.startsWith(DOUBLE_QUOTE) && value.endsWith(DOUBLE_QUOTE);
                 boolean hasSingleQuotes = value.startsWith(SINGLE_QUOTE) && value.endsWith(SINGLE_QUOTE);
                 if (hasDoubleQuotes) {
@@ -368,8 +382,13 @@ public class SkillZipParser {
                     value = value.substring(1, value.length() - 1);
                     value = value.replace(DOUBLE_SINGLE_QUOTE, SINGLE_QUOTE);
                 }
+                currentKey = key;
+                currentValue = new StringBuilder(value);
                 result.put(key, value);
+                continue;
             }
+            currentKey = null;
+            currentValue = null;
         }
         
         return result;

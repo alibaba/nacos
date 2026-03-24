@@ -554,7 +554,7 @@ export function CreateSkillDialog({
                         <span className="text-xs text-muted-foreground">
                           {t('skill.instruction')}:
                         </span>
-                        <div className="mt-1 rounded-md border bg-muted/20 p-3 max-h-[200px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
+                        <div className="app-markdown mt-1 rounded-md border bg-muted/20 p-3 max-h-[200px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
                           <Markdown remarkPlugins={[remarkGfm]}>
                             {generatedSkill.instruction}
                           </Markdown>

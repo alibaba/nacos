@@ -42,12 +42,14 @@ const arbListItem: fc.Arbitrary<AgentSpecListItem> = fc.record({
   name: fc.string({ minLength: 1, maxLength: 50 }),
   description: fc.string({ maxLength: 100 }),
   enable: fc.boolean(),
+  scope: fc.constantFrom('PUBLIC', 'PRIVATE'),
   bizTags: fc.constant('[]'),
   labels: fc.constant({}),
   editingVersion: fc.option(fc.string({ minLength: 1, maxLength: 10 }), { nil: null }),
   reviewingVersion: fc.option(fc.string({ minLength: 1, maxLength: 10 }), { nil: null }),
   onlineCnt: fc.nat({ max: 100 }),
   updateTime: fc.nat(),
+  downloadCount: fc.nat(),
 });
 
 /** Generate a successful API response with random pageItems and totalCount */

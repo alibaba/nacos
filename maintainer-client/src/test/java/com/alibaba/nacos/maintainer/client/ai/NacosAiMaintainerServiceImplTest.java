@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -464,12 +466,30 @@ public class NacosAiMaintainerServiceImplTest {
     }
 
     @Test
+    void updateSkillBizTags() throws NacosException {
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        assertTrue(aiMaintainerService.skill().updateBizTags("public", "testSkill", "[\"retail\"]"));
+    }
+
+    @Test
     void updateAgentSpecScopeUsesGroupedAccessorUpdateScope() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
 
         assertTrue(aiMaintainerService.agentSpec().updateScope("public", "testAgentSpec", "PUBLIC"));
+    }
+
+    @Test
+    void updateAgentSpecBizTagsUsesGroupedAccessorUpdateBizTags() throws NacosException {
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        assertTrue(aiMaintainerService.agentSpec().updateBizTags("public", "testAgentSpec", "[\"finance\"]"));
     }
     
     @Test
@@ -502,9 +522,11 @@ public class NacosAiMaintainerServiceImplTest {
     void getAgentSpecDetail() throws NacosException {
         AgentSpec agentSpec = new AgentSpec();
         agentSpec.setName("testAgentSpec");
+        AgentSpecMeta meta = new AgentSpecMeta();
+        meta.setEditingVersion("v1");
 
         final HttpRestResult<String> metadataRestResult = new HttpRestResult<>();
-        metadataRestResult.setData(JacksonUtils.toJson(Result.success(Collections.singletonMap("editingVersion", "v1"))));
+        metadataRestResult.setData(JacksonUtils.toJson(Result.success(meta)));
         final HttpRestResult<String> versionRestResult = new HttpRestResult<>();
         versionRestResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(metadataRestResult,
@@ -513,5 +535,39 @@ public class NacosAiMaintainerServiceImplTest {
         AgentSpec actual = aiMaintainerService.agentSpec().getAgentSpecDetail("public", "testAgentSpec");
         assertNotNull(actual);
         assertEquals("testAgentSpec", actual.getName());
+    }
+
+    @Test
+    void getAgentSpecAdminDetail() throws NacosException {
+        AgentSpecMeta detail = new AgentSpecMeta();
+        detail.setBizTags("[\"finance\"]");
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(detail)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        AgentSpecMeta actual = aiMaintainerService.agentSpec().getAgentSpecAdminDetail("public",
+                "testAgentSpec");
+        assertNotNull(actual);
+        assertEquals("[\"finance\"]", actual.getBizTags());
+    }
+
+    @Test
+    void listAgentSpecAdminItems() throws NacosException {
+        AgentSpecSummary item = new AgentSpecSummary();
+        item.setName("testAgentSpec");
+        item.setBizTags("[\"finance\"]");
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setPagesAvailable(1);
+        page.setTotalCount(1);
+        page.setPageNumber(1);
+        page.setPageItems(Collections.singletonList(item));
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(page)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        Page<AgentSpecSummary> actual = aiMaintainerService.agentSpec().listAgentSpecAdminItems("public",
+                "test", "blur", 1, 10);
+        assertNotNull(actual);
+        assertEquals("[\"finance\"]", actual.getPageItems().get(0).getBizTags());
     }
 }

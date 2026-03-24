@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
@@ -248,6 +249,19 @@ class SkillInnerHandlerTest {
         skillInnerHandler.updateLabels(form);
 
         verify(skillOperationService).updateLabels(eq(NAMESPACE_ID), eq(SKILL_NAME), any(Map.class));
+    }
+
+    @Test
+    void testUpdateBizTags() throws NacosException {
+        SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setBizTags("[\"retail\"]");
+        doNothing().when(skillOperationService).updateBizTags(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("[\"retail\"]"));
+
+        skillInnerHandler.updateBizTags(form);
+
+        verify(skillOperationService).updateBizTags(NAMESPACE_ID, SKILL_NAME, "[\"retail\"]");
     }
 
     @Test

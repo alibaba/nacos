@@ -59,7 +59,7 @@ import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
-import { parsePipelineInfo } from '@/types/skill';
+import { parseBizTags, parsePipelineInfo } from '@/types/skill';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
@@ -67,6 +67,8 @@ import { SkillVersionTimeline } from '../skillManagement/components/SkillVersion
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 import { SkillOptimizeDialog } from '@/components/ai/skill/SkillOptimizeDialog';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
+import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
+import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { sortVersionsDescending } from '../skillManagement/components/version-utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SkillResourcePanel } from './SkillResourcePanel';
@@ -106,6 +108,8 @@ export default function SkillDetailPage() {
   // Enable/disable toggle state
   const [enableToggling, setEnableToggling] = useState(false);
   const [scopeToggling, setScopeToggling] = useState(false);
+  const [bizTags, setBizTags] = useState<string[]>([]);
+  const [bizTagDialogOpen, setBizTagDialogOpen] = useState(false);
 
   // AI Optimize dialog state
   const [optimizeDialogOpen, setOptimizeDialogOpen] = useState(false);
@@ -146,6 +150,10 @@ export default function SkillDetailPage() {
       setSelectedVersion(first || '');
     }
   }, [currentDetail, detailLoading, selectedVersion]);
+
+  useEffect(() => {
+    setBizTags(parseBizTags(currentDetail?.bizTags));
+  }, [currentDetail?.bizTags]);
 
   // Load version document when selected version changes
   useEffect(() => {
@@ -295,6 +303,16 @@ export default function SkillDetailPage() {
       labels: JSON.stringify(labels),
     });
     toast.success(t('common.versionLabels.updateSuccess'));
+    await loadDetail();
+  };
+
+  const handleSaveBizTags = async (nextBizTags: string[]) => {
+    await skillApi.updateBizTags({
+      namespaceId,
+      skillName,
+      bizTags: JSON.stringify(nextBizTags),
+    });
+    toast.success(t('skill.bizTagsUpdateSuccess'));
     await loadDetail();
   };
 
@@ -822,7 +840,7 @@ export default function SkillDetailPage() {
       </div>
 
       {/* ===== Tabs Content ===== */}
-      <Tabs defaultValue="overview" className={cn((detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
+      <Tabs defaultValue="overview" className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
         <TabsList>
           <TabsTrigger value="overview" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" />
@@ -878,7 +896,7 @@ export default function SkillDetailPage() {
                     </div>
                   </div>
                 ) : versionDoc?.instruction ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                     <Markdown remarkPlugins={[remarkGfm]}>
                       {versionDoc.instruction}
                     </Markdown>
@@ -919,6 +937,43 @@ export default function SkillDetailPage() {
                 </CardContent>
               </Card>
 
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.bizTags')}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setBizTagDialogOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+                <CardContent className="p-3.5">
+                  {bizTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {bizTags.map((tag) => (
+                        <DetailTagChip key={tag} label={tag} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('skill.noBizTags')}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <BizTagEditDialog
+                open={bizTagDialogOpen}
+                onOpenChange={setBizTagDialogOpen}
+                tags={bizTags}
+                placeholder={t('skill.bizTagPlaceholder')}
+                emptyText={t('skill.noBizTags')}
+                onSave={handleSaveBizTags}
+              />
+
               {/* Pipeline status card */}
               {currentPipelineInfo && (
                 <Card className="overflow-hidden py-0 gap-0">
@@ -956,13 +1011,7 @@ export default function SkillDetailPage() {
                   {currentVersionLabels.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       {currentVersionLabels.map(([key]) => (
-                        <Badge
-                          key={key}
-                          variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[11px] font-mono"
-                        >
-                          {key}
-                        </Badge>
+                        <DetailTagChip key={key} label={key} />
                       ))}
                     </div>
                   ) : (

@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.ai.service.agentspecs;
 
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 
@@ -41,7 +41,7 @@ public interface AgentSpecOperationService {
      * @return agentspec admin detail (agentspec content + governance info)
      * @throws NacosException if agentspec not found
      */
-    AgentSpecAdminDetail getAgentSpecDetail(String namespaceId, String agentSpecName, String version)
+    AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName, String version)
             throws NacosException;
     
     /**
@@ -53,7 +53,7 @@ public interface AgentSpecOperationService {
      * @return agentspec admin detail (governance info + version summaries)
      * @throws NacosException if agentspec not found
      */
-    AgentSpecAdminDetail getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException;
+    AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException;
     
     /**
      * Get agentspec version detail for admin usage. Returns full agentspec content for a specific version, used for
@@ -88,7 +88,7 @@ public interface AgentSpecOperationService {
      * @return agentspec admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<AgentSpecAdminListItem> listAgentSpecs(String namespaceId, String agentSpecName, String search, int pageNo,
+    Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search, int pageNo,
             int pageSize) throws NacosException;
     
     /**
@@ -113,6 +113,17 @@ public interface AgentSpecOperationService {
      * @throws NacosException if upload failed
      */
     String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
+    
+    /**
+     * Bootstrap agentspec from zip file as an online agentspec.
+     *
+     * <p>This is intended for server-side built-in data initialization and bypasses draft/pipeline flow.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @throws NacosException if bootstrap failed
+     */
+    void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
     
     /**
      * Search agentspecs for runtime client usage. Only returns enabled agentspecs that have at least one online
@@ -200,6 +211,16 @@ public interface AgentSpecOperationService {
      * @throws NacosException if update failed
      */
     void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException;
+
+    /**
+     * Update agentspec biz tags JSON.
+     *
+     * @param namespaceId namespace ID
+     * @param name agentspec name
+     * @param bizTags biz tags JSON string
+     * @throws NacosException if update failed
+     */
+    void updateBizTags(String namespaceId, String name, String bizTags) throws NacosException;
     
     /**
      * Online/offline operation.

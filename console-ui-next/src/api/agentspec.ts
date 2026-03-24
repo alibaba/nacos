@@ -25,7 +25,6 @@ export const agentSpecApi = {
   getDetail: (params: {
     namespaceId?: string;
     agentSpecName: string;
-    version?: string;
   }): ApiResult<AgentSpecDetail> =>
     client.get(BASE, { params }) as ApiResult<AgentSpecDetail>,
 
@@ -102,6 +101,14 @@ export const agentSpecApi = {
     labels: string;
   }): ApiResult<string> =>
     client.put(`${BASE}/labels`, data) as ApiResult<string>,
+
+  /** 更新业务标签 */
+  updateBizTags: (data: {
+    namespaceId?: string;
+    agentSpecName: string;
+    bizTags: string;
+  }): ApiResult<string> =>
+    client.put(`${BASE}/biz-tags`, data) as ApiResult<string>,
 
   /** 上线 */
   online: (data: {

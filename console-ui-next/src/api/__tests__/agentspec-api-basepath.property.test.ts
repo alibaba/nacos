@@ -60,6 +60,7 @@ async function callAllApiMethods(): Promise<string[]> {
     agentSpecApi.submit({ agentSpecName: 'test', version: 'v1' }),
     agentSpecApi.publish({ agentSpecName: 'test', version: 'v1' }),
     agentSpecApi.updateLabels({ agentSpecName: 'test', labels: '{}' }),
+    agentSpecApi.updateBizTags({ agentSpecName: 'test', bizTags: '[]' }),
     agentSpecApi.online({ agentSpecName: 'test' }),
     agentSpecApi.offline({ agentSpecName: 'test' }),
   ]);
@@ -76,8 +77,7 @@ describe('Property 13: API 基础路径一致性', () => {
   it('all agentSpecApi methods use the correct base path prefix', async () => {
     const urls = await callAllApiMethods();
 
-    // Ensure we captured URLs from all 13 API methods
-    expect(urls.length).toBe(13);
+    expect(urls.length).toBe(14);
 
     // Every URL must start with the expected base path
     for (const url of urls) {
@@ -101,6 +101,7 @@ describe('Property 13: API 基础路径一致性', () => {
       { name: 'submit', call: () => agentSpecApi.submit({ agentSpecName: 'x', version: 'v1' }) },
       { name: 'publish', call: () => agentSpecApi.publish({ agentSpecName: 'x', version: 'v1' }) },
       { name: 'updateLabels', call: () => agentSpecApi.updateLabels({ agentSpecName: 'x', labels: '{}' }) },
+      { name: 'updateBizTags', call: () => agentSpecApi.updateBizTags({ agentSpecName: 'x', bizTags: '[]' }) },
       { name: 'online', call: () => agentSpecApi.online({ agentSpecName: 'x' }) },
       { name: 'offline', call: () => agentSpecApi.offline({ agentSpecName: 'x' }) },
     ];

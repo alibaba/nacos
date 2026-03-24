@@ -1,28 +1,33 @@
 // ===== AgentSpec Types =====
 
+export type AgentSpecVersionStatus = 'draft' | 'reviewing' | 'online' | 'offline';
+
 /** 列表项 */
 export interface AgentSpecListItem {
   namespaceId: string;
   name: string;
   description: string;
   enable: boolean;
+  scope: string; // "PUBLIC" or "PRIVATE"
   bizTags: string; // JSON string: ["tag1","tag2"]
   labels: Record<string, string>; // e.g. {"latest":"v3","stable":"v2"}
   editingVersion: string | null;
   reviewingVersion: string | null;
   onlineCnt: number;
   updateTime: number; // epoch millis
+  downloadCount: number;
 }
 
 /** 版本摘要 */
 export interface AgentSpecVersionSummary {
   version: string;
-  status: 'draft' | 'reviewing' | 'online' | 'offline';
+  status: AgentSpecVersionStatus;
   author: string;
   description: string;
   createTime: number;
   updateTime: number;
   publishPipelineInfo: string | null;
+  downloadCount: number;
 }
 
 /** 资源 */
@@ -43,16 +48,16 @@ export interface AgentSpecDocument {
 
 /** 详情 */
 export interface AgentSpecDetail {
-  agentSpec: AgentSpecDocument | null;
   enable: boolean;
-  version: string;
-  versionStatus: 'draft' | 'reviewing' | 'online' | 'offline';
+  scope: string; // "PUBLIC" or "PRIVATE"
+  bizTags: string; // JSON string: ["tag1","tag2"]
   editingVersion: string | null;
   reviewingVersion: string | null;
   labels: Record<string, string>;
   onlineCnt: number;
   updateTime: number;
   versions: AgentSpecVersionSummary[];
+  downloadCount: number;
 }
 
 /** 列表响应 */
@@ -101,5 +106,16 @@ export function parsePipelineInfo(raw: string | null | undefined): PublishPipeli
     return null;
   } catch {
     return null;
+  }
+}
+
+/** Safely parse bizTags JSON string */
+export function parseBizTags(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
   }
 }

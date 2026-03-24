@@ -205,9 +205,42 @@ public class AgentSpecZipParser {
         AgentSpec agentSpec = new AgentSpec();
         agentSpec.setNamespaceId(namespaceId);
         agentSpec.setName(suggestedName.trim());
+        Object descriptionObj = root.get("description");
+        if (descriptionObj != null && StringUtils.isNotBlank(descriptionObj.toString())) {
+            agentSpec.setDescription(descriptionObj.toString().trim());
+        }
+        String bizTags = parseBizTags(root.get("tags"));
+        if (StringUtils.isBlank(bizTags)) {
+            bizTags = parseBizTags(root.get("bizTags"));
+        }
+        if (StringUtils.isNotBlank(bizTags)) {
+            agentSpec.setBizTags(bizTags);
+        }
         agentSpec.setContent(manifestContent);
         
         return agentSpec;
+    }
+
+    private static String parseBizTags(Object bizTagsObj) {
+        if (bizTagsObj instanceof List) {
+            List<?> bizTags = (List<?>) bizTagsObj;
+            List<String> normalized = new ArrayList<>(bizTags.size());
+            for (Object each : bizTags) {
+                if (each == null) {
+                    continue;
+                }
+                String tag = each.toString().trim();
+                if (StringUtils.isNotBlank(tag)) {
+                    normalized.add(tag);
+                }
+            }
+            return normalized.isEmpty() ? null : JacksonUtils.toJson(normalized);
+        }
+        if (bizTagsObj instanceof String) {
+            String bizTags = bizTagsObj.toString().trim();
+            return StringUtils.isBlank(bizTags) ? null : bizTags;
+        }
+        return null;
     }
     
     /**

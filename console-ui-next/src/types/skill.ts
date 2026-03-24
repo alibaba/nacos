@@ -54,6 +54,7 @@ export interface SkillDocument {
 export interface SkillAdminDetail {
   enable: boolean;
   scope: string; // "PUBLIC" or "PRIVATE"
+  bizTags: string; // JSON string: ["tag1","tag2"]
   editingVersion: string | null;
   reviewingVersion: string | null;
   labels: Record<string, string>;
@@ -110,5 +111,16 @@ export function parsePipelineInfo(raw: string | null | undefined): PublishPipeli
     return null;
   } catch {
     return null;
+  }
+}
+
+/** Safely parse bizTags JSON string */
+export function parseBizTags(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
   }
 }

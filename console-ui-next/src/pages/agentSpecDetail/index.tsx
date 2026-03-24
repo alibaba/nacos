@@ -1,7 +1,9 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   ArrowLeft,
   History,
@@ -19,6 +21,7 @@ import {
   PowerOff,
   Trash2,
   Pencil,
+  Lock,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,17 +45,19 @@ import {
 import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { agentSpecApi } from '@/api/agentspec';
-import type { AgentSpecDocument } from '@/types/agentspec';
-import { parsePipelineInfo } from '@/types/agentspec';
+import { parseBizTags, parsePipelineInfo, type AgentSpecDocument } from '@/types/agentspec';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
 import { VersionTimeline } from '../agentSpecManagement/components/VersionTimeline';
 import { ResourceViewer } from '../agentSpecManagement/components/ResourceViewer';
 import { sortVersionsDescending } from '../agentSpecManagement/components/version-utils';
-import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
-import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 import { buildAgentSpecEditorSearch } from './version-workflow';
+import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
+import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
+import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
+import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AgentSpecDetailPage() {
   const { t } = useTranslation();
@@ -73,27 +78,26 @@ export default function AgentSpecDetailPage() {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [versionSheetOpen, setVersionSheetOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [detailDocument, setDetailDocument] = useState<AgentSpecDocument | null>(null);
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
+  const [bizTagDialogOpen, setBizTagDialogOpen] = useState(false);
   const [enableToggling, setEnableToggling] = useState(false);
-  const autoLoadedVersionRef = useRef<string | null>(null);
+  const [bizTags, setBizTags] = useState<string[]>([]);
 
-  const loadDetail = useCallback(
-    (version?: string) => {
-      if (agentSpecName) {
-        return fetchDetail(namespaceId, agentSpecName, version);
-      }
-    },
-    [fetchDetail, namespaceId, agentSpecName],
-  );
+  const loadDetail = useCallback(() => {
+    if (agentSpecName) {
+      return fetchDetail(namespaceId, agentSpecName);
+    }
+  }, [fetchDetail, namespaceId, agentSpecName]);
 
   useEffect(() => {
-    autoLoadedVersionRef.current = null;
     setDetailDocument(null);
+    setSelectedVersion('');
     loadDetail();
     return () => {
-      autoLoadedVersionRef.current = null;
       setDetailDocument(null);
+      setSelectedVersion('');
       clearDetail();
       clearError();
     };
@@ -101,31 +105,21 @@ export default function AgentSpecDetailPage() {
   }, [agentSpecName, namespaceId]);
 
   useEffect(() => {
-    if (!currentDetail || detailLoading || currentDetail.version) {
-      return;
-    }
-
-    const fallbackVersion = sortVersionsDescending(currentDetail.versions || [])[0]?.version;
-    if (fallbackVersion && autoLoadedVersionRef.current !== fallbackVersion) {
-      autoLoadedVersionRef.current = fallbackVersion;
-      loadDetail(fallbackVersion);
-    }
-  }, [currentDetail, detailLoading, loadDetail]);
+    setBizTags(parseBizTags(currentDetail?.bizTags));
+  }, [currentDetail?.bizTags]);
 
   useEffect(() => {
-    if (!currentDetail) {
-      setDetailDocument(null);
+    if (!currentDetail || detailLoading || selectedVersion) {
       return;
     }
-
-    if (currentDetail.agentSpec) {
-      setDetailDocument(currentDetail.agentSpec);
-      return;
+    const fallbackVersion = sortVersionsDescending(currentDetail.versions || [])[0]?.version;
+    if (fallbackVersion) {
+      setSelectedVersion(fallbackVersion);
     }
+  }, [currentDetail, detailLoading, selectedVersion]);
 
-    const fallbackVersion = currentDetail.version
-      || sortVersionsDescending(currentDetail.versions || [])[0]?.version;
-    if (!fallbackVersion) {
+  useEffect(() => {
+    if (!selectedVersion || !agentSpecName) {
       setDetailDocument(null);
       return;
     }
@@ -136,7 +130,7 @@ export default function AgentSpecDetailPage() {
     agentSpecApi.getVersion({
       namespaceId,
       agentSpecName,
-      version: fallbackVersion,
+      version: selectedVersion,
     }).then((response) => {
       if (!cancelled) {
         setDetailDocument(response.data);
@@ -150,7 +144,7 @@ export default function AgentSpecDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentDetail, namespaceId, agentSpecName]);
+  }, [selectedVersion, namespaceId, agentSpecName]);
 
   // ===== Enable/disable handler =====
 
@@ -263,7 +257,7 @@ export default function AgentSpecDetailPage() {
   };
 
   const handleSelectVersion = (version: string) => {
-    loadDetail(version);
+    setSelectedVersion(version);
   };
 
   const handleSaveLabels = async (newLabels: Record<string, string>) => {
@@ -278,8 +272,18 @@ export default function AgentSpecDetailPage() {
     await loadDetail();
   };
 
+  const handleSaveBizTags = async (nextBizTags: string[]) => {
+    await agentSpecApi.updateBizTags({
+      namespaceId,
+      agentSpecName,
+      bizTags: JSON.stringify(nextBizTags),
+    });
+    toast.success(t('agentSpec.bizTagsUpdateSuccess'));
+    await loadDetail();
+  };
+
   const handleNewVersion = () => {
-    if (!currentDetail?.version) {
+    if (!selectedVersion) {
       return;
     }
 
@@ -288,7 +292,7 @@ export default function AgentSpecDetailPage() {
         mode: 'version',
         name: agentSpecName,
         namespaceId,
-        sourceVersion: currentDetail.version,
+        sourceVersion: selectedVersion,
       })}`,
     );
   };
@@ -334,7 +338,7 @@ export default function AgentSpecDetailPage() {
   if (!currentDetail) return null;
 
   const detail = currentDetail;
-  const spec = detail.agentSpec ?? detailDocument ?? {
+  const spec = detailDocument ?? {
     namespaceId,
     name: agentSpecName,
     description: '',
@@ -343,52 +347,29 @@ export default function AgentSpecDetailPage() {
   };
   const versions = sortVersionsDescending(detail.versions || []);
   const latestVersion = detail.labels?.latest;
-  const selectedVersion = detail.version || versions[0]?.version || '';
   const displayVersion = selectedVersion || '-';
-  const versionOptions = (() => {
-    const seen = new Set<string>();
-    const result = [] as typeof versions;
-
-    if (selectedVersion) {
-      seen.add(selectedVersion);
-      const current = versions.find((item) => item.version === selectedVersion);
-      result.push(
-        current ?? {
-          version: selectedVersion,
-          status: detail.versionStatus,
-          author: '',
-          description: spec.description || '',
-          createTime: detail.updateTime,
-          updateTime: detail.updateTime,
-          publishPipelineInfo: null,
-        },
-      );
-    }
-
-    for (const item of versions) {
-      if (!seen.has(item.version)) {
-        seen.add(item.version);
-        result.push(item);
-      }
-    }
-
-    return result;
-  })();
+  const versionOptions = versions;
   const currentVersionSummary = versionOptions.find((item) => item.version === selectedVersion);
-  const currentVersionStatus = currentVersionSummary?.status || detail.versionStatus;
+  const currentVersionStatus = currentVersionSummary?.status;
   const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
   const currentVersionStatusLabel = currentVersionStatus
     ? t(`agentSpec.versionStatus.${currentVersionStatus}`)
     : '-';
-  const currentVersionCreateTime = currentVersionSummary?.createTime || 0;
   const onlineVersionCountLabel = t('agentSpec.onlineCount', { count: detail.onlineCnt ?? 0 });
+  const agentsResourceEntry = Object.entries(spec.resource || {}).find(([, resource]) => {
+    const normalizedName = resource.name.split('/').pop() || resource.name;
+    return normalizedName.toUpperCase() === 'AGENTS.MD';
+  });
+  const agentsContent = agentsResourceEntry?.[1]?.content || '';
+  const resourceEntries = Object.entries(spec.resource || {}).filter(([key]) => key !== agentsResourceEntry?.[0]);
+  const resourcesWithoutAgents = Object.fromEntries(resourceEntries);
   // Labels bound to the currently selected version
   const currentVersionLabels = Object.entries(detail.labels || {}).filter(
     ([, val]) => val === selectedVersion,
   );
 
   return (
-    <div className="flex h-[calc(100vh-88px)] min-h-0 flex-col gap-5 overflow-hidden">
+    <div className="flex min-h-[calc(100vh-88px)] flex-col gap-5 pb-5">
       {/* ===== Hero Header ===== */}
       <div className="relative rounded-xl border bg-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-blue-500/[0.03]" />
@@ -440,7 +421,7 @@ export default function AgentSpecDetailPage() {
                 {t('agentSpec.versionHistory')}
               </Button>
 
-              {detail.version && (
+              {selectedVersion && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -490,6 +471,13 @@ export default function AgentSpecDetailPage() {
                     {detail.enable ? t('agentSpec.enabled') : t('agentSpec.disabled')}
                   </span>
                 </label>
+                <div className="h-4 w-px bg-border" />
+                <div className="inline-flex items-center gap-2 select-none">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    {detail.scope === 'PUBLIC' ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                    {detail.scope === 'PUBLIC' ? t('agentSpec.scopePublic') : t('agentSpec.scopePrivate')}
+                  </span>
+                </div>
               </div>
               {spec.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
@@ -503,6 +491,12 @@ export default function AgentSpecDetailPage() {
                   <Globe className="h-3 w-3" />
                   {onlineVersionCountLabel}
                 </span>
+                {detail.downloadCount > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    {t('agentSpec.downloadCount', { count: detail.downloadCount })}
+                  </span>
+                )}
                 {detail.updateTime > 0 && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -600,130 +594,242 @@ export default function AgentSpecDetailPage() {
         </div>
       </div>
 
-      {/* ===== Content Grid ===== */}
-      <div className={cn('grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_320px]', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
-        {/* Left column */}
-        <div className="flex min-h-0 flex-col">
-          {/* Resource viewer card */}
-          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden py-0 gap-0">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                {t('agentSpec.resources')}
-              </h2>
-            </div>
-            <CardContent className="flex-1 min-h-0 p-0">
-              <ResourceViewer
-                resources={spec.resource || {}}
-                content={spec.content || '{}'}
-                editable={false}
-                className="h-full min-h-0"
-              />
-            </CardContent>
-          </Card>
-        </div>
+      {/* ===== Tabs Content ===== */}
+      <Tabs defaultValue="overview" className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
+        <TabsList>
+          <TabsTrigger value="overview" className="gap-1.5">
+            <FileText className="h-3.5 w-3.5" />
+            {t('agentSpec.agentsFile')}
+          </TabsTrigger>
+          <TabsTrigger value="resources" className="gap-1.5">
+            <Package className="h-3.5 w-3.5" />
+            {t('agentSpec.resources')}
+            {resourceEntries.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-0.5">
+                {resourceEntries.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Right column */}
-        <div className="space-y-4 lg:w-[320px]">
-          {/* Basic info card */}
-          <Card className="overflow-hidden py-0 gap-0">
-            <div className="px-4 py-3 border-b bg-muted/30">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                {t('agentSpec.basicInfo')}
-              </h2>
-            </div>
-            <CardContent className="p-0">
-              <div className="grid grid-cols-1 divide-y divide-border">
-                <InfoCell compact label={t('agentSpec.agentSpecName')} value={spec.name || '-'} icon={<Package className="h-3.5 w-3.5" />} />
-                <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
-                <InfoCell
-                  compact
-                  label={t('agentSpec.status')}
-                  value={<StatusBadge status={currentVersionStatus} label={currentVersionStatusLabel} />}
-                  icon={<Tag className="h-3.5 w-3.5" />}
-                />
-                <InfoCell compact label={t('agentSpec.createTime')} value={currentVersionCreateTime > 0 ? dayjs(currentVersionCreateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
-                <InfoCell compact label={t('agentSpec.updateTime')} value={detail.updateTime > 0 ? dayjs(detail.updateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
-              </div>
-              {spec.description && (
-                <div className="border-t px-4 py-2.5">
-                  <p className="text-[11px] text-muted-foreground leading-none mb-1">{t('agentSpec.description')}</p>
-                  <div className="text-sm text-foreground whitespace-pre-wrap break-words">{spec.description}</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {currentPipelineInfo && (
+        <TabsContent value="overview">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <Card className="overflow-hidden py-0 gap-0">
-              <div className="px-4 py-3 border-b bg-muted/30">
+              <div className="px-5 py-3.5 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <GitBranch className="h-4 w-4 text-muted-foreground" />
-                  {t('agentSpec.pipelineStatus')}
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  {t('agentSpec.agentsFile')}
                 </h2>
               </div>
-              <CardContent className="p-3.5">
-                <PipelineStatusDisplay
-                  pipelineInfo={currentPipelineInfo}
-                  translationPrefix="agentSpec"
-                  onRefresh={() => loadDetail()}
+              <CardContent className="p-5">
+                {agentsContent ? (
+                  <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
+                    <Markdown remarkPlugins={[remarkGfm]}>
+                      {agentsContent}
+                    </Markdown>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('agentSpec.noAgentsFile')}</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4 lg:w-[320px]">
+              {/* Basic info card */}
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    {t('agentSpec.basicInfo')}
+                  </h2>
+                </div>
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-1 divide-y divide-border">
+                    <InfoCell compact label={t('agentSpec.agentSpecName')} value={spec.name || '-'} icon={<Package className="h-3.5 w-3.5" />} />
+                    <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
+                    <InfoCell
+                      compact
+                      label={t('agentSpec.status')}
+                      value={<StatusBadge status={currentVersionStatus} label={currentVersionStatusLabel} />}
+                      icon={<Tag className="h-3.5 w-3.5" />}
+                    />
+                    {currentVersionSummary && (
+                      <InfoCell compact label={t('agentSpec.author')} value={currentVersionSummary.author || '-'} icon={<Globe className="h-3.5 w-3.5" />} />
+                    )}
+                    <InfoCell compact label={t('agentSpec.downloads')} value={String(detail.downloadCount ?? 0)} icon={<Package className="h-3.5 w-3.5" />} />
+                    {currentVersionSummary && (
+                      <InfoCell compact label={t('agentSpec.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Package className="h-3.5 w-3.5" />} />
+                    )}
+                    <InfoCell compact label={t('agentSpec.updateTime')} value={detail.updateTime > 0 ? dayjs(detail.updateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
+                  </div>
+                  {spec.description && (
+                    <div className="border-t px-4 py-2.5">
+                      <p className="text-[11px] text-muted-foreground leading-none mb-1">{t('agentSpec.description')}</p>
+                      <div className="text-sm text-foreground whitespace-pre-wrap break-words">{spec.description}</div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.bizTags')}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setBizTagDialogOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+                <CardContent className="p-3.5">
+                  {bizTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {bizTags.map((tag) => (
+                        <DetailTagChip key={tag} label={tag} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('agentSpec.noBizTags')}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <BizTagEditDialog
+                open={bizTagDialogOpen}
+                onOpenChange={setBizTagDialogOpen}
+                tags={bizTags}
+                placeholder={t('agentSpec.bizTagPlaceholder')}
+                emptyText={t('agentSpec.noBizTags')}
+                onSave={handleSaveBizTags}
+              />
+
+              {currentPipelineInfo && (
+                <Card className="overflow-hidden py-0 gap-0">
+                  <div className="px-4 py-3 border-b bg-muted/30">
+                    <h2 className="text-sm font-semibold flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      {t('agentSpec.pipelineStatus')}
+                    </h2>
+                  </div>
+                  <CardContent className="p-3.5">
+                    <PipelineStatusDisplay
+                      pipelineInfo={currentPipelineInfo}
+                      translationPrefix="agentSpec"
+                      onRefresh={() => loadDetail()}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.versionLabels.title')}
+                  </h2>
+                  {selectedVersion && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setLabelDialogOpen(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <CardContent className="p-3.5">
+                  {currentVersionLabels.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentVersionLabels.map(([key]) => (
+                        <DetailTagChip key={key} label={key} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t('common.versionLabels.noLabels')}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {selectedVersion && (
+                <LabelBindDialog
+                  open={labelDialogOpen}
+                  onOpenChange={setLabelDialogOpen}
+                  version={selectedVersion}
+                  allLabels={detail.labels ?? {}}
+                  onSave={handleSaveLabels}
+                />
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <Card className="flex min-h-[480px] flex-col overflow-hidden py-0 gap-0">
+              <div className="px-5 py-3.5 border-b bg-muted/30">
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                  {t('agentSpec.resources')}
+                </h2>
+              </div>
+              <CardContent className="flex-1 min-h-0 p-0">
+                <ResourceViewer
+                  resources={resourcesWithoutAgents}
+                  content={spec.content || '{}'}
+                  editable={false}
+                  className="h-full min-h-0"
                 />
               </CardContent>
             </Card>
-          )}
 
-          {/* Labels card (read-only for current version) */}
-          <Card className="overflow-hidden py-0 gap-0">
-            <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                {t('common.versionLabels.title')}
-              </h2>
-              {selectedVersion && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setLabelDialogOpen(true)}
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-            <CardContent className="p-3.5">
-              {currentVersionLabels.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {currentVersionLabels.map(([key]) => (
-                    <Badge
-                      key={key}
-                      variant="secondary"
-                      className="rounded-md px-2 py-0.5 text-[11px] font-mono"
-                    >
-                      {key}
-                    </Badge>
-                  ))}
+            <div className="space-y-4 lg:w-[320px]">
+              {/* Basic info card */}
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    {t('agentSpec.basicInfo')}
+                  </h2>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {t('common.versionLabels.noLabels')}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Label bind dialog */}
-          {selectedVersion && (
-            <LabelBindDialog
-              open={labelDialogOpen}
-              onOpenChange={setLabelDialogOpen}
-              version={selectedVersion}
-              allLabels={detail.labels ?? {}}
-              onSave={handleSaveLabels}
-            />
-          )}
-        </div>
-      </div>
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-1 divide-y divide-border">
+                    <InfoCell compact label={t('agentSpec.agentSpecName')} value={spec.name || '-'} icon={<Package className="h-3.5 w-3.5" />} />
+                    <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
+                    <InfoCell
+                      compact
+                      label={t('agentSpec.status')}
+                      value={<StatusBadge status={currentVersionStatus} label={currentVersionStatusLabel} />}
+                      icon={<Tag className="h-3.5 w-3.5" />}
+                    />
+                    {currentVersionSummary && (
+                      <InfoCell compact label={t('agentSpec.author')} value={currentVersionSummary.author || '-'} icon={<Globe className="h-3.5 w-3.5" />} />
+                    )}
+                    <InfoCell compact label={t('agentSpec.downloads')} value={String(detail.downloadCount ?? 0)} icon={<Package className="h-3.5 w-3.5" />} />
+                    {currentVersionSummary && (
+                      <InfoCell compact label={t('agentSpec.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Package className="h-3.5 w-3.5" />} />
+                    )}
+                    <InfoCell compact label={t('agentSpec.updateTime')} value={detail.updateTime > 0 ? dayjs(detail.updateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
+                  </div>
+                  {spec.description && (
+                    <div className="border-t px-4 py-2.5">
+                      <p className="text-[11px] text-muted-foreground leading-none mb-1">{t('agentSpec.description')}</p>
+                      <div className="text-sm text-foreground whitespace-pre-wrap break-words">{spec.description}</div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
         <SheetContent className="flex flex-col p-0 sm:max-w-md">
@@ -739,7 +845,7 @@ export default function AgentSpecDetailPage() {
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <VersionTimeline
               versions={versions}
-              currentVersion={detail.version}
+              currentVersion={selectedVersion}
               onSelectVersion={(version) => {
                 handleSelectVersion(version);
                 setVersionSheetOpen(false);

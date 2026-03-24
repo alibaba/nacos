@@ -250,6 +250,17 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to update labels
      */
     boolean updateLabels(String namespaceId, String skillName, String labels) throws NacosException;
+
+    /**
+     * Update skill biz tags JSON.
+     *
+     * @param namespaceId namespace ID
+     * @param skillName skill name
+     * @param bizTags biz tags JSON string
+     * @return true if update success
+     * @throws NacosException if fail to update biz tags
+     */
+    boolean updateBizTags(String namespaceId, String skillName, String bizTags) throws NacosException;
     
     /**
      * Online/offline operation.

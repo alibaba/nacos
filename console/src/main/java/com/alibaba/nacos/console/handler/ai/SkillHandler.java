@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.ai;
 
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
@@ -157,6 +158,14 @@ public interface SkillHandler {
      * @throws NacosException if operation failed
      */
     void updateLabels(SkillLabelsUpdateForm form) throws NacosException;
+
+    /**
+     * Update skill biz tags without changing version status.
+     *
+     * @param form biz tags update form
+     * @throws NacosException if operation failed
+     */
+    void updateBizTags(SkillBizTagsUpdateForm form) throws NacosException;
 
     /**
      * Change online/offline status.

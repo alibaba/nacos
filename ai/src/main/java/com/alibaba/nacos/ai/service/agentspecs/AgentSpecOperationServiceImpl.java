@@ -19,8 +19,6 @@ package com.alibaba.nacos.ai.service.agentspecs;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
@@ -31,10 +29,13 @@ import com.alibaba.nacos.ai.service.DataFilterHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -46,11 +47,14 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.AgentSpecPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,6 +121,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             AiResource existedMeta, boolean isNew) throws NacosException {
         String agentSpecName = agentSpec.getName();
         long uniformId = System.currentTimeMillis();
+        String currentUser = DataFilterHelper.resolveCurrentUser();
         
         // 1) write storage for draft version
         byte[] mainContent = buildMainContent(agentSpec, uniformId);
@@ -143,7 +148,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         versionRow.setNamespaceId(namespaceId);
         versionRow.setName(agentSpecName);
         versionRow.setType(RESOURCE_TYPE_AGENTSPEC);
-        versionRow.setAuthor(DEFAULT_AUTHOR);
+        versionRow.setAuthor(StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser);
         versionRow.setStatus(VERSION_STATUS_DRAFT);
         versionRow.setVersion(version);
         versionRow.setDesc(agentSpec.getDescription());
@@ -158,6 +163,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             meta.setType(RESOURCE_TYPE_AGENTSPEC);
             meta.setStatus(META_STATUS_ENABLE);
             meta.setDesc(agentSpec.getDescription());
+            meta.setBizTags(agentSpec.getBizTags());
+            meta.setOwner(currentUser);
             AgentSpecVersionInfo info = new AgentSpecVersionInfo();
             info.setEditingVersion(version);
             info.setOnlineCnt(0);
@@ -173,92 +180,28 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     @Override
-    public AgentSpecAdminDetail getAgentSpecDetail(String namespaceId, String agentSpecName, String version)
+    public AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName, String version)
             throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
-        if (meta == null) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "AgentSpec not found: " + agentSpecName);
-        }
-        AgentSpecVersionInfo versionInfo = requireVersionInfo(meta);
-        String resolvedVersion = StringUtils.isBlank(version) ? resolveVersion(meta, null, null) : version;
-        
-        AgentSpec agentSpec = null;
-        AiResourceVersion versionRow = null;
-        if (StringUtils.isNotBlank(resolvedVersion)) {
-            versionRow = aiResourceVersionPersistService.find(namespaceId, agentSpecName,
-                    RESOURCE_TYPE_AGENTSPEC, resolvedVersion);
-            if (versionRow == null) {
-                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                        "AgentSpec version not found: " + agentSpecName + "@" + resolvedVersion);
-            }
-            try {
-                agentSpec = loadAgentSpecFromStorage(namespaceId, agentSpecName, resolvedVersion);
-            } catch (NacosException ignored) {
-                // version row exists but storage missing
-            }
-        }
-        
-        String versionStatus = null;
-        if (versionRow != null) {
-            versionStatus = versionRow.getStatus();
-        }
-        
-        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, agentSpecName, 1,
-                200);
-        List<AgentSpecAdminDetail.AgentSpecVersionSummary> versionSummaries = new ArrayList<>();
-        if (versionPage != null && versionPage.getPageItems() != null) {
-            for (AiResourceVersion v : versionPage.getPageItems()) {
-                if (v == null) {
-                    continue;
-                }
-                AgentSpecAdminDetail.AgentSpecVersionSummary summary =
-                        new AgentSpecAdminDetail.AgentSpecVersionSummary();
-                summary.setVersion(v.getVersion());
-                summary.setStatus(v.getStatus());
-                summary.setAuthor(v.getAuthor());
-                summary.setDescription(v.getDesc());
-                summary.setCreateTime(v.getGmtCreate() == null ? null : v.getGmtCreate().getTime());
-                summary.setUpdateTime(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
-                summary.setPublishPipelineInfo(v.getPublishPipelineInfo());
-                versionSummaries.add(summary);
-            }
-        }
-        
-        AgentSpecAdminDetail detail = new AgentSpecAdminDetail();
-        detail.setAgentSpec(agentSpec);
-        detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
-        detail.setVersion(resolvedVersion);
-        detail.setVersionStatus(versionStatus);
-        detail.setEditingVersion(versionInfo.getEditingVersion());
-        detail.setReviewingVersion(versionInfo.getReviewingVersion());
-        detail.setLabels(versionInfo.getLabels());
-        detail.setOnlineCnt(versionInfo.getOnlineCnt());
-        detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
-        detail.setVersions(versionSummaries);
-        return detail;
+        return getAgentSpecDetail(namespaceId, agentSpecName);
     }
 
     @Override
-    public AgentSpecAdminDetail getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException {
+    public AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "AgentSpec not found: " + agentSpecName);
         }
         AgentSpecVersionInfo versionInfo = requireVersionInfo(meta);
-        
-        // Load all version summaries
         Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, agentSpecName, 1,
                 200);
-        List<AgentSpecAdminDetail.AgentSpecVersionSummary> versionSummaries = new ArrayList<>();
+        List<AgentSpecMeta.AgentSpecVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
             for (AiResourceVersion v : versionPage.getPageItems()) {
                 if (v == null) {
                     continue;
                 }
-                AgentSpecAdminDetail.AgentSpecVersionSummary summary =
-                        new AgentSpecAdminDetail.AgentSpecVersionSummary();
+                AgentSpecMeta.AgentSpecVersionSummary summary = new AgentSpecMeta.AgentSpecVersionSummary();
                 summary.setVersion(v.getVersion());
                 summary.setStatus(v.getStatus());
                 summary.setAuthor(v.getAuthor());
@@ -266,17 +209,24 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                 summary.setCreateTime(v.getGmtCreate() == null ? null : v.getGmtCreate().getTime());
                 summary.setUpdateTime(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
                 summary.setPublishPipelineInfo(v.getPublishPipelineInfo());
+                summary.setDownloadCount(v.getDownloadCount());
                 versionSummaries.add(summary);
             }
         }
         
-        AgentSpecAdminDetail detail = new AgentSpecAdminDetail();
+        AgentSpecMeta detail = new AgentSpecMeta();
+        detail.setNamespaceId(meta.getNamespaceId());
+        detail.setName(meta.getName());
+        detail.setDescription(meta.getDesc());
+        detail.setBizTags(meta.getBizTags());
         detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
+        detail.setScope(resolveScope(meta));
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
         detail.setLabels(versionInfo.getLabels());
         detail.setOnlineCnt(versionInfo.getOnlineCnt());
         detail.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+        detail.setDownloadCount(meta.getDownloadCount());
         detail.setVersions(versionSummaries);
         return detail;
     }
@@ -325,7 +275,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     @Override
-    public Page<AgentSpecAdminListItem> listAgentSpecs(String namespaceId, String agentSpecName, String search,
+    public Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search,
             int pageNo, int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(agentSpecName)) {
@@ -339,20 +289,22 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
                 pageNo, pageSize);
-        List<AgentSpecAdminListItem> items = new ArrayList<>();
+        List<AgentSpecSummary> items = new ArrayList<>();
         if (metaPage != null && metaPage.getPageItems() != null) {
             for (AiResource meta : metaPage.getPageItems()) {
                 if (meta == null) {
                     continue;
                 }
                 AgentSpecVersionInfo versionInfo = parseVersionInfo(meta.getVersionInfo());
-                AgentSpecAdminListItem item = new AgentSpecAdminListItem();
+                AgentSpecSummary item = new AgentSpecSummary();
                 item.setNamespaceId(namespaceId);
                 item.setName(meta.getName());
                 item.setDescription(meta.getDesc());
                 item.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
                 item.setBizTags(meta.getBizTags());
+                item.setScope(resolveScope(meta));
                 item.setUpdateTime(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
+                item.setDownloadCount(meta.getDownloadCount());
                 if (versionInfo != null) {
                     item.setLabels(versionInfo.getLabels());
                     item.setEditingVersion(versionInfo.getEditingVersion());
@@ -363,7 +315,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         }
         
-        Page<AgentSpecAdminListItem> result = new Page<>();
+        Page<AgentSpecSummary> result = new Page<>();
         result.setPageItems(items);
         result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
@@ -373,6 +325,32 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     @Override
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException {
+        List<AgentSpecSeedArchiveReader.AgentSpecPackage> packages = readUploadPackages(zipBytes);
+        if (!packages.isEmpty()) {
+            if (packages.size() == 1) {
+                return uploadSingleAgentSpecFromZip(namespaceId, packages.get(0).getZipBytes(), overwrite);
+            }
+            List<String> importedNames = new ArrayList<>(packages.size());
+            for (AgentSpecSeedArchiveReader.AgentSpecPackage each : packages) {
+                importedNames.add(uploadSingleAgentSpecFromZip(namespaceId, each.getZipBytes(), overwrite));
+            }
+            return String.format("Imported %d agentspecs: %s", importedNames.size(),
+                    String.join(", ", importedNames));
+        }
+        return uploadSingleAgentSpecFromZip(namespaceId, zipBytes, overwrite);
+    }
+
+    private List<AgentSpecSeedArchiveReader.AgentSpecPackage> readUploadPackages(byte[] zipBytes) throws NacosException {
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(zipBytes)) {
+            return AgentSpecSeedArchiveReader.read(inputStream);
+        } catch (IOException e) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR, e,
+                    "Failed to read agentspec zip archive");
+        }
+    }
+
+    private String uploadSingleAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
             throws NacosException {
         AgentSpec agentSpec = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, namespaceId);
         if (agentSpec == null || StringUtils.isBlank(agentSpec.getName())) {
@@ -398,7 +376,103 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         String newVersion = nextVersion(namespaceId, name);
         createDraftWithAgentSpec(namespaceId, agentSpec, newVersion, meta, false);
+        syncImportedMeta(namespaceId, meta, agentSpec.getDescription(), agentSpec.getBizTags());
         return name;
+    }
+    
+    @Override
+    public void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        AgentSpec agentSpec = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, namespaceId);
+        if (agentSpec == null || StringUtils.isBlank(agentSpec.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "AgentSpec name is required");
+        }
+        String name = agentSpec.getName();
+        AiResource existingMeta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
+        if (existingMeta != null) {
+            if (repairBuiltInAgentSpecIfBroken(namespaceId, existingMeta, agentSpec)) {
+                LOGGER.info("Repaired built-in agentspec bootstrap content for {}", name);
+                return;
+            }
+            LOGGER.info("Skip built-in agentspec bootstrap because agentspec already exists: {}", name);
+            return;
+        }
+        
+        String version = "v1";
+        long uniformId = System.currentTimeMillis();
+        writeAgentSpecToStorage(namespaceId, agentSpec, version, uniformId);
+        
+        AiResourceVersion versionRow = new AiResourceVersion();
+        versionRow.setNamespaceId(namespaceId);
+        versionRow.setName(name);
+        versionRow.setType(RESOURCE_TYPE_AGENTSPEC);
+        versionRow.setAuthor(DEFAULT_AUTHOR);
+        versionRow.setStatus(VERSION_STATUS_ONLINE);
+        versionRow.setVersion(version);
+        versionRow.setDesc(agentSpec.getDescription());
+        versionRow.setStorage(buildStorageJson(namespaceId, name, version));
+        aiResourceVersionPersistService.insert(versionRow);
+        
+        AgentSpecVersionInfo versionInfo = new AgentSpecVersionInfo();
+        versionInfo.setOnlineCnt(1);
+        Map<String, String> labels = new HashMap<>(4);
+        labels.put(LABEL_LATEST, version);
+        versionInfo.setLabels(labels);
+        
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(name);
+        meta.setType(RESOURCE_TYPE_AGENTSPEC);
+        meta.setStatus(META_STATUS_ENABLE);
+        meta.setDesc(agentSpec.getDescription());
+        meta.setBizTags(agentSpec.getBizTags());
+        meta.setOwner(DEFAULT_AUTHOR);
+        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setVersionInfo(JacksonUtils.toJson(versionInfo));
+        meta.setMetaVersion(1L);
+        aiResourcePersistService.insert(meta);
+    }
+
+    private boolean repairBuiltInAgentSpecIfBroken(String namespaceId, AiResource meta, AgentSpec bundledAgentSpec)
+            throws NacosException {
+        if (meta == null || bundledAgentSpec == null || StringUtils.isBlank(bundledAgentSpec.getName())) {
+            return false;
+        }
+        if (!StringUtils.equals(DEFAULT_AUTHOR, meta.getOwner())) {
+            return false;
+        }
+        AgentSpecVersionInfo versionInfo = requireVersionInfo(meta);
+        if (StringUtils.isNotBlank(versionInfo.getEditingVersion()) || StringUtils.isNotBlank(versionInfo.getReviewingVersion())) {
+            return false;
+        }
+        String latestVersion = versionInfo.getLabels() == null ? null : versionInfo.getLabels().get(LABEL_LATEST);
+        if (StringUtils.isBlank(latestVersion)) {
+            return false;
+        }
+        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, bundledAgentSpec.getName(),
+                RESOURCE_TYPE_AGENTSPEC, latestVersion);
+        if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())
+                || !StringUtils.equals(DEFAULT_AUTHOR, versionRow.getAuthor())) {
+            return false;
+        }
+
+        AgentSpec currentAgentSpec;
+        try {
+            currentAgentSpec = loadAgentSpecFromStorage(namespaceId, bundledAgentSpec.getName(), latestVersion);
+        } catch (NacosException e) {
+            currentAgentSpec = null;
+        }
+        if (!isBuiltInContentMissing(currentAgentSpec, bundledAgentSpec)) {
+            return false;
+        }
+
+        long uniformId = System.currentTimeMillis();
+        writeAgentSpecToStorage(namespaceId, bundledAgentSpec, latestVersion, uniformId);
+        aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, bundledAgentSpec.getName(),
+                RESOURCE_TYPE_AGENTSPEC, latestVersion, buildStorageJson(namespaceId, bundledAgentSpec.getName(),
+                        latestVersion), bundledAgentSpec.getDescription());
+        syncImportedMeta(namespaceId, meta, bundledAgentSpec.getDescription(), bundledAgentSpec.getBizTags());
+        return true;
     }
 
     private String overwriteUploadedAgentSpec(String namespaceId, AgentSpec agentSpec) throws NacosException {
@@ -418,6 +492,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
 
         String newVersion = nextVersion(namespaceId, name);
         createDraftWithAgentSpec(namespaceId, agentSpec, newVersion, meta, false);
+        syncImportedMeta(namespaceId, meta, agentSpec.getDescription(), agentSpec.getBizTags());
         return name;
     }
 
@@ -434,7 +509,14 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, agentSpec.getName(),
                 RESOURCE_TYPE_AGENTSPEC, editing, buildStorageJson(namespaceId, agentSpec.getName(), editing),
                 agentSpec.getDescription());
-        bumpMetaDescription(namespaceId, meta, agentSpec.getDescription());
+        syncImportedMeta(namespaceId, meta, agentSpec.getDescription(), agentSpec.getBizTags());
+    }
+    
+    private static String resolveScope(AiResource meta) {
+        if (StringUtils.isBlank(meta.getScope())) {
+            return DataFilterConstants.SCOPE_PRIVATE;
+        }
+        return meta.getScope();
     }
     
     @Override
@@ -739,9 +821,17 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateMetaVersionInfoCas(namespaceId, meta, info);
+    }
+
+    @Override
+    public void updateBizTags(String namespaceId, String name, String bizTags) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
+        updateMetaBizTagsCas(namespaceId, meta, bizTags);
     }
     
     @Override
@@ -946,6 +1036,38 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                 "Meta update conflict, retry");
     }
+
+    private void updateMetaBizTagsCas(String namespaceId, AiResource meta, String bizTags) throws NacosException {
+        if (meta == null || meta.getMetaVersion() == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, "Meta version missing");
+        }
+        long expected = meta.getMetaVersion();
+        AiResource newValue = new AiResource();
+        newValue.setStatus(meta.getStatus());
+        newValue.setDesc(meta.getDesc());
+        newValue.setBizTags(bizTags);
+        newValue.setExt(meta.getExt());
+        newValue.setVersionInfo(meta.getVersionInfo());
+        for (int i = 0; i < MAX_WORKING_VERSION_RETRY; i++) {
+            boolean ok = aiResourcePersistService.updateMetaCas(namespaceId, meta.getName(), meta.getType(), expected,
+                    newValue);
+            if (ok) {
+                return;
+            }
+            AiResource latest = aiResourcePersistService.find(namespaceId, meta.getName(), meta.getType());
+            if (latest == null || latest.getMetaVersion() == null) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, "Meta cas failed");
+            }
+            meta = latest;
+            expected = latest.getMetaVersion();
+            newValue.setStatus(latest.getStatus());
+            newValue.setDesc(latest.getDesc());
+            newValue.setExt(latest.getExt());
+            newValue.setVersionInfo(latest.getVersionInfo());
+        }
+        throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                "Meta update conflict, retry");
+    }
     
     private void metaEnableDisable(String namespaceId, AiResource meta, boolean enable) throws NacosException {
         AgentSpecVersionInfo info = requireVersionInfo(meta);
@@ -1025,6 +1147,52 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         }
         return resolved;
+    }
+
+    private static boolean isBuiltInContentMissing(AgentSpec currentAgentSpec, AgentSpec bundledAgentSpec) {
+        if (bundledAgentSpec == null) {
+            return false;
+        }
+        if (currentAgentSpec == null) {
+            return true;
+        }
+        if (StringUtils.isNotBlank(bundledAgentSpec.getContent()) && StringUtils.isBlank(currentAgentSpec.getContent())) {
+            return true;
+        }
+        Map<String, AgentSpecResource> bundledResources = bundledAgentSpec.getResource();
+        if (bundledResources == null || bundledResources.isEmpty()) {
+            return false;
+        }
+        Map<String, AgentSpecResource> currentResources = currentAgentSpec.getResource();
+        if (currentResources == null || currentResources.isEmpty()) {
+            return true;
+        }
+        String bundledAgentsContent = extractAgentsContent(bundledResources);
+        if (StringUtils.isBlank(bundledAgentsContent)) {
+            return false;
+        }
+        String currentAgentsContent = extractAgentsContent(currentResources);
+        return StringUtils.isBlank(currentAgentsContent);
+    }
+
+    private static String extractAgentsContent(Map<String, AgentSpecResource> resources) {
+        if (resources == null || resources.isEmpty()) {
+            return null;
+        }
+        for (AgentSpecResource resource : resources.values()) {
+            if (resource == null || StringUtils.isBlank(resource.getName())) {
+                continue;
+            }
+            String normalizedName = resource.getName().trim();
+            int lastSlash = normalizedName.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                normalizedName = normalizedName.substring(lastSlash + 1);
+            }
+            if ("AGENTS.md".equalsIgnoreCase(normalizedName)) {
+                return resource.getContent();
+            }
+        }
+        return null;
     }
     
     private void writeAgentSpecToStorage(String namespaceId, AgentSpec agentSpec, String version, long uniformId)
@@ -1198,6 +1366,38 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             expected = latest.getMetaVersion();
             newValue.setStatus(meta.getStatus());
             newValue.setBizTags(meta.getBizTags());
+            newValue.setExt(meta.getExt());
+            newValue.setVersionInfo(meta.getVersionInfo());
+        }
+    }
+
+    private void syncImportedMeta(String namespaceId, AiResource meta, String description, String bizTags) {
+        if (meta == null || meta.getMetaVersion() == null) {
+            return;
+        }
+        String resolvedDescription = StringUtils.isBlank(description) ? meta.getDesc() : description;
+        String resolvedBizTags = StringUtils.isBlank(bizTags) ? meta.getBizTags() : bizTags;
+        long expected = meta.getMetaVersion();
+        AiResource newValue = new AiResource();
+        newValue.setStatus(meta.getStatus());
+        newValue.setDesc(resolvedDescription);
+        newValue.setBizTags(resolvedBizTags);
+        newValue.setExt(meta.getExt());
+        newValue.setVersionInfo(meta.getVersionInfo());
+
+        for (int i = 0; i < 3; i++) {
+            boolean ok = aiResourcePersistService.updateMetaCas(namespaceId, meta.getName(), meta.getType(), expected,
+                    newValue);
+            if (ok) {
+                return;
+            }
+            AiResource latest = aiResourcePersistService.find(namespaceId, meta.getName(), meta.getType());
+            if (latest == null || latest.getMetaVersion() == null) {
+                return;
+            }
+            meta = latest;
+            expected = latest.getMetaVersion();
+            newValue.setStatus(meta.getStatus());
             newValue.setExt(meta.getExt());
             newValue.setVersionInfo(meta.getVersionInfo());
         }

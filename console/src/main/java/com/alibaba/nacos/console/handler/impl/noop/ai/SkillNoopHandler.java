@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
@@ -118,6 +119,12 @@ public class SkillNoopHandler implements SkillHandler {
 
     @Override
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                SKILL_NOT_ENABLED_MESSAGE);
+    }
+
+    @Override
+    public void updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 SKILL_NOT_ENABLED_MESSAGE);
     }

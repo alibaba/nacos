@@ -232,6 +232,22 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
 
     @Override
+    public boolean updateBizTags(String namespaceId, String skillName, String bizTags) throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("skillName", skillName);
+        params.put("bizTags", bizTags);
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
+                .setHttpMethod(HttpMethod.PUT).setPath(Constants.AdminApiPath.AI_SKILL_BIZ_TAGS_ADMIN_PATH)
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+
+    @Override
     public boolean changeOnlineStatus(String namespaceId, String skillName, String scope, String version,
             boolean online) throws NacosException {
         namespaceId = resolveNamespace(namespaceId);

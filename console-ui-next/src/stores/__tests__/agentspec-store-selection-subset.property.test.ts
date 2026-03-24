@@ -45,12 +45,14 @@ function makeItem(name: string): AgentSpecListItem {
     name,
     description: '',
     enable: true,
+    scope: 'PUBLIC',
     bizTags: '[]',
     labels: {},
     editingVersion: null,
     reviewingVersion: null,
     onlineCnt: 0,
     updateTime: 0,
+    downloadCount: 0,
   };
 }
 

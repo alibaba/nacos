@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.agentspecs;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -24,59 +23,9 @@ import java.util.Objects;
  *
  * @author nacos
  */
-public class AgentSpecBasicInfo {
-    
-    private String namespaceId;
-    
-    private String name;
-    
-    private String description;
-    
-    private String version;
-    
-    private Map<String, String> labels;
+public class AgentSpecBasicInfo extends AgentSpecBase {
     
     private Long updateTime;
-    
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-    
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
-    public String getVersion() {
-        return version;
-    }
-    
-    public void setVersion(String version) {
-        this.version = version;
-    }
-    
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-    
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
-    }
     
     public Long getUpdateTime() {
         return updateTime;
@@ -95,14 +44,13 @@ public class AgentSpecBasicInfo {
             return false;
         }
         AgentSpecBasicInfo that = (AgentSpecBasicInfo) o;
-        return Objects.equals(namespaceId, that.namespaceId)
-                && Objects.equals(name, that.name) && Objects.equals(description, that.description)
-                && Objects.equals(version, that.version) && Objects.equals(labels, that.labels)
+        return Objects.equals(getNamespaceId(), that.getNamespaceId())
+                && Objects.equals(getName(), that.getName()) && Objects.equals(getDescription(), that.getDescription())
                 && Objects.equals(updateTime, that.updateTime);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, name, description, version, labels, updateTime);
+        return Objects.hash(getNamespaceId(), getName(), getDescription(), updateTime);
     }
 }

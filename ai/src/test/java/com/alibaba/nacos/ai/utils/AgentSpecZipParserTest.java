@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -150,13 +151,45 @@ class AgentSpecZipParserTest {
         
         assertNotNull(result);
         assertNotNull(result.getName());
+        assertEquals("Test worker description", result.getDescription());
+        assertEquals("[\"design\",\"research\"]", result.getBizTags());
         assertNotNull(result.getContent());
+    }
+    
+    /** HiClaw-style worker package with config/, crons/, tool-analysis.json (see data/agentspec sample layout). */
+    @Test
+    void testParseValidZipWithHiClawLayout() throws Exception {
+        String manifest = "{\"version\":\"1.0\",\"description\":\"Sample worker description\","
+                + "\"tags\":[\"game-development\",\"unreal-engine\"],"
+                + "\"worker\":{\"suggested_name\":\"Unreal 技术美术\"}}";
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, "manifest.json", manifest.getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "config/SOUL.md", "soul".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "config/AGENTS.md", "agents".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "config/IDENTITY.md", "id".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "config/MEMORY.md", "memory".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "crons/jobs.json", "[]".getBytes(StandardCharsets.UTF_8));
+            addZipEntry(zos, "tool-analysis.json", "{}".getBytes(StandardCharsets.UTF_8));
+        }
+        byte[] zipBytes = baos.toByteArray();
+        
+        var result = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
+        
+        assertNotNull(result);
+        assertEquals("Unreal 技术美术", result.getName());
+        assertEquals("Sample worker description", result.getDescription());
+        assertEquals("[\"game-development\",\"unreal-engine\"]", result.getBizTags());
+        assertNotNull(result.getResource());
+        assertTrue(result.getResource().size() >= 6);
     }
     
     // ---- Helper methods ----
     
     private byte[] createValidAgentSpecZip() throws IOException {
-        String manifest = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"my-worker\"}}";
+        String manifest = "{\"version\":\"1.0\",\"description\":\"Test worker description\","
+                + "\"tags\":[\"design\",\"research\"],"
+                + "\"worker\":{\"suggested_name\":\"UX 研究员\"}}";
         return createZipWithManifest(manifest);
     }
     

@@ -114,6 +114,16 @@ class AgentSpecAdminControllerTest {
                 "must be PUBLIC or PRIVATE");
     }
 
+    @Test
+    void testUpdateBizTagsSuccess() throws Exception {
+        doNothing().when(agentSpecOperationService).updateBizTags(anyString(), anyString(), anyString());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(AGENTSPEC_ADMIN_PATH + "/biz-tags")
+                .param("agentSpecName", "test-agentspec").param("bizTags", "[\"finance\"]");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(agentSpecOperationService).updateBizTags("public", "test-agentspec", "[\"finance\"]");
+    }
+
     private void assertServletException(Class<? extends Exception> expectedException, Executable executable,
             String expectedMessage) throws Throwable {
         try {

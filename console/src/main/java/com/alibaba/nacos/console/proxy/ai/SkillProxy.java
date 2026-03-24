@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.proxy.ai;
 
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
@@ -98,6 +99,10 @@ public class SkillProxy {
 
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         skillHandler.updateLabels(form);
+    }
+
+    public void updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
+        skillHandler.updateBizTags(form);
     }
 
     public void online(SkillOnlineForm form) throws NacosException {

@@ -24,6 +24,7 @@ const arbVersionSummary: fc.Arbitrary<AgentSpecVersionSummary> = fc.record({
   createTime: fc.nat({ max: 2_000_000_000_000 }),
   updateTime: fc.nat({ max: 2_000_000_000_000 }),
   publishPipelineInfo: fc.constantFrom(null, 'pipeline-1', 'pipeline-2'),
+  downloadCount: fc.nat({ max: 1_000_000 }),
 });
 
 /** Generate an array of version summaries (0 to 50 items) */

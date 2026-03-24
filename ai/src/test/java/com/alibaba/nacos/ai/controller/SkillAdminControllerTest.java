@@ -235,6 +235,16 @@ class SkillAdminControllerTest {
     }
 
     @Test
+    void testUpdateBizTagsSuccess() throws Exception {
+        doNothing().when(skillOperationService).updateBizTags(eq("public"), eq("test-skill"), eq("[\"retail\"]"));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(SKILL_ADMIN_PATH + "/biz-tags")
+                .param("skillName", "test-skill").param("bizTags", "[\"retail\"]");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(skillOperationService).updateBizTags("public", "test-skill", "[\"retail\"]");
+    }
+
+    @Test
     void testPublishSuccess() throws Exception {
         doNothing().when(skillOperationService).publish(eq("public"), eq("test-skill"), eq("v1"), eq(true));
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/publish")

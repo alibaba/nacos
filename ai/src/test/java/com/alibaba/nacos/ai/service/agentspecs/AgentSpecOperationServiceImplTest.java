@@ -25,6 +25,8 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -46,6 +48,7 @@ import org.springframework.core.env.StandardEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -55,6 +58,7 @@ import java.util.zip.ZipOutputStream;
 import com.alibaba.nacos.api.model.Page;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -62,7 +66,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -156,6 +159,89 @@ class AgentSpecOperationServiceImplTest {
     }
 
     @Test
+    void bootstrapAgentSpecFromZipShouldCreateOnlineV1WhenMetaMissing() throws NacosException, IOException {
+        String namespaceId = "public";
+        byte[] zipBytes = createValidZipBytes();
+        when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(null);
+
+        service.bootstrapAgentSpecFromZip(namespaceId, zipBytes);
+
+        ArgumentCaptor<AiResourceVersion> versionCaptor = ArgumentCaptor.forClass(AiResourceVersion.class);
+        verify(aiResourceVersionPersistService).insert(versionCaptor.capture());
+        AiResourceVersion insertedVersion = versionCaptor.getValue();
+        assertEquals("测试坐席", insertedVersion.getName());
+        assertEquals("v1", insertedVersion.getVersion());
+        assertEquals("online", insertedVersion.getStatus());
+        assertEquals("Test agentspec description", insertedVersion.getDesc());
+
+        ArgumentCaptor<AiResource> metaCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).insert(metaCaptor.capture());
+        AiResource insertedMeta = metaCaptor.getValue();
+        assertEquals("测试坐席", insertedMeta.getName());
+        assertEquals("enable", insertedMeta.getStatus());
+        assertEquals("Test agentspec description", insertedMeta.getDesc());
+        assertEquals("[\"design\",\"ux\"]", insertedMeta.getBizTags());
+        Map<?, ?> versionInfo = JacksonUtils.toObj(insertedMeta.getVersionInfo(), Map.class);
+        assertEquals(1, ((Number) versionInfo.get("onlineCnt")).intValue());
+        assertEquals("v1", ((Map<?, ?>) versionInfo.get("labels")).get("latest"));
+
+        verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+    }
+
+    @Test
+    void bootstrapAgentSpecFromZipShouldSkipWhenMetaExists() throws NacosException, IOException {
+        String namespaceId = "public";
+        byte[] zipBytes = createValidZipBytes();
+        AiResource meta = new AiResource();
+        meta.setName("测试坐席");
+        meta.setType("agentspec");
+        when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(meta);
+
+        service.bootstrapAgentSpecFromZip(namespaceId, zipBytes);
+
+        verify(aiResourceVersionPersistService, never()).insert(any(AiResourceVersion.class));
+        verify(aiResourcePersistService, never()).insert(any(AiResource.class));
+    }
+
+    @Test
+    void bootstrapAgentSpecFromZipShouldRepairBuiltInWhenLatestContentMissing() throws NacosException, IOException {
+        String namespaceId = "public";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("测试坐席");
+        meta.setType("agentspec");
+        meta.setOwner("nacos");
+        meta.setStatus("enable");
+        meta.setDesc("old");
+        meta.setBizTags("[\"legacy\"]");
+        meta.setMetaVersion(5L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        AiResourceVersion onlineVersion = new AiResourceVersion();
+        onlineVersion.setVersion("v1");
+        onlineVersion.setStatus("online");
+        onlineVersion.setAuthor("nacos");
+
+        when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("测试坐席"), anyString(), eq("v1")))
+                .thenReturn(onlineVersion);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("测试坐席"), eq("agentspec"), eq(5L), any()))
+                .thenReturn(true);
+
+        byte[] zipBytes = createValidZipBytesWithAgents();
+        service.bootstrapAgentSpecFromZip(namespaceId, zipBytes);
+
+        verify(aiResourceVersionPersistService, never()).insert(any(AiResourceVersion.class));
+        verify(aiResourcePersistService, never()).insert(any(AiResource.class));
+        verify(aiResourceVersionPersistService).updateStorageAndDesc(eq(namespaceId), eq("测试坐席"),
+                eq("agentspec"), eq("v1"), anyString(), eq("Test agentspec description"));
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq("测试坐席"), eq("agentspec"), eq(5L),
+                argThat(resource -> resource != null
+                        && "Test agentspec description".equals(resource.getDesc())
+                        && "[\"design\",\"ux\"]".equals(resource.getBizTags())));
+        verify(storage, times(2)).save(any(StorageKey.class), any(byte[].class));
+    }
+
+    @Test
     void createDraftShouldRejectBasedOnVersionForBrandNewAgentSpec() {
         String namespaceId = "public";
         String agentSpecName = "brand-new-agentspec";
@@ -198,56 +284,81 @@ class AgentSpecOperationServiceImplTest {
     @Test
     void uploadAgentSpecFromZipWithOverwriteUpdatesExistingDraft() throws NacosException, IOException {
         String namespaceId = "public";
-        byte[] zipBytes = createValidZipBytes();
         AiResource meta = new AiResource();
         meta.setNamespaceId(namespaceId);
-        meta.setName("test-agentspec");
+        meta.setName("测试坐席");
         meta.setType("agentspec");
         meta.setStatus("enable");
+        meta.setDesc("old");
+        meta.setBizTags("[\"legacy\"]");
+        meta.setMetaVersion(2L);
         meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
         AiResourceVersion version = new AiResourceVersion();
         version.setVersion("v2");
         version.setStatus("draft");
-        when(aiResourcePersistService.find(eq(namespaceId), eq("test-agentspec"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("test-agentspec"), anyString(), eq("v2")))
+        when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq("测试坐席"), anyString(), eq("v2")))
                 .thenReturn(version);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("测试坐席"), eq("agentspec"), eq(2L), any()))
+                .thenReturn(true);
 
+        byte[] zipBytes = createValidZipBytes();
         String result = service.uploadAgentSpecFromZip(namespaceId, zipBytes, true);
 
-        assertEquals("test-agentspec", result);
-        verify(aiResourceVersionPersistService).updateStorageAndDesc(eq(namespaceId), eq("test-agentspec"),
-                anyString(), eq("v2"), anyString(), isNull());
+        assertEquals("测试坐席", result);
+        verify(aiResourceVersionPersistService).updateStorageAndDesc(eq(namespaceId), eq("测试坐席"),
+                anyString(), eq("v2"), anyString(), eq("Test agentspec description"));
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq("测试坐席"), eq("agentspec"), eq(2L),
+                argThat(resource -> resource != null
+                        && "Test agentspec description".equals(resource.getDesc())
+                        && "[\"design\",\"ux\"]".equals(resource.getBizTags())));
         verify(aiResourceVersionPersistService, never()).insert(argThat(inserted -> inserted != null
-                && "test-agentspec".equals(inserted.getName()) && "v2".equals(inserted.getVersion())));
+                && "测试坐席".equals(inserted.getName()) && "v2".equals(inserted.getVersion())));
     }
 
     @Test
     void uploadAgentSpecFromZipWithOverwriteCreatesDraftWhenNoEditingDraftExists() throws NacosException,
             IOException {
         String namespaceId = "public";
-        byte[] zipBytes = createValidZipBytes();
         AiResource meta = new AiResource();
         meta.setNamespaceId(namespaceId);
-        meta.setName("test-agentspec");
+        meta.setName("测试坐席");
         meta.setType("agentspec");
         meta.setStatus("enable");
+        meta.setDesc("old");
+        meta.setBizTags("[\"legacy\"]");
         meta.setMetaVersion(3L);
         meta.setVersionInfo("{\"reviewingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
         Page<AiResourceVersion> versions = new Page<>();
         AiResourceVersion v2 = new AiResourceVersion();
         v2.setVersion("v2");
         versions.setPageItems(java.util.List.of(v2));
-        when(aiResourcePersistService.find(eq(namespaceId), eq("test-agentspec"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-agentspec"), anyInt(), anyInt()))
+        when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("测试坐席"), anyInt(), anyInt()))
                 .thenReturn(versions);
-        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-agentspec"), anyString(), eq(3L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("测试坐席"), anyString(), eq(3L), any()))
                 .thenReturn(true);
 
+        byte[] zipBytes = createValidZipBytes();
         String result = service.uploadAgentSpecFromZip(namespaceId, zipBytes, true);
 
-        assertEquals("test-agentspec", result);
+        assertEquals("测试坐席", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "test-agentspec".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+                && "测试坐席".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void uploadAgentSpecFromArchiveShouldImportAllAgentSpecs() throws NacosException, IOException {
+        String namespaceId = "public";
+        byte[] zipBytes = createArchiveZipBytes("坐席一", "坐席二");
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenAnswer(invocation -> null);
+
+        String result = service.uploadAgentSpecFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("Imported 2 agentspecs: 坐席一, 坐席二", result);
+        verify(aiResourceVersionPersistService, times(2)).insert(any(AiResourceVersion.class));
+        verify(aiResourcePersistService, times(2)).insert(any(AiResource.class));
+        verify(storage, times(2)).save(any(StorageKey.class), any(byte[].class));
     }
 
     @Test
@@ -295,15 +406,121 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourcePersistService).updateScope(namespaceId, agentSpecName, "agentspec", "PRIVATE");
     }
 
+    @Test
+    void testUpdateBizTagsSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setDesc("desc");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        meta.setMetaVersion(1L);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+
+        service.updateBizTags(namespaceId, agentSpecName, "[\"finance\"]");
+
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq(1L),
+                argThat(resource -> resource != null && "[\"finance\"]".equals(resource.getBizTags())));
+    }
+
+    @Test
+    void testGetAgentSpecDetailShouldContainBizTags() throws NacosException {
+        String namespaceId = "public";
+        String agentSpecName = "test-agentspec";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setBizTags("[\"finance\"]");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        Page<AiResourceVersion> versions = new Page<>();
+        versions.setPageItems(List.of());
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(agentSpecName), anyInt(), anyInt()))
+                .thenReturn(versions);
+
+        AgentSpecMeta result = service.getAgentSpecDetail(namespaceId, agentSpecName);
+
+        assertNotNull(result);
+        assertEquals("[\"finance\"]", result.getBizTags());
+    }
+
+    @Test
+    void testListAgentSpecsShouldContainBizTags() throws NacosException {
+        String namespaceId = "public";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-agentspec");
+        meta.setType("agentspec");
+        meta.setDesc("desc");
+        meta.setBizTags("[\"iot\"]");
+        Page<AiResource> metaPage = new Page<>();
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPagesAvailable(1);
+        metaPage.setPageNumber(1);
+        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+                .thenReturn(metaPage);
+
+        Page<AgentSpecSummary> result = service.listAgentSpecs(namespaceId, null, null, 1, 10);
+
+        assertNotNull(result);
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("[\"iot\"]", result.getPageItems().get(0).getBizTags());
+    }
+
     private byte[] createValidZipBytes() throws IOException {
-        String manifest = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"test-agentspec\"}}";
+        String manifest = "{\"version\":\"1.0\",\"description\":\"Test agentspec description\","
+                + "\"tags\":[\"design\",\"ux\"],"
+                + "\"worker\":{\"suggested_name\":\"测试坐席\"}}";
+        return createZipBytes("manifest.json", manifest);
+    }
+
+    private byte[] createValidZipBytesWithAgents() throws IOException {
+        String manifest = "{\"version\":\"1.0\",\"description\":\"Test agentspec description\","
+                + "\"tags\":[\"design\",\"ux\"],"
+                + "\"worker\":{\"suggested_name\":\"测试坐席\"}}";
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
-            ZipEntry manifestEntry = new ZipEntry("manifest.json");
-            zos.putNextEntry(manifestEntry);
-            zos.write(manifest.getBytes(StandardCharsets.UTF_8));
-            zos.closeEntry();
+            addZipEntry(zos, "manifest.json", manifest);
+            addZipEntry(zos, "config/AGENTS.md", "# 测试坐席\n");
         }
         return baos.toByteArray();
+    }
+
+    private byte[] createArchiveZipBytes(String... names) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            for (String each : names) {
+                ZipEntry manifestEntry = new ZipEntry(each + "/manifest.json");
+                zos.putNextEntry(manifestEntry);
+                String manifest = "{\"version\":\"1.0\",\"tags\":[\"archive\"],"
+                        + "\"worker\":{\"suggested_name\":\"" + each + "\"}}";
+                zos.write(manifest.getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
+        }
+        return baos.toByteArray();
+    }
+
+    private byte[] createZipBytes(String path, String content) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+            addZipEntry(zos, path, content);
+        }
+        return baos.toByteArray();
+    }
+
+    private void addZipEntry(ZipOutputStream zos, String path, String content) throws IOException {
+        ZipEntry manifestEntry = new ZipEntry(path);
+        zos.putNextEntry(manifestEntry);
+        zos.write(content.getBytes(StandardCharsets.UTF_8));
+        zos.closeEntry();
     }
 }
