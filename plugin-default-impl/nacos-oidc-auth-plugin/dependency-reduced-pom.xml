@@ -66,6 +66,12 @@
       <artifactId>caffeine</artifactId>
       <version>3.1.8</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>checker-qual</artifactId>
+          <groupId>org.checkerframework</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
