@@ -441,6 +441,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (draftSkill == null || StringUtils.isBlank(draftSkill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
         }
+        if (StringUtils.isBlank(draftSkill.getDescription())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Skill description is required");
+        }
+        if (StringUtils.isBlank(draftSkill.getInstruction())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Skill instruction is required");
+        }
         String name = draftSkill.getName();
         AiResource meta = requireMeta(namespaceId, name);
         DataFilterHelper.doWriteCheck(meta);
@@ -509,17 +517,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         final String finalTarget = target;
         
-        // Validate required fields before changing status (avoid inconsistent state on failure).
-        Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
-        if (StringUtils.isBlank(skill.getDescription())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill description is required before submit");
-        }
-        if (StringUtils.isBlank(skill.getInstruction())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill instruction is required before submit");
-        }
-        
         // Move to reviewing before pipeline execution to ensure consistent state.
         aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget, VERSION_STATUS_REVIEWING);
         info.setEditingVersion(null);
@@ -527,6 +524,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         updateMetaVersionInfoCas(namespaceId, meta, info);
 
         // Build context for pipeline execution (multi-file skill representation).
+        Skill skill = loadSkillFromStorage(namespaceId, name, finalTarget, v.getStorage());
         SkillPipelineContext ctx = new SkillPipelineContext();
         ctx.setNamespaceId(namespaceId);
         ctx.setResourceName(name);
