@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.skills;
 
+import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.utils.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -603,7 +604,7 @@ public class SkillUtils {
      * @return config group string, e.g. "skill_myskill"
      */
     public static String buildSkillGroup(String skillName) {
-        return SKILL_GROUP_PREFIX + sanitizeNameForGroup(skillName);
+        return SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(skillName);
     }
 
     /**
@@ -614,33 +615,39 @@ public class SkillUtils {
      * @return config group string, e.g. "skill_myskill__v1"
      */
     public static String buildSkillVersionGroup(String skillName, String version) {
-        return SKILL_GROUP_PREFIX + sanitizeNameForGroup(skillName) + DOUBLE_UNDERSCORE + version;
+        return SKILL_GROUP_PREFIX + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(skillName) + DOUBLE_UNDERSCORE
+                + NacosAiConfigKeyCodec.encodeVersionedGroupSegment(version);
+    }
+
+    /**
+     * Decode a Skill Nacos Config {@code group} (as stored) into logical skill name and optional version.
+     *
+     * @param group physical group, e.g. {@code skill_myagent} or {@code skill_name__v1}
+     * @return array of length 2: {@code [skillName, version]}; {@code version} is {@code null} for manifest group
+     */
+    public static String[] decodeSkillGroupToNameAndVersion(String group) {
+        if (StringUtils.isBlank(group) || !group.startsWith(SKILL_GROUP_PREFIX)) {
+            throw new IllegalArgumentException("Not a Skill config group: " + group);
+        }
+        String rest = group.substring(SKILL_GROUP_PREFIX.length());
+        int idx = rest.lastIndexOf(DOUBLE_UNDERSCORE);
+        if (idx < 0) {
+            return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest), null};
+        }
+        return new String[] {NacosAiConfigKeyCodec.decodeSegment(rest.substring(0, idx)),
+                NacosAiConfigKeyCodec.decodeSegment(rest.substring(idx + DOUBLE_UNDERSCORE.length()))};
     }
 
     /**
      * Sanitize a resource name for use in Nacos Config group names.
      *
-     * <p>Nacos Config group names only allow letters, digits, and the characters {@code _ - . :}.
-     * Any other character (e.g. space) is replaced with {@code -} to avoid storage/query failures
-     * in components like {@code ConfigRawDiskService} that validate group name characters.</p>
-     *
      * @param name the raw resource name (e.g. skill name or agentspec name)
-     * @return sanitized name safe for use in config group
+     * @return value safe for use in Nacos config parameters
+     * @deprecated use {@link NacosAiConfigKeyCodec#encodeSegment(String)} for reversible encoding
      */
+    @Deprecated
     public static String sanitizeNameForGroup(String name) {
-        if (name == null || name.isEmpty()) {
-            return name;
-        }
-        StringBuilder sb = new StringBuilder(name.length());
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (Character.isLetterOrDigit(ch) || ch == '_' || ch == '-' || ch == '.' || ch == ':') {
-                sb.append(ch);
-            } else {
-                sb.append('-');
-            }
-        }
-        return sb.toString();
+        return NacosAiConfigKeyCodec.encodeManifestGroupNameSegment(name);
     }
 
     private static final String FILE_EXTENSION_PATTERN = ".*\\.[a-zA-Z0-9]+$";

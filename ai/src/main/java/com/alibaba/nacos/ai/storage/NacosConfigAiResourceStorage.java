@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.storage;
 
+import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.config.ConfigType;
@@ -170,12 +171,13 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         long startTimeStamp = System.currentTimeMillis();
         KeyParts parts = parse(storageKey);
         ConfigForm form = new ConfigForm();
-        form.setDataId(parts.dataId);
-        form.setGroup(parts.group);
-        form.setNamespaceId(parts.namespaceId);
+        String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        form.setDataId(physicalDataId);
+        form.setGroup(parts.group());
+        form.setNamespaceId(parts.namespaceId());
         form.setContent(content == null ? StringUtils.EMPTY : new String(content, StandardCharsets.UTF_8));
         form.setSrcUser("nacos");
-        form.setType(guessConfigType(parts.dataId));
+        form.setType(guessConfigType(parts.dataId()));
 
         ConfigRequestInfo requestInfo = new ConfigRequestInfo();
         try {
@@ -192,8 +194,9 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     @Override
     public byte[] get(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
+        String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
         ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(
-                parts.dataId, parts.group, parts.namespaceId);
+                physicalDataId, parts.group(), parts.namespaceId());
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
             return null;
@@ -204,7 +207,9 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     @Override
     public void delete(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
-        configOperationService.deleteConfig(parts.dataId, parts.group, parts.namespaceId, null, null, "nacos", null);
+        String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
+        configOperationService.deleteConfig(physicalDataId, parts.group(), parts.namespaceId(), null, null, "nacos",
+                null);
     }
 
     private static String guessConfigType(String dataId) {
@@ -249,8 +254,14 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             String name = parts[2];
             String version = parts[3];
             String filePath = parts[4];
-            String groupPrefix = resolveGroupPrefix(resourceType);
-            String group = groupPrefix + SkillUtils.sanitizeNameForGroup(name) + "__" + version;
+            String group;
+            if (RESOURCE_TYPE_AGENTSPEC.equals(resourceType)) {
+                group = AgentSpecUtils.buildAgentSpecVersionGroup(name, version);
+            } else if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
+                group = SkillUtils.buildSkillVersionGroup(name, version);
+            } else {
+                throw new IllegalArgumentException("Unknown resource type: " + resourceType);
+            }
             return new KeyParts(namespaceId, group, filePath);
         }
         // Fall back to legacy 4-part format (Skill): namespaceId:name:version:filePath
@@ -273,23 +284,6 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             group = SkillUtils.buildSkillVersionGroup(skillName, version);
         }
         return new KeyParts(namespaceId, group, filePath);
-    }
-
-    /**
-     * Resolve group prefix from resource type.
-     *
-     * @param resourceType "skill" or "agentspec"
-     * @return group prefix string
-     */
-    private static String resolveGroupPrefix(String resourceType) {
-        if (RESOURCE_TYPE_AGENTSPEC.equals(resourceType)) {
-            return AgentSpecUtils.AGENTSPEC_GROUP_PREFIX;
-        }
-        if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
-            return SkillUtils.SKILL_GROUP_PREFIX;
-        }
-        throw new IllegalArgumentException("Unknown resource type: " + resourceType
-                + ", expected '" + RESOURCE_TYPE_SKILL + "' or '" + RESOURCE_TYPE_AGENTSPEC + "'");
     }
 
     record KeyParts(String namespaceId, String group, String dataId) {
