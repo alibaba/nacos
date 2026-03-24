@@ -377,7 +377,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException {
+    public String createDraft(String namespaceId, String name, String basedOnVersion, Skill initialContent)
+            throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
 
         if (meta == null) {
@@ -386,10 +387,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                         "Skill not found: " + name + ", cannot use basedOnVersion for a brand-new skill");
             }
-            Skill emptySkill = new Skill();
-            emptySkill.setName(name);
-            emptySkill.setNamespaceId(namespaceId);
-            createDraftWithSkill(namespaceId, emptySkill, "v1", null, true);
+            if (initialContent == null) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "skillCard is required when creating a brand-new skill draft");
+            }
+            createDraftWithSkill(namespaceId, initialContent, "v1", null, true);
             return "v1";
         }
 
@@ -405,12 +407,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String base = resolveBaseVersion(namespaceId, name, meta, basedOnVersion);
 
         if (StringUtils.isBlank(base)) {
-            // No version exists yet: create an empty draft
-            Skill emptySkill = new Skill();
-            emptySkill.setName(name);
-            emptySkill.setNamespaceId(namespaceId);
-            createDraftWithSkill(namespaceId, emptySkill, newVersion, meta, false);
+            if (initialContent == null) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "skillCard is required when no published version exists to fork from");
+            }
+            createDraftWithSkill(namespaceId, initialContent, newVersion, meta, false);
         } else {
+            if (initialContent != null) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "skillCard must not be set when creating a draft from an existing version; omit it to fork, then use PUT /draft to edit");
+            }
             // Copy storage content from base version
             AiResourceVersion baseVersionRow = aiResourceVersionPersistService.find(namespaceId, name,
                     RESOURCE_TYPE_SKILL, base);

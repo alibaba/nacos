@@ -178,14 +178,14 @@ public class SkillAdminController {
     }
     
     /**
-     * Create draft version.
+     * Create draft: {@code skillCard} required unless {@code basedOnVersion} is set (fork from existing version).
      */
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
-        form.validate();
+        form.prepareCreateDraftRequest();
         String v = skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),
-                form.getBasedOnVersion());
+                form.getBasedOnVersion(), form.getResolvedInitialSkillOrNull());
         return Result.success(v);
     }
     

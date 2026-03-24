@@ -157,15 +157,43 @@ public interface SkillMaintainerService {
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
     
     /**
-     * Create draft version for a skill.
+     * Create a brand-new skill draft.
      *
-     * @param namespaceId    namespace ID
-     * @param skillName      skill name
-     * @param basedOnVersion base version (optional)
+     * @param namespaceId namespace ID
+     * @param skillCard   skill card JSON string
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
-    String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException;
+    default String createDraft(String namespaceId, String skillCard) throws NacosException {
+        return createDraft(namespaceId, null, null,  skillCard);
+    }
+    
+    /**
+     * Create draft from an existed version (Forking).
+     *
+     * @param namespaceId    namespace ID
+     * @param skillName      skill name
+     * @param basedOnVersion base version to fork from
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
+    default String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException {
+        return createDraft(namespaceId, skillName, basedOnVersion, null);
+    }
+    
+    /**
+     * Create draft version for a skill.
+     * {@code skillCard} is required unless forking ({@code basedOnVersion} set); same JSON as update draft.
+     *
+     * @param namespaceId    namespace ID
+     * @param skillName      skill name (required when forking)
+     * @param basedOnVersion base version to fork from (optional)
+     * @param skillCard      full skill JSON, or null when forking
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
+    String createDraft(String namespaceId, String skillName, String basedOnVersion, String skillCard)
+            throws NacosException;
     
     /**
      * Update current draft content.

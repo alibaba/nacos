@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.form.skills.admin;
 
+import com.alibaba.nacos.ai.utils.SkillRequestUtil;
+import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -24,32 +26,93 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.io.Serial;
 
 /**
- * Skill draft create form.
+ * Create skill draft: inherits {@code skillCard} from {@link SkillDetailForm} (required unless forking). When
+ * {@code basedOnVersion} is set, forks from that version and must not send {@code skillCard}.
  *
  * @author nacos
  */
-public class SkillDraftCreateForm extends SkillForm {
-
+public class SkillDraftCreateForm extends SkillDetailForm {
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     private String basedOnVersion;
-
+    
+    /**
+     * Parsed skill for create-draft after {@link #prepareCreateDraftRequest()}; not part of the serialized form.
+     */
+    private transient Skill resolvedInitialSkill;
+    
+    /**
+     * The request form allow user create a new craft from current version. So if {@code basedOnVersion} is set,
+     * {@code skillCard} will be ignored, and {@code skillName} is required. Otherwise, means users create a new skill,
+     * so {@code skillCard} is required and {@code skillName} is ignored.
+     */
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
-        if (StringUtils.isBlank(getSkillName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `skillName` should not be blank.");
+        if (StringUtils.isNotBlank(basedOnVersion)) {
+            if (StringUtils.isEmpty(getSkillName())) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                        "Required parameter 'skillName' when basedOnVersion is set");
+            }
+            return;
         }
+        super.validate();
     }
-
+    
+    /**
+     * Validates this request, normalizes {@link #setSkillName(String)} when the name only appears inside
+     * {@code skillCard}, and caches the parsed skill for {@link #getResolvedInitialSkillOrNull()}.
+     * <p>
+     * Console and admin controllers must invoke this before {@code SkillProxy} / {@code SkillHandler}; handlers then
+     * only forward to service or remote client without repeating validation.
+     * </p>
+     */
+    public void prepareCreateDraftRequest() throws NacosApiException {
+        validate();
+        resolvedInitialSkill = parseInitialSkillOrNull();
+        String skillName = requireResolvedSkillName(resolvedInitialSkill);
+        if (resolvedInitialSkill != null) {
+            SkillRequestUtil.validateInitialDraftSkill(resolvedInitialSkill, getNamespaceId(), skillName);
+        }
+        setSkillName(skillName);
+    }
+    
+    /**
+     * Non-null only after {@link #prepareCreateDraftRequest()} when {@code skillCard} was present (not forking).
+     */
+    public Skill getResolvedInitialSkillOrNull() {
+        return resolvedInitialSkill;
+    }
+    
     public String getBasedOnVersion() {
         return basedOnVersion;
     }
-
+    
     public void setBasedOnVersion(String basedOnVersion) {
         this.basedOnVersion = basedOnVersion;
     }
+    
+    private Skill parseInitialSkillOrNull() throws NacosApiException {
+        if (StringUtils.isBlank(getSkillCard())) {
+            return null;
+        }
+        Skill skill = SkillRequestUtil.parseSkill(this);
+        if (StringUtils.isNotBlank(getSkillName()) && !getSkillName().equals(skill.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "skillCard name must match skillName parameter");
+        }
+        return skill;
+    }
+    
+    private String requireResolvedSkillName(Skill initialOrNull) throws NacosApiException {
+        String skillName = StringUtils.isNotBlank(getSkillName()) ? getSkillName()
+                : (initialOrNull != null ? initialOrNull.getName() : null);
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "skillName or skillCard with name is required");
+        }
+        return skillName;
+    }
 }
-

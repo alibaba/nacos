@@ -114,7 +114,7 @@ public class SkillRemoteHandler implements SkillHandler {
     @Override
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
         return clientHolder.getAiMaintainerService().skill().createDraft(form.getNamespaceId(), form.getSkillName(),
-                form.getBasedOnVersion());
+                form.getBasedOnVersion(), form.getSkillCard());
     }
 
     @Override

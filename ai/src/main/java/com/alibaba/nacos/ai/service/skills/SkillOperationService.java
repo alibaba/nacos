@@ -128,15 +128,21 @@ public interface SkillOperationService {
                                    int pageNo, int pageSize) throws NacosException;
 
     /**
-     * Create a new draft version based on latest or specified version.
-     * If no base version is specified and no online version exists, an empty skill draft will be created.
+     * Create a new draft version.
+     * <p>
+     * {@code initialContent} is required for a brand-new skill or when no published version exists to fork from.
+     * When forking from an existing version, {@code initialContent} must be null and content is copied from the base
+     * version.
+     * </p>
      *
      * @param namespaceId namespace ID
      * @param name skill name
-     * @param basedOnVersion base version (optional, default latest)
+     * @param basedOnVersion base version to fork from (optional; defaults per server rules when resolving base)
+     * @param initialContent full skill from {@code skillCard}, or null when forking
      * @return created draft version
      */
-    String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException;
+    String createDraft(String namespaceId, String name, String basedOnVersion, Skill initialContent)
+            throws NacosException;
 
     /**
      * Update existing draft content.

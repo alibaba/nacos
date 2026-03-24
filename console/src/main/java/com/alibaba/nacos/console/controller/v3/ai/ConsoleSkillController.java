@@ -169,12 +169,12 @@ public class ConsoleSkillController {
     }
     
     /**
-     * Create draft version.
+     * Create draft. {@link SkillDraftCreateForm#prepareCreateDraftRequest()} validates here; handler only delegates.
      */
     @PostMapping("/draft")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
-        form.validate();
+        form.prepareCreateDraftRequest();
         return Result.success(skillProxy.createDraft(form));
     }
     

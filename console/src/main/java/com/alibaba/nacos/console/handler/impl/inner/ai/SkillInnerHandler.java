@@ -93,7 +93,8 @@ public class SkillInnerHandler implements SkillHandler {
 
     @Override
     public String createDraft(SkillDraftCreateForm form) throws NacosException {
-        return skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(), form.getBasedOnVersion());
+        return skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(), form.getBasedOnVersion(),
+                form.getResolvedInitialSkillOrNull());
     }
 
     @Override

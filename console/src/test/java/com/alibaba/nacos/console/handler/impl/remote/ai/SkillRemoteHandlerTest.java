@@ -47,6 +47,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -198,7 +199,8 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setBasedOnVersion("v1");
-        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn("v2");
+        form.prepareCreateDraftRequest();
+        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull())).thenReturn("v2");
 
         String result = skillRemoteHandler.createDraft(form);
 
