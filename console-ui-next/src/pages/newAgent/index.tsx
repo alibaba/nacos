@@ -315,7 +315,8 @@ export default function NewAgentPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col min-h-[calc(100vh-120px)]">
+      <div className="space-y-5 grow">
       {/* ===== Header ===== */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -651,6 +652,8 @@ export default function NewAgentPage() {
           </div>
         </div>
       )}
+
+      </div>
 
       {/* ===== Sticky Bottom Toolbar ===== */}
       <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-2">

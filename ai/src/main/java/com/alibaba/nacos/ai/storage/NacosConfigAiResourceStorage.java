@@ -250,7 +250,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
             String version = parts[3];
             String filePath = parts[4];
             String groupPrefix = resolveGroupPrefix(resourceType);
-            String group = groupPrefix + name + "__" + version;
+            String group = groupPrefix + SkillUtils.sanitizeNameForGroup(name) + "__" + version;
             return new KeyParts(namespaceId, group, filePath);
         }
         // Fall back to legacy 4-part format (Skill): namespaceId:name:version:filePath

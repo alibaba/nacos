@@ -441,6 +441,14 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (draftSkill == null || StringUtils.isBlank(draftSkill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
         }
+        if (StringUtils.isBlank(draftSkill.getDescription())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Skill description is required");
+        }
+        if (StringUtils.isBlank(draftSkill.getInstruction())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Skill instruction is required");
+        }
         String name = draftSkill.getName();
         AiResource meta = requireMeta(namespaceId, name);
         DataFilterHelper.doWriteCheck(meta);

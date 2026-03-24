@@ -223,7 +223,7 @@ export default function NewPromptPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-120px)]">
-      <div className="space-y-5 flex-1">
+      <div className="space-y-5 grow">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.agentspecs;
 
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.utils.StringUtils;
 
 /**
@@ -123,7 +124,7 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
-        return new ConfigInfo(AGENTSPEC_MAIN_DATA_ID, AGENTSPEC_GROUP_PREFIX + agentSpecName);
+        return new ConfigInfo(AGENTSPEC_MAIN_DATA_ID, AGENTSPEC_GROUP_PREFIX + SkillUtils.sanitizeNameForGroup(agentSpecName));
     }
     
     /**
@@ -137,7 +138,7 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new IllegalArgumentException("AgentSpec name cannot be blank");
         }
-        return AGENTSPEC_GROUP_PREFIX + agentSpecName;
+        return AGENTSPEC_GROUP_PREFIX + SkillUtils.sanitizeNameForGroup(agentSpecName);
     }
     
     /**
@@ -155,7 +156,7 @@ public class AgentSpecUtils {
         if (StringUtils.isBlank(version)) {
             throw new IllegalArgumentException("Version cannot be blank");
         }
-        return AGENTSPEC_GROUP_PREFIX + agentSpecName + DOUBLE_UNDERSCORE + version;
+        return AGENTSPEC_GROUP_PREFIX + SkillUtils.sanitizeNameForGroup(agentSpecName) + DOUBLE_UNDERSCORE + version;
     }
     
     /**

@@ -113,7 +113,7 @@ export default function LoginPage() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder=""
+                    placeholder={t('login.pleaseInputUsername')}
                     autoComplete="username"
                     className="h-10 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                   />
@@ -126,7 +126,7 @@ export default function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder=""
+                      placeholder={t('login.pleaseInputPassword')}
                       autoComplete="current-password"
                       className="h-10 pr-10 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                     />

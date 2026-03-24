@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 
@@ -45,6 +47,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -61,6 +64,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -86,6 +90,10 @@ class AgentSpecOperationServiceImplTest {
 
     private AgentSpecOperationServiceImpl service;
 
+    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+
+    private DataFilterPluginManager mockDataFilterManager;
+
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
     @BeforeEach
@@ -102,10 +110,17 @@ class AgentSpecOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         service = new AgentSpecOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository);
+        mockDataFilterManager = mock(DataFilterPluginManager.class);
+        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
+        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
+        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
     }
 
     @AfterEach
     void tearDown() {
+        if (dataFilterManagerStatic != null) {
+            dataFilterManagerStatic.close();
+        }
         AiResourceStorageRouter.reset();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
@@ -233,6 +248,51 @@ class AgentSpecOperationServiceImplTest {
         assertEquals("test-agentspec", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
                 && "test-agentspec".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUpdateScopeSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateScope(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq("PUBLIC")))
+                .thenReturn(true);
+
+        service.updateScope(namespaceId, agentSpecName, "PUBLIC");
+        verify(aiResourcePersistService).updateScope(namespaceId, agentSpecName, "agentspec", "PUBLIC");
+    }
+
+    @Test
+    void testUpdateScopeNotFound() {
+        String namespaceId = "test-ns";
+        String agentSpecName = "nonexistent";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(null);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.updateScope(namespaceId, agentSpecName, "PUBLIC"));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+
+    @Test
+    void testUpdateScopeFailed() {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateScope(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq("PRIVATE")))
+                .thenReturn(false);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.updateScope(namespaceId, agentSpecName, "PRIVATE"));
+        assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+        verify(aiResourcePersistService).updateScope(namespaceId, agentSpecName, "agentspec", "PRIVATE");
     }
 
     private byte[] createValidZipBytes() throws IOException {

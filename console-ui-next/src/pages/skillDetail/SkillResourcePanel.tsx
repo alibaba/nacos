@@ -111,31 +111,50 @@ export function SkillResourcePanel({
   );
 
   // File tree: create file
+  //
+  // parentKey is a folder tree-key like "skill/" or "skill/subfolder/".
+  // We treat the full folder key (minus trailing /) as the resource `type`,
+  // and `name` is only the bare filename.  This avoids `/` in `name` which
+  // the server's generateResourceId cannot handle correctly.
   const handleCreateFile = useCallback(
     (parentKey?: string) => {
       if (!onChange) return;
-      let folderType = '';
-      let subPath = '';
-      if (parentKey) {
-        const cleaned = parentKey.replace(/\/$/, '');
-        const parts = cleaned.split('/');
-        folderType = parts[0] || '';
-        if (parts.length > 1) {
-          subPath = parts.slice(1).join('/') + '/';
-        }
-      }
-      const name = `new_file_${Date.now()}.txt`;
-      const fullName = subPath + name;
+      const folderType = parentKey ? parentKey.replace(/\/$/, '') : '';
+      const name = 'untitled.txt';
       const newResource: SkillResource = {
-        name: fullName,
+        name,
         type: folderType,
         content: '',
         metadata: null,
       };
       const newMapKey = `${Date.now()}_${name}`;
-      const newTreeKey = folderType
-        ? `${folderType}/${fullName}`
-        : fullName;
+      const newTreeKey = folderType ? `${folderType}/${name}` : name;
+      onChange({ ...resources, [newMapKey]: newResource });
+      setSelectedKey(newTreeKey);
+    },
+    [onChange, resources],
+  );
+
+  // File tree: create folder
+  //
+  // Creates a real file (untitled.txt) inside a new subfolder.
+  // The subfolder path is encoded in `type` (e.g. "skill/new_folder"),
+  // keeping `name` as just the bare filename.
+  const handleCreateFolder = useCallback(
+    (parentKey?: string) => {
+      if (!onChange) return;
+      const parentType = parentKey ? parentKey.replace(/\/$/, '') : '';
+      const folderName = 'new_folder';
+      const fileName = 'untitled.txt';
+      const newType = parentType ? `${parentType}/${folderName}` : folderName;
+      const newResource: SkillResource = {
+        name: fileName,
+        type: newType,
+        content: '',
+        metadata: null,
+      };
+      const newMapKey = `${Date.now()}_${fileName}`;
+      const newTreeKey = `${newType}/${fileName}`;
       onChange({ ...resources, [newMapKey]: newResource });
       setSelectedKey(newTreeKey);
     },
@@ -222,6 +241,7 @@ export function SkillResourcePanel({
             onSelect={setSelectedKey}
             editable={editable}
             onCreateFile={editable ? handleCreateFile : undefined}
+            onCreateFolder={editable ? handleCreateFolder : undefined}
             onDeleteNode={editable ? handleDeleteNode : undefined}
             onRenameFile={editable ? handleRenameFile : undefined}
           />

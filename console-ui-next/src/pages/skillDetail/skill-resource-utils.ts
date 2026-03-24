@@ -103,19 +103,65 @@ function ensurePath(
 /**
  * Build a file tree from Skill resources.
  * Resources are grouped by their `type` field into virtual folders.
+ *
+ * Supports two naming conventions:
+ * 1. Flat type, path in name:  type="skill", name="subfolder/file.txt"
+ * 2. Hierarchical type:        type="skill/subfolder", name="file.txt"
+ *
+ * Convention 2 is preferred for new resources because the server's
+ * generateResourceId only sanitises `/` inside `type` (→ `.`), not `name`.
  */
 export function buildSkillFileTree(
   resources: Record<string, SkillResource>,
 ): FileTreeNode[] {
   const folders = new Map<string, MutableFolder>();
+  const rootTypes = new Set<string>();
   const rootFiles: FileTreeNode[] = [];
 
+  /**
+   * Get (or create) the folder node for a given type string.
+   * Handles hierarchical types like "skill/subfolder" by recursively
+   * creating nested folders under the root type ("skill").
+   */
   const getFolder = (t: string): MutableFolder => {
     let f = folders.get(t);
-    if (!f) {
+    if (f) return f;
+
+    const typeParts = t.split('/').filter(Boolean);
+
+    if (typeParts.length <= 1) {
+      // Simple root type like "skill"
       f = makeFolder(`${t}/`, `${t}/`, t);
       folders.set(t, f);
+      rootTypes.add(t);
+      return f;
     }
+
+    // Hierarchical type like "skill/subfolder"
+    // Recursively ensure parent folder exists
+    const parentType = typeParts.slice(0, -1).join('/');
+    const parentFolder = getFolder(parentType);
+
+    // Derive the root type for the resourceType field
+    const rootType = typeParts[0];
+
+    // Build folder key consistent with ensurePath: "rootType/subpath/"
+    const subPath = typeParts.slice(1).join('/');
+    const fk = `${rootType}/${subPath}/`;
+
+    // Check if ensurePath already created this folder
+    const existing = parentFolder.children.find(
+      (c) => c.type === 'folder' && c.key === fk,
+    ) as MutableFolder | undefined;
+    if (existing) {
+      folders.set(t, existing);
+      return existing;
+    }
+
+    const childName = typeParts[typeParts.length - 1];
+    f = makeFolder(fk, childName, rootType);
+    parentFolder.children.push(f);
+    folders.set(t, f);
     return f;
   };
 
@@ -126,11 +172,15 @@ export function buildSkillFileTree(
       continue;
     }
     const tf = getFolder(ft);
+
+    // Derive root type (first segment) for ensurePath compatibility
+    const rootType = ft.split('/')[0];
+
     const parts = res.name.split('/').filter(Boolean);
     const fn = parts.pop();
     if (!fn) continue;
     const parent =
-      parts.length > 0 ? ensurePath(tf, parts.join('/'), ft) : tf;
+      parts.length > 0 ? ensurePath(tf, parts.join('/'), rootType) : tf;
     parent.children.push({
       key: `${ft}/${res.name}`,
       name: fn,
@@ -139,8 +189,9 @@ export function buildSkillFileTree(
     });
   }
 
+  // Only add root-level type folders to the top-level nodes
   const nodes: FileTreeNode[] = [...rootFiles];
-  for (const t of [...folders.keys()].sort()) {
+  for (const t of [...rootTypes].sort()) {
     const f = folders.get(t)!;
     nodes.push({ ...f, children: sortNodes(f.children) });
   }
