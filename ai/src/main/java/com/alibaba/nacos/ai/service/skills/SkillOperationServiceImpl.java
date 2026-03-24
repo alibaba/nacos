@@ -61,6 +61,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 import static com.alibaba.nacos.ai.model.skills.SkillIndexManifest.LABEL_LATEST;
@@ -1156,26 +1160,55 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String skillName = skill.getName();
         List<String> files = new ArrayList<>();
 
+        // Save concurrently to reduce latency when skill has multiple resource files.
+        Executor executor = ForkJoinPool.commonPool();
+        List<CompletableFuture<Void>> tasks = new ArrayList<>();
+
         // 1) Store SKILL.md as a SkillResource (carries name/description/instruction in metadata)
         SkillResource skillMdResource = buildSkillMdResource(skill);
         String mdPath = NacosConfigAiResourceStorage.getResourceFilePath(null, SKILL_MD_RESOURCE_NAME);
         byte[] mdBytes = JacksonUtils.toJson(skillMdResource).getBytes(StandardCharsets.UTF_8);
         StorageKey mdKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName, version,
                 mdPath);
-        storageRouter.route(mdKey).save(mdKey, mdBytes);
         files.add(mdPath);
+        tasks.add(CompletableFuture.runAsync(() -> {
+            try {
+                storageRouter.route(mdKey).save(mdKey, mdBytes);
+            } catch (NacosException e) {
+                throw new CompletionException(e);
+            }
+        }, executor));
 
         // 2) Store each resource file
         if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             for (Map.Entry<String, SkillResource> entry : skill.getResource().entrySet()) {
                 SkillResource resource = entry.getValue();
+                if (resource == null) {
+                    continue;
+                }
                 String path = NacosConfigAiResourceStorage.getResourceFilePath(resource.getType(), resource.getName());
                 byte[] content = JacksonUtils.toJson(resource).getBytes(StandardCharsets.UTF_8);
                 StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName,
                         version, path);
-                storageRouter.route(resourceKey).save(resourceKey, content);
                 files.add(path);
+                tasks.add(CompletableFuture.runAsync(() -> {
+                    try {
+                        storageRouter.route(resourceKey).save(resourceKey, content);
+                    } catch (NacosException e) {
+                        throw new CompletionException(e);
+                    }
+                }, executor));
             }
+        }
+
+        try {
+            CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+        } catch (CompletionException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof NacosException) {
+                throw (NacosException) cause;
+            }
+            throw ex;
         }
 
         return files;
