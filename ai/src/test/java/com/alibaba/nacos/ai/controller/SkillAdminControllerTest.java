@@ -186,14 +186,30 @@ class SkillAdminControllerTest {
 
     @Test
     void testCreateDraftSuccess() throws Exception {
-        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull())).thenReturn("v1");
+        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull(), any(Skill.class))).thenReturn(
+                "v1");
+        String skillCard =
+                "{\"name\":\"test-skill\",\"description\":\"d\",\"instruction\":\"i\"}";
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
-                .param("skillName", "test-skill");
+                .param("skillCard", skillCard);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         Result<String> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
         });
         assertEquals("v1", result.getData());
+    }
+
+    @Test
+    void testCreateDraftForkSuccess() throws Exception {
+        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), eq("v1"), isNull())).thenReturn("v2");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
+                .param("skillName", "test-skill")
+                .param("basedOnVersion", "v1");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        Result<String> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+        });
+        assertEquals("v2", result.getData());
     }
 
     @Test

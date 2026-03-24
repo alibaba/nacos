@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -173,12 +174,13 @@ class SkillInnerHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillName(SKILL_NAME);
         form.setBasedOnVersion("v1");
-        when(skillOperationService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"))).thenReturn("v2");
+        form.prepareCreateDraftRequest();
+        when(skillOperationService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull())).thenReturn("v2");
 
         String result = skillInnerHandler.createDraft(form);
 
         assertEquals("v2", result);
-        verify(skillOperationService).createDraft(NAMESPACE_ID, SKILL_NAME, "v1");
+        verify(skillOperationService).createDraft(NAMESPACE_ID, SKILL_NAME, "v1", null);
     }
 
     @Test

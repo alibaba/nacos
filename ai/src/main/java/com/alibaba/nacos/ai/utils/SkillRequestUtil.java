@@ -107,6 +107,31 @@ public class SkillRequestUtil {
     }
 
     /**
+     * Validates parsed draft-create skill against request namespace and resolved skill name, then sets
+     * {@link Skill#setNamespaceId(String)}. Call after {@link #parseSkill(SkillDetailForm)} when handling POST draft.
+     *
+     * @param skill         non-null skill from skillCard
+     * @param namespaceId   request namespace
+     * @param expectedName  resolved name (query {@code skillName} or name inside skillCard)
+     */
+    public static void validateInitialDraftSkill(Skill skill, String namespaceId, String expectedName)
+            throws NacosApiException {
+        if (skill == null || StringUtils.isBlank(skill.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Skill name is required in skillCard when creating draft with content");
+        }
+        if (!expectedName.equals(skill.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "skillCard name must match skillName parameter");
+        }
+        if (StringUtils.isNotBlank(skill.getNamespaceId()) && !namespaceId.equals(skill.getNamespaceId())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "skillCard namespaceId must match request namespaceId");
+        }
+        skill.setNamespaceId(namespaceId);
+    }
+
+    /**
      * Validate uploaded skill zip file and extract bytes.
      *
      * <p>Validates the file is not null/empty, checks file size against the maximum limit,

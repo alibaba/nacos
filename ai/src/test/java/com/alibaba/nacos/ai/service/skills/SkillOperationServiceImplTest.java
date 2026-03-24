@@ -520,7 +520,7 @@ class SkillOperationServiceImplTest {
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.createDraft(namespaceId, skillName, null));
+                () -> skillOperationService.createDraft(namespaceId, skillName, null, null));
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
     }
 
@@ -531,7 +531,12 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
         setupRequestContext("myUser");
 
-        String version = skillOperationService.createDraft(namespaceId, skillName, null);
+        Skill initial = new Skill();
+        initial.setName(skillName);
+        initial.setDescription("desc");
+        initial.setInstruction("inst");
+        initial.setNamespaceId(namespaceId);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
         assertEquals("v1", version);
 
         org.mockito.ArgumentCaptor<com.alibaba.nacos.ai.model.AiResourceVersion> vCaptor =
