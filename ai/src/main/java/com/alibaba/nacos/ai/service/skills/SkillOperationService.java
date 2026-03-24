@@ -58,6 +58,17 @@ public interface SkillOperationService {
     String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
 
     /**
+     * Bootstrap skill from zip file as an online skill.
+     *
+     * <p>This is intended for server-side built-in data initialization and bypasses draft/pipeline flow.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @throws NacosException if bootstrap failed
+     */
+    void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+
+    /**
      * Get skill detail for admin usage. Returns version governance metadata and all version summaries.
      *
      * @param namespaceId namespace ID
@@ -173,6 +184,11 @@ public interface SkillOperationService {
      * Update labels mapping (label -> version) without changing any version status.
      */
     void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException;
+
+    /**
+     * Update skill biz tags JSON.
+     */
+    void updateBizTags(String namespaceId, String name, String bizTags) throws NacosException;
 
     /**
      * Online/offline operation.

@@ -5,6 +5,9 @@ import {
   ExternalLink,
   FileEdit,
   Clock,
+  Download,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
-import type { AgentSpecListItem } from '@/types/agentspec';
+import { parseBizTags, type AgentSpecListItem } from '@/types/agentspec';
 
 interface AgentSpecCardProps {
   item: AgentSpecListItem;
@@ -33,6 +36,7 @@ export function AgentSpecCard({
   const { t } = useTranslation();
 
   const latestVersion = item.labels?.latest;
+  const bizTags = parseBizTags(item.bizTags).slice(0, 2);
 
   return (
     <Card
@@ -77,6 +81,12 @@ export function AgentSpecCard({
             >
               {item.enable ? t('agentSpec.enabled') : t('agentSpec.disabled')}
             </Badge>
+            {item.scope && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                {item.scope === 'PUBLIC' ? <Globe className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
+                {item.scope === 'PUBLIC' ? t('agentSpec.scopePublic') : t('agentSpec.scopePrivate')}
+              </span>
+            )}
             {latestVersion && (
               <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1 py-0.5 rounded">
                 {latestVersion}
@@ -93,14 +103,37 @@ export function AgentSpecCard({
         </p>
 
         {/* Meta indicators */}
-        {item.editingVersion && (
-          <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          {bizTags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
+            >
+              {tag}
+            </span>
+          ))}
+          <span className={cn(
+            'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+            item.onlineCnt > 0
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+              : 'bg-muted text-muted-foreground',
+          )}>
+            <Globe className="h-2.5 w-2.5" />
+            {item.onlineCnt > 0
+              ? t('agentSpec.onlineCount', { count: item.onlineCnt })
+              : t('agentSpec.noOnlineVersion')}
+          </span>
+          {item.editingVersion && (
             <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
               <FileEdit className="h-2.5 w-2.5" />
               {t('agentSpec.hasDraft')}
             </span>
-          </div>
-        )}
+          )}
+          <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ml-auto">
+            <Download className="h-2.5 w-2.5" />
+            {item.downloadCount ?? 0}
+          </span>
+        </div>
       </div>
 
       {/* Footer */}

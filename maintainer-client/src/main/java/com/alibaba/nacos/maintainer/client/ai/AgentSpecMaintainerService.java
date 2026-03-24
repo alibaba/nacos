@@ -18,6 +18,8 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -49,6 +51,16 @@ public interface AgentSpecMaintainerService {
     default AgentSpec getAgentSpecDetail(String agentSpecName) throws NacosException {
         return getAgentSpecDetail(Constants.DEFAULT_NAMESPACE_ID, agentSpecName);
     }
+
+    /**
+     * Get agentspec admin detail.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @return admin detail
+     * @throws NacosException if fail to get agentspec admin detail
+     */
+    AgentSpecMeta getAgentSpecAdminDetail(String namespaceId, String agentSpecName) throws NacosException;
 
     /**
      * Get specific agentspec version detail.
@@ -121,6 +133,20 @@ public interface AgentSpecMaintainerService {
             throws NacosException {
         return listAgentSpecs(Constants.DEFAULT_NAMESPACE_ID, agentSpecName, "blur", pageNo, pageSize);
     }
+
+    /**
+     * List agentspec admin items with governance metadata.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name pattern for filtering
+     * @param search search mode
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return paged admin list
+     * @throws NacosException if fail to list agentspec admin items
+     */
+    Page<AgentSpecSummary> listAgentSpecAdminItems(String namespaceId, String agentSpecName, String search,
+            int pageNo, int pageSize) throws NacosException;
     
     /**
      * Upload agentspec from zip file.
@@ -222,6 +248,17 @@ public interface AgentSpecMaintainerService {
      * @throws NacosException if fail to update labels
      */
     boolean updateLabels(String namespaceId, String agentSpecName, String labels) throws NacosException;
+
+    /**
+     * Update agentspec biz tags JSON.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param bizTags biz tags JSON string
+     * @return true if update success
+     * @throws NacosException if fail to update biz tags
+     */
+    boolean updateBizTags(String namespaceId, String agentSpecName, String bizTags) throws NacosException;
     
     /**
      * Online/offline operation.

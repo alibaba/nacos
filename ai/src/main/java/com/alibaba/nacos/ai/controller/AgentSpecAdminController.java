@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
@@ -26,12 +27,12 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
 import com.alibaba.nacos.ai.param.AgentSpecHttpParamExtractor;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.utils.AgentSpecRequestUtil;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -82,7 +83,7 @@ public class AgentSpecAdminController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<AgentSpecAdminDetail> getAgentSpec(AgentSpecForm form) throws NacosException {
+    public Result<AgentSpecMeta> getAgentSpec(AgentSpecForm form) throws NacosException {
         form.validate();
         return Result.success(
                 agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName()));
@@ -129,7 +130,7 @@ public class AgentSpecAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<AgentSpecAdminListItem>> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
+    public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
         agentSpecListForm.validate();
         pageForm.validate();
@@ -229,6 +230,17 @@ public class AgentSpecAdminController {
         form.validate();
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(), labels);
+        return Result.success("ok");
+    }
+
+    /**
+     * Update agentspec biz tags without changing version status.
+     */
+    @PutMapping("/biz-tags")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
+        form.validate();
+        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(), form.getBizTags());
         return Result.success("ok");
     }
     

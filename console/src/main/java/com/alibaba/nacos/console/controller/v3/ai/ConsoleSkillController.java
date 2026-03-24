@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
@@ -229,6 +230,17 @@ public class ConsoleSkillController {
     public Result<String> updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         form.validate();
         skillProxy.updateLabels(form);
+        return Result.success("ok");
+    }
+
+    /**
+     * Update skill biz tags without changing version status.
+     */
+    @PutMapping("/biz-tags")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
+        form.validate();
+        skillProxy.updateBizTags(form);
         return Result.success("ok");
     }
     

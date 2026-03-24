@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -62,5 +63,19 @@ class AgentSpecInnerHandlerTest {
         agentSpecInnerHandler.updateScope(form);
 
         verify(agentSpecOperationService).updateScope(NAMESPACE_ID, AGENTSPEC_NAME, "PUBLIC");
+    }
+
+    @Test
+    void testUpdateBizTags() throws NacosException {
+        AgentSpecBizTagsUpdateForm form = new AgentSpecBizTagsUpdateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENTSPEC_NAME);
+        form.setBizTags("[\"finance\"]");
+        doNothing().when(agentSpecOperationService).updateBizTags(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME),
+                eq("[\"finance\"]"));
+
+        agentSpecInnerHandler.updateBizTags(form);
+
+        verify(agentSpecOperationService).updateBizTags(NAMESPACE_ID, AGENTSPEC_NAME, "[\"finance\"]");
     }
 }

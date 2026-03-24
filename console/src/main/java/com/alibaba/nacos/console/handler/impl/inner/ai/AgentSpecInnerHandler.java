@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
@@ -25,11 +26,11 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.ai.utils.AgentSpecRequestUtil;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -61,7 +62,7 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
     
     @Override
-    public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
+    public AgentSpecMeta getAgentSpec(AgentSpecForm form) throws NacosException {
         return agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName(),
                 form.getVersion());
     }
@@ -78,7 +79,7 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
     
     @Override
-    public Page<AgentSpecAdminListItem> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
         return agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
                 agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(), pageForm.getPageNo(),
@@ -124,6 +125,11 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(), labels);
+    }
+
+    @Override
+    public void updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
+        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(), form.getBizTags());
     }
 
     @Override

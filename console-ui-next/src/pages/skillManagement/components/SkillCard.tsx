@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
-import type { SkillListItem } from '@/types/skill';
+import { parseBizTags, type SkillListItem } from '@/types/skill';
 
 interface SkillCardProps {
   item: SkillListItem;
@@ -36,6 +36,7 @@ export function SkillCard({
   const { t } = useTranslation();
 
   const latestVersion = item.labels?.latest;
+  const bizTags = parseBizTags(item.bizTags).slice(0, 2);
 
   return (
     <Card
@@ -103,6 +104,14 @@ export function SkillCard({
 
         {/* Meta indicators */}
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          {bizTags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
+            >
+              {tag}
+            </span>
+          ))}
           <span className={cn(
             'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium',
             item.onlineCnt > 0

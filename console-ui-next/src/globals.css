@@ -48,6 +48,9 @@
   --warning-foreground: oklch(0.25 0.1 70);
   --info: oklch(0.65 0.18 230);
   --info-foreground: oklch(0.98 0.005 230);
+  --markdown-pre-bg: oklch(0.965 0.01 230);
+  --markdown-pre-border: oklch(0.9 0.01 230);
+  --markdown-inline-bg: oklch(0.955 0.012 230);
 }
 
 .dark {
@@ -91,6 +94,9 @@
   --warning-foreground: oklch(0.2 0.1 70);
   --info: oklch(0.7 0.18 230);
   --info-foreground: oklch(0.12 0.02 230);
+  --markdown-pre-bg: oklch(0.19 0.015 230);
+  --markdown-pre-border: oklch(0.28 0.015 230);
+  --markdown-inline-bg: oklch(0.22 0.015 230);
 }
 
 @theme inline {
@@ -196,4 +202,42 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.app-markdown {
+  color: var(--foreground);
+}
+
+.app-markdown :where(pre) {
+  background-color: var(--markdown-pre-bg) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--markdown-pre-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.dark .app-markdown :where(pre) {
+  box-shadow: none;
+}
+
+.app-markdown :where(pre code) {
+  background-color: transparent !important;
+  color: inherit !important;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.app-markdown :where(code):not(:where(pre code)) {
+  background-color: var(--markdown-inline-bg);
+  color: var(--foreground);
+  border: 1px solid var(--markdown-pre-border);
+  border-radius: 0.4rem;
+  padding: 0.15rem 0.4rem;
+  font-weight: 500;
+}
+
+.app-markdown :where(code):not(:where(pre code))::before,
+.app-markdown :where(code):not(:where(pre code))::after {
+  content: none;
 }

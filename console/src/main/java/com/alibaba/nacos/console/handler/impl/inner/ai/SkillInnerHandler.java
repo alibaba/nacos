@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillOnlineForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
@@ -123,6 +124,11 @@ public class SkillInnerHandler implements SkillHandler {
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);
+    }
+
+    @Override
+    public void updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
+        skillOperationService.updateBizTags(form.getNamespaceId(), form.getSkillName(), form.getBizTags());
     }
 
     @Override

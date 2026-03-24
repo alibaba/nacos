@@ -18,7 +18,7 @@ interface AgentSpecState {
   selectedNames: Set<string>;
 
   // Detail
-  currentDetail: AgentSpecDetail | null;
+  currentDetail: (AgentSpecDetail & { name: string }) | null;
   detailLoading: boolean;
 
   // Error
@@ -27,7 +27,7 @@ interface AgentSpecState {
 
 interface AgentSpecActions {
   fetchList: (namespaceId: string) => Promise<void>;
-  fetchDetail: (namespaceId: string, name: string, version?: string) => Promise<void>;
+  fetchDetail: (namespaceId: string, name: string) => Promise<void>;
   setSearchParams: (params: { searchName?: string }) => void;
   setPage: (pageNo: number, pageSize?: number) => void;
   resetSearch: () => void;
@@ -89,17 +89,16 @@ export const useAgentSpecStore = create<AgentSpecStore>((set, get) => ({
     }
   },
 
-  fetchDetail: async (namespaceId: string, name: string, version?: string) => {
+  fetchDetail: async (namespaceId: string, name: string) => {
     const hasDetail = get().currentDetail !== null;
     set({ detailLoading: !hasDetail, error: null });
     try {
       const response = await agentSpecApi.getDetail({
         namespaceId,
         agentSpecName: name,
-        version,
       });
       set({
-        currentDetail: response.data,
+        currentDetail: { ...response.data, name },
         detailLoading: false,
       });
     } catch (error) {

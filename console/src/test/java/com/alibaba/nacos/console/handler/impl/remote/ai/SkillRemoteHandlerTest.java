@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillListForm;
@@ -271,6 +272,20 @@ class SkillRemoteHandlerTest {
         skillRemoteHandler.updateLabels(form);
 
         verify(skillMaintainerService).updateLabels(NAMESPACE_ID, SKILL_NAME, "{\"latest\":\"v2\"}");
+    }
+
+    @Test
+    void testUpdateBizTags() throws NacosException {
+        SkillBizTagsUpdateForm form = new SkillBizTagsUpdateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setBizTags("[\"retail\"]");
+        when(skillMaintainerService.updateBizTags(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("[\"retail\"]")))
+                .thenReturn(true);
+
+        skillRemoteHandler.updateBizTags(form);
+
+        verify(skillMaintainerService).updateBizTags(NAMESPACE_ID, SKILL_NAME, "[\"retail\"]");
     }
 
     @Test

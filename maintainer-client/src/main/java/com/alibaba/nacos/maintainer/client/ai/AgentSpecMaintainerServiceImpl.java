@@ -18,6 +18,8 @@ package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -29,7 +31,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,17 +56,29 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
     
     @Override
     public AgentSpec getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException {
+        AgentSpecMeta meta = getAgentSpecAdminDetail(namespaceId, agentSpecName);
+        String version = resolveAgentSpecVersion(meta);
+        if (StringUtils.isBlank(version)) {
+            return null;
+        }
+        return getAgentSpecVersionDetail(namespaceId, agentSpecName, version);
+    }
+
+    @Override
+    public AgentSpecMeta getAgentSpecAdminDetail(String namespaceId, String agentSpecName)
+            throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(4);
         params.put("namespaceId", namespaceId);
         params.put("agentSpecName", agentSpecName);
-        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName)).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH).setParamValue(params).build();
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName))
+                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH)
+                .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
-        Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(),
-            new TypeReference<Result<JsonNode>>() {
+        Result<AgentSpecMeta> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<AgentSpecMeta>>() {
                 });
-        return extractAgentSpec(namespaceId, agentSpecName, result.getData());
+        return result.getData();
     }
 
     @Override
@@ -115,6 +128,26 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<Page<AgentSpecBasicInfo>> result = JacksonUtils.toObj(restResult.getData(),
                 new TypeReference<Result<Page<AgentSpecBasicInfo>>>() {
+                });
+        return result.getData();
+    }
+
+    @Override
+    public Page<AgentSpecSummary> listAgentSpecAdminItems(String namespaceId, String agentSpecName,
+            String search, int pageNo, int pageSize) throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("search", search);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName))
+                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_AGENTSPEC_LIST_ADMIN_PATH)
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<Page<AgentSpecSummary>>>() {
                 });
         return result.getData();
     }
@@ -230,6 +263,22 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
+
+    @Override
+    public boolean updateBizTags(String namespaceId, String agentSpecName, String bizTags) throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("bizTags", bizTags);
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName))
+                .setHttpMethod(HttpMethod.PUT).setPath(Constants.AdminApiPath.AI_AGENTSPEC_BIZ_TAGS_ADMIN_PATH)
+                .setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
     
     @Override
     public boolean changeOnlineStatus(String namespaceId, String agentSpecName, String scope, String version,
@@ -265,47 +314,29 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
 
-    private AgentSpec extractAgentSpec(String namespaceId, String agentSpecName, JsonNode dataNode)
-            throws NacosException {
-        if (dataNode == null || dataNode.isNull()) {
+    private String resolveAgentSpecVersion(AgentSpecMeta meta) {
+        if (meta == null) {
             return null;
         }
-        JsonNode resolvedNode = dataNode.has("agentSpec") ? dataNode.get("agentSpec") : dataNode;
-        if (resolvedNode != null && !resolvedNode.isNull()) {
-            return JacksonUtils.toObj(resolvedNode.toString(), AgentSpec.class);
+        if (StringUtils.isNotBlank(meta.getEditingVersion())) {
+            return meta.getEditingVersion();
         }
-        String resolvedVersion = resolveAgentSpecVersion(dataNode);
-        if (StringUtils.isBlank(resolvedVersion)) {
-            return null;
+        if (StringUtils.isNotBlank(meta.getReviewingVersion())) {
+            return meta.getReviewingVersion();
         }
-        return getAgentSpecVersionDetail(namespaceId, agentSpecName, resolvedVersion);
-    }
-
-    private String resolveAgentSpecVersion(JsonNode dataNode) {
-        String currentVersion = readTextField(dataNode, "version");
-        if (StringUtils.isNotBlank(currentVersion)) {
-            return currentVersion;
+        if (meta.getLabels() != null) {
+            String latest = meta.getLabels().get("latest");
+            if (StringUtils.isNotBlank(latest)) {
+                return latest;
+            }
         }
-        String editingVersion = readTextField(dataNode, "editingVersion");
-        if (StringUtils.isNotBlank(editingVersion)) {
-            return editingVersion;
-        }
-        String reviewingVersion = readTextField(dataNode, "reviewingVersion");
-        if (StringUtils.isNotBlank(reviewingVersion)) {
-            return reviewingVersion;
-        }
-        JsonNode labelsNode = dataNode.get("labels");
-        if (labelsNode != null && !labelsNode.isNull()) {
-            String latestVersion = readTextField(labelsNode, "latest");
-            if (StringUtils.isNotBlank(latestVersion)) {
-                return latestVersion;
+        if (meta.getVersions() != null) {
+            for (AgentSpecMeta.AgentSpecVersionSummary version : meta.getVersions()) {
+                if (version != null && StringUtils.isNotBlank(version.getVersion())) {
+                    return version.getVersion();
+                }
             }
         }
         return null;
-    }
-
-    private String readTextField(JsonNode dataNode, String fieldName) {
-        JsonNode fieldNode = dataNode.get(fieldName);
-        return fieldNode == null || fieldNode.isNull() ? null : fieldNode.asText();
     }
 }

@@ -165,6 +165,58 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return name;
     }
 
+    @Override
+    public void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
+        if (skill == null || StringUtils.isBlank(skill.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
+        }
+        String skillName = skill.getName();
+        if (aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL) != null) {
+            LOGGER.info("Skip built-in skill bootstrap because skill already exists: {}", skillName);
+            return;
+        }
+
+        String version = "v1";
+        List<String> files = writeSkillToStorage(namespaceId, skill, version);
+
+        AiResourceVersion versionRow = new AiResourceVersion();
+        versionRow.setNamespaceId(namespaceId);
+        versionRow.setName(skillName);
+        versionRow.setType(RESOURCE_TYPE_SKILL);
+        versionRow.setAuthor(DEFAULT_AUTHOR);
+        versionRow.setStatus(VERSION_STATUS_ONLINE);
+        versionRow.setVersion(version);
+        versionRow.setDesc(skill.getDescription());
+        versionRow.setStorage(buildStorageJson(namespaceId, skillName, version, files));
+        aiResourceVersionPersistService.insert(versionRow);
+
+        SkillVersionInfo versionInfo = new SkillVersionInfo();
+        versionInfo.setOnlineCnt(1);
+        Map<String, String> labels = new HashMap<>(4);
+        labels.put(LABEL_LATEST, version);
+        versionInfo.setLabels(labels);
+
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(skillName);
+        meta.setType(RESOURCE_TYPE_SKILL);
+        meta.setStatus(META_STATUS_ENABLE);
+        meta.setDesc(skill.getDescription());
+        meta.setOwner(DEFAULT_AUTHOR);
+        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setVersionInfo(JacksonUtils.toJson(versionInfo));
+        meta.setMetaVersion(1L);
+        aiResourcePersistService.insert(meta);
+
+        SkillIndexManifest manifest = new SkillIndexManifest();
+        manifest.setLabels(new HashMap<>(labels));
+        Map<String, List<String>> versions = new HashMap<>(4);
+        versions.put(version, files);
+        manifest.setVersions(versions);
+        manifestService.write(namespaceId, skillName, manifest);
+    }
+
     private String overwriteUploadedSkill(String namespaceId, Skill skill) throws NacosException {
         String name = skill.getName();
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
@@ -240,6 +292,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setName(skillName);
         detail.setDescription(meta.getDesc());
         detail.setEnable(META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
+        detail.setBizTags(meta.getBizTags());
         detail.setEditingVersion(versionInfo.getEditingVersion());
         detail.setReviewingVersion(versionInfo.getReviewingVersion());
         detail.setLabels(versionInfo.getLabels());
@@ -363,7 +416,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         Page<SkillSummary> result = new Page<>();
         result.setPageItems(items);
-        result.setTotalCount(items.size());
+        result.setTotalCount(metaPage == null ? 0 : metaPage.getTotalCount());
         result.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
         result.setPageNumber(pageNo);
         return result;
@@ -630,6 +683,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             manifest.setLabels(labels == null ? new HashMap<>(4) : new LinkedHashMap<>(labels));
             manifestService.write(namespaceId, name, manifest);
         }
+    }
+
+    @Override
+    public void updateBizTags(String namespaceId, String name, String bizTags) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name);
+        DataFilterHelper.doWriteCheck(meta);
+        updateMetaBizTagsCas(namespaceId, meta, bizTags);
     }
 
     @Override
@@ -984,6 +1044,38 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             newValue.setExt(latest.getExt());
         }
         throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT, "Meta update conflict, retry");
+    }
+
+    private void updateMetaBizTagsCas(String namespaceId, AiResource meta, String bizTags) throws NacosException {
+        if (meta == null || meta.getMetaVersion() == null) {
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, "Meta version missing");
+        }
+        long expected = meta.getMetaVersion();
+        AiResource newValue = new AiResource();
+        newValue.setStatus(meta.getStatus());
+        newValue.setDesc(meta.getDesc());
+        newValue.setBizTags(bizTags);
+        newValue.setExt(meta.getExt());
+        newValue.setVersionInfo(meta.getVersionInfo());
+        for (int i = 0; i < MAX_WORKING_VERSION_RETRY; i++) {
+            boolean ok = aiResourcePersistService.updateMetaCas(namespaceId, meta.getName(), meta.getType(), expected,
+                    newValue);
+            if (ok) {
+                return;
+            }
+            AiResource latest = aiResourcePersistService.find(namespaceId, meta.getName(), meta.getType());
+            if (latest == null || latest.getMetaVersion() == null) {
+                throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR, "Meta cas failed");
+            }
+            meta = latest;
+            expected = latest.getMetaVersion();
+            newValue.setStatus(latest.getStatus());
+            newValue.setDesc(latest.getDesc());
+            newValue.setExt(latest.getExt());
+            newValue.setVersionInfo(latest.getVersionInfo());
+        }
+        throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                "Meta update conflict, retry");
     }
 
     private void metaEnableDisable(String namespaceId, AiResource meta, boolean enable) throws NacosException {

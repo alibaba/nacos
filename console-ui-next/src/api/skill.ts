@@ -113,6 +113,14 @@ export const skillApi = {
   }): ApiResult<string> =>
     client.put(`${BASE}/labels`, data) as ApiResult<string>,
 
+  /** Update biz tags */
+  updateBizTags: (data: {
+    namespaceId?: string;
+    skillName: string;
+    bizTags: string;
+  }): ApiResult<string> =>
+    client.put(`${BASE}/biz-tags`, data) as ApiResult<string>,
+
   /** Online (skill-level or version-level) */
   online: (data: {
     namespaceId?: string;

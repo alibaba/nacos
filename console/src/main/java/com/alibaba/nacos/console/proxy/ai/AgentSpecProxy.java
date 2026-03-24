@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.proxy.ai;
 
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
@@ -25,9 +26,9 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.AgentSpecHandler;
@@ -48,7 +49,7 @@ public class AgentSpecProxy {
         this.agentSpecHandler = agentSpecHandler;
     }
     
-    public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
+    public AgentSpecMeta getAgentSpec(AgentSpecForm form) throws NacosException {
         return agentSpecHandler.getAgentSpec(form);
     }
     
@@ -60,7 +61,7 @@ public class AgentSpecProxy {
         agentSpecHandler.deleteAgentSpec(form);
     }
     
-    public Page<AgentSpecAdminListItem> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
         return agentSpecHandler.listAgentSpecs(agentSpecListForm, pageForm);
     }
@@ -96,6 +97,10 @@ public class AgentSpecProxy {
     
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         agentSpecHandler.updateLabels(form);
+    }
+
+    public void updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
+        agentSpecHandler.updateBizTags(form);
     }
     
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {

@@ -40,6 +40,11 @@ public class AgentSpec {
      * AgentSpec description.
      */
     private String description;
+
+    /**
+     * AgentSpec biz tags, stored as JSON array string.
+     */
+    private String bizTags;
     
     /**
      * manifest.json raw JSON string content.
@@ -74,7 +79,15 @@ public class AgentSpec {
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
+    public String getBizTags() {
+        return bizTags;
+    }
+
+    public void setBizTags(String bizTags) {
+        this.bizTags = bizTags;
+    }
+
     public String getContent() {
         return content;
     }

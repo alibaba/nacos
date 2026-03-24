@@ -14,136 +14,95 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.model.agentspecs;
+package com.alibaba.nacos.api.ai.model.agentspecs;
 
 import java.util.Map;
 
 /**
- * AgentSpec list item for admin API response. Contains agentspec basic info plus governance metadata.
+ * AgentSpec summary for admin list response.
+ * Contains agentspec basic info plus governance metadata.
  *
  * @author nacos
- * @since 3.2.0
  */
-public class AgentSpecAdminListItem {
-
-    private String namespaceId;
-
-    private String name;
-
-    private String description;
-
-    /**
-     * Whether the agentspec is globally enabled. true=enable, false=disable.
-     */
+public class AgentSpecSummary extends AgentSpecBasicInfo {
+    
     private boolean enable;
-
-    /**
-     * Business tags (JSON string), e.g. ["tag1","tag2"].
-     */
+    
     private String bizTags;
-
-    /**
-     * Label -> version mapping, e.g. {"latest":"v3","stable":"v2"}.
-     */
+    
+    private String scope;
+    
     private Map<String, String> labels;
-
-    /**
-     * The version currently being edited (draft).
-     */
+    
     private String editingVersion;
-
-    /**
-     * The version currently under pipeline review.
-     */
+    
     private String reviewingVersion;
-
-    /**
-     * Number of online versions.
-     */
+    
     private Integer onlineCnt;
-
-    /**
-     * Last update time (epoch millis).
-     */
-    private Long updateTime;
-
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
+    
+    private Long downloadCount;
+    
     public boolean isEnable() {
         return enable;
     }
-
+    
     public void setEnable(boolean enable) {
         this.enable = enable;
     }
-
+    
     public String getBizTags() {
         return bizTags;
     }
-
+    
     public void setBizTags(String bizTags) {
         this.bizTags = bizTags;
     }
-
+    
+    public String getScope() {
+        return scope;
+    }
+    
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+    
     public Map<String, String> getLabels() {
         return labels;
     }
-
+    
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-
+    
     public String getEditingVersion() {
         return editingVersion;
     }
-
+    
     public void setEditingVersion(String editingVersion) {
         this.editingVersion = editingVersion;
     }
-
+    
     public String getReviewingVersion() {
         return reviewingVersion;
     }
-
+    
     public void setReviewingVersion(String reviewingVersion) {
         this.reviewingVersion = reviewingVersion;
     }
-
+    
     public Integer getOnlineCnt() {
         return onlineCnt;
     }
-
+    
     public void setOnlineCnt(Integer onlineCnt) {
         this.onlineCnt = onlineCnt;
     }
-
-    public Long getUpdateTime() {
-        return updateTime;
+    
+    public Long getDownloadCount() {
+        return downloadCount;
     }
-
-    public void setUpdateTime(Long updateTime) {
-        this.updateTime = updateTime;
+    
+    public void setDownloadCount(Long downloadCount) {
+        this.downloadCount = downloadCount;
     }
 }

@@ -155,6 +155,7 @@ class SkillOperationServiceImplTest {
         meta.setType("skill");
         meta.setStatus("enable");
         meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setBizTags("[\"retail\"]");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
@@ -169,6 +170,7 @@ class SkillOperationServiceImplTest {
         assertTrue(skillDetail.isEnable());
         assertEquals(1, skillDetail.getOnlineCnt());
         assertEquals("v1", skillDetail.getLabels().get("latest"));
+        assertEquals("[\"retail\"]", skillDetail.getBizTags());
         assertEquals(DataFilterConstants.SCOPE_PUBLIC, skillDetail.getScope());
         assertNotNull(skillDetail.getVersions());
     }
@@ -232,6 +234,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResource meta = new com.alibaba.nacos.ai.model.AiResource();
         meta.setName("test-skill");
         meta.setDesc("Test description");
+        meta.setBizTags("[\"ops\"]");
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
@@ -246,6 +249,7 @@ class SkillOperationServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPageItems().size());
+        assertEquals("[\"ops\"]", result.getPageItems().get(0).getBizTags());
         assertEquals(DataFilterConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
     }
     
@@ -596,5 +600,28 @@ class SkillOperationServiceImplTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> skillOperationService.updateScope(namespaceId, skillName, "PUBLIC"));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+
+    @Test
+    void testUpdateBizTagsSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setDesc("desc");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        meta.setMetaVersion(1L);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+
+        skillOperationService.updateBizTags(namespaceId, skillName, "[\"retail\"]");
+
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L),
+                argThat(resource -> resource != null && "[\"retail\"]".equals(resource.getBizTags())));
     }
 }

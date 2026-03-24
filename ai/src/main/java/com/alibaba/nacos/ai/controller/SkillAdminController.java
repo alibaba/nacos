@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
@@ -244,6 +245,17 @@ public class SkillAdminController {
         form.validate();
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);
+        return Result.success("ok");
+    }
+
+    /**
+     * Update skill biz tags without changing version status.
+     */
+    @PutMapping("/biz-tags")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<String> updateBizTags(SkillBizTagsUpdateForm form) throws NacosException {
+        form.validate();
+        skillOperationService.updateBizTags(form.getNamespaceId(), form.getSkillName(), form.getBizTags());
         return Result.success("ok");
     }
     

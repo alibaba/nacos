@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecLabelsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
@@ -25,9 +26,9 @@ import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecSubmitForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecUpdateForm;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminDetail;
-import com.alibaba.nacos.ai.model.agentspecs.AgentSpecAdminListItem;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
@@ -51,7 +52,7 @@ public class AgentSpecNoopHandler implements AgentSpecHandler {
             "Nacos AI AgentSpec module and API required both `naming` and `config` module.";
 
     @Override
-    public AgentSpecAdminDetail getAgentSpec(AgentSpecForm form) throws NacosException {
+    public AgentSpecMeta getAgentSpec(AgentSpecForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 AGENTSPEC_NOT_ENABLED_MESSAGE);
     }
@@ -69,7 +70,7 @@ public class AgentSpecNoopHandler implements AgentSpecHandler {
     }
 
     @Override
-    public Page<AgentSpecAdminListItem> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 AGENTSPEC_NOT_ENABLED_MESSAGE);
@@ -114,6 +115,12 @@ public class AgentSpecNoopHandler implements AgentSpecHandler {
 
     @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                AGENTSPEC_NOT_ENABLED_MESSAGE);
+    }
+
+    @Override
+    public void updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 AGENTSPEC_NOT_ENABLED_MESSAGE);
     }

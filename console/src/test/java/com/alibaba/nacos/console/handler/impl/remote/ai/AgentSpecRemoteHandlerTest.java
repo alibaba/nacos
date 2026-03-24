@@ -16,11 +16,17 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AgentSpecMaintainerService;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,6 +92,44 @@ class AgentSpecRemoteHandlerTest {
     }
 
     @Test
+    void testGetAgentSpec() throws NacosException {
+        AgentSpecForm form = new AgentSpecForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        AgentSpecMeta detail = new AgentSpecMeta();
+        detail.setBizTags("[\"finance\"]");
+        when(agentSpecMaintainerService.getAgentSpecAdminDetail(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME)))
+                .thenReturn(detail);
+
+        AgentSpecMeta result = agentSpecRemoteHandler.getAgentSpec(form);
+
+        assertNotNull(result);
+        assertEquals("[\"finance\"]", result.getBizTags());
+    }
+
+    @Test
+    void testListAgentSpecs() throws NacosException {
+        AgentSpecListForm form = new AgentSpecListForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        AgentSpecSummary item = new AgentSpecSummary();
+        item.setName(AGENT_SPEC_NAME);
+        item.setBizTags("[\"finance\"]");
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setPageItems(java.util.List.of(item));
+        page.setTotalCount(1);
+        when(agentSpecMaintainerService.listAgentSpecAdminItems(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq(null),
+                eq(1), eq(10))).thenReturn(page);
+
+        Page<AgentSpecSummary> result = agentSpecRemoteHandler.listAgentSpecs(form, pageForm);
+
+        assertEquals("[\"finance\"]", result.getPageItems().get(0).getBizTags());
+    }
+
+    @Test
     void testUpdateScope() throws NacosException {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
         form.setNamespaceId(NAMESPACE_ID);
@@ -96,5 +141,19 @@ class AgentSpecRemoteHandlerTest {
         agentSpecRemoteHandler.updateScope(form);
 
         verify(agentSpecMaintainerService).updateScope(NAMESPACE_ID, AGENT_SPEC_NAME, "PUBLIC");
+    }
+
+    @Test
+    void testUpdateBizTags() throws NacosException {
+        AgentSpecBizTagsUpdateForm form = new AgentSpecBizTagsUpdateForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setBizTags("[\"finance\"]");
+        when(agentSpecMaintainerService.updateBizTags(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("[\"finance\"]")))
+                .thenReturn(true);
+
+        agentSpecRemoteHandler.updateBizTags(form);
+
+        verify(agentSpecMaintainerService).updateBizTags(NAMESPACE_ID, AGENT_SPEC_NAME, "[\"finance\"]");
     }
 }

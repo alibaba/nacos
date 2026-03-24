@@ -306,7 +306,7 @@ export function SkillOptimizeDialog({
             <h3 className="text-xs font-medium text-muted-foreground">
               {t('skill.originalContent')}
             </h3>
-            <div className="rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
+            <div className="app-markdown rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
               <Markdown remarkPlugins={[remarkGfm]}>
                 {targetFileName === SKILL_MD_VALUE
                   ? skill.instruction || ''
@@ -324,7 +324,7 @@ export function SkillOptimizeDialog({
               className="rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-y-auto"
             >
               {optimizedSkill ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
+                <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                   <Markdown remarkPlugins={[remarkGfm]}>
                     {optimizedSkill.instruction || ''}
                   </Markdown>
