@@ -84,12 +84,22 @@ export interface SkillListParams {
 
 export type PipelineExecutionStatus = 'IN_PROGRESS' | 'APPROVED' | 'REJECTED';
 
+/** Per-criterion audit checkpoint from a pipeline plugin. */
+export interface PipelineCheckpoint {
+  title: string;
+  passed: boolean;
+}
+
 /** Single pipeline node execution result */
 export interface PipelineNode {
   nodeId: string;
   executedAt?: string; // ISO 8601
   passed: boolean;
   message?: string;
+  /** Semantic type of message: text | json | markdown | html */
+  messageType?: string;
+  /** Per-criterion audit outcomes from the pipeline plugin */
+  checkpoints?: PipelineCheckpoint[];
   durationMs?: number;
 }
 

@@ -20,6 +20,12 @@ export interface ResourceViewerProps {
   content: string; // manifest.json content
   editable: boolean;
   onChange?: (resources: Record<string, AgentSpecResource>, content: string) => void;
+  onCreateFile?: (parentKey?: string) => void;
+  onCreateFolder?: (parentKey?: string) => void;
+  onDeleteNode?: (key: string, nodeType: 'file' | 'folder') => void;
+  onRenameFile?: (key: string, newName: string) => void;
+  onRenameFolder?: (key: string, newName: string) => void;
+  virtualFolders?: string[];
   className?: string;
 }
 
@@ -30,6 +36,12 @@ export function ResourceViewer({
   content,
   editable,
   onChange,
+  onCreateFile,
+  onCreateFolder,
+  onDeleteNode,
+  onRenameFile,
+  onRenameFolder,
+  virtualFolders,
   className,
 }: ResourceViewerProps) {
   const { t } = useTranslation();
@@ -37,7 +49,7 @@ export function ResourceViewer({
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
-  const nodes = useMemo(() => buildFileTree(resources, content), [resources, content]);
+  const nodes = useMemo(() => buildFileTree(resources, content, virtualFolders), [resources, content, virtualFolders]);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -124,6 +136,11 @@ export function ResourceViewer({
             selectedKey={selectedKey}
             onSelect={setSelectedKey}
             editable={editable}
+            onCreateFile={onCreateFile}
+            onCreateFolder={onCreateFolder}
+            onDeleteNode={onDeleteNode}
+            onRenameFile={onRenameFile}
+            onRenameFolder={onRenameFolder}
           />
         </div>
 
@@ -167,7 +184,7 @@ export function ResourceViewer({
           <span>{language}</span>
           <span>UTF-8</span>
         </div>
-        <span className="leading-none">{t('agentSpec.readOnly')}</span>
+        <span className="leading-none">{editable ? t('agentSpec.modified') : t('agentSpec.readOnly')}</span>
       </div>
     </div>
   );

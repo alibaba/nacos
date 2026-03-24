@@ -105,7 +105,6 @@ export default function NewAgentSpecPage() {
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [modified, setModified] = useState(false);
-  const [publishing, setPublishing] = useState(false);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [loaded, setLoaded] = useState(mode === 'new');
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
@@ -488,6 +487,86 @@ export default function NewAgentSpecPage() {
     [selectedKey, files, t],
   );
 
+  // Rename a sub-folder.
+  // Folder key format: "type/oldPath/" – rename the last segment.
+  // Updates all files & virtual folders under that path.
+  const handleRenameFolder = useCallback(
+    (folderKey: string, newName: string) => {
+      const normalized = folderKey.replace(/\/$/, ''); // "type/old" or just "type"
+      const [resourceType, ...segments] = normalized.split('/');
+      if (!resourceType) return;
+
+      // Top-level folder rename → change resource type
+      if (segments.length === 0) {
+        const oldType = resourceType;
+        const newType = newName;
+        setFiles((prev) => {
+          const next = new Map<string, typeof prev extends Map<string, infer V> ? V : never>();
+          for (const [mapKey, file] of prev) {
+            if (file.type === oldType) {
+              next.set(mapKey, { ...file, type: newType });
+            } else {
+              next.set(mapKey, file);
+            }
+          }
+          return next;
+        });
+        setVirtualFolders((prev) => {
+          const next = new Set<string>();
+          for (const folder of prev) {
+            if (folder === oldType || folder.startsWith(`${oldType}/`)) {
+              next.add(newType + folder.slice(oldType.length));
+            } else {
+              next.add(folder);
+            }
+          }
+          return next;
+        });
+        setModified(true);
+        return;
+      }
+
+      // Sub-folder rename
+      const oldRelPath = segments.join('/');
+      const parentSegments = segments.slice(0, -1);
+      const newRelPath = [...parentSegments, newName].join('/');
+
+      setFiles((prev) => {
+        const next = new Map<string, typeof prev extends Map<string, infer V> ? V : never>();
+        for (const [mapKey, file] of prev) {
+          if (mapKey === MANIFEST_KEY || file.type !== resourceType) {
+            next.set(mapKey, file);
+            continue;
+          }
+          if (mapKey === oldRelPath || mapKey.startsWith(`${oldRelPath}/`)) {
+            const updatedKey = newRelPath + mapKey.slice(oldRelPath.length);
+            next.set(updatedKey, file);
+          } else {
+            next.set(mapKey, file);
+          }
+        }
+        return next;
+      });
+
+      setVirtualFolders((prev) => {
+        const next = new Set<string>();
+        const oldPrefix = `${resourceType}/${oldRelPath}`;
+        const newPrefix = `${resourceType}/${newRelPath}`;
+        for (const folder of prev) {
+          if (folder === oldPrefix || folder.startsWith(`${oldPrefix}/`)) {
+            next.add(newPrefix + folder.slice(oldPrefix.length));
+          } else {
+            next.add(folder);
+          }
+        }
+        return next;
+      });
+
+      setModified(true);
+    },
+    [],
+  );
+
   // ===== Drag handle for resizable panel =====
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -618,7 +697,8 @@ export default function NewAgentSpecPage() {
         namespaceId,
         agentSpecCard,
       });
-      const nextDraftVersion = updateRes.data || draftVersion;
+      // Backend returns "ok", not the actual version — keep existing draftVersion
+      const nextDraftVersion = draftVersion || updateRes.data;
       if (JSON.stringify(labels) !== JSON.stringify(savedLabels)) {
         await agentSpecApi.updateLabels({
           namespaceId,
@@ -657,27 +737,6 @@ export default function NewAgentSpecPage() {
       setSaving(false);
     }
   }, [navigate, persistDraft]);
-
-  const handleSaveAndPublish = useCallback(async () => {
-    setPublishing(true);
-    try {
-      const result = await persistDraft(false);
-      if (!result?.draftVersion) {
-        return;
-      }
-      await agentSpecApi.submit({
-        namespaceId,
-        agentSpecName: result.name,
-        version: result.draftVersion,
-      });
-      toast.success(t('agentSpec.submitSuccess'));
-      navigate(`/agentspec/${encodeURIComponent(result.name)}`);
-    } catch {
-      // axios interceptor handles error toast
-    } finally {
-      setPublishing(false);
-    }
-  }, [navigate, namespaceId, persistDraft, t]);
 
   // ===== Loading state =====
   if (!loaded) {
@@ -760,20 +819,10 @@ export default function NewAgentSpecPage() {
                 {t('agentSpec.editBasicInfo')}
               </Button>
               <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={handleSaveAndPublish}
-                disabled={saving || publishing || !agentSpecName.trim()}
-              >
-                <Save className="h-3.5 w-3.5" />
-                {publishing ? t('common.loading') : t('agentSpec.saveAndPublish')}
-              </Button>
-              <Button
                 size="sm"
                 className="gap-1.5"
                 onClick={handleSave}
-                disabled={saving || publishing || !agentSpecName.trim()}
+                disabled={saving || !agentSpecName.trim()}
               >
                 <Save className="h-3.5 w-3.5" />
                 {saving ? t('common.loading') : t('common.save')}
@@ -794,6 +843,7 @@ export default function NewAgentSpecPage() {
                 onCreateFolder={handleCreateFolder}
                 onDeleteNode={handleDeleteNode}
                 onRenameFile={handleRenameFile}
+                onRenameFolder={handleRenameFolder}
               />
             </div>
 

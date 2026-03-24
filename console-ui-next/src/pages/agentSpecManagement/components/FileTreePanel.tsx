@@ -33,12 +33,12 @@ export interface FileTreePanelProps {
   onCreateFolder?: (parentKey?: string) => void;
   onDeleteNode?: (key: string, nodeType: 'file' | 'folder') => void;
   onRenameFile?: (key: string, newName: string) => void;
+  onRenameFolder?: (key: string, newName: string) => void;
 }
 
 // ===== Constants =====
 
 const MANIFEST_KEY = 'manifest.json';
-const SYSTEM_RESOURCE_TYPES = new Set(['config', 'skill', 'cron', 'dockerfile', 'other']);
 
 // ===== Sub-components =====
 
@@ -61,13 +61,13 @@ interface TreeNodeProps {
   onCreateFolder?: (parentKey?: string) => void;
   onDeleteNode?: (key: string, nodeType: 'file' | 'folder') => void;
   onRenameFile?: (key: string, newName: string) => void;
+  onRenameFolder?: (key: string, newName: string) => void;
   depth: number;
 }
 
 function isTopLevelFolder(node: FileTreeNode): boolean {
   return node.type === 'folder'
-    && node.key.split('/').filter(Boolean).length === 1
-    && SYSTEM_RESOURCE_TYPES.has(node.resourceType ?? '');
+    && node.key.split('/').filter(Boolean).length === 1;
 }
 
 function TreeActionButton({
@@ -163,7 +163,7 @@ function FileNode({
   return (
     <div
       className={cn(
-        'group flex items-center gap-1 px-2 py-1 cursor-pointer rounded-sm text-sm hover:bg-accent/50',
+        'group/row flex items-center gap-1 px-2 py-1 cursor-pointer rounded-sm text-sm hover:bg-accent/50',
         isSelected && 'text-foreground',
       )}
       style={{ paddingLeft: `${depth * 12 + 8}px` }}
@@ -189,7 +189,7 @@ function FileNode({
         <span className="truncate flex-1 min-w-0">{node.name}</span>
       )}
       {editable && !isManifest && !renaming && (
-        <div className="shrink-0 ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="shrink-0 ml-auto flex items-center gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
           <button
             className="p-0.5 rounded hover:bg-accent"
             onClick={(e) => {
@@ -225,18 +225,29 @@ function FolderNode({
   onCreateFolder,
   onDeleteNode,
   onRenameFile,
+  onRenameFolder,
   depth,
 }: TreeNodeProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
+  const [renaming, setRenaming] = useState(false);
   const canDelete = !isTopLevelFolder(node);
+  const canRename = true;
+
+  const handleRename = useCallback(
+    (newName: string) => {
+      setRenaming(false);
+      onRenameFolder?.(node.key, newName);
+    },
+    [node.key, onRenameFolder],
+  );
 
   return (
     <div role="group">
       <div
-        className="group flex items-center gap-1 px-2 py-1 cursor-pointer rounded-sm text-sm hover:bg-accent/50 font-medium"
+        className="group/row flex items-center gap-1 px-2 py-1 cursor-pointer rounded-sm text-sm hover:bg-accent/50 font-medium"
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => !renaming && setExpanded(!expanded)}
         role="treeitem"
         aria-expanded={expanded}
         tabIndex={0}
@@ -252,9 +263,28 @@ function FolderNode({
         ) : (
           <Folder className="h-4 w-4 shrink-0 text-blue-500" />
         )}
-        <span className="truncate flex-1 min-w-0">{node.name}</span>
-        {editable && (
-          <div className="shrink-0 ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        {renaming ? (
+          <RenameInput
+            initialName={node.name.replace(/\/$/, '')}
+            onConfirm={handleRename}
+            onCancel={() => setRenaming(false)}
+          />
+        ) : (
+          <span className="truncate flex-1 min-w-0">{node.name}</span>
+        )}
+        {editable && !renaming && (
+          <div className="shrink-0 ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100">
+            {canRename && (
+              <TreeActionButton
+                label={t('agentSpec.renameNode', { name: node.name })}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setRenaming(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </TreeActionButton>
+            )}
             <TreeActionButton
               label={t('agentSpec.createFileIn', { name: node.name })}
               onClick={(event) => {
@@ -301,6 +331,7 @@ function FolderNode({
               onCreateFolder={onCreateFolder}
               onDeleteNode={onDeleteNode}
               onRenameFile={onRenameFile}
+              onRenameFolder={onRenameFolder}
               depth={depth + 1}
             />
           ))}
@@ -328,6 +359,7 @@ export function FileTreePanel({
   onCreateFolder,
   onDeleteNode,
   onRenameFile,
+  onRenameFolder,
 }: FileTreePanelProps) {
   const { t } = useTranslation();
 
@@ -349,7 +381,7 @@ export function FileTreePanel({
         </div>
       )}
       <ScrollArea className="flex-1 bg-inherit">
-        <div className="min-h-full bg-inherit py-2 overflow-x-hidden" role="tree" aria-label={t('agentSpec.fileTree')}>
+        <div className="min-h-full bg-inherit py-2" role="tree" aria-label={t('agentSpec.fileTree')}>
           {nodes.map((node) => (
             <TreeNodeItem
               key={node.key}
@@ -361,6 +393,7 @@ export function FileTreePanel({
               onCreateFolder={onCreateFolder}
               onDeleteNode={onDeleteNode}
               onRenameFile={onRenameFile}
+              onRenameFolder={onRenameFolder}
               depth={0}
             />
           ))}

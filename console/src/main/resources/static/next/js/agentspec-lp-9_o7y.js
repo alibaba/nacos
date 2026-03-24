@@ -1,0 +1,1 @@
+function n(t){if(!t)return null;try{const r=JSON.parse(t);return r&&typeof r.executionId=="string"&&typeof r.status=="string"?r:null}catch{return null}}function s(t){if(!t)return[];try{const r=JSON.parse(t);return Array.isArray(r)?r.filter(e=>typeof e=="string"):[]}catch{return[]}}export{n as a,s as p};
