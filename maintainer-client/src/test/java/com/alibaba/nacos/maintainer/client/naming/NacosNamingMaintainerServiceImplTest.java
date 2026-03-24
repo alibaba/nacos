@@ -567,6 +567,35 @@ public class NacosNamingMaintainerServiceImplTest {
     }
     
     @Test
+    void testListInstancesWithClusterName() throws Exception {
+        // Arrange
+        List<Instance> expectedInfo = new ArrayList<>();
+        expectedInfo.add(new Instance());
+        expectedInfo.get(0).setIp("11.1.1.1");
+        expectedInfo.get(0).setPort(8848);
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(Result.success(expectedInfo)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        String serviceName = "testService";
+        String clusterName = "testCluster";
+        boolean healthyOnly = true;
+        List<Instance> result = nacosNamingMaintainerService.listInstances(serviceName, clusterName, healthyOnly);
+        
+        // Assert
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("11.1.1.1", result.get(0).getIp());
+        assertEquals(8848, result.get(0).getPort());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(requestCaptor.capture());
+        assertTrue(requestCaptor.getValue().getParamValues().containsKey("clusterName"));
+        assertEquals("testCluster", requestCaptor.getValue().getParamValues().get("clusterName"));
+    }
+    
+    @Test
     void testGetInstanceDetail() throws Exception {
         // Arrange
         String serviceName = "testService";
