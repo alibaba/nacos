@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
 
 import java.io.Serial;
 

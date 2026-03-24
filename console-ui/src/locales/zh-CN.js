@@ -121,7 +121,7 @@ const I18N_CONF = {
     trace: '追踪插件',
     environment: '环境插件',
     control: '控制插件',
-    'data-filter': '数据过滤插件',
+    visibility: '可见性插件',
     'ai-pipeline': 'AI 管道插件',
     'ai-storage': 'AI 存储插件',
   },

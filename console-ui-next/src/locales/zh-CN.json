@@ -732,6 +732,7 @@
     "typeTrace": "追踪",
     "typeEnvironment": "环境",
     "typeControl": "控制",
+    "typeVisibility": "可见性",
     "availableNodes": "可用节点",
     "yes": "是",
     "no": "否"

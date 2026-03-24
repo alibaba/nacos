@@ -732,6 +732,7 @@
     "typeTrace": "Trace",
     "typeEnvironment": "Environment",
     "typeControl": "Control",
+    "typeVisibility": "Visibility",
     "availableNodes": "Available Nodes",
     "yes": "Yes",
     "no": "No"

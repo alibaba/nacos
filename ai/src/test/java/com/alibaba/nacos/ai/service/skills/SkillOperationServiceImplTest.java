@@ -40,9 +40,10 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterService;
+import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +55,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -113,9 +112,9 @@ class SkillOperationServiceImplTest {
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
-    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+    private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
 
-    private DataFilterPluginManager mockDataFilterManager;
+    private VisibilityPluginManager mockVisibilityManager;
 
     @BeforeEach
     void setUp() {
@@ -131,16 +130,16 @@ class SkillOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository, manifestService);
-        mockDataFilterManager = mock(DataFilterPluginManager.class);
-        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
-        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
-        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
+        mockVisibilityManager = mock(VisibilityPluginManager.class);
+        lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
     }
 
     @AfterEach
     void tearDown() {
-        if (dataFilterManagerStatic != null) {
-            dataFilterManagerStatic.close();
+        if (visibilityManagerStatic != null) {
+            visibilityManagerStatic.close();
         }
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
@@ -412,10 +411,10 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
-                .thenReturn(Collections.singletonList(meta1));
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), any()))
+                .thenReturn(ValidationResult.allow());
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("userB");
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
@@ -436,10 +435,10 @@ class SkillOperationServiceImplTest {
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("otherUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -459,10 +458,10 @@ class SkillOperationServiceImplTest {
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -517,10 +516,10 @@ class SkillOperationServiceImplTest {
         meta.setMetaVersion(1L);
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -579,10 +578,10 @@ class SkillOperationServiceImplTest {
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,

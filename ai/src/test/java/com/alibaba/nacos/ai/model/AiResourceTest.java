@@ -16,24 +16,24 @@
 
 package com.alibaba.nacos.ai.model;
 
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
-import com.alibaba.nacos.plugin.datafilter.model.FilterableResource;
+import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
- * {@link AiResource} unit test focusing on FilterableResource integration.
+ * {@link AiResource} unit test focusing on VisibilityResource integration.
  *
  * @author xiweng.yy
  */
 class AiResourceTest {
     
     @Test
-    void testExtendsFilterableResource() {
+    void testExtendsVisibilityResource() {
         AiResource resource = new AiResource();
-        assertInstanceOf(FilterableResource.class, resource);
+        assertInstanceOf(VisibilityResource.class, resource);
     }
     
     @Test

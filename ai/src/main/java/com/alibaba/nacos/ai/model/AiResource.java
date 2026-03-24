@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.model;
 
-import com.alibaba.nacos.plugin.datafilter.model.FilterableResource;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 
 import java.sql.Timestamp;
 
@@ -26,7 +26,7 @@ import java.sql.Timestamp;
  * @author nacos
  * @since 3.2.0
  */
-public class AiResource extends FilterableResource {
+public class AiResource extends VisibilityResource {
 
     private Long id;
 

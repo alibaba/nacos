@@ -60,9 +60,9 @@ public enum PluginType {
     CONTROL("control", "Control plugin"),
     
     /**
-     * Data filter plugin.
+     * Visibility plugin.
      */
-    DATA_FILTER("data-filter", "Data filter plugin"),
+    VISIBILITY("visibility", "Visibility plugin"),
     
     /**
      * AI publish pipeline plugin.

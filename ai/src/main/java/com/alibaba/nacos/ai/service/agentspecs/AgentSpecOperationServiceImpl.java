@@ -47,7 +47,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.AgentSpecPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +121,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             AiResource existedMeta, boolean isNew) throws NacosException {
         String agentSpecName = agentSpec.getName();
         long uniformId = System.currentTimeMillis();
-        String currentUser = DataFilterHelper.resolveCurrentUser();
+        String currentUser = DataFilterHelper.resolveCurrentIdentity();
         
         // 1) write storage for draft version
         byte[] mainContent = buildMainContent(agentSpec, uniformId);
@@ -821,7 +821,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
-        DataFilterHelper.doWriteCheck(meta);
+        DataFilterHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateMetaVersionInfoCas(namespaceId, meta, info);
@@ -830,7 +830,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateBizTags(String namespaceId, String name, String bizTags) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
-        DataFilterHelper.doWriteCheck(meta);
+        DataFilterHelper.checkWritableResource(meta);
         updateMetaBizTagsCas(namespaceId, meta, bizTags);
     }
     
@@ -867,7 +867,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
-        DataFilterHelper.doWriteCheck(meta);
+        DataFilterHelper.checkWritableResource(meta);
         boolean ok = aiResourcePersistService.updateScope(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 scope.toUpperCase());
         if (!ok) {

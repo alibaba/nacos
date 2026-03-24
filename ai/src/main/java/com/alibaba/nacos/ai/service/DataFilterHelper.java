@@ -21,14 +21,16 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
-import com.alibaba.nacos.plugin.datafilter.model.FilterableResource;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterService;
+import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,15 +41,17 @@ import java.util.Optional;
  */
 public class DataFilterHelper {
 
-    private static final String DATA_FILTER_SERVICE_NAME = "nacos-default-ai";
+    private static final String VISIBILITY_PLUGIN_TYPE_CONFIG_KEY = "nacos.plugin.visibility.type";
+    
+    private static final String DEFAULT_VISIBILITY_SERVICE_NAME = "nacos-default-ai";
 
     private DataFilterHelper() {
     }
 
     /**
-     * Resolve the current user from request context using the plugin-level identity abstraction.
+     * Resolve the current identity from request context using the plugin-level identity abstraction.
      */
-    public static String resolveCurrentUser() {
+    public static String resolveCurrentIdentity() {
         try {
             IdentityContext identity = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
             Object id = identity.getParameter(Constants.Identity.IDENTITY_ID);
@@ -64,13 +68,22 @@ public class DataFilterHelper {
      * @param <T>        filterable resource type
      * @return resources the current user is allowed to read
      */
-    public static <T extends FilterableResource> List<T> doReadFilter(List<T> candidates) {
-        Optional<DataFilterService> filterService = DataFilterPluginManager.getInstance()
-                .findFilterService(DATA_FILTER_SERVICE_NAME);
-        if (!filterService.isPresent()) {
+    public static <T extends VisibilityResource> List<T> filterReadableResources(List<T> candidates) {
+        Optional<VisibilityService> visibilityService = VisibilityPluginManager.getInstance()
+                .findVisibilityService(resolveVisibilityServiceName());
+        if (visibilityService.isEmpty()) {
             return candidates;
         }
-        return filterService.get().filter(resolveCurrentUser(), DataFilterConstants.ACTION_READ, null, candidates);
+        String currentUser = resolveCurrentIdentity();
+        List<T> result = new ArrayList<>(candidates.size());
+        for (T each : candidates) {
+            ValidationResult validationResult = visibilityService.get()
+                    .validateVisibility(currentUser, DataFilterConstants.ACTION_READ, null, each);
+            if (validationResult.isAllowed()) {
+                result.add(each);
+            }
+        }
+        return result;
     }
 
     /**
@@ -79,17 +92,23 @@ public class DataFilterHelper {
      * @param resource the resource to check
      * @throws NacosException if no write permission
      */
-    public static void doWriteCheck(AiResource resource) throws NacosException {
-        Optional<DataFilterService> filterService = DataFilterPluginManager.getInstance()
-                .findFilterService(DATA_FILTER_SERVICE_NAME);
-        if (!filterService.isPresent()) {
+    public static void checkWritableResource(AiResource resource) throws NacosException {
+        Optional<VisibilityService> visibilityService = VisibilityPluginManager.getInstance()
+                .findVisibilityService(resolveVisibilityServiceName());
+        if (visibilityService.isEmpty()) {
             return;
         }
-        List<AiResource> result = filterService.get()
-                .filter(resolveCurrentUser(), DataFilterConstants.ACTION_WRITE, null, Collections.singletonList(resource));
-        if (result.isEmpty()) {
+        ValidationResult result = visibilityService.get()
+                .validateVisibility(resolveCurrentIdentity(), DataFilterConstants.ACTION_WRITE, null, resource);
+        if (!result.isAllowed()) {
             throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
                     "No permission to modify skill: " + resource.getName());
         }
+    }
+    
+    private static String resolveVisibilityServiceName() {
+        // TODO: replace EnvUtil-based lookup with a dedicated visibility plugin config model.
+        String serviceName = EnvUtil.getProperty(VISIBILITY_PLUGIN_TYPE_CONFIG_KEY, DEFAULT_VISIBILITY_SERVICE_NAME);
+        return serviceName.trim();
     }
 }

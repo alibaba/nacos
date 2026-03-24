@@ -872,7 +872,7 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>nacos-datafilter-plugin</artifactId>
+                <artifactId>nacos-visibility-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

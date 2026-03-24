@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.repository;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
