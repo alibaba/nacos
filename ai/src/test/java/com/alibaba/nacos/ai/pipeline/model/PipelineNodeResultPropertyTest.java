@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.pipeline.model;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
 import com.fasterxml.jackson.core.type.TypeReference;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
@@ -67,16 +68,31 @@ class PipelineNodeResultPropertyTest {
         Arbitrary<String> messages = Arbitraries.strings().alpha().numeric().withChars(' ', '.', ',')
                 .ofMinLength(0).ofMaxLength(50);
         Arbitrary<Long> durations = Arbitraries.longs().between(0, 1_000_000L);
+        Arbitrary<String> messageTypes = Arbitraries.oneOf(
+                Arbitraries.just(null),
+                Arbitraries.of("text", "json", "markdown", "html"));
+        Arbitrary<List<Checkpoint>> checkpoints = Arbitraries.oneOf(
+                Arbitraries.just(null),
+                checkpoint().list().ofMinSize(0).ofMaxSize(5));
         
-        return Combinators.combine(nodeIds, executedAts, passedValues, messages, durations)
-                .as((nodeId, executedAt, passed, message, durationMs) -> {
+        return Combinators.combine(nodeIds, executedAts, passedValues, messages, durations, messageTypes, checkpoints)
+                .as((nodeId, executedAt, passed, message, durationMs, messageType, cps) -> {
                     PipelineNodeResult result = new PipelineNodeResult();
                     result.setNodeId(nodeId);
                     result.setExecutedAt(executedAt);
                     result.setPassed(passed);
                     result.setMessage(message);
                     result.setDurationMs(durationMs);
+                    result.setMessageType(messageType);
+                    result.setCheckpoints(cps);
                     return result;
                 });
+    }
+
+    private Arbitrary<Checkpoint> checkpoint() {
+        Arbitrary<String> titles = Arbitraries.strings().alpha().numeric().withChars(' ', '_', '/')
+                .ofMinLength(1).ofMaxLength(40);
+        Arbitrary<Boolean> cpPassed = Arbitraries.of(true, false);
+        return Combinators.combine(titles, cpPassed).as(Checkpoint::new);
     }
 }

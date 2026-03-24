@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.spi.impl;
 
+import com.alibaba.nacos.plugin.ai.pipeline.model.Checkpoint;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
+import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineMessageType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
@@ -68,6 +70,12 @@ public class SkillScannerPipelineService implements PublishPipelineService {
      */
     static final String SCAN_OUTPUT_FORMAT = "markdown";
 
+    private static final String CHECKPOINT_AVAILABILITY = "skill-scanner 安装与可用性";
+
+    private static final String CHECKPOINT_APPLICABILITY = "skill-scanner 扫描适用性";
+
+    private static final String CHECKPOINT_CLI = "skill-scanner CLI 执行";
+
     /**
      * Installation hint when skill-scanner is not found.
      */
@@ -107,17 +115,21 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     @Override
     public PublishPipelineResult execute(PublishPipelineContext context) {
         if (scannerCommand == null || scannerCommand.isBlank()) {
-            return PublishPipelineResult.reject(INSTALLATION_HINT);
+            return PublishPipelineResult.reject(INSTALLATION_HINT, PublishPipelineMessageType.MARKDOWN,
+                    List.of(new Checkpoint(CHECKPOINT_AVAILABILITY, false)));
         }
 
         if (!(context instanceof ResourceFilesPipelineContext)) {
-            return PublishPipelineResult.pass("资源不包含可扫描文件，跳过 skill-scanner 扫描");
+            return PublishPipelineResult.pass("资源不包含可扫描文件，跳过 skill-scanner 扫描",
+                    PublishPipelineMessageType.MARKDOWN,
+                    List.of(new Checkpoint(CHECKPOINT_APPLICABILITY, true)));
         }
 
         ResourceFilesPipelineContext resourceContext = (ResourceFilesPipelineContext) context;
         List<ResourceFileContent> files = resourceContext.getFiles();
         if (files == null || files.isEmpty()) {
-            return PublishPipelineResult.pass("资源无文件内容，跳过扫描");
+            return PublishPipelineResult.pass("资源无文件内容，跳过扫描", PublishPipelineMessageType.MARKDOWN,
+                    List.of(new Checkpoint(CHECKPOINT_APPLICABILITY, true)));
         }
 
         Path tempDir = null;
@@ -146,22 +158,30 @@ public class SkillScannerPipelineService implements PublishPipelineService {
             if (exitCode == 0) {
                 LOGGER.info("[SkillScannerPipeline] {} {} 扫描通过", context.getResourceType(),
                     resourceContext.getResourceName());
-                return PublishPipelineResult.pass("skill-scanner 扫描通过，未发现 HIGH/CRITICAL 级别风险");
+                return PublishPipelineResult.pass("skill-scanner 扫描通过，未发现 HIGH/CRITICAL 级别风险",
+                        PublishPipelineMessageType.MARKDOWN,
+                        SkillScannerMarkdownFindingParser.buildPassCheckpoints());
             } else {
                 String scanOutput = output.toString();
                 LOGGER.warn("[SkillScannerPipeline] {} {} 扫描发现风险, command={}, exitCode={}, output={} ",
                     context.getResourceType(), resourceContext.getResourceName(), scannerCommand, exitCode,
                     scanOutput);
                 return PublishPipelineResult.reject(
-                        "skill-scanner 检测到安全风险（HIGH/CRITICAL 级别），发布被拒绝。\n扫描结果:\n" + scanOutput);
+                        "skill-scanner 检测到安全风险（HIGH/CRITICAL 级别），发布被拒绝。\n扫描结果:\n" + scanOutput,
+                        PublishPipelineMessageType.MARKDOWN,
+                        SkillScannerMarkdownFindingParser.buildRejectCheckpoints(scanOutput));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.error("[SkillScannerPipeline] 扫描被中断", e);
-            return PublishPipelineResult.reject("skill-scanner 扫描被中断: " + e.getMessage());
+            return PublishPipelineResult.reject("skill-scanner 扫描被中断: " + e.getMessage(),
+                    PublishPipelineMessageType.MARKDOWN,
+                    List.of(new Checkpoint(CHECKPOINT_CLI, false)));
         } catch (IOException e) {
             LOGGER.warn("[SkillScannerPipeline] 执行 skill-scanner 失败, command={}: {}", scannerCommand, e.getMessage());
-            return PublishPipelineResult.reject("执行 skill-scanner 失败: " + e.getMessage());
+            return PublishPipelineResult.reject("执行 skill-scanner 失败: " + e.getMessage(),
+                    PublishPipelineMessageType.MARKDOWN,
+                    List.of(new Checkpoint(CHECKPOINT_CLI, false)));
         } finally {
             if (tempDir != null) {
                 deleteRecursively(tempDir.toFile());

@@ -130,6 +130,10 @@ public class PublishPipelineExecutor {
                         long endTime = System.currentTimeMillis();
                         nodeResult.setPassed(pipelineResult.isPassed());
                         nodeResult.setMessage(pipelineResult.getMessage());
+                        if (pipelineResult.getType() != null) {
+                            nodeResult.setMessageType(pipelineResult.getType().getCode());
+                        }
+                        nodeResult.setCheckpoints(pipelineResult.getCheckpoints());
                         nodeResult.setDurationMs(endTime - startTime);
                         
                         if (!pipelineResult.isPassed()) {

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.ai.pipeline.model;
 
+import java.util.List;
+
 /**
  * Result of a single publish pipeline plugin execution.
  *
@@ -36,26 +38,63 @@ public class PublishPipelineResult {
      */
     private String message;
 
+    /**
+     * Semantic type of {@link #message} (e.g. markdown report from skill-scanner).
+     */
+    private PublishPipelineMessageType type;
+
+    /**
+     * Per-criterion audit outcomes for this plugin run.
+     */
+    private List<Checkpoint> checkpoints;
+
     public PublishPipelineResult() {
     }
 
     public PublishPipelineResult(boolean passed, String message) {
         this.passed = passed;
         this.message = message;
+        this.type = PublishPipelineMessageType.TEXT;
     }
 
     /**
-     * Create a passed result.
+     * Create a passed result (message treated as plain text).
      */
     public static PublishPipelineResult pass(String message) {
-        return new PublishPipelineResult(true, message);
+        return pass(message, PublishPipelineMessageType.TEXT, null);
     }
 
     /**
-     * Create a rejected result.
+     * Create a passed result with explicit message type and audit checkpoints.
+     */
+    public static PublishPipelineResult pass(String message, PublishPipelineMessageType type,
+            List<Checkpoint> checkpoints) {
+        PublishPipelineResult r = new PublishPipelineResult();
+        r.passed = true;
+        r.message = message;
+        r.type = type != null ? type : PublishPipelineMessageType.TEXT;
+        r.checkpoints = checkpoints;
+        return r;
+    }
+
+    /**
+     * Create a rejected result (message treated as plain text).
      */
     public static PublishPipelineResult reject(String message) {
-        return new PublishPipelineResult(false, message);
+        return reject(message, PublishPipelineMessageType.TEXT, null);
+    }
+
+    /**
+     * Create a rejected result with explicit message type and audit checkpoints.
+     */
+    public static PublishPipelineResult reject(String message, PublishPipelineMessageType type,
+            List<Checkpoint> checkpoints) {
+        PublishPipelineResult r = new PublishPipelineResult();
+        r.passed = false;
+        r.message = message;
+        r.type = type != null ? type : PublishPipelineMessageType.TEXT;
+        r.checkpoints = checkpoints;
+        return r;
     }
 
     public boolean isPassed() {
@@ -74,9 +113,25 @@ public class PublishPipelineResult {
         this.message = message;
     }
 
+    public PublishPipelineMessageType getType() {
+        return type;
+    }
+
+    public void setType(PublishPipelineMessageType type) {
+        this.type = type;
+    }
+
+    public List<Checkpoint> getCheckpoints() {
+        return checkpoints;
+    }
+
+    public void setCheckpoints(List<Checkpoint> checkpoints) {
+        this.checkpoints = checkpoints;
+    }
+
     @Override
     public String toString() {
-        return "PublishPipelineResult{passed=" + passed + ", message='" + message + "'}";
+        return "PublishPipelineResult{passed=" + passed + ", message='" + message + "', type=" + type
+                + ", checkpoints=" + checkpoints + "}";
     }
 }
-
