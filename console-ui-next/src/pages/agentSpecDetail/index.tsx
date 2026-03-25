@@ -22,12 +22,19 @@ import {
   Trash2,
   Pencil,
   Lock,
+  Save,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import MDEditor from '@uiw/react-md-editor';
 import {
   Select,
   SelectContent,
@@ -35,6 +42,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
@@ -45,19 +60,27 @@ import {
 import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { agentSpecApi } from '@/api/agentspec';
-import { parseBizTags, parsePipelineInfo, type AgentSpecDocument } from '@/types/agentspec';
+import { parseBizTags, parsePipelineInfo, type AgentSpecDocument, type AgentSpecResource } from '@/types/agentspec';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
 import { VersionTimeline } from '../agentSpecManagement/components/VersionTimeline';
 import { ResourceViewer } from '../agentSpecManagement/components/ResourceViewer';
 import { sortVersionsDescending } from '../agentSpecManagement/components/version-utils';
-import { buildAgentSpecEditorSearch } from './version-workflow';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  resolveCreateLocation,
+  getAncestorFolders,
+  normalizeRelativePath,
+} from '../newAgentSpec/create-node-utils';
+import {
+  getAgentSpecDescription,
+  syncManifestDescription,
+} from '../newAgentSpec/manifest-description-utils';
 
 export default function AgentSpecDetailPage() {
   const { t } = useTranslation();
@@ -83,7 +106,22 @@ export default function AgentSpecDetailPage() {
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [bizTagDialogOpen, setBizTagDialogOpen] = useState(false);
   const [enableToggling, setEnableToggling] = useState(false);
+  const [scopeToggling, setScopeToggling] = useState(false);
   const [bizTags, setBizTags] = useState<string[]>([]);
+
+  // Draft editing state
+  const [isEditingDraft, setIsEditingDraft] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editAgentsContent, setEditAgentsContent] = useState('');
+  const [editResources, setEditResources] = useState<Record<string, AgentSpecResource>>({});
+  const [editContent, setEditContent] = useState('{}');
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [editVirtualFolders, setEditVirtualFolders] = useState<Set<string>>(new Set());
+  const [createNodeOpen, setCreateNodeOpen] = useState(false);
+  const [createNodeMode, setCreateNodeMode] = useState<'file' | 'folder'>('file');
+  const [createNodeType, setCreateNodeType] = useState('other');
+  const [createNodePath, setCreateNodePath] = useState('');
+  const [createNodeFallbackType, setCreateNodeFallbackType] = useState('other');
 
   const loadDetail = useCallback(() => {
     if (agentSpecName) {
@@ -94,6 +132,7 @@ export default function AgentSpecDetailPage() {
   useEffect(() => {
     setDetailDocument(null);
     setSelectedVersion('');
+    setIsEditingDraft(false);
     loadDetail();
     return () => {
       setDetailDocument(null);
@@ -112,9 +151,14 @@ export default function AgentSpecDetailPage() {
     if (!currentDetail || detailLoading || selectedVersion) {
       return;
     }
-    const fallbackVersion = sortVersionsDescending(currentDetail.versions || [])[0]?.version;
-    if (fallbackVersion) {
-      setSelectedVersion(fallbackVersion);
+    // Prefer the "latest" labelled version, fall back to first by sort order
+    const latestLabelled = currentDetail.labels?.latest;
+    const versions = sortVersionsDescending(currentDetail.versions || []);
+    const defaultVersion = (latestLabelled && versions.some(v => v.version === latestLabelled))
+      ? latestLabelled
+      : versions[0]?.version;
+    if (defaultVersion) {
+      setSelectedVersion(defaultVersion);
     }
   }, [currentDetail, detailLoading, selectedVersion]);
 
@@ -166,6 +210,21 @@ export default function AgentSpecDetailPage() {
     }
   };
 
+  const handleToggleScope = async () => {
+    if (!currentDetail) return;
+    setScopeToggling(true);
+    try {
+      const newScope = currentDetail.scope === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+      await agentSpecApi.updateScope({ namespaceId, agentSpecName, scope: newScope });
+      toast.success(t('agentSpec.scopeUpdateSuccess'));
+      await loadDetail();
+    } catch {
+      // handled by interceptor
+    } finally {
+      setScopeToggling(false);
+    }
+  };
+
   // ===== Version lifecycle handlers =====
 
   const handleCreateDraft = async (basedOnVersion?: string) => {
@@ -178,9 +237,13 @@ export default function AgentSpecDetailPage() {
       });
       toast.success(t('agentSpec.createDraftSuccess'));
       await loadDetail();
+      // Switch to the newly created draft version
+      const updated = useAgentSpecStore.getState().currentDetail;
+      if (updated?.editingVersion) {
+        setSelectedVersion(updated.editingVersion);
+      }
     } catch {
-      // axios interceptor handles toast
-      await loadDetail(); // refresh to show latest state
+      await loadDetail();
     } finally {
       setActionLoading(false);
     }
@@ -282,21 +345,6 @@ export default function AgentSpecDetailPage() {
     await loadDetail();
   };
 
-  const handleNewVersion = () => {
-    if (!selectedVersion) {
-      return;
-    }
-
-    navigate(
-      `/agentspec/new?${buildAgentSpecEditorSearch({
-        mode: 'version',
-        name: agentSpecName,
-        namespaceId,
-        sourceVersion: selectedVersion,
-      })}`,
-    );
-  };
-
   // ===== Loading skeleton =====
   if (detailLoading && !currentDetail) {
     return (
@@ -368,6 +416,336 @@ export default function AgentSpecDetailPage() {
     ([, val]) => val === selectedVersion,
   );
 
+  // ===== Draft editing handlers =====
+
+  const handleStartEdit = () => {
+    setEditDescription(spec.description ?? '');
+    setEditAgentsContent(agentsContent);
+    setEditResources({ ...resourcesWithoutAgents });
+    setEditContent(spec.content || '{}');
+    setEditVirtualFolders(new Set());
+    setIsEditingDraft(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingDraft(false);
+  };
+
+  const handleSaveDraft = async () => {
+    setDraftSaving(true);
+    try {
+      const trimmedDescription = editDescription.trim();
+      const syncedContent = syncManifestDescription(editContent, trimmedDescription);
+      const fullResource: Record<string, import('@/types/agentspec').AgentSpecResource> = { ...editResources };
+
+      const existingAgentsKey = agentsResourceEntry?.[0];
+      if (existingAgentsKey) {
+        fullResource[existingAgentsKey] = {
+          ...agentsResourceEntry![1],
+          content: editAgentsContent,
+        };
+      } else if (editAgentsContent.trim()) {
+        const newKey = `${agentSpecName}/AGENTS.MD`;
+        fullResource[newKey] = {
+          name: `${agentSpecName}/AGENTS.MD`,
+          type: 'instruction',
+          content: editAgentsContent,
+          metadata: null,
+        };
+      }
+
+      const agentSpecCard = JSON.stringify({
+        name: agentSpecName,
+        description: trimmedDescription,
+        content: syncedContent,
+        resource: fullResource,
+      });
+
+      await agentSpecApi.updateDraft({ namespaceId, agentSpecCard });
+      toast.success(t('agentSpec.draftSaveSuccess'));
+      setIsEditingDraft(false);
+      await loadDetail();
+      if (selectedVersion) {
+        const response = await agentSpecApi.getVersion({ namespaceId, agentSpecName, version: selectedVersion });
+        setDetailDocument(response.data);
+      }
+    } catch {
+      // handled by interceptor
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  // ===== File tree operation handlers for resource editing =====
+
+  const RESOURCE_TYPES = ['config', 'skill', 'cron', 'dockerfile', 'other'] as const;
+  const CUSTOM_RESOURCE_TYPE = '__custom__';
+
+  const getContextFromTreeKey = (key: string | null): { resourceType: string; relativeDir: string } => {
+    if (!key || key === 'manifest.json') {
+      return { resourceType: 'other', relativeDir: '' };
+    }
+    const isFolder = key.endsWith('/');
+    const normalized = key.replace(/\/$/, '');
+    const [resourceType, ...rest] = normalized.split('/');
+    const relativePath = rest.join('/');
+    if (!resourceType) {
+      return { resourceType: 'other', relativeDir: '' };
+    }
+    return {
+      resourceType,
+      relativeDir: isFolder ? relativePath : relativePath.split('/').slice(0, -1).join('/'),
+    };
+  };
+
+  const handleEditCreateFile = (parentKey?: string) => {
+    const { resourceType, relativeDir } = getContextFromTreeKey(parentKey ?? null);
+    const isPresetResourceType = RESOURCE_TYPES.includes(resourceType as (typeof RESOURCE_TYPES)[number]);
+    const defaultName = 'untitled';
+    setCreateNodeMode('file');
+    setCreateNodeFallbackType(resourceType || 'other');
+    setCreateNodeType(isPresetResourceType ? resourceType : CUSTOM_RESOURCE_TYPE);
+    setCreateNodePath(
+      isPresetResourceType
+        ? (relativeDir ? `${relativeDir}/${defaultName}` : defaultName)
+        : [resourceType, relativeDir, defaultName].filter(Boolean).join('/'),
+    );
+    setCreateNodeOpen(true);
+  };
+
+  const handleEditCreateFolder = (parentKey?: string) => {
+    const { resourceType, relativeDir } = getContextFromTreeKey(parentKey ?? null);
+    const isPresetResourceType = RESOURCE_TYPES.includes(resourceType as (typeof RESOURCE_TYPES)[number]);
+    const defaultName = 'new-folder';
+    setCreateNodeMode('folder');
+    setCreateNodeFallbackType(resourceType || 'other');
+    setCreateNodeType(isPresetResourceType ? resourceType : CUSTOM_RESOURCE_TYPE);
+    setCreateNodePath(
+      isPresetResourceType
+        ? (relativeDir ? `${relativeDir}/${defaultName}` : defaultName)
+        : [resourceType, relativeDir, defaultName].filter(Boolean).join('/'),
+    );
+    setCreateNodeOpen(true);
+  };
+
+  const handleConfirmCreateNode = () => {
+    const { resourceType: normalizedType, relativePath: normalizedPath } = resolveCreateLocation(
+      createNodeType,
+      createNodePath,
+      CUSTOM_RESOURCE_TYPE,
+      createNodeFallbackType,
+    );
+    if (!normalizedType) {
+      toast.error(t('agentSpec.resourceTypeRequired'));
+      return;
+    }
+    if (!normalizedPath && !(createNodeMode === 'folder' && createNodeType === CUSTOM_RESOURCE_TYPE)) {
+      toast.error(t('agentSpec.pathRequired'));
+      return;
+    }
+
+    if (createNodeMode === 'file') {
+      if (normalizedPath === 'manifest.json') {
+        toast.error(t('agentSpec.invalidFileName'));
+        return;
+      }
+      if (Object.values(editResources).some(r => r.type === normalizedType && r.name === normalizedPath)) {
+        toast.error(t('agentSpec.fileExists'));
+        return;
+      }
+      setEditResources(prev => ({
+        ...prev,
+        [normalizedPath]: {
+          name: normalizedPath,
+          type: normalizedType as AgentSpecResource['type'],
+          content: '',
+          metadata: null,
+        },
+      }));
+    } else {
+      const folderKey = `${normalizedType}/${normalizedPath}`;
+      const folderExists = editVirtualFolders.has(folderKey) ||
+        Object.values(editResources).some(r =>
+          r.type === normalizedType && getAncestorFolders(r.name).includes(normalizedPath)
+        );
+      if (folderExists) {
+        toast.error(t('agentSpec.folderExists'));
+        return;
+      }
+      setEditVirtualFolders(prev => {
+        const next = new Set(prev);
+        next.add(folderKey);
+        return next;
+      });
+    }
+    setCreateNodeOpen(false);
+  };
+
+  const handleEditDeleteNode = (key: string, nodeType: 'file' | 'folder') => {
+    if (key === 'manifest.json') return;
+    if (nodeType === 'folder') {
+      const normalizedKey = key.replace(/\/$/, '');
+      const [resourceType, ...segments] = normalizedKey.split('/');
+      const relativePath = segments.join('/');
+      if (!resourceType || !relativePath) return;
+
+      setEditResources(prev => {
+        const next = { ...prev };
+        for (const [k, r] of Object.entries(next)) {
+          if (r.type !== resourceType) continue;
+          if (r.name === relativePath || r.name.startsWith(`${relativePath}/`)) {
+            delete next[k];
+          }
+        }
+        return next;
+      });
+      setEditVirtualFolders(prev => {
+        const next = new Set<string>();
+        for (const folder of prev) {
+          if (folder !== normalizedKey && !folder.startsWith(`${normalizedKey}/`)) {
+            next.add(folder);
+          }
+        }
+        return next;
+      });
+    } else {
+      setEditResources(prev => {
+        const next = { ...prev };
+        for (const [k, r] of Object.entries(next)) {
+          if (`${r.type}/${r.name}` === key) {
+            delete next[k];
+            break;
+          }
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleEditRenameFile = (key: string, newName: string) => {
+    if (key === 'manifest.json') return;
+    setEditResources(prev => {
+      const next = { ...prev };
+      for (const [k, r] of Object.entries(next)) {
+        if (`${r.type}/${r.name}` === key) {
+          const parentPath = r.name.includes('/') ? `${r.name.split('/').slice(0, -1).join('/')}/` : '';
+          const newResourceName = `${parentPath}${newName}`;
+          if (Object.values(next).some(res => res.type === r.type && res.name === newResourceName)) {
+            toast.error(t('agentSpec.fileExists'));
+            return prev;
+          }
+          delete next[k];
+          next[newResourceName] = { ...r, name: newResourceName };
+          break;
+        }
+      }
+      return next;
+    });
+  };
+
+  // Rename a folder.
+  // If folderKey is a top-level type folder (e.g. "config/"), rename changes the resource type.
+  // If folderKey is a sub-folder (e.g. "config/oldPath/"), rename the last segment of oldPath.
+  const handleEditRenameFolder = (folderKey: string, newName: string) => {
+    const normalized = folderKey.replace(/\/$/, ''); // "type/old" or just "type"
+    const [resourceType, ...segments] = normalized.split('/');
+    if (!resourceType) return;
+
+    // Top-level folder rename → change resource type
+    if (segments.length === 0) {
+      const oldType = resourceType;
+      const newType = newName;
+      setEditResources(prev => {
+        const next: typeof prev = {};
+        for (const [k, r] of Object.entries(prev)) {
+          if (r.type === oldType) {
+            next[k] = { ...r, type: newType as AgentSpecResource['type'] };
+          } else {
+            next[k] = r;
+          }
+        }
+        return next;
+      });
+      setEditVirtualFolders(prev => {
+        const next = new Set<string>();
+        for (const folder of prev) {
+          if (folder === oldType || folder.startsWith(`${oldType}/`)) {
+            next.add(newType + folder.slice(oldType.length));
+          } else {
+            next.add(folder);
+          }
+        }
+        return next;
+      });
+      return;
+    }
+
+    // Sub-folder rename
+    const oldRelPath = segments.join('/');
+    const parentSegments = segments.slice(0, -1);
+    const newRelPath = [...parentSegments, newName].join('/');
+
+    setEditResources(prev => {
+      const next: typeof prev = {};
+      for (const [k, r] of Object.entries(prev)) {
+        if (r.type !== resourceType) {
+          next[k] = r;
+          continue;
+        }
+        if (r.name === oldRelPath || r.name.startsWith(`${oldRelPath}/`)) {
+          const updatedName = newRelPath + r.name.slice(oldRelPath.length);
+          next[updatedName] = { ...r, name: updatedName };
+        } else {
+          next[k] = r;
+        }
+      }
+      return next;
+    });
+
+    setEditVirtualFolders(prev => {
+      const next = new Set<string>();
+      const oldPrefix = `${resourceType}/${oldRelPath}`;
+      const newPrefix = `${resourceType}/${newRelPath}`;
+      for (const folder of prev) {
+        if (folder === oldPrefix || folder.startsWith(`${oldPrefix}/`)) {
+          next.add(newPrefix + folder.slice(oldPrefix.length));
+        } else {
+          next.add(folder);
+        }
+      }
+      return next;
+    });
+  };
+
+  const createNodePathPrefix = RESOURCE_TYPES.includes(createNodeType as (typeof RESOURCE_TYPES)[number])
+    ? `${createNodeType}/`
+    : '';
+
+  const handleCreateNodeTypeChange = (value: string) => {
+    if (value === CUSTOM_RESOURCE_TYPE) {
+      const normalized = normalizeRelativePath(createNodePath);
+      const prefix = RESOURCE_TYPES.includes(createNodeType as (typeof RESOURCE_TYPES)[number])
+        ? `${createNodeType}/`
+        : '';
+      setCreateNodeType(value);
+      setCreateNodePath(prefix && normalized ? `${prefix}${normalized}` : normalized);
+      return;
+    }
+    const normalized = normalizeRelativePath(createNodePath);
+    const currentPrefix = RESOURCE_TYPES.includes(createNodeType as (typeof RESOURCE_TYPES)[number])
+      ? `${createNodeType}/`
+      : '';
+    const nextPrefix = `${value}/`;
+    const nextPath = normalized.startsWith(nextPrefix)
+      ? normalized.slice(nextPrefix.length)
+      : currentPrefix && normalized.startsWith(currentPrefix)
+        ? normalized.slice(currentPrefix.length)
+        : normalized;
+    setCreateNodeType(value);
+    setCreateNodeFallbackType(value);
+    setCreateNodePath(nextPath);
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-88px)] flex-col gap-5 pb-5">
       {/* ===== Hero Header ===== */}
@@ -390,7 +768,7 @@ export default function AgentSpecDetailPage() {
 
             <div className="flex items-center gap-2">
               {selectedVersion && (
-                <Select value={selectedVersion} onValueChange={handleSelectVersion}>
+                <Select value={selectedVersion} onValueChange={handleSelectVersion} disabled={isEditingDraft}>
                   <SelectTrigger className="w-[140px] h-7 text-xs bg-background/80">
                     <SelectValue placeholder={t('agentSpec.selectVersion')} />
                   </SelectTrigger>
@@ -402,6 +780,11 @@ export default function AgentSpecDetailPage() {
                           {latestVersion === version.version && (
                             <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1 py-0 border-0">
                               {t('agentSpec.latestVersion')}
+                            </Badge>
+                          )}
+                          {version.status === 'draft' && (
+                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 text-[10px] px-1 py-0 border-0">
+                              {t('agentSpec.versionStatus.draft')}
                             </Badge>
                           )}
                         </span>
@@ -416,22 +799,11 @@ export default function AgentSpecDetailPage() {
                 size="sm"
                 className="h-7 text-xs"
                 onClick={() => setVersionSheetOpen(true)}
+                disabled={isEditingDraft}
               >
                 <History className="mr-1 h-3 w-3" />
                 {t('agentSpec.versionHistory')}
               </Button>
-
-              {selectedVersion && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={handleNewVersion}
-                >
-                  <Plus className="mr-1 h-3 w-3" />
-                  {t('agentSpec.newVersion')}
-                </Button>
-              )}
 
             </div>
           </div>
@@ -472,18 +844,35 @@ export default function AgentSpecDetailPage() {
                   </span>
                 </label>
                 <div className="h-4 w-px bg-border" />
-                <div className="inline-flex items-center gap-2 select-none">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <Switch
+                    checked={detail.scope === 'PUBLIC'}
+                    disabled={scopeToggling}
+                    onCheckedChange={handleToggleScope}
+                  />
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
                     {detail.scope === 'PUBLIC' ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                     {detail.scope === 'PUBLIC' ? t('agentSpec.scopePublic') : t('agentSpec.scopePrivate')}
                   </span>
-                </div>
+                </label>
               </div>
-              {spec.description && (
+              {/* Description - editable in draft mode */}
+              {isEditingDraft ? (
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => {
+                    const newDesc = e.target.value;
+                    setEditDescription(newDesc);
+                    setEditContent(prev => syncManifestDescription(prev, newDesc));
+                  }}
+                  placeholder={t('agentSpec.descriptionPlaceholder')}
+                  className="text-sm max-w-2xl min-h-8 resize-none"
+                />
+              ) : spec.description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
                   {spec.description}
                 </p>
-              )}
+              ) : null}
 
               {/* Meta row */}
               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
@@ -507,29 +896,66 @@ export default function AgentSpecDetailPage() {
 
               {/* Version lifecycle action buttons */}
               {selectedVersion && currentVersionStatus && (
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40">
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <div className="flex items-center gap-2">
                   {/* Draft actions */}
                   {currentVersionStatus === 'draft' && (
                     <>
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs gap-1.5"
-                        disabled={actionLoading}
-                        onClick={() => handleSubmit(selectedVersion)}
-                      >
-                        <Send className="h-3 w-3" />
-                        {t('agentSpec.submit')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        disabled={actionLoading}
-                        onClick={handleDeleteDraft}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        {t('agentSpec.deleteDraft')}
-                      </Button>
+                      {isEditingDraft ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={handleCancelEdit}
+                            disabled={draftSaving}
+                          >
+                            <X className="h-3 w-3" />
+                            {t('agentSpec.cancelEdit')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={handleSaveDraft}
+                            disabled={draftSaving}
+                          >
+                            {draftSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                            {draftSaving ? t('common.loading') : t('agentSpec.saveDraft')}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={handleStartEdit}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            {t('agentSpec.editDraft')}
+                          </Button>
+                          <div className="h-4 w-px bg-border mx-0.5" />
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            disabled={actionLoading}
+                            onClick={() => handleSubmit(selectedVersion)}
+                          >
+                            <Send className="h-3 w-3" />
+                            {t('agentSpec.submit')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={actionLoading}
+                            onClick={handleDeleteDraft}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {t('agentSpec.deleteDraft')}
+                          </Button>
+                        </>
+                      )}
                     </>
                   )}
 
@@ -587,6 +1013,7 @@ export default function AgentSpecDetailPage() {
                       {t('agentSpec.createDraftFrom')}
                     </Button>
                   )}
+                  </div>
                 </div>
               )}
             </div>
@@ -596,7 +1023,7 @@ export default function AgentSpecDetailPage() {
 
       {/* ===== Tabs Content ===== */}
       <Tabs defaultValue="overview" className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
-        <TabsList>
+        <TabsList className="w-fit">
           <TabsTrigger value="overview" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" />
             {t('agentSpec.agentsFile')}
@@ -622,7 +1049,26 @@ export default function AgentSpecDetailPage() {
                 </h2>
               </div>
               <CardContent className="p-5">
-                {agentsContent ? (
+                {isEditingDraft ? (
+                  <div className="space-y-2">
+                    <div data-color-mode="light" className="dark:hidden">
+                      <MDEditor
+                        value={editAgentsContent}
+                        onChange={(val) => setEditAgentsContent(val || '')}
+                        height={500}
+                        preview="live"
+                      />
+                    </div>
+                    <div data-color-mode="dark" className="hidden dark:block">
+                      <MDEditor
+                        value={editAgentsContent}
+                        onChange={(val) => setEditAgentsContent(val || '')}
+                        height={500}
+                        preview="live"
+                      />
+                    </div>
+                  </div>
+                ) : agentsContent ? (
                   <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                     <Markdown remarkPlugins={[remarkGfm]}>
                       {agentsContent}
@@ -645,7 +1091,6 @@ export default function AgentSpecDetailPage() {
                 </div>
                 <CardContent className="p-0">
                   <div className="grid grid-cols-1 divide-y divide-border">
-                    <InfoCell compact label={t('agentSpec.agentSpecName')} value={spec.name || '-'} icon={<Package className="h-3.5 w-3.5" />} />
                     <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
                     <InfoCell
                       compact
@@ -660,14 +1105,7 @@ export default function AgentSpecDetailPage() {
                     {currentVersionSummary && (
                       <InfoCell compact label={t('agentSpec.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Package className="h-3.5 w-3.5" />} />
                     )}
-                    <InfoCell compact label={t('agentSpec.updateTime')} value={detail.updateTime > 0 ? dayjs(detail.updateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
                   </div>
-                  {spec.description && (
-                    <div className="border-t px-4 py-2.5">
-                      <p className="text-[11px] text-muted-foreground leading-none mb-1">{t('agentSpec.description')}</p>
-                      <div className="text-sm text-foreground whitespace-pre-wrap break-words">{spec.description}</div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -782,9 +1220,16 @@ export default function AgentSpecDetailPage() {
               </div>
               <CardContent className="flex-1 min-h-0 p-0">
                 <ResourceViewer
-                  resources={resourcesWithoutAgents}
-                  content={spec.content || '{}'}
-                  editable={false}
+                  resources={isEditingDraft ? editResources : resourcesWithoutAgents}
+                  content={isEditingDraft ? editContent : (spec.content || '{}')}
+                  editable={isEditingDraft}
+                  onChange={isEditingDraft ? (res, content) => { setEditResources(res); setEditContent(content); setEditDescription(getAgentSpecDescription(content)); } : undefined}
+                  onCreateFile={isEditingDraft ? handleEditCreateFile : undefined}
+                  onCreateFolder={isEditingDraft ? handleEditCreateFolder : undefined}
+                  onDeleteNode={isEditingDraft ? handleEditDeleteNode : undefined}
+                  onRenameFile={isEditingDraft ? handleEditRenameFile : undefined}
+                  onRenameFolder={isEditingDraft ? handleEditRenameFolder : undefined}
+                  virtualFolders={isEditingDraft ? [...editVirtualFolders] : undefined}
                   className="h-full min-h-0"
                 />
               </CardContent>
@@ -801,7 +1246,6 @@ export default function AgentSpecDetailPage() {
                 </div>
                 <CardContent className="p-0">
                   <div className="grid grid-cols-1 divide-y divide-border">
-                    <InfoCell compact label={t('agentSpec.agentSpecName')} value={spec.name || '-'} icon={<Package className="h-3.5 w-3.5" />} />
                     <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
                     <InfoCell
                       compact
@@ -816,14 +1260,7 @@ export default function AgentSpecDetailPage() {
                     {currentVersionSummary && (
                       <InfoCell compact label={t('agentSpec.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Package className="h-3.5 w-3.5" />} />
                     )}
-                    <InfoCell compact label={t('agentSpec.updateTime')} value={detail.updateTime > 0 ? dayjs(detail.updateTime).format('YYYY-MM-DD HH:mm') : '-'} icon={<Clock className="h-3.5 w-3.5" />} />
                   </div>
-                  {spec.description && (
-                    <div className="border-t px-4 py-2.5">
-                      <p className="text-[11px] text-muted-foreground leading-none mb-1">{t('agentSpec.description')}</p>
-                      <div className="text-sm text-foreground whitespace-pre-wrap break-words">{spec.description}</div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </div>
@@ -863,6 +1300,80 @@ export default function AgentSpecDetailPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ===== Create Node Dialog ===== */}
+      <Dialog open={createNodeOpen} onOpenChange={setCreateNodeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {createNodeMode === 'file' ? t('agentSpec.createFile') : t('agentSpec.createFolder')}
+            </DialogTitle>
+            <DialogDescription>
+              {createNodeMode === 'file'
+                ? t('agentSpec.createFileDesc')
+                : t('agentSpec.createFolderDesc')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2.5">
+              <Label>{t('agentSpec.resourceType')}</Label>
+              <Select
+                value={RESOURCE_TYPES.includes(createNodeType as (typeof RESOURCE_TYPES)[number]) ? createNodeType : CUSTOM_RESOURCE_TYPE}
+                onValueChange={handleCreateNodeTypeChange}
+              >
+                <SelectTrigger className="bg-transparent">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESOURCE_TYPES.map((resourceType) => (
+                    <SelectItem key={resourceType} value={resourceType}>
+                      {resourceType}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={CUSTOM_RESOURCE_TYPE}>
+                    {t('agentSpec.customFolder')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2.5">
+              <Label>
+                {createNodeMode === 'file'
+                  ? t('agentSpec.filePath')
+                  : t('agentSpec.folderPath')}
+              </Label>
+              <div className="flex h-9 items-center overflow-hidden rounded-md border border-input bg-transparent shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring">
+                {createNodePathPrefix && (
+                  <span className="shrink-0 border-r border-input bg-muted/30 px-3 text-xs text-muted-foreground">
+                    {createNodePathPrefix}
+                  </span>
+                )}
+                <Input
+                  value={createNodePath}
+                  onChange={(event) => setCreateNodePath(event.target.value)}
+                  placeholder={
+                    createNodeMode === 'file'
+                      ? t('agentSpec.filePathPlaceholderCompact')
+                      : t('agentSpec.folderPathPlaceholderCompact')
+                  }
+                  className="h-full border-0 px-3 shadow-none focus-visible:ring-0"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateNodeOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleConfirmCreateNode} disabled={!createNodePath.trim()}>
+              {createNodeMode === 'file' ? t('agentSpec.createFile') : t('agentSpec.createFolder')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

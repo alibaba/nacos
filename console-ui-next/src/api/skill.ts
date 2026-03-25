@@ -68,8 +68,9 @@ export const skillApi = {
   /** Create draft version */
   createDraft: (data: {
     namespaceId?: string;
-    skillName: string;
+    skillName?: string;
     basedOnVersion?: string;
+    skillCard?: string;
   }): ApiResult<string> =>
     client.post(`${BASE}/draft`, data, { timeout: 60000 }) as ApiResult<string>,
 

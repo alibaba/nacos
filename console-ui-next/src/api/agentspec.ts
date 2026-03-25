@@ -110,6 +110,14 @@ export const agentSpecApi = {
   }): ApiResult<string> =>
     client.put(`${BASE}/biz-tags`, data) as ApiResult<string>,
 
+  /** 更新可见范围 */
+  updateScope: (data: {
+    namespaceId?: string;
+    agentSpecName: string;
+    scope: string;
+  }): ApiResult<string> =>
+    client.put(`${BASE}/scope`, data) as ApiResult<string>,
+
   /** 上线 */
   online: (data: {
     namespaceId?: string;

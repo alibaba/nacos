@@ -39,6 +39,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
+import com.alibaba.nacos.config.server.utils.ConfigPersistContext;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
@@ -85,7 +86,6 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.PropertyUtil.CONFIG_MIGRATE_FLAG;
 import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
 
 /**
@@ -227,7 +227,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             Timestamp now = new Timestamp(System.currentTimeMillis());
-            if (!CONFIG_MIGRATE_FLAG.get()) {
+            if (!ConfigPersistContext.isSkipHistory()) {
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I",
                         Constants.FORMAL, null,
                         ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
@@ -455,7 +455,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 
                 removeConfigInfoAtomic(dataId, group, tenantTmp, srcIp, srcUser);
                 removeTagByIdAtomic(oldConfigAllInfo.getId());
-                if (!CONFIG_MIGRATE_FLAG.get()) {
+                if (!ConfigPersistContext.isSkipHistory()) {
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(),
                             oldConfigAllInfo, srcIp, srcUser, time, "D", Constants.FORMAL, null,
                             ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
@@ -580,7 +580,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         configInfo.getGroup(), configInfo.getTenant());
             }
             Timestamp time = new Timestamp(System.currentTimeMillis());
-            if (!CONFIG_MIGRATE_FLAG.get()) {
+            if (!ConfigPersistContext.isSkipHistory()) {
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo,
                         srcIp, srcUser, time, "U", Constants.FORMAL, null,
                         ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
@@ -628,7 +628,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         configInfo.getGroup(), configInfo.getTenant());
             }
             Timestamp time = new Timestamp(System.currentTimeMillis());
-            if (!CONFIG_MIGRATE_FLAG.get()) {
+            if (!ConfigPersistContext.isSkipHistory()) {
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo,
                         srcIp, srcUser, time, "U", Constants.FORMAL, null,
                         ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));

@@ -27,12 +27,13 @@ import {
   Sparkles,
   AlertTriangle,
   Lock,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import MDEditor from '@uiw/react-md-editor';
 import {
@@ -98,6 +99,7 @@ export default function SkillDetailPage() {
 
   // Draft editing state
   const [isEditingDraft, setIsEditingDraft] = useState(false);
+  const [isCreatingNewDraft, setIsCreatingNewDraft] = useState(false); // true when creating brand-new draft (no version to fork)
   const [editInstruction, setEditInstruction] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [draftSaving, setDraftSaving] = useState(false);
@@ -127,6 +129,7 @@ export default function SkillDetailPage() {
     setVersionDoc(null);
     setSelectedVersion('');
     setIsEditingDraft(false);
+    setIsCreatingNewDraft(false);
     loadDetail();
     return () => {
       clearDetail();
@@ -135,19 +138,22 @@ export default function SkillDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skillName, namespaceId]);
 
-  // Auto-select first version when detail loads, or fix stale selection
+  // Auto-select version when detail loads: prefer "latest" label, then first by sort order
   useEffect(() => {
     if (!currentDetail || detailLoading) return;
     const versions = sortVersionsDescending(currentDetail.versions || []);
-    const first = versions[0]?.version;
-    // If no version selected, auto-select the first one
-    if (first && !selectedVersion) {
-      setSelectedVersion(first);
+    const latestLabelled = currentDetail.labels?.latest;
+    const preferredVersion = (latestLabelled && versions.some(v => v.version === latestLabelled))
+      ? latestLabelled
+      : versions[0]?.version;
+    // If no version selected, auto-select preferred
+    if (preferredVersion && !selectedVersion) {
+      setSelectedVersion(preferredVersion);
       return;
     }
-    // If selected version no longer exists (e.g. deleted), switch to first available or clear
+    // If selected version no longer exists (e.g. deleted), switch to preferred or clear
     if (selectedVersion && !versions.some((v) => v.version === selectedVersion)) {
-      setSelectedVersion(first || '');
+      setSelectedVersion(preferredVersion || '');
     }
   }, [currentDetail, detailLoading, selectedVersion]);
 
@@ -201,6 +207,7 @@ export default function SkillDetailPage() {
 
   const handleCancelEdit = () => {
     setIsEditingDraft(false);
+    setIsCreatingNewDraft(false);
     setEditResources({});
   };
 
@@ -221,14 +228,27 @@ export default function SkillDetailPage() {
         instruction: editInstruction,
         resource: editResources,
       });
-      await skillApi.updateDraft({ namespaceId, skillCard });
-      toast.success(t('skill.draftSaveSuccess'));
-      setIsEditingDraft(false);
-      // Reload both detail and version doc
-      await loadDetail();
-      // Re-fetch version doc
-      const response = await skillApi.getVersion({ namespaceId, skillName, version: selectedVersion });
-      setVersionDoc(response.data);
+
+      if (isCreatingNewDraft) {
+        // Brand-new draft: single createDraft call with skillCard
+        await skillApi.createDraft({ namespaceId, skillName, skillCard });
+        toast.success(t('skill.createDraftSuccess'));
+        setIsCreatingNewDraft(false);
+        setIsEditingDraft(false);
+        await fetchDetail(namespaceId, skillName);
+        const updated = useSkillStore.getState().currentDetail;
+        if (updated?.editingVersion) {
+          setSelectedVersion(updated.editingVersion);
+        }
+      } else {
+        // Editing existing draft: updateDraft
+        await skillApi.updateDraft({ namespaceId, skillCard });
+        toast.success(t('skill.draftSaveSuccess'));
+        setIsEditingDraft(false);
+        await loadDetail();
+        const response = await skillApi.getVersion({ namespaceId, skillName, version: selectedVersion });
+        setVersionDoc(response.data);
+      }
     } catch {
       // handled by interceptor
     } finally {
@@ -319,12 +339,21 @@ export default function SkillDetailPage() {
   // ===== Version lifecycle handlers =====
 
   const handleCreateDraft = async (basedOnVersion?: string) => {
+    if (!basedOnVersion) {
+      // No version to fork from — enter edit mode for a brand-new draft
+      setEditDescription('');
+      setEditInstruction('');
+      setEditResources({});
+      setIsCreatingNewDraft(true);
+      setIsEditingDraft(true);
+      return;
+    }
+    // Fork from existing version
     setActionLoading(true);
     try {
       await skillApi.createDraft({ namespaceId, skillName, basedOnVersion });
       toast.success(t('skill.createDraftSuccess'));
       await fetchDetail(namespaceId, skillName);
-      // Switch to the newly created draft version
       const updated = useSkillStore.getState().currentDetail;
       if (updated?.editingVersion) {
         setSelectedVersion(updated.editingVersion);
@@ -540,7 +569,7 @@ export default function SkillDetailPage() {
 
             <div className="flex items-center gap-2">
               {selectedVersion && (
-                <Select value={selectedVersion} onValueChange={handleSelectVersion}>
+                <Select value={selectedVersion} onValueChange={handleSelectVersion} disabled={isEditingDraft}>
                   <SelectTrigger className="w-[140px] h-7 text-xs bg-background/80">
                     <SelectValue placeholder={t('skill.selectVersion')} />
                   </SelectTrigger>
@@ -552,6 +581,11 @@ export default function SkillDetailPage() {
                           {latestVersion === version.version && (
                             <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] px-1 py-0 border-0">
                               {t('skill.latestVersion')}
+                            </Badge>
+                          )}
+                          {version.status === 'draft' && (
+                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 text-[10px] px-1 py-0 border-0">
+                              {t('skill.versionStatus.draft')}
                             </Badge>
                           )}
                         </span>
@@ -566,6 +600,7 @@ export default function SkillDetailPage() {
                 size="sm"
                 className="h-7 text-xs"
                 onClick={() => setVersionSheetOpen(true)}
+                disabled={isEditingDraft}
               >
                 <History className="mr-1 h-3 w-3" />
                 {t('skill.versionHistory')}
@@ -635,11 +670,11 @@ export default function SkillDetailPage() {
               </div>
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
-                <Input
+                <Textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder={t('skill.descPlaceholder')}
-                  className="text-sm max-w-2xl h-8"
+                  className="text-sm max-w-2xl min-h-8 resize-none"
                 />
               ) : versionDoc?.description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
@@ -818,19 +853,43 @@ export default function SkillDetailPage() {
                 </div>
               )}
 
-              {/* Empty state: no versions, show create draft button prominently */}
+              {/* Empty state: no versions, show create draft button or editing actions */}
               {!selectedVersion && !detail.editingVersion && !detail.reviewingVersion && versions.length === 0 && (
                 <div className="mt-3 pt-3 border-t border-border/40">
                   <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      className="h-7 text-xs gap-1.5"
-                      disabled={actionLoading}
-                      onClick={() => handleCreateDraft()}
-                    >
-                      <Plus className="h-3 w-3" />
-                      {t('skill.createDraft')}
-                    </Button>
+                    {isCreatingNewDraft ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          onClick={handleCancelEdit}
+                          disabled={draftSaving}
+                        >
+                          <X className="h-3 w-3" />
+                          {t('skill.cancelEdit')}
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          disabled={draftSaving}
+                          onClick={handleSaveDraft}
+                        >
+                          {draftSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          {t('skill.createDraft')}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={actionLoading}
+                        onClick={() => handleCreateDraft()}
+                      >
+                        <Plus className="h-3 w-3" />
+                        {t('skill.createDraft')}
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
@@ -841,7 +900,7 @@ export default function SkillDetailPage() {
 
       {/* ===== Tabs Content ===== */}
       <Tabs defaultValue="overview" className={cn('flex flex-col', (detailLoading || actionLoading) && 'opacity-50 pointer-events-none')}>
-        <TabsList>
+        <TabsList className="w-fit">
           <TabsTrigger value="overview" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" />
             {t('skill.instruction')}

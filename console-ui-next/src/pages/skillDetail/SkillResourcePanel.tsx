@@ -213,6 +213,35 @@ export function SkillResourcePanel({
     [onChange, resources],
   );
 
+  // File tree: rename folder
+  //
+  // Folder keys look like "skill/subfolder/" – the part without the trailing
+  // slash is the *type* used by resources inside that folder.  Renaming the
+  // folder means rewriting the last segment of every matching `type`.
+  const handleRenameFolder = useCallback(
+    (folderKey: string, newName: string) => {
+      if (!onChange) return;
+      // e.g. "skill/old_folder/" → "skill/old_folder"
+      const oldType = folderKey.replace(/\/$/, '');
+      const segments = oldType.split('/');
+      segments[segments.length - 1] = newName;
+      const newType = segments.join('/');
+
+      const newResources: typeof resources = {};
+      for (const [mk, res] of Object.entries(resources)) {
+        if (res.type === oldType || res.type.startsWith(`${oldType}/`)) {
+          const updatedType = newType + res.type.slice(oldType.length);
+          const newMapKey = `${Date.now()}_${mk}`;
+          newResources[newMapKey] = { ...res, type: updatedType };
+        } else {
+          newResources[mk] = res;
+        }
+      }
+      onChange(newResources);
+    },
+    [onChange, resources],
+  );
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       dragRef.current = { startX: e.clientX, startWidth: panelWidth };
@@ -244,6 +273,7 @@ export function SkillResourcePanel({
             onCreateFolder={editable ? handleCreateFolder : undefined}
             onDeleteNode={editable ? handleDeleteNode : undefined}
             onRenameFile={editable ? handleRenameFile : undefined}
+            onRenameFolder={editable ? handleRenameFolder : undefined}
           />
         </div>
 

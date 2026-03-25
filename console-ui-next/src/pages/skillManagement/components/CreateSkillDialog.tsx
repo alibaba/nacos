@@ -142,14 +142,13 @@ export function CreateSkillDialog({
     setLoading(true);
     setError(null);
     try {
-      await skillApi.createDraft({ namespaceId, skillName: trimmedName });
       const skillCard = JSON.stringify({
         name: trimmedName,
         description: description.trim(),
         instruction: instruction.trim(),
         resource: {},
       });
-      await skillApi.updateDraft({ namespaceId, skillCard });
+      await skillApi.createDraft({ namespaceId, skillCard });
       toast.success(t('skill.createSuccess'));
       handleClose(false);
       onSuccess(trimmedName);
@@ -268,15 +267,13 @@ export function CreateSkillDialog({
     setLoading(true);
     setGenerateError(null);
     try {
-      await skillApi.createDraft({ namespaceId, skillName: name });
-
       const skillCard = JSON.stringify({
         name,
         description: generatedSkill.description || '',
         instruction: generatedSkill.instruction || '',
         resource: generatedSkill.resource || {},
       });
-      await skillApi.updateDraft({ namespaceId, skillCard });
+      await skillApi.createDraft({ namespaceId, skillCard });
 
       toast.success(t('skill.generateSuccess'));
       handleClose(false);
