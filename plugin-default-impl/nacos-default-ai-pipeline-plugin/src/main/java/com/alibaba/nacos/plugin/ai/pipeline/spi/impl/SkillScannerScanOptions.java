@@ -24,8 +24,10 @@ import java.util.Properties;
 /**
  * Skill-scanner CLI options derived from pipeline node {@link Properties}.
  *
- * <p>Configure via {@code nacos.ai.pipeline.node.skill-scanner.props} and matching
- * {@code nacos.ai.pipeline.node.skill-scanner.&lt;key&gt;} entries (see {@link com.alibaba.nacos.ai.pipeline.config.FilePipelineConfigProvider}).</p>
+ * <p>Configure via {@code nacos.plugin.skill-scanner.enabled=true},
+ * {@code nacos.plugin.skill-scanner.type=nacos}, and matching
+ * {@code nacos.plugin.skill-scanner.nacos.&lt;key&gt;} entries
+ * (see {@link com.alibaba.nacos.ai.pipeline.config.FilePipelineConfigProvider}).</p>
  *
  * <p>Environment variables for the LLM match
  * <a href="https://github.com/cisco-ai-defense/skill-scanner">skill-scanner</a> documentation.</p>
