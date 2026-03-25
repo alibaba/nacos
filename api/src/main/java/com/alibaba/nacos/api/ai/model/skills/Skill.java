@@ -27,21 +27,21 @@ import java.util.Map;
 public class Skill extends SkillBase {
     
     /**
-     * Claude instruction (note: singular instruction).
+     * Full SKILL.md content.
      */
-    private String instruction;
+    private String skillMd;
     
     /**
      * Resource map (note: singular resource, key is resource name).
      */
     private Map<String, SkillResource> resource;
     
-    public String getInstruction() {
-        return instruction;
+    public String getSkillMd() {
+        return skillMd;
     }
     
-    public void setInstruction(String instruction) {
-        this.instruction = instruction;
+    public void setSkillMd(String skillMd) {
+        this.skillMd = skillMd;
     }
     
     public Map<String, SkillResource> getResource() {

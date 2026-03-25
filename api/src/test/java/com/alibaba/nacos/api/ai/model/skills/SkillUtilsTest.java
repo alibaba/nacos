@@ -68,7 +68,11 @@ class SkillUtilsTest {
     void testToMarkdownWithSpecialCharacters() {
         // Given
         Skill skill = createValidSkill();
-        skill.setDescription("Description with: colon and \"quotes\"");
+        skill.setSkillMd("---\n"
+                + "name: test-skill\n"
+                + "description: \"Description with: colon and \\\"quotes\\\"\"\n"
+                + "---\n\n"
+                + "Test instruction");
         
         // When
         String markdown = SkillUtils.toMarkdown(skill);
@@ -195,7 +199,11 @@ class SkillUtilsTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("Test description");
-        skill.setInstruction("Test instruction");
+        skill.setSkillMd("---\n"
+                + "name: test-skill\n"
+                + "description: Test description\n"
+                + "---\n\n"
+                + "Test instruction");
         return skill;
     }
     

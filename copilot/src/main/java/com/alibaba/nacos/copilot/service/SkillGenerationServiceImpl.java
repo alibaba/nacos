@@ -330,12 +330,14 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             if (skillMap != null) {
                 // Normalize resource structure: handle nested resources (resources.scripts.xxx) to flat structure (resource.xxx)
                 normalizeResourceStructure(skillMap);
+                normalizeSkillMdField(skillMap);
                 
                 Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
                 response.setSkill(skill);
             } else {
                 // If skill is not found, try to parse the entire result as skill
                 normalizeResourceStructure(result);
+                normalizeSkillMdField(result);
                 Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(result), Skill.class);
                 response.setSkill(skill);
             }
@@ -356,6 +358,7 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                     Map<String, Object> skillMap = (Map<String, Object>) result.get("skill");
                     if (skillMap != null) {
                         normalizeResourceStructure(skillMap);
+                        normalizeSkillMdField(skillMap);
                         Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
                         response.setSkill(skill);
                     }
@@ -537,6 +540,23 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         // Replace "resources" with "resource" (singular) and use flattened structure
         skillMap.remove("resources");
         skillMap.put("resource", flatResourceMap);
+    }
+
+    /**
+     * Accept legacy "instruction" field from model output and map it to skillMd.
+     */
+    private void normalizeSkillMdField(Map<String, Object> skillMap) {
+        if (skillMap == null) {
+            return;
+        }
+        Object skillMd = skillMap.get("skillMd");
+        if (skillMd instanceof String && !((String) skillMd).isEmpty()) {
+            return;
+        }
+        Object instruction = skillMap.get("instruction");
+        if (instruction instanceof String) {
+            skillMap.put("skillMd", instruction);
+        }
     }
     
     /**

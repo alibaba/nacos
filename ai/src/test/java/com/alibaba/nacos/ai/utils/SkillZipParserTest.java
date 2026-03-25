@@ -55,7 +55,7 @@ class SkillZipParserTest {
         assertNotNull(skill);
         assertEquals("test-skill", skill.getName());
         assertEquals("Test skill description", skill.getDescription());
-        assertEquals("This is a test instruction", skill.getInstruction().trim());
+        assertTrue(skill.getSkillMd().contains("This is a test instruction"));
         assertEquals("test-namespace", skill.getNamespaceId());
     }
     
@@ -154,7 +154,7 @@ class SkillZipParserTest {
         
         // Then
         assertNotNull(skill);
-        assertTrue(skill.getInstruction().contains("instruction content"));
+        assertTrue(skill.getSkillMd().contains("instruction content"));
     }
 
     @Test
@@ -182,6 +182,31 @@ class SkillZipParserTest {
         Map<String, Object> meta = font.getMetadata();
         assertNotNull(meta);
         assertEquals("base64", meta.get("encoding"));
+    }
+
+    @Test
+    void testResolveVersionFromZipUsesSiblingMetaJsonWhenSkillMdMissingVersion() throws Exception {
+        byte[] zipBytes = createZipWithSkillMdAndMetaSibling("skills/test-skill", "1.1.3");
+
+        String version = SkillZipParser.resolveVersionFromZip(zipBytes);
+
+        assertEquals("1.1.3", version);
+    }
+
+    @Test
+    void testParseYamlFrontMatterFromMarkdownSupportsMetadataVersion() {
+        String markdown = "---\n"
+                + "name: baidu-search\n"
+                + "description: test\n"
+                + "metadata:\n"
+                + "  author: example-org\n"
+                + "  version: \"1.0\"\n"
+                + "---\n\n"
+                + "body";
+
+        Map<String, String> result = SkillZipParser.parseYamlFrontMatterFromMarkdown(markdown);
+
+        assertEquals("1.0", result.get("metadata.version"));
     }
 
     @Test
@@ -250,6 +275,34 @@ class SkillZipParserTest {
                     + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    private byte[] createZipWithSkillMdAndMetaSibling(String dir, String metaVersion) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        String prefix = (dir == null || dir.isEmpty()) ? "" : (dir.endsWith("/") ? dir : dir + "/");
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry skillMd = new ZipEntry(prefix + "SKILL.md");
+            zos.putNextEntry(skillMd);
+            String skillMdContent = "---\n"
+                    + "name: test-skill\n"
+                    + "description: Test skill description\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMdContent.getBytes());
+            zos.closeEntry();
+
+            ZipEntry meta = new ZipEntry(prefix + "_meta.json");
+            zos.putNextEntry(meta);
+            String metaJson = "{\n"
+                    + "  \"ownerId\": \"kn7akgt520t01vgs2tzx7yk6m180kt26\",\n"
+                    + "  \"slug\": \"baidu-search\",\n"
+                    + "  \"version\": \"" + metaVersion + "\",\n"
+                    + "  \"publishedAt\": 1773828934466\n"
+                    + "}";
+            zos.write(metaJson.getBytes());
             zos.closeEntry();
         }
         return baos.toByteArray();

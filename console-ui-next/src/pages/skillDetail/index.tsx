@@ -199,7 +199,7 @@ export default function SkillDetailPage() {
   // ===== Draft editing handlers =====
 
   const handleStartEdit = () => {
-    setEditInstruction(versionDoc?.instruction ?? '');
+    setEditInstruction(versionDoc?.skillMd ?? '');
     setEditDescription(versionDoc?.description ?? '');
     setEditResources({ ...(versionDoc?.resource ?? {}) });
     setIsEditingDraft(true);
@@ -217,7 +217,7 @@ export default function SkillDetailPage() {
       return;
     }
     if (!editInstruction.trim()) {
-      toast.error(t('skill.instructionRequired'));
+      toast.error(t('skill.skillMdRequired'));
       return;
     }
     setDraftSaving(true);
@@ -225,7 +225,7 @@ export default function SkillDetailPage() {
       const skillCard = JSON.stringify({
         name: skillName,
         description: editDescription.trim(),
-        instruction: editInstruction,
+        skillMd: editInstruction,
         resource: editResources,
       });
 
@@ -263,7 +263,7 @@ export default function SkillDetailPage() {
       const skillCard = JSON.stringify({
         name: skillName,
         description: optimizedSkill.description,
-        instruction: optimizedSkill.instruction,
+        skillMd: optimizedSkill.skillMd,
         resource: optimizedSkill.resource,
       });
       await skillApi.updateDraft({ namespaceId, skillCard });
@@ -367,7 +367,7 @@ export default function SkillDetailPage() {
 
   const handleSubmit = async (version: string) => {
     // Validate required fields before submit
-    if (versionDoc && (!versionDoc.description?.trim() || !versionDoc.instruction?.trim())) {
+    if (versionDoc && (!versionDoc.description?.trim() || !versionDoc.skillMd?.trim())) {
       toast.error(t('skill.submitRequiresFields'));
       return;
     }
@@ -903,7 +903,7 @@ export default function SkillDetailPage() {
         <TabsList className="w-fit">
           <TabsTrigger value="overview" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" />
-            {t('skill.instruction')}
+            {t('skill.skillMd')}
           </TabsTrigger>
           <TabsTrigger value="resources" className="gap-1.5">
             <Wand2 className="h-3.5 w-3.5" />
@@ -924,7 +924,7 @@ export default function SkillDetailPage() {
               <div className="px-5 py-3.5 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  {t('skill.instruction')}
+                  {t('skill.skillMd')}
                 </h2>
               </div>
               <CardContent className="p-5">
@@ -936,7 +936,7 @@ export default function SkillDetailPage() {
                   </div>
                 ) : isEditingDraft ? (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">{t('skill.instructionHint')}</p>
+                    <p className="text-xs text-muted-foreground">{t('skill.skillMdHint')}</p>
                     <div data-color-mode="light" className="dark:hidden">
                       <MDEditor
                         value={editInstruction}
@@ -954,10 +954,10 @@ export default function SkillDetailPage() {
                       />
                     </div>
                   </div>
-                ) : versionDoc?.instruction ? (
+                ) : versionDoc?.skillMd ? (
                   <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                     <Markdown remarkPlugins={[remarkGfm]}>
-                      {versionDoc.instruction}
+                      {versionDoc.skillMd}
                     </Markdown>
                   </div>
                 ) : (

@@ -174,7 +174,8 @@ public class SkillAdminController {
             @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
+        String skillName = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, file.getOriginalFilename(),
+                overwrite);
         return Result.success(skillName);
     }
     

@@ -94,7 +94,7 @@ class SkillClientControllerTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("desc");
-        skill.setInstruction("instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
         when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), isNull()))
                 .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
@@ -109,7 +109,7 @@ class SkillClientControllerTest {
     void testGetSkillByLabelSuccess() throws Exception {
         Skill skill = new Skill();
         skill.setName("test-skill");
-        skill.setInstruction("instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
         when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), eq("stable")))
                 .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
@@ -122,7 +122,7 @@ class SkillClientControllerTest {
     void testGetSkillByVersionSuccess() throws Exception {
         Skill skill = new Skill();
         skill.setName("test-skill");
-        skill.setInstruction("instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
         when(skillOperationService.querySkill(eq("public"), eq("test-skill"), eq("v2"), isNull()))
                 .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
@@ -135,7 +135,7 @@ class SkillClientControllerTest {
     void testGetSkillWithNamespaceId() throws Exception {
         Skill skill = new Skill();
         skill.setName("test-skill");
-        skill.setInstruction("instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
         when(skillOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(), isNull()))
                 .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)

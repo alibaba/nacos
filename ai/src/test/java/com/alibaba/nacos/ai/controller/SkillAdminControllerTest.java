@@ -123,7 +123,7 @@ class SkillAdminControllerTest {
     void testGetSkillVersionSuccess() throws Exception {
         Skill skill = new Skill();
         skill.setName("test-skill");
-        skill.setInstruction("hello");
+        skill.setSkillMd("---\nname: test-skill\ndescription: d\n---\n\nhello");
         when(skillOperationService.getSkillVersionDetail(eq("public"), eq("test-skill"), eq("v1"))).thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_ADMIN_PATH + "/version")
                 .param("skillName", "test-skill").param("version", "v1");
@@ -189,7 +189,7 @@ class SkillAdminControllerTest {
         when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull(), any(Skill.class))).thenReturn(
                 "v1");
         String skillCard =
-                "{\"name\":\"test-skill\",\"description\":\"d\",\"instruction\":\"i\"}";
+                "{\"name\":\"test-skill\",\"description\":\"d\",\"skillMd\":\"---\\nname: test-skill\\ndescription: d\\n---\\n\\ni\"}";
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
                 .param("skillCard", skillCard);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();

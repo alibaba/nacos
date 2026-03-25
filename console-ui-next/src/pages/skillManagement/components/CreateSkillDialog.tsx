@@ -50,6 +50,39 @@ import type {
   SkillGenerationResponse,
 } from '@/types/skill-ai';
 
+const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
+
+function toYamlQuotedValue(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function syncSkillMdFrontmatter(skillMd: string, name: string, description: string): string {
+  const content = skillMd || '';
+  const match = content.match(FRONTMATTER_REGEX);
+  const normalizedName = name.trim();
+  const normalizedDescription = description.trim();
+  const descriptionLine = `description: ${toYamlQuotedValue(normalizedDescription)}`;
+
+  if (!match) {
+    const body = content.trim().length > 0 ? `\n${content.replace(/^\r?\n+/, '')}` : '';
+    return `---\nname: ${normalizedName}\n${descriptionLine}\n---${body}`;
+  }
+
+  const frontmatterLines = match[1]
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*(name|description)\s*:/.test(line));
+  const body = content.slice(match[0].length);
+  const rebuiltFrontmatter = [
+    '---',
+    `name: ${normalizedName}`,
+    descriptionLine,
+    ...frontmatterLines,
+    '---',
+  ].join('\n');
+
+  return `${rebuiltFrontmatter}${body ? (body.startsWith('\n') ? '' : '\n') + body : '\n'}`;
+}
+
 interface CreateSkillDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -145,7 +178,7 @@ export function CreateSkillDialog({
       const skillCard = JSON.stringify({
         name: trimmedName,
         description: description.trim(),
-        instruction: instruction.trim(),
+        skillMd: instruction.trim(),
         resource: {},
       });
       await skillApi.createDraft({ namespaceId, skillCard });
@@ -230,6 +263,9 @@ export function CreateSkillDialog({
 
         if (skill) {
           skill = filterSkillMdFromResources(skill);
+          if (!skill.skillMd && (skill as unknown as { instruction?: string }).instruction) {
+            skill.skillMd = (skill as unknown as { instruction: string }).instruction;
+          }
           setGeneratedSkill(skill);
 
           // Update conversation history for multi-round
@@ -270,7 +306,7 @@ export function CreateSkillDialog({
       const skillCard = JSON.stringify({
         name,
         description: generatedSkill.description || '',
-        instruction: generatedSkill.instruction || '',
+        skillMd: generatedSkill.skillMd || '',
         resource: generatedSkill.resource || {},
       });
       await skillApi.createDraft({ namespaceId, skillCard });
@@ -316,7 +352,11 @@ export function CreateSkillDialog({
                   placeholder={t('skill.namePlaceholder')}
                   value={skillName}
                   onChange={(e) => {
-                    setSkillName(e.target.value);
+                    const nextName = e.target.value;
+                    setSkillName(nextName);
+                    setInstruction((prev) =>
+                      syncSkillMdFrontmatter(prev, nextName, description),
+                    );
                     setError(null);
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
@@ -330,7 +370,11 @@ export function CreateSkillDialog({
                   placeholder={t('skill.descPlaceholder')}
                   value={description}
                   onChange={(e) => {
-                    setDescription(e.target.value);
+                    const nextDescription = e.target.value;
+                    setDescription(nextDescription);
+                    setInstruction((prev) =>
+                      syncSkillMdFrontmatter(prev, skillName, nextDescription),
+                    );
                     setError(null);
                   }}
                 />
@@ -339,7 +383,7 @@ export function CreateSkillDialog({
               <div className="space-y-2">
                 <Label>{t('skill.instruction')} *</Label>
                 <p className="text-xs text-muted-foreground">
-                  {t('skill.instructionHint')}
+                  {t('skill.skillMdHint')}
                 </p>
                 <div data-color-mode="light" className="dark:hidden">
                   <MDEditor
@@ -347,6 +391,7 @@ export function CreateSkillDialog({
                     onChange={(val) => setInstruction(val || '')}
                     height={200}
                     preview="live"
+                    textareaProps={{ placeholder: t('skill.skillMdPlaceholder') }}
                   />
                 </div>
                 <div data-color-mode="dark" className="hidden dark:block">
@@ -355,6 +400,7 @@ export function CreateSkillDialog({
                     onChange={(val) => setInstruction(val || '')}
                     height={200}
                     preview="live"
+                    textareaProps={{ placeholder: t('skill.skillMdPlaceholder') }}
                   />
                 </div>
               </div>
@@ -546,14 +592,14 @@ export function CreateSkillDialog({
                         </span>
                       </div>
                     )}
-                    {generatedSkill.instruction && (
+                    {generatedSkill.skillMd && (
                       <div>
                         <span className="text-xs text-muted-foreground">
                           {t('skill.instruction')}:
                         </span>
                         <div className="app-markdown mt-1 rounded-md border bg-muted/20 p-3 max-h-[200px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
                           <Markdown remarkPlugins={[remarkGfm]}>
-                            {generatedSkill.instruction}
+                            {generatedSkill.skillMd}
                           </Markdown>
                         </div>
                       </div>

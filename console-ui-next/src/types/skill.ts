@@ -46,7 +46,7 @@ export interface SkillDocument {
   namespaceId: string;
   name: string;
   description: string;
-  instruction: string;
+  skillMd: string;
   resource: Record<string, SkillResource>;
 }
 

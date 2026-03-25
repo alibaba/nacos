@@ -266,6 +266,8 @@ class SkillOperationServiceImplTest {
         // Then
         assertNotNull(result);
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
     }
 
     @Test
@@ -321,7 +323,158 @@ class SkillOperationServiceImplTest {
 
         assertEquals("test-skill", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+                && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesMetaJsonVersionWhenMetadataMissing() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersionWithMeta("1.1.3");
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "1.1.3".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesFrontmatterMetadataVersion() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithNestedMetadataVersion("1.0");
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "1.0".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesMetadataVersionWhenBothPresent() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.6".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesDefaultVersionWhenCannotInfer() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersion();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "0.0.1".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipBumpsPatchWhenCandidateVersionAlreadyExists() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        final byte[] zipBytes = createValidZipBytes(); // metadata version = 3.0.6
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.6");
+        com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v2.setVersion("3.0.7");
+        versions.setPageItems(List.of(v1, v2));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.8".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipBumpsPatchWhenCandidateNotGreaterThanMax() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytes("3.0.5");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.7");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.5".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipKeepsLowerVersionWhenNotExisting() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytes("3.0.6");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.7");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.6".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testBootstrapSkillFromZipUsesMetadataVersion() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes(); // metadata version = 3.0.6
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(null);
+
+        skillOperationService.bootstrapSkillFromZip(namespaceId, zipBytes);
+
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())
+                && "online".equals(inserted.getStatus())));
     }
     
     /**
@@ -331,7 +484,7 @@ class SkillOperationServiceImplTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("Test description");
-        skill.setInstruction("Test instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: Test description\n---\n\nTest instruction");
         return skill;
     }
     
@@ -363,6 +516,22 @@ class SkillOperationServiceImplTest {
      * Create valid zip bytes for testing.
      */
     private byte[] createValidZipBytes() throws IOException {
+        return createZipBytes("3.0.6");
+    }
+
+    private byte[] createZipBytesWithoutVersion() throws IOException {
+        return createZipBytes(null);
+    }
+
+    private byte[] createZipBytesWithoutVersionWithMeta(String metaVersion) throws IOException {
+        return createZipBytesWithMeta(null, metaVersion);
+    }
+
+    private byte[] createZipBytes(String version) throws IOException {
+        return createZipBytesWithMeta(version, null);
+    }
+
+    private byte[] createZipBytesWithMeta(String version, String metaVersion) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             // Add SKILL.md
@@ -371,6 +540,38 @@ class SkillOperationServiceImplTest {
             String skillMd = "---\n"
                     + "name: test-skill\n"
                     + "description: Test skill description\n"
+                    + (version == null ? "" : "version: " + version + "\n")
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+            if (metaVersion != null) {
+                ZipEntry metaEntry = new ZipEntry("_meta.json");
+                zos.putNextEntry(metaEntry);
+                String metaJson = "{\n"
+                        + "  \"ownerId\": \"kn7akgt520t01vgs2tzx7yk6m180kt26\",\n"
+                        + "  \"slug\": \"baidu-search\",\n"
+                        + "  \"version\": \"" + metaVersion + "\",\n"
+                        + "  \"publishedAt\": 1773828934466\n"
+                        + "}";
+                zos.write(metaJson.getBytes());
+                zos.closeEntry();
+            }
+        }
+        return baos.toByteArray();
+    }
+
+    private byte[] createZipBytesWithNestedMetadataVersion(String metadataVersion) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: Test skill description\n"
+                    + "metadata:\n"
+                    + "  author: example-org\n"
+                    + "  version: \"" + metadataVersion + "\"\n"
                     + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
@@ -538,15 +739,33 @@ class SkillOperationServiceImplTest {
         Skill initial = new Skill();
         initial.setName(skillName);
         initial.setDescription("desc");
-        initial.setInstruction("inst");
+        initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\n---\n\ninst");
         initial.setNamespaceId(namespaceId);
         String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
-        assertEquals("v1", version);
+        assertEquals("0.0.1", version);
 
         org.mockito.ArgumentCaptor<com.alibaba.nacos.ai.model.AiResourceVersion> vCaptor =
                 org.mockito.ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.AiResourceVersion.class);
         verify(aiResourceVersionPersistService).insert(vCaptor.capture());
         assertEquals("myUser", vCaptor.getValue().getAuthor());
+    }
+
+    @Test
+    void testCreateDraftUsesMetadataVersionForBrandNewSkill() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "brand-new-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
+
+        Skill initial = new Skill();
+        initial.setName(skillName);
+        initial.setDescription("desc");
+        initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\nversion: 2.1.3\n---\n\ninst");
+        initial.setNamespaceId(namespaceId);
+
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
+
+        assertEquals("2.1.3", version);
+        verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())));
     }
 
     @Test

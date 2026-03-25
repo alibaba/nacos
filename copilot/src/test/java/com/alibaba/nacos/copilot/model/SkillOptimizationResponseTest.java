@@ -151,7 +151,7 @@ class SkillOptimizationResponseTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("Optimized skill");
-        skill.setInstruction("Improved instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: Optimized skill\n---\n\nImproved instruction");
         
         // When
         response.setOptimizedSkill(skill);

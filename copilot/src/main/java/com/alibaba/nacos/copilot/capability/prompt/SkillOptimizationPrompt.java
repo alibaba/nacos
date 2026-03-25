@@ -31,7 +31,7 @@ public class SkillOptimizationPrompt {
         
         你的任务是：
         1. 分析用户提供的 Skill，包括：
-           - Skill 的名称、描述、指令（instruction）
+           - Skill 的名称、描述、SKILL.md 内容（skillMd）
            - Skill 的资源（resources）结构和内容
            - Skill 的整体结构和逻辑
         2. **重要：只在有明显可优化点时才进行优化**
@@ -95,7 +95,7 @@ public class SkillOptimizationPrompt {
              * 在 resource 中添加任何与 SKILL.md 相关的资源
              * 将 SKILL.md 放在任何资源类型（template、data、script 等）下
              * 创建任何包含 "SKILL.md" 的资源
-           - SKILL.md 的内容由 Skill 的 name、description 和 instruction 字段自动生成，不需要也不应该在 resource 中定义
+           - SKILL.md 的内容位于 skillMd 字段，不需要也不应该在 resource 中定义
            - **如果用户要求"增加资源"或"添加资源"，只能添加真正的资源文件（如 .json、.yaml、.txt 等），绝对不能添加 SKILL.md**
         
         5. **MCP 工具使用**：
@@ -120,7 +120,7 @@ public class SkillOptimizationPrompt {
              * 确保整合后的 Skill 仍然保持清晰、可执行
         
         请以 JSON 格式返回优化结果，只包含 optimizedSkill 字段：
-        - optimizedSkill: 优化后的完整 Skill 对象（必须包含所有字段：name, description, instruction, resource）
+        - optimizedSkill: 优化后的完整 Skill 对象（必须包含所有字段：name, description, skillMd, resource）
           resource 字段是一个 Map<String, SkillResource>，其中：
           - key 是资源名称（resource name）
           - value 是 SkillResource 对象，包含：name, type, content, metadata
@@ -130,7 +130,7 @@ public class SkillOptimizationPrompt {
           "optimizedSkill": {
             "name": "skill_name",
             "description": "skill description",
-            "instruction": "skill instruction",
+            "skillMd": "---\\nname: skill_name\\ndescription: skill description\\n---\\n\\nskill instruction",
             "resource": {
               "resource_key": {
                 "name": "resource_file.json",
