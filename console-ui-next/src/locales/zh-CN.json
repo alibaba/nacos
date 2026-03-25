@@ -740,6 +740,9 @@
     "typeTrace": "追踪",
     "typeEnvironment": "环境",
     "typeControl": "控制",
+    "typeDataFilter": "数据过滤",
+    "typeAiPipeline": "AI 发布流水线",
+    "typeAiStorage": "AI 资源存储",
     "availableNodes": "可用节点",
     "yes": "是",
     "no": "否"
