@@ -102,6 +102,69 @@ class SkillZipParserTest {
     }
     
     @Test
+    void testParseSkillFromZipWithMultilineDescription() throws Exception {
+        // Given: SKILL.md with multi-line description in double-quoted YAML value
+        byte[] zipBytes = createZipWithMultilineDescription();
+
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then: full multi-line description is preserved
+        assertNotNull(skill);
+        assertEquals("test-skill", skill.getName());
+        assertEquals("Line 1\nLine 2\nLine 3", skill.getDescription());
+    }
+
+    @Test
+    void testParseSkillFromZipWithEscapedNewlineDescription() throws Exception {
+        // Given: SKILL.md with escaped \n in double-quoted description (single-line in YAML)
+        byte[] zipBytes = createZipWithEscapedNewlineDescription();
+
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then: escaped \n is converted to actual newline
+        assertNotNull(skill);
+        assertEquals("First line\nSecond line", skill.getDescription());
+    }
+
+    @Test
+    void testParseSkillFromZipWithBackslashNInDescription() throws Exception {
+        // Given: description containing literal backslash+n (not a newline)
+        byte[] zipBytes = createZipWithLiteralBackslashN();
+
+        // When
+        Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then: literal \n text is preserved (not converted to newline)
+        assertNotNull(skill);
+        assertEquals("path\\name", skill.getDescription());
+    }
+
+    @Test
+    void testRoundTripMultilineDescription() throws Exception {
+        // Given: a skill with multi-line description exported then re-imported
+        String multilineDesc = "Line 1\nLine 2\nLine 3";
+        Skill original = new Skill();
+        original.setName("roundtrip-skill");
+        original.setDescription(multilineDesc);
+        original.setInstruction("Test instruction");
+
+        // Export to markdown
+        String markdown = SkillUtils.toMarkdown(original);
+
+        // Create ZIP from the exported markdown
+        byte[] zipBytes = createZipFromMarkdown(markdown);
+
+        // Re-import
+        Skill reimported = SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace");
+
+        // Then: description survives the round-trip
+        assertNotNull(reimported);
+        assertEquals(multilineDesc, reimported.getDescription());
+    }
+
+    @Test
     void testParseSkillFromZipWithoutSkillMd() throws IOException {
         // Given
         byte[] zipBytes = createZipWithoutSkillMd();
@@ -459,6 +522,80 @@ class SkillZipParserTest {
             entry = new ZipEntry("test-skill/canvas-fonts/font.ttf");
             zos.putNextEntry(entry);
             zos.write(new byte[] { 0, 1, 2, 3 }); // minimal binary content
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Create a zip with multi-line description using literal newlines inside double quotes.
+     */
+    private byte[] createZipWithMultilineDescription() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            // Multi-line: literal newlines inside double-quoted YAML value
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: \"Line 1\nLine 2\nLine 3\"\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Create a zip with escaped \\n in description (single-line in YAML file).
+     */
+    private byte[] createZipWithEscapedNewlineDescription() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            // Escaped \n on a single line — common format from Nacos export
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: \"First line\\nSecond line\"\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Create a zip with literal backslash+n (\\n) in description — not a newline.
+     */
+    private byte[] createZipWithLiteralBackslashN() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            // \\\\n in Java string = \\n in the file = literal backslash + n after unescape
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: \"path\\\\name\"\n"
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Create a zip from raw SKILL.md markdown content.
+     */
+    private byte[] createZipFromMarkdown(String markdown) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            zos.write(markdown.getBytes());
             zos.closeEntry();
         }
         return baos.toByteArray();

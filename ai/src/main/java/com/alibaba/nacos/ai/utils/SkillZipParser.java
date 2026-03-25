@@ -316,44 +316,96 @@ public class SkillZipParser {
     private static Map<String, String> parseYamlFrontMatter(String yamlContent) {
         Map<String, String> result = new HashMap<>(4);
         String[] lines = yamlContent.split("\\n");
-        
+
+        String pendingKey = null;
+        StringBuilder pendingValue = null;
+
         for (String line : lines) {
+            // If we're accumulating a multi-line double-quoted value
+            if (pendingKey != null) {
+                pendingValue.append("\n").append(line);
+                String accumulated = pendingValue.toString().trim();
+                if (accumulated.endsWith(DOUBLE_QUOTE) && !accumulated.endsWith("\\" + DOUBLE_QUOTE)) {
+                    // Closing quote found — store the complete value
+                    String value = accumulated.substring(1, accumulated.length() - 1);
+                    result.put(pendingKey, unescapeDoubleQuotedYamlValue(value));
+                    pendingKey = null;
+                    pendingValue = null;
+                }
+                continue;
+            }
+
             line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) {
                 continue;
             }
-            
+
             int colonIndex = line.indexOf(':');
             if (colonIndex > 0) {
                 String key = line.substring(0, colonIndex).trim();
                 String value = line.substring(colonIndex + 1).trim();
-                boolean hasDoubleQuotes = value.startsWith(DOUBLE_QUOTE) && value.endsWith(DOUBLE_QUOTE);
+                boolean hasDoubleQuotes = value.length() > 1 && value.startsWith(DOUBLE_QUOTE)
+                        && value.endsWith(DOUBLE_QUOTE) && !value.endsWith("\\" + DOUBLE_QUOTE);
                 boolean hasSingleQuotes = value.startsWith(SINGLE_QUOTE) && value.endsWith(SINGLE_QUOTE);
-                if (hasDoubleQuotes) {
+
+                if (value.startsWith(DOUBLE_QUOTE) && !hasDoubleQuotes) {
+                    // Opening quote without closing — start multi-line accumulation
+                    pendingKey = key;
+                    pendingValue = new StringBuilder(value);
+                } else if (hasDoubleQuotes) {
                     value = value.substring(1, value.length() - 1);
-                    value = unescapeDoubleQuotedYamlValue(value);
+                    result.put(key, unescapeDoubleQuotedYamlValue(value));
                 } else if (hasSingleQuotes) {
                     value = value.substring(1, value.length() - 1);
                     value = value.replace(DOUBLE_SINGLE_QUOTE, SINGLE_QUOTE);
+                    result.put(key, value);
+                } else {
+                    result.put(key, value);
                 }
-                result.put(key, value);
             }
         }
-        
+
         return result;
     }
 
     /**
-     * Minimal unescape for double-quoted YAML scalar values.
-     * Only revert the escape sequences that are emitted by SKILL.md exporters:
-     * - \\\\ -> \
-     * - \\\" -> "
+     * Unescape double-quoted YAML scalar values using single-pass processing.
+     * Handles the following escape sequences:
+     * - \\\\ -> \  (escaped backslash)
+     * - \\\" -> "  (escaped double quote)
+     * - \\n  -> newline (escaped newline)
      */
     private static String unescapeDoubleQuotedYamlValue(String value) {
         if (StringUtils.isBlank(value)) {
             return value;
         }
-        return value.replace(DOUBLE_BACKSLASH, BACKSLASH).replace(ESCAPED_DOUBLE_QUOTE, DOUBLE_QUOTE);
+        StringBuilder sb = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '\\' && i + 1 < value.length()) {
+                char next = value.charAt(i + 1);
+                switch (next) {
+                    case '\\':
+                        sb.append('\\');
+                        i++;
+                        break;
+                    case '"':
+                        sb.append('"');
+                        i++;
+                        break;
+                    case 'n':
+                        sb.append('\n');
+                        i++;
+                        break;
+                    default:
+                        sb.append(c);
+                        break;
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
     
     private static String extractInstruction(String markdownContent) {

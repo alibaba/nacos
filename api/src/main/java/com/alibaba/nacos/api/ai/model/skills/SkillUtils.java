@@ -110,8 +110,9 @@ public class SkillUtils {
         // If value contains special characters, wrap in double quotes
         if (value.contains(COLON) || value.contains(DOUBLE_QUOTE) || value.contains(SINGLE_QUOTE)
             || value.contains(NEWLINE)) {
-            // Escape double quotes in the value
-            return DOUBLE_QUOTE + value.replace(DOUBLE_QUOTE, ESCAPED_DOUBLE_QUOTE) + DOUBLE_QUOTE;
+            // Escape backslashes, double quotes, and newlines in the value
+            return DOUBLE_QUOTE + value.replace("\\", "\\\\").replace(DOUBLE_QUOTE, ESCAPED_DOUBLE_QUOTE)
+                    .replace(NEWLINE, "\\n") + DOUBLE_QUOTE;
         }
         
         return value;

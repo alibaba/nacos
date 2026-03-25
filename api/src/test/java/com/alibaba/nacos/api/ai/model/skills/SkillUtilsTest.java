@@ -79,6 +79,20 @@ class SkillUtilsTest {
     }
     
     @Test
+    void testToMarkdownWithMultilineDescription() {
+        // Given
+        Skill skill = createValidSkill();
+        skill.setDescription("Line 1\nLine 2\nLine 3");
+
+        // When
+        String markdown = SkillUtils.toMarkdown(skill);
+
+        // Then: newlines are escaped as \n inside double quotes, keeping YAML on one line
+        assertNotNull(markdown);
+        assertTrue(markdown.contains("description: \"Line 1\\nLine 2\\nLine 3\""));
+    }
+
+    @Test
     void testSyncToLocalWithOverwriteStrategy() throws IOException {
         // Given
         Skill skill = createValidSkill();
