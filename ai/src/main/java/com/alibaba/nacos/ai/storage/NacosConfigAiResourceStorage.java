@@ -32,6 +32,7 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import com.alibaba.nacos.ai.service.SyncEffectService;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
+import com.alibaba.nacos.config.server.utils.ConfigPersistContext;
 
 import java.nio.charset.StandardCharsets;
 
@@ -180,12 +181,17 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
         form.setType(guessConfigType(parts.dataId()));
 
         ConfigRequestInfo requestInfo = new ConfigRequestInfo();
-        try {
-            configOperationService.publishConfig(form, requestInfo, null);
-        } catch (ConfigAlreadyExistsException alreadyExists) {
-            requestInfo.setUpdateForExist(Boolean.TRUE);
-            configOperationService.publishConfig(form, requestInfo, null);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
+            try {
+                configOperationService.publishConfig(form, requestInfo, null);
+            } catch (ConfigAlreadyExistsException alreadyExists) {
+                requestInfo.setUpdateForExist(Boolean.TRUE);
+                configOperationService.publishConfig(form, requestInfo, null);
+            }
         }
+
+        // Keep compatibility: single save still waits for effect.
+        // Batch writers should call SyncEffectService#toSyncConcurrent at higher level.
         if (syncEffectService != null) {
             syncEffectService.toSync(form, startTimeStamp);
         }
@@ -208,8 +214,10 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     public void delete(StorageKey storageKey) throws NacosException {
         KeyParts parts = parse(storageKey);
         String physicalDataId = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
-        configOperationService.deleteConfig(physicalDataId, parts.group(), parts.namespaceId(), null, null, "nacos",
-                null);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
+            configOperationService.deleteConfig(physicalDataId, parts.group(), parts.namespaceId(), null, null, "nacos",
+                    null);
+        }
     }
 
     private static String guessConfigType(String dataId) {

@@ -127,7 +127,7 @@ const I18N_CONF = {
     trace: 'Trace Plugin',
     environment: 'Environment Plugin',
     control: 'Control Plugin',
-    'data-filter': 'Data Filter Plugin',
+    visibility: 'Visibility Plugin',
     'ai-pipeline': 'AI Pipeline Plugin',
     'ai-storage': 'AI Storage Plugin',
   },

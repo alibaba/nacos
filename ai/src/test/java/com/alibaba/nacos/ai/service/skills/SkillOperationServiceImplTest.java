@@ -40,9 +40,12 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterService;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +57,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,10 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -113,9 +113,9 @@ class SkillOperationServiceImplTest {
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
-    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+    private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
 
-    private DataFilterPluginManager mockDataFilterManager;
+    private VisibilityPluginManager mockVisibilityManager;
 
     @BeforeEach
     void setUp() {
@@ -131,16 +131,16 @@ class SkillOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository, manifestService);
-        mockDataFilterManager = mock(DataFilterPluginManager.class);
-        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
-        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
-        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
+        mockVisibilityManager = mock(VisibilityPluginManager.class);
+        lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
     }
 
     @AfterEach
     void tearDown() {
-        if (dataFilterManagerStatic != null) {
-            dataFilterManagerStatic.close();
+        if (visibilityManagerStatic != null) {
+            visibilityManagerStatic.close();
         }
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
@@ -154,7 +154,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setStatus("enable");
-        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta.setBizTags("[\"retail\"]");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
@@ -171,7 +171,7 @@ class SkillOperationServiceImplTest {
         assertEquals(1, skillDetail.getOnlineCnt());
         assertEquals("v1", skillDetail.getLabels().get("latest"));
         assertEquals("[\"retail\"]", skillDetail.getBizTags());
-        assertEquals(DataFilterConstants.SCOPE_PUBLIC, skillDetail.getScope());
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, skillDetail.getScope());
         assertNotNull(skillDetail.getVersions());
     }
     
@@ -239,8 +239,7 @@ class SkillOperationServiceImplTest {
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
-                .thenReturn(metaPage);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
         
         // When
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
@@ -250,7 +249,7 @@ class SkillOperationServiceImplTest {
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPageItems().size());
         assertEquals("[\"ops\"]", result.getPageItems().get(0).getBizTags());
-        assertEquals(DataFilterConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
     }
     
     @Test
@@ -387,6 +386,7 @@ class SkillOperationServiceImplTest {
         IdentityContext identityContext = new IdentityContext();
         identityContext.setParameter(Constants.Identity.IDENTITY_ID, username);
         authContext.setIdentityContext(identityContext);
+        authContext.setApiType("ADMIN_API");
     }
 
     @Test
@@ -396,28 +396,29 @@ class SkillOperationServiceImplTest {
         meta1.setName("skill-public");
         meta1.setNamespaceId(namespaceId);
         meta1.setType("skill");
-        meta1.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta1.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta1.setOwner("userA");
         AiResource meta2 = new AiResource();
         meta2.setName("skill-private");
         meta2.setNamespaceId(namespaceId);
         meta2.setType("skill");
-        meta2.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta2.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta2.setOwner("userA");
 
-        Page<AiResource> metaPage = new Page<>();
-        metaPage.setPageItems(List.of(meta1, meta2));
-        metaPage.setTotalCount(2);
-        metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
-                .thenReturn(metaPage);
-
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
-                .thenReturn(Collections.singletonList(meta1));
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
-
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.PUBLIC);
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.adviseQuery(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any())).thenReturn(
+                advisor);
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
         setupRequestContext("userB");
+
+        Page<AiResource> metaPage = new Page<>();
+        metaPage.setPageItems(List.of(meta1));
+        metaPage.setTotalCount(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
         assertEquals("skill-public", result.getPageItems().get(0).getName());
@@ -432,19 +433,68 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("otherUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> skillOperationService.getSkillDetail(namespaceId, skillName));
-        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testQuerySkillDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.querySkill(namespaceId, skillName, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(manifestService, never()).query(namespaceId, skillName);
+    }
+    
+    @Test
+    void testGetSkillVersionDetailDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.getSkillVersionDetail(namespaceId, skillName, version));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -455,14 +505,14 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -496,8 +546,7 @@ class SkillOperationServiceImplTest {
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
-                .thenReturn(metaPage);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
 
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
@@ -511,16 +560,16 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         meta.setMetaVersion(1L);
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -557,7 +606,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         when(aiResourcePersistService.updateScope(eq(namespaceId), eq(skillName), eq("skill"), eq("PUBLIC")))
@@ -575,14 +624,14 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,

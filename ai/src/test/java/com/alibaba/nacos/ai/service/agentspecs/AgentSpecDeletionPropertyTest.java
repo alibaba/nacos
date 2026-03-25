@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -322,6 +323,11 @@ class AgentSpecDeletionPropertyTest {
         public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike,
                 String orderBy, int pageNo, int pageSize) {
             return list(namespaceId, type, nameLike, bizTagsLike, pageNo, pageSize);
+        }
+        
+        @Override
+        public Page<AiResource> list(QueryCondition queryCondition, int pageNo, int pageSize) {
+            return null;
         }
         
         @Override

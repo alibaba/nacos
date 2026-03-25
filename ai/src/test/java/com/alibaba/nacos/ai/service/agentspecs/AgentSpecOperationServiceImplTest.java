@@ -33,7 +33,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,9 +93,9 @@ class AgentSpecOperationServiceImplTest {
 
     private AgentSpecOperationServiceImpl service;
 
-    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+    private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
 
-    private DataFilterPluginManager mockDataFilterManager;
+    private VisibilityPluginManager mockVisibilityManager;
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
@@ -113,16 +113,16 @@ class AgentSpecOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         service = new AgentSpecOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository);
-        mockDataFilterManager = mock(DataFilterPluginManager.class);
-        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
-        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
-        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
+        mockVisibilityManager = mock(VisibilityPluginManager.class);
+        lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
     }
 
     @AfterEach
     void tearDown() {
-        if (dataFilterManagerStatic != null) {
-            dataFilterManagerStatic.close();
+        if (visibilityManagerStatic != null) {
+            visibilityManagerStatic.close();
         }
         AiResourceStorageRouter.reset();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);

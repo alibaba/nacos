@@ -46,6 +46,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigMigratePersistService;
+import com.alibaba.nacos.config.server.utils.ConfigPersistContext;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
@@ -67,7 +68,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.model.gray.GrayRuleManager.SPLIT;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.PropertyUtil.CONFIG_MIGRATE_FLAG;
 import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FLAG;
 
 /**
@@ -332,8 +332,7 @@ public class ConfigMigrateService {
         ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
                 changedConfigInfoGrayWrapper.getDataId(), changedConfigInfoGrayWrapper.getGroup(), targetTenant,
                 changedConfigInfoGrayWrapper.getGrayName());
-        try {
-            GRAY_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.equals(changedConfigInfoGrayWrapper.getSrcUser(), NAMESPACE_MIGRATE_SRC_USER)) {
                 if (targetConfigInfoGrayWrapper == null) {
                     configInfoGrayPersistService.removeConfigInfoGray(changedConfigInfoGrayWrapper.getDataId(),
@@ -375,8 +374,6 @@ public class ConfigMigrateService {
                     }
                 }
             }
-        } finally {
-            GRAY_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -401,8 +398,7 @@ public class ConfigMigrateService {
                 changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), tenant);
         ConfigAllInfo targetConfigAllInfo = configInfoPersistService.findConfigAllInfo(
                 changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), targetTenant);
-        try {
-            CONFIG_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (NAMESPACE_MIGRATE_SRC_USER.equals(changedConfigAllInfo.getCreateUser())) {
                 if (targetConfigAllInfo == null) {
                     configInfoPersistService.removeConfigInfo(changedConfigAllInfo.getDataId(),
@@ -433,10 +429,7 @@ public class ConfigMigrateService {
                     }
                 }
             }
-        } finally {
-            CONFIG_MIGRATE_FLAG.set(false);
         }
-        
     }
     
     /**
@@ -466,16 +459,13 @@ public class ConfigMigrateService {
             return;
         }
         
-        try {
-            GRAY_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (targetConfigInfoGrayStateWrapper.getLastModified()
                     <= deletedConfigInfoGrayStateWrapper.getLastModified()) {
                 configInfoGrayPersistService.removeConfigInfoGray(deletedConfigInfoGrayStateWrapper.getDataId(),
                         deletedConfigInfoGrayStateWrapper.getGroup(), targetTenant,
                         deletedConfigInfoGrayStateWrapper.getGrayName(), null, NAMESPACE_MIGRATE_SRC_USER);
             }
-        } finally {
-            GRAY_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -501,16 +491,12 @@ public class ConfigMigrateService {
         if (targetConfigInfoStateWrapper == null) {
             return;
         }
-        try {
-            CONFIG_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (targetConfigInfoStateWrapper.getLastModified() <= deletedConfigInfoStateWrapper.getLastModified()) {
                 configInfoPersistService.removeConfigInfo(deletedConfigInfoStateWrapper.getDataId(),
                         deletedConfigInfoStateWrapper.getGroup(), targetTenant, null, NAMESPACE_MIGRATE_SRC_USER);
             }
-        } finally {
-            CONFIG_MIGRATE_FLAG.set(false);
         }
-        
     }
     
     private void doCheckNamespaceMigrate() throws Exception {
@@ -798,8 +784,7 @@ public class ConfigMigrateService {
      * @param grayName the gray name
      */
     public void namespaceMigrateGray(String dataId, String group, String tenant, String grayName) {
-        try {
-            GRAY_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isBlank(tenant)) {
                 configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName, namespacePublic,
                         NAMESPACE_MIGRATE_SRC_USER);
@@ -809,8 +794,6 @@ public class ConfigMigrateService {
             }
         } catch (Exception e) {
             LOGGER.error("[migrate] namespace migrate gray failed", e);
-        } finally {
-            GRAY_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -822,8 +805,7 @@ public class ConfigMigrateService {
      * @param tenant the tenant
      */
     public void namespaceMigrate(String dataId, String group, String tenant) {
-        try {
-            CONFIG_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isBlank(tenant)) {
                 configMigratePersistService.syncConfig(dataId, group, tenant, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
             } else if (StringUtils.equals(tenant, namespacePublic)) {
@@ -831,8 +813,6 @@ public class ConfigMigrateService {
             }
         } catch (Exception e) {
             LOGGER.error("[migrate] namespace migrate failed", e);
-        } finally {
-            CONFIG_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -869,8 +849,7 @@ public class ConfigMigrateService {
         
         ConfigOperateResult configOperateResult;
         
-        try {
-            CONFIG_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
                 configOperateResult = configInfoPersistService.insertOrUpdateCas(configRequestInfo.getSrcIp(),
                         configForm.getSrcUser(), configInfo, configAdvanceInfo);
@@ -899,8 +878,6 @@ public class ConfigMigrateService {
                     }
                 }
             }
-        } finally {
-            CONFIG_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -984,8 +961,7 @@ public class ConfigMigrateService {
         
         ConfigOperateResult configOperateResult;
         
-        try {
-            GRAY_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
                 configOperateResult = configInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                         configForm.getGrayName(),
@@ -1004,8 +980,6 @@ public class ConfigMigrateService {
                         GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
                         configRequestInfo.getSrcIp(), configForm.getSrcUser());
             }
-        } finally {
-            GRAY_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -1023,11 +997,8 @@ public class ConfigMigrateService {
                 .isNamespaceCompatibleMode()) {
             return;
         }
-        try {
-            CONFIG_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             configInfoPersistService.removeConfigInfo(dataId, group, "", srcIp, NAMESPACE_MIGRATE_SRC_USER);
-        } finally {
-            CONFIG_MIGRATE_FLAG.set(false);
         }
     }
     
@@ -1047,13 +1018,10 @@ public class ConfigMigrateService {
                 .isNamespaceCompatibleMode()) {
             return;
         }
-        try {
-            GRAY_MIGRATE_FLAG.set(true);
+        try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, "", grayName, srcIp,
                     NAMESPACE_MIGRATE_SRC_USER);
             deleteConfigGrayV1(dataId, group, "", grayName, srcIp, NAMESPACE_MIGRATE_SRC_USER);
-        } finally {
-            GRAY_MIGRATE_FLAG.set(false);
         }
     }
     

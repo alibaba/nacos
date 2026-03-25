@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.oracle;
 
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AiResourceMapper;
@@ -39,18 +38,7 @@ public class AiResourceMapperByOracle extends AbstractMapperByOracle implements 
                         + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
 
-        Object type = context.getWhereParameter(FieldConstant.TYPE);
-        if (type != null && StringUtils.isNotBlank(String.valueOf(type))) {
-            where.and().eq("type", type);
-        }
-        Object name = context.getWhereParameter(FieldConstant.NAME);
-        if (name != null && StringUtils.isNotBlank(String.valueOf(name))) {
-            where.and().like("name", name);
-        }
-        Object bizTags = context.getWhereParameter(FieldConstant.BIZ_TAGS);
-        if (bizTags != null && StringUtils.isNotBlank(String.valueOf(bizTags))) {
-            where.and().like("biz_tags", bizTags);
-        }
+        appendExtraQueryCondition(where, context);
 
         MapperResult built = where.build();
         String sql = built.getSql() + resolveOrderByClause(context) + " OFFSET " + context.getStartRow()

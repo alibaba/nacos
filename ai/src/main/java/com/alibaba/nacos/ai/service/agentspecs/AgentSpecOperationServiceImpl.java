@@ -25,7 +25,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
-import com.alibaba.nacos.ai.service.DataFilterHelper;
+import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
@@ -47,7 +47,7 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.AgentSpecPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +121,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             AiResource existedMeta, boolean isNew) throws NacosException {
         String agentSpecName = agentSpec.getName();
         long uniformId = System.currentTimeMillis();
-        String currentUser = DataFilterHelper.resolveCurrentUser();
+        String currentUser = VisibilityHelper.resolveCurrentIdentity();
         
         // 1) write storage for draft version
         byte[] mainContent = buildMainContent(agentSpec, uniformId);
@@ -427,7 +427,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         meta.setDesc(agentSpec.getDescription());
         meta.setBizTags(agentSpec.getBizTags());
         meta.setOwner(DEFAULT_AUTHOR);
-        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta.setVersionInfo(JacksonUtils.toJson(versionInfo));
         meta.setMetaVersion(1L);
         aiResourcePersistService.insert(meta);
@@ -514,7 +514,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     private static String resolveScope(AiResource meta) {
         if (StringUtils.isBlank(meta.getScope())) {
-            return DataFilterConstants.SCOPE_PRIVATE;
+            return VisibilityConstants.SCOPE_PRIVATE;
         }
         return meta.getScope();
     }
@@ -821,7 +821,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
-        DataFilterHelper.doWriteCheck(meta);
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateMetaVersionInfoCas(namespaceId, meta, info);
@@ -830,7 +830,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateBizTags(String namespaceId, String name, String bizTags) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
-        DataFilterHelper.doWriteCheck(meta);
+        VisibilityHelper.checkWritableResource(meta);
         updateMetaBizTagsCas(namespaceId, meta, bizTags);
     }
     
@@ -867,7 +867,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void updateScope(String namespaceId, String name, String scope) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
-        DataFilterHelper.doWriteCheck(meta);
+        VisibilityHelper.checkWritableResource(meta);
         boolean ok = aiResourcePersistService.updateScope(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 scope.toUpperCase());
         if (!ok) {

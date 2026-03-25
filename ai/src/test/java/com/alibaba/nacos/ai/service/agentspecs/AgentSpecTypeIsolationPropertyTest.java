@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
@@ -291,6 +292,11 @@ class AgentSpecTypeIsolationPropertyTest {
         public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike,
                 String orderBy, int pageNo, int pageSize) {
             return list(namespaceId, type, nameLike, bizTagsLike, pageNo, pageSize);
+        }
+        
+        @Override
+        public Page<AiResource> list(QueryCondition queryCondition, int pageNo, int pageSize) {
+            return null;
         }
         
         @Override

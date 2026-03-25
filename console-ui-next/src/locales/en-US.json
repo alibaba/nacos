@@ -740,9 +740,9 @@
     "typeTrace": "Trace",
     "typeEnvironment": "Environment",
     "typeControl": "Control",
-    "typeDataFilter": "Data Filter",
     "typeAiPipeline": "AI Pipeline",
     "typeAiStorage": "AI Storage",
+    "typeVisibility": "Visibility",
     "availableNodes": "Available Nodes",
     "yes": "Yes",
     "no": "No"

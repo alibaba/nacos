@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 
 import java.io.Serial;
 
@@ -43,8 +43,8 @@ public class AgentSpecScopeForm extends AgentSpecForm {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'scope' type String is not present");
         }
-        if (!DataFilterConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
-                && !DataFilterConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
+        if (!VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
+                && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Parameter 'scope' must be PUBLIC or PRIVATE");
         }

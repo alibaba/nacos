@@ -63,7 +63,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     public static final ThreadLocal<Boolean> GRAY_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
     
-    public static final ThreadLocal<Boolean> CONFIG_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
+    // CONFIG_MIGRATE_FLAG has been replaced by {@link ConfigPersistContext}.
     
     /**
      * Whether to enable the limit check function of capacity management, including the upper limit of configuration
