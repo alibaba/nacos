@@ -21,33 +21,35 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.core.context.RequestContextHolder;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
 import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Helper for data-level filtering in AI service layer.
+ * Helper for visibility checking in AI service layer.
  *
  * @author nacos
  */
-public class DataFilterHelper {
-
+public class VisibilityHelper {
+    
     private static final String VISIBILITY_PLUGIN_TYPE_CONFIG_KEY = "nacos.plugin.visibility.type";
     
     private static final String DEFAULT_VISIBILITY_SERVICE_NAME = "nacos-default-ai";
-
-    private DataFilterHelper() {
+    
+    private static volatile String cachedVisibilityServiceName;
+    
+    private VisibilityHelper() {
     }
-
+    
     /**
      * Resolve the current identity from request context using the plugin-level identity abstraction.
      */
@@ -60,7 +62,21 @@ public class DataFilterHelper {
             return "";
         }
     }
-
+    
+    /**
+     * Resolve current API type from auth context.
+     *
+     * @return api type name, empty string when absent
+     */
+    public static String resolveCurrentApiType() {
+        try {
+            String apiType = RequestContextHolder.getContext().getAuthContext().getApiType();
+            return apiType == null ? "" : apiType;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    
     /**
      * Filter candidate resources by read permission for current user.
      *
@@ -69,8 +85,7 @@ public class DataFilterHelper {
      * @return resources the current user is allowed to read
      */
     public static <T extends VisibilityResource> List<T> filterReadableResources(List<T> candidates) {
-        Optional<VisibilityService> visibilityService = VisibilityPluginManager.getInstance()
-                .findVisibilityService(resolveVisibilityServiceName());
+        Optional<VisibilityService> visibilityService = findVisibilityService();
         if (visibilityService.isEmpty()) {
             return candidates;
         }
@@ -78,14 +93,14 @@ public class DataFilterHelper {
         List<T> result = new ArrayList<>(candidates.size());
         for (T each : candidates) {
             ValidationResult validationResult = visibilityService.get()
-                    .validateVisibility(currentUser, DataFilterConstants.ACTION_READ, null, each);
+                    .validateVisibility(currentUser, VisibilityConstants.ACTION_READ, resolveCurrentApiType(), each);
             if (validationResult.isAllowed()) {
                 result.add(each);
             }
         }
         return result;
     }
-
+    
     /**
      * Check write permission for current user on the given resource. Throws 403 if denied.
      *
@@ -93,13 +108,13 @@ public class DataFilterHelper {
      * @throws NacosException if no write permission
      */
     public static void checkWritableResource(AiResource resource) throws NacosException {
-        Optional<VisibilityService> visibilityService = VisibilityPluginManager.getInstance()
-                .findVisibilityService(resolveVisibilityServiceName());
+        Optional<VisibilityService> visibilityService = findVisibilityService();
         if (visibilityService.isEmpty()) {
             return;
         }
         ValidationResult result = visibilityService.get()
-                .validateVisibility(resolveCurrentIdentity(), DataFilterConstants.ACTION_WRITE, null, resource);
+                .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_WRITE, resolveCurrentApiType(),
+                        resource);
         if (!result.isAllowed()) {
             throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
                     "No permission to modify skill: " + resource.getName());
@@ -107,8 +122,26 @@ public class DataFilterHelper {
     }
     
     private static String resolveVisibilityServiceName() {
-        // TODO: replace EnvUtil-based lookup with a dedicated visibility plugin config model.
-        String serviceName = EnvUtil.getProperty(VISIBILITY_PLUGIN_TYPE_CONFIG_KEY, DEFAULT_VISIBILITY_SERVICE_NAME);
-        return serviceName.trim();
+        String serviceName = cachedVisibilityServiceName;
+        if (serviceName != null) {
+            return serviceName;
+        }
+        synchronized (VisibilityHelper.class) {
+            if (cachedVisibilityServiceName == null) {
+                String configured = EnvUtil.getProperty(VISIBILITY_PLUGIN_TYPE_CONFIG_KEY,
+                        DEFAULT_VISIBILITY_SERVICE_NAME);
+                cachedVisibilityServiceName = configured.trim();
+            }
+            return cachedVisibilityServiceName;
+        }
+    }
+    
+    /**
+     * Find configured visibility service from plugin manager.
+     *
+     * @return optional visibility service
+     */
+    public static Optional<VisibilityService> findVisibilityService() {
+        return VisibilityPluginManager.getInstance().findVisibilityService(resolveVisibilityServiceName());
     }
 }

@@ -117,6 +117,7 @@ public abstract class AbstractWebAuthFilter implements Filter {
             requestContext.getAuthContext().setIdentityContext(identityContext);
             requestContext.getAuthContext().setResource(resource);
             requestContext.getAuthContext().setAuthResult(result);
+            requestContext.getAuthContext().setApiType(secured.apiType().name());
             if (!result.isSuccess()) {
                 throw new AccessException(result.format());
             }

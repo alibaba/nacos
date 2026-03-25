@@ -21,21 +21,21 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * {@link DataFilterConstants} unit test.
+ * {@link VisibilityConstants} unit test.
  *
  * @author xiweng.yy
  */
-class DataFilterConstantsTest {
+class VisibilityConstantsTest {
     
     @Test
     void testScopeConstants() {
-        assertEquals("PUBLIC", DataFilterConstants.SCOPE_PUBLIC);
-        assertEquals("PRIVATE", DataFilterConstants.SCOPE_PRIVATE);
+        assertEquals("PUBLIC", VisibilityConstants.SCOPE_PUBLIC);
+        assertEquals("PRIVATE", VisibilityConstants.SCOPE_PRIVATE);
     }
     
     @Test
     void testActionConstants() {
-        assertEquals("r", DataFilterConstants.ACTION_READ);
-        assertEquals("w", DataFilterConstants.ACTION_WRITE);
+        assertEquals("r", VisibilityConstants.ACTION_READ);
+        assertEquals("w", VisibilityConstants.ACTION_WRITE);
     }
 }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.visibility.model;
 
-import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 
 /**
  * Base class for resources that support visibility validation.
@@ -25,7 +25,7 @@ import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
  */
 public abstract class VisibilityResource {
     
-    private String scope = DataFilterConstants.SCOPE_PRIVATE;
+    private String scope = VisibilityConstants.SCOPE_PRIVATE;
     
     private String owner = "";
     

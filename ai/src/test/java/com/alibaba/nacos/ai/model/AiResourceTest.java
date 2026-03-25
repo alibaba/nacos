@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.ai.model;
 
-import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ class AiResourceTest {
     @Test
     void testDefaultScopeIsPrivate() {
         AiResource resource = new AiResource();
-        assertEquals(DataFilterConstants.SCOPE_PRIVATE, resource.getScope());
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, resource.getScope());
     }
     
     @Test
@@ -72,9 +72,9 @@ class AiResourceTest {
     @Test
     void testScopeAndOwnerGetterSetter() {
         AiResource resource = new AiResource();
-        resource.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        resource.setScope(VisibilityConstants.SCOPE_PUBLIC);
         resource.setOwner("alice");
-        assertEquals(DataFilterConstants.SCOPE_PUBLIC, resource.getScope());
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, resource.getScope());
         assertEquals("alice", resource.getOwner());
     }
 }

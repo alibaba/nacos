@@ -56,15 +56,44 @@ public interface AiResourcePersistService {
 
     AiResource find(String namespaceId, String name, String type);
 
-    Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo, int pageSize);
+    /**
+     * List resources with basic filters.
+     */
+    default Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo,
+            int pageSize) {
+        QueryCondition condition = new QueryCondition();
+        condition.setNamespaceId(namespaceId);
+        condition.setType(type);
+        condition.setNameLike(nameLike);
+        condition.setBizTagsLike(bizTagsLike);
+        return list(condition, pageNo, pageSize);
+    }
 
     /**
      * List resources with optional ordering.
      *
      * @param orderBy sort field (e.g. "download_count"), null defaults to gmt_modified
      */
-    Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, String orderBy,
-            int pageNo, int pageSize);
+    default Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, String orderBy,
+            int pageNo, int pageSize) {
+        QueryCondition condition = new QueryCondition();
+        condition.setNamespaceId(namespaceId);
+        condition.setType(type);
+        condition.setNameLike(nameLike);
+        condition.setBizTagsLike(bizTagsLike);
+        condition.setOrderBy(orderBy);
+        return list(condition, pageNo, pageSize);
+    }
+    
+    /**
+     * List resources by unified query condition.
+     *
+     * @param queryCondition unified table-oriented query conditions
+     * @param pageNo         page number (1-based)
+     * @param pageSize       page size
+     * @return paged resources
+     */
+    Page<AiResource> list(QueryCondition queryCondition, int pageNo, int pageSize);
 
     /**
      * Update meta with optimistic lock on meta_version.
@@ -92,5 +121,6 @@ public interface AiResourcePersistService {
      * @return true if updated successfully
      */
     boolean incrementDownloadCount(String namespaceId, String name, String type, long increment);
+    
 }
 

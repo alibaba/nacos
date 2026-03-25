@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.visibility.constant;
+package com.alibaba.nacos.ai.service.visibility;
+
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 
 /**
- * Constants for data filter plugin.
+ * Convert plugin-level {@link QueryAdvisor} to repository-executable condition.
  *
- * @author xiweng.yy
+ * @author nacos
  */
-public class DataFilterConstants {
+public interface VisibilityAdvisorConverter {
     
-    public static final String SCOPE_PUBLIC = "PUBLIC";
-    
-    public static final String SCOPE_PRIVATE = "PRIVATE";
-    
-    public static final String ACTION_READ = "r";
-    
-    public static final String ACTION_WRITE = "w";
-    
-    private DataFilterConstants() {
-    }
+    QueryCondition convert(QueryCondition condition, String identity, QueryAdvisor advisor, VisibilityQueryContext context);
 }

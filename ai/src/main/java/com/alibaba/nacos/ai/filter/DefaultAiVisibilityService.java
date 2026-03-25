@@ -26,7 +26,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.AuthorizedResources;
 import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
@@ -61,7 +61,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
         if (!isAuthEnabled(apiType)) {
             return ValidationResult.allow();
         }
-        boolean isRead = DataFilterConstants.ACTION_READ.equals(action);
+        boolean isRead = VisibilityConstants.ACTION_READ.equals(action);
         if (isPermitted(identity, isRead, resource)) {
             return ValidationResult.allow();
         }
@@ -75,7 +75,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
             advisor.setBasePredicate(BaseVisibilityPredicate.ALL);
             return advisor;
         }
-        if (!DataFilterConstants.ACTION_READ.equals(action)) {
+        if (!VisibilityConstants.ACTION_READ.equals(action)) {
             advisor.setBasePredicate(BaseVisibilityPredicate.OWNER);
             return advisor;
         }
@@ -98,10 +98,10 @@ public class DefaultAiVisibilityService implements VisibilityService {
         if (isOwner(currentUser, candidate)) {
             return true;
         }
-        if (isRead && DataFilterConstants.SCOPE_PUBLIC.equals(candidate.getScope())) {
+        if (isRead && VisibilityConstants.SCOPE_PUBLIC.equals(candidate.getScope())) {
             return true;
         }
-        String action = isRead ? DataFilterConstants.ACTION_READ : DataFilterConstants.ACTION_WRITE;
+        String action = isRead ? VisibilityConstants.ACTION_READ : VisibilityConstants.ACTION_WRITE;
         return checkResourcePermission(candidate, action);
     }
     

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.visibility.model;
 
-import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,7 @@ class VisibilityResourceTest {
     
     @Test
     void testDefaultScopeIsPrivate() {
-        assertEquals(DataFilterConstants.SCOPE_PRIVATE, resource.getScope());
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, resource.getScope());
     }
     
     @Test

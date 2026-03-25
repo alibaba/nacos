@@ -23,7 +23,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-import com.alibaba.nacos.plugin.visibility.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
@@ -56,8 +56,8 @@ class DefaultAiVisibilityServiceTest {
                 NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
         try {
             ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap", new HashMap<>());
-            TestResource resource = new TestResource("public", "test", "skill", DataFilterConstants.SCOPE_PRIVATE, "alice");
-            ValidationResult result = service.validateVisibility("bob", DataFilterConstants.ACTION_READ, "ADMIN_API",
+            TestResource resource = new TestResource("public", "test", "skill", VisibilityConstants.SCOPE_PRIVATE, "alice");
+            ValidationResult result = service.validateVisibility("bob", VisibilityConstants.ACTION_READ, "ADMIN_API",
                     resource);
             assertTrue(result.isAllowed());
         } finally {
@@ -88,8 +88,8 @@ class DefaultAiVisibilityServiceTest {
             Map<String, NacosAuthConfig> map = new HashMap<>();
             map.put("ADMIN_API", authConfig);
             ReflectionTestUtils.setField(NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap", map);
-            TestResource resource = new TestResource("public", "test", "skill", DataFilterConstants.SCOPE_PRIVATE, "alice");
-            ValidationResult result = service.validateVisibility("bob", DataFilterConstants.ACTION_READ, "ADMIN_API",
+            TestResource resource = new TestResource("public", "test", "skill", VisibilityConstants.SCOPE_PRIVATE, "alice");
+            ValidationResult result = service.validateVisibility("bob", VisibilityConstants.ACTION_READ, "ADMIN_API",
                     resource);
             assertFalse(result.isAllowed());
         } finally {
@@ -113,7 +113,7 @@ class DefaultAiVisibilityServiceTest {
             VisibilityQueryContext context = new VisibilityQueryContext();
             context.setNamespaceId("public");
             context.setResourceType("skill");
-            QueryAdvisor advisor = service.adviseQuery("userA", DataFilterConstants.ACTION_READ, "ADMIN_API", context);
+            QueryAdvisor advisor = service.adviseQuery("userA", VisibilityConstants.ACTION_READ, "ADMIN_API", context);
             assertEquals(BaseVisibilityPredicate.PUBLIC_AND_OWNER, advisor.getBasePredicate());
             assertEquals("skill", advisor.getAuthorizedPredicate().getResourceType());
         } finally {
