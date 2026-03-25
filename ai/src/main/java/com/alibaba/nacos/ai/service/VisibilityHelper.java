@@ -134,7 +134,7 @@ public class VisibilityHelper {
                         resource);
         if (!result.isAllowed()) {
             throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
-                    "No permission to modify skill: " + resource.getName());
+                    "No permission to modify " + resource.getType() + ": " + resource.getName());
         }
     }
     
