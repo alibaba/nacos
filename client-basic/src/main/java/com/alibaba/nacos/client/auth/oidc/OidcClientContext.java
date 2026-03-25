@@ -128,7 +128,10 @@ public class OidcClientContext {
                 return false;
             }
             
-            String responseBody = readInputStreamAsString(connection.getInputStream());
+            String responseBody;
+            try (InputStream responseStream = connection.getInputStream()) {
+                responseBody = readInputStreamAsString(responseStream);
+            }
             
             JsonNode root = OBJECT_MAPPER.readTree(responseBody);
             JsonNode tokenEndpointNode = root.get(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT);

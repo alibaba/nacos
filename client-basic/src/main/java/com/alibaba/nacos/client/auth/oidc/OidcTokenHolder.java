@@ -95,15 +95,21 @@ public class OidcTokenHolder {
             
             int responseCode = connection.getResponseCode();
             if (responseCode != OidcProtocolConstants.HTTP_STATUS_OK) {
-                InputStream errorStream = connection.getErrorStream();
-                String errorBody = errorStream != null
-                        ? OidcClientContext.readInputStreamAsString(errorStream) : "";
+                String errorBody = "";
+                try (InputStream errorStream = connection.getErrorStream()) {
+                    if (errorStream != null) {
+                        errorBody = OidcClientContext.readInputStreamAsString(errorStream);
+                    }
+                }
                 LOGGER.error("[OIDC-CLIENT] Token request failed, HTTP status: {}, body: {}",
                         responseCode, errorBody);
                 return false;
             }
-            
-            String responseBody = OidcClientContext.readInputStreamAsString(connection.getInputStream());
+
+            String responseBody;
+            try (InputStream responseStream = connection.getInputStream()) {
+                responseBody = OidcClientContext.readInputStreamAsString(responseStream);
+            }
             
             return parseTokenResponse(responseBody);
             

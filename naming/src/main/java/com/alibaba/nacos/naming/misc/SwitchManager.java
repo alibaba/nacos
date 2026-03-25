@@ -127,8 +127,13 @@ public class SwitchManager extends RequestProcessor4CP {
             
             if (entry.equals(SwitchEntry.PUSH_VERSION)) {
                 
-                String type = value.split(":")[0];
-                String version = value.split(":")[1];
+                String[] parts = value.split(":");
+                if (parts.length < 2) {
+                    throw new IllegalArgumentException(
+                            "illegal format, must be 'type:version', but got: " + value);
+                }
+                String type = parts[0];
+                String version = parts[1];
                 
                 if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
                     throw new IllegalArgumentException(

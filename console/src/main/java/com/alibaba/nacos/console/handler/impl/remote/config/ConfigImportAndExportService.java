@@ -176,8 +176,8 @@ public class ConfigImportAndExportService {
         
         @Override
         public ResponseEntity<byte[]> handleEntity(HttpEntity entity) throws IOException {
-            InputStream inputStream = entity.getContent();
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            try (InputStream inputStream = entity.getContent();
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 IoUtils.copy(inputStream, outputStream);
                 byte[] responseBody = outputStream.toByteArray();
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM)
