@@ -154,7 +154,7 @@ class NacosSkillsRegistryServiceTest {
         result.setNamespaceId("public");
         result.setName(name);
         result.setDescription(name + " description");
-        result.setInstruction("# " + name);
+        result.setSkillMd("# " + name);
         SkillResource resource = new SkillResource();
         resource.setType("docs");
         resource.setName("guide.md");

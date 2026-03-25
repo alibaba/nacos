@@ -89,7 +89,7 @@ class FilePipelineConfigProviderPropertyTest {
                     "Number of parsed nodes should match input");
             
             for (int i = 0; i < config.getNodes().size(); i++) {
-            NodeTestData expected = expectedNodes.get(i);
+                NodeTestData expected = expectedNodes.get(i);
                 PipelineNodeConfig actual = config.getNodes().get(i);
                 assertEquals(expected.pipelineId, actual.getPipelineId(),
                         "Node pipelineId at index " + i + " should match");

@@ -825,7 +825,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta.setOwner("ownerUser");
         meta.setMetaVersion(2L);
         meta.setVersionInfo("{\"labels\":{\"latest\":\"1.1.3\"},\"onlineCnt\":1}");
