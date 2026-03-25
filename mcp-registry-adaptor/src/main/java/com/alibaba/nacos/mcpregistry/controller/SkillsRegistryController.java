@@ -118,6 +118,35 @@ public class SkillsRegistryController {
     }
     
     /**
+     * Well-Known resource file endpoint for {@code skills add} command.
+     *
+     * <p>Returns the content of a resource file for a specific skill.
+     * The CLI requests: {@code GET /.well-known/skills/{skillName}/{filePath}}
+     * where filePath can include subdirectories (e.g., "resources/foo.json")
+     *
+     * @param skillName the skill name
+     * @param namespaceId optional namespace filter
+     * @param request HTTP request used to extract the file path
+     * @return resource file content or 404 if not found
+     */
+    @GetMapping(value = "/.well-known/skills/{skillName}/**")
+    public ResponseEntity<String> getSkillResource(
+            @PathVariable String skillName,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            HttpServletRequest request) {
+        // Extract the file path after /.well-known/skills/{skillName}/
+        String prefix = "/.well-known/skills/" + skillName + "/";
+        String requestUri = request.getRequestURI();
+        String filePath = requestUri.substring(requestUri.indexOf(prefix) + prefix.length());
+        
+        String content = skillsRegistryService.getSkillResource(skillName, filePath, namespaceId);
+        if (content == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(content);
+    }
+    
+    /**
      * Resolve the source URL from the incoming request.
      * This URL is used as the {@code source} field in search results,
      * so that {@code skills add {source}} can find the well-known endpoints.

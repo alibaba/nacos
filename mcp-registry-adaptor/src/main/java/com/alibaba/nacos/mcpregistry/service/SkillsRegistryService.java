@@ -105,9 +105,13 @@ public class SkillsRegistryService {
             if (page == null || page.getPageItems() == null) {
                 return new WellKnownIndex(Collections.emptyList());
             }
-            List<WellKnownSkillEntry> entries = page.getPageItems().stream()
-                    .map(this::toWellKnownEntry)
-                    .collect(Collectors.toList());
+            List<WellKnownSkillEntry> entries = new ArrayList<>();
+            for (SkillBasicInfo info : page.getPageItems()) {
+                WellKnownSkillEntry entry = toWellKnownEntry(info, ns);
+                if (entry != null) {
+                    entries.add(entry);
+                }
+            }
             return new WellKnownIndex(entries);
         } catch (NacosException e) {
             LOGGER.warn("Failed to list skills for well-known index", e);
@@ -139,6 +143,38 @@ public class SkillsRegistryService {
         }
     }
     
+    /**
+     * Get the content of a resource file for a specific skill.
+     *
+     * @param skillName   the skill name
+     * @param filePath    the resource file path (may include subdirectories like "resources/foo.json")
+     * @param namespaceId optional namespace filter
+     * @return resource file content, or null if not found
+     */
+    public String getSkillResource(String skillName, String filePath, String namespaceId) {
+        String ns = resolveNamespace(namespaceId);
+        try {
+            Skill skill = skillOperationService.querySkillPublic(ns, skillName, null, null);
+            if (skill == null || skill.getResource() == null) {
+                return null;
+            }
+            // Search for the resource by matching the full path: {type}/{name} or {name}
+            for (SkillResource resource : skill.getResource().values()) {
+                String resourcePath = buildResourcePath(resource.getType(), resource.getName());
+                if (filePath.equals(resourcePath)) {
+                    return resource.getContent();
+                }
+            }
+            return null;
+        } catch (NacosException e) {
+            if (e.getErrCode() == NacosException.NOT_FOUND) {
+                return null;
+            }
+            LOGGER.warn("Failed to query skill resource: {}/{}", skillName, filePath, e);
+            return null;
+        }
+    }
+    
     private String resolveNamespace(String namespaceId) {
         return StringUtils.isEmpty(namespaceId) ? DEFAULT_NAMESPACE : namespaceId;
     }
@@ -152,14 +188,41 @@ public class SkillsRegistryService {
         return item;
     }
     
-    private WellKnownSkillEntry toWellKnownEntry(SkillBasicInfo info) {
+    private WellKnownSkillEntry toWellKnownEntry(SkillBasicInfo info, String namespaceId) {
         WellKnownSkillEntry entry = new WellKnownSkillEntry();
         entry.setName(info.getName());
         entry.setDescription(info.getDescription() != null ? info.getDescription() : info.getName());
+        
+        // Query full skill to get resource files
         List<String> files = new ArrayList<>();
         files.add(SKILL_MD_FILE);
+        try {
+            Skill skill = skillOperationService.querySkillPublic(namespaceId, info.getName(), null, null);
+            if (skill != null && skill.getResource() != null) {
+                for (SkillResource resource : skill.getResource().values()) {
+                    if (resource.getName() != null) {
+                        // Reconstruct path: {type}/{name} if type exists, otherwise just {name}
+                        String path = buildResourcePath(resource.getType(), resource.getName());
+                        files.add(path);
+                    }
+                }
+            }
+        } catch (NacosException e) {
+            LOGGER.debug("Failed to get skill resources for {}: {}", info.getName(), e.getMessage());
+        }
         entry.setFiles(files);
         return entry;
+    }
+    
+    /**
+     * Build resource file path from type and name.
+     * If type is present, returns "{type}/{name}", otherwise just "{name}".
+     */
+    private String buildResourcePath(String type, String name) {
+        if (StringUtils.isNotBlank(type)) {
+            return type + "/" + name;
+        }
+        return name;
     }
     
     /**
