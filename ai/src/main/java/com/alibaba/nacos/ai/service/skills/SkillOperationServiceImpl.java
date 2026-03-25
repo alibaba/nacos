@@ -826,6 +826,67 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 new SkillDownloadEvent(namespaceId, name, RESOURCE_TYPE_SKILL, resolved));
         return skill;
     }
+    
+    // ========== Public APIs (no auth required) ==========
+    
+    @Override
+    public Page<SkillBasicInfo> searchSkillsPublic(String namespaceId, String keyword, int pageNo, int pageSize)
+            throws NacosException {
+        String nameLike = StringUtils.isBlank(keyword) ? null
+                : aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
+        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null, pageNo,
+                pageSize);
+        // Note: No DataFilterHelper.doReadFilter here - this is for public unauthenticated access
+        List<AiResource> items = metaPage == null || metaPage.getPageItems() == null 
+                ? new ArrayList<>() : metaPage.getPageItems();
+        List<SkillBasicInfo> result = new ArrayList<>();
+        for (AiResource meta : items) {
+            if (meta == null) {
+                continue;
+            }
+            if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
+                continue;
+            }
+            SkillVersionInfo info = parseVersionInfo(meta.getVersionInfo());
+            if (info == null || info.getOnlineCnt() == null || info.getOnlineCnt() <= 0) {
+                continue;
+            }
+            SkillBasicInfo basicInfo = new SkillBasicInfo();
+            basicInfo.setName(meta.getName());
+            basicInfo.setDescription(meta.getDesc());
+            result.add(basicInfo);
+        }
+        Page<SkillBasicInfo> page = new Page<>();
+        page.setPageItems(result);
+        page.setTotalCount(result.size());
+        page.setPagesAvailable(metaPage == null ? 0 : metaPage.getPagesAvailable());
+        page.setPageNumber(pageNo);
+        return page;
+    }
+    
+    @Override
+    public Skill querySkillPublic(String namespaceId, String name, String version, String label) throws NacosException {
+        // Note: No DataFilterHelper.doReadFilter here - this is for public unauthenticated access
+        SkillIndexManifest manifest = manifestService.query(namespaceId, name);
+        if (manifest == null || manifest.getVersions() == null || manifest.getVersions().isEmpty()) {
+            return null;
+        }
+        
+        String resolved = SkillIndexManifestService.resolveVersion(manifest, version, label);
+        if (StringUtils.isBlank(resolved)) {
+            return null;
+        }
+        
+        List<String> files = manifest.getVersions().get(resolved);
+        if (files == null || files.isEmpty()) {
+            return null;
+        }
+        
+        Skill skill = loadSkillFromFiles(namespaceId, name, resolved, files);
+        NotifyCenter.publishEvent(
+                new SkillDownloadEvent(namespaceId, name, RESOURCE_TYPE_SKILL, resolved));
+        return skill;
+    }
 
     // ========== Private methods ==========
 

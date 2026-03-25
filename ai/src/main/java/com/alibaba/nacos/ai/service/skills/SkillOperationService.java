@@ -232,4 +232,34 @@ public interface SkillOperationService {
      * @param label route label, e.g. latest/stable (optional)
      */
     Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException;
+    
+    // ========== Public APIs (no auth required) ==========
+    
+    /**
+     * Search skills for public access without authentication.
+     * Bypasses data permission filter, intended for external skill registry integration.
+     * Only returns enabled skills that have at least one online version.
+     *
+     * @param namespaceId namespace ID
+     * @param keyword keyword (optional)
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return page of skill basic info
+     * @throws NacosException if query failed
+     */
+    Page<SkillBasicInfo> searchSkillsPublic(String namespaceId, String keyword, int pageNo, int pageSize)
+            throws NacosException;
+    
+    /**
+     * Query skill for public access without authentication.
+     * Bypasses data permission filter, intended for external skill registry integration.
+     *
+     * @param namespaceId namespace ID
+     * @param name skill name
+     * @param version explicit version (optional)
+     * @param label route label, e.g. latest/stable (optional)
+     * @return skill or null if not found
+     * @throws NacosException if query failed
+     */
+    Skill querySkillPublic(String namespaceId, String name, String version, String label) throws NacosException;
 }
