@@ -193,8 +193,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                     "AgentSpec not found: " + agentSpecName);
         }
         AgentSpecVersionInfo versionInfo = requireVersionInfo(meta);
-        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, agentSpecName, 1,
-                200);
+        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, agentSpecName,
+                RESOURCE_TYPE_AGENTSPEC, null, 1, 200);
         List<AgentSpecMeta.AgentSpecVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
             for (AiResourceVersion v : versionPage.getPageItems()) {
@@ -261,7 +261,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         aiResourcePersistService.delete(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         
-        Page<AiResourceVersion> versions = aiResourceVersionPersistService.listAll(namespaceId, agentSpecName, 1, 200);
+        Page<AiResourceVersion> versions = aiResourceVersionPersistService.list(namespaceId, agentSpecName,
+                RESOURCE_TYPE_AGENTSPEC, null, 1, 200);
         aiResourceVersionPersistService.deleteByNameAndType(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         
         if (versions != null && versions.getPageItems() != null) {
@@ -1099,7 +1100,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     private String nextVersion(String namespaceId, String name) {
-        Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
+        Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                null, 1, 200);
         int max = 0;
         if (page != null && page.getPageItems() != null) {
             for (AiResourceVersion v : page.getPageItems()) {
@@ -1123,7 +1125,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
 
     private String maxVersionByNumber(String namespaceId, String name) {
-        Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
+        Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                null, 1, 200);
         int max = 0;
         String resolved = null;
         if (page != null && page.getPageItems() != null) {

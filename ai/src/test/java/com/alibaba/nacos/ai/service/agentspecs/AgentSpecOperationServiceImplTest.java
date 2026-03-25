@@ -66,6 +66,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -269,8 +270,8 @@ class AgentSpecOperationServiceImplTest {
 
         com.alibaba.nacos.api.model.Page<AiResourceVersion> emptyPage = new com.alibaba.nacos.api.model.Page<>();
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(agentSpecName), anyInt(), anyInt()))
-                .thenReturn(emptyPage);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(emptyPage);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
                 .thenReturn(true);
 
@@ -334,8 +335,8 @@ class AgentSpecOperationServiceImplTest {
         v2.setVersion("v2");
         versions.setPageItems(java.util.List.of(v2));
         when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("测试坐席"), anyInt(), anyInt()))
-                .thenReturn(versions);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("测试坐席"), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("测试坐席"), anyString(), eq(3L), any()))
                 .thenReturn(true);
 
@@ -442,8 +443,8 @@ class AgentSpecOperationServiceImplTest {
         Page<AiResourceVersion> versions = new Page<>();
         versions.setPageItems(List.of());
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(agentSpecName), anyInt(), anyInt()))
-                .thenReturn(versions);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versions);
 
         AgentSpecMeta result = service.getAgentSpecDetail(namespaceId, agentSpecName);
 
