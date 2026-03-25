@@ -297,6 +297,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return candidateVersion;
     }
 
+    private String resolveNextDraftVersion(String namespaceId, String skillName) throws NacosException {
+        List<String> existingVersions = listExistingVersions(namespaceId, skillName);
+        String maxSemver = maxSemver(existingVersions);
+        if (StringUtils.isNotBlank(maxSemver)) {
+            return nextPatchVersion(maxSemver);
+        }
+        int maxLegacy = maxVersionNumber(existingVersions);
+        if (maxLegacy > 0) {
+            return "v" + (maxLegacy + 1);
+        }
+        return DEFAULT_INITIAL_UPLOAD_VERSION;
+    }
+
     private List<String> listExistingVersions(String namespaceId, String skillName) throws NacosException {
         Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 500);
         if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
@@ -611,7 +624,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "There is already a working version (editing/reviewing), cannot create draft");
         }
 
-        String newVersion = resolveFinalUploadVersion(namespaceId, name, DEFAULT_INITIAL_UPLOAD_VERSION);
+        String newVersion = resolveNextDraftVersion(namespaceId, name);
         // resolveBaseVersion: explicit param > latest label > max semver version > max legacy vN version
         // null means no version exists yet
         String base = resolveBaseVersion(namespaceId, name, meta, basedOnVersion);
