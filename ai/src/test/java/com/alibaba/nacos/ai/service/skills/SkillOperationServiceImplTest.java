@@ -445,7 +445,56 @@ class SkillOperationServiceImplTest {
         setupRequestContext("otherUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> skillOperationService.getSkillDetail(namespaceId, skillName));
-        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testQuerySkillDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.querySkill(namespaceId, skillName, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(manifestService, never()).query(namespaceId, skillName);
+    }
+    
+    @Test
+    void testGetSkillVersionDetailDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.getSkillVersionDetail(namespaceId, skillName, version));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(), anyString(), anyString());
     }
 
     @Test

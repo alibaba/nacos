@@ -102,6 +102,23 @@ public class VisibilityHelper {
     }
     
     /**
+     * Check read permission for current user on the given resource.
+     *
+     * @param resource the resource to check
+     * @return true when readable, false otherwise
+     */
+    public static boolean canReadResource(VisibilityResource resource) {
+        Optional<VisibilityService> visibilityService = findVisibilityService();
+        if (visibilityService.isEmpty()) {
+            return true;
+        }
+        ValidationResult result = visibilityService.get()
+                .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_READ, resolveCurrentApiType(),
+                        resource);
+        return result.isAllowed();
+    }
+    
+    /**
      * Check write permission for current user on the given resource. Throws 403 if denied.
      *
      * @param resource the resource to check

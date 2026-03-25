@@ -63,7 +63,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -272,11 +271,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
         }
-        List<AiResource> filtered = VisibilityHelper.filterReadableResources(Collections.singletonList(meta));
-        if (filtered.isEmpty()) {
-            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
-                    "No permission to read skill: " + skillName);
-        }
+        ensureReadableOrNotFound(meta, "Skill not found: " + skillName);
         SkillVersionInfo versionInfo = requireVersionInfo(meta);
 
         // Load all version summaries
@@ -324,11 +319,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
         }
-        List<AiResource> filtered = VisibilityHelper.filterReadableResources(Collections.singletonList(meta));
-        if (filtered.isEmpty()) {
-            throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
-                    "No permission to read skill: " + skillName);
-        }
+        ensureReadableOrNotFound(meta, "Skill not found: " + skillName);
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Version is required for skill version detail");
@@ -814,13 +805,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
-        if (meta != null) {
-            List<AiResource> filtered = VisibilityHelper.filterReadableResources(Collections.singletonList(meta));
-            if (filtered.isEmpty()) {
-                throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
-                        "No permission to read skill: " + name);
-            }
+        if (meta == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill not found: " + name);
         }
+        ensureReadableOrNotFound(meta, "Skill not found: " + name);
         SkillIndexManifest manifest = manifestService.query(namespaceId, name);
         if (manifest == null || manifest.getVersions() == null || manifest.getVersions().isEmpty()) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -1442,6 +1431,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     return queryAdvisor;
                 });
         return visibilityAdvisorConverter.convert(queryCondition, identity, advisor, context);
+    }
+    
+    private void ensureReadableOrNotFound(AiResource resource, String notFoundMessage) throws NacosException {
+        if (VisibilityHelper.canReadResource(resource)) {
+            return;
+        }
+        throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, notFoundMessage);
     }
     
     private static <T> Page<T> buildEmptyPage(int pageNo) {
