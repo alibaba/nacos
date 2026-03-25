@@ -97,6 +97,14 @@
     "bizTagEditor": {
       "title": "Tags",
       "description": "Edit the business tag list."
+    },
+    "cliUsage": {
+      "title": "CLI Command",
+      "description": "Get this resource locally via Nacos CLI. Requires Node.js.",
+      "copied": "Command copied",
+      "latest": "Get latest",
+      "byVersion": "By version",
+      "byLabel": "By label"
     }
   },
   "config": {
@@ -803,6 +811,9 @@
     "totalAgentSpecs": "{{total}} AgentSpecs",
     "upload": "Upload",
     "createAgentSpec": "Create AgentSpec",
+    "createAgentSpecDesc": "Fill in basic info to create the first draft version",
+    "createSuccess": "AgentSpec created",
+    "createFailed": "Failed to create AgentSpec",
     "editAgentSpec": "Edit AgentSpec",
     "newFile": "New File",
     "newFolder": "New Folder",
@@ -858,6 +869,7 @@
     "loadListError": "Failed to fetch agent specs",
     "loadError": "Failed to load AgentSpec details",
     "nameRequired": "AgentSpec name is required",
+    "descriptionRequired": "Description is required",
     "saveSuccess": "Saved successfully",
     "unsaved": "Unsaved",
     "enabled": "Enabled",
@@ -881,6 +893,7 @@
     "reviewing": "Reviewing",
     "reviewingVersion": "Reviewing",
     "submit": "Submit",
+    "resubmit": "Resubmit",
     "saveAndPublish": "Save and Publish",
     "publish": "Publish",
     "online": "Version Online",
@@ -919,7 +932,7 @@
     "pipelineStatus": "Review Pipeline",
     "pipelineInProgress": "In Progress",
     "pipelineApproved": "Approved",
-    "pipelineRejected": "Rejected",
+    "pipelineRejected": "Review Failed",
     "pipelineNone": "No review pipeline available",
     "pipelineNodePassed": "Passed",
     "pipelineNodeFailed": "Failed",
@@ -995,6 +1008,7 @@
     "createDraft": "Create Draft",
     "createDraftSuccess": "Draft created",
     "submit": "Submit",
+    "resubmit": "Resubmit",
     "submitSuccess": "Submitted for review",
     "publish": "Publish",
     "publishSuccess": "Published successfully",
@@ -1053,7 +1067,7 @@
     "pipelineStatus": "Review Pipeline",
     "pipelineInProgress": "In Progress",
     "pipelineApproved": "Approved",
-    "pipelineRejected": "Rejected",
+    "pipelineRejected": "Review Failed",
     "pipelineNone": "No review pipeline configured",
     "pipelineNodePassed": "Passed",
     "pipelineNodeFailed": "Failed",

@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AgentSpecCard } from './components/AgentSpecCard';
 import { UploadAgentSpecDialog } from './components/UploadAgentSpecDialog';
+import { CreateAgentSpecDialog } from './components/CreateAgentSpecDialog';
 import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { agentSpecApi } from '@/api/agentspec';
@@ -51,6 +52,7 @@ export default function AgentSpecManagementPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(searchName);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const namespaceId = currentNamespace || 'public';
 
@@ -133,7 +135,7 @@ export default function AgentSpecManagementPage() {
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             {t('agentSpec.upload')}
           </Button>
-          <Button size="sm" onClick={() => navigate('/agentspec/new')}>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t('agentSpec.createAgentSpec')}
           </Button>
@@ -222,7 +224,7 @@ export default function AgentSpecManagementPage() {
           </div>
           <p className="text-sm font-medium">{t('common.noData')}</p>
           <p className="text-xs text-muted-foreground/70 mt-1">{t('agentSpec.searchPlaceholder')}</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate('/agentspec/new')}>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t('agentSpec.createAgentSpec')}
           </Button>
@@ -311,6 +313,17 @@ export default function AgentSpecManagementPage() {
         onOpenChange={setUploadOpen}
         namespaceId={namespaceId}
         onSuccess={loadData}
+      />
+
+      {/* Create dialog */}
+      <CreateAgentSpecDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        namespaceId={namespaceId}
+        onSuccess={(name) => {
+          loadData();
+          navigate(`/agentspec/${encodeURIComponent(name)}`);
+        }}
       />
 
       {/* Delete confirm dialog */}

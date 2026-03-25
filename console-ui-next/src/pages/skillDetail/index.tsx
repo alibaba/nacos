@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   History,
   Wand2,
-  Hash,
   Clock,
   Tag,
   Globe,
@@ -37,12 +36,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import MDEditor from '@uiw/react-md-editor';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -70,6 +63,7 @@ import { SkillOptimizeDialog } from '@/components/ai/skill/SkillOptimizeDialog';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { CliCommandCard } from '@/components/ai/CliCommandCard';
 import { sortVersionsDescending } from '../skillManagement/components/version-utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SkillResourcePanel } from './SkillResourcePanel';
@@ -466,6 +460,29 @@ export default function SkillDetailPage() {
     setSelectedVersion(version);
   };
 
+  // Build CLI commands for current skill (must be before early returns to keep hooks order stable)
+  const cliCommands = useMemo(() => {
+    const cmds: { label: string; command: string }[] = [];
+    cmds.push({
+      label: t('common.cliUsage.latest'),
+      command: `npx @nacos-group/cli skill-get ${skillName}`,
+    });
+    if (selectedVersion) {
+      cmds.push({
+        label: t('common.cliUsage.byVersion'),
+        command: `npx @nacos-group/cli skill-get ${skillName} --version ${selectedVersion}`,
+      });
+    }
+    const detailLatest = currentDetail?.labels?.latest;
+    if (detailLatest) {
+      cmds.push({
+        label: t('common.cliUsage.byLabel'),
+        command: `npx @nacos-group/cli skill-get ${skillName} --label latest`,
+      });
+    }
+    return cmds;
+  }, [skillName, selectedVersion, currentDetail?.labels?.latest, t]);
+
   // ===== Loading skeleton =====
   if (detailLoading && !currentDetail) {
     return (
@@ -509,7 +526,6 @@ export default function SkillDetailPage() {
   const detail = currentDetail;
   const versions = sortVersionsDescending(detail.versions || []);
   const latestVersion = detail.labels?.latest;
-  const displayVersion = selectedVersion || '-';
   const versionOptions = (() => {
     const seen = new Set<string>();
     const result: SkillVersionSummary[] = [];
@@ -765,7 +781,9 @@ export default function SkillDetailPage() {
                             onClick={() => handleSubmit(selectedVersion)}
                           >
                             <Send className="h-3 w-3" />
-                            {t('skill.submit')}
+                            {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED'
+                              ? t('skill.resubmit')
+                              : t('skill.submit')}
                           </Button>
                           <Button
                             variant="outline"
@@ -777,6 +795,9 @@ export default function SkillDetailPage() {
                             <Trash2 className="h-3 w-3" />
                             {t('skill.deleteDraft')}
                           </Button>
+                          {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                            <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                          )}
                         </>
                       )}
                     </>
@@ -784,28 +805,22 @@ export default function SkillDetailPage() {
 
                   {/* Reviewing actions */}
                   {currentVersionStatus === 'reviewing' && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span>
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs gap-1.5"
-                              disabled={actionLoading || (!!currentPipelineInfo && currentPipelineInfo.status !== 'APPROVED')}
-                              onClick={() => handlePublish(selectedVersion)}
-                            >
-                              <CheckCircle2 className="h-3 w-3" />
-                              {t('skill.publish')}
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        {currentPipelineInfo && currentPipelineInfo.status !== 'APPROVED' && (
-                          <TooltipContent>
-                            {t('skill.publishDisabledPipeline')}
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
+                    <>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={actionLoading || !!(currentPipelineInfo && currentPipelineInfo.status !== 'APPROVED')}
+                        onClick={() => handlePublish(selectedVersion)}
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {currentPipelineInfo && currentPipelineInfo.status === 'IN_PROGRESS'
+                          ? t('skill.pipelineInProgress')
+                          : t('skill.publish')}
+                      </Button>
+                      {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
+                        <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                      )}
+                    </>
                   )}
 
                   {/* Online actions */}
@@ -968,6 +983,8 @@ export default function SkillDetailPage() {
 
             {/* Right: Sidebar */}
             <div className="space-y-4 lg:w-[320px]">
+              <CliCommandCard commands={cliCommands} />
+
               {/* Basic info card */}
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30">
@@ -977,8 +994,7 @@ export default function SkillDetailPage() {
                   </h2>
                 </div>
                 <CardContent className="p-0">
-                  <div className="grid grid-cols-1 divide-y divide-border">
-                    <InfoCell compact label={t('skill.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
+                  <div className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l border-border">
                     <InfoCell
                       compact
                       label={t('skill.status')}
@@ -995,6 +1011,21 @@ export default function SkillDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Pipeline status card */}
+              {currentPipelineInfo && (
+                <Card className="overflow-hidden py-0 gap-0">
+                  <div className="px-4 py-3 border-b bg-muted/30">
+                    <h2 className="text-sm font-semibold flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      {t('skill.pipelineStatus')}
+                    </h2>
+                  </div>
+                  <CardContent className="p-3.5">
+                    <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} onRefresh={() => loadDetail()} />
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
@@ -1023,30 +1054,6 @@ export default function SkillDetailPage() {
                   )}
                 </CardContent>
               </Card>
-
-              <BizTagEditDialog
-                open={bizTagDialogOpen}
-                onOpenChange={setBizTagDialogOpen}
-                tags={bizTags}
-                placeholder={t('skill.bizTagPlaceholder')}
-                emptyText={t('skill.noBizTags')}
-                onSave={handleSaveBizTags}
-              />
-
-              {/* Pipeline status card */}
-              {currentPipelineInfo && (
-                <Card className="overflow-hidden py-0 gap-0">
-                  <div className="px-4 py-3 border-b bg-muted/30">
-                    <h2 className="text-sm font-semibold flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 text-muted-foreground" />
-                      {t('skill.pipelineStatus')}
-                    </h2>
-                  </div>
-                  <CardContent className="p-3.5">
-                    <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} onRefresh={() => loadDetail()} />
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Labels card (read-only for current version) */}
               <Card className="overflow-hidden py-0 gap-0">
@@ -1081,29 +1088,143 @@ export default function SkillDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Label bind dialog */}
-              {selectedVersion && (
-                <LabelBindDialog
-                  open={labelDialogOpen}
-                  onOpenChange={setLabelDialogOpen}
-                  version={selectedVersion}
-                  allLabels={detail.labels ?? {}}
-                  onSave={handleSaveLabels}
-                />
-              )}
             </div>
           </div>
         </TabsContent>
 
         {/* Resources tab: IDE-like resource panel */}
         <TabsContent value="resources">
-          <SkillResourcePanel
-            resources={isEditingDraft ? editResources : resources}
-            editable={isEditingDraft}
-            onChange={isEditingDraft ? setEditResources : undefined}
-          />
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <SkillResourcePanel
+              resources={isEditingDraft ? editResources : resources}
+              editable={isEditingDraft}
+              onChange={isEditingDraft ? setEditResources : undefined}
+            />
+            <div className="space-y-4 lg:w-[320px]">
+              <CliCommandCard commands={cliCommands} />
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Wand2 className="h-4 w-4 text-muted-foreground" />
+                    {t('skill.basicInfo')}
+                  </h2>
+                </div>
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l border-border">
+                    <InfoCell
+                      compact
+                      label={t('skill.status')}
+                      value={<StatusBadge status={currentVersionStatus} label={currentVersionStatusLabel} />}
+                      icon={<Tag className="h-3.5 w-3.5" />}
+                    />
+                    {currentVersionSummary && (
+                      <InfoCell compact label={t('skill.author')} value={currentVersionSummary.author || '-'} icon={<Globe className="h-3.5 w-3.5" />} />
+                    )}
+                    <InfoCell compact label={t('skill.downloads')} value={String(detail.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
+                    {currentVersionSummary && (
+                      <InfoCell compact label={t('skill.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {currentPipelineInfo && (
+                <Card className="overflow-hidden py-0 gap-0">
+                  <div className="px-4 py-3 border-b bg-muted/30">
+                    <h2 className="text-sm font-semibold flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      {t('skill.pipelineStatus')}
+                    </h2>
+                  </div>
+                  <CardContent className="p-3.5">
+                    <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} onRefresh={() => loadDetail()} />
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.bizTags')}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setBizTagDialogOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+                <CardContent className="p-3.5">
+                  {bizTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {bizTags.map((tag) => (
+                        <DetailTagChip key={tag} label={tag} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('skill.noBizTags')}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.versionLabels.title')}
+                  </h2>
+                  {selectedVersion && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setLabelDialogOpen(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <CardContent className="p-3.5">
+                  {currentVersionLabels.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentVersionLabels.map(([key]) => (
+                        <DetailTagChip key={key} label={key} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t('common.versionLabels.noLabels')}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
+
+      <BizTagEditDialog
+        open={bizTagDialogOpen}
+        onOpenChange={setBizTagDialogOpen}
+        tags={bizTags}
+        placeholder={t('skill.bizTagPlaceholder')}
+        emptyText={t('skill.noBizTags')}
+        onSave={handleSaveBizTags}
+      />
+
+      {selectedVersion && (
+        <LabelBindDialog
+          open={labelDialogOpen}
+          onOpenChange={setLabelDialogOpen}
+          version={selectedVersion}
+          allLabels={detail.labels ?? {}}
+          onSave={handleSaveLabels}
+        />
+      )}
 
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
         <SheetContent className="flex flex-col p-0 sm:max-w-md">

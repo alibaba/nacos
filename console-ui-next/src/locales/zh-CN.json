@@ -97,6 +97,14 @@
     "bizTagEditor": {
       "title": "业务标签",
       "description": "编辑业务标签列表。"
+    },
+    "cliUsage": {
+      "title": "CLI 获取命令",
+      "description": "通过 Nacos CLI 在本地获取当前资源，需先安装 Node.js。",
+      "copied": "命令已复制",
+      "latest": "获取最新版本",
+      "byVersion": "指定版本",
+      "byLabel": "指定标签"
     }
   },
   "config": {
@@ -803,6 +811,9 @@
     "totalAgentSpecs": "共 {{total}} 个 AgentSpec",
     "upload": "上传",
     "createAgentSpec": "创建 AgentSpec",
+    "createAgentSpecDesc": "填写基础信息后将创建第一个草稿版本",
+    "createSuccess": "AgentSpec 创建成功",
+    "createFailed": "创建 AgentSpec 失败",
     "editAgentSpec": "编辑 AgentSpec",
     "newFile": "新建文件",
     "newFolder": "新建文件夹",
@@ -858,6 +869,7 @@
     "loadListError": "获取 AgentSpec 列表失败",
     "loadError": "加载 AgentSpec 详情失败",
     "nameRequired": "AgentSpec 名称不能为空",
+    "descriptionRequired": "描述不能为空",
     "saveSuccess": "保存成功",
     "unsaved": "未保存",
     "enabled": "已启用",
@@ -881,6 +893,7 @@
     "reviewing": "审核中",
     "reviewingVersion": "审核中",
     "submit": "提交审核",
+    "resubmit": "重新提交审核",
     "saveAndPublish": "保存并发布",
     "publish": "发布",
     "online": "版本上线",
@@ -922,7 +935,7 @@
     "pipelineStatus": "审核流水线",
     "pipelineInProgress": "审核中",
     "pipelineApproved": "已通过",
-    "pipelineRejected": "已拒绝",
+    "pipelineRejected": "审核未通过",
     "pipelineNone": "暂无审核流水线",
     "pipelineNodePassed": "通过",
     "pipelineNodeFailed": "失败",
@@ -995,6 +1008,7 @@
     "createDraft": "创建草稿",
     "createDraftSuccess": "草稿创建成功",
     "submit": "提交审核",
+    "resubmit": "重新提交审核",
     "submitSuccess": "提交审核成功",
     "publish": "发布",
     "publishSuccess": "发布成功",
@@ -1053,7 +1067,7 @@
     "pipelineStatus": "审核流水线",
     "pipelineInProgress": "审核中",
     "pipelineApproved": "已通过",
-    "pipelineRejected": "已拒绝",
+    "pipelineRejected": "审核未通过",
     "pipelineNone": "暂无审核流水线",
     "pipelineNodePassed": "通过",
     "pipelineNodeFailed": "失败",
