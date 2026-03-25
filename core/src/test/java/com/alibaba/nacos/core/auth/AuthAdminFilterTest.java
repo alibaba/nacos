@@ -35,7 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 
-import static org.mockito.Mockito.never;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -89,7 +89,6 @@ class AuthAdminFilterTest {
     
     @Test
     void testIsMatchFilterSkipsNonAdminApi() throws NoSuchMethodException, ServletException, IOException {
-        when(authConfig.isAuthEnabled()).thenReturn(true);
         when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredOpenApi());
         
         authAdminFilter.doFilter(request, response, filterChain);
@@ -98,13 +97,24 @@ class AuthAdminFilterTest {
     }
     
     @Test
-    void testDoFilterWhenAuthDisabledPassesThrough() throws ServletException, IOException {
+    void testDoFilterWhenAuthDisabledPassesThrough() throws NoSuchMethodException, ServletException, IOException {
         when(authConfig.isAuthEnabled()).thenReturn(false);
+        when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredAdminApi());
         
         authAdminFilter.doFilter(request, response, filterChain);
         
         verify(filterChain).doFilter(request, response);
-        verify(methodsCache, never()).getMethod(request);
+        assertEquals(ApiType.ADMIN_API.name(), RequestContextHolder.getContext().getAuthContext().getApiType());
+    }
+    
+    @Test
+    void testDoFilterShouldSetApiTypeWhenSkippingNonAdminApi() throws NoSuchMethodException, ServletException, IOException {
+        when(methodsCache.getMethod(request)).thenReturn(getMethodWithSecuredOpenApi());
+        
+        authAdminFilter.doFilter(request, response, filterChain);
+        
+        verify(filterChain).doFilter(request, response);
+        assertEquals(ApiType.OPEN_API.name(), RequestContextHolder.getContext().getAuthContext().getApiType());
     }
     
     @Secured(apiType = ApiType.ADMIN_API)

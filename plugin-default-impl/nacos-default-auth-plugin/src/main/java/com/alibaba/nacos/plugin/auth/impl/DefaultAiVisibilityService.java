@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.filter;
+package com.alibaba.nacos.plugin.auth.impl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -24,6 +25,8 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
@@ -42,7 +45,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 /**
- * Default {@link VisibilityService} implementation for AI module.
+ * Default AI visibility service implementation for nacos auth plugin.
  *
  * @author xiweng.yy
  */
@@ -50,15 +53,18 @@ public class DefaultAiVisibilityService implements VisibilityService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAiVisibilityService.class);
     
-    private static final String NAME = "nacos-default-ai";
+    private static final String NAME = AuthConstants.AUTH_PLUGIN_TYPE;
     
     private static final String RESOURCE_PREFIX = "@@visibility";
     
-    private static final String ANONYMOUS_IDENTITY = "__nacos_anonymous__";
+    private static final String ANONYMOUS_IDENTITY = AuthConstants.ANONYMOUS_USER;
     
     @Override
     public ValidationResult validateVisibility(String identity, String action, String apiType, VisibilityResource resource) {
-        if (!isAuthEnabled(apiType)) {
+        if (isAuthDisabled(apiType)) {
+            return ValidationResult.allow();
+        }
+        if (isCurrentIdentityGlobalAdmin(identity)) {
             return ValidationResult.allow();
         }
         boolean isRead = VisibilityConstants.ACTION_READ.equals(action);
@@ -71,7 +77,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
     @Override
     public QueryAdvisor adviseQuery(String identity, String action, String apiType, VisibilityQueryContext context) {
         QueryAdvisor advisor = new QueryAdvisor();
-        if (!isAuthEnabled(apiType)) {
+        if (isAuthDisabled(apiType) || isCurrentIdentityGlobalAdmin(identity)) {
             advisor.setBasePredicate(BaseVisibilityPredicate.ALL);
             return advisor;
         }
@@ -110,7 +116,7 @@ public class DefaultAiVisibilityService implements VisibilityService {
     }
     
     private String buildResourceIdentifier(VisibilityResource res) {
-        String ns = StringUtils.isBlank(res.getNamespaceId()) ? "public" : res.getNamespaceId();
+        String ns = StringUtils.isBlank(res.getNamespaceId()) ? Constants.DEFAULT_NAMESPACE_ID : res.getNamespaceId();
         return RESOURCE_PREFIX + "/" + ns + "/" + res.getResourceType() + "/" + res.getResourceName();
     }
     
@@ -142,15 +148,31 @@ public class DefaultAiVisibilityService implements VisibilityService {
         return Optional.empty();
     }
     
-    private boolean isAuthEnabled(String apiType) {
+    private boolean isAuthDisabled(String apiType) {
         if (StringUtils.isBlank(apiType)) {
-            return NacosAuthConfigHolder.getInstance().isAnyAuthEnabled();
+            return !NacosAuthConfigHolder.getInstance().isAnyAuthEnabled();
         }
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(apiType);
-        return authConfig != null && authConfig.isAuthEnabled();
+        return authConfig == null || !authConfig.isAuthEnabled();
     }
     
     private boolean isAnonymousIdentity(String identity) {
         return ANONYMOUS_IDENTITY.equals(identity);
+    }
+    
+    private boolean isCurrentIdentityGlobalAdmin(String identity) {
+        if (StringUtils.isBlank(identity)) {
+            return false;
+        }
+        try {
+            IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+            Object nacosUser = identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
+            if (!(nacosUser instanceof NacosUser user)) {
+                return false;
+            }
+            return identity.equals(user.getUserName()) && user.isGlobalAdmin();
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

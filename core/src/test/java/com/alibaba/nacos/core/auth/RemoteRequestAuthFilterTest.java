@@ -108,6 +108,7 @@ class RemoteRequestAuthFilterTest {
         when(authConfig.isAuthEnabled()).thenReturn(false);
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
         assertNull(actual);
+        assertEquals(ApiType.OPEN_API.name(), RequestContextHolder.getContext().getAuthContext().getApiType());
     }
     
     @Test

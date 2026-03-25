@@ -32,7 +32,7 @@ import com.alibaba.nacos.mcpregistry.model.skills.SkillsSearchItem;
 import com.alibaba.nacos.mcpregistry.model.skills.SkillsSearchResponse;
 import com.alibaba.nacos.mcpregistry.model.skills.WellKnownSkillEntry;
 import com.alibaba.nacos.mcpregistry.model.skills.WellKnownSkillsIndex;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -220,7 +220,7 @@ public class NacosSkillsRegistryService {
     private boolean isEligibleSummary(SkillSummary summary) {
         return summary != null
                 && summary.isEnable()
-                && DataFilterConstants.SCOPE_PUBLIC.equalsIgnoreCase(summary.getScope())
+                && VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(summary.getScope())
                 && summary.getOnlineCnt() != null
                 && summary.getOnlineCnt() > 0
                 && StringUtils.isNotBlank(summary.getName())

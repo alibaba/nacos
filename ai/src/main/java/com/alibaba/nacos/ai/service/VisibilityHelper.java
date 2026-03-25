@@ -43,7 +43,7 @@ public class VisibilityHelper {
     
     private static final String VISIBILITY_PLUGIN_TYPE_CONFIG_KEY = "nacos.plugin.visibility.type";
     
-    private static final String DEFAULT_VISIBILITY_SERVICE_NAME = "nacos-default-ai";
+    private static final String DEFAULT_VISIBILITY_SERVICE_NAME = "nacos";
     
     private static volatile String cachedVisibilityServiceName;
     
