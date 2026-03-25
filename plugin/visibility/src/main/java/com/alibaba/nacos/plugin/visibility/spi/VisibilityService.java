@@ -19,12 +19,25 @@ package com.alibaba.nacos.plugin.visibility.spi;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 
+import java.util.Properties;
+
 /**
  * SPI for resource visibility service.
  *
  * @author xiweng.yy
  */
 public interface VisibilityService {
+
+    /**
+     * Initialize service with external properties.
+     *
+     * <p>Property source is managed by {@link VisibilityPluginManager}. Default no-op keeps backward compatibility
+     * for existing SPI implementations.</p>
+     *
+     * @param properties service-specific properties
+     */
+    default void init(Properties properties) {
+    }
     
     ValidationResult validateVisibility(String identity, String action, String apiType, VisibilityResource resource);
     
