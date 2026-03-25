@@ -59,7 +59,7 @@ public class AgentSpecClientController {
      * Search enabled agentspecs for runtime usage.
      */
     @GetMapping("/search")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API, tags = {ALLOW_ANONYMOUS})
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
     public Result<Page<AgentSpecBasicInfo>> search(AgentSpecSearchForm form, PageForm pageForm) throws NacosException {
         form.validate();
         pageForm.validate();

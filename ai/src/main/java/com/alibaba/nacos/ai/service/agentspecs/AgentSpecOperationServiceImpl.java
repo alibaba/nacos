@@ -28,6 +28,9 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.repository.QueryCondition;
+import com.alibaba.nacos.ai.service.visibility.DefaultVisibilityAdvisorConverter;
+import com.alibaba.nacos.ai.service.visibility.VisibilityAdvisorConverter;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
@@ -47,6 +50,9 @@ import com.alibaba.nacos.plugin.ai.pipeline.model.AgentSpecPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
+import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -106,6 +112,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     private final PipelineExecutionRepository pipelineExecutionRepository;
     
+    private final VisibilityAdvisorConverter visibilityAdvisorConverter;
+    
     public AgentSpecOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
             AiResourceVersionPersistService aiResourceVersionPersistService,
             PublishPipelineExecutor publishPipelineExecutor,
@@ -115,6 +123,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.pipelineExecutionRepository = pipelineExecutionRepository;
+        this.visibilityAdvisorConverter = new DefaultVisibilityAdvisorConverter();
     }
     
     private void createDraftWithAgentSpec(String namespaceId, AgentSpec agentSpec, String version,
@@ -192,6 +201,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "AgentSpec not found: " + agentSpecName);
         }
+        ensureReadableOrNotFound(meta, "AgentSpec not found: " + agentSpecName);
         AgentSpecVersionInfo versionInfo = requireVersionInfo(meta);
         Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, agentSpecName,
                 RESOURCE_TYPE_AGENTSPEC, null, 1, 200);
@@ -239,6 +249,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "AgentSpec not found: " + agentSpecName);
         }
+        ensureReadableOrNotFound(meta, "AgentSpec not found: " + agentSpecName);
         if (StringUtils.isBlank(version)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Version is required for agentspec version detail");
@@ -258,6 +269,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         if (meta == null) {
             return;
         }
+        VisibilityHelper.checkWritableResource(meta);
         
         aiResourcePersistService.delete(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         
@@ -288,8 +300,12 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         }
         
-        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
-                pageNo, pageSize);
+        QueryCondition queryCondition = buildQueryCondition(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
+                VisibilityConstants.ACTION_READ);
+        if (queryCondition.isAlwaysEmpty()) {
+            return buildEmptyPage(pageNo);
+        }
+        Page<AiResource> metaPage = aiResourcePersistService.list(queryCondition, pageNo, pageSize);
         List<AgentSpecSummary> items = new ArrayList<>();
         if (metaPage != null && metaPage.getPageItems() != null) {
             for (AiResource meta : metaPage.getPageItems()) {
@@ -369,6 +385,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             return name;
         }
         
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
@@ -484,6 +501,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             return name;
         }
 
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         if (StringUtils.isNotBlank(editing)) {
@@ -525,8 +543,12 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             throws NacosException {
         String nameLike = StringUtils.isBlank(keyword) ? null
                 : aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
-        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
-                pageNo, pageSize);
+        QueryCondition queryCondition = buildQueryCondition(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
+                VisibilityConstants.ACTION_READ);
+        if (queryCondition.isAlwaysEmpty()) {
+            return buildEmptyPage(pageNo);
+        }
+        Page<AiResource> metaPage = aiResourcePersistService.list(queryCondition, pageNo, pageSize);
         List<AgentSpecBasicInfo> items = new ArrayList<>();
         if (metaPage != null && metaPage.getPageItems() != null) {
             for (AiResource meta : metaPage.getPageItems()) {
@@ -562,6 +584,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "AgentSpec not found: " + name);
         }
+        ensureReadableOrNotFound(meta, "AgentSpec not found: " + name);
         if (!META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus())) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "AgentSpec disabled: " + name);
@@ -595,6 +618,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             return "v1";
         }
 
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
@@ -646,6 +670,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             createDraftWithAgentSpec(namespaceId, draftAgentSpec, "v1", null, true);
             return;
         }
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         if (StringUtils.isBlank(editing)) {
@@ -669,6 +694,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public void deleteDraft(String namespaceId, String name) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         if (StringUtils.isBlank(editing)) {
@@ -687,6 +713,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public String submit(String namespaceId, String name, String version) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         
         String target = version;
@@ -770,6 +797,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
             throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         
         AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
@@ -839,6 +867,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     public void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online)
             throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
+        VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         
         boolean agentSpecScope = SCOPE_AGENTSPEC.equalsIgnoreCase(scope) || StringUtils.isBlank(version);
@@ -983,6 +1012,44 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         json.put("provider", resolveStorageProvider());
         json.put("scope", namespaceId + ":" + agentSpecName + ":" + version);
         return JacksonUtils.toJson(json);
+    }
+    
+    private QueryCondition buildQueryCondition(String namespaceId, String resourceType, String nameLike,
+            String bizTagsLike, String action) {
+        String identity = VisibilityHelper.resolveCurrentIdentity();
+        String apiType = VisibilityHelper.resolveCurrentApiType();
+        QueryCondition queryCondition = new QueryCondition();
+        queryCondition.setNamespaceId(namespaceId);
+        queryCondition.setType(resourceType);
+        queryCondition.setNameLike(nameLike);
+        queryCondition.setBizTagsLike(bizTagsLike);
+        VisibilityQueryContext context = new VisibilityQueryContext();
+        context.setNamespaceId(namespaceId);
+        context.setResourceType(resourceType);
+        QueryAdvisor advisor = VisibilityHelper.findVisibilityService()
+                .map(service -> service.adviseQuery(identity, action, apiType, context))
+                .orElseGet(() -> {
+                    QueryAdvisor queryAdvisor = new QueryAdvisor();
+                    queryAdvisor.setBasePredicate(BaseVisibilityPredicate.ALL);
+                    return queryAdvisor;
+                });
+        return visibilityAdvisorConverter.convert(queryCondition, identity, advisor, context);
+    }
+    
+    private void ensureReadableOrNotFound(AiResource resource, String notFoundMessage) throws NacosException {
+        if (VisibilityHelper.canReadResource(resource)) {
+            return;
+        }
+        throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, notFoundMessage);
+    }
+    
+    private static <T> Page<T> buildEmptyPage(int pageNo) {
+        Page<T> page = new Page<>();
+        page.setPageItems(new ArrayList<>());
+        page.setTotalCount(0);
+        page.setPagesAvailable(0);
+        page.setPageNumber(pageNo);
+        return page;
     }
     
     private AiResource requireMeta(String namespaceId, String name) throws NacosException {

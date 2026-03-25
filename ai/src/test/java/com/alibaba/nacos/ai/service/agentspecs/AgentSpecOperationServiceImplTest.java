@@ -466,7 +466,7 @@ class AgentSpecOperationServiceImplTest {
         metaPage.setTotalCount(1);
         metaPage.setPagesAvailable(1);
         metaPage.setPageNumber(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(any(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
         Page<AgentSpecSummary> result = service.listAgentSpecs(namespaceId, null, null, 1, 10);
