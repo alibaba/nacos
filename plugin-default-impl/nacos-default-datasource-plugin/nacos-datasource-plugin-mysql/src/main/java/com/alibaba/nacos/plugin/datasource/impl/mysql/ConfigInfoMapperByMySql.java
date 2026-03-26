@@ -278,8 +278,8 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         }
         
         // 先分页，减少后续 JOIN 的数据量
-        innerSql.append(" LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
-        
+        innerSql.append(" ORDER BY id LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
+
         // 外层查询：对分页后的结果进行标签关联
         final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,"
                           + "a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified,"

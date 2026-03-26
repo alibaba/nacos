@@ -277,7 +277,7 @@ class ConfigInfoMapperByMySqlTest {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
         String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified"
-                + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? LIMIT " + startRow + "," + pageSize;
+                + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? ORDER BY id LIMIT " + startRow + "," + pageSize;
         String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
                 + ",a.gmt_modified,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
                 + "FROM (" + expectedInnerSql + ") a "
@@ -420,7 +420,7 @@ class ConfigInfoMapperByMySqlTest {
         assertEquals(true, sql.contains("LIKE"));
         assertEquals(true, sql.contains("IN"));
         assertEquals(true, sql.contains("FROM (SELECT"));
-        assertEquals(true, sql.contains("LIMIT"));
+        assertEquals(true, sql.contains("ORDER BY id LIMIT"));
         
         // 验证参数数量（tenant + dataId + group + appName + content + 2个type）
         assertEquals(7, paramList.size());
