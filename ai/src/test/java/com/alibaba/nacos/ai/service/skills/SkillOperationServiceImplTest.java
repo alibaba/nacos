@@ -806,7 +806,7 @@ class SkillOperationServiceImplTest {
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.createDraft(namespaceId, skillName, null, null));
+                () -> skillOperationService.createDraft(namespaceId, skillName, null, null, null));
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
     }
 
@@ -822,7 +822,7 @@ class SkillOperationServiceImplTest {
         initial.setDescription("desc");
         initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\n---\n\ninst");
         initial.setNamespaceId(namespaceId);
-        String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial);
         assertEquals("0.0.1", version);
 
         org.mockito.ArgumentCaptor<com.alibaba.nacos.ai.model.AiResourceVersion> vCaptor =
@@ -843,7 +843,7 @@ class SkillOperationServiceImplTest {
         initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\nversion: 2.1.3\n---\n\ninst");
         initial.setNamespaceId(namespaceId);
 
-        String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial);
 
         assertEquals("2.1.3", version);
         verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())));
@@ -883,11 +883,104 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(2L), any()))
                 .thenReturn(true);
 
-        String version = skillOperationService.createDraft(namespaceId, skillName, null, null);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, null);
 
         assertEquals("1.2.1", version);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
                 && "1.2.1".equals(inserted.getVersion())));
+    }
+    
+    @Test
+    void testCreateDraftWithSpecifiedTargetVersion() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setOwner("ownerUser");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"1.1.3\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion("1.1.3");
+        versions.setPageItems(List.of(v));
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+                .thenReturn(versions);
+        
+        com.alibaba.nacos.ai.model.AiResourceVersion baseVersion = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        baseVersion.setVersion("1.1.3");
+        baseVersion.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:1.1.3\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq("1.1.3")))
+                .thenReturn(baseVersion);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+                ("---\nname: my-skill\ndescription: Test skill description\nversion: 1.1.3\n---\n\nbody")
+                        .getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(2L), any()))
+                .thenReturn(true);
+        
+        String version = skillOperationService.createDraft(namespaceId, skillName, "1.1.3", "1.1.4", null);
+        
+        assertEquals("1.1.4", version);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "1.1.4".equals(inserted.getVersion())));
+    }
+    
+    @Test
+    void testCreateDraftWithDuplicateTargetVersionThrowsConflict() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setOwner("ownerUser");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"1.1.3\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("1.1.3");
+        com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v2.setVersion("1.1.4");
+        versions.setPageItems(List.of(v1, v2));
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+                .thenReturn(versions);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.createDraft(namespaceId, skillName, null, "1.1.4", null));
+        assertEquals(NacosException.CONFLICT, ex.getErrCode());
+    }
+    
+    @Test
+    void testCreateDraftWithTargetVersionNotGreaterThanBaseThrowsInvalidParam() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setOwner("ownerUser");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"1.1.3\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("1.1.3");
+        versions.setPageItems(List.of(v1));
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+                .thenReturn(versions);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.createDraft(namespaceId, skillName, "1.1.3", "1.1.2", null));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
 
     @Test

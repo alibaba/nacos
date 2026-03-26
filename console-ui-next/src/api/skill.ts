@@ -71,6 +71,7 @@ export const skillApi = {
     namespaceId?: string;
     skillName?: string;
     basedOnVersion?: string;
+    targetVersion?: string;
     skillCard?: string;
   }): ApiResult<string> =>
     client.post(`${BASE}/draft`, data, { timeout: 60000 }) as ApiResult<string>,

@@ -33,6 +33,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import MDEditor from '@uiw/react-md-editor';
 import {
@@ -49,6 +51,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { skillApi } from '@/api/skill';
@@ -113,6 +123,9 @@ export default function SkillDetailPage() {
 
   // Label bind dialog state
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
+  const [createDraftDialogOpen, setCreateDraftDialogOpen] = useState(false);
+  const [createDraftFromVersion, setCreateDraftFromVersion] = useState('');
+  const [createDraftTargetVersion, setCreateDraftTargetVersion] = useState('');
 
   const loadDetail = useCallback(() => {
     if (skillName) {
@@ -333,6 +346,28 @@ export default function SkillDetailPage() {
 
   // ===== Version lifecycle handlers =====
 
+  const validateDraftTargetVersion = (targetVersion: string, basedOnVersion: string): string | null => {
+    if (!targetVersion) {
+      return t('skill.newVersionRequired');
+    }
+    const isTargetSemver = isSemverVersion(targetVersion);
+    const isTargetLegacy = isLegacyVersion(targetVersion);
+    if (!isTargetSemver && !isTargetLegacy) {
+      return t('skill.versionInvalid');
+    }
+    if (basedOnVersion) {
+      const isBaseSemver = isSemverVersion(basedOnVersion);
+      const isBaseLegacy = isLegacyVersion(basedOnVersion);
+      if (isTargetSemver && isBaseSemver && compareSemverVersion(targetVersion, basedOnVersion) <= 0) {
+        return t('skill.versionMustGreater', { current: basedOnVersion });
+      }
+      if (isTargetLegacy && isBaseLegacy && compareLegacyVersion(targetVersion, basedOnVersion) <= 0) {
+        return t('skill.versionMustGreater', { current: basedOnVersion });
+      }
+    }
+    return null;
+  };
+
   const handleCreateDraft = async (basedOnVersion?: string) => {
     if (!basedOnVersion) {
       // No version to fork from — enter edit mode for a brand-new draft
@@ -343,11 +378,29 @@ export default function SkillDetailPage() {
       setIsEditingDraft(true);
       return;
     }
-    // Fork from existing version
+    const suggestedVersion = suggestNextVersionFromBase(basedOnVersion);
+    setCreateDraftFromVersion(basedOnVersion);
+    setCreateDraftTargetVersion(suggestedVersion);
+    setCreateDraftDialogOpen(true);
+  };
+  
+  const handleConfirmCreateDraft = async () => {
+    const targetVersion = createDraftTargetVersion.trim();
+    const errorMsg = validateDraftTargetVersion(targetVersion, createDraftFromVersion);
+    if (errorMsg) {
+      toast.error(errorMsg);
+      return;
+    }
     setActionLoading(true);
     try {
-      await skillApi.createDraft({ namespaceId, skillName, basedOnVersion });
+      await skillApi.createDraft({
+        namespaceId,
+        skillName,
+        basedOnVersion: createDraftFromVersion,
+        targetVersion,
+      });
       toast.success(t('skill.createDraftSuccess'));
+      setCreateDraftDialogOpen(false);
       await fetchDetail(namespaceId, skillName);
       const updated = useSkillStore.getState().currentDetail;
       if (updated?.editingVersion) {
@@ -1226,6 +1279,39 @@ export default function SkillDetailPage() {
           onSave={handleSaveLabels}
         />
       )}
+      
+      <Dialog open={createDraftDialogOpen} onOpenChange={setCreateDraftDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('skill.newVersionTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('skill.newVersionDesc', { current: createDraftFromVersion })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="create-draft-target-version">{t('skill.newVersion')}</Label>
+            <Input
+              id="create-draft-target-version"
+              value={createDraftTargetVersion}
+              placeholder={t('skill.newVersionPlaceholder')}
+              onChange={(e) => setCreateDraftTargetVersion(e.target.value)}
+              disabled={actionLoading}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDraftDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleConfirmCreateDraft} disabled={actionLoading}>
+              {t('skill.createDraft')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
         <SheetContent className="flex flex-col p-0 sm:max-w-md">
@@ -1276,6 +1362,60 @@ export default function SkillDetailPage() {
       )}
     </div>
   );
+}
+
+function parseSemver(version: string): { major: number; minor: number; patch: number } | null {
+  const match = version.trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) return null;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  };
+}
+
+function isSemverVersion(version: string): boolean {
+  return parseSemver(version) !== null;
+}
+
+function compareSemverVersion(a: string, b: string): number {
+  const pa = parseSemver(a);
+  const pb = parseSemver(b);
+  if (!pa || !pb) return 0;
+  if (pa.major !== pb.major) return pa.major - pb.major;
+  if (pa.minor !== pb.minor) return pa.minor - pb.minor;
+  return pa.patch - pb.patch;
+}
+
+function parseLegacyVersion(version: string): number | null {
+  const match = version.trim().match(/^[vV](\d+)$/);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
+function isLegacyVersion(version: string): boolean {
+  return parseLegacyVersion(version) !== null;
+}
+
+function compareLegacyVersion(a: string, b: string): number {
+  const pa = parseLegacyVersion(a);
+  const pb = parseLegacyVersion(b);
+  if (pa === null || pb === null) return 0;
+  return pa - pb;
+}
+
+function suggestNextVersionFromBase(baseVersion: string): string {
+  const semver = parseSemver(baseVersion);
+  if (semver) {
+    return `${semver.major}.${semver.minor}.${semver.patch + 1}`;
+  }
+  const legacy = parseLegacyVersion(baseVersion);
+  if (legacy !== null) {
+    return `v${legacy + 1}`;
+  }
+  return baseVersion;
 }
 
 function InfoCell({

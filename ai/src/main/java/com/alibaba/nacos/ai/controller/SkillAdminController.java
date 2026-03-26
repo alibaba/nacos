@@ -187,7 +187,7 @@ public class SkillAdminController {
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
         form.prepareCreateDraftRequest();
         String v = skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),
-                form.getBasedOnVersion(), form.getResolvedInitialSkillOrNull());
+                form.getBasedOnVersion(), form.getTargetVersion(), form.getResolvedInitialSkillOrNull());
         return Result.success(v);
     }
     

@@ -186,7 +186,8 @@ class SkillAdminControllerTest {
 
     @Test
     void testCreateDraftSuccess() throws Exception {
-        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull(), any(Skill.class))).thenReturn(
+        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull(), isNull(),
+                any(Skill.class))).thenReturn(
                 "v1");
         String skillCard =
                 "{\"name\":\"test-skill\",\"description\":\"d\",\"skillMd\":\"---\\nname: test-skill\\ndescription: d\\n---\\n\\ni\"}";
@@ -201,7 +202,8 @@ class SkillAdminControllerTest {
 
     @Test
     void testCreateDraftForkSuccess() throws Exception {
-        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), eq("v1"), isNull())).thenReturn("v2");
+        when(skillOperationService.createDraft(eq("public"), eq("test-skill"), eq("v1"), isNull(),
+                isNull())).thenReturn("v2");
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
                 .param("skillName", "test-skill")
                 .param("basedOnVersion", "v1");

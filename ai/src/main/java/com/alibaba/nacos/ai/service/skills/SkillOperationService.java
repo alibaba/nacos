@@ -164,10 +164,12 @@ public interface SkillOperationService {
      * @param namespaceId namespace ID
      * @param name skill name
      * @param basedOnVersion base version to fork from (optional; defaults per server rules when resolving base)
+     * @param targetVersion target draft version to create (optional; auto-generated when empty)
      * @param initialContent full skill from {@code skillCard}, or null when forking
      * @return created draft version
      */
-    String createDraft(String namespaceId, String name, String basedOnVersion, Skill initialContent)
+    String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion,
+            Skill initialContent)
             throws NacosException;
 
     /**

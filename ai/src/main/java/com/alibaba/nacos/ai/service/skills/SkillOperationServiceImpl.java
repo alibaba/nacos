@@ -420,6 +420,65 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return null;
         }
     }
+    
+    private String resolveSpecifiedDraftVersion(String namespaceId, String skillName, String targetVersion,
+            String basedOnVersion, String baseVersion) throws NacosException {
+        if (StringUtils.isBlank(targetVersion)) {
+            return resolveNextDraftVersion(namespaceId, skillName);
+        }
+        String candidate = targetVersion.trim();
+        if (!isSupportedDraftVersionFormat(candidate)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Invalid targetVersion format: " + candidate + ", expected x.y.z or vN");
+        }
+        List<String> existingVersions = listExistingVersions(namespaceId, skillName);
+        if (existingVersions.contains(candidate)) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    "targetVersion already exists: " + candidate);
+        }
+        if (StringUtils.isNotBlank(basedOnVersion) && StringUtils.isNotBlank(baseVersion)) {
+            validateTargetVersionGreaterThanBase(candidate, baseVersion);
+        }
+        return candidate;
+    }
+    
+    private static boolean isSupportedDraftVersionFormat(String version) {
+        return normalizePureSemver(version) != null || parseLegacyVersionNumber(version) != null;
+    }
+    
+    private static void validateTargetVersionGreaterThanBase(String targetVersion, String baseVersion)
+            throws NacosApiException {
+        String targetSemver = normalizePureSemver(targetVersion);
+        String baseSemver = normalizePureSemver(baseVersion);
+        if (targetSemver != null && baseSemver != null && compareSemver(targetSemver, baseSemver) <= 0) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "targetVersion must be greater than basedOnVersion, basedOnVersion=" + baseVersion
+                            + ", targetVersion=" + targetVersion);
+        }
+        Integer targetLegacy = parseLegacyVersionNumber(targetVersion);
+        Integer baseLegacy = parseLegacyVersionNumber(baseVersion);
+        if (targetLegacy != null && baseLegacy != null && targetLegacy <= baseLegacy) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "targetVersion must be greater than basedOnVersion, basedOnVersion=" + baseVersion
+                            + ", targetVersion=" + targetVersion);
+        }
+    }
+    
+    private static Integer parseLegacyVersionNumber(String version) {
+        if (StringUtils.isBlank(version)) {
+            return null;
+        }
+        String normalized = version.trim();
+        if (!(normalized.startsWith("v") || normalized.startsWith("V")) || normalized.length() <= 1) {
+            return null;
+        }
+        try {
+            int numeric = Integer.parseInt(normalized.substring(1));
+            return numeric > 0 ? numeric : null;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
 
     private void overwriteEditingDraft(String namespaceId, Skill skill, AiResource meta, String editing)
             throws NacosException {
@@ -610,7 +669,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     @Override
-    public String createDraft(String namespaceId, String name, String basedOnVersion, Skill initialContent)
+    public String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion,
+            Skill initialContent)
             throws NacosException {
         AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
 
@@ -624,8 +684,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "skillCard is required when creating a brand-new skill draft");
             }
-            String version = resolveFinalUploadVersion(namespaceId, name,
-                    resolveUploadVersion(initialContent.getSkillMd(), null));
+            String version = StringUtils.isBlank(targetVersion)
+                    ? resolveFinalUploadVersion(namespaceId, name, resolveUploadVersion(initialContent.getSkillMd(), null))
+                    : resolveSpecifiedDraftVersion(namespaceId, name, targetVersion, null, null);
             createDraftWithSkill(namespaceId, initialContent, version, null, true);
             return version;
         }
@@ -637,10 +698,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "There is already a working version (editing/reviewing), cannot create draft");
         }
 
-        String newVersion = resolveNextDraftVersion(namespaceId, name);
         // resolveBaseVersion: explicit param > latest label > max semver version > max legacy vN version
         // null means no version exists yet
         String base = resolveBaseVersion(namespaceId, name, meta, basedOnVersion);
+        String newVersion = resolveSpecifiedDraftVersion(namespaceId, name, targetVersion, basedOnVersion, base);
 
         if (StringUtils.isBlank(base)) {
             if (initialContent == null) {

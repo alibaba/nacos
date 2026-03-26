@@ -176,12 +176,13 @@ class SkillInnerHandlerTest {
         form.setSkillName(SKILL_NAME);
         form.setBasedOnVersion("v1");
         form.prepareCreateDraftRequest();
-        when(skillOperationService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull())).thenReturn("v2");
+        when(skillOperationService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull(),
+                isNull())).thenReturn("v2");
 
         String result = skillInnerHandler.createDraft(form);
 
         assertEquals("v2", result);
-        verify(skillOperationService).createDraft(NAMESPACE_ID, SKILL_NAME, "v1", null);
+        verify(skillOperationService).createDraft(NAMESPACE_ID, SKILL_NAME, "v1", null, null);
     }
 
     @Test

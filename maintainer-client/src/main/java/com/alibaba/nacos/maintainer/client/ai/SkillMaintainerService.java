@@ -165,7 +165,7 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to create draft
      */
     default String createDraft(String namespaceId, String skillCard) throws NacosException {
-        return createDraft(namespaceId, null, null,  skillCard);
+        return createDraft(namespaceId, null, null, null, skillCard);
     }
     
     /**
@@ -178,7 +178,22 @@ public interface SkillMaintainerService {
      * @throws NacosException if fail to create draft
      */
     default String createDraft(String namespaceId, String skillName, String basedOnVersion) throws NacosException {
-        return createDraft(namespaceId, skillName, basedOnVersion, null);
+        return createDraft(namespaceId, skillName, basedOnVersion, null, null);
+    }
+    
+    /**
+     * Create draft version for a skill with optional target version.
+     *
+     * @param namespaceId    namespace ID
+     * @param skillName      skill name (required when forking)
+     * @param basedOnVersion base version to fork from (optional)
+     * @param targetVersion  target draft version to create (optional)
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
+    default String createDraft(String namespaceId, String skillName, String basedOnVersion, String targetVersion)
+            throws NacosException {
+        return createDraft(namespaceId, skillName, basedOnVersion, targetVersion, null);
     }
     
     /**
@@ -188,11 +203,13 @@ public interface SkillMaintainerService {
      * @param namespaceId    namespace ID
      * @param skillName      skill name (required when forking)
      * @param basedOnVersion base version to fork from (optional)
+     * @param targetVersion  target draft version to create (optional)
      * @param skillCard      full skill JSON, or null when forking
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
-    String createDraft(String namespaceId, String skillName, String basedOnVersion, String skillCard)
+    String createDraft(String namespaceId, String skillName, String basedOnVersion, String targetVersion,
+            String skillCard)
             throws NacosException;
     
     /**

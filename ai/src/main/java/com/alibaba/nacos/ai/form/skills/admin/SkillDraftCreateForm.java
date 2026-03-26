@@ -38,6 +38,8 @@ public class SkillDraftCreateForm extends SkillDetailForm {
     
     private String basedOnVersion;
     
+    private String targetVersion;
+    
     /**
      * Parsed skill for create-draft after {@link #prepareCreateDraftRequest()}; not part of the serialized form.
      */
@@ -92,6 +94,14 @@ public class SkillDraftCreateForm extends SkillDetailForm {
     
     public void setBasedOnVersion(String basedOnVersion) {
         this.basedOnVersion = basedOnVersion;
+    }
+    
+    public String getTargetVersion() {
+        return targetVersion;
+    }
+    
+    public void setTargetVersion(String targetVersion) {
+        this.targetVersion = targetVersion;
     }
     
     private Skill parseInitialSkillOrNull() throws NacosApiException {

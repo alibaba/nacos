@@ -129,13 +129,15 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
 
     @Override
-    public String createDraft(String namespaceId, String skillName, String basedOnVersion, String skillCard)
+    public String createDraft(String namespaceId, String skillName, String basedOnVersion, String targetVersion,
+            String skillCard)
             throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("skillName", skillName);
         putIfNotBlank(params, "basedOnVersion", basedOnVersion);
+        putIfNotBlank(params, "targetVersion", targetVersion);
         putIfNotBlank(params, "skillCard", skillCard);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
                 .setHttpMethod(HttpMethod.POST).setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/draft")
