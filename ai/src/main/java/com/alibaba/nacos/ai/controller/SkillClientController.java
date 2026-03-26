@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.client.SkillQueryForm;
+import com.alibaba.nacos.ai.param.SkillHttpParamExtractor;
 import com.alibaba.nacos.ai.service.skills.SkillOperationService;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
@@ -43,7 +44,7 @@ import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMO
 @NacosApi
 @RestController
 @RequestMapping(Constants.Skills.CLIENT_PATH)
-@ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = SkillHttpParamExtractor.class)
 public class SkillClientController {
     
     private final SkillOperationService skillOperationService;

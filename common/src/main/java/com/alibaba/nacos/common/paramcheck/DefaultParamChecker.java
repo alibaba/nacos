@@ -49,6 +49,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
     
     private Pattern agentNamePattern;
     
+    private Pattern skillNamePattern;
+    
     private static final String CHECKER_TYPE = "default";
     
     private static final String MAX_METADATA_LENGTH_PROP_NAME = "nacos.naming.service.metadata.length";
@@ -94,6 +96,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
         this.mcpNamePattern = Pattern.compile(this.paramCheckRule.mcpNamePatternString);
         this.agentNamePattern = Pattern.compile(this.paramCheckRule.agentNamePatternString);
+        this.skillNamePattern = Pattern.compile(this.paramCheckRule.skillNamePatternString);
     }
     
     /**
@@ -163,6 +166,10 @@ public class DefaultParamChecker extends AbstractParamChecker {
             return paramCheckResponse;
         }
         paramCheckResponse = checkAgentNameFormat(paramInfo.getAgentName());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkSkillNameFormat(paramInfo.getSkillName());
         if (!paramCheckResponse.isSuccess()) {
             return paramCheckResponse;
         }
@@ -492,6 +499,38 @@ public class DefaultParamChecker extends AbstractParamChecker {
         if (!agentNamePattern.matcher(agentName).matches()) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage("Param 'agentName' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
+        }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
+    }
+    
+    /**
+     * Check skill name format.
+     *
+     * @param skillName skill name
+     * @return the param check response
+     */
+    public ParamCheckResponse checkSkillNameFormat(String skillName) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
+        if (StringUtils.isBlank(skillName)) {
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
+        }
+        if (skillName.length() > paramCheckRule.maxSkillNameLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Skill name must be 1-64 characters");
+            return paramCheckResponse;
+        }
+        if (!skillNamePattern.matcher(skillName).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(
+                    "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen");
+            return paramCheckResponse;
+        }
+        if (skillName.contains("--")) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Skill name must not contain consecutive hyphens (--)");
             return paramCheckResponse;
         }
         paramCheckResponse.setSuccess(true);

@@ -36,15 +36,26 @@ public class SkillHttpParamExtractor extends AbstractHttpParamExtractor {
     
     private static final String SKILL_CARD_PARAM = "skillCard";
     
+    private static final String SKILL_NAME_PARAM = "skillName";
+    
+    private static final String SKILL_CLIENT_NAME_PARAM = "name";
+    
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
-        paramInfo.setAgentName(request.getParameter("skillName"));
+        String skillName = resolveSkillName(request);
+        paramInfo.setSkillName(skillName);
         if (request.getParameterMap().containsKey(SKILL_CARD_PARAM)) {
-            paramInfo.setAgentName(deserializeAndGetSkillName(request.getParameter(SKILL_CARD_PARAM)));
+            String parsedSkillName = deserializeAndGetSkillName(request.getParameter(SKILL_CARD_PARAM));
+            paramInfo.setSkillName(parsedSkillName);
         }
         return Collections.singletonList(paramInfo);
+    }
+    
+    private String resolveSkillName(HttpServletRequest request) {
+        String skillName = request.getParameter(SKILL_NAME_PARAM);
+        return StringUtils.isNotBlank(skillName) ? skillName : request.getParameter(SKILL_CLIENT_NAME_PARAM);
     }
     
     private String deserializeAndGetSkillName(String skillCardJson) {
