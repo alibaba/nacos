@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +119,7 @@ public class PublishPipelineManager {
         return serviceMap.values().stream()
                 .filter(service -> pipelineIds.contains(service.pipelineId()))
                 .filter(service -> supportsResourceType(service, resourceType))
-                .sorted((a, b) -> Integer.compare(a.getPreferOrder(), b.getPreferOrder()))
+                .sorted(Comparator.comparingInt(PublishPipelineService::getPreferOrder))
                 .collect(Collectors.toList());
     }
     

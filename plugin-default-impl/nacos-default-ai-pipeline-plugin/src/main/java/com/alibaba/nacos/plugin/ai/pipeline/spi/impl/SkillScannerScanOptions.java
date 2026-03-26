@@ -24,9 +24,8 @@ import java.util.Properties;
 /**
  * Skill-scanner CLI options derived from pipeline node {@link Properties}.
  *
- * <p>Configure via {@code nacos.plugin.skill-scanner.enabled=true},
- * {@code nacos.plugin.skill-scanner.type=nacos}, and matching
- * {@code nacos.plugin.skill-scanner.nacos.&lt;key&gt;} entries
+ * <p>Configure via {@code nacos.plugin.ai-pipeline.type=skill-scanner}
+ * and matching {@code nacos.plugin.ai-pipeline.skill-scanner.&lt;key&gt;} entries
  * (see {@link com.alibaba.nacos.ai.pipeline.config.FilePipelineConfigProvider}).</p>
  *
  * <p>Environment variables for the LLM match

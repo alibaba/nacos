@@ -36,7 +36,7 @@ import java.util.Set;
  * Builder for {@link SkillScannerPipelineService}. Checks if skill-scanner is installed
  * during initialization and logs installation instructions if not found.
  *
- * <p>Optional node properties (via {@code nacos.plugin.skill-scanner.nacos.*}):</p>
+ * <p>Optional node properties (via {@code nacos.plugin.ai-pipeline.skill-scanner.*}):</p>
  * <ul>
  *   <li>{@code useLlm} — {@code true} to pass {@code --use-llm} (semantic analysis; requires API key in properties or parent env)</li>
  *   <li>{@code llmApiKey} — sets subprocess {@code SKILL_SCANNER_LLM_API_KEY}</li>

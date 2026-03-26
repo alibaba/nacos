@@ -26,6 +26,7 @@ import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -53,10 +55,10 @@ class FilePipelineConfigProviderPropertyTest {
     /**
      * Property 10: Configuration parsing correctness.
      *
-     * <p>For any valid combination of {@code nacos.plugin.{pluginName}.enabled},
-     * {@code nacos.plugin.{pluginName}.type}, and {@code nacos.plugin.{pluginName}.{type}.*}
+     * <p>For any valid combination of {@code nacos.plugin.ai-pipeline.enabled},
+     * {@code nacos.plugin.ai-pipeline.type}, and {@code nacos.plugin.ai-pipeline.{type}.*}
      * config entries, FilePipelineConfigProvider should parse them into a PipelineConfig whose enabled value,
-     * nodes list, and per-node Properties all match the enabled plugin config.</p>
+     * nodes list, and per-node Properties all match the configured plugin types.</p>
      *
      * <p><b>Validates: Requirements 4.3, 4.4</b></p>
      */
@@ -64,11 +66,14 @@ class FilePipelineConfigProviderPropertyTest {
     void configParsingCorrectness(@ForAll boolean enabled,
             @ForAll("validNodeConfigs") List<NodeTestData> nodeConfigs) {
         Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", String.valueOf(enabled));
+        if (!nodeConfigs.isEmpty()) {
+            String typeValue = nodeConfigs.stream().map(node -> node.pipelineId).collect(Collectors.joining(","));
+            envProperties.setProperty("nacos.plugin.ai-pipeline.type", typeValue);
+        }
         for (NodeTestData node : nodeConfigs) {
-            envProperties.setProperty("nacos.plugin." + node.pipelineId + ".enabled", String.valueOf(enabled));
-            envProperties.setProperty("nacos.plugin." + node.pipelineId + ".type", node.typeName);
             for (String key : node.propertyKeys()) {
-                String fullKey = "nacos.plugin." + node.pipelineId + "." + node.typeName + "." + key;
+                String fullKey = "nacos.plugin.ai-pipeline." + node.pipelineId + "." + key;
                 envProperties.setProperty(fullKey, node.properties.getProperty(key));
             }
         }
@@ -132,6 +137,30 @@ class FilePipelineConfigProviderPropertyTest {
             assertFalse(config.isEnabled(), "Default config should have enabled=false");
             assertNotNull(config.getNodes(), "Default config nodes should not be null");
             assertTrue(config.getNodes().isEmpty(), "Default config should have empty nodes list");
+        }
+    }
+    
+    @Test
+    void subPropertyEnabledShouldNotBeTreatedAsNodeSwitch() {
+        Properties envProperties = new Properties();
+        envProperties.setProperty("nacos.plugin.ai-pipeline.enabled", "true");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.type", "skill-scanner");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.enabled", "true");
+        envProperties.setProperty("nacos.plugin.ai-pipeline.skill-scanner.command", "/tmp/skill-scanner");
+        try (MockedStatic<EnvUtil> envMock = Mockito.mockStatic(EnvUtil.class);
+                MockedStatic<NotifyCenter> notifyMock = Mockito.mockStatic(NotifyCenter.class)) {
+            envMock.when(EnvUtil::getProperties).thenReturn(envProperties);
+            
+            FilePipelineConfigProvider provider = createFreshInstance();
+            PipelineConfig config = provider.getConfig();
+            assertTrue(config.isEnabled(), "Config should be enabled when plugin switch is true and type exists");
+            assertEquals(1, config.getNodes().size(), "Only configured type should be parsed as one node");
+            PipelineNodeConfig node = config.getNodes().get(0);
+            assertEquals("skill-scanner", node.getPipelineId(), "Node id should match configured type");
+            assertEquals("true", node.getProperties().getProperty("enabled"),
+                    "Type sub-property enabled should be preserved as node property");
+            assertEquals("/tmp/skill-scanner", node.getProperties().getProperty("command"),
+                    "Type sub-property command should be preserved");
         }
     }
     
@@ -214,13 +243,10 @@ class FilePipelineConfigProviderPropertyTest {
         
         final String pipelineId;
         
-        final String typeName;
-        
         final Properties properties;
         
         NodeTestData(String pipelineId, String typeName, Properties properties) {
             this.pipelineId = pipelineId;
-            this.typeName = typeName;
             this.properties = properties;
         }
         
@@ -230,8 +256,7 @@ class FilePipelineConfigProviderPropertyTest {
         
         @Override
         public String toString() {
-            return "NodeTestData{pipelineId='" + pipelineId + "', typeName='" + typeName
-                    + "', properties=" + properties + "}";
+            return "NodeTestData{pipelineId='" + pipelineId + "', properties=" + properties + "}";
         }
     }
 }

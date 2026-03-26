@@ -25,9 +25,11 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -35,10 +37,13 @@ import java.util.TreeMap;
  *
  * <p>Reads configuration from EnvUtil with the following keys:
  * <ul>
- *   <li>{@code nacos.plugin.{pluginName}.enabled} - whether this pipeline plugin is enabled</li>
- *   <li>{@code nacos.plugin.{pluginName}.type} - property namespace under this plugin, for example {@code nacos}</li>
- *   <li>{@code nacos.plugin.{pluginName}.{type}.{key}} - individual property values passed to the builder</li>
+ *   <li>{@code nacos.plugin.ai-pipeline.enabled} - optional global switch for ai-pipeline plugin</li>
+ *   <li>{@code nacos.plugin.ai-pipeline.type} - enabled implementation type(s), for example
+ *   {@code skill-scanner}</li>
+ *   <li>{@code nacos.plugin.ai-pipeline.{type}.{key}} - implementation properties passed to builder</li>
  * </ul>
+ * <p>For example: {@code nacos.plugin.ai-pipeline.type=skill-scanner} and
+ * {@code nacos.plugin.ai-pipeline.skill-scanner.enabled=true}.
  *
  * <p>Follows the singleton pattern like PushConfig.
  *
@@ -49,11 +54,11 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig implements
     
     private static final String CONFIG_NAME = "PipelineConfig";
     
-    private static final String KEY_PLUGIN_PREFIX = "nacos.plugin.";
+    private static final String KEY_PLUGIN_PREFIX = "nacos.plugin.ai-pipeline";
     
-    private static final String KEY_ENABLED_SUFFIX = ".enabled";
+    private static final String KEY_ENABLED = KEY_PLUGIN_PREFIX + ".enabled";
     
-    private static final String KEY_TYPE_SUFFIX = ".type";
+    private static final String KEY_TYPE = KEY_PLUGIN_PREFIX + ".type";
     
     private static final FilePipelineConfigProvider INSTANCE = new FilePipelineConfigProvider();
     
@@ -96,39 +101,23 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig implements
         }
     }
     
-    /**
-     * Read enabled pipeline plugin definitions from {@code nacos.plugin.*} properties.
-     *
-     * <p>The plugin name is treated as the pipeline ID. Only plugins with
-     * {@code nacos.plugin.{pluginName}.enabled=true} are included.
-     * The property namespace is selected by {@code nacos.plugin.{pluginName}.type}, and all
-     * nested keys under {@code nacos.plugin.{pluginName}.{type}.} are passed to the builder.
-     *
-     * @return enabled pipeline plugin configurations sorted by plugin name for deterministic behavior
-     */
     private List<PipelineNodeConfig> readEnabledPluginNodes() {
         Properties allProperties = EnvUtil.getProperties();
         if (allProperties == null || allProperties.isEmpty()) {
             return Collections.emptyList();
         }
-        Map<String, Properties> pluginPropertyMap = new TreeMap<>();
-        for (String propertyName : allProperties.stringPropertyNames()) {
-            if (!propertyName.startsWith(KEY_PLUGIN_PREFIX) || !propertyName.endsWith(KEY_ENABLED_SUFFIX)) {
-                continue;
-            }
-            String pluginName = propertyName.substring(KEY_PLUGIN_PREFIX.length(),
-                    propertyName.length() - KEY_ENABLED_SUFFIX.length());
-            if (StringUtils.isBlank(pluginName)) {
-                continue;
-            }
-            boolean enabled = Boolean.parseBoolean(allProperties.getProperty(propertyName));
-            if (!enabled) {
-                continue;
-            }
-            pluginPropertyMap.put(pluginName, readNodeProperties(pluginName, allProperties));
-        }
-        if (pluginPropertyMap.isEmpty()) {
+        if (!isPluginEnabled(allProperties)) {
             return Collections.emptyList();
+        }
+        
+        List<String> configuredTypes = readConfiguredTypes(allProperties);
+        if (configuredTypes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        Map<String, Properties> pluginPropertyMap = new TreeMap<>();
+        for (String typeName : configuredTypes) {
+            pluginPropertyMap.put(typeName, readNodeProperties(typeName, allProperties));
         }
         List<PipelineNodeConfig> nodes = new ArrayList<>(pluginPropertyMap.size());
         pluginPropertyMap.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
@@ -141,14 +130,32 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig implements
         return nodes;
     }
     
-    private Properties readNodeProperties(String pluginName, Properties allProperties) {
-        Properties properties = new Properties();
-        String pluginPrefix = KEY_PLUGIN_PREFIX + pluginName;
-        String type = allProperties.getProperty(pluginPrefix + KEY_TYPE_SUFFIX);
-        if (StringUtils.isBlank(type)) {
-            return properties;
+    private boolean isPluginEnabled(Properties allProperties) {
+        String enabledValue = allProperties.getProperty(KEY_ENABLED);
+        if (StringUtils.isBlank(enabledValue)) {
+            return true;
         }
-        String propertyPrefix = pluginPrefix + "." + type + ".";
+        return Boolean.parseBoolean(enabledValue);
+    }
+    
+    private List<String> readConfiguredTypes(Properties allProperties) {
+        String typeValue = allProperties.getProperty(KEY_TYPE);
+        if (StringUtils.isBlank(typeValue)) {
+            return Collections.emptyList();
+        }
+        Set<String> types = new LinkedHashSet<>();
+        for (String each : typeValue.split(",")) {
+            String normalized = each == null ? null : each.trim();
+            if (StringUtils.isNotBlank(normalized)) {
+                types.add(normalized);
+            }
+        }
+        return new ArrayList<>(types);
+    }
+    
+    private Properties readNodeProperties(String typeName, Properties allProperties) {
+        Properties properties = new Properties();
+        String propertyPrefix = KEY_PLUGIN_PREFIX + "." + typeName + ".";
         for (String propertyName : allProperties.stringPropertyNames()) {
             if (!propertyName.startsWith(propertyPrefix)) {
                 continue;
