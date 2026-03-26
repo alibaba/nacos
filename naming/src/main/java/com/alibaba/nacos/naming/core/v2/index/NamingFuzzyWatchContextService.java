@@ -283,8 +283,9 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      * @param clientId        client id.
      */
     public void removeFuzzyWatchContext(String groupKeyPattern, String clientId) {
-        if (watchedClientsMap.containsKey(groupKeyPattern)) {
-            watchedClientsMap.get(groupKeyPattern).remove(clientId);
+        Set<String> clients = watchedClientsMap.get(groupKeyPattern);
+        if (clients != null) {
+            clients.remove(clientId);
         }
     }
     
