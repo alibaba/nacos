@@ -192,7 +192,8 @@ public class SkillDataBootstrapInitializer implements ApplicationListener<Applic
     private ImportTaskResult importBuiltInSkill(SkillSeedArchiveReader.SkillPackage skillPackage) {
         try {
             LOGGER.info("Import built-in skill `{}` from `{}`", skillPackage.getSkillName(), skillPackage.getSourcePath());
-            skillOperationService.bootstrapSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, skillPackage.getZipBytes());
+            skillOperationService.bootstrapSkillFromZip(Constants.DEFAULT_NAMESPACE_ID, skillPackage.getZipBytes(),
+                    skillPackage.getFrom());
             return ImportTaskResult.success(skillPackage.getSkillName());
         } catch (Exception e) {
             LOGGER.error("Failed to bootstrap built-in skill `{}` from `{}`", skillPackage.getSkillName(),

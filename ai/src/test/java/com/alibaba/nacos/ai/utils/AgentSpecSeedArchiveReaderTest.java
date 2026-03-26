@@ -51,6 +51,7 @@ class AgentSpecSeedArchiveReaderTest {
 
         assertEquals(1, actual.size());
         assertEquals("演示坐席", actual.get(0).getAgentSpecName());
+        assertEquals("vendor", actual.get(0).getFrom());
 
         AgentSpec spec = AgentSpecZipParser.parseAgentSpecFromZip(actual.get(0).getZipBytes(), "public");
         assertEquals("演示坐席", spec.getName());
@@ -71,6 +72,16 @@ class AgentSpecSeedArchiveReaderTest {
 
         assertEquals(1, actual.size());
         assertEquals("同名坐席", actual.get(0).getAgentSpecName());
+    }
+
+    @Test
+    void shouldParseNestedFromPath() throws Exception {
+        String manifest = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\"find-agentspec\"}}";
+        byte[] archive = buildArchive(new ArchiveEntry("github.com/nacos/find-agentspec/manifest.json", manifest));
+        List<AgentSpecSeedArchiveReader.AgentSpecPackage> actual =
+                AgentSpecSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        assertEquals(1, actual.size());
+        assertEquals("github.com/nacos", actual.get(0).getFrom());
     }
 
     @Test

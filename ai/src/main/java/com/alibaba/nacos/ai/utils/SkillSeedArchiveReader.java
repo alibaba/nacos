@@ -93,7 +93,7 @@ public final class SkillSeedArchiveReader {
                 LOGGER.warn("Skip duplicate built-in skill name `{}` from archive path `{}`", skillName, root);
                 continue;
             }
-            result.add(new SkillPackage(skillName, root, buildSkillZip(entries, root, skillName)));
+            result.add(new SkillPackage(skillName, extractFrom(root), root, buildSkillZip(entries, root, skillName)));
         }
         return result;
     }
@@ -200,6 +200,22 @@ public final class SkillSeedArchiveReader {
         return root.isEmpty() ? fileName : root + "/" + fileName;
     }
 
+    private static String extractFrom(String sourcePath) {
+        if (StringUtils.isBlank(sourcePath)) {
+            return null;
+        }
+        String normalized = sourcePath;
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        int idx = normalized.lastIndexOf('/');
+        if (idx <= 0) {
+            return null;
+        }
+        String from = normalized.substring(0, idx).trim();
+        return StringUtils.isBlank(from) ? null : from;
+    }
+
     /**
      * Standalone skill package built from the seed archive.
      */
@@ -207,18 +223,25 @@ public final class SkillSeedArchiveReader {
 
         private final String skillName;
 
+        private final String from;
+
         private final String sourcePath;
 
         private final byte[] zipBytes;
 
-        public SkillPackage(String skillName, String sourcePath, byte[] zipBytes) {
+        public SkillPackage(String skillName, String from, String sourcePath, byte[] zipBytes) {
             this.skillName = skillName;
+            this.from = from;
             this.sourcePath = sourcePath;
             this.zipBytes = zipBytes == null ? new byte[0] : zipBytes;
         }
 
         public String getSkillName() {
             return skillName;
+        }
+
+        public String getFrom() {
+            return from;
         }
 
         public String getSourcePath() {

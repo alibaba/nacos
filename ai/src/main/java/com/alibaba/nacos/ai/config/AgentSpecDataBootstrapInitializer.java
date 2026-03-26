@@ -198,7 +198,8 @@ public class AgentSpecDataBootstrapInitializer implements ApplicationListener<Ap
     private ImportTaskResult importBuiltInAgentSpec(AgentSpecSeedArchiveReader.AgentSpecPackage pkg) {
         try {
             LOGGER.info("Import built-in agentspec `{}` from `{}`", pkg.getAgentSpecName(), pkg.getSourcePath());
-            agentSpecOperationService.bootstrapAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, pkg.getZipBytes());
+            agentSpecOperationService.bootstrapAgentSpecFromZip(Constants.DEFAULT_NAMESPACE_ID, pkg.getZipBytes(),
+                    pkg.getFrom());
             return ImportTaskResult.success(pkg.getAgentSpecName());
         } catch (Exception e) {
             LOGGER.error("Failed to bootstrap built-in agentspec `{}` from `{}`", pkg.getAgentSpecName(),

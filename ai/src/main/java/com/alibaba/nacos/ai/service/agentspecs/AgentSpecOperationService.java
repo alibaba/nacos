@@ -124,6 +124,18 @@ public interface AgentSpecOperationService {
      * @throws NacosException if bootstrap failed
      */
     void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
+
+    /**
+     * Bootstrap agentspec from zip file as an online agentspec with source metadata.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param from source identifier, e.g. github.com/nacos
+     * @throws NacosException if bootstrap failed
+     */
+    default void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes, String from) throws NacosException {
+        bootstrapAgentSpecFromZip(namespaceId, zipBytes);
+    }
     
     /**
      * Search agentspecs for runtime client usage. Only returns enabled agentspecs that have at least one online

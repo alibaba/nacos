@@ -402,6 +402,11 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     @Override
     public void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        bootstrapAgentSpecFromZip(namespaceId, zipBytes, null);
+    }
+
+    @Override
+    public void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes, String from) throws NacosException {
         AgentSpec agentSpec = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, namespaceId);
         if (agentSpec == null || StringUtils.isBlank(agentSpec.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -447,6 +452,7 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         meta.setDesc(agentSpec.getDescription());
         meta.setBizTags(agentSpec.getBizTags());
         meta.setOwner(DEFAULT_AUTHOR);
+        meta.setFrom(from);
         meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta.setVersionInfo(JacksonUtils.toJson(versionInfo));
         meta.setMetaVersion(1L);

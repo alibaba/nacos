@@ -49,6 +49,7 @@ class SkillSeedArchiveReaderTest {
 
         assertEquals(1, actual.size());
         assertEquals("demo-skill", actual.get(0).getSkillName());
+        assertEquals("vendor", actual.get(0).getFrom());
 
         Skill skill = SkillZipParser.parseSkillFromZip(actual.get(0).getZipBytes(), "public");
         assertEquals("demo-skill", skill.getName());
@@ -66,6 +67,15 @@ class SkillSeedArchiveReaderTest {
 
         assertEquals(1, actual.size());
         assertEquals("same-skill", actual.get(0).getSkillName());
+    }
+
+    @Test
+    void shouldParseNestedFromPath() throws Exception {
+        byte[] archive = buildArchive(new ArchiveEntry("github.com/nacos/find-skills/SKILL.md",
+                buildSkillMarkdown("find-skills")));
+        List<SkillSeedArchiveReader.SkillPackage> actual = SkillSeedArchiveReader.read(new ByteArrayInputStream(archive));
+        assertEquals(1, actual.size());
+        assertEquals("github.com/nacos", actual.get(0).getFrom());
     }
 
     @Test

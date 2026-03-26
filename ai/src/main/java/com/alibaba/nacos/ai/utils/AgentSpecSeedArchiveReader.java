@@ -87,7 +87,7 @@ public final class AgentSpecSeedArchiveReader {
                 LOGGER.warn("Skip duplicate built-in agentspec name `{}` from archive path `{}`", agentSpecName, root);
                 continue;
             }
-            result.add(new AgentSpecPackage(agentSpecName, root, buildAgentSpecZip(entries, root)));
+            result.add(new AgentSpecPackage(agentSpecName, extractFrom(root), root, buildAgentSpecZip(entries, root)));
         }
         return result;
     }
@@ -198,6 +198,22 @@ public final class AgentSpecSeedArchiveReader {
         return root.isEmpty() ? fileName : root + "/" + fileName;
     }
 
+    private static String extractFrom(String sourcePath) {
+        if (StringUtils.isBlank(sourcePath)) {
+            return null;
+        }
+        String normalized = sourcePath;
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        int idx = normalized.lastIndexOf('/');
+        if (idx <= 0) {
+            return null;
+        }
+        String from = normalized.substring(0, idx).trim();
+        return StringUtils.isBlank(from) ? null : from;
+    }
+
     /**
      * Standalone agentspec package built from the seed archive.
      */
@@ -205,18 +221,25 @@ public final class AgentSpecSeedArchiveReader {
 
         private final String agentSpecName;
 
+        private final String from;
+
         private final String sourcePath;
 
         private final byte[] zipBytes;
 
-        public AgentSpecPackage(String agentSpecName, String sourcePath, byte[] zipBytes) {
+        public AgentSpecPackage(String agentSpecName, String from, String sourcePath, byte[] zipBytes) {
             this.agentSpecName = agentSpecName;
+            this.from = from;
             this.sourcePath = sourcePath;
             this.zipBytes = zipBytes == null ? new byte[0] : zipBytes;
         }
 
         public String getAgentSpecName() {
             return agentSpecName;
+        }
+
+        public String getFrom() {
+            return from;
         }
 
         public String getSourcePath() {

@@ -198,6 +198,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
     @Override
     public void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+        bootstrapSkillFromZip(namespaceId, zipBytes, null);
+    }
+
+    @Override
+    public void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes, String from) throws NacosException {
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
@@ -236,6 +241,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         meta.setStatus(META_STATUS_ENABLE);
         meta.setDesc(skill.getDescription());
         meta.setOwner(DEFAULT_AUTHOR);
+        meta.setFrom(from);
         meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta.setVersionInfo(JacksonUtils.toJson(versionInfo));
         meta.setMetaVersion(1L);

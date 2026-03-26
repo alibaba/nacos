@@ -84,6 +84,18 @@ public interface SkillOperationService {
     void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
 
     /**
+     * Bootstrap skill from zip file as an online skill with source metadata.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param from source identifier, e.g. github.com/nacos
+     * @throws NacosException if bootstrap failed
+     */
+    default void bootstrapSkillFromZip(String namespaceId, byte[] zipBytes, String from) throws NacosException {
+        bootstrapSkillFromZip(namespaceId, zipBytes);
+    }
+
+    /**
      * Get skill detail for admin usage. Returns version governance metadata and all version summaries.
      *
      * @param namespaceId namespace ID
