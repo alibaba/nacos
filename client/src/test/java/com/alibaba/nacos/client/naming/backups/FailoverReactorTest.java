@@ -80,7 +80,45 @@ class FailoverReactorTest {
     @Test
     void testIsFailoverSwitch() throws NacosException {
         assertFalse(failoverReactor.isFailoverSwitch());
-        
+    }
+
+    @Test
+    void testIsFailoverSwitchByServiceNameWhenDisabled() {
+        assertFalse(failoverReactor.isFailoverSwitch("non-existent-service"));
+    }
+
+    @Test
+    void testIsFailoverSwitchByServiceNameWhenServiceNotInMap()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
+        field.setAccessible(true);
+        field.set(failoverReactor, true);
+        assertFalse(failoverReactor.isFailoverSwitch("non-existent-service"));
+    }
+
+    @Test
+    void testIsFailoverSwitchByServiceNameWhenServiceHasInstances()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field switchField = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
+        switchField.setAccessible(true);
+        switchField.set(failoverReactor, true);
+        ServiceInfo serviceInfo = new ServiceInfo("test@@service");
+        serviceInfo.addHost(new Instance());
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put("test@@service",
+                serviceInfo);
+        assertTrue(failoverReactor.isFailoverSwitch("test@@service"));
+    }
+
+    @Test
+    void testIsFailoverSwitchByServiceNameWhenServiceHasNoInstances()
+            throws NoSuchFieldException, IllegalAccessException {
+        Field switchField = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
+        switchField.setAccessible(true);
+        switchField.set(failoverReactor, true);
+        ServiceInfo serviceInfo = new ServiceInfo("test@@empty");
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put("test@@empty",
+                serviceInfo);
+        assertFalse(failoverReactor.isFailoverSwitch("test@@empty"));
     }
     
     @Test
