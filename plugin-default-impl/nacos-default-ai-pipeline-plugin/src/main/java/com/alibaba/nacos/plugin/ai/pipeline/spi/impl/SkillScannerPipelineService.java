@@ -160,7 +160,7 @@ public class SkillScannerPipelineService implements PublishPipelineService {
                     resourceContext.getResourceName());
                 return PublishPipelineResult.pass("skill-scanner 扫描通过，未发现 HIGH/CRITICAL 级别风险",
                         PublishPipelineMessageType.MARKDOWN,
-                        SkillScannerMarkdownFindingParser.buildPassCheckpoints());
+                        SkillScannerMarkdownFindingParser.buildPassCheckpoints(scanOptions));
             } else {
                 String scanOutput = output.toString();
                 LOGGER.warn("[SkillScannerPipeline] {} {} 扫描发现风险, command={}, exitCode={}, output={} ",

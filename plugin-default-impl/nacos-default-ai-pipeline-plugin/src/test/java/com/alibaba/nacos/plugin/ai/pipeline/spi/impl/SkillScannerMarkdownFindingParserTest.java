@@ -98,10 +98,26 @@ class SkillScannerMarkdownFindingParserTest {
     }
 
     @Test
-    void buildPassCheckpointsSingleRow() {
-        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints();
-        assertEquals(1, cps.size());
+    void buildPassCheckpointsBaseChecks() {
+        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints(SkillScannerScanOptions.none());
+        assertEquals(5, cps.size());
+        assertEquals("Prompt injection 检查", cps.get(0).getTitle());
         assertTrue(cps.get(0).getPassed());
-        assertEquals("自动化安全扫描（无 HIGH/CRITICAL 发现）", cps.get(0).getTitle());
+        assertEquals("Data exfiltration 检查", cps.get(1).getTitle());
+        assertTrue(cps.get(1).getPassed());
+    }
+    
+    @Test
+    void buildPassCheckpointsIncludesLlmAndMetaWhenEnabled() {
+        java.util.Properties properties = new java.util.Properties();
+        properties.setProperty(SkillScannerScanOptions.PROP_USE_LLM, "true");
+        properties.setProperty(SkillScannerScanOptions.PROP_ENABLE_META, "true");
+        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints(
+                SkillScannerScanOptions.fromProperties(properties));
+        assertEquals(7, cps.size());
+        assertEquals("LLM semantic analysis 检查", cps.get(5).getTitle());
+        assertTrue(cps.get(5).getPassed());
+        assertEquals("Meta-analyzer filtering 检查", cps.get(6).getTitle());
+        assertTrue(cps.get(6).getPassed());
     }
 }

@@ -36,6 +36,20 @@ import java.util.regex.Pattern;
 final class SkillScannerMarkdownFindingParser {
 
     private static final Pattern NEXT_H2_NOT_H3 = Pattern.compile("(?m)^## [^#]");
+    
+    private static final String CHECK_PROMPT_INJECTION = "Prompt injection 检查";
+    
+    private static final String CHECK_DATA_EXFILTRATION = "Data exfiltration 检查";
+    
+    private static final String CHECK_MALICIOUS_PATTERN = "Malicious code patterns 检查";
+    
+    private static final String CHECK_PIPELINE_TAINT = "Pipeline taint analysis 检查";
+    
+    private static final String CHECK_BYTECODE_INTEGRITY = "Bytecode integrity 检查";
+    
+    private static final String CHECK_LLM_SEMANTIC = "LLM semantic analysis 检查";
+    
+    private static final String CHECK_META_FILTERING = "Meta-analyzer filtering 检查";
 
     private SkillScannerMarkdownFindingParser() {
     }
@@ -60,8 +74,20 @@ final class SkillScannerMarkdownFindingParser {
      * Builds pass checkpoints when the scanner exits successfully: either a generic pass row, or
      * derived from report text if needed later.
      */
-    static List<Checkpoint> buildPassCheckpoints() {
-        return Collections.singletonList(new Checkpoint("自动化安全扫描（无 HIGH/CRITICAL 发现）", true));
+    static List<Checkpoint> buildPassCheckpoints(SkillScannerScanOptions scanOptions) {
+        List<Checkpoint> list = new ArrayList<>();
+        list.add(new Checkpoint(CHECK_PROMPT_INJECTION, true));
+        list.add(new Checkpoint(CHECK_DATA_EXFILTRATION, true));
+        list.add(new Checkpoint(CHECK_MALICIOUS_PATTERN, true));
+        list.add(new Checkpoint(CHECK_PIPELINE_TAINT, true));
+        list.add(new Checkpoint(CHECK_BYTECODE_INTEGRITY, true));
+        if (scanOptions != null && scanOptions.isUseLlm()) {
+            list.add(new Checkpoint(CHECK_LLM_SEMANTIC, true));
+            if (scanOptions.isEnableMeta()) {
+                list.add(new Checkpoint(CHECK_META_FILTERING, true));
+            }
+        }
+        return list;
     }
 
     /**
