@@ -92,7 +92,8 @@ class ConfigTagsRelationMapperByMySqlTest {
         assertEquals(true, sql.contains("SELECT DISTINCT a.id"));  // 内层查询
         assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id"));  // 外层关联获取所有标签
         assertEquals(true, sql.contains("b.tag_name IN"));  // 内层标签筛选条件
-        
+        assertEquals(true, sql.contains("ORDER BY a.id"));  // 内层排序保证分页确定性
+
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -101,7 +102,7 @@ class ConfigTagsRelationMapperByMySqlTest {
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
-    
+
     @Test
     void testFindConfigInfoLike4PageCountRowss() {
         context.putWhereParameter(FieldConstant.DATA_ID, "dataID1");
@@ -141,7 +142,8 @@ class ConfigTagsRelationMapperByMySqlTest {
         assertEquals(true, sql.contains("LEFT JOIN config_tags_relation d ON c.id=d.id"));  // 外层关联获取所有标签
         assertEquals(true, sql.contains("b.tag_name LIKE"));  // 内层标签筛选条件
         assertEquals(true, sql.contains("LIKE"));
-        
+        assertEquals(true, sql.contains("ORDER BY a.id"));  // 内层排序保证分页确定性
+
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");

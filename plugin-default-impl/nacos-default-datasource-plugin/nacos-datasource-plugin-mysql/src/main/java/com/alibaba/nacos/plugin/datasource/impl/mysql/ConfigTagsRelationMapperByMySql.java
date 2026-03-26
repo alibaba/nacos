@@ -85,7 +85,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
                 + "SELECT DISTINCT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc "
                 + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id"
                 + innerWhere
-                + "LIMIT " + context.getStartRow() + "," + context.getPageSize()
+                + "ORDER BY a.id LIMIT " + context.getStartRow() + "," + context.getPageSize()
                 + ") c LEFT JOIN config_tags_relation d ON c.id=d.id "
                 + "GROUP BY c.id,c.data_id,c.group_id,c.tenant_id,c.app_name,c.content,c.md5,c.type,c.encrypted_data_key,c.c_desc";
         
@@ -135,7 +135,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
             innerWhere.and().in("a.type", types);
         }
         
-        innerWhere.limit(context.getStartRow(), context.getPageSize());
+        innerWhere.orderBy("a.id").limit(context.getStartRow(), context.getPageSize());
         MapperResult innerResult = innerWhere.build();
         
         // 构建外层查询：获取筛选出的配置的完整标签信息

@@ -184,7 +184,18 @@ public final class WhereBuilder {
         where.append(" GROUP BY ").append(fields);
         return this;
     }
-    
+
+    /**
+     * Build ORDER BY.
+     *
+     * @param fields Order by fields
+     * @return Return {@link WhereBuilder}
+     */
+    public WhereBuilder orderBy(String fields) {
+        where.append(" ORDER BY ").append(fields);
+        return this;
+    }
+
     /**
      * Build EXISTS conditional.
      * <p>
