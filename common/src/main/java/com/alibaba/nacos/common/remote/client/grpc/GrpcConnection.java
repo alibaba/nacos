@@ -33,7 +33,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
@@ -137,7 +136,7 @@ public class GrpcConnection extends Connection {
         //set callback .
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
-            public void onSuccess(@Nullable Payload grpcResponse) {
+            public void onSuccess(Payload grpcResponse) {
                 Response response = (Response) GrpcUtils.parse(grpcResponse);
                 
                 if (response != null) {
