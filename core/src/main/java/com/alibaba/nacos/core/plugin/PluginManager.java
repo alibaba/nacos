@@ -341,18 +341,20 @@ public class PluginManager implements PluginStateChecker, PluginStateApplier, Ap
         // Load states
         Map<String, Boolean> states = persistence.loadAllStates();
         states.forEach((pluginId, enabled) -> {
-            if (pluginRegistry.containsKey(pluginId)) {
+            PluginInfo pluginInfo = pluginRegistry.get(pluginId);
+            if (pluginInfo != null) {
                 pluginStates.put(pluginId, enabled);
-                pluginRegistry.get(pluginId).setEnabled(enabled);
+                pluginInfo.setEnabled(enabled);
             }
         });
 
         // Load configs
         Map<String, Map<String, String>> configs = persistence.loadAllConfigs();
         configs.forEach((pluginId, config) -> {
-            if (pluginRegistry.containsKey(pluginId)) {
+            PluginInfo pluginInfoForConfig = pluginRegistry.get(pluginId);
+            if (pluginInfoForConfig != null) {
                 pluginConfigs.put(pluginId, config);
-                pluginRegistry.get(pluginId).setConfig(config);
+                pluginInfoForConfig.setConfig(config);
                 applyConfigToPlugin(pluginId, config);
             }
         });

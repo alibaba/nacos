@@ -76,8 +76,9 @@ public class IdGeneratorManager {
      * @return id
      */
     public long nextId(String resource) {
-        if (generatorMap.containsKey(resource)) {
-            return generatorMap.get(resource).nextId();
+        IdGenerator generator = generatorMap.get(resource);
+        if (generator != null) {
+            return generator.nextId();
         }
         throw new NoSuchElementException(
                 "The resource is not registered with the distributed " + "ID resource for the time being.");
