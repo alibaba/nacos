@@ -50,6 +50,7 @@
     "react-i18next": "^16.5.8",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
+    "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "swagger2openapi": "^7.0.8",

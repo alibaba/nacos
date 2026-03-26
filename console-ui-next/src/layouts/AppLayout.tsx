@@ -25,22 +25,30 @@ export default function AppLayout() {
   // Clear stale Radix scroll locks on route change.
   // When a Dialog/Sheet/Select is closing (animating out) and the route changes,
   // react-remove-scroll may leave overflow:hidden + data-scroll-locked on <html>.
+  // We run cleanup both immediately AND after a delay to catch locks that Radix
+  // re-applies during its exit animation (~200ms).
   useEffect(() => {
-    const html = document.documentElement;
-    if (html.hasAttribute('data-scroll-locked')) {
-      html.removeAttribute('data-scroll-locked');
-      html.style.removeProperty('overflow');
-      html.style.removeProperty('padding-right');
-    }
-    // Also clean up body in case of older Radix versions
-    const { body } = document;
-    if (body.hasAttribute('data-scroll-locked')) {
-      body.removeAttribute('data-scroll-locked');
-      body.style.removeProperty('overflow');
-      body.style.removeProperty('padding-right');
-    }
+    const clearScrollLock = () => {
+      const html = document.documentElement;
+      if (html.hasAttribute('data-scroll-locked')) {
+        html.removeAttribute('data-scroll-locked');
+        html.style.removeProperty('overflow');
+        html.style.removeProperty('padding-right');
+      }
+      const { body } = document;
+      if (body.hasAttribute('data-scroll-locked')) {
+        body.removeAttribute('data-scroll-locked');
+        body.style.removeProperty('overflow');
+        body.style.removeProperty('padding-right');
+      }
+    };
+    // Immediate cleanup
+    clearScrollLock();
+    // Delayed cleanup to catch locks re-applied during Radix exit animations
+    const timer = setTimeout(clearScrollLock, 300);
     // Scroll to top on navigation
     window.scrollTo(0, 0);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   return (

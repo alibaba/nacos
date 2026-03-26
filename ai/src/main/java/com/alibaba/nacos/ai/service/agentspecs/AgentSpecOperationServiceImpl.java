@@ -852,6 +852,24 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         AiResource meta = requireMeta(namespaceId, name);
         VisibilityHelper.checkWritableResource(meta);
         AgentSpecVersionInfo info = requireVersionInfo(meta);
+        // Validate: labels must not point to draft or reviewing versions
+        if (labels != null) {
+            String editing = info.getEditingVersion();
+            String reviewing = info.getReviewingVersion();
+            for (Map.Entry<String, String> entry : labels.entrySet()) {
+                String targetVersion = entry.getValue();
+                if (StringUtils.isNotBlank(editing) && editing.equals(targetVersion)) {
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                            ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "Label '" + entry.getKey() + "' cannot point to draft version: " + targetVersion);
+                }
+                if (StringUtils.isNotBlank(reviewing) && reviewing.equals(targetVersion)) {
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                            ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "Label '" + entry.getKey() + "' cannot point to reviewing version: " + targetVersion);
+                }
+            }
+        }
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateMetaVersionInfoCas(namespaceId, meta, info);
     }

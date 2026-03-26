@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import MDEditor from '@uiw/react-md-editor';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { stripFrontmatter } from '@/lib/markdown-utils';
+import remarkFrontmatter from 'remark-frontmatter';
 import {
   Sparkles,
   Loader2,
@@ -393,6 +393,7 @@ export function CreateSkillDialog({
                     height={200}
                     preview="live"
                     textareaProps={{ placeholder: t('skill.skillMdPlaceholder') }}
+                    previewOptions={{ remarkPlugins: [remarkGfm, remarkFrontmatter] }}
                   />
                 </div>
                 <div data-color-mode="dark" className="hidden dark:block">
@@ -402,6 +403,7 @@ export function CreateSkillDialog({
                     height={200}
                     preview="live"
                     textareaProps={{ placeholder: t('skill.skillMdPlaceholder') }}
+                    previewOptions={{ remarkPlugins: [remarkGfm, remarkFrontmatter] }}
                   />
                 </div>
               </div>
@@ -599,8 +601,8 @@ export function CreateSkillDialog({
                           {t('skill.instruction')}:
                         </span>
                         <div className="app-markdown mt-1 rounded-md border bg-muted/20 p-3 max-h-[200px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
-                          <Markdown remarkPlugins={[remarkGfm]}>
-                            {stripFrontmatter(generatedSkill.skillMd)}
+                          <Markdown remarkPlugins={[remarkGfm, remarkFrontmatter]}>
+                            {generatedSkill.skillMd}
                           </Markdown>
                         </div>
                       </div>

@@ -888,6 +888,7 @@
     "versionStatus": {
       "draft": "草稿",
       "reviewing": "审核中",
+      "pendingPublish": "待发布",
       "online": "已上线",
       "offline": "已下线"
     },
@@ -924,6 +925,7 @@
     "newVersion": "新建版本",
     "createDraft": "创建草稿",
     "createDraftFrom": "基于此版本创建草稿",
+    "draftExistsTip": "已存在草稿/未发布版本",
     "createDraftSuccess": "草稿创建成功",
     "deleteDraft": "删除草稿",
     "editDraft": "编辑草稿",
@@ -985,6 +987,7 @@
     "versionStatus": {
       "draft": "草稿",
       "reviewing": "审核中",
+      "pendingPublish": "待发布",
       "online": "已上线",
       "offline": "已下线"
     },
@@ -1090,6 +1093,7 @@
     "newVersionRequired": "新版本号不能为空",
     "versionInvalid": "版本号格式不正确，格式为 x.y.z 或 vN",
     "versionMustGreater": "新版本号必须大于当前版本 {{current}}",
+    "draftExistsTip": "已存在草稿/未发布版本",
     "bizTagsUpdateSuccess": "业务标签更新成功",
     "bizTagPlaceholder": "添加标签",
     "noBizTags": "暂无业务标签",

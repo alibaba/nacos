@@ -40,6 +40,8 @@ const STATUS_STYLES: Record<string, string> = {
     'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
   reviewing:
     'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  pendingPublish:
+    'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
   online:
     'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
   offline:
@@ -49,6 +51,7 @@ const STATUS_STYLES: Record<string, string> = {
 const DOT_STYLES: Record<string, string> = {
   draft: 'bg-amber-400',
   reviewing: 'bg-blue-400',
+  pendingPublish: 'bg-teal-400',
   online: 'bg-emerald-400',
   offline: 'bg-gray-400',
 };
@@ -120,6 +123,8 @@ export function VersionTimeline({
           const isActive = v.version === currentVersion;
           const actions = getValidActions(v.status);
           const pipelineInfo = parsePipelineInfo(v.publishPipelineInfo);
+          const isPendingPublish = v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED';
+          const displayStatus = isPendingPublish ? 'pendingPublish' : v.status;
 
           return (
             <div key={v.version} className="relative flex gap-3 pb-4">
@@ -132,7 +137,7 @@ export function VersionTimeline({
               <div
                 className={cn(
                   'relative z-10 mt-1.5 h-[15px] w-[15px] shrink-0 rounded-full border-2 border-background',
-                  DOT_STYLES[v.status] ?? 'bg-gray-400',
+                  DOT_STYLES[displayStatus] ?? 'bg-gray-400',
                   isActive && 'ring-2 ring-primary ring-offset-1',
                 )}
               />
@@ -153,10 +158,10 @@ export function VersionTimeline({
                   <Badge
                     className={cn(
                       'text-[10px] px-1.5 py-0 h-4 font-medium border-0',
-                      STATUS_STYLES[v.status],
+                      STATUS_STYLES[displayStatus],
                     )}
                   >
-                    {t(`agentSpec.versionStatus.${v.status}`)}
+                    {t(`agentSpec.versionStatus.${displayStatus}`)}
                   </Badge>
                   {pipelineInfo && (
                     <PipelineStatusDisplay
@@ -230,7 +235,7 @@ export function VersionTimeline({
                         </Button>
                       );
                     })}
-                    {onSaveLabels && (
+                    {onSaveLabels && v.status !== 'draft' && v.status !== 'reviewing' && (
                       <Button
                         variant="ghost"
                         size="sm"

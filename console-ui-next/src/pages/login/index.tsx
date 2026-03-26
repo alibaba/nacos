@@ -110,7 +110,7 @@ export default function LoginPage() {
                   </div>
                   {guideMsg && (
                     <div
-                      className="text-sm text-gray-500 leading-relaxed"
+                      className="text-sm text-gray-500 leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-700 [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-gray-700 [&_code]:font-mono [&_code]:text-xs"
                       dangerouslySetInnerHTML={{ __html: guideMsg }}
                     />
                   )}
@@ -171,13 +171,6 @@ export default function LoginPage() {
                   {t('login.login')}
                 </Button>
               </form>
-
-              {guideMsg && (
-                <div
-                  className="mt-4 text-xs text-gray-500 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: guideMsg }}
-                />
-              )}
                 </>
               )}
             </div>

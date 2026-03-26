@@ -1,9 +1,10 @@
-import { useEffect, useCallback, useState, useMemo } from 'react';
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkFrontmatter from 'remark-frontmatter';
 import {
   ArrowLeft,
   History,
@@ -25,6 +26,7 @@ import {
   Plus,
   Sparkles,
   AlertTriangle,
+  AlertCircle,
   Lock,
   Loader2,
 } from 'lucide-react';
@@ -36,6 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import MDEditor from '@uiw/react-md-editor';
 import {
   Select,
@@ -65,7 +68,7 @@ import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
 import { cn } from '@/lib/utils';
-import { stripFrontmatter } from '@/lib/markdown-utils';
+import { parseFrontmatter, updateFrontmatterField } from '@/lib/markdown-utils';
 import dayjs from 'dayjs';
 
 import { SkillVersionTimeline } from '../skillManagement/components/SkillVersionTimeline';
@@ -101,6 +104,36 @@ export default function SkillDetailPage() {
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [versionDoc, setVersionDoc] = useState<SkillDocument | null>(null);
   const [docLoading, setDocLoading] = useState(false);
+
+  // Ref to prevent circular updates between description textarea and md editor frontmatter
+  const syncSourceRef = useRef<'description' | 'instruction' | null>(null);
+
+  // Handler: MD editor content changed -> extract description from frontmatter & protect name
+  const handleInstructionChange = useCallback((val: string | undefined) => {
+    let newVal = val || '';
+    const fm = parseFrontmatter(newVal);
+    // Protect name: revert to original skillName if user changed it
+    if (fm.name !== undefined && fm.name !== skillName) {
+      newVal = updateFrontmatterField(newVal, 'name', skillName);
+    }
+    setEditInstruction(newVal);
+    if (syncSourceRef.current === 'description') return;
+    syncSourceRef.current = 'instruction';
+    if (fm.description !== undefined) {
+      setEditDescription(fm.description);
+    }
+    // Reset after microtask to allow the other side to update freely
+    queueMicrotask(() => { syncSourceRef.current = null; });
+  }, [skillName]);
+
+  // Handler: description textarea changed -> update frontmatter in md editor
+  const handleDescriptionChange = useCallback((newDesc: string) => {
+    setEditDescription(newDesc);
+    if (syncSourceRef.current === 'instruction') return;
+    syncSourceRef.current = 'description';
+    setEditInstruction((prev) => updateFrontmatterField(prev, 'description', newDesc));
+    queueMicrotask(() => { syncSourceRef.current = null; });
+  }, []);
 
   // Draft editing state
   const [isEditingDraft, setIsEditingDraft] = useState(false);
@@ -644,7 +677,10 @@ export default function SkillDetailPage() {
                     <SelectValue placeholder={t('skill.selectVersion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {versionOptions.map((version) => (
+                    {versionOptions.map((version) => {
+                      const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
+                      const isVersionPendingPublish = version.status === 'reviewing' && vPipeline?.status === 'APPROVED';
+                      return (
                       <SelectItem key={version.version} value={version.version}>
                         <span className="flex items-center gap-2">
                           <span>{version.version}</span>
@@ -658,9 +694,18 @@ export default function SkillDetailPage() {
                               {t('skill.versionStatus.draft')}
                             </Badge>
                           )}
+                          {version.status === 'reviewing' && (
+                            <Badge className={isVersionPendingPublish
+                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
+                            }>
+                              {t(isVersionPendingPublish ? 'skill.versionStatus.pendingPublish' : 'skill.versionStatus.reviewing')}
+                            </Badge>
+                          )}
                         </span>
                       </SelectItem>
-                    ))}
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
@@ -742,7 +787,7 @@ export default function SkillDetailPage() {
               {isEditingDraft ? (
                 <Textarea
                   value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
                   placeholder={t('skill.descPlaceholder')}
                   className="text-sm max-w-2xl min-h-8 resize-none"
                 />
@@ -904,20 +949,35 @@ export default function SkillDetailPage() {
                     </Button>
                   )}
 
-                  {/* Create new draft (when viewing online/offline and no editing/reviewing version) */}
-                  {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') &&
-                    !detail.editingVersion && !detail.reviewingVersion && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1.5"
-                      disabled={actionLoading}
-                      onClick={() => handleCreateDraft(selectedVersion)}
-                    >
-                      <Plus className="h-3 w-3" />
-                      {t('skill.createDraftFrom')}
-                    </Button>
-                  )}
+                  {/* Create new draft (when viewing online/offline version) */}
+                  {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') && (() => {
+                    const hasDraft = !!(detail.editingVersion || detail.reviewingVersion);
+                    const btn = (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={actionLoading || hasDraft}
+                        onClick={() => handleCreateDraft(selectedVersion)}
+                      >
+                        <Plus className="h-3 w-3" />
+                        {t('skill.createDraftFrom')}
+                      </Button>
+                    );
+                    return hasDraft ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>{btn}</span>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
+                          <span className="flex items-center gap-1.5">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            {t('skill.draftExistsTip')}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : btn;
+                  })()}
                   </div>
                 </div>
               )}
@@ -1009,24 +1069,26 @@ export default function SkillDetailPage() {
                     <div data-color-mode="light" className="dark:hidden">
                       <MDEditor
                         value={editInstruction}
-                        onChange={(val) => setEditInstruction(val || '')}
+                        onChange={handleInstructionChange}
                         height={500}
                         preview="live"
+                        previewOptions={{ remarkPlugins: [remarkGfm, remarkFrontmatter] }}
                       />
                     </div>
                     <div data-color-mode="dark" className="hidden dark:block">
                       <MDEditor
                         value={editInstruction}
-                        onChange={(val) => setEditInstruction(val || '')}
+                        onChange={handleInstructionChange}
                         height={500}
                         preview="live"
+                        previewOptions={{ remarkPlugins: [remarkGfm, remarkFrontmatter] }}
                       />
                     </div>
                   </div>
                 ) : versionDoc?.skillMd ? (
                   <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
-                    <Markdown remarkPlugins={[remarkGfm]}>
-                      {stripFrontmatter(versionDoc.skillMd)}
+                    <Markdown remarkPlugins={[remarkGfm, remarkFrontmatter]}>
+                      {versionDoc.skillMd}
                     </Markdown>
                   </div>
                 ) : (
@@ -1116,7 +1178,7 @@ export default function SkillDetailPage() {
                     <Tag className="h-4 w-4 text-muted-foreground" />
                     {t('common.versionLabels.title')}
                   </h2>
-                  {selectedVersion && (
+                  {selectedVersion && currentVersionStatus !== 'draft' && currentVersionStatus !== 'reviewing' && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -1231,7 +1293,7 @@ export default function SkillDetailPage() {
                     <Tag className="h-4 w-4 text-muted-foreground" />
                     {t('common.versionLabels.title')}
                   </h2>
-                  {selectedVersion && (
+                  {selectedVersion && currentVersionStatus !== 'draft' && currentVersionStatus !== 'reviewing' && (
                     <Button
                       variant="ghost"
                       size="icon"

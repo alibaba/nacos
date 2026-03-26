@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { stripFrontmatter } from '@/lib/markdown-utils';
+import remarkFrontmatter from 'remark-frontmatter';
 import {
   Sparkles,
   Loader2,
@@ -311,12 +311,10 @@ export function SkillOptimizeDialog({
               {t('skill.originalContent')}
             </h3>
             <div className="app-markdown rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
-              <Markdown remarkPlugins={[remarkGfm]}>
-                {stripFrontmatter(
-                  targetFileName === SKILL_MD_VALUE
+              <Markdown remarkPlugins={[remarkGfm, remarkFrontmatter]}>
+                {targetFileName === SKILL_MD_VALUE
                     ? skill.skillMd || ''
-                    : skill.resource?.[targetFileName]?.content || ''
-                )}
+                    : skill.resource?.[targetFileName]?.content || ''}
               </Markdown>
             </div>
           </div>
@@ -331,8 +329,8 @@ export function SkillOptimizeDialog({
             >
               {optimizedSkill ? (
                 <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
-                  <Markdown remarkPlugins={[remarkGfm]}>
-                    {stripFrontmatter(optimizedSkill.skillMd || '')}
+                  <Markdown remarkPlugins={[remarkGfm, remarkFrontmatter]}>
+                    {optimizedSkill.skillMd || ''}
                   </Markdown>
                 </div>
               ) : streamContent ? (

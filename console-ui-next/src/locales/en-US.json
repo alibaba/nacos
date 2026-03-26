@@ -888,6 +888,7 @@
     "versionStatus": {
       "draft": "Draft",
       "reviewing": "Reviewing",
+      "pendingPublish": "Pending Publish",
       "online": "Online",
       "offline": "Offline"
     },
@@ -924,6 +925,7 @@
     "newVersion": "New Version",
     "createDraft": "Create Draft",
     "createDraftFrom": "Create draft from this version",
+    "draftExistsTip": "A draft or unpublished version already exists",
     "createDraftSuccess": "Draft created",
     "deleteDraft": "Delete Draft",
     "editDraft": "Edit Draft",
@@ -985,6 +987,7 @@
     "versionStatus": {
       "draft": "Draft",
       "reviewing": "Reviewing",
+      "pendingPublish": "Pending Publish",
       "online": "Online",
       "offline": "Offline"
     },
@@ -1090,6 +1093,7 @@
     "newVersionRequired": "New version is required",
     "versionInvalid": "Invalid version format, should be x.y.z or vN",
     "versionMustGreater": "New version must be greater than current version {{current}}",
+    "draftExistsTip": "A draft or unpublished version already exists",
     "bizTagsUpdateSuccess": "Tags updated",
     "bizTagPlaceholder": "Add a tag",
     "noBizTags": "No tags",

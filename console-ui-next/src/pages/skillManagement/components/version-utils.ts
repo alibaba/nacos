@@ -52,8 +52,12 @@ export function getValidActionsWithContext(
     return { action };
   });
 
-  if ((status === 'online' || status === 'offline') && !hasEditingOrReviewing) {
-    items.push({ action: 'createDraftFrom' });
+  if (status === 'online' || status === 'offline') {
+    if (hasEditingOrReviewing) {
+      items.push({ action: 'createDraftFrom', disabled: true, disabledReason: 'skill.draftExistsTip' });
+    } else {
+      items.push({ action: 'createDraftFrom' });
+    }
   }
 
   return items;

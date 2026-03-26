@@ -22,7 +22,7 @@ function ConsoleDisabledPage() {
         <h1 className="text-xl font-semibold text-gray-800 mb-4">{t('login.consoleClosed')}</h1>
         {guideMsg && (
           <div
-            className="text-sm text-gray-500 leading-relaxed"
+            className="text-sm text-gray-500 leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-700 [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-gray-700 [&_code]:font-mono [&_code]:text-xs"
             dangerouslySetInnerHTML={{ __html: guideMsg }}
           />
         )}

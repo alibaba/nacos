@@ -23,6 +23,7 @@ import {
   Lock,
   Save,
   X,
+  AlertCircle,
   Loader2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -813,7 +815,10 @@ export default function AgentSpecDetailPage() {
                     <SelectValue placeholder={t('agentSpec.selectVersion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {versionOptions.map((version) => (
+                    {versionOptions.map((version) => {
+                      const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
+                      const isVersionPendingPublish = version.status === 'reviewing' && vPipeline?.status === 'APPROVED';
+                      return (
                       <SelectItem key={version.version} value={version.version}>
                         <span className="flex items-center gap-2">
                           <span>{version.version}</span>
@@ -827,9 +832,18 @@ export default function AgentSpecDetailPage() {
                               {t('agentSpec.versionStatus.draft')}
                             </Badge>
                           )}
+                          {version.status === 'reviewing' && (
+                            <Badge className={isVersionPendingPublish
+                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
+                            }>
+                              {t(isVersionPendingPublish ? 'agentSpec.versionStatus.pendingPublish' : 'agentSpec.versionStatus.reviewing')}
+                            </Badge>
+                          )}
                         </span>
                       </SelectItem>
-                    ))}
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
@@ -1051,20 +1065,35 @@ export default function AgentSpecDetailPage() {
                     </Button>
                   )}
 
-                  {/* Create new draft (when viewing online/offline and no editing/reviewing version) */}
-                  {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') &&
-                    !detail.editingVersion && !detail.reviewingVersion && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1.5"
-                      disabled={actionLoading}
-                      onClick={() => handleCreateDraft(selectedVersion)}
-                    >
-                      <Plus className="h-3 w-3" />
-                      {t('agentSpec.createDraftFrom')}
-                    </Button>
-                  )}
+                  {/* Create new draft (when viewing online/offline version) */}
+                  {(currentVersionStatus === 'online' || currentVersionStatus === 'offline') && (() => {
+                    const hasDraft = !!(detail.editingVersion || detail.reviewingVersion);
+                    const btn = (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={actionLoading || hasDraft}
+                        onClick={() => handleCreateDraft(selectedVersion)}
+                      >
+                        <Plus className="h-3 w-3" />
+                        {t('agentSpec.createDraftFrom')}
+                      </Button>
+                    );
+                    return hasDraft ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>{btn}</span>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
+                          <span className="flex items-center gap-1.5">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            {t('agentSpec.draftExistsTip')}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : btn;
+                  })()}
                   </div>
                 </div>
               )}
@@ -1215,7 +1244,7 @@ export default function AgentSpecDetailPage() {
                     <Tag className="h-4 w-4 text-muted-foreground" />
                     {t('common.versionLabels.title')}
                   </h2>
-                  {selectedVersion && (
+                  {selectedVersion && currentVersionStatus !== 'draft' && currentVersionStatus !== 'reviewing' && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -1353,7 +1382,7 @@ export default function AgentSpecDetailPage() {
                     <Tag className="h-4 w-4 text-muted-foreground" />
                     {t('common.versionLabels.title')}
                   </h2>
-                  {selectedVersion && (
+                  {selectedVersion && currentVersionStatus !== 'draft' && currentVersionStatus !== 'reviewing' && (
                     <Button
                       variant="ghost"
                       size="icon"

@@ -12,6 +12,7 @@ import {
   GitBranch,
   Tag,
   ShieldOff,
+  AlertCircle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,8 @@ const STATUS_STYLES: Record<string, string> = {
     'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
   reviewing:
     'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  pendingPublish:
+    'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
   online:
     'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
   offline:
@@ -57,6 +60,7 @@ const STATUS_STYLES: Record<string, string> = {
 const DOT_STYLES: Record<string, string> = {
   draft: 'bg-amber-400',
   reviewing: 'bg-blue-400',
+  pendingPublish: 'bg-teal-400',
   online: 'bg-emerald-400',
   offline: 'bg-gray-400',
 };
@@ -116,17 +120,34 @@ export function SkillVersionTimeline({
   return (
     <div className="space-y-1">
       {/* Create draft button */}
-      {showCreateDraftButton && !hasEditingVersion && !hasReviewingVersion && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mb-3 w-full"
-          onClick={() => onCreateDraft()}
-        >
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          {t('skill.createDraft')}
-        </Button>
-      )}
+      {showCreateDraftButton && ((() => {
+        const hasDraft = hasEditingVersion || hasReviewingVersion;
+        const btn = (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mb-3 w-full"
+            disabled={hasDraft}
+            onClick={() => onCreateDraft()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            {t('skill.createDraft')}
+          </Button>
+        );
+        return hasDraft ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="w-full">{btn}</span>
+            </TooltipTrigger>
+            <TooltipContent className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
+              <span className="flex items-center gap-1.5">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                {t('skill.draftExistsTip')}
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        ) : btn;
+      })())}
 
       {/* Skill disabled banner */}
       {!skillEnabled && (
@@ -147,6 +168,9 @@ export function SkillVersionTimeline({
             pipelineInfo?.status,
           );
 
+          const isPendingPublish = v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED';
+          const displayStatus = isPendingPublish ? 'pendingPublish' : v.status;
+
           return (
             <div key={v.version} className="relative flex gap-3 pb-4">
               {/* Vertical line */}
@@ -158,7 +182,7 @@ export function SkillVersionTimeline({
               <div
                 className={cn(
                   'relative z-10 mt-1.5 h-[15px] w-[15px] shrink-0 rounded-full border-2 border-background',
-                  DOT_STYLES[v.status] ?? 'bg-gray-400',
+                  DOT_STYLES[displayStatus] ?? 'bg-gray-400',
                   isActive && 'ring-2 ring-primary ring-offset-1',
                 )}
               />
@@ -179,10 +203,10 @@ export function SkillVersionTimeline({
                   <Badge
                     className={cn(
                       'text-[10px] px-1.5 py-0 h-4 font-medium border-0',
-                      STATUS_STYLES[v.status],
+                      STATUS_STYLES[displayStatus],
                     )}
                   >
-                    {t(`skill.versionStatus.${v.status}`)}
+                    {t(`skill.versionStatus.${displayStatus}`)}
                   </Badge>
                   {/* Pipeline status badge */}
                   {pipelineInfo && (
@@ -263,8 +287,15 @@ export function SkillVersionTimeline({
                       if (item.disabled && item.disabledReason) {
                         return (
                           <Tooltip key={item.action}>
-                            <TooltipTrigger asChild>{button}</TooltipTrigger>
-                            <TooltipContent>{t(item.disabledReason)}</TooltipContent>
+                            <TooltipTrigger asChild>
+                              <span>{button}</span>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
+                              <span className="flex items-center gap-1.5">
+                                <AlertCircle className="h-3 w-3 shrink-0" />
+                                {t(item.disabledReason)}
+                              </span>
+                            </TooltipContent>
                           </Tooltip>
                         );
                       }
@@ -282,7 +313,7 @@ export function SkillVersionTimeline({
                         {t('skill.download')}
                       </Button>
                     )}
-                    {onSaveLabels && (
+                    {onSaveLabels && v.status !== 'draft' && v.status !== 'reviewing' && (
                       <Button
                         variant="ghost"
                         size="sm"
