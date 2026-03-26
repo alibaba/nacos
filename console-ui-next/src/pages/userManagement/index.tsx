@@ -41,6 +41,7 @@ export default function UserManagementPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [newConfirmPassword, setNewConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Delete dialog
@@ -93,6 +94,7 @@ export default function UserManagementPage() {
   const handleCreateUser = async () => {
     if (!newUsername.trim()) { toast.error(t('authority.usernameRequired')); return; }
     if (!newPassword.trim()) { toast.error(t('authority.passwordRequired')); return; }
+    if (newPassword !== newConfirmPassword) { toast.error(t('authority.passwordMismatch')); return; }
     setSaving(true);
     try {
       await authApi.createUser({ username: newUsername.trim(), password: newPassword.trim() });
@@ -100,6 +102,7 @@ export default function UserManagementPage() {
       setCreateOpen(false);
       setNewUsername('');
       setNewPassword('');
+      setNewConfirmPassword('');
       fetchUsers();
     } catch {
       // Error handled by interceptor
@@ -146,7 +149,7 @@ export default function UserManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-foreground">{t('authority.userManagement')}</h1>
-        <Button onClick={() => { setNewUsername(''); setNewPassword(''); setCreateOpen(true); }} className="gap-2">
+        <Button onClick={() => { setNewUsername(''); setNewPassword(''); setNewConfirmPassword(''); setCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
           {t('authority.createUser')}
         </Button>
@@ -336,12 +339,27 @@ export default function UserManagementPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
+            <div className="flex flex-col gap-2">
+              <Label>
+                {t('authority.confirmPassword')}
+                <span className="text-destructive ml-1">*</span>
+              </Label>
+              <Input
+                type="password"
+                placeholder={t('authority.confirmPasswordPlaceholder')}
+                value={newConfirmPassword}
+                onChange={(e) => setNewConfirmPassword(e.target.value)}
+              />
+              {newConfirmPassword && newPassword !== newConfirmPassword && (
+                <p className="text-xs text-destructive">{t('authority.passwordMismatch')}</p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleCreateUser} disabled={saving}>
+            <Button onClick={handleCreateUser} disabled={saving || !newPassword || newPassword !== newConfirmPassword}>
               {saving ? t('common.loading') : t('common.confirm')}
             </Button>
           </DialogFooter>
@@ -402,13 +420,16 @@ export default function UserManagementPage() {
                 value={resetConfirmPassword}
                 onChange={(e) => setResetConfirmPassword(e.target.value)}
               />
+              {resetConfirmPassword && resetNewPassword !== resetConfirmPassword && (
+                <p className="text-xs text-destructive">{t('authority.passwordMismatch')}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleResetPassword} disabled={saving}>
+            <Button onClick={handleResetPassword} disabled={saving || !resetNewPassword || resetNewPassword !== resetConfirmPassword}>
               {saving ? t('common.loading') : t('common.confirm')}
             </Button>
           </DialogFooter>

@@ -102,16 +102,15 @@ export default function LoginPage() {
             <div className="flex flex-col justify-center bg-white p-8 md:p-12">
               {stateLoaded && !consoleUiEnable ? (
                 <>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-4">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                     </span>
                     <h2 className="text-xl font-semibold text-gray-800">{t('login.consoleClosed')}</h2>
                   </div>
-                  <p className="text-sm text-gray-500 mb-4">{t('login.consoleClosedDesc')}</p>
                   {guideMsg && (
                     <div
-                      className="text-xs text-gray-400 leading-relaxed border-t pt-4"
+                      className="text-sm text-gray-500 leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: guideMsg }}
                     />
                   )}

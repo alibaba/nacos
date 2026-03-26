@@ -19,11 +19,10 @@ function ConsoleDisabledPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-4">
           <AlertTriangle className="h-7 w-7 text-amber-600" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-800 mb-2">{t('login.consoleClosed')}</h1>
-        <p className="text-sm text-gray-500 mb-4">{t('login.consoleClosedDesc')}</p>
+        <h1 className="text-xl font-semibold text-gray-800 mb-4">{t('login.consoleClosed')}</h1>
         {guideMsg && (
           <div
-            className="text-xs text-gray-400 leading-relaxed border-t pt-4"
+            className="text-sm text-gray-500 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: guideMsg }}
           />
         )}
