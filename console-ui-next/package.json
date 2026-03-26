@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && rm -rf ../console/src/main/resources/static/next && cp -r dist ../console/src/main/resources/static/next",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest --run",

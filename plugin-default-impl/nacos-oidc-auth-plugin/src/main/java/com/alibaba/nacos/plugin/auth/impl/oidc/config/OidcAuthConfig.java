@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.config;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -162,7 +163,7 @@ public class OidcAuthConfig {
     }
 
     private void doOidcDiscovery(String issuer) {
-        String discoveryUrl = issuer.replaceAll("/$", "") + OidcConstants.WELL_KNOWN_OPENID_CONFIGURATION;
+        String discoveryUrl = issuer.replaceAll("/$", "") + OidcProtocolConstants.WELL_KNOWN_PATH;
         LOGGER.info("Fetching OIDC configuration from: {}", discoveryUrl);
 
         try {
@@ -182,20 +183,20 @@ public class OidcAuthConfig {
                 JsonNode configNode = JacksonUtils.toObj(response.body());
                 
                 if (configNode != null) {
-                    if (configNode.has(OidcConstants.DISCOVERY_AUTHORIZATION_ENDPOINT)) {
-                        this.authorizationEndpoint = configNode.get(OidcConstants.DISCOVERY_AUTHORIZATION_ENDPOINT).asText();
+                    if (configNode.has(OidcProtocolConstants.DISCOVERY_AUTHORIZATION_ENDPOINT)) {
+                        this.authorizationEndpoint = configNode.get(OidcProtocolConstants.DISCOVERY_AUTHORIZATION_ENDPOINT).asText();
                     }
-                    if (configNode.has(OidcConstants.DISCOVERY_TOKEN_ENDPOINT)) {
-                        this.tokenEndpoint = configNode.get(OidcConstants.DISCOVERY_TOKEN_ENDPOINT).asText();
+                    if (configNode.has(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT)) {
+                        this.tokenEndpoint = configNode.get(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT).asText();
                     }
-                    if (configNode.has(OidcConstants.DISCOVERY_USERINFO_ENDPOINT)) {
-                        this.userinfoEndpoint = configNode.get(OidcConstants.DISCOVERY_USERINFO_ENDPOINT).asText();
+                    if (configNode.has(OidcProtocolConstants.DISCOVERY_USERINFO_ENDPOINT)) {
+                        this.userinfoEndpoint = configNode.get(OidcProtocolConstants.DISCOVERY_USERINFO_ENDPOINT).asText();
                     }
-                    if (configNode.has(OidcConstants.DISCOVERY_END_SESSION_ENDPOINT)) {
-                        this.endSessionEndpoint = configNode.get(OidcConstants.DISCOVERY_END_SESSION_ENDPOINT).asText();
+                    if (configNode.has(OidcProtocolConstants.DISCOVERY_END_SESSION_ENDPOINT)) {
+                        this.endSessionEndpoint = configNode.get(OidcProtocolConstants.DISCOVERY_END_SESSION_ENDPOINT).asText();
                     }
-                    if (configNode.has(OidcConstants.DISCOVERY_JWKS_URI)) {
-                        this.jwksUri = configNode.get(OidcConstants.DISCOVERY_JWKS_URI).asText();
+                    if (configNode.has(OidcProtocolConstants.DISCOVERY_JWKS_URI)) {
+                        this.jwksUri = configNode.get(OidcProtocolConstants.DISCOVERY_JWKS_URI).asText();
                     }
                     
                     LOGGER.info("OIDC Discovery successful. Auth Endpoint: {}, Token Endpoint: {}", authorizationEndpoint, tokenEndpoint);

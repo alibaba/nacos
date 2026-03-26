@@ -33,7 +33,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +66,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -93,9 +94,9 @@ class AgentSpecOperationServiceImplTest {
 
     private AgentSpecOperationServiceImpl service;
 
-    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+    private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
 
-    private DataFilterPluginManager mockDataFilterManager;
+    private VisibilityPluginManager mockVisibilityManager;
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
@@ -113,16 +114,16 @@ class AgentSpecOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         service = new AgentSpecOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository);
-        mockDataFilterManager = mock(DataFilterPluginManager.class);
-        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
-        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
-        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
+        mockVisibilityManager = mock(VisibilityPluginManager.class);
+        lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
     }
 
     @AfterEach
     void tearDown() {
-        if (dataFilterManagerStatic != null) {
-            dataFilterManagerStatic.close();
+        if (visibilityManagerStatic != null) {
+            visibilityManagerStatic.close();
         }
         AiResourceStorageRouter.reset();
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
@@ -269,8 +270,8 @@ class AgentSpecOperationServiceImplTest {
 
         com.alibaba.nacos.api.model.Page<AiResourceVersion> emptyPage = new com.alibaba.nacos.api.model.Page<>();
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(agentSpecName), anyInt(), anyInt()))
-                .thenReturn(emptyPage);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(emptyPage);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
                 .thenReturn(true);
 
@@ -334,8 +335,8 @@ class AgentSpecOperationServiceImplTest {
         v2.setVersion("v2");
         versions.setPageItems(java.util.List.of(v2));
         when(aiResourcePersistService.find(eq(namespaceId), eq("测试坐席"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("测试坐席"), anyInt(), anyInt()))
-                .thenReturn(versions);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("测试坐席"), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("测试坐席"), anyString(), eq(3L), any()))
                 .thenReturn(true);
 
@@ -442,8 +443,8 @@ class AgentSpecOperationServiceImplTest {
         Page<AiResourceVersion> versions = new Page<>();
         versions.setPageItems(List.of());
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(agentSpecName), anyInt(), anyInt()))
-                .thenReturn(versions);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versions);
 
         AgentSpecMeta result = service.getAgentSpecDetail(namespaceId, agentSpecName);
 
@@ -465,7 +466,7 @@ class AgentSpecOperationServiceImplTest {
         metaPage.setTotalCount(1);
         metaPage.setPagesAvailable(1);
         metaPage.setPageNumber(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), eq(1), eq(10)))
+        when(aiResourcePersistService.list(any(), eq(1), eq(10)))
                 .thenReturn(metaPage);
 
         Page<AgentSpecSummary> result = service.listAgentSpecs(namespaceId, null, null, 1, 10);

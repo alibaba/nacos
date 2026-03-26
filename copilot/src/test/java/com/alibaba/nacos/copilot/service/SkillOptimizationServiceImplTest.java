@@ -278,7 +278,7 @@ class SkillOptimizationServiceImplTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("Test description");
-        skill.setInstruction("Test instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: Test description\n---\n\nTest instruction");
         request.setSkill(skill);
         request.setTargetFileName("SKILL.md");
         return request;

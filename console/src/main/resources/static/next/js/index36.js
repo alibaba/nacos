@@ -1,0 +1,1 @@
+import{z as n,A as o,r as p}from"./vendor-react.js";function m(){const s=n(),[e]=o();return p.useEffect(()=>{const t=e.get("promptKey")||"",r=e.get("namespaceId")||e.get("namespace")||"",a=new URLSearchParams({mode:"version"});t&&a.set("promptKey",t),r&&a.set("namespaceId",r),s(`/newPrompt?${a}`,{replace:!0})},[s,e]),null}export{m as default};

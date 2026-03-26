@@ -35,7 +35,7 @@ public class SkillGenerationPrompt {
         3. 根据 Agent Skill 的最佳实践，生成一个完整、高质量、可直接使用的 Skill，包括：
            - name: Skill 名称（使用下划线命名，snake_case，简洁明了）
            - description: Skill 描述（准确、简洁、有吸引力，说明 Skill 的核心功能）
-           - instruction: Agent 指令（清晰、具体、可执行，详细说明 Skill 如何工作）
+           - skillMd: 完整 SKILL.md 内容（包含 front matter 与正文）
            - resource: 资源映射（如果需要，包含必要的模板、数据等资源）
         4. 确保生成的 Skill 符合以下最佳实践：
            - 指令（instruction）应该清晰、具体、可执行，包含详细的步骤和逻辑
@@ -92,7 +92,7 @@ public class SkillGenerationPrompt {
            - 在 instruction 中明确说明工具调用的步骤和流程（如果使用了工具）
         
         请以 JSON 格式返回生成结果，只包含 skill 字段：
-        - skill: 生成的完整 Skill 对象（必须包含所有字段：name, description, instruction, resource）
+        - skill: 生成的完整 Skill 对象（必须包含所有字段：name, description, skillMd, resource）
           resource 字段是一个 Map<String, SkillResource>，其中：
           - key 是资源名称（resource name）
           - value 是 SkillResource 对象，包含：name, type, content, metadata
@@ -102,7 +102,7 @@ public class SkillGenerationPrompt {
           "skill": {
             "name": "skill_name",
             "description": "Skill description",
-            "instruction": "Detailed instruction...",
+            "skillMd": "---\\nname: skill_name\\ndescription: Skill description\\n---\\n\\nDetailed instruction...",
             "resource": {
               "resource_key": {
                 "name": "resource_file.json",

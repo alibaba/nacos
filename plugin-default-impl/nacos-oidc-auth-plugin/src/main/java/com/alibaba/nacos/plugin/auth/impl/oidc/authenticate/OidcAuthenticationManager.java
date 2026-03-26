@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.authenticate;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authorization.AuthorizationClient;
 import com.alibaba.nacos.plugin.auth.impl.oidc.authorization.AuthorizationRequest;
@@ -111,7 +112,7 @@ public class OidcAuthenticationManager {
 
         if (StringUtils.isBlank(token)) {
             // Try accessToken parameter
-            token = identityContext.getParameter(OidcConstants.ACCESS_TOKEN_PARAM, "");
+            token = identityContext.getParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM, "");
         }
 
         if (StringUtils.isBlank(token)) {
@@ -128,9 +129,9 @@ public class OidcAuthenticationManager {
      * @return token string or null
      */
     private String extractBearerToken(IdentityContext identityContext) {
-        String authHeader = identityContext.getParameter(OidcConstants.AUTHORIZATION_HEADER, "");
-        if (StringUtils.isNotBlank(authHeader) && authHeader.startsWith(OidcConstants.BEARER_PREFIX)) {
-            return authHeader.substring(OidcConstants.BEARER_PREFIX.length());
+        String authHeader = identityContext.getParameter(OidcProtocolConstants.AUTHORIZATION_HEADER, "");
+        if (StringUtils.isNotBlank(authHeader) && authHeader.startsWith(OidcProtocolConstants.BEARER_PREFIX)) {
+            return authHeader.substring(OidcProtocolConstants.BEARER_PREFIX.length());
         }
         return null;
     }

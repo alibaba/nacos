@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { stripFrontmatter } from '@/lib/markdown-utils';
 import {
   Sparkles,
   Loader2,
@@ -130,7 +131,7 @@ export function SkillOptimizeDialog({
       skill: {
         name: skill.name,
         description: skill.description,
-        instruction: skill.instruction,
+        skillMd: skill.skillMd,
         resource: skill.resource,
       },
       targetFileName,
@@ -176,6 +177,9 @@ export function SkillOptimizeDialog({
 
         if (result) {
           result = filterSkillMdFromResources(result);
+          if (!result.skillMd && (result as unknown as { instruction?: string }).instruction) {
+            result.skillMd = (result as unknown as { instruction: string }).instruction;
+          }
           setOptimizedSkill(result);
         } else {
           setOptimizeError(data.explanation || t('skill.optimizeFailed'));
@@ -196,7 +200,7 @@ export function SkillOptimizeDialog({
     onApply({
       ...skill,
       description: optimizedSkill.description || skill.description,
-      instruction: optimizedSkill.instruction || skill.instruction,
+      skillMd: optimizedSkill.skillMd || skill.skillMd,
       resource: optimizedSkill.resource || skill.resource,
     });
     handleClose(false);
@@ -308,9 +312,11 @@ export function SkillOptimizeDialog({
             </h3>
             <div className="app-markdown rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
               <Markdown remarkPlugins={[remarkGfm]}>
-                {targetFileName === SKILL_MD_VALUE
-                  ? skill.instruction || ''
-                  : skill.resource?.[targetFileName]?.content || ''}
+                {stripFrontmatter(
+                  targetFileName === SKILL_MD_VALUE
+                    ? skill.skillMd || ''
+                    : skill.resource?.[targetFileName]?.content || ''
+                )}
               </Markdown>
             </div>
           </div>
@@ -326,7 +332,7 @@ export function SkillOptimizeDialog({
               {optimizedSkill ? (
                 <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                   <Markdown remarkPlugins={[remarkGfm]}>
-                    {optimizedSkill.instruction || ''}
+                    {stripFrontmatter(optimizedSkill.skillMd || '')}
                   </Markdown>
                 </div>
               ) : streamContent ? (

@@ -59,10 +59,27 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       output: {
         entryFileNames: 'js/main.js',
-        chunkFileNames: 'js/[name]-[hash].js',
+        chunkFileNames: 'js/[name].js',
         assetFileNames: (info) => {
           if (info.name?.endsWith('.css')) return 'css/main.css';
           return 'assets/[name]-[hash][extname]';
+        },
+        manualChunks(id) {
+          // Merge all lucide-react icons into one chunk
+          if (id.includes('lucide-react')) {
+            return 'vendor-icons';
+          }
+          // Merge Monaco Editor core + languages into one chunk
+          if (id.includes('monaco-editor')) {
+            return 'vendor-monaco';
+          }
+          // Merge major vendor libs
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom')) return 'vendor-react';
+            if (id.includes('/react/') || id.includes('react-router') || id.includes('react-i18next') || id.includes('i18next')) return 'vendor-react';
+            if (id.includes('@radix-ui') || id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui';
+            if (id.includes('react-markdown') || id.includes('remark') || id.includes('rehype') || id.includes('unified') || id.includes('mdast') || id.includes('hast') || id.includes('micromark') || id.includes('@uiw/react-md-editor')) return 'vendor-markdown';
+          }
         },
       },
     },

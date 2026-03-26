@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,7 +9,6 @@ import {
   History,
   Plus,
   Package,
-  Hash,
   Clock,
   Tag,
   Globe,
@@ -60,7 +59,7 @@ import {
 import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { agentSpecApi } from '@/api/agentspec';
-import { parseBizTags, parsePipelineInfo, type AgentSpecDocument, type AgentSpecResource } from '@/types/agentspec';
+import { parseBizTags, parsePipelineInfo, type AgentSpecDocument, type AgentSpecResource, type AgentSpecVersionSummary } from '@/types/agentspec';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 
@@ -71,6 +70,7 @@ import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
 import { BizTagEditDialog } from '@/components/ai/BizTagEditDialog';
 import { PipelineStatusDisplay } from '../skillManagement/components/PipelineStatusDisplay';
 import { DetailTagChip } from '@/components/ai/DetailTagChip';
+import { CliCommandCard } from '@/components/ai/CliCommandCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   resolveCreateLocation,
@@ -345,6 +345,29 @@ export default function AgentSpecDetailPage() {
     await loadDetail();
   };
 
+  // Build CLI commands for current agentspec (must be before early returns to keep hooks order stable)
+  const cliCommands = useMemo(() => {
+    const cmds: { label: string; command: string }[] = [];
+    cmds.push({
+      label: t('common.cliUsage.latest'),
+      command: `npx @nacos-group/cli agentspec-get ${agentSpecName}`,
+    });
+    if (selectedVersion) {
+      cmds.push({
+        label: t('common.cliUsage.byVersion'),
+        command: `npx @nacos-group/cli agentspec-get ${agentSpecName} --version ${selectedVersion}`,
+      });
+    }
+    const detailLatest = currentDetail?.labels?.latest;
+    if (detailLatest) {
+      cmds.push({
+        label: t('common.cliUsage.byLabel'),
+        command: `npx @nacos-group/cli agentspec-get ${agentSpecName} --label latest`,
+      });
+    }
+    return cmds;
+  }, [agentSpecName, selectedVersion, currentDetail?.labels?.latest, t]);
+
   // ===== Loading skeleton =====
   if (detailLoading && !currentDetail) {
     return (
@@ -395,8 +418,25 @@ export default function AgentSpecDetailPage() {
   };
   const versions = sortVersionsDescending(detail.versions || []);
   const latestVersion = detail.labels?.latest;
-  const displayVersion = selectedVersion || '-';
-  const versionOptions = versions;
+  const versionOptions = (() => {
+    const seen = new Set<string>();
+    const result: AgentSpecVersionSummary[] = [];
+
+    if (selectedVersion) {
+      seen.add(selectedVersion);
+      const current = versions.find((item) => item.version === selectedVersion);
+      if (current) result.push(current);
+    }
+
+    for (const item of versions) {
+      if (!seen.has(item.version)) {
+        seen.add(item.version);
+        result.push(item);
+      }
+    }
+
+    return result;
+  })();
   const currentVersionSummary = versionOptions.find((item) => item.version === selectedVersion);
   const currentVersionStatus = currentVersionSummary?.status;
   const currentPipelineInfo = parsePipelineInfo(currentVersionSummary?.publishPipelineInfo);
@@ -942,7 +982,9 @@ export default function AgentSpecDetailPage() {
                             onClick={() => handleSubmit(selectedVersion)}
                           >
                             <Send className="h-3 w-3" />
-                            {t('agentSpec.submit')}
+                            {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED'
+                              ? t('agentSpec.resubmit')
+                              : t('agentSpec.submit')}
                           </Button>
                           <Button
                             variant="outline"
@@ -954,6 +996,9 @@ export default function AgentSpecDetailPage() {
                             <Trash2 className="h-3 w-3" />
                             {t('agentSpec.deleteDraft')}
                           </Button>
+                          {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                            <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact translationPrefix="agentSpec" />
+                          )}
                         </>
                       )}
                     </>
@@ -961,15 +1006,22 @@ export default function AgentSpecDetailPage() {
 
                   {/* Reviewing actions */}
                   {currentVersionStatus === 'reviewing' && (
-                    <Button
-                      size="sm"
-                      className="h-7 text-xs gap-1.5"
-                      disabled={actionLoading}
-                      onClick={() => handlePublish(selectedVersion)}
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      {t('agentSpec.publish')}
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={actionLoading || !!(currentPipelineInfo && currentPipelineInfo.status !== 'APPROVED')}
+                        onClick={() => handlePublish(selectedVersion)}
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {currentPipelineInfo && currentPipelineInfo.status === 'IN_PROGRESS'
+                          ? t('agentSpec.pipelineInProgress')
+                          : t('agentSpec.publish')}
+                      </Button>
+                      {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
+                        <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact translationPrefix="agentSpec" />
+                      )}
+                    </>
                   )}
 
                   {/* Online actions */}
@@ -1081,6 +1133,8 @@ export default function AgentSpecDetailPage() {
             </Card>
 
             <div className="space-y-4 lg:w-[320px]">
+              <CliCommandCard commands={cliCommands} />
+
               {/* Basic info card */}
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30">
@@ -1090,8 +1144,7 @@ export default function AgentSpecDetailPage() {
                   </h2>
                 </div>
                 <CardContent className="p-0">
-                  <div className="grid grid-cols-1 divide-y divide-border">
-                    <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
+                  <div className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l border-border">
                     <InfoCell
                       compact
                       label={t('agentSpec.status')}
@@ -1108,6 +1161,24 @@ export default function AgentSpecDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {currentPipelineInfo && (
+                <Card className="overflow-hidden py-0 gap-0">
+                  <div className="px-4 py-3 border-b bg-muted/30">
+                    <h2 className="text-sm font-semibold flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      {t('agentSpec.pipelineStatus')}
+                    </h2>
+                  </div>
+                  <CardContent className="p-3.5">
+                    <PipelineStatusDisplay
+                      pipelineInfo={currentPipelineInfo}
+                      translationPrefix="agentSpec"
+                      onRefresh={() => loadDetail()}
+                    />
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
@@ -1137,33 +1208,7 @@ export default function AgentSpecDetailPage() {
                 </CardContent>
               </Card>
 
-              <BizTagEditDialog
-                open={bizTagDialogOpen}
-                onOpenChange={setBizTagDialogOpen}
-                tags={bizTags}
-                placeholder={t('agentSpec.bizTagPlaceholder')}
-                emptyText={t('agentSpec.noBizTags')}
-                onSave={handleSaveBizTags}
-              />
-
-              {currentPipelineInfo && (
-                <Card className="overflow-hidden py-0 gap-0">
-                  <div className="px-4 py-3 border-b bg-muted/30">
-                    <h2 className="text-sm font-semibold flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 text-muted-foreground" />
-                      {t('agentSpec.pipelineStatus')}
-                    </h2>
-                  </div>
-                  <CardContent className="p-3.5">
-                    <PipelineStatusDisplay
-                      pipelineInfo={currentPipelineInfo}
-                      translationPrefix="agentSpec"
-                      onRefresh={() => loadDetail()}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
+              {/* Labels card */}
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
                   <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -1196,15 +1241,6 @@ export default function AgentSpecDetailPage() {
                 </CardContent>
               </Card>
 
-              {selectedVersion && (
-                <LabelBindDialog
-                  open={labelDialogOpen}
-                  onOpenChange={setLabelDialogOpen}
-                  version={selectedVersion}
-                  allLabels={detail.labels ?? {}}
-                  onSave={handleSaveLabels}
-                />
-              )}
             </div>
           </div>
         </TabsContent>
@@ -1236,6 +1272,8 @@ export default function AgentSpecDetailPage() {
             </Card>
 
             <div className="space-y-4 lg:w-[320px]">
+              <CliCommandCard commands={cliCommands} />
+
               {/* Basic info card */}
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30">
@@ -1245,8 +1283,7 @@ export default function AgentSpecDetailPage() {
                   </h2>
                 </div>
                 <CardContent className="p-0">
-                  <div className="grid grid-cols-1 divide-y divide-border">
-                    <InfoCell compact label={t('agentSpec.version')} value={displayVersion} icon={<Hash className="h-3.5 w-3.5" />} />
+                  <div className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l border-border">
                     <InfoCell
                       compact
                       label={t('agentSpec.status')}
@@ -1263,10 +1300,107 @@ export default function AgentSpecDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {currentPipelineInfo && (
+                <Card className="overflow-hidden py-0 gap-0">
+                  <div className="px-4 py-3 border-b bg-muted/30">
+                    <h2 className="text-sm font-semibold flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      {t('agentSpec.pipelineStatus')}
+                    </h2>
+                  </div>
+                  <CardContent className="p-3.5">
+                    <PipelineStatusDisplay
+                      pipelineInfo={currentPipelineInfo}
+                      translationPrefix="agentSpec"
+                      onRefresh={() => loadDetail()}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.bizTags')}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setBizTagDialogOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+                <CardContent className="p-3.5">
+                  {bizTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {bizTags.map((tag) => (
+                        <DetailTagChip key={tag} label={tag} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('agentSpec.noBizTags')}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden py-0 gap-0">
+                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    {t('common.versionLabels.title')}
+                  </h2>
+                  {selectedVersion && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setLabelDialogOpen(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <CardContent className="p-3.5">
+                  {currentVersionLabels.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentVersionLabels.map(([key]) => (
+                        <DetailTagChip key={key} label={key} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t('common.versionLabels.noLabels')}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
       </Tabs>
+
+      <BizTagEditDialog
+        open={bizTagDialogOpen}
+        onOpenChange={setBizTagDialogOpen}
+        tags={bizTags}
+        placeholder={t('agentSpec.bizTagPlaceholder')}
+        emptyText={t('agentSpec.noBizTags')}
+        onSave={handleSaveBizTags}
+      />
+
+      {selectedVersion && (
+        <LabelBindDialog
+          open={labelDialogOpen}
+          onOpenChange={setLabelDialogOpen}
+          version={selectedVersion}
+          allLabels={detail.labels ?? {}}
+          onSave={handleSaveLabels}
+        />
+      )}
 
       <Sheet open={versionSheetOpen} onOpenChange={setVersionSheetOpen}>
         <SheetContent className="flex flex-col p-0 sm:max-w-md">

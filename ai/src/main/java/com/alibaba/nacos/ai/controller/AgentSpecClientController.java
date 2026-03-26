@@ -36,6 +36,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * AgentSpec client controller for runtime read query.
  *
@@ -69,7 +71,7 @@ public class AgentSpecClientController {
      * Get an online agentspec version by label/version/latest.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.OPEN_API, tags = {ALLOW_ANONYMOUS})
     public Result<AgentSpec> get(AgentSpecQueryForm form) throws NacosException {
         form.validate();
         return Result.success(

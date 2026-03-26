@@ -43,12 +43,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class SkillUtils {
 
-    private static final String NEWLINE = "\n";
     private static final String EMPTY_STRING = "";
-    private static final String COLON = ":";
-    private static final String DOUBLE_QUOTE = "\"";
-    private static final String SINGLE_QUOTE = "'";
-    private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
 
     private static final String METADATA_ENCODING = "encoding";
 
@@ -87,7 +82,7 @@ public class SkillUtils {
     }
 
     /**
-     * Convert Skill object to SKILL.md markdown content.
+     * Get full SKILL.md markdown content from skill.
      *
      * @param skill the Skill object to convert
      * @return SKILL.md markdown content
@@ -97,47 +92,7 @@ public class SkillUtils {
             return EMPTY_STRING;
         }
 
-        StringBuilder markdown = new StringBuilder();
-
-        // YAML front matter
-        markdown.append("---\n");
-        markdown.append("name: ").append(escapeYamlValue(skill.getName())).append("\n");
-        markdown.append("description: ").append(escapeYamlValue(skill.getDescription())).append("\n");
-        markdown.append("---\n\n");
-
-        // Instruction content
-        if (!StringUtils.isBlank(skill.getInstruction())) {
-            String instruction = skill.getInstruction().trim();
-            markdown.append(instruction);
-            // Ensure there's a newline at the end if instruction doesn't end with one
-            if (!instruction.isEmpty() && !instruction.endsWith(NEWLINE)) {
-                markdown.append(NEWLINE);
-            }
-        }
-
-        return markdown.toString();
-    }
-
-    /**
-     * Escape YAML value to handle special characters.
-     * If value contains special characters (colon, quotes, newlines), wrap it in double quotes.
-     *
-     * @param value the value to escape
-     * @return escaped YAML value
-     */
-    private static String escapeYamlValue(String value) {
-        if (value == null) {
-            return EMPTY_STRING;
-        }
-
-        // If value contains special characters, wrap in double quotes
-        if (value.contains(COLON) || value.contains(DOUBLE_QUOTE) || value.contains(SINGLE_QUOTE)
-            || value.contains(NEWLINE)) {
-            // Escape double quotes in the value
-            return DOUBLE_QUOTE + value.replace(DOUBLE_QUOTE, ESCAPED_DOUBLE_QUOTE) + DOUBLE_QUOTE;
-        }
-
-        return value;
+        return skill.getSkillMd() == null ? EMPTY_STRING : skill.getSkillMd();
     }
 
     /**

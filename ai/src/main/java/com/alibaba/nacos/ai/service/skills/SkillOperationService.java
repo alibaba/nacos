@@ -47,6 +47,21 @@ public interface SkillOperationService {
     }
 
     /**
+     * Upload skill from zip file with original upload file name.
+     *
+     * @param namespaceId namespace ID
+     * @param zipBytes zip file bytes
+     * @param zipFileName uploaded zip file name (optional, used to infer version)
+     * @param overwrite whether to overwrite the current editable draft when the skill already exists
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName, boolean overwrite)
+            throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite);
+    }
+
+    /**
      * Upload skill from zip file.
      *
      * @param namespaceId namespace ID

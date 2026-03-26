@@ -50,7 +50,8 @@ export const skillApi = {
   /** Upload skill from ZIP */
   upload: (namespaceId: string, file: File): ApiResult<string> => {
     const formData = new FormData();
-    formData.append('file', file);
+    // Pass filename explicitly so backend can reliably read original upload filename.
+    formData.append('file', file, file.name);
     formData.append('namespaceId', namespaceId);
     return client.post(`${BASE}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

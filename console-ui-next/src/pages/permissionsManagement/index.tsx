@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 import { authApi } from '@/api/auth';
-import type { PermissionItem } from '@/api/auth';
+import type { PermissionItem, RoleItem } from '@/api/auth';
 import { namespaceApi } from '@/api/namespace';
 import type { Namespace } from '@/api/namespace';
 
@@ -25,6 +25,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { ComboInput } from '@/components/ui/combo-input';
 
 const ACTION_OPTIONS = [
   { value: 'r', labelKey: 'authority.actionRead' },
@@ -55,6 +56,10 @@ export default function PermissionsManagementPage() {
 
   // Namespace list for resource dropdown
   const [namespaces, setNamespaces] = useState<Namespace[]>([]);
+
+  // Role list for role dropdown
+  const [allRoles, setAllRoles] = useState<string[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   // Delete dialog
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -98,6 +103,21 @@ export default function PermissionsManagementPage() {
   useEffect(() => {
     fetchNamespaces();
   }, [fetchNamespaces]);
+
+  const fetchAllRoles = useCallback(async () => {
+    setRolesLoading(true);
+    try {
+      const response = await authApi.listRoles({ pageNo: 1, pageSize: 500, search: 'blur' });
+      const body = response as unknown as { data: { pageItems: RoleItem[]; totalCount: number } };
+      const items = body.data?.pageItems || [];
+      const uniqueRoles = [...new Set(items.map((r) => r.role))];
+      setAllRoles(uniqueRoles);
+    } catch {
+      setAllRoles([]);
+    } finally {
+      setRolesLoading(false);
+    }
+  }, []);
 
   const handleSearch = () => {
     setSearchRole(localRole);
@@ -177,7 +197,7 @@ export default function PermissionsManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-foreground">{t('authority.permissionManagement')}</h1>
-        <Button onClick={() => { setNewRole(''); setNewResource(''); setNewAction(''); setCreateOpen(true); }} className="gap-2">
+        <Button onClick={() => { setNewRole(''); setNewResource(''); setNewAction(''); fetchAllRoles(); setCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
           {t('authority.addPermission')}
         </Button>
@@ -344,10 +364,13 @@ export default function PermissionsManagementPage() {
                 {t('authority.role')}
                 <span className="text-destructive ml-1">*</span>
               </Label>
-              <Input
-                placeholder={t('authority.rolePlaceholder')}
+              <ComboInput
                 value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
+                onChange={setNewRole}
+                options={allRoles.map((r) => ({ value: r, label: r }))}
+                placeholder={t('authority.selectRolePlaceholder')}
+                loading={rolesLoading}
+                loadingText={t('common.loading')}
               />
             </div>
             <div className="flex flex-col gap-2">

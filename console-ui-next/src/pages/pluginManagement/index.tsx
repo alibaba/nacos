@@ -32,6 +32,9 @@ const PLUGIN_TYPE_KEYS: Record<string, string> = {
   'trace': 'plugin.typeTrace',
   'environment': 'plugin.typeEnvironment',
   'control': 'plugin.typeControl',
+  'ai-pipeline': 'plugin.typeAiPipeline',
+  'ai-storage': 'plugin.typeAiStorage',
+  'visibility': 'plugin.typeVisibility',
 };
 
 export default function PluginManagementPage() {

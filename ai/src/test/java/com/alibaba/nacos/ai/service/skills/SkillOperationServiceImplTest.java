@@ -40,9 +40,12 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterPluginManager;
-import com.alibaba.nacos.plugin.datafilter.spi.DataFilterService;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
+import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
+import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
+import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityPluginManager;
+import com.alibaba.nacos.plugin.visibility.spi.VisibilityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +57,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,10 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -113,9 +113,9 @@ class SkillOperationServiceImplTest {
 
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT = EnvUtil.getEnvironment();
 
-    private MockedStatic<DataFilterPluginManager> dataFilterManagerStatic;
+    private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
 
-    private DataFilterPluginManager mockDataFilterManager;
+    private VisibilityPluginManager mockVisibilityManager;
 
     @BeforeEach
     void setUp() {
@@ -131,16 +131,16 @@ class SkillOperationServiceImplTest {
                 Executors.newSingleThreadExecutor());
         skillOperationService = new SkillOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository, manifestService);
-        mockDataFilterManager = mock(DataFilterPluginManager.class);
-        lenient().when(mockDataFilterManager.findFilterService(anyString())).thenReturn(Optional.empty());
-        dataFilterManagerStatic = org.mockito.Mockito.mockStatic(DataFilterPluginManager.class);
-        dataFilterManagerStatic.when(DataFilterPluginManager::getInstance).thenReturn(mockDataFilterManager);
+        mockVisibilityManager = mock(VisibilityPluginManager.class);
+        lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
     }
 
     @AfterEach
     void tearDown() {
-        if (dataFilterManagerStatic != null) {
-            dataFilterManagerStatic.close();
+        if (visibilityManagerStatic != null) {
+            visibilityManagerStatic.close();
         }
         EnvUtil.setEnvironment(CACHED_ENVIRONMENT);
     }
@@ -154,7 +154,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setStatus("enable");
-        meta.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta.setBizTags("[\"retail\"]");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
@@ -171,7 +171,7 @@ class SkillOperationServiceImplTest {
         assertEquals(1, skillDetail.getOnlineCnt());
         assertEquals("v1", skillDetail.getLabels().get("latest"));
         assertEquals("[\"retail\"]", skillDetail.getBizTags());
-        assertEquals(DataFilterConstants.SCOPE_PUBLIC, skillDetail.getScope());
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, skillDetail.getScope());
         assertNotNull(skillDetail.getVersions());
     }
     
@@ -239,8 +239,7 @@ class SkillOperationServiceImplTest {
         metaPage.setTotalCount(1);
         metaPage.setPageNumber(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
-                .thenReturn(metaPage);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
         
         // When
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
@@ -250,7 +249,7 @@ class SkillOperationServiceImplTest {
         assertEquals(1, result.getPageNumber());
         assertEquals(1, result.getPageItems().size());
         assertEquals("[\"ops\"]", result.getPageItems().get(0).getBizTags());
-        assertEquals(DataFilterConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, result.getPageItems().get(0).getScope());
     }
     
     @Test
@@ -266,6 +265,23 @@ class SkillOperationServiceImplTest {
         // Then
         assertNotNull(result);
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
+    }
+    
+    @Test
+    void testUploadSkillFromZipWithInvalidSkillNameShouldBeRejected() throws IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithSkillNameAndVersion("Test_Skill", "3.0.6");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.uploadSkillFromZip(namespaceId, zipBytes));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
+                exception.getErrMsg());
+        verify(aiResourcePersistService, never()).insert(any());
+        verify(aiResourceVersionPersistService, never()).insert(any());
     }
 
     @Test
@@ -321,7 +337,158 @@ class SkillOperationServiceImplTest {
 
         assertEquals("test-skill", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "test-skill".equals(inserted.getName()) && "v3".equals(inserted.getVersion())));
+                && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesMetaJsonVersionWhenMetadataMissing() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersionWithMeta("1.1.3");
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "1.1.3".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesFrontmatterMetadataVersion() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithNestedMetadataVersion("1.0");
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "1.0".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesMetadataVersionWhenBothPresent() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.6".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipUsesDefaultVersionWhenCannotInfer() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersion();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "0.0.1".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipBumpsPatchWhenCandidateVersionAlreadyExists() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        final byte[] zipBytes = createValidZipBytes(); // metadata version = 3.0.6
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.6");
+        com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v2.setVersion("3.0.7");
+        versions.setPageItems(List.of(v1, v2));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.8".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipBumpsPatchWhenCandidateNotGreaterThanMax() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytes("3.0.5");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.7");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.5".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipKeepsLowerVersionWhenNotExisting() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytes("3.0.6");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.7");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "3.0.6".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testBootstrapSkillFromZipUsesMetadataVersion() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createValidZipBytes(); // metadata version = 3.0.6
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(null);
+
+        skillOperationService.bootstrapSkillFromZip(namespaceId, zipBytes);
+
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())
+                && "online".equals(inserted.getStatus())));
     }
     
     /**
@@ -331,7 +498,7 @@ class SkillOperationServiceImplTest {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setDescription("Test description");
-        skill.setInstruction("Test instruction");
+        skill.setSkillMd("---\nname: test-skill\ndescription: Test description\n---\n\nTest instruction");
         return skill;
     }
     
@@ -363,6 +530,39 @@ class SkillOperationServiceImplTest {
      * Create valid zip bytes for testing.
      */
     private byte[] createValidZipBytes() throws IOException {
+        return createZipBytes("3.0.6");
+    }
+
+    private byte[] createZipBytesWithoutVersion() throws IOException {
+        return createZipBytes(null);
+    }
+
+    private byte[] createZipBytesWithoutVersionWithMeta(String metaVersion) throws IOException {
+        return createZipBytesWithMeta(null, metaVersion);
+    }
+
+    private byte[] createZipBytes(String version) throws IOException {
+        return createZipBytesWithMeta(version, null);
+    }
+    
+    private byte[] createZipBytesWithSkillNameAndVersion(String skillName, String version) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                    + "name: " + skillName + "\n"
+                    + "description: Test skill description\n"
+                    + (version == null ? "" : "version: " + version + "\n")
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    private byte[] createZipBytesWithMeta(String version, String metaVersion) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             // Add SKILL.md
@@ -371,6 +571,38 @@ class SkillOperationServiceImplTest {
             String skillMd = "---\n"
                     + "name: test-skill\n"
                     + "description: Test skill description\n"
+                    + (version == null ? "" : "version: " + version + "\n")
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+            if (metaVersion != null) {
+                ZipEntry metaEntry = new ZipEntry("_meta.json");
+                zos.putNextEntry(metaEntry);
+                String metaJson = "{\n"
+                        + "  \"ownerId\": \"kn7akgt520t01vgs2tzx7yk6m180kt26\",\n"
+                        + "  \"slug\": \"baidu-search\",\n"
+                        + "  \"version\": \"" + metaVersion + "\",\n"
+                        + "  \"publishedAt\": 1773828934466\n"
+                        + "}";
+                zos.write(metaJson.getBytes());
+                zos.closeEntry();
+            }
+        }
+        return baos.toByteArray();
+    }
+
+    private byte[] createZipBytesWithNestedMetadataVersion(String metadataVersion) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                    + "name: test-skill\n"
+                    + "description: Test skill description\n"
+                    + "metadata:\n"
+                    + "  author: example-org\n"
+                    + "  version: \"" + metadataVersion + "\"\n"
                     + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
@@ -387,6 +619,7 @@ class SkillOperationServiceImplTest {
         IdentityContext identityContext = new IdentityContext();
         identityContext.setParameter(Constants.Identity.IDENTITY_ID, username);
         authContext.setIdentityContext(identityContext);
+        authContext.setApiType("ADMIN_API");
     }
 
     @Test
@@ -396,28 +629,29 @@ class SkillOperationServiceImplTest {
         meta1.setName("skill-public");
         meta1.setNamespaceId(namespaceId);
         meta1.setType("skill");
-        meta1.setScope(DataFilterConstants.SCOPE_PUBLIC);
+        meta1.setScope(VisibilityConstants.SCOPE_PUBLIC);
         meta1.setOwner("userA");
         AiResource meta2 = new AiResource();
         meta2.setName("skill-private");
         meta2.setNamespaceId(namespaceId);
         meta2.setType("skill");
-        meta2.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta2.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta2.setOwner("userA");
 
-        Page<AiResource> metaPage = new Page<>();
-        metaPage.setPageItems(List.of(meta1, meta2));
-        metaPage.setTotalCount(2);
-        metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
-                .thenReturn(metaPage);
-
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
-                .thenReturn(Collections.singletonList(meta1));
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
-
+        QueryAdvisor advisor = new QueryAdvisor();
+        advisor.setBasePredicate(BaseVisibilityPredicate.PUBLIC);
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.adviseQuery(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any())).thenReturn(
+                advisor);
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
         setupRequestContext("userB");
+
+        Page<AiResource> metaPage = new Page<>();
+        metaPage.setPageItems(List.of(meta1));
+        metaPage.setTotalCount(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
         assertEquals("skill-public", result.getPageItems().get(0).getName());
@@ -432,19 +666,68 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_READ), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("otherUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> skillOperationService.getSkillDetail(namespaceId, skillName));
-        assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testQuerySkillDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.querySkill(namespaceId, skillName, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(manifestService, never()).query(namespaceId, skillName);
+    }
+    
+    @Test
+    void testGetSkillVersionDetailDeniedByReadFilterShouldReturnNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "private-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
+        meta.setOwner("ownerUser");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_READ), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        
+        setupRequestContext("otherUser");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.getSkillVersionDetail(namespaceId, skillName, version));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+        verify(aiResourceVersionPersistService, never()).find(anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -455,14 +738,14 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -496,8 +779,7 @@ class SkillOperationServiceImplTest {
         metaPage.setPageItems(List.of(meta));
         metaPage.setTotalCount(1);
         metaPage.setPagesAvailable(1);
-        when(aiResourcePersistService.list(eq(namespaceId), anyString(), any(), any(), isNull(), eq(1), eq(10)))
-                .thenReturn(metaPage);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
 
         Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, 1, 10);
         assertEquals(1, result.getPageItems().size());
@@ -511,16 +793,16 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         meta.setMetaVersion(1L);
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -538,15 +820,74 @@ class SkillOperationServiceImplTest {
         Skill initial = new Skill();
         initial.setName(skillName);
         initial.setDescription("desc");
-        initial.setInstruction("inst");
+        initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\n---\n\ninst");
         initial.setNamespaceId(namespaceId);
         String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
-        assertEquals("v1", version);
+        assertEquals("0.0.1", version);
 
         org.mockito.ArgumentCaptor<com.alibaba.nacos.ai.model.AiResourceVersion> vCaptor =
                 org.mockito.ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.AiResourceVersion.class);
         verify(aiResourceVersionPersistService).insert(vCaptor.capture());
         assertEquals("myUser", vCaptor.getValue().getAuthor());
+    }
+
+    @Test
+    void testCreateDraftUsesMetadataVersionForBrandNewSkill() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "brand-new-skill";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(null);
+
+        Skill initial = new Skill();
+        initial.setName(skillName);
+        initial.setDescription("desc");
+        initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\nversion: 2.1.3\n---\n\ninst");
+        initial.setNamespaceId(namespaceId);
+
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, initial);
+
+        assertEquals("2.1.3", version);
+        verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())));
+    }
+
+    @Test
+    void testCreateDraftDefaultsToMaxPatchIncrement() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setOwner("ownerUser");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"1.1.3\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion("1.1.3");
+        com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v2.setVersion("1.2.0");
+        versions.setPageItems(List.of(v, v2));
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+                .thenReturn(versions);
+
+        com.alibaba.nacos.ai.model.AiResourceVersion baseVersion = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        baseVersion.setVersion("1.1.3");
+        baseVersion.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:1.1.3\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq("1.1.3")))
+                .thenReturn(baseVersion);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+                ("---\nname: my-skill\ndescription: Test skill description\nversion: 1.1.3\n---\n\nbody")
+                        .getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(2L), any()))
+                .thenReturn(true);
+
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null);
+
+        assertEquals("1.2.1", version);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "1.2.1".equals(inserted.getVersion())));
     }
 
     @Test
@@ -557,7 +898,7 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         when(aiResourcePersistService.updateScope(eq(namespaceId), eq(skillName), eq("skill"), eq("PUBLIC")))
@@ -575,14 +916,14 @@ class SkillOperationServiceImplTest {
         meta.setName(skillName);
         meta.setType("skill");
         meta.setNamespaceId(namespaceId);
-        meta.setScope(DataFilterConstants.SCOPE_PRIVATE);
+        meta.setScope(VisibilityConstants.SCOPE_PRIVATE);
         meta.setOwner("ownerUser");
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
 
-        DataFilterService mockFilter = mock(DataFilterService.class);
-        when(mockFilter.filter(anyString(), eq(DataFilterConstants.ACTION_WRITE), isNull(), anyList()))
-                .thenReturn(Collections.emptyList());
-        when(mockDataFilterManager.findFilterService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
+        VisibilityService mockFilter = mock(VisibilityService.class);
+        when(mockFilter.validateVisibility(anyString(), eq(VisibilityConstants.ACTION_WRITE), anyString(), any()))
+                .thenReturn(ValidationResult.deny("denied"));
+        when(mockVisibilityManager.findVisibilityService("nacos-default-ai")).thenReturn(Optional.of(mockFilter));
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,

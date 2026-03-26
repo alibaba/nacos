@@ -107,13 +107,21 @@ client.interceptors.response.use(
     }
     return response.data;
   },
-  (error: AxiosError<{ message?: string }>) => {
+  (error: AxiosError<{ message?: string; data?: string }>) => {
     const status = error.response?.status;
     const message = error.response?.data?.message?.toLowerCase() || '';
+    const dataStr = typeof error.response?.data?.data === 'string'
+      ? error.response.data.data.toLowerCase()
+      : '';
     
     // Handle 401/403 with session expired messages
+    // Check both `message` and `data` fields since the server may wrap
+    // the real reason (e.g. "token expired!") inside the `data` field
+    // while `message` is a generic "access denied".
     if (status === 401 || status === 403) {
-      const isSessionExpired = SESSION_EXPIRED_MESSAGES.some(msg => message.includes(msg));
+      const isSessionExpired = SESSION_EXPIRED_MESSAGES.some(
+        msg => message.includes(msg) || dataStr.includes(msg)
+      );
       if (isSessionExpired) {
         localStorage.removeItem('token');
         window.location.hash = '#/login';

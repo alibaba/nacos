@@ -24,18 +24,20 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
 /**
  * File-based (application.properties) implementation of {@link PipelineConfigProvider}.
  *
  * <p>Reads configuration from EnvUtil with the following keys:
  * <ul>
- *   <li>{@code nacos.ai.pipeline.enabled} - boolean, default false</li>
- *   <li>{@code nacos.ai.pipeline.nodes} - comma-separated pipeline IDs</li>
- *   <li>{@code nacos.ai.pipeline.node.{pipelineId}.props} - comma-separated property key names</li>
- *   <li>{@code nacos.ai.pipeline.node.{pipelineId}.{key}} - individual property values</li>
+ *   <li>{@code nacos.plugin.{pluginName}.enabled} - whether this pipeline plugin is enabled</li>
+ *   <li>{@code nacos.plugin.{pluginName}.type} - property namespace under this plugin, for example {@code nacos}</li>
+ *   <li>{@code nacos.plugin.{pluginName}.{type}.{key}} - individual property values passed to the builder</li>
  * </ul>
  *
  * <p>Follows the singleton pattern like PushConfig.
@@ -47,13 +49,11 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig implements
     
     private static final String CONFIG_NAME = "PipelineConfig";
     
-    private static final String KEY_ENABLED = "nacos.ai.pipeline.enabled";
+    private static final String KEY_PLUGIN_PREFIX = "nacos.plugin.";
     
-    private static final String KEY_NODES = "nacos.ai.pipeline.nodes";
+    private static final String KEY_ENABLED_SUFFIX = ".enabled";
     
-    private static final String KEY_NODE_PREFIX = "nacos.ai.pipeline.node.";
-    
-    private static final String KEY_PROPS_SUFFIX = ".props";
+    private static final String KEY_TYPE_SUFFIX = ".type";
     
     private static final FilePipelineConfigProvider INSTANCE = new FilePipelineConfigProvider();
     
@@ -81,28 +81,10 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig implements
     @Override
     protected void getConfigFromEnv() {
         try {
-            boolean enabled = EnvUtil.getProperty(KEY_ENABLED, Boolean.class, false);
-            String nodesStr = EnvUtil.getProperty(KEY_NODES, "");
-            
-            List<PipelineNodeConfig> nodes;
-            if (StringUtils.isBlank(nodesStr)) {
-                nodes = Collections.emptyList();
-            } else {
-                String[] nodeIds = nodesStr.split(",");
-                nodes = new ArrayList<>(nodeIds.length);
-                for (String nodeId : nodeIds) {
-                    String trimmedId = nodeId.trim();
-                    if (StringUtils.isNotBlank(trimmedId)) {
-                        PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
-                        nodeConfig.setPipelineId(trimmedId);
-                        nodeConfig.setProperties(readNodeProperties(trimmedId));
-                        nodes.add(nodeConfig);
-                    }
-                }
-            }
+            List<PipelineNodeConfig> nodes = readEnabledPluginNodes();
             
             PipelineConfig config = new PipelineConfig();
-            config.setEnabled(enabled);
+            config.setEnabled(!nodes.isEmpty());
             config.setNodes(nodes);
             this.currentConfig = config;
         } catch (Exception e) {
@@ -115,30 +97,65 @@ public class FilePipelineConfigProvider extends AbstractDynamicConfig implements
     }
     
     /**
-     * Read custom properties for a specific pipeline node.
+     * Read enabled pipeline plugin definitions from {@code nacos.plugin.*} properties.
      *
-     * <p>Reads {@code nacos.ai.pipeline.node.{pipelineId}.props} as a comma-separated list of property key names,
-     * then reads each {@code nacos.ai.pipeline.node.{pipelineId}.{key}} value.
+     * <p>The plugin name is treated as the pipeline ID. Only plugins with
+     * {@code nacos.plugin.{pluginName}.enabled=true} are included.
+     * The property namespace is selected by {@code nacos.plugin.{pluginName}.type}, and all
+     * nested keys under {@code nacos.plugin.{pluginName}.{type}.} are passed to the builder.
      *
-     * @param pipelineId the pipeline node ID
-     * @return properties for this node, empty if no props configured
+     * @return enabled pipeline plugin configurations sorted by plugin name for deterministic behavior
      */
-    private Properties readNodeProperties(String pipelineId) {
+    private List<PipelineNodeConfig> readEnabledPluginNodes() {
+        Properties allProperties = EnvUtil.getProperties();
+        if (allProperties == null || allProperties.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<String, Properties> pluginPropertyMap = new TreeMap<>();
+        for (String propertyName : allProperties.stringPropertyNames()) {
+            if (!propertyName.startsWith(KEY_PLUGIN_PREFIX) || !propertyName.endsWith(KEY_ENABLED_SUFFIX)) {
+                continue;
+            }
+            String pluginName = propertyName.substring(KEY_PLUGIN_PREFIX.length(),
+                    propertyName.length() - KEY_ENABLED_SUFFIX.length());
+            if (StringUtils.isBlank(pluginName)) {
+                continue;
+            }
+            boolean enabled = Boolean.parseBoolean(allProperties.getProperty(propertyName));
+            if (!enabled) {
+                continue;
+            }
+            pluginPropertyMap.put(pluginName, readNodeProperties(pluginName, allProperties));
+        }
+        if (pluginPropertyMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<PipelineNodeConfig> nodes = new ArrayList<>(pluginPropertyMap.size());
+        pluginPropertyMap.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
+                .forEach(entry -> {
+                    PipelineNodeConfig nodeConfig = new PipelineNodeConfig();
+                    nodeConfig.setPipelineId(entry.getKey());
+                    nodeConfig.setProperties(entry.getValue());
+                    nodes.add(nodeConfig);
+                });
+        return nodes;
+    }
+    
+    private Properties readNodeProperties(String pluginName, Properties allProperties) {
         Properties properties = new Properties();
-        String propsKey = KEY_NODE_PREFIX + pipelineId + KEY_PROPS_SUFFIX;
-        String propsStr = EnvUtil.getProperty(propsKey, "");
-        if (StringUtils.isBlank(propsStr)) {
+        String pluginPrefix = KEY_PLUGIN_PREFIX + pluginName;
+        String type = allProperties.getProperty(pluginPrefix + KEY_TYPE_SUFFIX);
+        if (StringUtils.isBlank(type)) {
             return properties;
         }
-        String[] propKeys = propsStr.split(",");
-        for (String propKey : propKeys) {
-            String trimmedKey = propKey.trim();
-            if (StringUtils.isNotBlank(trimmedKey)) {
-                String fullKey = KEY_NODE_PREFIX + pipelineId + "." + trimmedKey;
-                String value = EnvUtil.getProperty(fullKey);
-                if (value != null) {
-                    properties.setProperty(trimmedKey, value);
-                }
+        String propertyPrefix = pluginPrefix + "." + type + ".";
+        for (String propertyName : allProperties.stringPropertyNames()) {
+            if (!propertyName.startsWith(propertyPrefix)) {
+                continue;
+            }
+            String propertyKey = propertyName.substring(propertyPrefix.length());
+            if (StringUtils.isNotBlank(propertyKey)) {
+                properties.setProperty(propertyKey, allProperties.getProperty(propertyName));
             }
         }
         return properties;

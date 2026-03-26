@@ -285,6 +285,34 @@ class DefaultParamCheckerTest {
         assertTrue(actual.isSuccess());
     }
     
+    @Test
+    void testCheckParamInfoForSkillName() {
+        ParamInfo paramInfo = new ParamInfo();
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        // Pattern
+        paramInfo.setSkillName("Skill_Name");
+        ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals(
+                "Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
+                actual.getMessage());
+        // Max Length
+        paramInfo.setSkillName(buildStringLength(65));
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Skill name must be 1-64 characters", actual.getMessage());
+        // Consecutive hyphens
+        paramInfo.setSkillName("test--skill");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Skill name must not contain consecutive hyphens (--)", actual.getMessage());
+        // Success
+        paramInfo.setSkillName("skill-name1");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertTrue(actual.isSuccess());
+    }
+    
     private String buildStringLength(int length) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < length; i++) {

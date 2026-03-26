@@ -32,7 +32,7 @@ export interface SkillGenerationPayload {
 export interface GeneratedSkill {
   name: string;
   description: string;
-  instruction: string;
+  skillMd: string;
   resource: Record<string, SkillResource>;
 }
 
@@ -50,7 +50,7 @@ export interface SkillOptimizationPayload {
   skill: {
     name: string;
     description: string;
-    instruction: string;
+    skillMd: string;
     resource: Record<string, SkillResource>;
   };
   optimizationGoal?: string;

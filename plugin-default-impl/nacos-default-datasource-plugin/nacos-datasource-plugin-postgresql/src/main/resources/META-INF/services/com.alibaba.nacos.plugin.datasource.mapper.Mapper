@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoAggrMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoBetaMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.ConfigInfoTagMapperByPostgresql

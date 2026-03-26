@@ -123,4 +123,8 @@ public class FieldConstant {
     public static final String ORDER_BY = "orderBy";
 
     public static final String ORDER_BY_DOWNLOAD_COUNT = "download_count";
+    
+    public static final String SCOPE = "scope";
+    
+    public static final String OWNER = "owner";
 }

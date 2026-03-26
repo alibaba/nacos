@@ -72,6 +72,8 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(Secured.class)) {
                 Secured secured = method.getAnnotation(Secured.class);
+                RequestContext requestContext = RequestContextHolder.getContext();
+                requestContext.getAuthContext().setApiType(secured.apiType().name());
                 // During Upgrading, Old Nacos server might not with server identity for some Inner API, follow old version logic.
                 if (ApiType.INNER_API.equals(secured.apiType()) && !innerApiAuthEnabled.isEnabled()) {
                     return null;
@@ -102,7 +104,6 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
                 AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
-                RequestContext requestContext = RequestContextHolder.getContext();
                 requestContext.getAuthContext().setIdentityContext(identityContext);
                 requestContext.getAuthContext().setResource(resource);
                 requestContext.getAuthContext().setAuthResult(result);

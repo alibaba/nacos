@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,10 +54,10 @@ public class SkillZipParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillZipParser.class);
     
     private static final String SKILL_MD_FILE = "SKILL.md";
+    /** UTF-8 BOM character that some editors prepend to files. Must be stripped before parsing. */
+    private static final char UTF8_BOM = '\uFEFF';
     /** macOS AppleDouble/resource fork metadata file prefix (e.g. ._LICENSE.txt). Should be excluded from skill zip. */
     private static final String MACOS_METADATA_PREFIX = "._";
-    private static final String INSTRUCTIONS_HEADER_WITH_SPACE = "## Instructions";
-    private static final String INSTRUCTIONS_HEADER_NO_SPACE = "##Instructions";
     private static final String DOUBLE_QUOTE = "\"";
     private static final String SINGLE_QUOTE = "'";
     private static final String DOUBLE_SINGLE_QUOTE = "''";
@@ -66,8 +67,8 @@ public class SkillZipParser {
     private static final String SLASH = "/";
     private static final String DOT = ".";
     /** Metadata key for binary resources: value "base64" means content is Base64-encoded. */
-    private static final String METADATA_ENCODING = "encoding";
-    private static final String METADATA_ENCODING_BASE64 = "base64";
+    public static final String METADATA_ENCODING = "encoding";
+    public static final String METADATA_ENCODING_BASE64 = "base64";
     
     /** File extensions treated as binary; content will be stored as Base64. */
     private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
@@ -101,6 +102,74 @@ public class SkillZipParser {
     
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
             "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
+
+    /**
+     * Parse YAML front matter map from full SKILL.md content.
+     *
+     * @param markdownContent full SKILL.md content
+     * @return parsed front matter map, empty when no valid front matter exists
+     */
+    public static Map<String, String> parseYamlFrontMatterFromMarkdown(String markdownContent) {
+        if (StringUtils.isBlank(markdownContent)) {
+            return new HashMap<>(2);
+        }
+        Matcher matcher = YAML_FRONT_MATTER.matcher(markdownContent);
+        if (!matcher.matches()) {
+            return new HashMap<>(2);
+        }
+        String yamlContent = matcher.group(1);
+        return parseYamlFrontMatter(yamlContent);
+    }
+
+    /**
+     * Resolve version using SKILL.md sibling _meta.json as compensation.
+     *
+     * <p>Priority:
+     * <ol>
+     *   <li>frontmatter {@code version} in SKILL.md</li>
+     *   <li>{@code _meta.json} in the same directory as SKILL.md, field {@code version}</li>
+     * </ol>
+     *
+     * <p>Returns {@code null} when no version can be inferred.</p>
+     */
+    public static String resolveVersionFromZip(byte[] zipBytes) {
+        if (zipBytes == null || zipBytes.length == 0) {
+            return null;
+        }
+        try {
+            List<ZipEntryData> entries = unzipToEntries(zipBytes);
+            ZipEntryData skillMdEntry = findSkillMdEntry(entries);
+            if (skillMdEntry == null) {
+                return null;
+            }
+            String skillMdContent = new String(skillMdEntry.data, StandardCharsets.UTF_8);
+            Map<String, String> yaml = parseYamlFrontMatterFromMarkdown(skillMdContent);
+            String version = yaml.get("version");
+            if (StringUtils.isNotBlank(version)) {
+                return version.trim();
+            }
+
+            String metaJsonPath = buildSiblingMetaJsonPath(skillMdEntry.name);
+            ZipEntryData metaEntry = findEntryByPath(entries, metaJsonPath);
+            if (metaEntry == null) {
+                return null;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> meta = JacksonUtils.toObj(new String(metaEntry.data, StandardCharsets.UTF_8), Map.class);
+            if (meta == null) {
+                return null;
+            }
+            Object metaVersion = meta.get("version");
+            if (metaVersion == null) {
+                return null;
+            }
+            String resolved = String.valueOf(metaVersion).trim();
+            return StringUtils.isBlank(resolved) ? null : resolved;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to resolve version from zip (fallback to default later): {}", e.getMessage());
+            return null;
+        }
+    }
     
     /**
      * Parse skill from zip file bytes. Zip size must not exceed {@link Constants.Skills#MAX_UPLOAD_ZIP_BYTES}.
@@ -134,7 +203,7 @@ public class SkillZipParser {
                 boolean endsWithSkillMd = name.endsWith(SKILL_MD_FILE);
                 boolean isSkillMd = isSkillMdFile || isSkillMdInSubdir;
                 if (endsWithSkillMd && isSkillMd) {
-                    skillMdContent = new String(entry.data, StandardCharsets.UTF_8);
+                    skillMdContent = stripBom(new String(entry.data, StandardCharsets.UTF_8));
                     break;
                 }
             }
@@ -207,6 +276,48 @@ public class SkillZipParser {
             }
         }
         return result;
+    }
+
+    private static ZipEntryData findSkillMdEntry(List<ZipEntryData> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return null;
+        }
+        for (ZipEntryData entry : entries) {
+            String name = entry.name;
+            if (isMacOsMetadataFile(name)) {
+                continue;
+            }
+            boolean isSkillMdFile = SKILL_MD_FILE.equals(name);
+            boolean isSkillMdInSubdir = name.endsWith(SLASH + SKILL_MD_FILE);
+            boolean endsWithSkillMd = name.endsWith(SKILL_MD_FILE);
+            if (endsWithSkillMd && (isSkillMdFile || isSkillMdInSubdir)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static String buildSiblingMetaJsonPath(String skillMdPath) {
+        if (StringUtils.isBlank(skillMdPath)) {
+            return "_meta.json";
+        }
+        int idx = skillMdPath.lastIndexOf(SLASH);
+        if (idx < 0) {
+            return "_meta.json";
+        }
+        return skillMdPath.substring(0, idx + 1) + "_meta.json";
+    }
+
+    private static ZipEntryData findEntryByPath(List<ZipEntryData> entries, String targetPath) {
+        if (entries == null || entries.isEmpty() || StringUtils.isBlank(targetPath)) {
+            return null;
+        }
+        for (ZipEntryData entry : entries) {
+            if (targetPath.equals(entry.name)) {
+                return entry;
+            }
+        }
+        return null;
     }
     
     /**
@@ -281,8 +392,13 @@ public class SkillZipParser {
         
         return resources;
     }
-    
-    private static boolean isBinaryResource(String fileName) {
+
+    /**
+     * check is binary
+     * @param fileName file name
+     * @return
+     */
+    public static boolean isBinaryResource(String fileName) {
         if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
             return false;
         }
@@ -329,18 +445,16 @@ public class SkillZipParser {
                     "Skill description is required in YAML front matter");
         }
         
-        String instruction = extractInstruction(instructionContent);
-        
-        if (StringUtils.isBlank(instruction)) {
+        if (StringUtils.isBlank(instructionContent)) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill instruction is required");
+                    "Skill markdown body is required");
         }
         
         Skill skill = new Skill();
         skill.setNamespaceId(namespaceId);
         skill.setName(name.trim());
         skill.setDescription(description.trim());
-        skill.setInstruction(instruction.trim());
+        skill.setSkillMd(markdownContent);
         
         return skill;
     }
@@ -356,10 +470,20 @@ public class SkillZipParser {
                 continue;
             }
             if (Character.isWhitespace(line.charAt(0)) && currentKey != null) {
+                String nestedLine = line.trim();
+                int nestedColonIndex = nestedLine.indexOf(':');
+                // Support one-level nested keys like:
+                // metadata:
+                //   version: 1.0.0
+                if (nestedColonIndex > 0) {
+                    String nestedKey = nestedLine.substring(0, nestedColonIndex).trim();
+                    String nestedValue = nestedLine.substring(nestedColonIndex + 1).trim();
+                    result.put(currentKey + "." + nestedKey, parseYamlScalarValue(nestedValue));
+                }
                 if (currentValue.length() > 0) {
                     currentValue.append(' ');
                 }
-                currentValue.append(line.trim());
+                currentValue.append(nestedLine);
                 result.put(currentKey, currentValue.toString());
                 continue;
             }
@@ -373,15 +497,7 @@ public class SkillZipParser {
             if (colonIndex > 0) {
                 String key = trimmedLine.substring(0, colonIndex).trim();
                 String value = trimmedLine.substring(colonIndex + 1).trim();
-                boolean hasDoubleQuotes = value.startsWith(DOUBLE_QUOTE) && value.endsWith(DOUBLE_QUOTE);
-                boolean hasSingleQuotes = value.startsWith(SINGLE_QUOTE) && value.endsWith(SINGLE_QUOTE);
-                if (hasDoubleQuotes) {
-                    value = value.substring(1, value.length() - 1);
-                    value = unescapeDoubleQuotedYamlValue(value);
-                } else if (hasSingleQuotes) {
-                    value = value.substring(1, value.length() - 1);
-                    value = value.replace(DOUBLE_SINGLE_QUOTE, SINGLE_QUOTE);
-                }
+                value = parseYamlScalarValue(value);
                 currentKey = key;
                 currentValue = new StringBuilder(value);
                 result.put(key, value);
@@ -391,6 +507,23 @@ public class SkillZipParser {
             currentValue = null;
         }
         
+        return result;
+    }
+
+    private static String parseYamlScalarValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        String result = value;
+        boolean hasDoubleQuotes = result.startsWith(DOUBLE_QUOTE) && result.endsWith(DOUBLE_QUOTE);
+        boolean hasSingleQuotes = result.startsWith(SINGLE_QUOTE) && result.endsWith(SINGLE_QUOTE);
+        if (hasDoubleQuotes) {
+            result = result.substring(1, result.length() - 1);
+            result = unescapeDoubleQuotedYamlValue(result);
+        } else if (hasSingleQuotes) {
+            result = result.substring(1, result.length() - 1);
+            result = result.replace(DOUBLE_SINGLE_QUOTE, SINGLE_QUOTE);
+        }
         return result;
     }
 
@@ -407,21 +540,6 @@ public class SkillZipParser {
         return value.replace(DOUBLE_BACKSLASH, BACKSLASH).replace(ESCAPED_DOUBLE_QUOTE, DOUBLE_QUOTE);
     }
     
-    private static String extractInstruction(String markdownContent) {
-        String content = markdownContent.trim();
-        boolean hasHeaderWithSpace = content.startsWith(INSTRUCTIONS_HEADER_WITH_SPACE);
-        boolean hasHeaderNoSpace = content.startsWith(INSTRUCTIONS_HEADER_NO_SPACE);
-        if (hasHeaderWithSpace || hasHeaderNoSpace) {
-            int headerEnd = content.indexOf('\n');
-            if (headerEnd > 0) {
-                content = content.substring(headerEnd).trim();
-            } else {
-                content = content.replaceFirst("##\\s*Instructions\\s*", "");
-            }
-        }
-        return content.trim();
-    }
-    
     private static boolean isMacOsMetadataFile(String itemName) {
         if (StringUtils.isBlank(itemName)) {
             return false;
@@ -429,5 +547,18 @@ public class SkillZipParser {
         int lastSlash = itemName.lastIndexOf('/');
         String fileName = lastSlash >= 0 ? itemName.substring(lastSlash + 1) : itemName;
         return fileName.startsWith(MACOS_METADATA_PREFIX);
+    }
+    
+    /**
+     * Strip UTF-8 BOM character from the beginning of a string if present.
+     *
+     * @param content the string to strip BOM from
+     * @return the string without leading BOM
+     */
+    private static String stripBom(String content) {
+        if (content != null && !content.isEmpty() && content.charAt(0) == UTF8_BOM) {
+            return content.substring(1);
+        }
+        return content;
     }
 }

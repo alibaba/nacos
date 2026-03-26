@@ -96,7 +96,7 @@ public class SkillRequestUtil {
     public static void validateSkill(Skill skill) throws NacosApiException {
         validateSkillField("name", skill.getName());
         validateSkillField("description", skill.getDescription());
-        validateSkillField("instruction", skill.getInstruction());
+        validateSkillField("skillMd", skill.getSkillMd());
     }
     
     private static void validateSkillField(String fieldName, String fieldValue) throws NacosApiException {

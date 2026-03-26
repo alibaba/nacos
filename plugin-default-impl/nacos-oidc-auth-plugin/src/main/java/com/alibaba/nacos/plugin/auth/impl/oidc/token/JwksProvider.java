@@ -18,8 +18,8 @@ package com.alibaba.nacos.plugin.auth.impl.oidc.token;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
-import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -142,7 +142,7 @@ public class JwksProvider {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != OidcConstants.HTTP_STATUS_OK) {
+            if (response.statusCode() != OidcProtocolConstants.HTTP_STATUS_OK) {
                 throw new IOException("Failed to fetch JWKS, status: " + response.statusCode());
             }
 
@@ -196,7 +196,7 @@ public class JwksProvider {
     private void discoverOidcConfiguration(String issuerUri) throws IOException {
         String discoveryUrl = issuerUri.endsWith("/")
                 ? issuerUri + ".well-known/openid-configuration"
-                : issuerUri + "/.well-known/openid-configuration";
+                : issuerUri + OidcProtocolConstants.WELL_KNOWN_PATH;
 
         LOGGER.info("Discovering OIDC configuration from: {}", discoveryUrl);
 
@@ -209,27 +209,27 @@ public class JwksProvider {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != OidcConstants.HTTP_STATUS_OK) {
+            if (response.statusCode() != OidcProtocolConstants.HTTP_STATUS_OK) {
                 throw new IOException("Failed to discover OIDC configuration, status: " + response.statusCode());
             }
 
             JsonNode root = JacksonUtils.toObj(response.body());
             if (root != null) {
-                if (root.has("jwks_uri")) {
-                    this.jwksUri = root.get("jwks_uri").asText();
+                if (root.has(OidcProtocolConstants.DISCOVERY_JWKS_URI)) {
+                    this.jwksUri = root.get(OidcProtocolConstants.DISCOVERY_JWKS_URI).asText();
                     config.setJwksUri(jwksUri);
                 }
-                if (root.has("authorization_endpoint")) {
-                    config.setAuthorizationEndpoint(root.get("authorization_endpoint").asText());
+                if (root.has(OidcProtocolConstants.DISCOVERY_AUTHORIZATION_ENDPOINT)) {
+                    config.setAuthorizationEndpoint(root.get(OidcProtocolConstants.DISCOVERY_AUTHORIZATION_ENDPOINT).asText());
                 }
-                if (root.has("token_endpoint")) {
-                    config.setTokenEndpoint(root.get("token_endpoint").asText());
+                if (root.has(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT)) {
+                    config.setTokenEndpoint(root.get(OidcProtocolConstants.DISCOVERY_TOKEN_ENDPOINT).asText());
                 }
-                if (root.has("userinfo_endpoint")) {
-                    config.setUserinfoEndpoint(root.get("userinfo_endpoint").asText());
+                if (root.has(OidcProtocolConstants.DISCOVERY_USERINFO_ENDPOINT)) {
+                    config.setUserinfoEndpoint(root.get(OidcProtocolConstants.DISCOVERY_USERINFO_ENDPOINT).asText());
                 }
-                if (root.has("end_session_endpoint")) {
-                    config.setEndSessionEndpoint(root.get("end_session_endpoint").asText());
+                if (root.has(OidcProtocolConstants.DISCOVERY_END_SESSION_ENDPOINT)) {
+                    config.setEndSessionEndpoint(root.get(OidcProtocolConstants.DISCOVERY_END_SESSION_ENDPOINT).asText());
                 }
             }
 

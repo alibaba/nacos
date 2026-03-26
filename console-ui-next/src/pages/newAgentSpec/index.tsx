@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LabelEditor } from '../agentSpecManagement/components/LabelEditor';
 import { FileTreePanel } from '../agentSpecManagement/components/FileTreePanel';
 import type { FileTreeNode } from '../agentSpecManagement/components/FileTreePanel';
 import { buildFileTree } from '../agentSpecManagement/components/file-tree-utils';
@@ -917,18 +916,6 @@ export default function NewAgentSpecPage() {
                 placeholder={t('agentSpec.descriptionPlaceholder')}
                 className="min-h-24 resize-y bg-transparent"
               />
-            </div>
-
-            <div className="space-y-2.5">
-              <Label className="text-sm font-medium">{t('agentSpec.labels')}</Label>
-              <div className="rounded-md border border-input/60 bg-muted/10 p-3">
-                <LabelEditor
-                  labels={draftLabels}
-                  onChange={setDraftLabels}
-                  onSave={setDraftLabels}
-                  showSaveButton={false}
-                />
-              </div>
             </div>
           </div>
 

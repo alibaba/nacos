@@ -17,9 +17,10 @@
 package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.plugin.datafilter.constant.DataFilterConstants;
+import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -71,9 +72,9 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
                 "version_info", "meta_version", "scope", "owner", "gmt_create@NOW()", "gmt_modified@NOW()"));
 
         Object[] args = new Object[] {resource.getName(), resource.getType(), resource.getDesc(), resource.getStatus(),
-                StringUtils.defaultEmptyIfBlank(resource.getNamespaceId()), resource.getBizTags(), resource.getExt(),
+                normalizeNamespaceId(resource.getNamespaceId()), resource.getBizTags(), resource.getExt(),
                 resource.getVersionInfo(), resource.getMetaVersion() == null ? 1L : resource.getMetaVersion(),
-                resource.getScope() == null ? DataFilterConstants.SCOPE_PRIVATE : resource.getScope(),
+                resource.getScope() == null ? VisibilityConstants.SCOPE_PRIVATE : resource.getScope(),
                 resource.getOwner() == null ? "" : resource.getOwner()};
 
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -96,37 +97,20 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
                 Arrays.asList("id", "gmt_create", "gmt_modified", "name", "type", "c_desc", "status", "namespace_id",
                         "biz_tags", "ext", "version_info", "meta_version", "scope", "owner", "download_count"),
                 Arrays.asList("namespace_id", "name", "type"));
-        return databaseOperate.queryOne(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type},
+        return databaseOperate.queryOne(sql, new Object[] {normalizeNamespaceId(namespaceId), name, type},
                 AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
     }
 
     @Override
-    public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo,
-            int pageSize) {
-        return list(namespaceId, type, nameLike, bizTagsLike, null, pageNo, pageSize);
-    }
-
-    @Override
-    public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, String orderBy,
-            int pageNo, int pageSize) {
+    public Page<AiResource> list(QueryCondition queryCondition, int pageNo, int pageSize) {
+        if (queryCondition == null) {
+            queryCondition = new QueryCondition();
+        }
         PaginationHelper<AiResource> helper = new EmbeddedPaginationHelperImpl<>(databaseOperate);
         AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
-
-        MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
-        context.putWhereParameter(FieldConstant.NAMESPACE_ID, StringUtils.defaultEmptyIfBlank(namespaceId));
-        if (StringUtils.isNotBlank(type)) {
-            context.putWhereParameter(FieldConstant.TYPE, type);
-        }
-        if (StringUtils.isNotBlank(nameLike)) {
-            context.putWhereParameter(FieldConstant.NAME, nameLike);
-        }
-        if (StringUtils.isNotBlank(bizTagsLike)) {
-            context.putWhereParameter(FieldConstant.BIZ_TAGS, bizTagsLike);
-        }
-        if (StringUtils.isNotBlank(orderBy)) {
-            context.putWhereParameter(FieldConstant.ORDER_BY, orderBy);
-        }
-
+        MapperContext context = buildListContext(queryCondition, pageNo, pageSize);
+        mergeQueryConditionToContext(context, queryCondition);
+        context.putWhereParameter(AiResourceMapper.QUERY_CONDITION_ALWAYS_EMPTY, queryCondition.isAlwaysEmpty());
         MapperResult count = mapper.findAiResourceCountRows(context);
         MapperResult fetch = mapper.findAiResourceFetchRows(context);
         return helper.fetchPageLimit(count, fetch, pageNo, pageSize, AiResourceRowMappers.AI_RESOURCE_ROW_MAPPER);
@@ -142,7 +126,7 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
                 + " WHERE namespace_id=? AND name=? AND type=? AND meta_version=?";
 
         Object[] args = new Object[] {newValue.getStatus(), newValue.getDesc(), newValue.getBizTags(), newValue.getExt(),
-                newValue.getVersionInfo(), StringUtils.defaultEmptyIfBlank(namespaceId), name, type, expectedMetaVersion};
+                newValue.getVersionInfo(), normalizeNamespaceId(namespaceId), name, type, expectedMetaVersion};
 
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         Boolean success = databaseOperate.blockUpdate();
@@ -163,7 +147,7 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
             return 0;
         }
 
-        EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+        EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {normalizeNamespaceId(namespaceId), name, type});
         Boolean success = databaseOperate.blockUpdate();
         if (success == null || !success) {
             return 0;
@@ -177,7 +161,7 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
         String sql = "UPDATE ai_resource SET scope=?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=?";
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {scope, StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+                new Object[] {scope, normalizeNamespaceId(namespaceId), name, type});
         Boolean success = databaseOperate.blockUpdate();
         return success != null && success;
     }
@@ -188,9 +172,46 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
         String sql = "UPDATE ai_resource SET download_count = download_count + ?, gmt_modified=" + mapper.getFunction("NOW()")
                 + " WHERE namespace_id=? AND name=? AND type=?";
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {increment, StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+                new Object[] {increment, normalizeNamespaceId(namespaceId), name, type});
         Boolean success = databaseOperate.blockUpdate();
         return success != null && success;
+    }
+    
+    private MapperContext buildListContext(QueryCondition queryCondition, int pageNo, int pageSize) {
+        MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
+        context.putWhereParameter(FieldConstant.NAMESPACE_ID, normalizeNamespaceId(queryCondition.getNamespaceId()));
+        return context;
+    }
+    
+    private void mergeQueryConditionToContext(MapperContext context, QueryCondition condition) {
+        if (context == null || condition == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(condition.getType())) {
+            context.putWhereParameter(FieldConstant.TYPE, condition.getType());
+        }
+        if (StringUtils.isNotBlank(condition.getNameLike())) {
+            context.putWhereParameter(FieldConstant.NAME, condition.getNameLike());
+        }
+        if (StringUtils.isNotBlank(condition.getBizTagsLike())) {
+            context.putWhereParameter(FieldConstant.BIZ_TAGS, condition.getBizTagsLike());
+        }
+        if (StringUtils.isNotBlank(condition.getScope())) {
+            context.putWhereParameter(FieldConstant.SCOPE, condition.getScope());
+        }
+        if (StringUtils.isNotBlank(condition.getOwner())) {
+            context.putWhereParameter(FieldConstant.OWNER, condition.getOwner());
+        }
+        if (StringUtils.isNotBlank(condition.getOrderBy())) {
+            context.putWhereParameter(FieldConstant.ORDER_BY, condition.getOrderBy());
+        }
+        if (condition.getOrGroup() != null && !condition.getOrGroup().isEmpty()) {
+            context.putWhereParameter(AiResourceMapper.QUERY_CONDITION_OR_GROUP, condition.getOrGroup());
+        }
+    }
+    
+    private String normalizeNamespaceId(String namespaceId) {
+        return StringUtils.isBlank(namespaceId) ? Constants.DEFAULT_NAMESPACE_ID : namespaceId;
     }
 }
 

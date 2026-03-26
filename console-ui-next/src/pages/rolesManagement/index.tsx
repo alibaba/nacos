@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 import { authApi } from '@/api/auth';
-import type { RoleItem } from '@/api/auth';
+import type { RoleItem, UserItem } from '@/api/auth';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ComboInput } from '@/components/ui/combo-input';
 
 export default function RolesManagementPage() {
   const { t } = useTranslation();
@@ -45,6 +46,8 @@ export default function RolesManagementPage() {
   const [newRole, setNewRole] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [saving, setSaving] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserItem[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
 
   // Delete dialog
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -75,6 +78,19 @@ export default function RolesManagementPage() {
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
+
+  const fetchAllUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const response = await authApi.listUsers({ pageNo: 1, pageSize: 500, search: 'blur' });
+      const body = response as unknown as { data: { pageItems: UserItem[]; totalCount: number } };
+      setAllUsers(body.data?.pageItems || []);
+    } catch {
+      setAllUsers([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
 
   const handleSearch = () => {
     setSearchRole(localRole);
@@ -130,7 +146,7 @@ export default function RolesManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-foreground">{t('authority.roleManagement')}</h1>
-        <Button onClick={() => { setNewRole(''); setNewUsername(''); setCreateOpen(true); }} className="gap-2">
+        <Button onClick={() => { setNewRole(''); setNewUsername(''); fetchAllUsers(); setCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
           {t('authority.bindRole')}
         </Button>
@@ -320,10 +336,13 @@ export default function RolesManagementPage() {
                 {t('authority.username')}
                 <span className="text-destructive ml-1">*</span>
               </Label>
-              <Input
-                placeholder={t('authority.usernamePlaceholder')}
+              <ComboInput
                 value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
+                onChange={setNewUsername}
+                options={allUsers.map((u) => ({ value: u.username, label: u.username }))}
+                placeholder={t('authority.selectUserPlaceholder')}
+                loading={usersLoading}
+                loadingText={t('common.loading')}
               />
             </div>
           </div>

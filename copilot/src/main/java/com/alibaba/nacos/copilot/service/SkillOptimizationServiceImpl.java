@@ -168,12 +168,12 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
         StringBuilder skillInfo = new StringBuilder();
         skillInfo.append("名称：").append(skill.getName()).append("\n");
         
-        // Check if target file is SKILL.md (instruction) or a resource file
+        // Check if target file is SKILL.md or a resource file
         boolean isSkillMd = SKILL_MD_FILE_NAME.equals(targetFileName) || SKILL_MD_KEY.equals(targetFileName);
         if (isSkillMd) {
-            // Target is SKILL.md, include description and instruction
+            // Target is SKILL.md, include description and full markdown content
             skillInfo.append("描述：").append(skill.getDescription()).append("\n");
-            skillInfo.append("指令：\n").append(skill.getInstruction()).append("\n");
+            skillInfo.append("SKILL.md：\n").append(skill.getSkillMd()).append("\n");
         } else if (skill.getResource() != null && !skill.getResource().isEmpty()) {
             // Target is a resource file, find and include only that resource
             boolean found = false;
@@ -314,7 +314,7 @@ public class SkillOptimizationServiceImpl implements SkillOptimizationService {
                     optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在 resource 字段中");
                     optimizationRequest.append("\n- 绝对不能创建名为 SKILL.md 的资源文件");
                     optimizationRequest.append("\n- 绝对不能将 SKILL.md 放在任何资源类型（template、data、script 等）下");
-                    optimizationRequest.append("\n- SKILL.md 是特殊的元数据文件，由 Skill 的 name、description 和 instruction 字段自动生成，不需要也不应该在 resource 中定义");
+                    optimizationRequest.append("\n- SKILL.md 是特殊的元数据文件，位于 skillMd 字段，不需要也不应该在 resource 中定义");
                     optimizationRequest.append("\n- 只能添加真正的资源文件（如 .json、.yaml、.txt 等），绝对不能添加 SKILL.md");
                 }
             }

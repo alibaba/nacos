@@ -69,10 +69,6 @@ public abstract class AbstractWebAuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        if (!isAuthEnabled()) {
-            chain.doFilter(request, response);
-            return;
-        }
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         Method method = methodsCache.getMethod(req);
@@ -87,7 +83,13 @@ public abstract class AbstractWebAuthFilter implements Filter {
         
         try {
             Secured secured = method.getAnnotation(Secured.class);
+            RequestContext requestContext = RequestContextHolder.getContext();
+            requestContext.getAuthContext().setApiType(secured.apiType().name());
             if (!isMatchFilter(secured)) {
+                chain.doFilter(request, response);
+                return;
+            }
+            if (!isAuthEnabled()) {
                 chain.doFilter(request, response);
                 return;
             }
@@ -113,7 +115,6 @@ public abstract class AbstractWebAuthFilter implements Filter {
             Resource resource = protocolAuthService.parseResource(req, secured);
             IdentityContext identityContext = protocolAuthService.parseIdentity(req);
             AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
-            RequestContext requestContext = RequestContextHolder.getContext();
             requestContext.getAuthContext().setIdentityContext(identityContext);
             requestContext.getAuthContext().setResource(resource);
             requestContext.getAuthContext().setAuthResult(result);

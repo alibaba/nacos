@@ -50,6 +50,8 @@ public class ParamInfo {
     
     private String agentName;
     
+    private String skillName;
+    
     public String getNamespaceShowName() {
         return namespaceShowName;
     }
@@ -152,5 +154,13 @@ public class ParamInfo {
     
     public void setAgentName(String agentName) {
         this.agentName = agentName;
+    }
+    
+    public String getSkillName() {
+        return skillName;
+    }
+    
+    public void setSkillName(String skillName) {
+        this.skillName = skillName;
     }
 }

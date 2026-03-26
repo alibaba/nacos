@@ -44,8 +44,6 @@ public class TableConstant {
     
     public static final String MIGRATE_CONFIG = "migrate_config";
     
-    public static final String CONFIG_INFO_AGGR = "config_info_aggr";
-
     public static final String AI_RESOURCE = "ai_resource";
 
     public static final String AI_RESOURCE_VERSION = "ai_resource_version";

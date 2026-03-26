@@ -57,6 +57,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
+
 /**
  * AgentSpec admin controller.
  *
@@ -129,7 +131,8 @@ public class AgentSpecAdminController {
      * @throws NacosException if the agentspec list fails
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
+            tags = {ALLOW_ANONYMOUS})
     public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
             throws NacosException {
         agentSpecListForm.validate();

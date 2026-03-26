@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.oidc.authorization;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.constant.OidcProtocolConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.config.OidcAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.oidc.constant.OidcConstants;
 import org.slf4j.Logger;
@@ -98,7 +99,7 @@ public class AuthorizationClient {
             HttpResponse<String> response = httpClient.send(httpRequest,
                     HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() == OidcConstants.HTTP_STATUS_OK) {
+            if (response.statusCode() == OidcProtocolConstants.HTTP_STATUS_OK) {
                 AuthorizationResponse authzResponse = AuthorizationResponse.fromJson(response.body());
                 LOGGER.debug("IdP authorization response: {}", authzResponse);
                 return authzResponse;

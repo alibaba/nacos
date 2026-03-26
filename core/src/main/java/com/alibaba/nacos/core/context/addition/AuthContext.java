@@ -36,6 +36,11 @@ public class AuthContext {
      */
     private AuthResult authResult;
     
+    /**
+     * API type parsed from {@link com.alibaba.nacos.auth.annotation.Secured#apiType()}.
+     */
+    private String apiType;
+    
     public IdentityContext getIdentityContext() {
         return identityContext;
     }
@@ -58,5 +63,13 @@ public class AuthContext {
     
     public void setAuthResult(AuthResult authResult) {
         this.authResult = authResult;
+    }
+    
+    public String getApiType() {
+        return apiType;
+    }
+    
+    public void setApiType(String apiType) {
+        this.apiType = apiType;
     }
 }

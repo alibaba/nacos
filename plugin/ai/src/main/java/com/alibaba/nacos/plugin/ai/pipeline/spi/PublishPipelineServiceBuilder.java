@@ -25,8 +25,8 @@ import java.util.Properties;
  * creating pipeline service implementations. Each pipeline plugin should implement this builder and
  * register it via SPI (META-INF/services).</p>
  *
- * <p>The {@link #build(Properties)} method receives per-node configuration properties from the
- * pipeline config (e.g. {@code nacos.ai.pipeline.node.{pipelineId}.*}), allowing each plugin
+ * <p>The {@link #build(Properties)} method receives per-plugin configuration properties from the
+ * pipeline config (for example {@code nacos.plugin.{pluginName}.{type}.*}), allowing each plugin
  * to be initialized with custom parameters such as API endpoints, timeouts, etc.</p>
  *
  * @author mosong.lp
