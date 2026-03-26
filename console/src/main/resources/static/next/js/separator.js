@@ -1,0 +1,1 @@
+import{r as l,j as m}from"./vendor-react.js";import{l as o}from"./vendor-ui.js";import{c as e}from"./button.js";const f=l.forwardRef(({className:a,orientation:r="horizontal",decorative:s=!0,...t},p)=>m.jsx(o,{ref:p,decorative:s,orientation:r,className:e("shrink-0 bg-border",r==="horizontal"?"h-[1px] w-full":"h-full w-[1px]",a),...t}));f.displayName=o.displayName;export{f as S};
