@@ -18,7 +18,10 @@ package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,10 +34,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -109,10 +116,14 @@ class ParamCheckerFilterTest {
         when(methodsCache.getMethod(request)).thenReturn(method);
         when(request.getParameter("dataId")).thenReturn("invalid@dataId");
         when(request.getRequestURI()).thenReturn("/test");
-        jakarta.servlet.ServletOutputStream outputStream = mock(jakarta.servlet.ServletOutputStream.class);
-        when(response.getOutputStream()).thenReturn(outputStream);
+        StringWriter responseBody = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(responseBody));
         filter.doFilter(request, response, chain);
         verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        Result<?> result = JacksonUtils.toObj(responseBody.toString(), Result.class);
+        assertNotNull(result);
+        assertEquals(20002, result.getCode());
+        assertEquals("parameter validate error", result.getMessage());
     }
 
     @Test
@@ -134,18 +145,24 @@ class ParamCheckerFilterTest {
 
     @Test
     void testGenerate400Response() throws IOException {
-        jakarta.servlet.ServletOutputStream outputStream = mock(jakarta.servlet.ServletOutputStream.class);
-        when(response.getOutputStream()).thenReturn(outputStream);
+        StringWriter responseBody = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(responseBody));
         filter.generate400Response(response, "invalid param");
         verify(response).setHeader("Pragma", "no-cache");
         verify(response).setDateHeader(eq("Expires"), eq(0L));
         verify(response).setHeader("Cache-Control", "no-cache,no-store");
+        verify(response).setContentType(MediaType.APPLICATION_JSON);
         verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        Result<?> result = JacksonUtils.toObj(responseBody.toString(), Result.class);
+        assertNotNull(result);
+        assertEquals(20002, result.getCode());
+        assertEquals("parameter validate error", result.getMessage());
+        assertEquals("invalid param", result.getData());
     }
 
     @Test
-    void testGenerate400ResponseWhenGetOutputStreamThrows() throws IOException {
-        when(response.getOutputStream()).thenThrow(new IOException("output error"));
+    void testGenerate400ResponseWhenGetWriterThrows() throws IOException {
+        when(response.getWriter()).thenThrow(new IOException("output error"));
         filter.generate400Response(response, "msg");
         verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
     }
