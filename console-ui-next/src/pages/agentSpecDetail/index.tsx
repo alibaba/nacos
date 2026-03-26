@@ -349,26 +349,12 @@ export default function AgentSpecDetailPage() {
 
   // Build CLI commands for current agentspec (must be before early returns to keep hooks order stable)
   const cliCommands = useMemo(() => {
-    const cmds: { label: string; command: string }[] = [];
-    cmds.push({
-      label: t('common.cliUsage.latest'),
-      command: `npx @nacos-group/cli agentspec-get ${agentSpecName}`,
-    });
-    if (selectedVersion) {
-      cmds.push({
-        label: t('common.cliUsage.byVersion'),
-        command: `npx @nacos-group/cli agentspec-get ${agentSpecName} --version ${selectedVersion}`,
-      });
-    }
-    const detailLatest = currentDetail?.labels?.latest;
-    if (detailLatest) {
-      cmds.push({
-        label: t('common.cliUsage.byLabel'),
-        command: `npx @nacos-group/cli agentspec-get ${agentSpecName} --label latest`,
-      });
-    }
-    return cmds;
-  }, [agentSpecName, selectedVersion, currentDetail?.labels?.latest, t]);
+    const versionFlag = selectedVersion ? ` --version ${selectedVersion}` : '';
+    return [{
+      label: t('common.cliUsage.cliInstall'),
+      command: `npx @nacos-group/cli agentspec-get ${agentSpecName}${versionFlag}`,
+    }];
+  }, [agentSpecName, selectedVersion, t]);
 
   // ===== Loading skeleton =====
   if (detailLoading && !currentDetail) {
@@ -1162,7 +1148,9 @@ export default function AgentSpecDetailPage() {
             </Card>
 
             <div className="space-y-4 lg:w-[320px]">
-              <CliCommandCard commands={cliCommands} />
+              {currentVersionStatus !== 'draft' && (
+                <CliCommandCard commands={cliCommands} />
+              )}
 
               {/* Basic info card */}
               <Card className="overflow-hidden py-0 gap-0">
@@ -1301,7 +1289,9 @@ export default function AgentSpecDetailPage() {
             </Card>
 
             <div className="space-y-4 lg:w-[320px]">
-              <CliCommandCard commands={cliCommands} />
+              {currentVersionStatus !== 'draft' && (
+                <CliCommandCard commands={cliCommands} />
+              )}
 
               {/* Basic info card */}
               <Card className="overflow-hidden py-0 gap-0">

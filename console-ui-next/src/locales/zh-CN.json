@@ -101,7 +101,12 @@
       "description": "编辑业务标签列表。"
     },
     "cliUsage": {
-      "title": "CLI 获取命令",
+      "title": "安装",
+      "cliInstall": "CLI 安装",
+      "cliDoc": "CLI 使用文档",
+      "downloadFile": "下载文件",
+      "manualDownload": "手动下载",
+      "downloadZip": "下载 .zip 文件",
       "description": "通过 Nacos CLI 在本地获取当前资源，需先安装 Node.js。",
       "copied": "命令已复制",
       "latest": "获取最新版本",

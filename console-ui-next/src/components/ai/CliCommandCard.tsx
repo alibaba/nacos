@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Terminal, Copy, Check } from 'lucide-react';
+import { Copy, Check, Download, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -15,34 +15,72 @@ interface CliCommand {
 interface CliCommandCardProps {
   commands: CliCommand[];
   className?: string;
+  /** When provided, renders a download ZIP button section */
+  onDownload?: () => void;
+  /** File name hint shown on the download button, e.g. "skill-name-1.0.0.zip" */
+  downloadFileName?: string;
+  /** Whether download is available (e.g. non-draft version selected) */
+  downloadDisabled?: boolean;
 }
 
-export function CliCommandCard({ commands, className }: CliCommandCardProps) {
+export function CliCommandCard({ commands, className, onDownload, downloadFileName, downloadDisabled }: CliCommandCardProps) {
   const { t } = useTranslation();
 
-  if (commands.length === 0) return null;
+  if (commands.length === 0 && !onDownload) return null;
 
   return (
     <Card className={cn('overflow-hidden py-0 gap-0', className)}>
       <div className="px-4 py-3 border-b bg-muted/30">
         <h2 className="text-sm font-semibold flex items-center gap-2">
-          <Terminal className="h-4 w-4 text-muted-foreground" />
+          <Download className="h-4 w-4 text-muted-foreground" />
           {t('common.cliUsage.title')}
         </h2>
       </div>
       <CardContent className="p-3.5 space-y-3">
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          {t('common.cliUsage.description')}
-        </p>
-        {commands.map((cmd, idx) => (
-          <CommandBlock key={idx} label={cmd.label} command={cmd.command} />
-        ))}
+        {/* Download ZIP section */}
+        {onDownload && (
+          <>
+            <p className="text-xs font-medium text-foreground">{t('common.cliUsage.manualDownload')}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              disabled={downloadDisabled}
+              onClick={onDownload}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {downloadFileName || t('common.cliUsage.downloadZip')}
+            </Button>
+          </>
+        )}
+
+        {/* CLI section */}
+        {commands.length > 0 && (
+          <>
+            {onDownload && <div className="border-t" />}
+            <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+              {t('common.cliUsage.cliInstall')}
+              <a
+                href="https://github.com/nacos-group/nacos-cli"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t('common.cliUsage.cliDoc')}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </p>
+            {commands.map((cmd, idx) => (
+              <CommandBlock key={idx} command={cmd.command} />
+            ))}
+          </>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function CommandBlock({ label, command }: { label: string; command: string }) {
+function CommandBlock({ command }: { command: string }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
@@ -68,7 +106,6 @@ function CommandBlock({ label, command }: { label: string; command: string }) {
 
   return (
     <div>
-      <p className="text-[11px] font-medium text-muted-foreground mb-1.5">{label}</p>
       <div className="group relative rounded-md bg-zinc-950 dark:bg-zinc-900 border border-zinc-800 overflow-hidden">
         <pre className="px-3 py-2.5 pr-10 text-[11px] leading-relaxed text-zinc-300 font-mono overflow-x-auto whitespace-pre-wrap break-all">
           <span className="text-emerald-400 select-none">$ </span>

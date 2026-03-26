@@ -101,7 +101,12 @@
       "description": "Edit the business tag list."
     },
     "cliUsage": {
-      "title": "CLI Command",
+      "title": "Install",
+      "cliInstall": "CLI Install",
+      "cliDoc": "CLI Documentation",
+      "downloadFile": "Download File",
+      "manualDownload": "Manual Download",
+      "downloadZip": "Download .zip",
       "description": "Get this resource locally via Nacos CLI. Requires Node.js.",
       "copied": "Command copied",
       "latest": "Get latest",

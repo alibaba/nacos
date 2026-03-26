@@ -549,26 +549,12 @@ export default function SkillDetailPage() {
 
   // Build CLI commands for current skill (must be before early returns to keep hooks order stable)
   const cliCommands = useMemo(() => {
-    const cmds: { label: string; command: string }[] = [];
-    cmds.push({
-      label: t('common.cliUsage.latest'),
-      command: `npx @nacos-group/cli skill-get ${skillName}`,
-    });
-    if (selectedVersion) {
-      cmds.push({
-        label: t('common.cliUsage.byVersion'),
-        command: `npx @nacos-group/cli skill-get ${skillName} --version ${selectedVersion}`,
-      });
-    }
-    const detailLatest = currentDetail?.labels?.latest;
-    if (detailLatest) {
-      cmds.push({
-        label: t('common.cliUsage.byLabel'),
-        command: `npx @nacos-group/cli skill-get ${skillName} --label latest`,
-      });
-    }
-    return cmds;
-  }, [skillName, selectedVersion, currentDetail?.labels?.latest, t]);
+    const versionFlag = selectedVersion ? ` --version ${selectedVersion}` : '';
+    return [{
+      label: t('common.cliUsage.cliInstall'),
+      command: `npx @nacos-group/cli skill-get ${skillName}${versionFlag}`,
+    }];
+  }, [skillName, selectedVersion, t]);
 
   // ===== Loading skeleton =====
   if (detailLoading && !currentDetail) {
@@ -720,18 +706,6 @@ export default function SkillDetailPage() {
                 <History className="mr-1 h-3 w-3" />
                 {t('skill.versionHistory')}
               </Button>
-
-              {selectedVersion && currentVersionStatus !== 'draft' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => handleDownload(selectedVersion)}
-                >
-                  <Download className="mr-1 h-3 w-3" />
-                  {t('skill.download')}
-                </Button>
-              )}
             </div>
           </div>
 
@@ -1099,7 +1073,11 @@ export default function SkillDetailPage() {
 
             {/* Right: Sidebar */}
             <div className="space-y-4 lg:w-[320px]">
-              <CliCommandCard commands={cliCommands} />
+              <CliCommandCard
+                commands={currentVersionStatus !== 'draft' ? cliCommands : []}
+                onDownload={selectedVersion ? () => handleDownload(selectedVersion) : undefined}
+                downloadFileName={selectedVersion ? `${skillName}-${selectedVersion}.zip` : undefined}
+              />
 
               {/* Basic info card */}
               <Card className="overflow-hidden py-0 gap-0">
@@ -1217,7 +1195,11 @@ export default function SkillDetailPage() {
               onChange={isEditingDraft ? setEditResources : undefined}
             />
             <div className="space-y-4 lg:w-[320px]">
-              <CliCommandCard commands={cliCommands} />
+              <CliCommandCard
+                commands={currentVersionStatus !== 'draft' ? cliCommands : []}
+                onDownload={selectedVersion ? () => handleDownload(selectedVersion) : undefined}
+                downloadFileName={selectedVersion ? `${skillName}-${selectedVersion}.zip` : undefined}
+              />
 
               <Card className="overflow-hidden py-0 gap-0">
                 <div className="px-4 py-3 border-b bg-muted/30">
