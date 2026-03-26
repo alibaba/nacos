@@ -82,7 +82,7 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
             idSql.append(") ");
         }
 
-        idSql.append(" OFFSET ")
+        idSql.append(" ORDER BY a.id OFFSET ")
                 .append(context.getStartRow())
                 .append(" ROWS FETCH NEXT ")
                 .append(context.getPageSize())
@@ -150,7 +150,7 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
             idQuery.and().in("a.type", types);
         }
 
-        idQuery.offset(context.getStartRow(), context.getPageSize());
+        idQuery.orderBy("a.id").offset(context.getStartRow(), context.getPageSize());
         MapperResult idResult = idQuery.build();
 
         // 构建外层查询：获取筛选出的配置的完整标签信息

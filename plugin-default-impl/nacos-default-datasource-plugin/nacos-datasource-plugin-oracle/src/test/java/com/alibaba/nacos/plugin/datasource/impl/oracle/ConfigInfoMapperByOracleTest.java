@@ -102,7 +102,7 @@ class ConfigInfoMapperByOracleTest {
     void testFindConfigInfoByAppFetchRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoByAppFetchRows(context);
         assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql().contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -117,7 +117,7 @@ class ConfigInfoMapperByOracleTest {
     void testGetTenantIdList() {
         MapperResult mapperResult = configInfoMapperByOracle.getTenantIdList(context);
         assertTrue(mapperResult.getSql().contains("SELECT tenant_id FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("GROUP BY tenant_id"));
+        assertTrue(mapperResult.getSql().contains("GROUP BY tenant_id ORDER BY tenant_id"));
         assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
     }
     
@@ -125,7 +125,7 @@ class ConfigInfoMapperByOracleTest {
     void testGetGroupIdList() {
         MapperResult mapperResult = configInfoMapperByOracle.getGroupIdList(context);
         assertTrue(mapperResult.getSql().contains("SELECT group_id FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("GROUP BY group_id"));
+        assertTrue(mapperResult.getSql().contains("GROUP BY group_id ORDER BY group_id"));
         assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
     }
     
@@ -222,7 +222,7 @@ class ConfigInfoMapperByOracleTest {
     void testFindConfigInfoBaseLikeFetchRows() {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoBaseLikeFetchRows(context);
         assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,tenant_id,content FROM config_info"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql().contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
@@ -240,7 +240,7 @@ class ConfigInfoMapperByOracleTest {
         String sql = mapperResult.getSql();
         assertTrue(sql.contains("WITH tag_agg AS"));
         assertTrue(sql.contains("LISTAGG"));
-        assertTrue(sql.contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(sql.contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -250,7 +250,7 @@ class ConfigInfoMapperByOracleTest {
         MapperResult mapperResult = configInfoMapperByOracle.findConfigInfoBaseByGroupFetchRows(context);
         assertTrue(mapperResult.getSql().contains("SELECT id,data_id,group_id,content FROM config_info"));
         assertTrue(mapperResult.getSql().contains("WHERE group_id=? AND tenant_id=?"));
-        assertTrue(mapperResult.getSql().contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(mapperResult.getSql().contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {groupId, tenantId}, mapperResult.getParamList().toArray());
     }
     
@@ -268,7 +268,7 @@ class ConfigInfoMapperByOracleTest {
         String sql = mapperResult.getSql();
         assertTrue(sql.contains("WITH tag_agg AS"));
         assertTrue(sql.contains("LISTAGG"));
-        assertTrue(sql.contains("OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
+        assertTrue(sql.contains("ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"));
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     

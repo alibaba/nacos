@@ -44,7 +44,7 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info"
-                + " WHERE tenant_id LIKE ? AND app_name= ?" + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
+                + " WHERE tenant_id LIKE ? AND app_name= ?" + " ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
                 + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, CollectionUtils.list(tenantId, appName));
     }
@@ -52,14 +52,14 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
     @Override
     public MapperResult getTenantIdList(MapperContext context) {
         String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '" + NamespaceUtil.getNamespaceDefaultId()
-                + "' GROUP BY tenant_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+                + "' GROUP BY tenant_id ORDER BY tenant_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, Collections.emptyList());
     }
 
     @Override
     public MapperResult getGroupIdList(MapperContext context) {
         String sql = "SELECT group_id FROM config_info WHERE tenant_id ='" + NamespaceUtil.getNamespaceDefaultId()
-                + "' GROUP BY group_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+                + "' GROUP BY group_id ORDER BY group_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, Collections.emptyList());
     }
 
@@ -177,7 +177,7 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
             paramList.add(content);
         }
         return new MapperResult(sqlFetchRows + where
-                + " OFFSET " + context.getStartRow()
+                + " ORDER BY id OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize()
                 + " ROWS ONLY",
                 paramList);
@@ -215,7 +215,7 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
         }
 
         // 先分页，减少后续 JOIN 的数据量
-        idSql.append(" OFFSET ").append(context.getStartRow()).append(" ROWS FETCH NEXT ").append(context.getPageSize()).append(" ROWS ONLY");
+        idSql.append(" ORDER BY id OFFSET ").append(context.getStartRow()).append(" ROWS FETCH NEXT ").append(context.getPageSize()).append(" ROWS ONLY");
 
         // 外层查询：对分页后的结果进行标签关联
         String sql =
@@ -238,7 +238,7 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
 
     @Override
     public MapperResult findConfigInfoBaseByGroupFetchRows(MapperContext context) {
-        String sql = "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?" + " OFFSET "
+        String sql = "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?" + " ORDER BY id OFFSET "
                 + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.GROUP_ID),
                 context.getWhereParameter(FieldConstant.TENANT_ID)));
@@ -287,7 +287,7 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
         }
 
         // 先分页，减少后续 JOIN 的数据量
-        idSql.append(" OFFSET ").append(context.getStartRow()).append(" ROWS FETCH NEXT ").append(context.getPageSize()).append(" ROWS ONLY");
+        idSql.append(" ORDER BY id OFFSET ").append(context.getStartRow()).append(" ROWS FETCH NEXT ").append(context.getPageSize()).append(" ROWS ONLY");
 
         // 外层查询：对分页后的结果进行标签关联
         String sql =
