@@ -46,8 +46,13 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
+import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
+import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.pipeline.model.SkillPipelineContext;
@@ -167,6 +172,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
         }
+        validateSkillNameByParamChecker(skill.getName());
         String uploadVersion = resolveUploadVersion(skill.getSkillMd(), zipBytes);
         if (overwrite) {
             return overwriteUploadedSkill(namespaceId, skill, uploadVersion);
@@ -196,6 +202,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
         }
+        validateSkillNameByParamChecker(skill.getName());
         String skillName = skill.getName();
         if (aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL) != null) {
             LOGGER.info("Skip built-in skill bootstrap because skill already exists: {}", skillName);
@@ -1222,6 +1229,18 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             newValue.setExt(latest.getExt());
         }
         throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT, "Meta update conflict, retry");
+    }
+    
+    private void validateSkillNameByParamChecker(String skillName) throws NacosApiException {
+        ParamInfo paramInfo = new ParamInfo();
+        paramInfo.setSkillName(skillName);
+        String checkerType = ServerParamCheckConfig.getInstance().getActiveParamChecker();
+        AbstractParamChecker paramChecker = ParamCheckerManager.getInstance().getParamChecker(checkerType);
+        ParamCheckResponse response = paramChecker.checkParamInfoList(Collections.singletonList(paramInfo));
+        if (!response.isSuccess()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    response.getMessage());
+        }
     }
 
     private void updateMetaBizTagsCas(String namespaceId, AiResource meta, String bizTags) throws NacosException {

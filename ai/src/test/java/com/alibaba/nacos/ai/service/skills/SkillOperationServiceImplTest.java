@@ -268,6 +268,21 @@ class SkillOperationServiceImplTest {
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
                 && "test-skill".equals(inserted.getName()) && "3.0.6".equals(inserted.getVersion())));
     }
+    
+    @Test
+    void testUploadSkillFromZipWithInvalidSkillNameShouldBeRejected() throws IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithSkillNameAndVersion("Test_Skill", "3.0.6");
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> skillOperationService.uploadSkillFromZip(namespaceId, zipBytes));
+        
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("Skill name may only contain lowercase letters, numbers, and hyphens, and must not start or end with a hyphen",
+                exception.getErrMsg());
+        verify(aiResourcePersistService, never()).insert(any());
+        verify(aiResourceVersionPersistService, never()).insert(any());
+    }
 
     @Test
     void testUploadSkillFromZipWithOverwriteUpdatesExistingDraft() throws NacosException, IOException {
@@ -528,6 +543,23 @@ class SkillOperationServiceImplTest {
 
     private byte[] createZipBytes(String version) throws IOException {
         return createZipBytesWithMeta(version, null);
+    }
+    
+    private byte[] createZipBytesWithSkillNameAndVersion(String skillName, String version) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry entry = new ZipEntry("SKILL.md");
+            zos.putNextEntry(entry);
+            String skillMd = "---\n"
+                    + "name: " + skillName + "\n"
+                    + "description: Test skill description\n"
+                    + (version == null ? "" : "version: " + version + "\n")
+                    + "---\n\n"
+                    + "This is a test instruction";
+            zos.write(skillMd.getBytes());
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
     }
 
     private byte[] createZipBytesWithMeta(String version, String metaVersion) throws IOException {
