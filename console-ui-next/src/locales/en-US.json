@@ -23,7 +23,9 @@
     "invalidUsernameOrPassword": "Invalid username or password",
     "passwordRequired": "Password should not be empty",
     "usernameRequired": "Username should not be empty",
-    "productDesc": "An easy-to-use dynamic service discovery, configuration and AI agent management platform for building AI agent applications"
+    "productDesc": "An easy-to-use dynamic service discovery, configuration and AI agent management platform for building AI agent applications",
+    "consoleClosed": "Console Closed",
+    "consoleClosedDesc": "The Nacos console has been closed."
   },
   "menu": {
     "configManagement": "Configuration",

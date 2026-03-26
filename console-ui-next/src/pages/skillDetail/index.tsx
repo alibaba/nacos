@@ -55,6 +55,7 @@ import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
 import { cn } from '@/lib/utils';
+import { stripFrontmatter } from '@/lib/markdown-utils';
 import dayjs from 'dayjs';
 
 import { SkillVersionTimeline } from '../skillManagement/components/SkillVersionTimeline';
@@ -972,7 +973,7 @@ export default function SkillDetailPage() {
                 ) : versionDoc?.skillMd ? (
                   <div className="app-markdown prose prose-sm dark:prose-invert max-w-none">
                     <Markdown remarkPlugins={[remarkGfm]}>
-                      {versionDoc.skillMd}
+                      {stripFrontmatter(versionDoc.skillMd)}
                     </Markdown>
                   </div>
                 ) : (

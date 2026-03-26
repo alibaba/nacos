@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import MDEditor from '@uiw/react-md-editor';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { stripFrontmatter } from '@/lib/markdown-utils';
 import {
   Sparkles,
   Loader2,
@@ -599,7 +600,7 @@ export function CreateSkillDialog({
                         </span>
                         <div className="app-markdown mt-1 rounded-md border bg-muted/20 p-3 max-h-[200px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
                           <Markdown remarkPlugins={[remarkGfm]}>
-                            {generatedSkill.skillMd}
+                            {stripFrontmatter(generatedSkill.skillMd)}
                           </Markdown>
                         </div>
                       </div>

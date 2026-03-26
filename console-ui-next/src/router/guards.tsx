@@ -1,18 +1,66 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getToken } from '@/lib/storage';
 import { useAuthStore } from '@/stores';
+import { useServerStore } from '@/stores/server-store';
+import { AlertTriangle } from 'lucide-react';
+
+/**
+ * ConsoleDisabledPage - Shown when nacos.console.ui.enabled=false
+ */
+function ConsoleDisabledPage() {
+  const { t } = useTranslation();
+  const { guideMsg } = useServerStore();
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100">
+      <div className="max-w-md w-full mx-4 bg-white rounded-xl shadow-lg p-8 text-center">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-4">
+          <AlertTriangle className="h-7 w-7 text-amber-600" />
+        </div>
+        <h1 className="text-xl font-semibold text-gray-800 mb-2">{t('login.consoleClosed')}</h1>
+        <p className="text-sm text-gray-500 mb-4">{t('login.consoleClosedDesc')}</p>
+        {guideMsg && (
+          <div
+            className="text-xs text-gray-400 leading-relaxed border-t pt-4"
+            dangerouslySetInnerHTML={{ __html: guideMsg }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 /**
  * AuthGuard - Protects routes that require authentication
- * Checks if token exists in localStorage, redirects to login if not
+ * Also checks if console UI is enabled
  */
 export function AuthGuard() {
   const token = getToken();
-  
+  const { consoleUiEnable, stateLoaded, fetchState, fetchGuide } = useServerStore();
+
+  // Fetch server state once on mount
+  useEffect(() => {
+    if (!stateLoaded) {
+      fetchState();
+      fetchGuide();
+    }
+  }, [stateLoaded, fetchState, fetchGuide]);
+
+  // Wait for state to load before making any decision
+  if (!stateLoaded) {
+    return null;
+  }
+
+  if (!consoleUiEnable) {
+    return <ConsoleDisabledPage />;
+  }
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <Outlet />;
 }
 

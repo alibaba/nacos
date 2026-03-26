@@ -1,0 +1,1 @@
+import{f as n,w as o,i as c,r as i}from"./main.js";function f(){const e=n(),[a]=o(),{functionMode:t}=c();return i.useEffect(()=>{const r=a.toString(),s=r?`?${r}`:"";t==="naming"?e(`/serviceManagement${s}`,{replace:!0}):e(`/configurationManagement${s}`,{replace:!0})},[t,e,a]),null}export{f as default};

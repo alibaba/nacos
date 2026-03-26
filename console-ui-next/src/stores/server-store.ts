@@ -32,7 +32,7 @@ const initialState: ServerState = {
   functionMode: '',
   loginPageEnabled: true,
   authEnabled: false,
-  consoleUiEnable: false,
+  consoleUiEnable: true,
   startupMode: '',
   configRetentionDays: 0,
   authAdminRequest: false,
