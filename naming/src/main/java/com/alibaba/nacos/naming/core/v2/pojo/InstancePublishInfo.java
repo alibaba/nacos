@@ -104,13 +104,13 @@ public class InstancePublishInfo implements Serializable {
             return false;
         }
         InstancePublishInfo that = (InstancePublishInfo) o;
-        return port == that.port && healthy == that.healthy && Objects.equals(ip, that.ip) && Objects
-                .equals(extendDatum, that.extendDatum);
+        return port == that.port && healthy == that.healthy && Objects.equals(ip, that.ip)
+                && Objects.equals(cluster, that.cluster) && Objects.equals(extendDatum, that.extendDatum);
     }
-    
+
     @Override
     public int hashCode() {
-        return Objects.hash(ip, port, extendDatum, healthy);
+        return Objects.hash(ip, port, healthy, cluster, extendDatum);
     }
     
     @Override
