@@ -18,11 +18,13 @@ package com.alibaba.nacos.ai.index;
 
 import com.alibaba.nacos.ai.config.McpCacheIndexProperties;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,6 +53,13 @@ class MemoryMcpCacheIndexTest {
         props.setMaxSize(3);
         props.setExpireTimeSeconds(2); // 2秒过期
         cache = new MemoryMcpCacheIndex(props);
+    }
+    
+    // Shutdown the default cache after each test to prevent zombie scheduler thread leaks,
+    // since each @BeforeEach creates a new MemoryMcpCacheIndex with a background scheduler.
+    @AfterEach
+    void tearDown() {
+        cache.shutdown();
     }
     
     @Test
@@ -570,12 +579,14 @@ class MemoryMcpCacheIndexTest {
     }
     
     @Test
-    void testCleanupExpiredEntries() throws InterruptedException {
+    void testCleanupExpiredEntries() throws Exception {
         // 创建一个具有短过期时间的缓存实例
         McpCacheIndexProperties shortExpireProps = new McpCacheIndexProperties();
         shortExpireProps.setMaxSize(100);
         shortExpireProps.setExpireTimeSeconds(1); // 1秒过期
-        shortExpireProps.setCleanupIntervalSeconds(1);
+        // Use large interval to prevent the background scheduler from firing during the test,
+        // which would cause non-deterministic cleanup and race conditions under CI load.
+        shortExpireProps.setCleanupIntervalSeconds(3600);
         MemoryMcpCacheIndex shortExpireCache = new MemoryMcpCacheIndex(shortExpireProps);
         
         try {
@@ -589,11 +600,13 @@ class MemoryMcpCacheIndexTest {
             assertEquals("id2", shortExpireCache.getMcpId("ns2", "name2"));
             assertEquals("id3", shortExpireCache.getMcpId("ns3", "name3"));
             
-            // 等待过期和清理
+            // 等待过期
             Thread.sleep(1500);
             
-            // 触发清理（通过获取来间接触发）
-            shortExpireCache.getMcpId("ns1", "name1");
+            // Invoke cleanupExpiredEntries directly instead of relying on the async scheduler.
+            // Note: getMcpId also triggers lazy eviction for individual entries (line 141-149),
+            // but here we test the batch cleanup method that the scheduler would normally run.
+            invokeCleanupExpiredEntries(shortExpireCache);
             
             // 验证过期条目被清理
             assertNull(shortExpireCache.getMcpId("ns1", "name1"));
@@ -609,12 +622,14 @@ class MemoryMcpCacheIndexTest {
     }
     
     @Test
-    void testCleanupExpiredEntriesDoesNotAffectValidEntries() throws InterruptedException {
+    void testCleanupExpiredEntriesDoesNotAffectValidEntries() throws Exception {
         // 创建一个具有不同过期时间的缓存实例
         McpCacheIndexProperties mixedProps = new McpCacheIndexProperties();
         mixedProps.setMaxSize(100);
         mixedProps.setExpireTimeSeconds(2); // 2秒过期
-        mixedProps.setCleanupIntervalSeconds(1);
+        // Use large interval to prevent the background scheduler from firing during the test,
+        // which would cause non-deterministic cleanup and race conditions under CI load.
+        mixedProps.setCleanupIntervalSeconds(3600);
         MemoryMcpCacheIndex mixedCache = new MemoryMcpCacheIndex(mixedProps);
         
         try {
@@ -630,8 +645,10 @@ class MemoryMcpCacheIndexTest {
             // 再等待1.1秒，使第一个条目过期但第二个不过期
             Thread.sleep(1100);
             
-            // 触发清理（通过获取来间接触发）
-            mixedCache.getMcpId("ns1", "name1");
+            // Invoke cleanupExpiredEntries directly instead of relying on the async scheduler.
+            // Note: getMcpId also triggers lazy eviction for individual entries (line 141-149),
+            // but here we test the batch cleanup method that the scheduler would normally run.
+            invokeCleanupExpiredEntries(mixedCache);
             
             // 验证只有过期的条目被清理
             assertNull(mixedCache.getMcpId("ns1", "name1"));
@@ -651,7 +668,9 @@ class MemoryMcpCacheIndexTest {
         McpCacheIndexProperties concurrentProps = new McpCacheIndexProperties();
         concurrentProps.setMaxSize(100);
         concurrentProps.setExpireTimeSeconds(1); // 1秒过期
-        concurrentProps.setCleanupIntervalSeconds(1);
+        // Use large interval to prevent the background scheduler from firing during the test,
+        // which would cause non-deterministic cleanup and race conditions under CI load.
+        concurrentProps.setCleanupIntervalSeconds(3600);
         MemoryMcpCacheIndex concurrentCache = new MemoryMcpCacheIndex(concurrentProps);
         
         try {
@@ -712,35 +731,51 @@ class MemoryMcpCacheIndexTest {
     }
     
     @Test
-    void testCleanupExpiredEntriesWithException() throws InterruptedException {
+    void testCleanupExpiredEntriesWithException() throws Exception {
         McpCacheIndexProperties concurrentProps = new McpCacheIndexProperties();
         concurrentProps.setMaxSize(100);
         concurrentProps.setExpireTimeSeconds(1); // 1秒过期
-        concurrentProps.setCleanupIntervalSeconds(1);
+        // Use large interval to prevent the background scheduler from firing during the test,
+        // which would cause non-deterministic cleanup and race conditions under CI load.
+        concurrentProps.setCleanupIntervalSeconds(3600);
         MemoryMcpCacheIndex testCache = new MemoryMcpCacheIndex(concurrentProps);
         try {
             testCache.updateIndex("ns", "name", "id");
             ReflectionTestUtils.setField(testCache, "properties", null);
-            TimeUnit.MILLISECONDS.sleep(1100);
+            // Manually invoke cleanup — should handle NPE gracefully without throwing
+            invokeCleanupExpiredEntries(testCache);
         } finally {
             testCache.shutdown();
         }
     }
     
     @Test
-    void testCleanupExpiredEntriesAfterShutdown() throws InterruptedException {
+    void testCleanupExpiredEntriesAfterShutdown() throws Exception {
         McpCacheIndexProperties concurrentProps = new McpCacheIndexProperties();
         concurrentProps.setMaxSize(100);
         concurrentProps.setExpireTimeSeconds(1); // 1秒过期
-        concurrentProps.setCleanupIntervalSeconds(1);
+        // Use large interval to prevent the background scheduler from firing during the test,
+        // which would cause non-deterministic cleanup and race conditions under CI load.
+        concurrentProps.setCleanupIntervalSeconds(3600);
         MemoryMcpCacheIndex testCache = new MemoryMcpCacheIndex(concurrentProps);
         try {
             ReflectionTestUtils.setField(testCache, "shutdown", true);
-            TimeUnit.MILLISECONDS.sleep(1100);
+            // Manually invoke cleanup — should return early due to shutdown flag
+            invokeCleanupExpiredEntries(testCache);
         } finally {
             ScheduledExecutorService cleanupScheduler = (ScheduledExecutorService) ReflectionTestUtils.getField(testCache,
                     "cleanupScheduler");
             cleanupScheduler.shutdownNow();
         }
+    }
+    
+    /**
+     * Helper method to invoke the private cleanupExpiredEntries method via reflection.
+     * This allows deterministic testing without relying on the async scheduler.
+     */
+    private void invokeCleanupExpiredEntries(MemoryMcpCacheIndex cacheInstance) throws Exception {
+        Method cleanup = MemoryMcpCacheIndex.class.getDeclaredMethod("cleanupExpiredEntries");
+        cleanup.setAccessible(true);
+        cleanup.invoke(cacheInstance);
     }
 }
