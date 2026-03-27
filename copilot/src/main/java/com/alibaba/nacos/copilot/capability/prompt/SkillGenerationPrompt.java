@@ -33,14 +33,14 @@ public class SkillGenerationPrompt {
         1. 仔细分析用户提供的背景信息，深入理解用户想要创建的 Skill 的功能、用途和应用场景
         2. 在思考过程中，清晰地表达你的思考过程，说明你如何理解需求、如何设计 Skill 结构、为什么这样设计会更好
         3. 根据 Agent Skill 的最佳实践，生成一个完整、高质量、可直接使用的 Skill，包括：
-           - name: Skill 名称（使用下划线命名，snake_case，简洁明了）
-           - description: Skill 描述（准确、简洁、有吸引力，说明 Skill 的核心功能）
+           - name: Skill 名称（必须符合格式规范，详见下方名称规范）
+           - description: Skill 描述（必须符合格式规范，详见下方描述规范）
            - skillMd: 完整 SKILL.md 内容（包含 front matter 与正文）
            - resource: 资源映射（如果需要，包含必要的模板、数据等资源）
         4. 确保生成的 Skill 符合以下最佳实践：
            - 指令（instruction）应该清晰、具体、可执行，包含详细的步骤和逻辑
-           - 描述（description）应该准确、简洁，能够吸引用户使用
-           - 名称（name）应该使用下划线命名（snake_case），简洁明了
+           - 描述（description）应该准确、简洁，能够吸引用户使用，且必须符合下方描述规范的格式要求
+           - 名称（name）必须严格符合下方名称规范的格式要求
            - 资源（resource）应该结构合理，只在必要时添加
            - 整体符合 Agent Skill 格式规范
         
@@ -52,15 +52,22 @@ public class SkillGenerationPrompt {
         - 遵循 Agent Skill 最佳实践
         
         Agent Skill 最佳实践指南：
-        1. **名称规范**：
-           - 使用下划线命名（snake_case）
-           - 简洁明了，能够反映 Skill 的核心功能
-           - 例如：process_nacos_config_not_push, analyze_service_health
+        1. **名称规范**（name 字段必须严格遵守以下所有规则）：
+           - 长度必须在 1-64 个字符之间
+           - 只能包含 Unicode 小写字母（a-z）、数字（0-9）和连字符（-）
+           - 不能以连字符（-）开头或结尾
+           - 不能包含连续的连字符（--）
+           - 使用连字符命名（kebab-case），简洁明了，能够反映 Skill 的核心功能
+           - 例如：process-nacos-config-not-push, analyze-service-health
         
-        2. **描述规范**：
-           - 一句话概括 Skill 的核心功能
+        2. **描述规范**（description 字段必须严格遵守以下所有规则）：
+           - 长度必须在 1-1024 个字符之间
+           - 必须同时描述 Skill 的功能（做什么）和适用场景（什么时候使用）
+           - 应包含能帮助 Agent 识别相关任务的特定关键词
            - 简洁、准确、有吸引力
-           - 例如："处理 Nacos 配置未推送的情况"、"分析服务健康状态"
+           - 例如："Process Nacos config not push issues.
+             Use when config changes are not being pushed to subscribers,
+             including push failures and connectivity problems."
         
         3. **指令规范**：
            - 清晰、具体、可执行
@@ -100,9 +107,9 @@ public class SkillGenerationPrompt {
         返回格式示例：
         {
           "skill": {
-            "name": "skill_name",
-            "description": "Skill description",
-            "skillMd": "---\\nname: skill_name\\ndescription: Skill description\\n---\\n\\nDetailed instruction...",
+            "name": "my-skill-name",
+            "description": "What the skill does. Use when [triggers].",
+            "skillMd": "---\\nname: my-skill-name\\ndescription: ...\\n---\\n\\nDetailed instruction...",
             "resource": {
               "resource_key": {
                 "name": "resource_file.json",

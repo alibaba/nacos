@@ -63,14 +63,23 @@ public class SkillOptimizationPrompt {
         - 遵循 Agent Skill 最佳实践
         
         Agent Skill 最佳实践指南（优化时必须遵循）：
-        1. **名称规范**：
+        1. **名称规范**（name 字段必须严格遵守以下所有规则）：
            - **重要：必须保持原始 Skill 的名称不变，不要修改 name 字段**
            - 在返回的 JSON 中，optimizedSkill.name 必须与原始 Skill 的 name 完全一致
+           - name 字段的格式要求（仅供参考，不要修改原始名称）：
+             * 长度必须在 1-64 个字符之间
+             * 只能包含 Unicode 小写字母（a-z）、数字（0-9）和连字符（-）
+             * 不能以连字符（-）开头或结尾
+             * 不能包含连续的连字符（--）
         
-        2. **描述规范**：
-           - 一句话概括 Skill 的核心功能
+        2. **描述规范**（description 字段必须严格遵守以下所有规则）：
+           - 长度必须在 1-1024 个字符之间
+           - 必须同时描述 Skill 的功能（做什么）和适用场景（什么时候使用）
+           - 应包含能帮助 Agent 识别相关任务的特定关键词
            - 简洁、准确、有吸引力
-           - 例如："处理 Nacos 配置未推送的情况"、"分析服务健康状态"
+           - 例如："Process Nacos config not push issues.
+             Use when config changes are not being pushed to subscribers,
+             including push failures and connectivity problems."
         
         3. **指令规范**：
            - 清晰、具体、可执行
@@ -128,9 +137,9 @@ public class SkillOptimizationPrompt {
         返回格式示例：
         {
           "optimizedSkill": {
-            "name": "skill_name",
-            "description": "skill description",
-            "skillMd": "---\\nname: skill_name\\ndescription: skill description\\n---\\n\\nskill instruction",
+            "name": "my-skill-name",
+            "description": "What the skill does. Use when [triggers].",
+            "skillMd": "---\\nname: my-skill-name\\ndescription: ...\\n---\\n\\nskill instruction",
             "resource": {
               "resource_key": {
                 "name": "resource_file.json",

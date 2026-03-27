@@ -1029,7 +1029,7 @@ export default function SkillDetailPage() {
         <TabsContent value="overview">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             {/* Left: Instruction card */}
-            <Card className="overflow-hidden py-0 gap-0">
+            <Card className="overflow-hidden py-0 gap-0 min-h-[580px]">
               <div className="px-5 py-3.5 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
@@ -1194,120 +1194,11 @@ export default function SkillDetailPage() {
 
         {/* Resources tab: IDE-like resource panel */}
         <TabsContent value="resources">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <SkillResourcePanel
-              resources={isEditingDraft ? editResources : resources}
-              editable={isEditingDraft}
-              onChange={isEditingDraft ? setEditResources : undefined}
-            />
-            <div className="space-y-4 lg:w-[320px]">
-              <CliCommandCard
-                commands={currentVersionStatus !== 'draft' ? cliCommands : []}
-                onDownload={selectedVersion ? () => handleDownload(selectedVersion) : undefined}
-                downloadFileName={selectedVersion ? `${skillName}-${selectedVersion}.zip` : undefined}
-              />
-
-              <Card className="overflow-hidden py-0 gap-0">
-                <div className="px-4 py-3 border-b bg-muted/30">
-                  <h2 className="text-sm font-semibold flex items-center gap-2">
-                    <Wand2 className="h-4 w-4 text-muted-foreground" />
-                    {t('skill.basicInfo')}
-                  </h2>
-                </div>
-                <CardContent className="p-0">
-                  <div className="grid grid-cols-2 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(even)]:border-l border-border">
-                    <InfoCell
-                      compact
-                      label={t('skill.status')}
-                      value={<StatusBadge status={currentVersionStatus} label={currentVersionStatusLabel} />}
-                      icon={<Tag className="h-3.5 w-3.5" />}
-                    />
-                    {currentVersionSummary && (
-                      <InfoCell compact label={t('skill.author')} value={currentVersionSummary.author || '-'} icon={<Globe className="h-3.5 w-3.5" />} />
-                    )}
-                    <InfoCell compact label={t('skill.downloads')} value={String(detail.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
-                    {currentVersionSummary && (
-                      <InfoCell compact label={t('skill.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {currentPipelineInfo && (
-                <Card className="overflow-hidden py-0 gap-0">
-                  <div className="px-4 py-3 border-b bg-muted/30">
-                    <h2 className="text-sm font-semibold flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 text-muted-foreground" />
-                      {t('skill.pipelineStatus')}
-                    </h2>
-                  </div>
-                  <CardContent className="p-3.5">
-                    <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} onRefresh={() => loadDetail()} />
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card className="overflow-hidden py-0 gap-0">
-                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                    {t('common.bizTags')}
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setBizTagDialogOpen(true)}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                </div>
-                <CardContent className="p-3.5">
-                  {bizTags.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {bizTags.map((tag) => (
-                        <DetailTagChip key={tag} label={tag} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">{t('skill.noBizTags')}</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden py-0 gap-0">
-                <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                    {t('common.versionLabels.title')}
-                  </h2>
-                  {selectedVersion && currentVersionStatus !== 'draft' && currentVersionStatus !== 'reviewing' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => setLabelDialogOpen(true)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-                <CardContent className="p-3.5">
-                  {currentVersionLabels.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {currentVersionLabels.map(([key]) => (
-                        <DetailTagChip key={key} label={key} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {t('common.versionLabels.noLabels')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <SkillResourcePanel
+            resources={isEditingDraft ? editResources : resources}
+            editable={isEditingDraft}
+            onChange={isEditingDraft ? setEditResources : undefined}
+          />
         </TabsContent>
       </Tabs>
 

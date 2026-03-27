@@ -6,7 +6,7 @@ import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useServerStore } from '@/stores/server-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 export default function AppLayout() {
@@ -22,33 +22,32 @@ export default function AppLayout() {
     fetchNamespaces();
   }, [loadFromStorage, fetchState, fetchNamespaces]);
 
-  // Clear stale Radix scroll locks on route change.
-  // When a Dialog/Sheet/Select is closing (animating out) and the route changes,
-  // react-remove-scroll may leave overflow:hidden + data-scroll-locked on <html>.
-  // We run cleanup both immediately AND after a delay to catch locks that Radix
-  // re-applies during its exit animation (~200ms).
+  // Clear stale scroll locks from react-remove-scroll on route change.
+  //
+  // react-remove-scroll locks page scroll via a <style> element whose CSS
+  // selector is `body[data-scroll-locked] { overflow:hidden!important }`.
+  // When the route changes while an overlay is animating out, the library's
+  // useEffect cleanup can race with the transition, leaving the attribute stuck.
+  //
+  // useLayoutEffect runs synchronously after DOM mutations but BEFORE paint,
+  // so we remove the attribute before the browser renders the new page.
+  // The library's own useEffect cleanup runs later and handles the rest
+  // (removing the <style> element and decrementing its internal counter).
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const { body } = document;
+    html.removeAttribute('data-scroll-locked');
+    body.removeAttribute('data-scroll-locked');
+    for (const el of [html, body]) {
+      el.style.removeProperty('overflow');
+      el.style.removeProperty('padding-right');
+      el.style.removeProperty('margin-right');
+    }
+  }, [location.pathname]);
+
+  // Scroll to top on navigation (passive effect is fine for this)
   useEffect(() => {
-    const clearScrollLock = () => {
-      const html = document.documentElement;
-      if (html.hasAttribute('data-scroll-locked')) {
-        html.removeAttribute('data-scroll-locked');
-        html.style.removeProperty('overflow');
-        html.style.removeProperty('padding-right');
-      }
-      const { body } = document;
-      if (body.hasAttribute('data-scroll-locked')) {
-        body.removeAttribute('data-scroll-locked');
-        body.style.removeProperty('overflow');
-        body.style.removeProperty('padding-right');
-      }
-    };
-    // Immediate cleanup
-    clearScrollLock();
-    // Delayed cleanup to catch locks re-applied during Radix exit animations
-    const timer = setTimeout(clearScrollLock, 300);
-    // Scroll to top on navigation
     window.scrollTo(0, 0);
-    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   return (

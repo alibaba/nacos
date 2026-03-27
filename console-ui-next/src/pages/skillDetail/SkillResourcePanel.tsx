@@ -17,7 +17,7 @@ import {
 const DEFAULT_PANEL_WIDTH = 220;
 const MIN_PANEL_WIDTH = 160;
 const MAX_PANEL_WIDTH = 360;
-const PANEL_HEIGHT = 520;
+const PANEL_HEIGHT = 580;
 
 // ===== Props =====
 
