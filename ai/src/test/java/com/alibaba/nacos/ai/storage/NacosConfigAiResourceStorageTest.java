@@ -22,6 +22,9 @@ import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -206,5 +209,64 @@ class NacosConfigAiResourceStorageTest {
         String physical = NacosAiConfigKeyCodec.encodeSegment(parts.dataId());
         assertTrue(NacosAiConfigKeyCodec.isValidNacosConfigParam(physical));
         assertEquals("resource_x y.json", NacosAiConfigKeyCodec.decodeSegment(physical));
+    }
+
+    @Test
+    void testAgentSpecGroupNamingConventionWithDeterministicInputs() {
+        List<String> namespaceIds = Arrays.asList("public", "test-ns", "ns-1", "namespace_abc");
+        List<String> names = Arrays.asList("worker", "worker-1", "worker_alpha");
+        List<String> versions = Arrays.asList("1.0.0", "2.3.4", "10.20.30");
+        for (String namespaceId : namespaceIds) {
+            for (String name : names) {
+                for (String version : versions) {
+                    StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                            NacosConfigAiResourceStorage.TYPE, namespaceId,
+                            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                            name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
+                    NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+                    assertEquals(AgentSpecUtils.buildAgentSpecVersionGroup(name, version), parts.group());
+                    assertTrue(parts.group().startsWith(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX));
+                }
+            }
+        }
+    }
+
+    @Test
+    void testAgentSpecMainDataIdIsManifestJsonWithDeterministicInputs() {
+        List<String> namespaceIds = Arrays.asList("public", "test-ns");
+        List<String> names = Arrays.asList("worker", "worker-1");
+        List<String> versions = Arrays.asList("1.0.0", "3.2.1");
+        String mainFilePath = NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
+        for (String namespaceId : namespaceIds) {
+            for (String name : names) {
+                for (String version : versions) {
+                    StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                            NacosConfigAiResourceStorage.TYPE, namespaceId,
+                            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                            name, version, mainFilePath);
+                    NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+                    assertEquals(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID, parts.dataId());
+                }
+            }
+        }
+    }
+
+    @Test
+    void testAgentSpecResourceDataIdPreservesGeneratedPath() {
+        List<String> resourceTypes = Arrays.asList("config", "skill", "cron", "dockerfile", "other");
+        List<String> resourceNames = Arrays.asList("SOUL.md", "AGENTS.md", "jobs.json", "Dockerfile");
+        for (String resourceType : resourceTypes) {
+            for (String resourceName : resourceNames) {
+                String expectedPath = NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(resourceType, resourceName);
+                StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                        NacosConfigAiResourceStorage.TYPE, "public",
+                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        "worker", "1.0.0", expectedPath);
+                NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+                assertEquals(expectedPath, parts.dataId());
+                assertTrue(parts.dataId().startsWith(AgentSpecUtils.RESOURCE_DATA_ID_PREFIX));
+                assertTrue(parts.dataId().endsWith(AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX));
+            }
+        }
     }
 }

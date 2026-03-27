@@ -17,42 +17,35 @@
 package com.alibaba.nacos.ai.pipeline.model;
 
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
-import net.jqwik.api.Arbitrary;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Property-based tests for PublishPipelineResourceType enum.
+ * Tests for PublishPipelineResourceType enum.
  *
  * <p><b>Validates: Requirements 1.2, 1.3, 1.4</b></p>
  *
  * @author kiro
  * @since 3.2.0
  */
-class PublishPipelineResourceTypePropertyTest {
-    
+class PublishPipelineResourceTypeInvariantTest {
+
     /**
-     * Property 1: Enum serialization/deserialization roundtrip consistency.
+     * Enum serialization/deserialization roundtrip consistency.
      *
-     * <p>For any PublishPipelineResourceType enum value (including AGENTSPEC),
+     * <p>For every PublishPipelineResourceType enum value (including AGENTSPEC),
      * {@code valueOf(e.name())} should return an enum equal to the original value.</p>
      *
      * <p><b>Validates: Requirements 1.2, 1.3, 1.4</b></p>
      */
-    @Property
-    void enumSerializationRoundtrip(@ForAll("resourceTypes") PublishPipelineResourceType original) {
-        String serialized = original.name();
-        PublishPipelineResourceType deserialized = PublishPipelineResourceType.valueOf(serialized);
-        assertEquals(original, deserialized,
-                "valueOf(name()) should return the original enum value for " + original);
-    }
-    
-    @Provide
-    Arbitrary<PublishPipelineResourceType> resourceTypes() {
-        return Arbitraries.of(PublishPipelineResourceType.values());
+    @Test
+    void enumSerializationRoundtrip() {
+        for (PublishPipelineResourceType original : PublishPipelineResourceType.values()) {
+            String serialized = original.name();
+            PublishPipelineResourceType deserialized = PublishPipelineResourceType.valueOf(serialized);
+            assertEquals(original, deserialized,
+                    "valueOf(name()) should return the original enum value for " + original);
+        }
     }
 }

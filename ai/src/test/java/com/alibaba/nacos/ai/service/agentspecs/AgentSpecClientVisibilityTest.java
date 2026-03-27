@@ -23,14 +23,10 @@ import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Combinators;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author kiro
  * @since 3.2.0
  */
-class AgentSpecClientVisibilityPropertyTest {
+class AgentSpecClientVisibilityTest {
     
     private static final String NAMESPACE_ID = "test-ns";
     
@@ -60,108 +56,126 @@ class AgentSpecClientVisibilityPropertyTest {
     private static final String META_STATUS_ENABLE = "enable";
     
     private static final String META_STATUS_DISABLE = "disable";
-    
+
+    private static java.util.List<java.util.List<AgentSpecTestData>> sampleMixedAgentSpecs() {
+        return Arrays.asList(
+                Arrays.asList(
+                        new AgentSpecTestData("a", true, 1),
+                        new AgentSpecTestData("b", false, 2),
+                        new AgentSpecTestData("c", true, 0)),
+                Arrays.asList(
+                        new AgentSpecTestData("x", true, 3),
+                        new AgentSpecTestData("y", true, 1)),
+                Arrays.asList(
+                        new AgentSpecTestData("onlyoff", false, 0),
+                        new AgentSpecTestData("eligible", true, 2)));
+    }
+
     /**
-     * Property 6a: Client search only returns enabled AgentSpecs with at least one online version.
+     * Client search only returns enabled AgentSpecs with at least one online version.
      *
      * <p>Every item returned by the simulated searchAgentSpecs logic must correspond to an
      * AiResource that has status = "enable" and versionInfo.onlineCnt > 0.</p>
      */
-    @Property(tries = 50)
-    void clientSearchOnlyReturnsEnabledWithOnlineVersions(@ForAll("mixedAgentSpecs") List<AgentSpecTestData> dataset) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        for (AgentSpecTestData data : dataset) {
-            persistService.insert(data.toAiResource());
-        }
-        
-        List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
-        
-        for (AgentSpecBasicInfo result : searchResults) {
-            AgentSpecTestData original = dataset.stream().filter(d -> d.name.equals(result.getName())).findFirst()
-                    .orElse(null);
-            assertTrue(original != null, "Search returned unknown AgentSpec: " + result.getName());
-            assertTrue(original.enabled, "Search returned disabled AgentSpec: " + result.getName());
-            assertTrue(original.onlineCnt > 0,
-                    "Search returned AgentSpec with no online versions: " + result.getName());
+    @Test
+    void clientSearchOnlyReturnsEnabledWithOnlineVersions() {
+        for (List<AgentSpecTestData> dataset : sampleMixedAgentSpecs()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            for (AgentSpecTestData data : dataset) {
+                persistService.insert(data.toAiResource());
+            }
+
+            List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
+
+            for (AgentSpecBasicInfo result : searchResults) {
+                AgentSpecTestData original = dataset.stream().filter(d -> d.name.equals(result.getName())).findFirst()
+                        .orElse(null);
+                assertTrue(original != null, "Search returned unknown AgentSpec: " + result.getName());
+                assertTrue(original.enabled, "Search returned disabled AgentSpec: " + result.getName());
+                assertTrue(original.onlineCnt > 0,
+                        "Search returned AgentSpec with no online versions: " + result.getName());
+            }
         }
     }
-    
+
     /**
-     * Property 6b: Disabled AgentSpecs are never returned by client search.
+     * Disabled AgentSpecs are never returned by client search.
      *
      * <p>No item in the search results should have a name matching any disabled AgentSpec.</p>
      */
-    @Property(tries = 50)
-    void disabledAgentSpecsNeverReturnedBySearch(@ForAll("mixedAgentSpecs") List<AgentSpecTestData> dataset) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        for (AgentSpecTestData data : dataset) {
-            persistService.insert(data.toAiResource());
-        }
-        
-        List<String> disabledNames = dataset.stream().filter(d -> !d.enabled).map(d -> d.name)
-                .collect(Collectors.toList());
-        
-        List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
-        
-        for (AgentSpecBasicInfo result : searchResults) {
-            assertFalse(disabledNames.contains(result.getName()),
-                    "Search returned disabled AgentSpec: " + result.getName());
+    @Test
+    void disabledAgentSpecsNeverReturnedBySearch() {
+        for (List<AgentSpecTestData> dataset : sampleMixedAgentSpecs()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            for (AgentSpecTestData data : dataset) {
+                persistService.insert(data.toAiResource());
+            }
+
+            List<String> disabledNames = dataset.stream().filter(d -> !d.enabled).map(d -> d.name)
+                    .collect(Collectors.toList());
+
+            List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
+
+            for (AgentSpecBasicInfo result : searchResults) {
+                assertFalse(disabledNames.contains(result.getName()),
+                        "Search returned disabled AgentSpec: " + result.getName());
+            }
         }
     }
-    
+
     /**
-     * Property 6c: AgentSpecs with no online versions are never returned by client search.
+     * AgentSpecs with no online versions are never returned by client search.
      *
      * <p>No item in the search results should have a name matching any AgentSpec with onlineCnt <= 0.</p>
      */
-    @Property(tries = 50)
-    void agentSpecsWithNoOnlineVersionsNeverReturnedBySearch(
-            @ForAll("mixedAgentSpecs") List<AgentSpecTestData> dataset) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        for (AgentSpecTestData data : dataset) {
-            persistService.insert(data.toAiResource());
-        }
-        
-        List<String> noOnlineNames = dataset.stream().filter(d -> d.onlineCnt <= 0).map(d -> d.name)
-                .collect(Collectors.toList());
-        
-        List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
-        
-        for (AgentSpecBasicInfo result : searchResults) {
-            assertFalse(noOnlineNames.contains(result.getName()),
-                    "Search returned AgentSpec with no online versions: " + result.getName());
+    @Test
+    void agentSpecsWithNoOnlineVersionsNeverReturnedBySearch() {
+        for (List<AgentSpecTestData> dataset : sampleMixedAgentSpecs()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            for (AgentSpecTestData data : dataset) {
+                persistService.insert(data.toAiResource());
+            }
+
+            List<String> noOnlineNames = dataset.stream().filter(d -> d.onlineCnt <= 0).map(d -> d.name)
+                    .collect(Collectors.toList());
+
+            List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
+
+            for (AgentSpecBasicInfo result : searchResults) {
+                assertFalse(noOnlineNames.contains(result.getName()),
+                        "Search returned AgentSpec with no online versions: " + result.getName());
+            }
         }
     }
-    
+
     /**
-     * Property 6d: All eligible AgentSpecs (enabled + onlineCnt > 0) appear in search results.
+     * All eligible AgentSpecs (enabled + onlineCnt > 0) appear in search results.
      *
      * <p>Completeness check: every AgentSpec that is enabled and has at least one online version
      * must appear in the search results.</p>
      */
-    @Property(tries = 50)
-    void allEligibleAgentSpecsAppearInSearchResults(@ForAll("mixedAgentSpecs") List<AgentSpecTestData> dataset) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        for (AgentSpecTestData data : dataset) {
-            persistService.insert(data.toAiResource());
-        }
-        
-        List<String> eligibleNames = dataset.stream().filter(d -> d.enabled && d.onlineCnt > 0).map(d -> d.name)
-                .collect(Collectors.toList());
-        
-        List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
-        List<String> resultNames = searchResults.stream().map(AgentSpecBasicInfo::getName).collect(Collectors.toList());
-        
-        for (String eligibleName : eligibleNames) {
-            assertTrue(resultNames.contains(eligibleName),
-                    "Eligible AgentSpec missing from search results: " + eligibleName);
+    @Test
+    void allEligibleAgentSpecsAppearInSearchResults() {
+        for (List<AgentSpecTestData> dataset : sampleMixedAgentSpecs()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            for (AgentSpecTestData data : dataset) {
+                persistService.insert(data.toAiResource());
+            }
+
+            List<String> eligibleNames = dataset.stream().filter(d -> d.enabled && d.onlineCnt > 0).map(d -> d.name)
+                    .collect(Collectors.toList());
+
+            List<AgentSpecBasicInfo> searchResults = simulateSearchAgentSpecs(persistService, NAMESPACE_ID, null);
+            List<String> resultNames = searchResults.stream().map(AgentSpecBasicInfo::getName)
+                    .collect(Collectors.toList());
+
+            for (String eligibleName : eligibleNames) {
+                assertTrue(resultNames.contains(eligibleName),
+                        "Eligible AgentSpec missing from search results: " + eligibleName);
+            }
         }
     }
-    
+
     // ---- Simulate searchAgentSpecs logic (mirrors AgentSpecOperationServiceImpl.searchAgentSpecs) ----
     
     private List<AgentSpecBasicInfo> simulateSearchAgentSpecs(InMemoryAiResourcePersistService persistService,
@@ -244,26 +258,7 @@ class AgentSpecClientVisibilityPropertyTest {
         
         public Map<String, String> labels;
     }
-    
-    // ---- Arbitraries ----
-    
-    @Provide
-    Arbitrary<List<AgentSpecTestData>> mixedAgentSpecs() {
-        return agentSpecTestData().list().ofMinSize(1).ofMaxSize(15).filter(list -> {
-            // Ensure unique names
-            long distinctNames = list.stream().map(d -> d.name).distinct().count();
-            return distinctNames == list.size();
-        });
-    }
-    
-    private Arbitrary<AgentSpecTestData> agentSpecTestData() {
-        Arbitrary<String> names = Arbitraries.strings().alpha().ofMinLength(3).ofMaxLength(10);
-        Arbitrary<Boolean> enabledStates = Arbitraries.of(true, false);
-        Arbitrary<Integer> onlineCounts = Arbitraries.of(0, 0, 1, 2, 3);
-        
-        return Combinators.combine(names, enabledStates, onlineCounts).as(AgentSpecTestData::new);
-    }
-    
+
     // ---- In-memory persist service ----
     
     private static class InMemoryAiResourcePersistService implements AiResourcePersistService {

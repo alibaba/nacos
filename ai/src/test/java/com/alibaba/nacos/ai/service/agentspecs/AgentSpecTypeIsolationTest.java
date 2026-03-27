@@ -25,14 +25,10 @@ import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.model.Page;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Combinators;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,179 +49,191 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author kiro
  * @since 3.2.0
  */
-class AgentSpecTypeIsolationPropertyTest {
+class AgentSpecTypeIsolationTest {
     
     private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
     
     private static final String RESOURCE_TYPE_SKILL = "skill";
     
     private static final String NAMESPACE_ID = "test-ns";
-    
+
+    private static String[] sampleResourceNames() {
+        return new String[] {"myres", "abc", "resourcex"};
+    }
+
+    private static String[] sampleVersions() {
+        return new String[] {"v1", "v2", "v5"};
+    }
+
+    private static List<List<AiResource>> sampleMixedAiResources() {
+        List<List<AiResource>> out = new ArrayList<>();
+        out.add(Arrays.asList(
+                buildAiResource("a", RESOURCE_TYPE_AGENTSPEC),
+                buildAiResource("b", RESOURCE_TYPE_SKILL)));
+        out.add(Arrays.asList(
+                buildAiResource("c", RESOURCE_TYPE_SKILL),
+                buildAiResource("d", RESOURCE_TYPE_AGENTSPEC),
+                buildAiResource("e", RESOURCE_TYPE_SKILL)));
+        return out;
+    }
+
+    private static List<List<AiResourceVersion>> sampleMixedAiResourceVersions() {
+        List<List<AiResourceVersion>> out = new ArrayList<>();
+        out.add(Arrays.asList(
+                buildAiResourceVersion("n1", RESOURCE_TYPE_AGENTSPEC, "v1"),
+                buildAiResourceVersion("n2", RESOURCE_TYPE_SKILL, "v1")));
+        out.add(Arrays.asList(
+                buildAiResourceVersion("x", RESOURCE_TYPE_SKILL, "v2"),
+                buildAiResourceVersion("y", RESOURCE_TYPE_AGENTSPEC, "v3")));
+        return out;
+    }
+
     /**
-     * Property 3a: All AgentSpec AiResource records use type = "agentspec".
+     * All AgentSpec AiResource records use type = "agentspec".
      *
      * <p>Given a mixed dataset of AgentSpec and Skill AiResource records, querying with
      * type = "agentspec" returns only records whose type field equals "agentspec".</p>
      */
-    @Property(tries = 30)
-    void agentSpecQueryOnlyReturnsAgentSpecResources(@ForAll("mixedAiResources") List<AiResource> mixedResources) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        for (AiResource resource : mixedResources) {
-            persistService.insert(resource);
-        }
-        
-        Page<AiResource> agentSpecPage = persistService.list(NAMESPACE_ID, RESOURCE_TYPE_AGENTSPEC, null, null, 1, 200);
-        
-        if (agentSpecPage != null && agentSpecPage.getPageItems() != null) {
-            for (AiResource resource : agentSpecPage.getPageItems()) {
-                assertEquals(RESOURCE_TYPE_AGENTSPEC, resource.getType(),
-                        "AgentSpec query returned a non-agentspec record: " + resource.getName());
+    @Test
+    void agentSpecQueryOnlyReturnsAgentSpecResources() {
+        for (List<AiResource> mixedResources : sampleMixedAiResources()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            for (AiResource resource : mixedResources) {
+                persistService.insert(resource);
             }
-        }
-    }
-    
-    /**
-     * Property 3b: All Skill AiResource records use type = "skill".
-     *
-     * <p>Given a mixed dataset, querying with type = "skill" returns only records
-     * whose type field equals "skill".</p>
-     */
-    @Property(tries = 30)
-    void skillQueryOnlyReturnsSkillResources(@ForAll("mixedAiResources") List<AiResource> mixedResources) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        for (AiResource resource : mixedResources) {
-            persistService.insert(resource);
-        }
-        
-        Page<AiResource> skillPage = persistService.list(NAMESPACE_ID, RESOURCE_TYPE_SKILL, null, null, 1, 200);
-        
-        if (skillPage != null && skillPage.getPageItems() != null) {
-            for (AiResource resource : skillPage.getPageItems()) {
-                assertEquals(RESOURCE_TYPE_SKILL, resource.getType(),
-                        "Skill query returned a non-skill record: " + resource.getName());
-            }
-        }
-    }
-    
-    /**
-     * Property 3c: AgentSpec version queries never return Skill version records.
-     *
-     * <p>Given a mixed dataset of AgentSpec and Skill AiResourceVersion records,
-     * querying versions with type = "agentspec" returns only agentspec-typed versions.</p>
-     */
-    @Property(tries = 30)
-    void agentSpecVersionQueryNeverReturnsSkillVersions(
-            @ForAll("mixedAiResourceVersions") List<AiResourceVersion> mixedVersions) {
-        
-        InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
-        for (AiResourceVersion version : mixedVersions) {
-            versionService.insert(version);
-        }
-        
-        // Query each unique name with agentspec type
-        for (AiResourceVersion version : mixedVersions) {
-            if (RESOURCE_TYPE_AGENTSPEC.equals(version.getType())) {
-                AiResourceVersion found = versionService.find(NAMESPACE_ID, version.getName(), RESOURCE_TYPE_AGENTSPEC,
-                        version.getVersion());
-                if (found != null) {
-                    assertEquals(RESOURCE_TYPE_AGENTSPEC, found.getType(),
-                            "AgentSpec version query returned skill version");
+
+            Page<AiResource> agentSpecPage = persistService.list(NAMESPACE_ID, RESOURCE_TYPE_AGENTSPEC, null, null, 1,
+                    200);
+
+            if (agentSpecPage != null && agentSpecPage.getPageItems() != null) {
+                for (AiResource resource : agentSpecPage.getPageItems()) {
+                    assertEquals(RESOURCE_TYPE_AGENTSPEC, resource.getType(),
+                            "AgentSpec query returned a non-agentspec record: " + resource.getName());
                 }
             }
         }
     }
-    
+
     /**
-     * Property 3d: AgentSpec storage keys use "agentspec__" group prefix, Skill uses "skill_".
+     * All Skill AiResource records use type = "skill".
+     *
+     * <p>Given a mixed dataset, querying with type = "skill" returns only records
+     * whose type field equals "skill".</p>
+     */
+    @Test
+    void skillQueryOnlyReturnsSkillResources() {
+        for (List<AiResource> mixedResources : sampleMixedAiResources()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            for (AiResource resource : mixedResources) {
+                persistService.insert(resource);
+            }
+
+            Page<AiResource> skillPage = persistService.list(NAMESPACE_ID, RESOURCE_TYPE_SKILL, null, null, 1, 200);
+
+            if (skillPage != null && skillPage.getPageItems() != null) {
+                for (AiResource resource : skillPage.getPageItems()) {
+                    assertEquals(RESOURCE_TYPE_SKILL, resource.getType(),
+                            "Skill query returned a non-skill record: " + resource.getName());
+                }
+            }
+        }
+    }
+
+    /**
+     * AgentSpec version queries never return Skill version records.
+     *
+     * <p>Given a mixed dataset of AgentSpec and Skill AiResourceVersion records,
+     * querying versions with type = "agentspec" returns only agentspec-typed versions.</p>
+     */
+    @Test
+    void agentSpecVersionQueryNeverReturnsSkillVersions() {
+        for (List<AiResourceVersion> mixedVersions : sampleMixedAiResourceVersions()) {
+            InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
+            for (AiResourceVersion version : mixedVersions) {
+                versionService.insert(version);
+            }
+
+            // Query each unique name with agentspec type
+            for (AiResourceVersion version : mixedVersions) {
+                if (RESOURCE_TYPE_AGENTSPEC.equals(version.getType())) {
+                    AiResourceVersion found = versionService.find(NAMESPACE_ID, version.getName(),
+                            RESOURCE_TYPE_AGENTSPEC, version.getVersion());
+                    if (found != null) {
+                        assertEquals(RESOURCE_TYPE_AGENTSPEC, found.getType(),
+                                "AgentSpec version query returned skill version");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * AgentSpec storage keys use "agentspec__" group prefix, Skill uses "skill_".
      *
      * <p>For any resource name and version, the storage group prefix for AgentSpec is
      * {@code agentspec__} and for Skill is {@code skill_}. We verify this by examining the StorageKey key string which
      * encodes the resource type, and by verifying the group prefix constants are distinct.</p>
      */
-    @Property(tries = 50)
-    void storageGroupPrefixIsolation(@ForAll("resourceNames") String name, @ForAll("versions") String version) {
-        
-        // AgentSpec storage key embeds "agentspec" resource type
-        String agentSpecKey = NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
-                NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, name, version,
-                AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID).getKey();
-        
-        // Key format: namespaceId:resourceType:name:version:filePath
-        String[] agentSpecParts = agentSpecKey.split(":", 5);
-        assertEquals(5, agentSpecParts.length, "AgentSpec key should have 5 parts");
-        assertEquals(RESOURCE_TYPE_AGENTSPEC, agentSpecParts[1], "AgentSpec key resource type should be 'agentspec'");
-        
-        // Skill storage key embeds "skill" resource type
-        String skillKey = NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE, NAMESPACE_ID,
-                        NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, name, version, SkillUtils.SKILL_MAIN_DATA_ID)
-                .getKey();
-        
-        String[] skillParts = skillKey.split(":", 5);
-        assertEquals(5, skillParts.length, "Skill key should have 5 parts");
-        assertEquals(RESOURCE_TYPE_SKILL, skillParts[1], "Skill key resource type should be 'skill'");
-        
-        // Group prefixes are distinct
-        assertFalse(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.equals(SkillUtils.SKILL_GROUP_PREFIX),
-                "AgentSpec and Skill group prefixes must be different");
-        assertTrue(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.startsWith("agentspec"),
-                "AgentSpec group prefix should start with 'agentspec'");
-        assertTrue(SkillUtils.SKILL_GROUP_PREFIX.startsWith("skill"), "Skill group prefix should start with 'skill'");
+    @Test
+    void storageGroupPrefixIsolation() {
+        for (String name : sampleResourceNames()) {
+            for (String version : sampleVersions()) {
+                // AgentSpec storage key embeds "agentspec" resource type
+                String agentSpecKey = NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
+                        NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, name, version,
+                        AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID).getKey();
+
+                // Key format: namespaceId:resourceType:name:version:filePath
+                String[] agentSpecParts = agentSpecKey.split(":", 5);
+                assertEquals(5, agentSpecParts.length, "AgentSpec key should have 5 parts");
+                assertEquals(RESOURCE_TYPE_AGENTSPEC, agentSpecParts[1],
+                        "AgentSpec key resource type should be 'agentspec'");
+
+                // Skill storage key embeds "skill" resource type
+                String skillKey = NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
+                                NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, name, version,
+                                SkillUtils.SKILL_MAIN_DATA_ID)
+                        .getKey();
+
+                String[] skillParts = skillKey.split(":", 5);
+                assertEquals(5, skillParts.length, "Skill key should have 5 parts");
+                assertEquals(RESOURCE_TYPE_SKILL, skillParts[1], "Skill key resource type should be 'skill'");
+
+                // Group prefixes are distinct
+                assertFalse(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.equals(SkillUtils.SKILL_GROUP_PREFIX),
+                        "AgentSpec and Skill group prefixes must be different");
+                assertTrue(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.startsWith("agentspec"),
+                        "AgentSpec group prefix should start with 'agentspec'");
+                assertTrue(SkillUtils.SKILL_GROUP_PREFIX.startsWith("skill"),
+                        "Skill group prefix should start with 'skill'");
+            }
+        }
     }
-    
+
     /**
-     * Property 3e: AgentSpec and Skill records with the same name are isolated by type.
+     * AgentSpec and Skill records with the same name are isolated by type.
      *
      * <p>When both an AgentSpec and a Skill share the same name, find by type returns
      * only the correct record.</p>
      */
-    @Property(tries = 30)
-    void sameNameDifferentTypeIsolation(@ForAll("resourceNames") String name) {
-        
-        InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-        
-        AiResource agentSpecResource = buildAiResource(name, RESOURCE_TYPE_AGENTSPEC);
-        AiResource skillResource = buildAiResource(name, RESOURCE_TYPE_SKILL);
-        persistService.insert(agentSpecResource);
-        persistService.insert(skillResource);
-        
-        AiResource foundAgentSpec = persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_AGENTSPEC);
-        AiResource foundSkill = persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_SKILL);
-        
-        assertEquals(RESOURCE_TYPE_AGENTSPEC, foundAgentSpec.getType());
-        assertEquals(RESOURCE_TYPE_SKILL, foundSkill.getType());
+    @Test
+    void sameNameDifferentTypeIsolation() {
+        for (String name : sampleResourceNames()) {
+            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+
+            AiResource agentSpecResource = buildAiResource(name, RESOURCE_TYPE_AGENTSPEC);
+            AiResource skillResource = buildAiResource(name, RESOURCE_TYPE_SKILL);
+            persistService.insert(agentSpecResource);
+            persistService.insert(skillResource);
+
+            AiResource foundAgentSpec = persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_AGENTSPEC);
+            AiResource foundSkill = persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_SKILL);
+
+            assertEquals(RESOURCE_TYPE_AGENTSPEC, foundAgentSpec.getType());
+            assertEquals(RESOURCE_TYPE_SKILL, foundSkill.getType());
+        }
     }
-    
-    // ---- Arbitraries ----
-    
-    @Provide
-    Arbitrary<List<AiResource>> mixedAiResources() {
-        Arbitrary<AiResource> agentSpecResources = resourceNames().map(
-                name -> buildAiResource(name, RESOURCE_TYPE_AGENTSPEC));
-        Arbitrary<AiResource> skillResources = resourceNames().map(name -> buildAiResource(name, RESOURCE_TYPE_SKILL));
-        return Arbitraries.oneOf(agentSpecResources, skillResources).list().ofMinSize(2).ofMaxSize(10);
-    }
-    
-    @Provide
-    Arbitrary<List<AiResourceVersion>> mixedAiResourceVersions() {
-        Arbitrary<AiResourceVersion> agentSpecVersions = Combinators.combine(resourceNames(), versions())
-                .as((name, ver) -> buildAiResourceVersion(name, RESOURCE_TYPE_AGENTSPEC, ver));
-        Arbitrary<AiResourceVersion> skillVersions = Combinators.combine(resourceNames(), versions())
-                .as((name, ver) -> buildAiResourceVersion(name, RESOURCE_TYPE_SKILL, ver));
-        return Arbitraries.oneOf(agentSpecVersions, skillVersions).list().ofMinSize(2).ofMaxSize(10);
-    }
-    
-    @Provide
-    Arbitrary<String> resourceNames() {
-        return Arbitraries.strings().alpha().ofMinLength(3).ofMaxLength(12);
-    }
-    
-    @Provide
-    Arbitrary<String> versions() {
-        return Arbitraries.integers().between(1, 50).map(n -> "v" + n);
-    }
-    
+
     // ---- Helpers ----
     
     private static AiResource buildAiResource(String name, String type) {

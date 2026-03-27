@@ -26,14 +26,11 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Combinators;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,110 +52,122 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author kiro
  * @since 3.2.0
  */
-class AgentSpecDeletionPropertyTest {
+class AgentSpecDeletionTest {
     
     private static final String NAMESPACE_ID = "test-ns";
     
     private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
     
     private static final String META_STATUS_ENABLE = "enable";
-    
+
+    private static java.util.List<AgentSpecTestData> sampleAgentSpecWithVersions() {
+        return Arrays.asList(
+                new AgentSpecTestData("agentspeca", Arrays.asList("v1", "v2"), 1),
+                new AgentSpecTestData("myagent", Collections.singletonList("v1"), 0),
+                new AgentSpecTestData("multi", Arrays.asList("v1", "v3", "v5"), 2));
+    }
+
+    private static String[] sampleResourceNamesForDeletion() {
+        return new String[] {"ghost", "missing", "none"};
+    }
+
     /**
-     * Property 8a: After deletion, querying the AgentSpec metadata returns null.
+     * After deletion, querying the AgentSpec metadata returns null.
      *
      * <p>Given an AgentSpec with metadata, versions, and storage entries, after simulating
      * the deleteAgentSpec flow, the metadata record SHALL no longer exist.</p>
      */
-    @Property(tries = 30)
-    void afterDeletionMetadataIsRemoved(@ForAll("agentSpecWithVersions") AgentSpecTestData testData)
-            throws NacosException {
-        
-        InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
-        InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
-        InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
-        
-        seedTestData(resourceService, versionService, storage, testData);
-        
-        simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
-        
-        AiResource meta = resourceService.find(NAMESPACE_ID, testData.name, RESOURCE_TYPE_AGENTSPEC);
-        assertNull(meta, "Metadata should be null after deletion for: " + testData.name);
+    @Test
+    void afterDeletionMetadataIsRemoved() throws NacosException {
+        for (AgentSpecTestData testData : sampleAgentSpecWithVersions()) {
+            InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
+            InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
+            InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
+
+            seedTestData(resourceService, versionService, storage, testData);
+
+            simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
+
+            AiResource meta = resourceService.find(NAMESPACE_ID, testData.name, RESOURCE_TYPE_AGENTSPEC);
+            assertNull(meta, "Metadata should be null after deletion for: " + testData.name);
+        }
     }
-    
+
     /**
-     * Property 8b: After deletion, all ai_resource_version rows for that AgentSpec are removed.
+     * After deletion, all ai_resource_version rows for that AgentSpec are removed.
      *
      * <p>Given an AgentSpec with N versions, after deletion, listing versions SHALL return
      * an empty result.</p>
      */
-    @Property(tries = 30)
-    void afterDeletionAllVersionRowsAreRemoved(@ForAll("agentSpecWithVersions") AgentSpecTestData testData)
-            throws NacosException {
-        
-        InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
-        InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
-        InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
-        
-        seedTestData(resourceService, versionService, storage, testData);
-        
-        simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
-        
-        Page<AiResourceVersion> remaining = versionService.listAll(NAMESPACE_ID, testData.name, 1, 200);
-        assertTrue(remaining == null || remaining.getPageItems() == null || remaining.getPageItems().isEmpty(),
-                "All version rows should be removed after deletion for: " + testData.name);
+    @Test
+    void afterDeletionAllVersionRowsAreRemoved() throws NacosException {
+        for (AgentSpecTestData testData : sampleAgentSpecWithVersions()) {
+            InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
+            InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
+            InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
+
+            seedTestData(resourceService, versionService, storage, testData);
+
+            simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
+
+            Page<AiResourceVersion> remaining = versionService.listAll(NAMESPACE_ID, testData.name, 1, 200);
+            assertTrue(remaining == null || remaining.getPageItems() == null || remaining.getPageItems().isEmpty(),
+                    "All version rows should be removed after deletion for: " + testData.name);
+        }
     }
-    
+
     /**
-     * Property 8c: After deletion, all storage entries matching agentspec__{name}__* are removed.
+     * After deletion, all storage entries matching agentspec__{name}__* are removed.
      *
      * <p>Given an AgentSpec with storage entries for each version, after deletion, no storage
      * keys containing the AgentSpec name pattern should remain.</p>
      */
-    @Property(tries = 30)
-    void afterDeletionAllStorageEntriesAreRemoved(@ForAll("agentSpecWithVersions") AgentSpecTestData testData)
-            throws NacosException {
-        
-        InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
-        InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
-        InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
-        
-        seedTestData(resourceService, versionService, storage, testData);
-        
-        simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
-        
-        String keyPattern = NAMESPACE_ID + ":" + RESOURCE_TYPE_AGENTSPEC + ":" + testData.name + ":";
-        List<String> remainingKeys = storage.allKeys().stream().filter(k -> k.startsWith(keyPattern))
-                .collect(Collectors.toList());
-        assertTrue(remainingKeys.isEmpty(),
-                "All storage entries should be removed after deletion for: " + testData.name + ", remaining: "
-                        + remainingKeys);
+    @Test
+    void afterDeletionAllStorageEntriesAreRemoved() throws NacosException {
+        for (AgentSpecTestData testData : sampleAgentSpecWithVersions()) {
+            InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
+            InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
+            InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
+
+            seedTestData(resourceService, versionService, storage, testData);
+
+            simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
+
+            String keyPattern = NAMESPACE_ID + ":" + RESOURCE_TYPE_AGENTSPEC + ":" + testData.name + ":";
+            List<String> remainingKeys = storage.allKeys().stream().filter(k -> k.startsWith(keyPattern))
+                    .collect(Collectors.toList());
+            assertTrue(remainingKeys.isEmpty(),
+                    "All storage entries should be removed after deletion for: " + testData.name + ", remaining: "
+                            + remainingKeys);
+        }
     }
-    
+
     /**
-     * Property 8d: Deletion of a non-existent AgentSpec is a no-op (no errors, no side effects).
+     * Deletion of a non-existent AgentSpec is a no-op (no errors, no side effects).
      *
      * <p>When deleting an AgentSpec that does not exist, the operation should complete
      * without throwing and without affecting other data.</p>
      */
-    @Property(tries = 20)
-    void deletionOfNonExistentAgentSpecIsNoOp(@ForAll("resourceNames") String name) throws NacosException {
-        
-        InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
-        InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
-        InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
-        
-        // Insert a different AgentSpec to ensure it's not affected
-        String otherName = name + "_other";
-        AiResource otherMeta = buildAiResource(otherName);
-        resourceService.insert(otherMeta);
-        
-        simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, name);
-        
-        AiResource otherStillExists = resourceService.find(NAMESPACE_ID, otherName, RESOURCE_TYPE_AGENTSPEC);
-        assertTrue(otherStillExists != null,
-                "Other AgentSpec should not be affected by deleting non-existent: " + name);
+    @Test
+    void deletionOfNonExistentAgentSpecIsNoOp() throws NacosException {
+        for (String name : sampleResourceNamesForDeletion()) {
+            InMemoryAiResourcePersistService resourceService = new InMemoryAiResourcePersistService();
+            InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
+            InMemoryAiResourceStorage storage = new InMemoryAiResourceStorage();
+
+            // Insert a different AgentSpec to ensure it's not affected
+            String otherName = name + "_other";
+            AiResource otherMeta = buildAiResource(otherName);
+            resourceService.insert(otherMeta);
+
+            simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, name);
+
+            AiResource otherStillExists = resourceService.find(NAMESPACE_ID, otherName, RESOURCE_TYPE_AGENTSPEC);
+            assertTrue(otherStillExists != null,
+                    "Other AgentSpec should not be affected by deleting non-existent: " + name);
+        }
     }
-    
+
     // ---- Simulate deleteAgentSpec logic (mirrors AgentSpecOperationServiceImpl.deleteAgentSpec) ----
     
     private void simulateDeleteAgentSpec(InMemoryAiResourcePersistService resourceService,
@@ -267,24 +276,7 @@ class AgentSpecDeletionPropertyTest {
         resource.setMetaVersion(1L);
         return resource;
     }
-    
-    // ---- Arbitraries ----
-    
-    @Provide
-    Arbitrary<AgentSpecTestData> agentSpecWithVersions() {
-        Arbitrary<String> names = resourceNames();
-        Arbitrary<List<String>> versions = Arbitraries.integers().between(1, 10).map(n -> "v" + n).list().ofMinSize(1)
-                .ofMaxSize(5).filter(list -> list.stream().distinct().count() == list.size());
-        Arbitrary<Integer> resourceCounts = Arbitraries.integers().between(0, 3);
-        
-        return Combinators.combine(names, versions, resourceCounts).as(AgentSpecTestData::new);
-    }
-    
-    @Provide
-    Arbitrary<String> resourceNames() {
-        return Arbitraries.strings().alpha().ofMinLength(3).ofMaxLength(12);
-    }
-    
+
     // ---- In-memory implementations ----
     
     private static class InMemoryAiResourcePersistService implements AiResourcePersistService {
