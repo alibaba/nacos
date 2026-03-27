@@ -161,12 +161,13 @@ class SkillInnerHandlerTest {
     @Test
     void testUploadSkillFromZip() throws NacosException {
         byte[] zipBytes = "test-zip".getBytes();
-        when(skillOperationService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes))).thenReturn(SKILL_NAME);
+        when(skillOperationService.uploadSkillFromZip(eq(NAMESPACE_ID), eq(zipBytes), eq(false))).thenReturn(
+                SKILL_NAME);
 
         String result = skillInnerHandler.uploadSkillFromZip(NAMESPACE_ID, zipBytes);
 
         assertEquals(SKILL_NAME, result);
-        verify(skillOperationService).uploadSkillFromZip(NAMESPACE_ID, zipBytes);
+        verify(skillOperationService).uploadSkillFromZip(NAMESPACE_ID, zipBytes, false);
     }
 
     @Test

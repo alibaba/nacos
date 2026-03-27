@@ -29,17 +29,14 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.ai.A2aProxy;
-import com.alibaba.nacos.core.auth.AuthFilter;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -69,12 +66,6 @@ public class ConsoleA2aControllerTest {
     @Mock
     private A2aProxy a2aProxy;
     
-    @Mock
-    private NacosAuthConfig authConfig;
-    
-    @InjectMocks
-    private AuthFilter authFilter;
-    
     private MockMvc mockMvc;
     
     private ConsoleA2aController consoleA2aController;
@@ -83,8 +74,7 @@ public class ConsoleA2aControllerTest {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         consoleA2aController = new ConsoleA2aController(a2aProxy);
-        mockMvc = MockMvcBuilders.standaloneSetup(consoleA2aController).addFilter(authFilter).build();
-        when(authConfig.isAuthEnabled()).thenReturn(false);
+        mockMvc = MockMvcBuilders.standaloneSetup(consoleA2aController).build();
     }
     
     @Test

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,10 +66,10 @@ public abstract class AbstractRemoteHandlerTest {
     }
     
     protected void setUpWithAi() {
-        when(clientHolder.getAiMaintainerService()).thenReturn(aiMaintainerService);
-        when(aiMaintainerService.mcp()).thenReturn(mcpMaintainerService);
-        when(aiMaintainerService.a2a()).thenReturn(a2aMaintainerService);
-        when(aiMaintainerService.prompt()).thenReturn(promptMaintainerService);
-        when(aiMaintainerService.pipeline()).thenReturn(pipelineMaintainerService);
+        lenient().when(clientHolder.getAiMaintainerService()).thenReturn(aiMaintainerService);
+        lenient().when(aiMaintainerService.mcp()).thenReturn(mcpMaintainerService);
+        lenient().when(aiMaintainerService.a2a()).thenReturn(a2aMaintainerService);
+        lenient().when(aiMaintainerService.prompt()).thenReturn(promptMaintainerService);
+        lenient().when(aiMaintainerService.pipeline()).thenReturn(pipelineMaintainerService);
     }
 }

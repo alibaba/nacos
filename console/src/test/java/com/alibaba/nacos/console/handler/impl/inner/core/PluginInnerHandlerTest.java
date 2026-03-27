@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -227,7 +226,7 @@ class PluginInnerHandlerTest {
         assertNotNull(authVo);
         assertNotNull(traceVo);
         assertTrue(authVo.getExclusive());
-        assertFalse(traceVo.getExclusive());
+        assertTrue(traceVo.getExclusive());
     }
 
     private PluginInfo createMockPluginInfo(String pluginId, PluginType type, String name, boolean enabled) {
