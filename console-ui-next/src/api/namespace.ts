@@ -15,7 +15,8 @@ export interface NamespaceListResponse {
 }
 
 export interface NamespaceCreateData {
-  namespaceId: string;
+  customNamespaceId?: string;
+  namespaceId?: string;
   namespaceName: string;
   namespaceDesc?: string;
 }
@@ -33,8 +34,14 @@ export const namespaceApi = {
   detail: (namespaceId: string): AxiosPromise<Namespace> =>
     client.get('v3/console/core/namespace', { params: { namespaceId } }),
 
-  create: (data: NamespaceCreateData): AxiosPromise<void> =>
-    client.post('v3/console/core/namespace', data),
+  create: (data: NamespaceCreateData): AxiosPromise<void> => {
+    const customNamespaceId = data.customNamespaceId ?? data.namespaceId ?? '';
+    return client.post('v3/console/core/namespace', {
+      customNamespaceId,
+      namespaceName: data.namespaceName,
+      namespaceDesc: data.namespaceDesc,
+    });
+  },
   
   update: (data: NamespaceUpdateData): AxiosPromise<void> =>
     client.put('v3/console/core/namespace', data),

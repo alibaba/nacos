@@ -76,7 +76,7 @@ export default function NamespacePage() {
     setSaving(true);
     try {
       await namespaceApi.create({
-        namespaceId: formId.trim(),
+        customNamespaceId: formId.trim(),
         namespaceName: formName.trim(),
         namespaceDesc: formDesc.trim(),
       });
