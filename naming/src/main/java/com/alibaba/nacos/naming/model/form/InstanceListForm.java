@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.api.model.NacosForm;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpStatus;
 
 import java.util.Objects;
@@ -69,7 +68,7 @@ public class InstanceListForm implements NacosForm {
             groupName = Constants.DEFAULT_GROUP;
         }
         if (StringUtils.isBlank(clusterName)) {
-            clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+            clusterName = StringUtils.EMPTY;
         }
         if (null == healthyOnly) {
             healthyOnly = false;

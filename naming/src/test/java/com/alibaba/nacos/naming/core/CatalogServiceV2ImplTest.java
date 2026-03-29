@@ -131,7 +131,38 @@ class CatalogServiceV2ImplTest {
             catalogServiceV2Impl.listInstances("A", "B", "C", "DD");
         });
     }
-    
+
+    @Test
+    void testListInstancesWithBlankClusterNameReturnsAll() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setGroupName("B");
+        serviceInfo.setName("C");
+        Instance instance1 = new Instance();
+        instance1.setClusterName("cluster1");
+        instance1.setIp("1.1.1.1");
+        Instance instance2 = new Instance();
+        instance2.setClusterName("cluster2");
+        instance2.setIp("2.2.2.2");
+        serviceInfo.setHosts(List.of(instance1, instance2));
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        List<? extends Instance> instances = catalogServiceV2Impl.listInstances("A", "B", "C", "");
+        assertEquals(2, instances.size());
+    }
+
+    @Test
+    void testListInstancesWithNullClusterNameReturnsAll() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setGroupName("B");
+        serviceInfo.setName("C");
+        Instance instance = new Instance();
+        instance.setClusterName("anyCluster");
+        instance.setIp("1.1.1.1");
+        serviceInfo.setHosts(Collections.singletonList(instance));
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        List<? extends Instance> instances = catalogServiceV2Impl.listInstances("A", "B", "C", null);
+        assertEquals(1, instances.size());
+    }
+
     @Test
     void testPageListService() throws NacosException {
         ServiceInfo serviceInfo = new ServiceInfo();
