@@ -419,7 +419,8 @@ class SkillManagement extends React.Component {
 
   getUploadAction = () => {
     const { accessToken = '', username = '' } = this.getTokenInfo();
-    return `v3/console/ai/skills/upload?namespaceId=${getParams('namespace') ||
+    const basePath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    return `${basePath}v3/console/ai/skills/upload?namespaceId=${getParams('namespace') ||
       ''}&accessToken=${accessToken}&username=${username}`;
   };
 
