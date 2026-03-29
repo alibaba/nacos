@@ -706,7 +706,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         AgentSpecVersionInfo info = requireVersionInfo(meta);
         String editing = info.getEditingVersion();
         if (StringUtils.isBlank(editing)) {
-            return;
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "No draft version to delete for agentspec: " + name);
         }
         AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 editing);
@@ -742,6 +743,13 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         final String finalTarget = target;
         
+        // Move to reviewing BEFORE pipeline execution to ensure consistent state.
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, finalTarget,
+                VERSION_STATUS_REVIEWING);
+        info.setEditingVersion(null);
+        info.setReviewingVersion(finalTarget);
+        updateMetaVersionInfoCas(namespaceId, meta, info);
+
         // Build context for pipeline execution using the AgentSpec file layout.
         AgentSpecPipelineContext ctx = new AgentSpecPipelineContext();
         ctx.setNamespaceId(namespaceId);
@@ -755,27 +763,24 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         });
         
-        String executionId = publishPipelineExecutor.execute(ctx,
-                result -> onPipelineComplete(namespaceId, name, finalTarget, result));
-        if (StringUtils.isBlank(executionId)) {
-            // Pipeline disabled or no matched nodes -> publish directly.
-            directPublishWithoutPipeline(namespaceId, meta, info, name, finalTarget, true);
-            return finalTarget;
-        }
-        
-        // Move to reviewing and record pipeline execution id
-        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, finalTarget,
-                VERSION_STATUS_REVIEWING);
-        info.setEditingVersion(null);
-        info.setReviewingVersion(finalTarget);
-        updateMetaVersionInfoCas(namespaceId, meta, info);
-        
+        // Write IN_PROGRESS pipelineInfo BEFORE execute() to prevent race condition:
+        // the async callback (onPipelineComplete) can finish very quickly and overwrite
+        // the final status if we write IN_PROGRESS after execute().
         AgentSpecPublishPipelineInfo pipelineInfo = new AgentSpecPublishPipelineInfo();
-        pipelineInfo.setExecutionId(executionId);
         pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);
         pipelineInfo.setPipeline(new ArrayList<>());
         aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 finalTarget, JacksonUtils.toJson(pipelineInfo));
+
+        String executionId = publishPipelineExecutor.execute(ctx,
+                result -> onPipelineComplete(namespaceId, name, finalTarget, result));
+        if (StringUtils.isBlank(executionId)) {
+            // Pipeline disabled or no matched nodes -> clear IN_PROGRESS and publish directly.
+            aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                    finalTarget, null);
+            directPublishWithoutPipeline(namespaceId, meta, info, name, finalTarget, true);
+            return finalTarget;
+        }
         
         return finalTarget;
     }

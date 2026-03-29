@@ -1,6 +1,7 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 
+/** Server state — returned as a flat key-value map (no {code,data} wrapper) */
 export interface ServerState {
   version: string;
   standaloneMode: string;
@@ -13,21 +14,14 @@ export interface ServerState {
   authAdminRequest: boolean;
 }
 
-export interface AnnouncementResponse {
-  data: string;
-}
-
-export interface GuideResponse {
-  data: string;
-}
-
 export const serverApi = {
-  getState: (): AxiosPromise<ServerState> =>
-    client.get('v3/console/server/state'),
+  /** Returns a flat key-value map (snake_case keys at runtime) */
+  getState: (): Promise<ServerState> =>
+    client.get('v3/console/server/state') as Promise<ServerState>,
   
-  getAnnouncement: (language: string): AxiosPromise<AnnouncementResponse> =>
-    client.get(`v3/console/server/announcement?language=${language}`),
+  getAnnouncement: (language: string): ApiResult<string> =>
+    client.get(`v3/console/server/announcement?language=${language}`) as ApiResult<string>,
   
-  getGuide: (): AxiosPromise<GuideResponse> =>
-    client.get('v3/console/server/guide'),
+  getGuide: (): ApiResult<string> =>
+    client.get('v3/console/server/guide') as ApiResult<string>,
 };

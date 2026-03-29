@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CONFIG_TYPES, type ConfigType, type ConfigBetaInfo } from '@/types/config';
+import { CONFIG_TYPES, type ConfigType, type ConfigBetaInfo, type Config } from '@/types/config';
 
 export default function ConfigEditorPage() {
   const navigate = useNavigate();
@@ -71,14 +71,14 @@ export default function ConfigEditorPage() {
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const response = await configApi.get({
+      const result = await configApi.get({
         dataId: urlDataId,
         groupName: urlGroup,
         namespaceId: urlNamespace,
       });
-
-      if (response.data?.code === 0 && response.data.data) {
-        const config = response.data.data;
+      // Response interceptor already unwraps response.data
+      const config = (result as unknown as { data: Config }).data;
+      if (config) {
         setDataId(config.dataId);
         setGroupName(config.groupName);
         setContent(config.content || '');
@@ -87,7 +87,7 @@ export default function ConfigEditorPage() {
         setConfigTags(config.configTags || '');
         setType(config.type || 'text');
       } else {
-        toast.error(response.data?.message || t('common.failed'));
+        toast.error(t('common.failed'));
       }
     } catch {
       toast.error(t('common.failed'));
@@ -149,7 +149,7 @@ export default function ConfigEditorPage() {
 
     setPublishing(true);
     try {
-      const response = await configApi.publish({
+      await configApi.publish({
         dataId,
         groupName,
         content,
@@ -159,13 +159,8 @@ export default function ConfigEditorPage() {
         appName,
         namespaceId: urlNamespace,
       });
-
-      if (response.data?.code === 0) {
-        toast.success(t('config.publishSuccess'));
-        navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(urlNamespace)}`);
-      } else {
-        toast.error(response.data?.message || t('config.publishFailed'));
-      }
+      toast.success(t('config.publishSuccess'));
+      navigate(`/configdetail?dataId=${encodeURIComponent(dataId)}&group=${encodeURIComponent(groupName)}&namespace=${encodeURIComponent(urlNamespace)}`);
     } catch {
       toast.error(t('config.publishFailed'));
     } finally {

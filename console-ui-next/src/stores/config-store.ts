@@ -106,14 +106,18 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
         pageSize,
       } = get();
 
+      // In blur mode, wrap search terms with * wildcards for backend LIKE matching
+      const isBlur = searchMode === 'blur';
+      const wrapBlur = (v: string) => (isBlur && v ? `*${v}*` : v || undefined);
+
       const params = {
-        dataId: dataId || undefined,
-        groupName: groupName || undefined,
+        dataId: wrapBlur(dataId),
+        groupName: wrapBlur(groupName),
         appName: appName || undefined,
         configTags: configTags || undefined,
         type: configType || undefined,
         search: searchMode,
-        configDetail: configDetail || undefined,
+        configDetail: wrapBlur(configDetail),
         pageNo,
         pageSize,
         namespaceId,

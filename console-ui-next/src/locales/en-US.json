@@ -79,6 +79,9 @@
     "version": "Version",
     "pageSize": "Page Size",
     "selectNamespace": "Namespace",
+    "sessionExpired": "Session expired, please login again",
+    "noPermission": "No permission to perform this operation",
+    "requestFailed": "Request failed",
     "versionLabels": {
       "title": "Version Labels",
       "noLabels": "No version labels",
@@ -246,6 +249,7 @@
     "ephemeral": "Ephemeral",
     "deleteConfirm": "Delete service {{name}}?",
     "deleteSuccess": "Service deleted",
+        "deleteHasInstances": "Service has active instances and cannot be deleted. Please deregister all instances first.",
     "createSuccess": "Service created",
     "updateSuccess": "Service updated",
     "totalServices": "{{total}} services",

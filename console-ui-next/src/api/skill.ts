@@ -1,18 +1,11 @@
 import client from './client';
+import type { ApiResult } from './types';
 import type {
   SkillListParams,
   SkillListResponse,
   SkillAdminDetail,
   SkillDocument,
 } from '@/types/skill';
-
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
-
-type ApiResult<T> = Promise<ApiResponse<T>>;
 
 const BASE = 'v3/console/ai/skills';
 

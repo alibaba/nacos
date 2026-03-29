@@ -79,6 +79,9 @@
     "version": "版本",
     "pageSize": "每页条数",
     "selectNamespace": "命名空间",
+    "sessionExpired": "会话已过期，请重新登录",
+    "noPermission": "无权限执行此操作",
+    "requestFailed": "请求失败",
     "versionLabels": {
       "title": "版本标签",
       "noLabels": "暂无版本标签",
@@ -246,6 +249,7 @@
     "ephemeral": "临时服务",
     "deleteConfirm": "确定要删除服务 {{name}} 吗？",
     "deleteSuccess": "服务删除成功",
+        "deleteHasInstances": "服务下存在实例，无法删除。请先注销所有实例后再试。",
     "createSuccess": "服务创建成功",
     "updateSuccess": "服务更新成功",
     "totalServices": "共 {{total}} 个服务",

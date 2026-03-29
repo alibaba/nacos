@@ -343,10 +343,8 @@ export default function SkillDetailPage() {
     setScopeToggling(true);
     try {
       const newScope = currentDetail.scope === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
-      const res = await skillApi.updateScope({ namespaceId, skillName, scope: newScope });
-      if (res.code === 0) {
-        toast.success(t('skill.scopeUpdateSuccess'));
-      }
+      await skillApi.updateScope({ namespaceId, skillName, scope: newScope });
+      toast.success(t('skill.scopeUpdateSuccess'));
       await loadDetail();
     } catch {
       // handled by interceptor

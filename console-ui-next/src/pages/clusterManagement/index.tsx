@@ -26,9 +26,8 @@ import {
 export default function ClusterManagementPage() {
   const { t } = useTranslation();
 
-  const [nodes, setNodes] = useState<ClusterNode[]>([]);
+  const [allNodes, setAllNodes] = useState<ClusterNode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [keyword, setKeyword] = useState('');
@@ -43,24 +42,25 @@ export default function ClusterManagementPage() {
     try {
       const response = await clusterApi.list({
         keyword: keyword || undefined,
-        pageNo,
-        pageSize,
       });
-      const body = response as unknown as { data: { pageItems: ClusterNode[]; totalCount: number } };
-      const data = body.data || { pageItems: [], totalCount: 0 };
-      setNodes(data.pageItems || []);
-      setTotal(data.totalCount || 0);
+      // Backend returns Result<Collection<NacosMember>> — data is a flat array
+      const members = response.data || [];
+      setAllNodes(Array.isArray(members) ? members : []);
     } catch {
-      setNodes([]);
-      setTotal(0);
+      setAllNodes([]);
     } finally {
       setLoading(false);
     }
-  }, [keyword, pageNo, pageSize]);
+  }, [keyword]);
 
   useEffect(() => {
     fetchNodes();
   }, [fetchNodes]);
+
+  // Client-side pagination (backend doesn't support pagination)
+  const total = allNodes.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const nodes = allNodes.slice((pageNo - 1) * pageSize, pageNo * pageSize);
 
   const handleSearch = () => {
     setKeyword(localKeyword);
@@ -72,6 +72,11 @@ export default function ClusterManagementPage() {
     setKeyword('');
     setPageNo(1);
   };
+
+  // Reset to page 1 when data changes
+  useEffect(() => {
+    setPageNo(1);
+  }, [allNodes]);
 
   const handleLeave = async () => {
     if (!nodeToLeave) return;
@@ -94,8 +99,6 @@ export default function ClusterManagementPage() {
     if (s === 'SUSPICIOUS') return <Badge className="bg-amber-500/15 text-amber-600 border-amber-200 hover:bg-amber-500/15">{t('cluster.stateSuspicious')}</Badge>;
     return <Badge variant="secondary">{state}</Badge>;
   };
-
-  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="flex flex-col gap-4">
@@ -139,7 +142,7 @@ export default function ClusterManagementPage() {
       {/* Table */}
       <Card className="py-0">
         <CardContent className="p-0">
-          {loading && nodes.length === 0 ? (
+          {loading && allNodes.length === 0 ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />

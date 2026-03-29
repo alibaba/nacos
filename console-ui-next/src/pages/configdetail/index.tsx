@@ -65,17 +65,13 @@ export default function ConfigDetailPage() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const response = await configApi.delete({
+      await configApi.delete({
         dataId,
         groupName: group,
         namespaceId: namespace,
       });
-      if (response.data?.code === 0) {
-        toast.success(t('config.deleteSuccess'));
-        navigate('/configurationManagement');
-      } else {
-        toast.error(response.data?.message || t('common.failed'));
-      }
+      toast.success(t('config.deleteSuccess'));
+      navigate('/configurationManagement');
     } catch (error) {
       toast.error(t('common.failed'));
     } finally {

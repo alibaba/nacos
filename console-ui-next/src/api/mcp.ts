@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 import type {
   McpListParams,
   McpListResponse,
@@ -12,16 +12,10 @@ import type {
   McpTool,
 } from '@/types/mcp';
 
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
-
 export const mcpApi = {
   /** List MCP servers with pagination and search */
-  listMcpServers: (params: McpListParams): AxiosPromise<ApiResponse<McpListResponse>> =>
-    client.get('v3/console/ai/mcp/list', { params }),
+  listMcpServers: (params: McpListParams): ApiResult<McpListResponse> =>
+    client.get('v3/console/ai/mcp/list', { params }) as ApiResult<McpListResponse>,
 
   /** Get MCP server detail */
   getMcpServer: (params: {
@@ -29,24 +23,24 @@ export const mcpApi = {
     mcpName?: string;
     version?: string;
     namespaceId?: string;
-  }): AxiosPromise<ApiResponse<McpServerDetailInfo>> =>
-    client.get('v3/console/ai/mcp', { params }),
+  }): ApiResult<McpServerDetailInfo> =>
+    client.get('v3/console/ai/mcp', { params }) as ApiResult<McpServerDetailInfo>,
 
   /** Create a new MCP server */
-  createMcpServer: (data: McpCreateData): AxiosPromise<ApiResponse<string>> =>
-    client.post('v3/console/ai/mcp', data),
+  createMcpServer: (data: McpCreateData): ApiResult<string> =>
+    client.post('v3/console/ai/mcp', data) as ApiResult<string>,
 
   /** Update an existing MCP server */
-  updateMcpServer: (data: McpUpdateData): AxiosPromise<ApiResponse<string>> =>
-    client.put('v3/console/ai/mcp', data),
+  updateMcpServer: (data: McpUpdateData): ApiResult<string> =>
+    client.put('v3/console/ai/mcp', data) as ApiResult<string>,
 
   /** Delete an MCP server */
   deleteMcpServer: (params: {
     mcpId?: string;
     mcpName?: string;
     namespaceId?: string;
-  }): AxiosPromise<ApiResponse<string>> =>
-    client.delete('v3/console/ai/mcp', { params }),
+  }): ApiResult<string> =>
+    client.delete('v3/console/ai/mcp', { params }) as ApiResult<string>,
 
   /** Import tools from an external MCP server endpoint */
   importToolsFromMcp: (params: {
@@ -54,14 +48,14 @@ export const mcpApi = {
     baseUrl: string;
     endpoint?: string;
     authToken?: string;
-  }): AxiosPromise<ApiResponse<McpTool[]>> =>
-    client.get('v3/console/ai/mcp/importToolsFromMcp', { params }),
+  }): ApiResult<McpTool[]> =>
+    client.get('v3/console/ai/mcp/importToolsFromMcp', { params }) as ApiResult<McpTool[]>,
 
   /** Validate MCP import request */
-  validateImport: (data: McpImportData): AxiosPromise<ApiResponse<McpImportValidationResult>> =>
-    client.post('v3/console/ai/mcp/import/validate', data),
+  validateImport: (data: McpImportData): ApiResult<McpImportValidationResult> =>
+    client.post('v3/console/ai/mcp/import/validate', data) as ApiResult<McpImportValidationResult>,
 
   /** Execute MCP import */
-  executeImport: (data: McpImportData): AxiosPromise<ApiResponse<McpImportResponse>> =>
-    client.post('v3/console/ai/mcp/import/execute', data),
+  executeImport: (data: McpImportData): ApiResult<McpImportResponse> =>
+    client.post('v3/console/ai/mcp/import/execute', data) as ApiResult<McpImportResponse>,
 };

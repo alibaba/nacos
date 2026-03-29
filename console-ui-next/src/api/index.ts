@@ -1,4 +1,5 @@
 export { default as client } from './client';
+export type { ApiResponse, ApiResult } from './types';
 export { authApi } from './auth';
 export { serverApi } from './server';
 export { namespaceApi } from './namespace';

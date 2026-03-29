@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 
 export interface PluginInfo {
   pluginId: string;
@@ -14,13 +14,13 @@ export interface PluginInfo {
 }
 
 export const pluginApi = {
-  list: (pluginType?: string): AxiosPromise<PluginInfo[]> =>
-    client.get('v3/console/plugin/list', { params: pluginType ? { pluginType } : {} }),
+  list: (pluginType?: string): ApiResult<PluginInfo[]> =>
+    client.get('v3/console/plugin/list', { params: pluginType ? { pluginType } : {} }) as ApiResult<PluginInfo[]>,
 
   setStatus: (params: {
     pluginType: string;
     pluginName: string;
     enabled: boolean;
-  }): AxiosPromise<void> =>
-    client.put('v3/console/plugin/status', null, { params }),
+  }): ApiResult<boolean> =>
+    client.put('v3/console/plugin/status', null, { params }) as ApiResult<boolean>,
 };

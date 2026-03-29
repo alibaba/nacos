@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 import type {
   PromptListParams,
   PromptListResponse,
@@ -11,23 +11,17 @@ import type {
   PromptLabelBindData,
 } from '@/types/prompt';
 
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
-
 export const promptApi = {
   /** List prompts with pagination and search */
-  listPrompts: (params: PromptListParams): AxiosPromise<ApiResponse<PromptListResponse>> =>
-    client.get('v3/console/ai/prompt/list', { params }),
+  listPrompts: (params: PromptListParams): ApiResult<PromptListResponse> =>
+    client.get('v3/console/ai/prompt/list', { params }) as ApiResult<PromptListResponse>,
 
   /** Get prompt metadata (versions, labels, description, bizTags) */
   getPromptMetadata: (params: {
     promptKey: string;
     namespaceId?: string;
-  }): AxiosPromise<ApiResponse<PromptMetaInfo>> =>
-    client.get('v3/console/ai/prompt/metadata', { params }),
+  }): ApiResult<PromptMetaInfo> =>
+    client.get('v3/console/ai/prompt/metadata', { params }) as ApiResult<PromptMetaInfo>,
 
   /** Get prompt version detail */
   getPromptDetail: (params: {
@@ -35,8 +29,8 @@ export const promptApi = {
     version?: string;
     label?: string;
     namespaceId?: string;
-  }): AxiosPromise<ApiResponse<PromptVersionInfo>> =>
-    client.get('v3/console/ai/prompt/detail', { params }),
+  }): ApiResult<PromptVersionInfo> =>
+    client.get('v3/console/ai/prompt/detail', { params }) as ApiResult<PromptVersionInfo>,
 
   /** List version history (paginated) */
   listVersions: (params: {
@@ -44,11 +38,11 @@ export const promptApi = {
     namespaceId?: string;
     pageNo?: number;
     pageSize?: number;
-  }): AxiosPromise<ApiResponse<PromptVersionListResponse>> =>
-    client.get('v3/console/ai/prompt/versions', { params }),
+  }): ApiResult<PromptVersionListResponse> =>
+    client.get('v3/console/ai/prompt/versions', { params }) as ApiResult<PromptVersionListResponse>,
 
   /** Publish new prompt version (form-urlencoded) */
-  publishVersion: (data: PromptPublishData): AxiosPromise<ApiResponse<boolean>> => {
+  publishVersion: (data: PromptPublishData): ApiResult<boolean> => {
     const params = new URLSearchParams();
     params.append('promptKey', data.promptKey);
     params.append('version', data.version);
@@ -60,11 +54,11 @@ export const promptApi = {
     if (data.namespaceId) params.append('namespaceId', data.namespaceId);
     return client.post('v3/console/ai/prompt', params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    }) as ApiResult<boolean>;
   },
 
   /** Update prompt metadata (description/bizTags) */
-  updateMetadata: (data: PromptUpdateMetadataData): AxiosPromise<ApiResponse<boolean>> => {
+  updateMetadata: (data: PromptUpdateMetadataData): ApiResult<boolean> => {
     const params = new URLSearchParams();
     params.append('promptKey', data.promptKey);
     if (data.description !== undefined) params.append('description', data.description);
@@ -72,11 +66,11 @@ export const promptApi = {
     if (data.namespaceId) params.append('namespaceId', data.namespaceId);
     return client.put('v3/console/ai/prompt/metadata', params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    }) as ApiResult<boolean>;
   },
 
   /** Bind label to version */
-  bindLabel: (data: PromptLabelBindData): AxiosPromise<ApiResponse<boolean>> => {
+  bindLabel: (data: PromptLabelBindData): ApiResult<boolean> => {
     const params = new URLSearchParams();
     params.append('promptKey', data.promptKey);
     params.append('label', data.label);
@@ -84,7 +78,7 @@ export const promptApi = {
     if (data.namespaceId) params.append('namespaceId', data.namespaceId);
     return client.put('v3/console/ai/prompt/label', params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    }) as ApiResult<boolean>;
   },
 
   /** Unbind label */
@@ -92,13 +86,13 @@ export const promptApi = {
     promptKey: string;
     label: string;
     namespaceId?: string;
-  }): AxiosPromise<ApiResponse<boolean>> =>
-    client.delete('v3/console/ai/prompt/label', { params }),
+  }): ApiResult<boolean> =>
+    client.delete('v3/console/ai/prompt/label', { params }) as ApiResult<boolean>,
 
   /** Delete prompt */
   deletePrompt: (params: {
     promptKey: string;
     namespaceId?: string;
-  }): AxiosPromise<ApiResponse<boolean>> =>
-    client.delete('v3/console/ai/prompt', { params }),
+  }): ApiResult<boolean> =>
+    client.delete('v3/console/ai/prompt', { params }) as ApiResult<boolean>,
 };
