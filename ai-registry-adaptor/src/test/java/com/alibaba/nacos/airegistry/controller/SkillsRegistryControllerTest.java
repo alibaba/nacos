@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.mcpregistry.controller;
+package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.mcpregistry.model.skills.SkillsSearchItem;
-import com.alibaba.nacos.mcpregistry.model.skills.SkillsSearchResponse;
-import com.alibaba.nacos.mcpregistry.model.skills.WellKnownSkillEntry;
-import com.alibaba.nacos.mcpregistry.model.skills.WellKnownSkillsIndex;
-import com.alibaba.nacos.mcpregistry.service.NacosSkillsRegistryService;
+import com.alibaba.nacos.airegistry.model.skills.SkillsSearchItem;
+import com.alibaba.nacos.airegistry.model.skills.SkillsSearchResponse;
+import com.alibaba.nacos.airegistry.model.skills.WellKnownSkillEntry;
+import com.alibaba.nacos.airegistry.model.skills.WellKnownSkillsIndex;
+import com.alibaba.nacos.airegistry.service.NacosSkillsRegistryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

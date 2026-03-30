@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.mcpregistry.service;
+package com.alibaba.nacos.airegistry.service;
 
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.index.McpServerIndex;
@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
-import com.alibaba.nacos.mcpregistry.form.ListServerForm;
+import com.alibaba.nacos.airegistry.form.ListServerForm;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class NacosMcpRegistryServiceTest {
+class NacosAiRegistryServiceTest {
     
     private static final String RANDOM_NAMESPACE_ID = UUID.randomUUID().toString();
     

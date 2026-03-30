@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.mcpregistry.controller;
+package com.alibaba.nacos.airegistry.controller;
 
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpErrorResponse;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerResponse;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.mcpregistry.service.NacosMcpRegistryService;
+import com.alibaba.nacos.airegistry.service.NacosMcpRegistryService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

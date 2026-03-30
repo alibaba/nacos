@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.mcpregistry.service;
+package com.alibaba.nacos.airegistry.service;
 
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.service.skills.SkillIndexManifestService;
@@ -23,8 +23,8 @@ import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.mcpregistry.model.skills.SkillsSearchResponse;
-import com.alibaba.nacos.mcpregistry.model.skills.WellKnownSkillsIndex;
+import com.alibaba.nacos.airegistry.model.skills.SkillsSearchResponse;
+import com.alibaba.nacos.airegistry.model.skills.WellKnownSkillsIndex;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

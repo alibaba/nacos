@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.mcpregistry;
+package com.alibaba.nacos.airegistry;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,26 +27,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class NacosMcpRegistryStartUpTest {
+class NacosAiRegistryStartUpTest {
     
-    NacosMcpRegistryStartUp nacosMcpRegistryStartUp;
+    NacosAiRegistryStartUp nacosAiRegistryStartUp;
     
     @Mock
     Logger logger;
     
     @BeforeEach
     void setUp() {
-        nacosMcpRegistryStartUp = new NacosMcpRegistryStartUp();
+        nacosAiRegistryStartUp = new NacosAiRegistryStartUp();
     }
     
     @Test
     void getPhaseNameInStartingInfo() {
-        assertEquals("Nacos Mcp Registry", nacosMcpRegistryStartUp.getPhaseNameInStartingInfo());
+        assertEquals("Nacos AI Registry", nacosAiRegistryStartUp.getPhaseNameInStartingInfo());
     }
     
     @Test
     void logStarted() {
-        nacosMcpRegistryStartUp.logStarted(logger);
-        verify(logger).info("Nacos Mcp Registry Started.");
+        nacosAiRegistryStartUp.logStarted(logger);
+        verify(logger).info("Nacos AI Registry Started.");
     }
 }
