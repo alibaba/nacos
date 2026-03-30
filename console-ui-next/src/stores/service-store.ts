@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { serviceApi } from '@/api/service';
+import client from '@/api/client';
 import type { ServiceView, ServiceListResponse, ServiceDetailInfo } from '@/types/service';
 import type { AxiosError } from 'axios';
 
@@ -39,7 +40,7 @@ interface ServiceActions {
   setPage: (pageNo: number, pageSize?: number) => void;
   resetSearch: () => void;
   fetchServiceDetail: (namespaceId: string, serviceName: string, groupName: string) => Promise<void>;
-  deleteService: (namespaceId: string, serviceName: string, groupName: string) => Promise<boolean>;
+  deleteService: (namespaceId: string, serviceName: string, groupName: string) => Promise<{ ok: boolean; reason?: string }>;
   fetchSelectorTypes: () => Promise<void>;
   clearCurrentService: () => void;
   clearError: () => void;
@@ -137,12 +138,17 @@ export const useServiceStore = create<ServiceStore>((set, get) => ({
 
   deleteService: async (namespaceId: string, serviceName: string, groupName: string) => {
     try {
-      await serviceApi.deleteService({ namespaceId, serviceName, groupName });
-      return true;
+      await client.delete('v3/console/ns/service', {
+        params: { namespaceId, serviceName, groupName },
+        silentError: true,
+      } as never);
+      return { ok: true };
     } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      set({ error: axiosError.response?.data?.message || 'Failed to delete service' });
-      return false;
+      const axiosError = error as AxiosError<{ message?: string; data?: string }>;
+      const detail = typeof axiosError.response?.data?.data === 'string' ? axiosError.response.data.data : '';
+      const reason = detail || axiosError.response?.data?.message || '';
+      set({ error: reason });
+      return { ok: false, reason };
     }
   },
 

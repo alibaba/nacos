@@ -58,6 +58,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+import static com.alibaba.nacos.ai.constant.Constants.Skills.ADMIN_PATH;
 import static com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ALLOW_ANONYMOUS;
 
 /**
@@ -147,8 +148,7 @@ public class SkillAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
-    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm)
-            throws NacosException {
+    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();
         pageForm.validate();
         return Result.success(
@@ -238,6 +238,20 @@ public class SkillAdminController {
     }
     
     /**
+     * Force-publish a skill version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and reviewing
+     * (pipeline in-progress) versions. Only admin users can call this endpoint.
+     */
+    @PostMapping("/force-publish")
+    @Secured(resource = ADMIN_PATH
+            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
+        form.validate();
+        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+        return Result.success("ok");
+    }
+    
+    /**
      * Update runtime route labels without changing version status.
      */
     @PutMapping("/labels")
@@ -248,7 +262,7 @@ public class SkillAdminController {
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);
         return Result.success("ok");
     }
-
+    
     /**
      * Update skill biz tags without changing version status.
      */

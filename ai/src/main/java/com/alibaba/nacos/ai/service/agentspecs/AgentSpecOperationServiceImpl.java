@@ -67,6 +67,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * AgentSpec operation service implementation. Mirrors {@code SkillOperationServiceImpl} with AgentSpec types.
@@ -755,15 +756,18 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             }
         });
         
-        String executionId = publishPipelineExecutor.execute(ctx,
-                result -> onPipelineComplete(namespaceId, name, finalTarget, result));
-        if (StringUtils.isBlank(executionId)) {
+        // Check pipeline availability before starting async execution.
+        if (!publishPipelineExecutor.isPipelineAvailable(ctx.getResourceType())) {
             // Pipeline disabled or no matched nodes -> publish directly.
             directPublishWithoutPipeline(namespaceId, meta, info, name, finalTarget, true);
             return finalTarget;
         }
         
-        // Move to reviewing and record pipeline execution id
+        // Pre-generate executionId and write IN_PROGRESS pipelineInfo BEFORE starting async task
+        // to eliminate the race condition where async callback could complete before pipelineInfo is written.
+        String executionId = UUID.randomUUID().toString();
+        
+        // Move to reviewing state
         aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, finalTarget,
                 VERSION_STATUS_REVIEWING);
         info.setEditingVersion(null);
@@ -776,6 +780,17 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         pipelineInfo.setPipeline(new ArrayList<>());
         aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 finalTarget, JacksonUtils.toJson(pipelineInfo));
+        
+        // Start async pipeline with pre-generated executionId
+        String result = publishPipelineExecutor.execute(ctx,
+                r -> onPipelineComplete(namespaceId, name, finalTarget, r), executionId);
+        if (StringUtils.isBlank(result)) {
+            // Edge case: pipeline became unavailable between isPipelineAvailable check and execute.
+            // Clean up pipelineInfo and publish directly.
+            aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                    finalTarget, null);
+            directPublishWithoutPipeline(namespaceId, meta, info, name, finalTarget, true);
+        }
         
         return finalTarget;
     }

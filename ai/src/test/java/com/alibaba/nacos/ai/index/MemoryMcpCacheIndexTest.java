@@ -640,13 +640,11 @@ class MemoryMcpCacheIndexTest {
             // 仅校验新条目有效，旧条目在秒级边界上可能会提前过期
             assertEquals("id2", mixedCache.getMcpId("ns2", "name2"));
             
-            // 再等待1.1秒，使第一个条目过期但第二个不过期
-            Thread.sleep(1100);
-            
-            // Invoke cleanupExpiredEntries directly instead of relying on the async scheduler.
-            // Note: getMcpId also triggers lazy eviction for individual entries (line 141-149),
-            // but here we test the batch cleanup method that the scheduler would normally run.
-            invokeCleanupExpiredEntries(mixedCache);
+            // 轮询等待id1过期，避免固定sleep导致秒级边界抖动
+            long deadline = System.currentTimeMillis() + 2500;
+            while (mixedCache.getMcpId("ns1", "name1") != null && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
             
             // 验证只有过期的条目被清理
             assertNull(mixedCache.getMcpId("ns1", "name1"));

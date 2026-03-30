@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 import type {
   Config,
   ConfigListParams,
@@ -13,36 +13,30 @@ import type {
   ConfigBetaInfo,
 } from '@/types/config';
 
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
-
 export const configApi = {
   // List configs
-  list: (params: ConfigListParams): AxiosPromise<ApiResponse<ConfigListResponse>> =>
-    client.get('v3/console/cs/config/list', { params }),
+  list: (params: ConfigListParams): ApiResult<ConfigListResponse> =>
+    client.get('v3/console/cs/config/list', { params }) as ApiResult<ConfigListResponse>,
 
   // Advanced search with content
-  searchDetail: (params: ConfigListParams): AxiosPromise<ApiResponse<ConfigListResponse>> =>
-    client.get('v3/console/cs/config/searchDetail', { params }),
+  searchDetail: (params: ConfigListParams): ApiResult<ConfigListResponse> =>
+    client.get('v3/console/cs/config/searchDetail', { params }) as ApiResult<ConfigListResponse>,
 
   // Get single config
-  get: (params: { dataId: string; groupName: string; namespaceId?: string }): AxiosPromise<ApiResponse<Config>> =>
-    client.get('v3/console/cs/config', { params }),
+  get: (params: { dataId: string; groupName: string; namespaceId?: string }): ApiResult<Config> =>
+    client.get('v3/console/cs/config', { params }) as ApiResult<Config>,
 
   // Create or update config
-  publish: (data: ConfigCreateData): AxiosPromise<ApiResponse<boolean>> =>
-    client.post('v3/console/cs/config', data),
+  publish: (data: ConfigCreateData): ApiResult<boolean> =>
+    client.post('v3/console/cs/config', data) as ApiResult<boolean>,
 
   // Delete config
-  delete: (params: { dataId: string; groupName: string; namespaceId?: string }): AxiosPromise<ApiResponse<boolean>> =>
-    client.delete('v3/console/cs/config', { params }),
+  delete: (params: { dataId: string; groupName: string; namespaceId?: string }): ApiResult<boolean> =>
+    client.delete('v3/console/cs/config', { params }) as ApiResult<boolean>,
 
   // Batch delete
-  batchDelete: (params: { ids: string; namespaceId: string }): AxiosPromise<ApiResponse<boolean>> =>
-    client.delete('v3/console/cs/config/batchDelete', { params }),
+  batchDelete: (params: { ids: string; namespaceId: string }): ApiResult<boolean> =>
+    client.delete('v3/console/cs/config/batchDelete', { params }) as ApiResult<boolean>,
 
   // History list
   historyList: (params: {
@@ -51,38 +45,38 @@ export const configApi = {
     namespaceId?: string;
     pageNo: number;
     pageSize: number;
-  }): AxiosPromise<ApiResponse<ConfigHistoryListResponse>> =>
-    client.get('v3/console/cs/history/list', { params }),
+  }): ApiResult<ConfigHistoryListResponse> =>
+    client.get('v3/console/cs/history/list', { params }) as ApiResult<ConfigHistoryListResponse>,
 
   // History detail
-  historyDetail: (params: { nid: string; dataId: string; groupName: string }): AxiosPromise<ApiResponse<ConfigHistory>> =>
-    client.get('v3/console/cs/history', { params }),
+  historyDetail: (params: { nid: string; dataId: string; groupName: string }): ApiResult<ConfigHistory> =>
+    client.get('v3/console/cs/history', { params }) as ApiResult<ConfigHistory>,
 
   // Previous version
-  historyPrevious: (params: { id: string; dataId: string; groupName: string }): AxiosPromise<ApiResponse<ConfigHistory>> =>
-    client.get('v3/console/cs/history/previous', { params }),
+  historyPrevious: (params: { id: string; dataId: string; groupName: string }): ApiResult<ConfigHistory> =>
+    client.get('v3/console/cs/history/previous', { params }) as ApiResult<ConfigHistory>,
 
   // Listeners by config
-  listenersByConfig: (params: { dataId: string; groupName: string; namespaceId?: string }): AxiosPromise<ApiResponse<ConfigListenerInfo>> =>
-    client.get('v3/console/cs/config/listener', { params }),
+  listenersByConfig: (params: { dataId: string; groupName: string; namespaceId?: string }): ApiResult<ConfigListenerInfo> =>
+    client.get('v3/console/cs/config/listener', { params }) as ApiResult<ConfigListenerInfo>,
 
   // Listeners by IP
-  listenersByIp: (params: { ip: string; namespaceId?: string }): AxiosPromise<ApiResponse<ConfigListenerInfo>> =>
-    client.get('v3/console/cs/config/listener/ip', { params }),
+  listenersByIp: (params: { ip: string; namespaceId?: string }): ApiResult<ConfigListenerInfo> =>
+    client.get('v3/console/cs/config/listener/ip', { params }) as ApiResult<ConfigListenerInfo>,
 
   // Get beta config
-  getBeta: (params: { dataId: string; groupName: string; namespaceId?: string }): AxiosPromise<ApiResponse<ConfigBetaInfo>> =>
-    client.get('v3/console/cs/config/beta', { params }),
+  getBeta: (params: { dataId: string; groupName: string; namespaceId?: string }): ApiResult<ConfigBetaInfo> =>
+    client.get('v3/console/cs/config/beta', { params }) as ApiResult<ConfigBetaInfo>,
 
   // Publish beta config (same endpoint, with betaIps header)
-  publishBeta: (data: ConfigCreateData, betaIps: string): AxiosPromise<ApiResponse<boolean>> =>
+  publishBeta: (data: ConfigCreateData, betaIps: string): ApiResult<boolean> =>
     client.post('v3/console/cs/config', data, {
       headers: { betaIps },
-    }),
+    }) as ApiResult<boolean>,
 
   // Stop beta
-  stopBeta: (params: { dataId: string; groupName: string; namespaceId?: string }): AxiosPromise<ApiResponse<boolean>> =>
-    client.delete('v3/console/cs/config/beta', { params }),
+  stopBeta: (params: { dataId: string; groupName: string; namespaceId?: string }): ApiResult<boolean> =>
+    client.delete('v3/console/cs/config/beta', { params }) as ApiResult<boolean>,
 
   // Export - returns URL string for window.open() browser download
   exportUrl: (params: { namespaceId: string; ids?: string; groupName?: string; appName?: string; dataId?: string }): string => {
@@ -106,7 +100,7 @@ export const configApi = {
   },
 
   // Import - POST multipart/form-data (ZIP file)
-  importFile: (namespaceId: string, policy: ConflictPolicy, file: File): AxiosPromise => {
+  importFile: (namespaceId: string, policy: ConflictPolicy, file: File): ApiResult<unknown> => {
     const formData = new FormData();
     formData.append('file', file);
     // Add auth params
@@ -123,11 +117,11 @@ export const configApi = {
     return client.post('v3/console/cs/config/import', formData, {
       params: { namespaceId, policy, accessToken, username },
       headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    }) as ApiResult<unknown>;
   },
 
   // Clone - POST JSON body
-  clone: (params: { namespaceId: string; targetNamespaceId: string; policy: ConflictPolicy }, configs: ConfigCloneItem[]): AxiosPromise =>
+  clone: (params: { namespaceId: string; targetNamespaceId: string; policy: ConflictPolicy }, configs: ConfigCloneItem[]): ApiResult<unknown> =>
     client.post('v3/console/cs/config/clone', JSON.stringify(configs), {
       params: {
         targetNamespaceId: params.targetNamespaceId,
@@ -135,5 +129,5 @@ export const configApi = {
         namespaceId: params.namespaceId,
       },
       headers: { 'Content-Type': 'application/json' },
-    }),
+    }) as ApiResult<unknown>,
 };

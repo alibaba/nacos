@@ -35,6 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -89,8 +90,8 @@ class NacosPromptCacheHolderTest {
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
         assertNotNull(getPromptCache().get("p1::version:1.0.0"));
-        waitForSubscriber(subscriber);
-        assertTrue(subscriber.invokedMark.get());
+        assertTrue(subscriber.await(2000), "Event should be received by subscriber within 2 seconds");
+        assertTrue(subscriber.invokedMark.get(), "Subscriber should have been invoked");
     }
     
     @Test
@@ -189,26 +190,32 @@ class NacosPromptCacheHolderTest {
     }
     
     private void waitForSubscriber(MockPromptEventSubscriber subscriber) throws InterruptedException {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 10; i++) {
             if (subscriber.invokedMark.get()) {
                 return;
             }
-            TimeUnit.MILLISECONDS.sleep(200);
+            TimeUnit.MILLISECONDS.sleep(100);
         }
     }
     
     private static class MockPromptEventSubscriber extends Subscriber<PromptChangedEvent> {
         
         private final AtomicBoolean invokedMark = new AtomicBoolean(false);
+        private final CountDownLatch latch = new CountDownLatch(1);
         
         @Override
         public void onEvent(PromptChangedEvent event) {
             invokedMark.set(true);
+            latch.countDown();
         }
         
         @Override
         public Class<? extends Event> subscribeType() {
             return PromptChangedEvent.class;
+        }
+        
+        boolean await(long timeoutMs) throws InterruptedException {
+            return latch.await(timeoutMs, TimeUnit.MILLISECONDS);
         }
     }
 }

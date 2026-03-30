@@ -66,7 +66,7 @@ export default function NewConfigPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await configApi.publish({
+      await configApi.publish({
         dataId: dataId.trim(),
         groupName: groupName.trim(),
         content: content,
@@ -76,13 +76,8 @@ export default function NewConfigPage() {
         appName: appName.trim(),
         namespaceId: currentNamespace,
       });
-
-      if (response.data.code === 0) {
-        toast.success(t('config.publishSuccess'));
-        navigate('/configurationManagement');
-      } else {
-        toast.error(response.data.message || t('config.publishFailed'));
-      }
+      toast.success(t('config.publishSuccess'));
+      navigate('/configurationManagement');
     } catch (error) {
       toast.error(t('config.publishFailed'));
     } finally {

@@ -299,6 +299,16 @@ class SkillAdminControllerTest {
         verify(skillOperationService).updateScope("public", "test-skill", "PUBLIC");
     }
 
+    @Test
+    void testForcePublishSuccess() throws Exception {
+        doNothing().when(skillOperationService).forcePublish(eq("public"), eq("test-skill"), eq("v1"), eq(true));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/force-publish")
+                .param("skillName", "test-skill").param("version", "v1");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(skillOperationService).forcePublish("public", "test-skill", "v1", true);
+    }
+
     private void assertServletException(Class<? extends Exception> expectedException, Executable executable,
             String expectedMessage) throws Throwable {
         try {

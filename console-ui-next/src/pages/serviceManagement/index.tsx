@@ -71,6 +71,7 @@ export default function ServiceManagementPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ name: string; groupName: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Create service dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -132,13 +133,19 @@ export default function ServiceManagementPage() {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    const ok = await deleteService(currentNamespace, deleteTarget.name, deleteTarget.groupName);
+    setDeleteError(null);
+    const result = await deleteService(currentNamespace, deleteTarget.name, deleteTarget.groupName);
     setDeleting(false);
-    if (ok) {
+    if (result.ok) {
       toast.success(t('service.deleteSuccess'));
       setDeleteOpen(false);
       setDeleteTarget(null);
       loadServices();
+    } else {
+      // Show localized error: detect "not empty" pattern from backend
+      const reason = result.reason || '';
+      const hasInstances = reason.toLowerCase().includes('not empty');
+      setDeleteError(hasInstances ? t('service.deleteHasInstances') : reason);
     }
   };
 
@@ -331,6 +338,7 @@ export default function ServiceManagementPage() {
                           className="text-destructive hover:text-destructive"
                           onClick={() => {
                             setDeleteTarget({ name: svc.name, groupName: svc.groupName });
+                            setDeleteError(null);
                             setDeleteOpen(true);
                           }}
                         >
@@ -401,6 +409,11 @@ export default function ServiceManagementPage() {
               {deleteTarget && t('service.deleteConfirm', { name: deleteTarget.name })}
             </DialogDescription>
           </DialogHeader>
+          {deleteError && (
+            <div className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              {deleteError}
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
               {t('common.cancel')}

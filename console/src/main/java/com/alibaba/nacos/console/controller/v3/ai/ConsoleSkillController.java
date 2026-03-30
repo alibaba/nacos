@@ -55,6 +55,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
+
 /**
  * Console skill controller.
  *
@@ -114,7 +116,7 @@ public class ConsoleSkillController {
         Skill skill = skillProxy.downloadSkillVersion(form);
         return SkillRequestUtil.buildSkillZipResponse(skill);
     }
-
+    
     /**
      * Delete skill.
      *
@@ -140,8 +142,7 @@ public class ConsoleSkillController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm)
-            throws NacosException {
+    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();
         pageForm.validate();
         return Result.success(skillProxy.listSkills(skillListForm, pageForm));
@@ -223,6 +224,20 @@ public class ConsoleSkillController {
     }
     
     /**
+     * Force-publish a skill version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and reviewing
+     * (pipeline in-progress) versions. Restricted to admin users only (apiType = ADMIN_API enforces global admin
+     * check).
+     */
+    @PostMapping("/force-publish")
+    @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
+            + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+    public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
+        form.validate();
+        skillProxy.forcePublish(form);
+        return Result.success("ok");
+    }
+    
+    /**
      * Update runtime route labels without changing version status.
      */
     @PutMapping("/labels")
@@ -232,7 +247,7 @@ public class ConsoleSkillController {
         skillProxy.updateLabels(form);
         return Result.success("ok");
     }
-
+    
     /**
      * Update skill biz tags without changing version status.
      */

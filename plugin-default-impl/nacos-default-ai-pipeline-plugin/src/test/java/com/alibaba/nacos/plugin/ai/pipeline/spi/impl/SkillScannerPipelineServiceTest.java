@@ -238,8 +238,10 @@ class SkillScannerPipelineServiceTest {
         assertTrue(result.getMessage().contains("扫描通过"));
         assertEquals(PublishPipelineMessageType.MARKDOWN, result.getType());
         assertNotNull(result.getCheckpoints());
-        assertEquals(1, result.getCheckpoints().size());
-        assertEquals("自动化安全扫描（无 HIGH/CRITICAL 发现）", result.getCheckpoints().get(0).getTitle());
+        // buildPassCheckpoints generates multiple checkpoints for each security check category
+        assertTrue(result.getCheckpoints().size() >= 5, 
+                "Should have at least 5 checkpoints for basic security checks, but got: " + result.getCheckpoints().size());
+        assertEquals("Prompt injection 检查", result.getCheckpoints().get(0).getTitle());
         assertTrue(result.getCheckpoints().get(0).getPassed());
     }
 
@@ -299,8 +301,10 @@ class SkillScannerPipelineServiceTest {
         assertTrue(result.getMessage().contains("扫描通过"));
         assertEquals(PublishPipelineMessageType.MARKDOWN, result.getType());
         assertNotNull(result.getCheckpoints());
-        assertEquals(1, result.getCheckpoints().size());
-        assertEquals("自动化安全扫描（无 HIGH/CRITICAL 发现）", result.getCheckpoints().get(0).getTitle());
+        // buildPassCheckpoints generates multiple checkpoints for each security check category
+        assertTrue(result.getCheckpoints().size() >= 5, 
+                "Should have at least 5 checkpoints for basic security checks, but got: " + result.getCheckpoints().size());
+        assertEquals("Prompt injection 检查", result.getCheckpoints().get(0).getTitle());
         assertTrue(result.getCheckpoints().get(0).getPassed());
     }
 

@@ -79,20 +79,26 @@ class AgentSpecSubmitResourceTypeTest {
                     eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version)))
                     .thenReturn(versionRow);
 
-            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any()))
-                    .thenReturn(null);
+            // isPipelineAvailable returns true to enter the pipeline path
+            when(publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
+                    .thenReturn(true);
+
+            // Pipeline executor returns the caller's pre-generated executionId
+            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any(), any(String.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(2));
+
+            // Mock updateMetaCas to return true
+            when(aiResourcePersistService.updateMetaCas(
+                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), any(Long.class), any()))
+                    .thenReturn(true);
 
             AgentSpecOperationServiceImpl service = new AgentSpecOperationServiceImpl(
                     aiResourcePersistService, aiResourceVersionPersistService,
                     publishPipelineExecutor, pipelineExecutionRepository);
-            try {
-                service.submit(input.namespaceId, input.name, input.version);
-            } catch (Exception e) {
-                // publish() may fail due to unmocked storage, but the context was already captured
-            }
+            service.submit(input.namespaceId, input.name, input.version);
 
             ArgumentCaptor<PublishPipelineContext> captor = ArgumentCaptor.forClass(PublishPipelineContext.class);
-            verify(publishPipelineExecutor).execute(captor.capture(), any());
+            verify(publishPipelineExecutor).execute(captor.capture(), any(), any(String.class));
 
             PublishPipelineContext capturedCtx = captor.getValue();
             assertNotNull(capturedCtx, "PublishPipelineContext should not be null");

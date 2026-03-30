@@ -22,6 +22,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -63,6 +64,47 @@ class LocalDataSourceServiceImplTest {
         service = new LocalDataSourceServiceImpl();
         ReflectionTestUtils.setField(service, "jt", jt);
         ReflectionTestUtils.setField(service, "tjt", tjt);
+    }
+    
+    @AfterEach
+    void tearDown() throws Exception {
+        // Shutdown Derby to release locks
+        try {
+            java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
+        } catch (Exception e) {
+            // Ignore shutdown exception as Derby always throws an exception on successful shutdown
+        }
+        
+        // Wait for Derby to fully shutdown and release locks
+        Thread.sleep(500);
+        
+        // Clean up derby data directory to ensure fresh start for next test
+        try {
+            String derbyPath = System.getProperty("user.dir") + "/data/derby-data";
+            java.io.File derbyDir = new java.io.File(derbyPath);
+            if (derbyDir.exists()) {
+                deleteDirectory(derbyDir);
+            }
+        } catch (Exception e) {
+            // Ignore cleanup exceptions
+        }
+        
+        DatasourceConfiguration.setUseExternalDb(false);
+        EnvUtil.setEnvironment(null);
+    }
+    
+    private void deleteDirectory(java.io.File directory) throws Exception {
+        if (directory.exists()) {
+            java.nio.file.Files.walk(directory.toPath())
+                    .sorted((a, b) -> b.compareTo(a))
+                    .forEach(path -> {
+                        try {
+                            java.nio.file.Files.delete(path);
+                        } catch (Exception e) {
+                            // Ignore
+                        }
+                    });
+        }
     }
     
     @Test

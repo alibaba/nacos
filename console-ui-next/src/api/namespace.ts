@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 
 export interface Namespace {
   namespace: string;
@@ -15,7 +15,7 @@ export interface NamespaceListResponse {
 }
 
 export interface NamespaceCreateData {
-  namespaceId: string;
+  customNamespaceId: string;
   namespaceName: string;
   namespaceDesc?: string;
 }
@@ -27,18 +27,18 @@ export interface NamespaceUpdateData {
 }
 
 export const namespaceApi = {
-  list: (): AxiosPromise<NamespaceListResponse> =>
-    client.get('v3/console/core/namespace/list'),
+  list: (): ApiResult<Namespace[]> =>
+    client.get('v3/console/core/namespace/list') as ApiResult<Namespace[]>,
 
-  detail: (namespaceId: string): AxiosPromise<Namespace> =>
-    client.get('v3/console/core/namespace', { params: { namespaceId } }),
+  detail: (namespaceId: string): ApiResult<Namespace> =>
+    client.get('v3/console/core/namespace', { params: { namespaceId } }) as ApiResult<Namespace>,
 
-  create: (data: NamespaceCreateData): AxiosPromise<void> =>
-    client.post('v3/console/core/namespace', data),
+  create: (data: NamespaceCreateData): ApiResult<boolean> =>
+    client.post('v3/console/core/namespace', data) as ApiResult<boolean>,
   
-  update: (data: NamespaceUpdateData): AxiosPromise<void> =>
-    client.put('v3/console/core/namespace', data),
+  update: (data: NamespaceUpdateData): ApiResult<boolean> =>
+    client.put('v3/console/core/namespace', data) as ApiResult<boolean>,
   
-  remove: (namespaceId: string): AxiosPromise<void> =>
-    client.delete(`v3/console/core/namespace?namespaceId=${namespaceId}`),
+  remove: (namespaceId: string): ApiResult<boolean> =>
+    client.delete(`v3/console/core/namespace?namespaceId=${namespaceId}`) as ApiResult<boolean>,
 };

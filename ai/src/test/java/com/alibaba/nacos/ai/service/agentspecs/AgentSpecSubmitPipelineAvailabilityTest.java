@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
+import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -59,12 +60,6 @@ class AgentSpecSubmitPipelineAvailabilityTest {
                 new SubmitInput("ns", "b", "ver"));
     }
 
-    private static java.util.List<SubmitWithPipelineInput> sampleSubmitWithPipelineInputs() {
-        return java.util.Arrays.asList(
-                new SubmitWithPipelineInput("public", "x", "v1", "exec-1"),
-                new SubmitWithPipelineInput("ns", "y", "v2", "pipeline-id-abc"));
-    }
-
     /**
      * When Pipeline is not enabled or has no matching nodes (execute returns null),
      * submit directly publishes and version status becomes online.
@@ -98,9 +93,9 @@ class AgentSpecSubmitPipelineAvailabilityTest {
                     .thenReturn(draftVersion)
                     .thenReturn(reviewingVersion);
 
-            // Pipeline executor returns null -> pipeline disabled / no matching nodes
-            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any()))
-                    .thenReturn(null);
+            // isPipelineAvailable returns false -> pipeline disabled / no matching nodes
+            when(publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
+                    .thenReturn(false);
 
             // Mock updateMetaCas to return true
             when(aiResourcePersistService.updateMetaCas(
@@ -123,6 +118,9 @@ class AgentSpecSubmitPipelineAvailabilityTest {
             assertEquals("online", statusCaptor.getValue(),
                     "Version status should become 'online' when pipeline is disabled");
 
+            // Verify: execute was never called
+            verify(publishPipelineExecutor, never()).execute(any(), any(), any(String.class));
+
             // Verify: updatePublishPipelineInfo was NOT called (no pipeline execution)
             verify(aiResourceVersionPersistService, never()).updatePublishPipelineInfo(
                     any(), any(), any(), any(), any());
@@ -137,7 +135,7 @@ class AgentSpecSubmitPipelineAvailabilityTest {
      */
     @Test
     void submitSetsReviewingWhenPipelineEnabled() throws Exception {
-        for (SubmitWithPipelineInput input : sampleSubmitWithPipelineInputs()) {
+        for (SubmitInput input : sampleSubmitInputs()) {
             EnvUtil.setEnvironment(new StandardEnvironment());
 
             // Mock dependencies
@@ -158,9 +156,13 @@ class AgentSpecSubmitPipelineAvailabilityTest {
                     eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version)))
                     .thenReturn(draftVersion);
 
-            // Pipeline executor returns a non-blank executionId -> pipeline enabled with matching nodes
-            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any()))
-                    .thenReturn(input.executionId);
+            // isPipelineAvailable returns true -> pipeline enabled with matching nodes
+            when(publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
+                    .thenReturn(true);
+
+            // Pipeline executor returns the caller's pre-generated executionId
+            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any(), any(String.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(2));
 
             // Mock updateMetaCas to return true
             when(aiResourcePersistService.updateMetaCas(
@@ -203,8 +205,13 @@ class AgentSpecSubmitPipelineAvailabilityTest {
             String pipelineInfoJson = pipelineInfoCaptor.getValue();
             assertTrue(pipelineInfoJson.contains("IN_PROGRESS"),
                     "publishPipelineInfo should contain IN_PROGRESS status, but was: " + pipelineInfoJson);
-            assertTrue(pipelineInfoJson.contains(input.executionId),
-                    "publishPipelineInfo should contain executionId '" + input.executionId
+
+            // Verify: the executionId in pipelineInfo matches the one passed to execute
+            ArgumentCaptor<String> execIdCaptor = ArgumentCaptor.forClass(String.class);
+            verify(publishPipelineExecutor).execute(any(PublishPipelineContext.class), any(), execIdCaptor.capture());
+            String capturedExecId = execIdCaptor.getValue();
+            assertTrue(pipelineInfoJson.contains(capturedExecId),
+                    "publishPipelineInfo should contain executionId '" + capturedExecId
                             + "', but was: " + pipelineInfoJson);
         }
     }
@@ -254,23 +261,4 @@ class AgentSpecSubmitPipelineAvailabilityTest {
         }
     }
 
-    static class SubmitWithPipelineInput {
-        final String namespaceId;
-        final String name;
-        final String version;
-        final String executionId;
-
-        SubmitWithPipelineInput(String namespaceId, String name, String version, String executionId) {
-            this.namespaceId = namespaceId;
-            this.name = name;
-            this.version = version;
-            this.executionId = executionId;
-        }
-
-        @Override
-        public String toString() {
-            return "SubmitWithPipelineInput{ns='" + namespaceId + "', name='" + name
-                    + "', version='" + version + "', execId='" + executionId + "'}";
-        }
-    }
 }

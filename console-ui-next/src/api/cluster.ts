@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 
 export interface ClusterNode {
   ip: string;
@@ -11,24 +11,19 @@ export interface ClusterNode {
   extendInfo?: Record<string, string>;
 }
 
-export interface ClusterNodeListResponse {
-  pageItems: ClusterNode[];
-  totalCount: number;
-  pageNumber: number;
-  pagesAvailable: number;
-}
-
 export const clusterApi = {
+  /**
+   * List cluster members.
+   * Backend returns Result<Collection<NacosMember>> — data is a flat array, NOT paginated.
+   * The `keyword` param filters by IP; pageNo/pageSize are NOT supported by backend.
+   */
   list: (params: {
     keyword?: string;
-    pageNo?: number;
-    pageSize?: number;
-    withInstances?: boolean;
-  }): AxiosPromise<ClusterNodeListResponse> =>
-    client.get('v3/console/core/cluster/nodes', { params }),
+  }): ApiResult<ClusterNode[]> =>
+    client.get('v3/console/core/cluster/nodes', { params }) as ApiResult<ClusterNode[]>,
 
-  leave: (addresses: string[]): AxiosPromise<void> =>
+  leave: (addresses: string[]): ApiResult<string> =>
     client.post('v3/console/core/cluster/server/leave', addresses, {
       headers: { 'Content-Type': 'application/json' },
-    }),
+    }) as ApiResult<string>,
 };

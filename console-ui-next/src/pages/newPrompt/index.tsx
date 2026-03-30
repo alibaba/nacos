@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,6 +9,8 @@ import {
   Variable,
   Sparkles,
   X,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,9 +20,27 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { promptApi } from '@/api/prompt';
 import type { PromptVersionInfo, PromptMetaInfo } from '@/types/prompt';
+
+function getAccessToken(): string {
+  try {
+    const tokenStr = localStorage.getItem('token');
+    if (tokenStr) {
+      const tokenData = JSON.parse(tokenStr);
+      return tokenData.accessToken || '';
+    }
+  } catch { /* ignore */ }
+  return '';
+}
 
 // Extract {{variable}} from template
 function extractVariables(template: string): string[] {
@@ -98,6 +118,15 @@ export default function NewPromptPage() {
 
   const variables = useMemo(() => extractVariables(template), [template]);
 
+  // AI Optimize state
+  const [optimizeOpen, setOptimizeOpen] = useState(false);
+  const [optimizeGoal, setOptimizeGoal] = useState('');
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizeStream, setOptimizeStream] = useState('');
+  const [optimizedResult, setOptimizedResult] = useState<string | null>(null);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const optimizePanelRef = useRef<HTMLDivElement>(null);
+
   const pageTitle = isCreate ? t('prompt.createPrompt') : t('prompt.publishVersion');
 
   // Load existing prompt data for version mode
@@ -156,6 +185,71 @@ export default function NewPromptPage() {
     setBizTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
+  // --- SSE AI Optimize ---
+  const handleStartOptimize = () => {
+    if (!template.trim()) return;
+    setOptimizing(true);
+    setOptimizeStream('');
+    setOptimizedResult(null);
+    setOptimizeError(null);
+
+    const ctxPath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+    const url = `${window.location.origin}${ctxPath}v3/console/copilot/prompt/optimize`;
+    const token = getAccessToken();
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        ...(token ? { Authorization: `Bearer ${token}`, AccessToken: token } : {}),
+      },
+      body: JSON.stringify({ prompt: template, optimizationGoal: optimizeGoal }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let accumulated = '';
+
+        const read = (): Promise<void> =>
+          reader.read().then(({ done, value }) => {
+            if (done) { setOptimizing(false); setOptimizedResult(accumulated || null); return; }
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            lines.forEach((line) => {
+              if (line.startsWith('data:')) {
+                try {
+                  const data = JSON.parse(line.substring(5).trim());
+                  const typeStr = data.type?.code || data.type || 'CONTENT';
+                  if (typeStr === 'CONTENT') { accumulated += data.chunk || ''; setOptimizeStream(accumulated); }
+                  else if (typeStr === 'DONE' || data.done) { setOptimizing(false); setOptimizedResult(accumulated || null); }
+                  else if (typeStr === 'error') { setOptimizing(false); setOptimizeError(data.message || 'Error'); }
+                } catch { /* ignore */ }
+              }
+            });
+            optimizePanelRef.current?.scrollTo(0, optimizePanelRef.current.scrollHeight);
+            return read();
+          });
+
+        return read();
+      })
+      .catch((err) => { setOptimizing(false); setOptimizeError(err.message || 'Request failed'); });
+  };
+
+  const handleApplyOptimize = () => {
+    if (optimizedResult) {
+      setTemplate(optimizedResult);
+      setOptimizeOpen(false);
+      setOptimizeGoal('');
+      setOptimizeStream('');
+      setOptimizedResult(null);
+      toast.success(t('prompt.applyOptimize'));
+    }
+  };
+
   const handleSubmit = async () => {
     if (isCreate && !promptKey.trim()) {
       toast.error(t('prompt.keyRequired'));
@@ -195,8 +289,8 @@ export default function NewPromptPage() {
         version: version.trim(),
         template: template,
         commitMsg: commitMsg.trim() || undefined,
-        description: description.trim() || undefined,
-        bizTags: bizTags.length > 0 ? bizTags.join(',') : undefined,
+        description: isCreate ? (description.trim() || undefined) : undefined,
+        bizTags: isCreate ? (bizTags.length > 0 ? bizTags.join(',') : undefined) : undefined,
         variables: variablesDef.length > 0 ? JSON.stringify(variablesDef) : undefined,
         namespaceId,
       });
@@ -355,6 +449,10 @@ export default function NewPromptPage() {
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 {t('prompt.templateEditor')}
               </h2>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setOptimizeOpen(true)} disabled={!template.trim()}>
+                <Sparkles className="mr-1 h-3 w-3" />
+                {t('prompt.aiOptimize')}
+              </Button>
             </div>
             <CardContent className="p-0">
               <div className="border-b">
@@ -462,6 +560,76 @@ export default function NewPromptPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Optimize Dialog */}
+      <Dialog open={optimizeOpen} onOpenChange={(open) => { if (!optimizing) setOptimizeOpen(open); }}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              {t('prompt.aiOptimize')}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Goal + Start button */}
+          <div className="flex gap-2">
+            <Input
+              value={optimizeGoal}
+              onChange={(e) => setOptimizeGoal(e.target.value)}
+              placeholder={t('prompt.optimizeGoalPlaceholder')}
+              className="flex-1"
+              disabled={optimizing}
+            />
+            <Button onClick={handleStartOptimize} disabled={optimizing}>
+              {optimizing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
+              {optimizing ? t('prompt.optimizing') : t('prompt.startOptimize')}
+            </Button>
+          </div>
+
+          {optimizeError && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {optimizeError}
+            </div>
+          )}
+
+          {/* Side-by-side comparison */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium text-muted-foreground">{t('prompt.originalTemplate')}</h3>
+              <div className="rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-auto">
+                <pre className="text-xs whitespace-pre-wrap break-words leading-relaxed">{template}</pre>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                {t('prompt.optimizedResult')}
+                {optimizing && <Loader2 className="h-3 w-3 animate-spin" />}
+              </h3>
+              <div ref={optimizePanelRef} className="rounded-md border bg-muted/20 p-3 max-h-[400px] overflow-auto">
+                {optimizeStream ? (
+                  <pre className="text-xs whitespace-pre-wrap break-words leading-relaxed">{optimizeStream}</pre>
+                ) : (
+                  <p className="text-xs text-muted-foreground/60 text-center py-8">
+                    {t('prompt.startOptimize')}...
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { if (!optimizing) { setOptimizeOpen(false); setOptimizeStream(''); setOptimizedResult(null); setOptimizeGoal(''); } }}>
+              {t('common.cancel')}
+            </Button>
+            {optimizedResult && !optimizing && (
+              <Button onClick={handleApplyOptimize}>
+                {t('prompt.applyOptimize')}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

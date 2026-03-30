@@ -73,6 +73,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -842,14 +843,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ctx.setVersion(finalTarget);
         ctx.setFiles(buildPipelineFiles(skill));
 
-        // Execute asynchronously via standard pipeline engine.
-        String executionId = publishPipelineExecutor.execute(ctx,
-                result -> onPipelineComplete(namespaceId, name, finalTarget, result));
-        if (StringUtils.isBlank(executionId)) {
+        // Check pipeline availability before starting async execution.
+        if (!publishPipelineExecutor.isPipelineAvailable(ctx.getResourceType())) {
             // Pipeline disabled or no matched nodes -> publish directly.
             publish(namespaceId, name, finalTarget, true);
             return finalTarget;
         }
+        
+        // Pre-generate executionId and write IN_PROGRESS pipelineInfo BEFORE starting async task
+        // to eliminate the race condition where async callback could complete before pipelineInfo is written.
+        String executionId = UUID.randomUUID().toString();
 
         // Record pipeline execution id.
         SkillPublishPipelineInfo pipelineInfo = new SkillPublishPipelineInfo();
@@ -858,6 +861,17 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         pipelineInfo.setPipeline(new ArrayList<>());
         aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget,
                 JacksonUtils.toJson(pipelineInfo));
+
+        // Start async pipeline with pre-generated executionId.
+        String result = publishPipelineExecutor.execute(ctx,
+                r -> onPipelineComplete(namespaceId, name, finalTarget, r), executionId);
+        if (StringUtils.isBlank(result)) {
+            // Edge case: pipeline became unavailable between isPipelineAvailable check and execute.
+            // Clean up pipelineInfo and publish directly.
+            aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, RESOURCE_TYPE_SKILL,
+                    finalTarget, null);
+            publish(namespaceId, name, finalTarget, true);
+        }
 
         return finalTarget;
     }
@@ -913,6 +927,55 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         updateMetaVersionInfoCas(namespaceId, meta, info);
 
         // Update skill index manifest: add version files and update labels
+        SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
+        manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
+        if (updateLatestLabel) {
+            manifest.getLabels().put(LABEL_LATEST, version);
+        }
+        manifestService.write(namespaceId, name, manifest);
+    }
+
+    @Override
+    public void forcePublish(String namespaceId, String name, String version, boolean updateLatestLabel) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name);
+        VisibilityHelper.checkWritableResource(meta);
+        SkillVersionInfo info = requireVersionInfo(meta);
+
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Skill version not found: " + name + "@" + version);
+        }
+        if (VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Version is already online, force-publish is not needed: " + version);
+        }
+
+        LOGGER.warn("[FORCE-PUBLISH] Bypassing pipeline validation for skill {}@{} by user {}",
+                name, version, VisibilityHelper.resolveCurrentIdentity());
+
+        // Set version status to online
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, version,
+                VERSION_STATUS_ONLINE);
+
+        // Update meta: clear working pointers (editingVersion or reviewingVersion), increment onlineCnt
+        if (StringUtils.equals(info.getEditingVersion(), version)) {
+            info.setEditingVersion(null);
+        }
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+        }
+        Integer cnt = info.getOnlineCnt();
+        info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        if (info.getLabels() == null) {
+            info.setLabels(new HashMap<>(4));
+        }
+        if (updateLatestLabel) {
+            info.getLabels().put(LABEL_LATEST, version);
+        }
+        updateMetaVersionInfoCas(namespaceId, meta, info);
+
+        // Update skill index manifest
         SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
         manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
         if (updateLatestLabel) {

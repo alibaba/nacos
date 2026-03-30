@@ -83,6 +83,8 @@ public class NacosAiService implements AiService {
     
     private final AiGrpcClient grpcClient;
     
+    private final AiHttpClientProxy httpProxy;
+    
     private final AiClientProxy aiClientProxy;
     
     private final NacosMcpServerCacheHolder mcpServerCacheHolder;
@@ -102,12 +104,12 @@ public class NacosAiService implements AiService {
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
+        this.httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
         String transportMode = clientProperties.getProperty(AiConstants.AI_TRANSPORT_MODE,
                 AiConstants.AI_TRANSPORT_MODE_GRPC);
         if (AiConstants.AI_TRANSPORT_MODE_HTTP.equalsIgnoreCase(transportMode)) {
-            LOGGER.info("AI transport mode is HTTP, using AiHttpClientProxy for prompt operations.");
-            AiHttpClientProxy httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
-            this.aiClientProxy = httpProxy;
+            LOGGER.info("AI transport mode is HTTP, using AiHttpClientProxy as primary proxy.");
+            this.aiClientProxy = this.httpProxy;
         } else {
             this.aiClientProxy = this.grpcClient;
         }
@@ -366,7 +368,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return aiClientProxy.downloadSkillZip(skillName, null, null);
+        return httpProxy.downloadSkillZip(skillName, null, null);
     }
     
     @Override
@@ -375,7 +377,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return aiClientProxy.downloadSkillZip(skillName, version, null);
+        return httpProxy.downloadSkillZip(skillName, version, null);
     }
     
     @Override
@@ -384,7 +386,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
         }
-        return aiClientProxy.downloadSkillZip(skillName, null, label);
+        return httpProxy.downloadSkillZip(skillName, null, label);
     }
     
     // ==================== AgentSpec Methods ====================
@@ -513,9 +515,7 @@ public class NacosAiService implements AiService {
     @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
-        if (this.aiClientProxy != this.grpcClient) {
-            this.aiClientProxy.shutdown();
-        }
+        this.httpProxy.shutdown();
         this.skillConfigService.shutDown();
         this.mcpServerCacheHolder.shutdown();
         this.promptCacheHolder.shutdown();

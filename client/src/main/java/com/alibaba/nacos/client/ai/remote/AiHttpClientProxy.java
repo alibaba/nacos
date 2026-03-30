@@ -141,7 +141,6 @@ public class AiHttpClientProxy implements AiClientProxy {
      * @return ZIP file as byte array
      * @throws NacosException if request fails
      */
-    @Override
     public byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);

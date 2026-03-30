@@ -1,5 +1,5 @@
 import client from './client';
-import type { AxiosPromise } from 'axios';
+import type { ApiResult } from './types';
 import type {
   ServiceListParams,
   ServiceListResponse,
@@ -11,40 +11,34 @@ import type {
   SubscriberListResponse,
 } from '@/types/service';
 
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
-
 export const serviceApi = {
   // List services
-  listServices: (params: ServiceListParams): AxiosPromise<ApiResponse<ServiceListResponse>> =>
-    client.get('v3/console/ns/service/list', { params }),
+  listServices: (params: ServiceListParams): ApiResult<ServiceListResponse> =>
+    client.get('v3/console/ns/service/list', { params }) as ApiResult<ServiceListResponse>,
 
   // Get service detail
-  getService: (params: { namespaceId: string; serviceName: string; groupName: string }): AxiosPromise<ApiResponse<ServiceDetailInfo>> =>
-    client.get('v3/console/ns/service', { params }),
+  getService: (params: { namespaceId: string; serviceName: string; groupName: string }): ApiResult<ServiceDetailInfo> =>
+    client.get('v3/console/ns/service', { params }) as ApiResult<ServiceDetailInfo>,
 
   // Create service
-  createService: (data: ServiceFormData): AxiosPromise<ApiResponse<string>> =>
-    client.post('v3/console/ns/service', data),
+  createService: (data: ServiceFormData): ApiResult<string> =>
+    client.post('v3/console/ns/service', data) as ApiResult<string>,
 
   // Update service
-  updateService: (data: ServiceFormData): AxiosPromise<ApiResponse<string>> =>
-    client.put('v3/console/ns/service', data),
+  updateService: (data: ServiceFormData): ApiResult<string> =>
+    client.put('v3/console/ns/service', data) as ApiResult<string>,
 
   // Delete service
-  deleteService: (params: { namespaceId: string; serviceName: string; groupName: string }): AxiosPromise<ApiResponse<string>> =>
-    client.delete('v3/console/ns/service', { params }),
+  deleteService: (params: { namespaceId: string; serviceName: string; groupName: string }): ApiResult<string> =>
+    client.delete('v3/console/ns/service', { params }) as ApiResult<string>,
 
   // Get selector types
-  getSelectorTypes: (): AxiosPromise<ApiResponse<string[]>> =>
-    client.get('v3/console/ns/service/selector/types'),
+  getSelectorTypes: (): ApiResult<string[]> =>
+    client.get('v3/console/ns/service/selector/types') as ApiResult<string[]>,
 
   // Update cluster
-  updateCluster: (data: ClusterUpdateData): AxiosPromise<ApiResponse<string>> =>
-    client.put('v3/console/ns/service/cluster', data),
+  updateCluster: (data: ClusterUpdateData): ApiResult<string> =>
+    client.put('v3/console/ns/service/cluster', data) as ApiResult<string>,
 
   // List instances
   listInstances: (params: {
@@ -54,12 +48,12 @@ export const serviceApi = {
     clusterName?: string;
     pageNo?: number;
     pageSize?: number;
-  }): AxiosPromise<ApiResponse<InstanceListResponse>> =>
-    client.get('v3/console/ns/instance/list', { params }),
+  }): ApiResult<InstanceListResponse> =>
+    client.get('v3/console/ns/instance/list', { params }) as ApiResult<InstanceListResponse>,
 
   // Update instance
-  updateInstance: (data: InstanceUpdateData): AxiosPromise<ApiResponse<string>> =>
-    client.put('v3/console/ns/instance', data),
+  updateInstance: (data: InstanceUpdateData): ApiResult<string> =>
+    client.put('v3/console/ns/instance', data) as ApiResult<string>,
 
   // List subscribers
   listSubscribers: (params: {
@@ -69,6 +63,6 @@ export const serviceApi = {
     pageNo?: number;
     pageSize?: number;
     aggregation?: boolean;
-  }): AxiosPromise<ApiResponse<SubscriberListResponse>> =>
-    client.get('v3/console/ns/service/subscribers', { params }),
+  }): ApiResult<SubscriberListResponse> =>
+    client.get('v3/console/ns/service/subscribers', { params }) as ApiResult<SubscriberListResponse>,
 };

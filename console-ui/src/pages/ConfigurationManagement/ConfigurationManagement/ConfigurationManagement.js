@@ -601,9 +601,16 @@ class ConfigurationManagement extends React.Component {
   };
 
   openUri(url, params) {
+    // Resolve relative URLs against the correct base path,
+    // stripping /legacy/ or /next/ prefix that the browser would otherwise prepend.
+    let resolvedUrl = url;
+    if (resolvedUrl && !resolvedUrl.startsWith('/') && !resolvedUrl.startsWith('http')) {
+      const basePath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+      resolvedUrl = basePath + resolvedUrl;
+    }
     window.open(
       [
-        url,
+        resolvedUrl,
         Object.keys(params)
           .map(key => `${key}=${params[key]}`)
           .join('&'),
@@ -1090,9 +1097,10 @@ class ConfigurationManagement extends React.Component {
       }
     }
     const { accessToken = '', username = '' } = token;
+    const basePath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
     const uploadProps = {
       accept: 'application/zip',
-      action: `v3/console/cs/config/import?namespaceId=${getParams(
+      action: `${basePath}v3/console/cs/config/import?namespaceId=${getParams(
         'namespace'
       )}&accessToken=${accessToken}&username=${username}`,
       headers: Object.assign({}, {}, { accessToken }),

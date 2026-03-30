@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import qs from 'qs';
 import { toast } from 'sonner';
+import i18n from '@/locales';
 
 // Auth endpoints that don't need username param
 const AUTH_ENDPOINTS = [
@@ -43,13 +44,16 @@ const client = axios.create({
 // Request interceptor
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Add accessToken header from localStorage.token
+    // Add auth headers from localStorage.token
+    // Send both Authorization (standard) and accessToken (Nacos custom) headers
+    // to ensure compatibility with reverse proxies and different backend auth paths.
     try {
       const tokenStr = localStorage.getItem('token');
       if (tokenStr) {
         const tokenData = JSON.parse(tokenStr);
         if (tokenData.accessToken) {
-          config.headers.accessToken = tokenData.accessToken;
+          config.headers.set('Authorization', `Bearer ${tokenData.accessToken}`);
+          config.headers.set('accessToken', tokenData.accessToken);
         }
       }
     } catch {
@@ -125,19 +129,23 @@ client.interceptors.response.use(
       if (isSessionExpired) {
         localStorage.removeItem('token');
         window.location.hash = '#/login';
-        toast.error('Session expired, please login again');
+        toast.error(i18n.t('common.sessionExpired'));
         return Promise.reject(error);
       }
     }
 
     // Show error toast (skip for silent endpoints)
     const requestUrl = error.config?.url || '';
-    const isSilent = SILENT_ENDPOINTS.some(ep => requestUrl.includes(ep));
+    const isSilent = SILENT_ENDPOINTS.some(ep => requestUrl.includes(ep))
+      || (error.config as unknown as Record<string, unknown>)?.silentError === true;
     if (!isSilent) {
       if (status === 403) {
-        toast.error('无权限执行此操作 / No permission');
+        toast.error(i18n.t('common.noPermission'));
       } else {
-        const errorMessage = error.response?.data?.message || error.message || 'Request failed';
+        // Prefer the detailed error in `data` (e.g. "Service xxx is not empty, can't be delete.")
+        // over the generic `message` (e.g. "service delete failure").
+        const detail = typeof error.response?.data?.data === 'string' ? error.response.data.data : '';
+        const errorMessage = detail || error.response?.data?.message || error.message || i18n.t('common.requestFailed');
         toast.error(errorMessage);
       }
     }

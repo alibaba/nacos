@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link RaftCommandForm} unit test.
@@ -33,9 +35,52 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class RaftCommandFormTest {
 
     @Test
-    void validateDoesNotThrow() throws NacosApiException {
+    void validateShouldThrowWhenCommandMissing() {
         RaftCommandForm form = new RaftCommandForm();
+        form.setValue("127.0.0.1:7848");
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        assertTrue(exception.getErrMsg().contains("Raft command is required"));
+    }
+    
+    @Test
+    void validateShouldThrowWhenValueMissing() {
+        RaftCommandForm form = new RaftCommandForm();
+        form.setCommand("doSnapshot");
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        assertTrue(exception.getErrMsg().contains("Raft command value is required"));
+    }
+    
+    @Test
+    void validateShouldThrowWhenBothMissing() {
+        RaftCommandForm form = new RaftCommandForm();
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        assertTrue(exception.getErrMsg().contains("Raft command is required"));
+    }
+    
+    @Test
+    void validateShouldNotThrowWhenBothPresent() throws NacosApiException {
+        RaftCommandForm form = new RaftCommandForm();
+        form.setCommand("doSnapshot");
+        form.setValue("127.0.0.1:7848");
         assertDoesNotThrow(form::validate);
+    }
+    
+    @Test
+    void validateShouldThrowWhenCommandBlank() {
+        RaftCommandForm form = new RaftCommandForm();
+        form.setCommand("");
+        form.setValue("127.0.0.1:7848");
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        assertTrue(exception.getErrMsg().contains("Raft command is required"));
+    }
+    
+    @Test
+    void validateShouldThrowWhenValueBlank() {
+        RaftCommandForm form = new RaftCommandForm();
+        form.setCommand("doSnapshot");
+        form.setValue("");
+        NacosApiException exception = assertThrows(NacosApiException.class, form::validate);
+        assertTrue(exception.getErrMsg().contains("Raft command value is required"));
     }
 
     @Test
