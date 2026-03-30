@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
@@ -213,13 +214,15 @@ public class McpServerImportService {
 
             McpServerDetailInfo server = item.getServer();
             McpToolSpecification toolSpec = server.getToolSpec();
+            McpResourceSpecification resourceSpec = server.getResourceSpec();
             McpServerBasicInfo basicInfo = generateMcpBasicInfo(server);
             McpEndpointSpec endpointSpec = generateEndpointSpec(server);
             McpServerIndexData exist = mcpCacheIndex.getMcpServerByName(namespaceId, item.getServerName());
             if (exist != null && overrideExisting) {
-                operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec, true);
+                operationService.updateMcpServer(namespaceId, true, basicInfo, toolSpec, resourceSpec, endpointSpec,
+                        true);
             } else {
-                operationService.createMcpServer(namespaceId, basicInfo, toolSpec, endpointSpec);
+                operationService.createMcpServer(namespaceId, basicInfo, toolSpec, resourceSpec, endpointSpec);
             }
             result.setStatus(McpImportResultStatusEnum.SUCCESS.getName());
         } catch (Exception e) {

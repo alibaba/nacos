@@ -125,7 +125,7 @@ class ReleaseMcpServerRequestHandlerTest {
         when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(request.getServerSpecification()), isNull(), isNotNull())).thenReturn(id);
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull())).thenReturn(id);
         when(meta.getConnectionId()).thenReturn("111");
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
@@ -141,7 +141,7 @@ class ReleaseMcpServerRequestHandlerTest {
                 "1.0.0")).thenThrow(
                     new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND, ""));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(request.getServerSpecification()), isNull(), isNotNull())).thenReturn(id);
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull())).thenReturn(id);
         when(meta.getConnectionId()).thenReturn("111");
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
@@ -157,7 +157,7 @@ class ReleaseMcpServerRequestHandlerTest {
                 "1.0.0")).thenThrow(
                     new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND, ""));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(request.getServerSpecification()), isNull(), isNull())).thenReturn(id);
+                eq(request.getServerSpecification()), isNull(), isNull(), isNull())).thenReturn(id);
         when(meta.getConnectionId()).thenReturn("111");
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
@@ -179,7 +179,7 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
-                eq(request.getServerSpecification()), isNull(), isNotNull(), eq(false));
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
     }
     
     @Test
@@ -197,7 +197,7 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
-                eq(request.getServerSpecification()), isNull(), isNotNull(), eq(false));
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
         verify(endpointOperationService, never()).generateService(anyString(), anyString());
     }
     
@@ -217,7 +217,7 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                eq(request.getServerSpecification()), isNull(), isNotNull(), eq(false));
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
     }
     
     @Test

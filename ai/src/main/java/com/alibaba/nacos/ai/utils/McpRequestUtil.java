@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
@@ -73,6 +74,21 @@ public class McpRequestUtil {
             return null;
         }
         return McpRequestUtil.deserializeSpec(mcpForm.getToolSpecification(), new TypeReference<>() {
+        });
+    }
+    
+    /**
+     * Parse Mcp resources request form to {@link McpResourceSpecification}.
+     *
+     * @param mcpForm mcp detail request.
+     * @return mcp server resource info
+     * @throws NacosApiException if parse failed.
+     */
+    public static McpResourceSpecification parseMcpResources(McpDetailForm mcpForm) throws NacosApiException {
+        if (StringUtils.isBlank(mcpForm.getResourceSpecification())) {
+            return null;
+        }
+        return McpRequestUtil.deserializeSpec(mcpForm.getResourceSpecification(), new TypeReference<>() {
         });
     }
     

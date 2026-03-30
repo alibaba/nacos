@@ -61,21 +61,24 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class McpAdminControllerTest {
-    
+
     private static final String MCP_SERVER_SPEC =
             "{\"protocol\":\"stdio\",\"frontProtocol\":\"stdio\",\"name\":\"nacos-mcp-server\","
                     + "\"id\":\"\",\"description\":\"nacos local mcp server(test version)\",\"versionDetail\":{\"version\":\"1.0.0\"},"
                     + "\"enabled\":true,\"localServerConfig\":{}}'";
-    
+
+    private static final String MCP_RESOURCE_SPEC =
+            "{\"resources\":[{\"name\":\"readme\",\"uri\":\"file:///README.md\",\"description\":\"test resource\"}]}";
+
     private McpAdminController mcpAdminController;
-    
+
     private MockMvc mockMvc;
-    
+
     private ConfigurableEnvironment cachedEnvironment;
-    
+
     @Mock
     private McpServerOperationService mcpServerOperationService;
-    
+
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
@@ -83,12 +86,12 @@ class McpAdminControllerTest {
         mcpAdminController = new McpAdminController(mcpServerOperationService);
         mockMvc = MockMvcBuilders.standaloneSetup(mcpAdminController).build();
     }
-    
+
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnvironment);
     }
-    
+
     @Test
     void listMcpServersWithIllegalSearch() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH + "/list")
@@ -96,7 +99,7 @@ class McpAdminControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:Request parameter `search` should be `accurate` or `blur`.");
     }
-    
+
     @Test
     void listMcpServersWithIllegalPage() throws Throwable {
         final MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH + "/list")
@@ -108,7 +111,7 @@ class McpAdminControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder2).andReturn(),
                 "ErrCode:400, ErrMsg:Required parameter 'pageSize' should be positive integer, current is 0");
     }
-    
+
     @Test
     void listMcpServersSuccess() throws Throwable {
         when(mcpServerOperationService.listMcpServerWithPage(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null,
@@ -123,14 +126,14 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertInstanceOf(Page.class, result.getData());
     }
-    
+
     @Test
     void getMcpServerWithoutMcpIdAndMcpName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:Required parameter 'mcpId' or 'mcpName' type String at lease one is not present");
     }
-    
+
     @Test
     void getMcpServerWithMcpName() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.MCP_ADMIN_PATH)
@@ -144,7 +147,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertInstanceOf(McpServerDetailInfo.class, result.getData());
     }
-    
+
     @Test
     void getMcpServerWithMcpId() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -158,7 +161,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertInstanceOf(McpServerDetailInfo.class, result.getData());
     }
-    
+
     @Test
     void getMcpServerWithVersion() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -173,21 +176,21 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertInstanceOf(McpServerDetailInfo.class, result.getData());
     }
-    
+
     @Test
     void createMcpServerWithoutSpec() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.MCP_ADMIN_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
     }
-    
+
     @Test
     void createMcpServerWithSpec() throws Exception {
         String mcpId = UUID.randomUUID().toString();
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.MCP_ADMIN_PATH)
                 .param("serverSpecification", MCP_SERVER_SPEC);
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                any(McpServerBasicInfo.class), any(), any())).thenReturn(mcpId);
+                any(McpServerBasicInfo.class), any(), any(), any())).thenReturn(mcpId);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
 
@@ -197,16 +200,29 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(mcpId, result.getData());
         verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                any(McpServerBasicInfo.class), isNull(), isNull());
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull());
     }
-    
+
+    @Test
+    void createMcpServerWithResourceSpec() throws Exception {
+        String mcpId = UUID.randomUUID().toString();
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.MCP_ADMIN_PATH)
+                .param("serverSpecification", MCP_SERVER_SPEC).param("resourceSpecification", MCP_RESOURCE_SPEC);
+        when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerBasicInfo.class), any(), any(), any())).thenReturn(mcpId);
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerBasicInfo.class), isNull(), any(), isNull());
+    }
+
     @Test
     void updateMcpServerWithoutSpec() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.MCP_ADMIN_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
     }
-    
+
     @Test
     void updateMcpServerWithSpec() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.MCP_ADMIN_PATH)
@@ -218,7 +234,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), isNull(), isNull(), eq(false));
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull(), eq(false));
     }
 
     @Test
@@ -232,9 +248,9 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), isNull(), isNull(), eq(true));
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull(), eq(true));
     }
-    
+
     @Test
     void updateMcpServerWithoutLatest() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.MCP_ADMIN_PATH)
@@ -246,16 +262,16 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
-                any(McpServerBasicInfo.class), isNull(), isNull(), eq(false));
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull(), eq(false));
     }
-    
+
     @Test
     void deleteMcpServerWithoutMcpIdAndMcpName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.MCP_ADMIN_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "ErrCode:400, ErrMsg:Required parameter 'mcpId' or 'mcpName' type String at lease one is not present");
     }
-    
+
     @Test
     void deleteMcpServerWithMcpName() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.MCP_ADMIN_PATH)
@@ -269,7 +285,7 @@ class McpAdminControllerTest {
         verify(mcpServerOperationService).deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "testName", null,
                 null);
     }
-    
+
     @Test
     void deleteMcpServerWithMcpId() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -283,7 +299,7 @@ class McpAdminControllerTest {
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, id, null);
     }
-    
+
     @Test
     void deleteMcpServerWithVersion() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -297,7 +313,7 @@ class McpAdminControllerTest {
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).deleteMcpServer("testNs", null, id, "1.0.0");
     }
-    
+
     private static <T extends Throwable> void assertServletException(Class<T> expectedCause, Executable executable,
             String expectedMsg) throws Throwable {
         try {
