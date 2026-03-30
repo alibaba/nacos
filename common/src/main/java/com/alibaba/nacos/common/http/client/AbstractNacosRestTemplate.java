@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.constant.ResponseHandlerType;
 import com.alibaba.nacos.common.http.client.handler.BeanResponseHandler;
+import com.alibaba.nacos.common.http.client.handler.ByteArrayResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.RestResultResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
@@ -50,6 +51,7 @@ public abstract class AbstractNacosRestTemplate {
         // init response handler
         responseHandlerMap.put(ResponseHandlerType.STRING_TYPE, new StringResponseHandler());
         responseHandlerMap.put(ResponseHandlerType.RESTRESULT_TYPE, new RestResultResponseHandler());
+        responseHandlerMap.put(ResponseHandlerType.BYTE_ARRAY_TYPE, new ByteArrayResponseHandler());
         responseHandlerMap.put(ResponseHandlerType.DEFAULT_BEAN_TYPE, new BeanResponseHandler());
     }
     
