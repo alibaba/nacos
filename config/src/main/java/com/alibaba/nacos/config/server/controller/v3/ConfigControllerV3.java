@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
@@ -69,7 +70,6 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -83,6 +83,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -137,7 +138,7 @@ public class ConfigControllerV3 {
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
     private final ConfigMigrateService configMigrateService;
-
+    
     /**
      * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
      */
@@ -228,6 +229,34 @@ public class ConfigControllerV3 {
         
         return Result.success(
                 configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
+    }
+    
+    /**
+     * Publish config metadata result.
+     *
+     * @param request    the request
+     * @param configForm the config form
+     * @return the result
+     * @throws NacosException the nacos exception
+     */
+    @PutMapping("/metadata")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> publishConfigMetadata(HttpServletRequest request, ConfigFormV3 configForm)
+            throws NacosException {
+        configForm.validate();
+        String remoteIp = getRemoteIp(request);
+        String configTags = configForm.getConfigTags();
+        String description = configForm.getDesc();
+        String dataId = configForm.getDataId();
+        String group = configForm.getGroup();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags, description);
+        configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags, description);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), remoteIp,
+                ConfigTraceService.PERSISTENCE_EVENT_METADATA, ConfigTraceService.PERSISTENCE_TYPE_PUB, null);
+        ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(dataId, group, namespaceId, time.getTime()));
+        return Result.success(true);
     }
     
     /**
@@ -469,8 +498,14 @@ public class ConfigControllerV3 {
     private Result<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespaceId) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
-        String metaData = metaDataItem.getItemData();
         Map<String, Object> failedData = new HashMap<>(4);
+        
+        if (metaDataItem == null) {
+            failedData.put("succCount", 0);
+            return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
+        }
+        
+        String metaData = metaDataItem.getItemData();
         
         ConfigMetadata configMetadata = YamlParserUtil.loadObject(metaData, ConfigMetadata.class);
         if (configMetadata == null || CollectionUtils.isEmpty(configMetadata.getMetadata())) {
