@@ -101,6 +101,15 @@ export const skillApi = {
   }): ApiResult<string> =>
     client.post(`${BASE}/publish`, data) as ApiResult<string>,
 
+  /** Force-publish, bypassing pipeline validation (admin only) */
+  forcePublish: (data: {
+    namespaceId?: string;
+    skillName: string;
+    version: string;
+    updateLatestLabel?: boolean;
+  }): ApiResult<string> =>
+    client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
+
   /** Update labels */
   updateLabels: (data: {
     namespaceId?: string;

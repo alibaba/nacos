@@ -13,10 +13,19 @@ import {
   Tag,
   ShieldOff,
   AlertCircle,
+  ShieldAlert,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import type { SkillVersionSummary } from '@/types/skill';
@@ -35,6 +44,7 @@ interface SkillVersionTimelineProps {
   onDeleteDraft: (version: string) => void;
   onSubmit: (version: string) => void;
   onPublish: (version: string) => void;
+  onForcePublish?: (version: string) => void;
   onOnline: (version: string) => void;
   onOffline: (version: string) => void;
   onDownload?: (version: string) => void;
@@ -42,6 +52,7 @@ interface SkillVersionTimelineProps {
   allLabels?: Record<string, string>;
   onSaveLabels?: (labels: Record<string, string>) => Promise<void>;
   skillEnabled?: boolean;
+  isGlobalAdmin?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -75,6 +86,7 @@ export function SkillVersionTimeline({
   onDeleteDraft,
   onSubmit,
   onPublish,
+  onForcePublish,
   onOnline,
   onOffline,
   onDownload,
@@ -82,9 +94,11 @@ export function SkillVersionTimeline({
   allLabels,
   onSaveLabels,
   skillEnabled = true,
+  isGlobalAdmin = false,
 }: SkillVersionTimelineProps) {
   const { t } = useTranslation();
   const [labelEditVersion, setLabelEditVersion] = useState<string | null>(null);
+  const [forcePublishConfirmVersion, setForcePublishConfirmVersion] = useState<string | null>(null);
 
   const sorted = sortVersionsDescending(versions);
 
@@ -103,6 +117,7 @@ export function SkillVersionTimeline({
   const actionHandlers: Record<string, (version: string) => void> = {
     submit: onSubmit,
     publish: onPublish,
+    forcePublish: (version: string) => setForcePublishConfirmVersion(version),
     online: onOnline,
     offline: onOffline,
     createDraftFrom: (version: string) => onCreateDraft(version),
@@ -111,6 +126,7 @@ export function SkillVersionTimeline({
   const actionMeta: Record<string, { icon: React.ReactNode; labelKey: string; variant?: 'default' | 'outline' | 'destructive' | 'ghost' }> = {
     submit: { icon: <Send className="h-3 w-3" />, labelKey: 'skill.submit' },
     publish: { icon: <Rocket className="h-3 w-3" />, labelKey: 'skill.publish' },
+    forcePublish: { icon: <ShieldAlert className="h-3 w-3" />, labelKey: 'skill.forcePublish', variant: 'outline' },
     online: { icon: <Globe className="h-3 w-3" />, labelKey: 'skill.online' },
     offline: { icon: <PowerOff className="h-3 w-3" />, labelKey: 'skill.offline', variant: 'outline' },
     deleteDraft: { icon: <Trash2 className="h-3 w-3" />, labelKey: 'common.delete', variant: 'destructive' },
@@ -166,6 +182,7 @@ export function SkillVersionTimeline({
             v.status,
             hasEditingVersion || hasReviewingVersion,
             pipelineInfo?.status,
+            isGlobalAdmin,
           );
 
           const isPendingPublish = v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED';
@@ -348,6 +365,41 @@ export function SkillVersionTimeline({
           onSave={onSaveLabels}
         />
       )}
+
+      {/* Force-publish confirmation dialog */}
+      <Dialog
+        open={!!forcePublishConfirmVersion}
+        onOpenChange={(open) => !open && setForcePublishConfirmVersion(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              {t('skill.forcePublishConfirmTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('skill.forcePublishConfirmDesc', { version: forcePublishConfirmVersion ?? '' })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForcePublishConfirmVersion(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (forcePublishConfirmVersion) {
+                  onForcePublish?.(forcePublishConfirmVersion);
+                }
+                setForcePublishConfirmVersion(null);
+              }}
+            >
+              <ShieldAlert className="h-4 w-4 mr-1" />
+              {t('skill.forcePublishConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -121,6 +121,12 @@ public class SkillInnerHandler implements SkillHandler {
     }
 
     @Override
+    public void forcePublish(SkillPublishForm form) throws NacosException {
+        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        skillOperationService.forcePublish(form.getNamespaceId(), form.getSkillName(), form.getVersion(), updateLatest);
+    }
+
+    @Override
     public void updateLabels(SkillLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         skillOperationService.updateLabels(form.getNamespaceId(), form.getSkillName(), labels);

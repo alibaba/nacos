@@ -36,13 +36,15 @@ export interface ActionItem {
 
 /**
  * Context-aware version of getValidActions.
- * - reviewing: disables publish if pipeline hasn't approved
+ * - reviewing: disables publish if pipeline hasn't approved; adds forcePublish for admin when pipeline is REJECTED
+ * - draft: adds forcePublish for admin when pipeline is REJECTED
  * - online/offline: adds createDraftFrom when no editing/reviewing version exists
  */
 export function getValidActionsWithContext(
   status: string,
   hasEditingOrReviewing: boolean,
   pipelineStatus?: PipelineExecutionStatus | null,
+  isGlobalAdmin?: boolean,
 ): ActionItem[] {
   const base = getValidActions(status);
   const items: ActionItem[] = base.map((action) => {
@@ -51,6 +53,11 @@ export function getValidActionsWithContext(
     }
     return { action };
   });
+
+  // Admin force-publish: show when pipeline REJECTED on draft or reviewing version
+  if (isGlobalAdmin && pipelineStatus === 'REJECTED' && (status === 'draft' || status === 'reviewing')) {
+    items.push({ action: 'forcePublish' });
+  }
 
   if (status === 'online' || status === 'offline') {
     if (hasEditingOrReviewing) {

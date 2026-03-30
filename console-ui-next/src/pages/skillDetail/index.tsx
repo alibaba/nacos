@@ -29,6 +29,7 @@ import {
   AlertCircle,
   Lock,
   Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ import {
 } from '@/components/ui/dialog';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
@@ -89,6 +91,7 @@ export default function SkillDetailPage() {
   const skillName = routeName ? decodeURIComponent(routeName) : '';
   const { currentNamespace } = useNamespaceStore();
   const namespaceId = currentNamespace || 'public';
+  const { globalAdmin } = useAuthStore();
 
   const {
     currentDetail,
@@ -159,6 +162,7 @@ export default function SkillDetailPage() {
   const [createDraftDialogOpen, setCreateDraftDialogOpen] = useState(false);
   const [createDraftFromVersion, setCreateDraftFromVersion] = useState('');
   const [createDraftTargetVersion, setCreateDraftTargetVersion] = useState('');
+  const [forcePublishConfirmOpen, setForcePublishConfirmOpen] = useState(false);
 
   const loadDetail = useCallback(() => {
     if (skillName) {
@@ -491,6 +495,24 @@ export default function SkillDetailPage() {
         updateLatestLabel: true,
       });
       toast.success(t('skill.publishSuccess'));
+      await loadDetail();
+    } catch {
+      await loadDetail();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleForcePublish = async (version: string) => {
+    setActionLoading(true);
+    try {
+      await skillApi.forcePublish({
+        namespaceId,
+        skillName,
+        version,
+        updateLatestLabel: true,
+      });
+      toast.success(t('skill.forcePublishSuccess'));
       await loadDetail();
     } catch {
       await loadDetail();
@@ -875,6 +897,19 @@ export default function SkillDetailPage() {
                           {currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
                             <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
                           )}
+                          {/* Admin-only force-publish when pipeline rejected */}
+                          {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/40"
+                              disabled={actionLoading}
+                              onClick={() => setForcePublishConfirmOpen(true)}
+                            >
+                              <ShieldAlert className="h-3 w-3" />
+                              {t('skill.forcePublish')}
+                            </Button>
+                          )}
                         </>
                       )}
                     </>
@@ -896,6 +931,22 @@ export default function SkillDetailPage() {
                       </Button>
                       {currentPipelineInfo && currentPipelineInfo.status === 'APPROVED' && (
                         <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                      )}
+                      {/* Admin-only force-publish when pipeline rejected during reviewing */}
+                      {globalAdmin && currentPipelineInfo && currentPipelineInfo.status === 'REJECTED' && (
+                        <>
+                          <PipelineStatusDisplay pipelineInfo={currentPipelineInfo} compact />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/40"
+                            disabled={actionLoading}
+                            onClick={() => setForcePublishConfirmOpen(true)}
+                          >
+                            <ShieldAlert className="h-3 w-3" />
+                            {t('skill.forcePublish')}
+                          </Button>
+                        </>
                       )}
                     </>
                   )}
@@ -1277,6 +1328,7 @@ export default function SkillDetailPage() {
               onDeleteDraft={handleDeleteDraft}
               onSubmit={handleSubmit}
               onPublish={handlePublish}
+              onForcePublish={handleForcePublish}
               onOnline={handleOnline}
               onOffline={handleOffline}
               onDownload={handleDownload}
@@ -1284,6 +1336,7 @@ export default function SkillDetailPage() {
               allLabels={detail.labels}
               onSaveLabels={handleSaveLabels}
               skillEnabled={detail.enable}
+              isGlobalAdmin={globalAdmin}
             />
           </div>
         </SheetContent>
@@ -1299,6 +1352,37 @@ export default function SkillDetailPage() {
           onApply={handleOptimizationApply}
         />
       )}
+
+      {/* Force-publish confirmation dialog */}
+      <Dialog open={forcePublishConfirmOpen} onOpenChange={setForcePublishConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              {t('skill.forcePublishConfirmTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('skill.forcePublishConfirmDesc', { version: selectedVersion })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForcePublishConfirmOpen(false)} disabled={actionLoading}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={actionLoading}
+              onClick={async () => {
+                setForcePublishConfirmOpen(false);
+                await handleForcePublish(selectedVersion);
+              }}
+            >
+              <ShieldAlert className="h-4 w-4 mr-1" />
+              {t('skill.forcePublishConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
