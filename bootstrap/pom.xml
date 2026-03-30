@@ -44,7 +44,7 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-mcp-registry-adaptor</artifactId>
+            <artifactId>nacos-ai-registry-adaptor</artifactId>
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

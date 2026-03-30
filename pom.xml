@@ -657,7 +657,7 @@
         <module>client-basic</module>
         <module>ai</module>
         <module>copilot</module>
-        <module>mcp-registry-adaptor</module>
+        <module>ai-registry-adaptor</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -906,7 +906,7 @@
             </dependency>
             <dependency>
                 <groupId>com.alibaba.nacos</groupId>
-                <artifactId>nacos-mcp-registry-adaptor</artifactId>
+                <artifactId>nacos-ai-registry-adaptor</artifactId>
                 <version>${project.version}</version>
             </dependency>
             
