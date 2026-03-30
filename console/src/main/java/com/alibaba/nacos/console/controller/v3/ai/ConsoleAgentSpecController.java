@@ -44,6 +44,8 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.CONSOLE_RESOURCE_NAME_PREFIX;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -223,6 +225,20 @@ public class ConsoleAgentSpecController {
     public Result<String> publish(AgentSpecPublishForm form) throws NacosException {
         form.validate();
         agentSpecProxy.publish(form);
+        return Result.success("ok");
+    }
+    
+    /**
+     * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and
+     * reviewing (pipeline in-progress) versions. Restricted to admin users only (apiType = ADMIN_API enforces global
+     * admin check).
+     */
+    @PostMapping("/force-publish")
+    @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
+            + "agentspecs", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+    public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
+        form.validate();
+        agentSpecProxy.forcePublish(form);
         return Result.success("ok");
     }
     

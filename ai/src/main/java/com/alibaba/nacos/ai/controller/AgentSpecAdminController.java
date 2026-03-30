@@ -225,6 +225,21 @@ public class AgentSpecAdminController {
     }
     
     /**
+     * Force-publish an agentspec version, bypassing pipeline validation. Accepts draft (pipeline-rejected) and
+     * reviewing (pipeline in-progress) versions. Only admin users can call this endpoint.
+     */
+    @PostMapping("/force-publish")
+    @Secured(resource = Constants.AgentSpecs.ADMIN_PATH
+            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    public Result<String> forcePublish(AgentSpecPublishForm form) throws NacosException {
+        form.validate();
+        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
+                updateLatest);
+        return Result.success("ok");
+    }
+    
+    /**
      * Update runtime route labels without changing version status.
      */
     @PutMapping("/labels")

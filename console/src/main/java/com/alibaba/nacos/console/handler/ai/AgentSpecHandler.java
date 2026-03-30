@@ -143,6 +143,14 @@ public interface AgentSpecHandler {
     void publish(AgentSpecPublishForm form) throws NacosException;
 
     /**
+     * Force-publish a version, bypassing pipeline validation.
+     *
+     * @param form publish form
+     * @throws NacosException if operation failed
+     */
+    void forcePublish(AgentSpecPublishForm form) throws NacosException;
+
+    /**
      * Update runtime route labels without changing version status.
      *
      * @param form labels update form

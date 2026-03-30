@@ -95,6 +95,10 @@ public class AgentSpecProxy {
         agentSpecHandler.publish(form);
     }
     
+    public void forcePublish(AgentSpecPublishForm form) throws NacosException {
+        agentSpecHandler.forcePublish(form);
+    }
+    
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         agentSpecHandler.updateLabels(form);
     }

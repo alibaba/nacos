@@ -239,6 +239,19 @@ public interface AgentSpecMaintainerService {
             throws NacosException;
     
     /**
+     * Force-publish an agentspec version, bypassing pipeline validation.
+     *
+     * @param namespaceId       namespace ID
+     * @param agentSpecName     agentspec name
+     * @param version           version
+     * @param updateLatestLabel update latest label, default true if null
+     * @return true if force-publish success
+     * @throws NacosException if fail to force-publish
+     */
+    boolean forcePublish(String namespaceId, String agentSpecName, String version, Boolean updateLatestLabel)
+            throws NacosException;
+    
+    /**
      * Update runtime labels mapping JSON.
      *
      * @param namespaceId    namespace ID

@@ -871,6 +871,47 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     @Override
+    public void forcePublish(String namespaceId, String name, String version, boolean updateLatestLabel)
+            throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name);
+        VisibilityHelper.checkWritableResource(meta);
+        AgentSpecVersionInfo info = requireVersionInfo(meta);
+        
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
+                version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "AgentSpec version not found: " + name + "@" + version);
+        }
+        if (VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Version is already online, force-publish is not needed: " + version);
+        }
+        
+        LOGGER.warn("[FORCE-PUBLISH] Bypassing pipeline validation for agentspec {}@{} by user {}", name, version,
+                VisibilityHelper.resolveCurrentIdentity());
+        
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, version,
+                VERSION_STATUS_ONLINE);
+        
+        if (StringUtils.equals(info.getEditingVersion(), version)) {
+            info.setEditingVersion(null);
+        }
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+        }
+        Integer cnt = info.getOnlineCnt();
+        info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        if (info.getLabels() == null) {
+            info.setLabels(new HashMap<>(4));
+        }
+        if (updateLatestLabel) {
+            info.getLabels().put(LABEL_LATEST, version);
+        }
+        updateMetaVersionInfoCas(namespaceId, meta, info);
+    }
+    
+    @Override
     public void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException {
         AiResource meta = requireMeta(namespaceId, name);
         VisibilityHelper.checkWritableResource(meta);

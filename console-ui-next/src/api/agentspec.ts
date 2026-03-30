@@ -87,6 +87,15 @@ export const agentSpecApi = {
   }): ApiResult<string> =>
     client.post(`${BASE}/publish`, data) as ApiResult<string>,
 
+  /** 强制发布（跳过 pipeline 校验，仅限管理员） */
+  forcePublish: (data: {
+    namespaceId?: string;
+    agentSpecName: string;
+    version: string;
+    updateLatestLabel?: boolean;
+  }): ApiResult<string> =>
+    client.post(`${BASE}/force-publish`, data) as ApiResult<string>,
+
   /** 更新标签 */
   updateLabels: (data: {
     namespaceId?: string;

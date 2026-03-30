@@ -215,6 +215,19 @@ public interface AgentSpecOperationService {
     void publish(String namespaceId, String name, String version, boolean updateLatestLabel) throws NacosException;
     
     /**
+     * Force-publish an agentspec version, bypassing pipeline validation.
+     * Accepts draft (pipeline-rejected) and reviewing (pipeline in-progress) versions.
+     * Should only be invoked by admin users.
+     *
+     * @param namespaceId       namespace ID
+     * @param name              agentspec name
+     * @param version           version to force-publish
+     * @param updateLatestLabel whether to update the "latest" label
+     */
+    void forcePublish(String namespaceId, String name, String version, boolean updateLatestLabel)
+            throws NacosException;
+    
+    /**
      * Update labels mapping (label -> version) without changing any version status.
      *
      * @param namespaceId namespace ID

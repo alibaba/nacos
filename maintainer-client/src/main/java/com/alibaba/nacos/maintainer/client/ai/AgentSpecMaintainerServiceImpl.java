@@ -250,6 +250,25 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
     }
     
     @Override
+    public boolean forcePublish(String namespaceId, String agentSpecName, String version, Boolean updateLatestLabel)
+            throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("version", version);
+        if (null != updateLatestLabel) {
+            params.put("updateLatestLabel", String.valueOf(updateLatestLabel));
+        }
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName)).setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.AI_AGENTSPEC_ADMIN_PATH + "/force-publish").setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
+        });
+        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+    }
+    
+    @Override
     public boolean updateLabels(String namespaceId, String agentSpecName, String labels) throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(8);

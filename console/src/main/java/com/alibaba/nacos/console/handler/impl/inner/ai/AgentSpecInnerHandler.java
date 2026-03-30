@@ -122,6 +122,13 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
 
     @Override
+    public void forcePublish(AgentSpecPublishForm form) throws NacosException {
+        boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
+        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
+                updateLatest);
+    }
+
+    @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
         agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(), labels);
