@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
+import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResult;
 import com.alibaba.nacos.plugin.ai.pipeline.spi.PublishPipelineService;
 import org.slf4j.Logger;
@@ -79,6 +80,21 @@ public class PublishPipelineExecutor {
      * @return executionId, or null if pipeline is not enabled or no matching nodes
      */
     public String execute(PublishPipelineContext context, PipelineCallback callback) {
+        return execute(context, callback, UUID.randomUUID().toString());
+    }
+    
+    /**
+     * Asynchronously execute the pipeline with a pre-generated executionId.
+     *
+     * <p>Callers who need to write pipeline state (e.g. IN_PROGRESS) before the async task
+     * starts should pre-generate an executionId and use this overload.</p>
+     *
+     * @param context     pipeline context containing resource metadata
+     * @param callback    async callback, invoked exactly once when pipeline execution completes
+     * @param executionId pre-generated execution identifier
+     * @return executionId, or null if pipeline is not enabled or no matching nodes
+     */
+    public String execute(PublishPipelineContext context, PipelineCallback callback, String executionId) {
         // Step 1: Check config
         PipelineConfig config = configProvider.getConfig();
         if (!config.isEnabled()) {
@@ -93,7 +109,6 @@ public class PublishPipelineExecutor {
         }
         
         // Step 3: Create execution record
-        String executionId = UUID.randomUUID().toString();
         long now = System.currentTimeMillis();
         
         PipelineExecution execution = new PipelineExecution();
@@ -191,5 +206,20 @@ public class PublishPipelineExecutor {
         });
         
         return executionId;
+    }
+    
+    /**
+     * Read-only check: whether the pipeline is available for the given resource type.
+     *
+     * @param resourceType the resource type to check
+     * @return true if pipeline is enabled and has matching service nodes
+     */
+    public boolean isPipelineAvailable(PublishPipelineResourceType resourceType) {
+        PipelineConfig config = configProvider.getConfig();
+        if (!config.isEnabled()) {
+            return false;
+        }
+        List<PublishPipelineService> services = pipelineManager.getPipelineServices(resourceType, config.getNodes());
+        return !services.isEmpty();
     }
 }
