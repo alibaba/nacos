@@ -95,8 +95,47 @@ class StandaloneDatabaseOperateImplTest {
     
     @AfterAll
     static void afterAll() {
+        // Shutdown Derby to release locks
+        try {
+            java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
+        } catch (Exception e) {
+            // Ignore shutdown exception as Derby always throws an exception on successful shutdown
+        }
+        
+        // Wait for Derby to fully shutdown and release locks
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        // Clean up derby data directory to ensure fresh start
+        try {
+            String derbyPath = System.getProperty("user.dir") + "/data/derby-data";
+            java.io.File derbyDir = new java.io.File(derbyPath);
+            if (derbyDir.exists()) {
+                deleteDirectory(derbyDir);
+            }
+        } catch (Exception e) {
+            // Ignore cleanup exceptions
+        }
+        
         EnvUtil.setEnvironment(null);
         EmbeddedStorageContextHolder.cleanAllContext();
+    }
+    
+    private static void deleteDirectory(java.io.File directory) throws Exception {
+        if (directory.exists()) {
+            java.nio.file.Files.walk(directory.toPath())
+                    .sorted((a, b) -> b.compareTo(a))
+                    .forEach(path -> {
+                        try {
+                            java.nio.file.Files.delete(path);
+                        } catch (Exception e) {
+                            // Ignore
+                        }
+                    });
+        }
     }
     
     @Test
