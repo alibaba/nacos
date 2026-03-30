@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -284,6 +285,9 @@ class NacosAiServiceTest {
         field.setAccessible(true);
         final AiGrpcClient autoBuildGrpcClient = (AiGrpcClient) field.get(nacosAiService);
         field.set(nacosAiService, grpcClient);
+        field = NacosAiService.class.getDeclaredField("httpProxy");
+        field.setAccessible(true);
+        final AiHttpClientProxy autoBuildHttpProxy = (AiHttpClientProxy) field.get(nacosAiService);
         field = NacosAiService.class.getDeclaredField("aiClientProxy");
         field.setAccessible(true);
         field.set(nacosAiService, grpcClient);
@@ -300,6 +304,7 @@ class NacosAiServiceTest {
         field.set(nacosAiService, aiChangeNotifier);
         try {
             autoBuildGrpcClient.shutdown();
+            autoBuildHttpProxy.shutdown();
             autoBuildCacheHolder.shutdown();
             autoBuildAgentCacheHolder.shutdown();
         } catch (NacosException ignored) {

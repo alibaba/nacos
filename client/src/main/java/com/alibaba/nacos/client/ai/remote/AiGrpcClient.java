@@ -218,12 +218,6 @@ public class AiGrpcClient implements AiClientProxy {
         return response.getPromptInfo();
     }
 
-    @Override
-    public byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException {
-        throw new NacosException(NacosException.SERVER_NOT_IMPLEMENTED,
-                "Skill download via gRPC is not supported. Set AI_TRANSPORT_MODE=http.");
-    }
-
     /**
      * Do release mcp server.
      *
