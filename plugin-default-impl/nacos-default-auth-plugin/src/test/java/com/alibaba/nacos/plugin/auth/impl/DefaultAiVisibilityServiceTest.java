@@ -34,8 +34,10 @@ import com.alibaba.nacos.plugin.visibility.model.VisibilityResource;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import com.alibaba.nacos.plugin.visibility.spi.ValidationResult;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -53,9 +55,33 @@ import static org.mockito.Mockito.when;
 
 class DefaultAiVisibilityServiceTest {
     
+    static {
+        try {
+            MockEnvironment environment = new MockEnvironment();
+            environment.setProperty("nacos.core.auth.system.type", "nacos");
+            environment.setProperty("nacos.core.auth.server.identity.key", "nacos");
+            environment.setProperty("nacos.core.auth.server.identity.value", "nacos");
+            environment.setProperty("nacos.core.auth.admin.enabled", "true");
+            com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(environment);
+        } catch (Exception e) {
+            // Ignore exception during static initialization
+        }
+    }
+    
+    @BeforeEach
+    void setUp() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.core.auth.system.type", "nacos");
+        environment.setProperty("nacos.core.auth.server.identity.key", "nacos");
+        environment.setProperty("nacos.core.auth.server.identity.value", "nacos");
+        environment.setProperty("nacos.core.auth.admin.enabled", "true");
+        com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(environment);
+    }
+    
     @AfterEach
     void tearDown() {
         RequestContextHolder.removeContext();
+        com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(null);
     }
     
     @Test
