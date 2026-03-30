@@ -364,6 +364,9 @@ public class OidcAuthConfig {
     }
 
     public String getAuthorizationEvaluateEndpoint() {
+        if (StringUtils.isBlank(authorizationEvaluateEndpoint)) {
+            return authorizationEndpoint
+        }
         return authorizationEvaluateEndpoint;
     }
 
