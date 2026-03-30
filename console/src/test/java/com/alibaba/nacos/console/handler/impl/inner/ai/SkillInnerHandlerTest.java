@@ -293,4 +293,32 @@ class SkillInnerHandlerTest {
         
         verify(skillOperationService).updateScope(NAMESPACE_ID, SKILL_NAME, "PUBLIC");
     }
+
+    @Test
+    void testForcePublish() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(true);
+        doNothing().when(skillOperationService).forcePublish(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), eq(true));
+
+        skillInnerHandler.forcePublish(form);
+
+        verify(skillOperationService).forcePublish(NAMESPACE_ID, SKILL_NAME, "v1", true);
+    }
+
+    @Test
+    void testForcePublishWithNullUpdateLatestLabel() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(null);
+        doNothing().when(skillOperationService).forcePublish(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), eq(true));
+
+        skillInnerHandler.forcePublish(form);
+
+        verify(skillOperationService).forcePublish(NAMESPACE_ID, SKILL_NAME, "v1", true);
+    }
 }

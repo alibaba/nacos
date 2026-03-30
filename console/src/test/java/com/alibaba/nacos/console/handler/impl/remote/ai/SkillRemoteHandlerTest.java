@@ -315,4 +315,19 @@ class SkillRemoteHandlerTest {
         
         verify(skillMaintainerService).updateScope(NAMESPACE_ID, SKILL_NAME, "PUBLIC");
     }
+
+    @Test
+    void testForcePublish() throws NacosException {
+        SkillPublishForm form = new SkillPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setSkillName(SKILL_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(true);
+        when(skillMaintainerService.forcePublish(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), eq(true)))
+                .thenReturn(true);
+
+        skillRemoteHandler.forcePublish(form);
+
+        verify(skillMaintainerService).forcePublish(NAMESPACE_ID, SKILL_NAME, "v1", true);
+    }
 }

@@ -1058,4 +1058,87 @@ class SkillOperationServiceImplTest {
         verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L),
                 argThat(resource -> resource != null && "[\"retail\"]".equals(resource.getBizTags())));
     }
+
+    @Test
+    void testForcePublishSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("draft");
+        v.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest = new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setVersions(new HashMap<>());
+        manifest.setLabels(new HashMap<>());
+        when(manifestService.loadForUpdate(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+
+        skillOperationService.forcePublish(namespaceId, skillName, version, true);
+
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName), anyString(),
+                eq(version), eq("online"));
+        verify(manifestService).write(eq(namespaceId), eq(skillName), any(
+                com.alibaba.nacos.ai.model.skills.SkillIndexManifest.class));
+    }
+
+    @Test
+    void testForcePublishVersionNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v99";
+
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(null);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.forcePublish(namespaceId, skillName, version, true));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+
+    @Test
+    void testForcePublishVersionAlreadyOnline() {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.forcePublish(namespaceId, skillName, version, true));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
 }
