@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.ApiType;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -75,7 +76,8 @@ public class CoreOpsControllerV3 {
     @PostMapping(value = "/raft")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<String> raftOps(@RequestBody RaftCommandForm form) {
+    public Result<String> raftOps(@RequestBody RaftCommandForm form) throws NacosApiException {
+        form.validate();
         return Result.success(protocolManager.getCpProtocol().execute(form.toMap()).getData());
     }
     
@@ -104,10 +106,18 @@ public class CoreOpsControllerV3 {
         return Result.success(result);
     }
     
+    /**
+     * Update log level.
+     *
+     * @param logUpdateRequest log update request
+     * @return {@link Result}
+     * @throws NacosApiException if parameters are invalid
+     */
     @PutMapping(value = "/log")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) {
+    public Result<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) throws NacosApiException {
+        logUpdateRequest.validate();
         Loggers.setLogLevel(logUpdateRequest.getLogName(), logUpdateRequest.getLogLevel());
         return Result.success();
     }

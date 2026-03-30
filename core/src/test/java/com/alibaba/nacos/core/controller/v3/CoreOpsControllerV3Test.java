@@ -72,14 +72,17 @@ class CoreOpsControllerV3Test {
     }
     
     @Test
-    void testRaftOps() {
+    void testRaftOps() throws Exception {
         Mockito.when(protocolManager.getCpProtocol()).thenAnswer(invocationOnMock -> {
             CPProtocol cpProtocol = Mockito.mock(CPProtocol.class);
             Mockito.when(cpProtocol.execute(Mockito.anyMap())).thenReturn(RestResultUtils.success("test"));
             return cpProtocol;
         });
         
-        Result<String> result = coreOpsControllerV3.raftOps(new RaftCommandForm());
+        RaftCommandForm form = new RaftCommandForm();
+        form.setCommand("doSnapshot");
+        form.setValue("127.0.0.1:7848");
+        Result<String> result = coreOpsControllerV3.raftOps(form);
         assertEquals("test", result.getData());
     }
     
@@ -100,7 +103,7 @@ class CoreOpsControllerV3Test {
     }
     
     @Test
-    void testUpdateLog() {
+    void testUpdateLog() throws Exception {
         LogUpdateRequest request = new LogUpdateRequest();
         request.setLogName("core");
         request.setLogLevel("debug");
