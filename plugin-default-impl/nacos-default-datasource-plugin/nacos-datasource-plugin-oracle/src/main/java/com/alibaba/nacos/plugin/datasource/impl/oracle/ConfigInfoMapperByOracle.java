@@ -52,14 +52,16 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
     @Override
     public MapperResult getTenantIdList(MapperContext context) {
         String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '" + NamespaceUtil.getNamespaceDefaultId()
-                + "' GROUP BY tenant_id ORDER BY tenant_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+                + "' GROUP BY tenant_id ORDER BY tenant_id OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, Collections.emptyList());
     }
 
     @Override
     public MapperResult getGroupIdList(MapperContext context) {
         String sql = "SELECT group_id FROM config_info WHERE tenant_id ='" + NamespaceUtil.getNamespaceDefaultId()
-                + "' GROUP BY group_id ORDER BY group_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+                + "' GROUP BY group_id ORDER BY group_id OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, Collections.emptyList());
     }
 
@@ -215,7 +217,11 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
         }
 
         // 先分页，减少后续 JOIN 的数据量
-        idSql.append(" ORDER BY id OFFSET ").append(context.getStartRow()).append(" ROWS FETCH NEXT ").append(context.getPageSize()).append(" ROWS ONLY");
+        idSql.append(" ORDER BY id OFFSET ")
+                .append(context.getStartRow())
+                .append(" ROWS FETCH NEXT ")
+                .append(context.getPageSize())
+                .append(" ROWS ONLY");
 
         // 外层查询：对分页后的结果进行标签关联
         String sql =
@@ -287,7 +293,11 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
         }
 
         // 先分页，减少后续 JOIN 的数据量
-        idSql.append(" ORDER BY id OFFSET ").append(context.getStartRow()).append(" ROWS FETCH NEXT ").append(context.getPageSize()).append(" ROWS ONLY");
+        idSql.append(" ORDER BY id OFFSET ")
+                .append(context.getStartRow())
+                .append(" ROWS FETCH NEXT ")
+                .append(context.getPageSize())
+                .append(" ROWS ONLY");
 
         // 外层查询：对分页后的结果进行标签关联
         String sql =
