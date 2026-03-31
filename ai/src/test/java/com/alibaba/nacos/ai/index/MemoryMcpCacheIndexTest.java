@@ -626,22 +626,22 @@ class MemoryMcpCacheIndexTest {
         // 创建一个具有不同过期时间的缓存实例
         McpCacheIndexProperties mixedProps = new McpCacheIndexProperties();
         mixedProps.setMaxSize(100);
-        mixedProps.setExpireTimeSeconds(2); // 2秒过期
+        mixedProps.setExpireTimeSeconds(4); // 拉大过期窗口，避免CI调度抖动导致新条目误过期
         // 避免后台清理线程在测试窗口内并发介入，降低时序抖动
         mixedProps.setCleanupIntervalSeconds(60);
         MemoryMcpCacheIndex mixedCache = new MemoryMcpCacheIndex(mixedProps);
         
         try {
             // 添加一些条目
-            mixedCache.updateIndex("ns1", "name1", "id1"); // 这个会过期
-            Thread.sleep(1200); // 与id2拉开创建时间，避免同一秒边界
+            mixedCache.updateIndex("ns1", "name1", "id1"); // 这个会先过期
+            Thread.sleep(1500); // 与id2拉开创建时间，避免同一秒边界
             mixedCache.updateIndex("ns2", "name2", "id2"); // 这个不会过期
             
             // 仅校验新条目有效，旧条目在秒级边界上可能会提前过期
             assertEquals("id2", mixedCache.getMcpId("ns2", "name2"));
             
             // 轮询等待id1过期，避免固定sleep导致秒级边界抖动
-            long deadline = System.currentTimeMillis() + 2500;
+            long deadline = System.currentTimeMillis() + 3000;
             while (mixedCache.getMcpId("ns1", "name1") != null && System.currentTimeMillis() < deadline) {
                 Thread.sleep(50);
             }

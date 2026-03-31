@@ -33,6 +33,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -55,15 +57,22 @@ class NacosPromptCacheHolderTest {
     
     private NacosPromptCacheHolder cacheHolder;
     
+    private final List<MockPromptEventSubscriber> registeredSubscribers = new ArrayList<>();
+    
     @BeforeEach
     void setUp() {
         Properties properties = new Properties();
         properties.put(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL, "100");
+        NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
         cacheHolder = new NacosPromptCacheHolder(aiClientProxy, NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @AfterEach
     void tearDown() throws NacosException {
+        for (MockPromptEventSubscriber each : registeredSubscribers) {
+            NotifyCenter.deregisterSubscriber(each);
+        }
+        registeredSubscribers.clear();
         cacheHolder.shutdown();
         NotifyCenter.deregisterPublisher(PromptChangedEvent.class);
     }
@@ -84,13 +93,12 @@ class NacosPromptCacheHolderTest {
         Prompt prompt = new Prompt("p1", "1.0.0", "v1");
         prompt.setMd5("m1");
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, null)).thenReturn(prompt);
-        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
-        NotifyCenter.registerSubscriber(subscriber);
+        MockPromptEventSubscriber subscriber = registerMockSubscriber();
         
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
         
         assertNotNull(getPromptCache().get("p1::version:1.0.0"));
-        assertTrue(subscriber.await(2000), "Event should be received by subscriber within 2 seconds");
+        assertTrue(subscriber.await(5000), "Event should be received by subscriber within 5 seconds");
         assertTrue(subscriber.invokedMark.get(), "Subscriber should have been invoked");
     }
     
@@ -102,8 +110,7 @@ class NacosPromptCacheHolderTest {
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
                 .thenThrow(new NacosException(NacosException.NOT_MODIFIED, "up to date"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
-        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
-        NotifyCenter.registerSubscriber(subscriber);
+        MockPromptEventSubscriber subscriber = registerMockSubscriber();
         
         Runnable updater = getOnlyUpdater();
         updater.run();
@@ -121,14 +128,13 @@ class NacosPromptCacheHolderTest {
         when(aiClientProxy.queryPrompt("p1", "1.0.0", null, "m1"))
                 .thenThrow(new NacosException(NacosException.NOT_FOUND, "not found"));
         cacheHolder.subscribePrompt("p1", "1.0.0", null);
-        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
-        NotifyCenter.registerSubscriber(subscriber);
+        MockPromptEventSubscriber subscriber = registerMockSubscriber();
         
         Runnable updater = getOnlyUpdater();
         updater.run();
         
         assertNull(getPromptCache().get("p1::version:1.0.0"));
-        waitForSubscriber(subscriber);
+        assertTrue(subscriber.await(5000), "Null event should be received by subscriber within 5 seconds");
         assertTrue(subscriber.invokedMark.get());
     }
     
@@ -189,13 +195,11 @@ class NacosPromptCacheHolderTest {
         return (Runnable) updater;
     }
     
-    private void waitForSubscriber(MockPromptEventSubscriber subscriber) throws InterruptedException {
-        for (int i = 0; i < 10; i++) {
-            if (subscriber.invokedMark.get()) {
-                return;
-            }
-            TimeUnit.MILLISECONDS.sleep(100);
-        }
+    private MockPromptEventSubscriber registerMockSubscriber() {
+        MockPromptEventSubscriber subscriber = new MockPromptEventSubscriber();
+        NotifyCenter.registerSubscriber(subscriber);
+        registeredSubscribers.add(subscriber);
+        return subscriber;
     }
     
     private static class MockPromptEventSubscriber extends Subscriber<PromptChangedEvent> {

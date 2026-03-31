@@ -260,8 +260,9 @@ class ConfigInfoMapperByMySqlTest {
     void testFindConfigInfoBaseByGroupFetchRows() {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoBaseByGroupFetchRows(context);
-        assertEquals(mapperResult.getSql(),
-                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? ORDER BY id LIMIT " + startRow + "," + pageSize);
+        String expectedSql = "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? "
+                + "ORDER BY id LIMIT " + startRow + "," + pageSize;
+        assertEquals(mapperResult.getSql(), expectedSql);
         assertArrayEquals(new Object[] {groupId, tenantId}, mapperResult.getParamList().toArray());
     }
     
