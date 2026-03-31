@@ -90,7 +90,28 @@ public interface AgentSpecOperationService {
      */
     Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search, int pageNo,
             int pageSize) throws NacosException;
-    
+    /**
+     * List agentspecs with pagination, optional ordering, and additional filter criteria for admin usage.
+     *
+     * <p>Backward-compatible: when {@code orderBy}, {@code owner} and {@code scope} are all {@code null}/empty,
+     * the behaviour is identical to
+     * {@link #listAgentSpecs(String, String, String, int, int)}.</p>
+     *
+     * @param namespaceId   namespace ID
+     * @param agentSpecName agentspec name (for search)
+     * @param search        search type (accurate/blur)
+     * @param orderBy       sort field (e.g. "download_count"), null defaults to gmt_modified
+     * @param owner         optional filter by resource owner; null or empty means no owner filter
+     * @param scope         optional filter by visibility scope ("PUBLIC"/"PRIVATE"); null or empty means no scope filter
+     * @param pageNo        page number
+     * @param pageSize      page size
+     * @return agentspec admin list page with governance metadata
+     * @throws NacosException if query failed
+     */
+    default Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search,
+            String orderBy, String owner, String scope, int pageNo, int pageSize) throws NacosException {
+        return listAgentSpecs(namespaceId, agentSpecName, search, pageNo, pageSize);
+    }    
     /**
      * Upload agentspec from zip file.
      *

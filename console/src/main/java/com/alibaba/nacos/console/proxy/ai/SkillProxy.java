@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
@@ -65,8 +66,9 @@ public class SkillProxy {
         skillHandler.deleteSkill(form);
     }
     
-    public Page<SkillSummary> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
-        return skillHandler.listSkills(skillListForm, pageForm);
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
+            PageForm pageForm) throws NacosException {
+        return skillHandler.listSkills(skillListForm, filterableForm, pageForm);
     }
     
     public String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {

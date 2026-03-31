@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -79,11 +80,12 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     }
     
     @Override
-    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
-            throws NacosException {
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         return agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
-                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(), pageForm.getPageNo(),
-                pageForm.getPageSize());
+                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
+                agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
+                pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override

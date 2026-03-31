@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
@@ -148,12 +149,16 @@ public class SkillAdminController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
-    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();
+        filterableForm.validate();
         pageForm.validate();
         return Result.success(
                 skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
-                        skillListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize()));
+                        skillListForm.getSearch(), skillListForm.getOrderBy(),
+                        filterableForm.getOwner(), filterableForm.getScope(),
+                        pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
     /**

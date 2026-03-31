@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -83,10 +84,12 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     }
 
     @Override
-    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
-            throws NacosException {
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         Page<AgentSpecSummary> source = clientHolder.getAiMaintainerService().agentSpec().listAgentSpecAdminItems(
-                agentSpecListForm.getNamespaceId(), agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
+                agentSpecListForm.getNamespaceId(), agentSpecListForm.getAgentSpecName(),
+                agentSpecListForm.getSearch(), agentSpecListForm.getOrderBy(),
+                filterableForm.getOwner(), filterableForm.getScope(),
                 pageForm.getPageNo(), pageForm.getPageSize());
         if (source != null) {
             return source;

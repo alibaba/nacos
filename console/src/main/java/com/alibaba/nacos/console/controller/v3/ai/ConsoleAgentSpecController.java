@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -126,11 +127,12 @@ public class ConsoleAgentSpecController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
-            throws NacosException {
+    public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         agentSpecListForm.validate();
+        filterableForm.validate();
         pageForm.validate();
-        return Result.success(agentSpecProxy.listAgentSpecs(agentSpecListForm, pageForm));
+        return Result.success(agentSpecProxy.listAgentSpecs(agentSpecListForm, filterableForm, pageForm));
     }
     
     /**

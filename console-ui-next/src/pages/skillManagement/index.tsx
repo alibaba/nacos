@@ -21,6 +21,7 @@ import { UploadSkillDialog } from './components/UploadSkillDialog';
 import { CreateSkillDialog } from './components/CreateSkillDialog';
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { skillApi } from '@/api/skill';
 
 export default function SkillManagementPage() {
@@ -28,6 +29,7 @@ export default function SkillManagementPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentNamespace } = useNamespaceStore();
+  const { globalAdmin, username } = useAuthStore();
   const {
     items,
     loading,
@@ -36,6 +38,8 @@ export default function SkillManagementPage() {
     pageSize,
     searchName,
     orderBy,
+    filterOwner,
+    filterScope,
     selectedNames,
     error,
     fetchList,
@@ -51,6 +55,7 @@ export default function SkillManagementPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(searchName);
+  const [ownerInput, setOwnerInput] = useState(filterOwner);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -65,12 +70,16 @@ export default function SkillManagementPage() {
   }, [loadData, pageNo, pageSize, location.key]);
 
   const handleSearch = () => {
-    setSearchParams({ searchName: searchInput });
+    setSearchParams({
+      searchName: searchInput,
+      filterOwner: globalAdmin ? ownerInput : (ownerInput ? username || '' : ''),
+    });
     fetchList(namespaceId);
   };
 
   const handleReset = () => {
     setSearchInput('');
+    setOwnerInput('');
     resetSearch();
     fetchList(namespaceId);
   };
@@ -152,12 +161,55 @@ export default function SkillManagementPage() {
         <Button size="sm" variant="secondary" className="h-8" onClick={handleSearch}>
           {t('common.search')}
         </Button>
-        {searchInput && (
+        {(searchInput || filterOwner || filterScope) && (
           <Button size="sm" variant="ghost" className="h-8" onClick={handleReset}>
             <X className="mr-1 h-3 w-3" />
             {t('common.reset')}
           </Button>
         )}
+
+        {/* Owner filter: admin gets free-text input; non-admin gets "only mine" toggle */}
+        {globalAdmin ? (
+          <Input
+            placeholder={t('skill.filterOwnerPlaceholder')}
+            value={ownerInput}
+            onChange={(e) => setOwnerInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="w-[160px] h-8 text-xs"
+            title={t('skill.filterByOwner')}
+          />
+        ) : (
+          <Button
+            size="sm"
+            variant={filterOwner ? 'default' : 'outline'}
+            className="h-8 text-xs"
+            onClick={() => {
+              const next = filterOwner ? '' : (username || '');
+              setSearchParams({ filterOwner: next });
+              fetchList(namespaceId);
+            }}
+          >
+            {t('skill.filterOnlyMine')}
+          </Button>
+        )}
+
+        {/* Scope filter: everyone can choose all / public / private */}
+        <Select
+          value={filterScope || ''}
+          onValueChange={(v) => {
+            setSearchParams({ filterScope: v === '_all' ? '' : v });
+            fetchList(namespaceId);
+          }}
+        >
+          <SelectTrigger className="w-[130px] h-8 text-xs">
+            <SelectValue placeholder={t('skill.filterScopeAll')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_all">{t('skill.filterScopeAll')}</SelectItem>
+            <SelectItem value="PUBLIC">{t('skill.filterScopePublic')}</SelectItem>
+            <SelectItem value="PRIVATE">{t('skill.filterScopePrivate')}</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* Sort */}
         <Select

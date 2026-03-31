@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -96,13 +97,28 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
+        return listSkills(namespaceId, skillName, search, null, null, null, pageNo, pageSize);
+    }
+
+    @Override
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            String owner, String scope, int pageNo, int pageSize) throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
-        Map<String, String> params = new HashMap<>(8);
+        Map<String, String> params = new HashMap<>(12);
         params.put("namespaceId", namespaceId);
         params.put("skillName", skillName);
         params.put("search", search);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
+        if (StringUtils.isNotBlank(orderBy)) {
+            params.put("orderBy", orderBy);
+        }
+        if (StringUtils.isNotBlank(owner)) {
+            params.put("owner", owner);
+        }
+        if (StringUtils.isNotBlank(scope)) {
+            params.put("scope", scope);
+        }
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
                 .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_SKILL_LIST_ADMIN_PATH)
                 .setParamValue(params).build();

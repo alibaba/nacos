@@ -135,13 +135,29 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
     @Override
     public Page<AgentSpecSummary> listAgentSpecAdminItems(String namespaceId, String agentSpecName,
             String search, int pageNo, int pageSize) throws NacosException {
+        return listAgentSpecAdminItems(namespaceId, agentSpecName, search, null, null, null, pageNo, pageSize);
+    }
+
+    @Override
+    public Page<AgentSpecSummary> listAgentSpecAdminItems(String namespaceId, String agentSpecName,
+            String search, String orderBy, String owner, String scope, int pageNo, int pageSize)
+            throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
-        Map<String, String> params = new HashMap<>(8);
+        Map<String, String> params = new HashMap<>(12);
         params.put("namespaceId", namespaceId);
         params.put("agentSpecName", agentSpecName);
         params.put("search", search);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
+        if (StringUtils.isNotBlank(orderBy)) {
+            params.put("orderBy", orderBy);
+        }
+        if (StringUtils.isNotBlank(owner)) {
+            params.put("owner", owner);
+        }
+        if (StringUtils.isNotBlank(scope)) {
+            params.put("scope", scope);
+        }
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName))
                 .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_AGENTSPEC_LIST_ADMIN_PATH)
                 .setParamValue(params).build();

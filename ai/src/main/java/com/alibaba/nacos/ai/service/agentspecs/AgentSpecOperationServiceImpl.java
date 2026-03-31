@@ -292,6 +292,12 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     @Override
     public Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search,
             int pageNo, int pageSize) throws NacosException {
+        return listAgentSpecs(namespaceId, agentSpecName, search, null, null, null, pageNo, pageSize);
+    }
+
+    @Override
+    public Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search,
+            String orderBy, String owner, String scope, int pageNo, int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(agentSpecName)) {
             if (Constants.AgentSpecs.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
@@ -304,6 +310,13 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         QueryCondition queryCondition = buildQueryCondition(namespaceId, RESOURCE_TYPE_AGENTSPEC, nameLike, null,
                 VisibilityConstants.ACTION_READ);
+        queryCondition.setOrderBy(orderBy);
+        if (StringUtils.isNotBlank(owner)) {
+            queryCondition.setOwner(owner);
+        }
+        if (StringUtils.isNotBlank(scope)) {
+            queryCondition.setScope(scope);
+        }
         if (queryCondition.isAlwaysEmpty()) {
             return buildEmptyPage(pageNo);
         }

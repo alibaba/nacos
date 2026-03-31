@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
@@ -84,7 +85,8 @@ public interface SkillHandler {
      * @return skill list
      * @throws NacosException nacos exception
      */
-    Page<SkillSummary> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException;
+    Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
+            PageForm pageForm) throws NacosException;
     
     /**
      * Upload skill from zip file.

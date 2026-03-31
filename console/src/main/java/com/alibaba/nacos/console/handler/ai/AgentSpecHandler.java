@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -74,8 +75,8 @@ public interface AgentSpecHandler {
      * @return agentspec list
      * @throws NacosException nacos exception
      */
-    Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
-            throws NacosException;
+    Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException;
     
     /**
      * Upload agentspec from zip file.

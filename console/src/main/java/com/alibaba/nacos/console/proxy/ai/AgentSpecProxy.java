@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -61,9 +62,9 @@ public class AgentSpecProxy {
         agentSpecHandler.deleteAgentSpec(form);
     }
     
-    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
-            throws NacosException {
-        return agentSpecHandler.listAgentSpecs(agentSpecListForm, pageForm);
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
+        return agentSpecHandler.listAgentSpecs(agentSpecListForm, filterableForm, pageForm);
     }
     
     public String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {

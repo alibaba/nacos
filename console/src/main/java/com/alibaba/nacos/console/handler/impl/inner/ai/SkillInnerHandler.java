@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
@@ -82,9 +83,12 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public Page<SkillSummary> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
+            PageForm pageForm) throws NacosException {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
-                skillListForm.getSearch(), skillListForm.getOrderBy(), pageForm.getPageNo(), pageForm.getPageSize());
+                skillListForm.getSearch(), skillListForm.getOrderBy(),
+                filterableForm.getOwner(), filterableForm.getScope(),
+                pageForm.getPageNo(), pageForm.getPageSize());
     }
     
     @Override

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillForm;
@@ -142,10 +143,12 @@ public class ConsoleSkillController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Result<Page<SkillSummary>> listSkills(SkillListForm skillListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         skillListForm.validate();
+        filterableForm.validate();
         pageForm.validate();
-        return Result.success(skillProxy.listSkills(skillListForm, pageForm));
+        return Result.success(skillProxy.listSkills(skillListForm, filterableForm, pageForm));
     }
     
     /**

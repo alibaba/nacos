@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillDraftCreateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.skills.admin.SkillLabelsUpdateForm;
@@ -88,11 +89,15 @@ public class SkillRemoteHandler implements SkillHandler {
     }
 
     @Override
-    public Page<SkillSummary> listSkills(SkillListForm skillListForm, PageForm pageForm) throws NacosException {
+    public Page<SkillSummary> listSkills(SkillListForm skillListForm, AiResourceFilterableForm filterableForm,
+            PageForm pageForm) throws NacosException {
         Page<SkillSummary> result = clientHolder.getAiMaintainerService().skill().listSkills(
                 skillListForm.getNamespaceId(),
                 skillListForm.getSkillName(),
                 skillListForm.getSearch(),
+                skillListForm.getOrderBy(),
+                filterableForm.getOwner(),
+                filterableForm.getScope(),
                 pageForm.getPageNo(),
                 pageForm.getPageSize()
         );

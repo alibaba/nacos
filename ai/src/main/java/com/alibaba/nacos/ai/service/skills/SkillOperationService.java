@@ -166,6 +166,29 @@ public interface SkillOperationService {
                                    int pageNo, int pageSize) throws NacosException;
 
     /**
+     * List skills with pagination, optional ordering, and additional filter criteria for admin usage.
+     *
+     * <p>Backward-compatible: when {@code owner} and {@code scope} are both {@code null}/empty,
+     * the behaviour is identical to
+     * {@link #listSkills(String, String, String, String, int, int)}.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name (for search)
+     * @param search      search type (accurate/blur)
+     * @param orderBy     sort field (e.g. "download_count"), null defaults to gmt_modified
+     * @param owner       optional filter by resource owner; null or empty means no owner filter
+     * @param scope       optional filter by visibility scope ("PUBLIC"/"PRIVATE"); null or empty means no scope filter
+     * @param pageNo      page number
+     * @param pageSize    page size
+     * @return skill admin list page with governance metadata
+     * @throws NacosException if query failed
+     */
+    default Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            String owner, String scope, int pageNo, int pageSize) throws NacosException {
+        return listSkills(namespaceId, skillName, search, orderBy, pageNo, pageSize);
+    }
+
+    /**
      * Create a new draft version.
      * <p>
      * {@code initialContent} is required for a brand-new skill or when no published version exists to fork from.

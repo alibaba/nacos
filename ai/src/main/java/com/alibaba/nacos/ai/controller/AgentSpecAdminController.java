@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -133,13 +134,16 @@ public class AgentSpecAdminController {
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API,
             tags = {ALLOW_ANONYMOUS})
-    public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
+    public Result<Page<AgentSpecSummary>> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm)
             throws NacosException {
         agentSpecListForm.validate();
+        filterableForm.validate();
         pageForm.validate();
         return Result.success(agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
-                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(), pageForm.getPageNo(),
-                pageForm.getPageSize()));
+                agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
+                agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
+                pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
     /**

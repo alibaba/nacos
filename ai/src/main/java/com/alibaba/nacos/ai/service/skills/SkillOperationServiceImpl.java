@@ -618,6 +618,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
                                           int pageNo, int pageSize) throws NacosException {
+        return listSkills(namespaceId, skillName, search, orderBy, null, null, pageNo, pageSize);
+    }
+
+    @Override
+    public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            String owner, String scope, int pageNo, int pageSize) throws NacosException {
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
             if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
@@ -631,6 +637,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         QueryCondition queryCondition = buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null,
                 VisibilityConstants.ACTION_READ);
         queryCondition.setOrderBy(orderBy);
+        if (StringUtils.isNotBlank(owner)) {
+            queryCondition.setOwner(owner);
+        }
+        if (StringUtils.isNotBlank(scope)) {
+            queryCondition.setScope(scope);
+        }
         if (queryCondition.isAlwaysEmpty()) {
             return buildEmptyPage(pageNo);
         }

@@ -123,6 +123,28 @@ public interface SkillMaintainerService {
             throws NacosException;
 
     /**
+     * List skills with pagination, optional ordering and additional filter criteria.
+     *
+     * <p>Backward-compatible: when {@code orderBy}, {@code owner} and {@code scope} are all {@code null}/empty,
+     * the behaviour is identical to {@link #listSkills(String, String, String, int, int)}.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name pattern for filtering
+     * @param search      search mode: "accurate" or "blur"
+     * @param orderBy     optional sort field (e.g. "download_count"); null defaults to gmt_modified
+     * @param owner       optional filter by resource owner; null or empty means no owner filter
+     * @param scope       optional filter by visibility scope ("PUBLIC"/"PRIVATE"); null or empty means no scope filter
+     * @param pageNo      page number
+     * @param pageSize    page size
+     * @return paged skill list
+     * @throws NacosException if fail to list skills
+     */
+    default Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            String owner, String scope, int pageNo, int pageSize) throws NacosException {
+        return listSkills(namespaceId, skillName, search, pageNo, pageSize);
+    }
+
+    /**
      * Upload skill from zip file with default namespace.
      *
      * @param zipBytes zip file bytes

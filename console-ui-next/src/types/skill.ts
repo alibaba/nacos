@@ -78,6 +78,10 @@ export interface SkillListParams {
   skillName?: string;
   search?: SkillSearchMode;
   orderBy?: string;
+  /** Filter by resource owner. Admin: any value; non-admin: own username only. */
+  owner?: string;
+  /** Filter by visibility scope: "PUBLIC" or "PRIVATE". Empty = no filter. */
+  scope?: string;
   pageNo?: number;
   pageSize?: number;
 }

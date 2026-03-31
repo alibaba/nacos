@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecDraftCreateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
@@ -70,8 +71,8 @@ public class AgentSpecNoopHandler implements AgentSpecHandler {
     }
 
     @Override
-    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm, PageForm pageForm)
-            throws NacosException {
+    public Page<AgentSpecSummary> listAgentSpecs(AgentSpecListForm agentSpecListForm,
+            AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 AGENTSPEC_NOT_ENABLED_MESSAGE);
     }

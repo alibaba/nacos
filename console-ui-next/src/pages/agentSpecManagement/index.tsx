@@ -22,6 +22,7 @@ import { UploadAgentSpecDialog } from './components/UploadAgentSpecDialog';
 import { CreateAgentSpecDialog } from './components/CreateAgentSpecDialog';
 import { useAgentSpecStore } from '@/stores/agentspec-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { agentSpecApi } from '@/api/agentspec';
 
 export default function AgentSpecManagementPage() {
@@ -29,6 +30,7 @@ export default function AgentSpecManagementPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentNamespace } = useNamespaceStore();
+  const { globalAdmin, username } = useAuthStore();
   const {
     items,
     loading,
@@ -36,6 +38,9 @@ export default function AgentSpecManagementPage() {
     pageNo,
     pageSize,
     searchName,
+    orderBy,
+    filterOwner,
+    filterScope,
     selectedNames,
     error,
     fetchList,
@@ -51,6 +56,7 @@ export default function AgentSpecManagementPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(searchName);
+  const [ownerInput, setOwnerInput] = useState(filterOwner);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -65,12 +71,16 @@ export default function AgentSpecManagementPage() {
   }, [loadData, pageNo, pageSize, location.key]);
 
   const handleSearch = () => {
-    setSearchParams({ searchName: searchInput });
+    setSearchParams({
+      searchName: searchInput,
+      filterOwner: globalAdmin ? ownerInput : (ownerInput ? username || '' : ''),
+    });
     fetchList(namespaceId);
   };
 
   const handleReset = () => {
     setSearchInput('');
+    setOwnerInput('');
     resetSearch();
     fetchList(namespaceId);
   };
@@ -157,12 +167,72 @@ export default function AgentSpecManagementPage() {
         <Button size="sm" variant="secondary" className="h-8" onClick={handleSearch}>
           {t('common.search')}
         </Button>
-        {searchInput && (
+        {(searchInput || filterOwner || filterScope) && (
           <Button size="sm" variant="ghost" className="h-8" onClick={handleReset}>
             <X className="mr-1 h-3 w-3" />
             {t('common.reset')}
           </Button>
         )}
+
+        {/* Owner filter: admin gets free-text input; non-admin gets "only mine" toggle */}
+        {globalAdmin ? (
+          <Input
+            placeholder={t('agentSpec.filterOwnerPlaceholder')}
+            value={ownerInput}
+            onChange={(e) => setOwnerInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="w-[160px] h-8 text-xs"
+            title={t('agentSpec.filterByOwner')}
+          />
+        ) : (
+          <Button
+            size="sm"
+            variant={filterOwner ? 'default' : 'outline'}
+            className="h-8 text-xs"
+            onClick={() => {
+              const next = filterOwner ? '' : (username || '');
+              setSearchParams({ filterOwner: next });
+              fetchList(namespaceId);
+            }}
+          >
+            {t('agentSpec.filterOnlyMine')}
+          </Button>
+        )}
+
+        {/* Scope filter: everyone can choose all / public / private */}
+        <Select
+          value={filterScope || ''}
+          onValueChange={(v) => {
+            setSearchParams({ filterScope: v === '_all' ? '' : v });
+            fetchList(namespaceId);
+          }}
+        >
+          <SelectTrigger className="w-[130px] h-8 text-xs">
+            <SelectValue placeholder={t('agentSpec.filterScopeAll')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_all">{t('agentSpec.filterScopeAll')}</SelectItem>
+            <SelectItem value="PUBLIC">{t('agentSpec.filterScopePublic')}</SelectItem>
+            <SelectItem value="PRIVATE">{t('agentSpec.filterScopePrivate')}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort */}
+        <Select
+          value={orderBy}
+          onValueChange={(v) => {
+            setSearchParams({ orderBy: v });
+            fetchList(namespaceId);
+          }}
+        >
+          <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectValue placeholder={t('agentSpec.sortDefault')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value=" ">{t('agentSpec.sortDefault')}</SelectItem>
+            <SelectItem value="download_count">{t('agentSpec.sortByDownloads')}</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* Batch operations */}
         {selectedNames.size > 0 && (
