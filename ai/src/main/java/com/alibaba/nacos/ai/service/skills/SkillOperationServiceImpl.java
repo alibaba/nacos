@@ -908,16 +908,19 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
 
         // 1) version status -> online (idempotent)
-        if (!VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+        boolean alreadyOnline = VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus());
+        if (!alreadyOnline) {
             aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, version, VERSION_STATUS_ONLINE);
         }
 
-        // 2) meta: clear working pointers, onlineCnt++, update latest label if required
+        // 2) meta: clear working pointers, onlineCnt++ (only when not already online), update latest label if required
         if (StringUtils.equals(info.getReviewingVersion(), version)) {
             info.setReviewingVersion(null);
         }
-        Integer cnt = info.getOnlineCnt();
-        info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        if (!alreadyOnline) {
+            Integer cnt = info.getOnlineCnt();
+            info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        }
         if (info.getLabels() == null) {
             info.setLabels(new HashMap<>(4));
         }
@@ -1049,6 +1052,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "Skill version not found: " + name + "@" + version);
         }
         String targetStatus = online ? VERSION_STATUS_ONLINE : VERSION_STATUS_OFFLINE;
+        String currentStatus = v.getStatus();
+        
+        // Skip if already in target status
+        if (targetStatus.equalsIgnoreCase(currentStatus)) {
+            return;
+        }
+        
         aiResourceVersionPersistService.updateStatus(namespaceId, name, RESOURCE_TYPE_SKILL, version, targetStatus);
         // onlineCnt is best-effort, list/search uses it as hint
         Integer cnt = info.getOnlineCnt() == null ? 0 : info.getOnlineCnt();

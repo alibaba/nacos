@@ -31,6 +31,8 @@ public class PromptVersionSummary implements Serializable {
     
     private String version;
     
+    private String status;
+    
     private String commitMsg;
     
     private String srcUser;
@@ -51,6 +53,14 @@ public class PromptVersionSummary implements Serializable {
     
     public void setVersion(String version) {
         this.version = version;
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
     }
     
     public String getCommitMsg() {

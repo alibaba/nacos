@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.storage;
 
 import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -39,11 +40,11 @@ import java.nio.charset.StandardCharsets;
 /**
  * Nacos Config based {@link AiResourceStorage} implementation.
  *
- * <p>Supports both Skill and AgentSpec resource types via parameterized group prefixes.
+ * <p>Supports Skill, AgentSpec and Prompt resource types via parameterized group prefixes.
  * StorageKey.key format:
  * <ul>
  *   <li>Legacy (Skill): {@code namespaceId:name:version:filePath} (4-part, defaults to skill__ prefix)</li>
- *   <li>Typed: {@code namespaceId:resourceType:name:version:filePath} (5-part, resourceType = "skill" or "agentspec")</li>
+ *   <li>Typed: {@code namespaceId:resourceType:name:version:filePath} (5-part, resourceType = "skill", "agentspec" or "prompt")</li>
  * </ul>
  * File path convention: main = {@link #getMainFilePath()} / {@link #getMainFilePath(String)},
  * resources = {@link #getResourceFilePath(String, String)} / {@link #getAgentSpecResourceFilePath(String, String)},
@@ -58,6 +59,9 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
 
     /** Resource type identifier for AgentSpec storage keys. */
     public static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
+
+    /** Resource type identifier for Prompt storage keys. */
+    public static final String RESOURCE_TYPE_PROMPT = "prompt";
 
     /**
      * Build storage key for Skill resources (legacy 4-part format).
@@ -84,7 +88,7 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
      *
      * @param provider     storage provider (e.g. {@link #TYPE})
      * @param namespaceId  namespace
-     * @param resourceType resource type ({@link #RESOURCE_TYPE_SKILL} or {@link #RESOURCE_TYPE_AGENTSPEC})
+     * @param resourceType resource type ({@link #RESOURCE_TYPE_SKILL}, {@link #RESOURCE_TYPE_AGENTSPEC} or {@link #RESOURCE_TYPE_PROMPT})
      * @param name         resource name (skill name or agentspec name)
      * @param version      version
      * @param filePath     file path (use {@link #getMainFilePath(String)} or resource file path helpers)
@@ -267,6 +271,8 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
                 group = AgentSpecUtils.buildAgentSpecVersionGroup(name, version);
             } else if (RESOURCE_TYPE_SKILL.equals(resourceType)) {
                 group = SkillUtils.buildSkillVersionGroup(name, version);
+            } else if (RESOURCE_TYPE_PROMPT.equals(resourceType)) {
+                group = PromptUtils.buildPromptVersionGroup(name, version);
             } else {
                 throw new IllegalArgumentException("Unknown resource type: " + resourceType);
             }
