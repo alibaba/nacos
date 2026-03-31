@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,13 @@ class AgentSpecNoopHandlerTest {
     void testUpdateScopeThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> agentSpecNoopHandler.updateScope(new AgentSpecScopeForm()));
+        assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
+    }
+
+    @Test
+    void testForcePublishThrowsNotImplemented() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> agentSpecNoopHandler.forcePublish(new AgentSpecPublishForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
 }

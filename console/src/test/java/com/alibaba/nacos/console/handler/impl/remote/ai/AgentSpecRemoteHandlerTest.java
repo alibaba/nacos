@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.handler.impl.remote.ai;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
@@ -155,5 +156,20 @@ class AgentSpecRemoteHandlerTest {
         agentSpecRemoteHandler.updateBizTags(form);
 
         verify(agentSpecMaintainerService).updateBizTags(NAMESPACE_ID, AGENT_SPEC_NAME, "[\"finance\"]");
+    }
+
+    @Test
+    void testForcePublish() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENT_SPEC_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(true);
+        when(agentSpecMaintainerService.forcePublish(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1"), eq(true)))
+                .thenReturn(true);
+
+        agentSpecRemoteHandler.forcePublish(form);
+
+        verify(agentSpecMaintainerService).forcePublish(NAMESPACE_ID, AGENT_SPEC_NAME, "v1", true);
     }
 }

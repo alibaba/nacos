@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecBizTagsUpdateForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecScopeForm;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -77,5 +78,35 @@ class AgentSpecInnerHandlerTest {
         agentSpecInnerHandler.updateBizTags(form);
 
         verify(agentSpecOperationService).updateBizTags(NAMESPACE_ID, AGENTSPEC_NAME, "[\"finance\"]");
+    }
+
+    @Test
+    void testForcePublish() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENTSPEC_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(true);
+        doNothing().when(agentSpecOperationService).forcePublish(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME), eq("v1"),
+                eq(true));
+
+        agentSpecInnerHandler.forcePublish(form);
+
+        verify(agentSpecOperationService).forcePublish(NAMESPACE_ID, AGENTSPEC_NAME, "v1", true);
+    }
+
+    @Test
+    void testForcePublishWithNullUpdateLatestLabel() throws NacosException {
+        AgentSpecPublishForm form = new AgentSpecPublishForm();
+        form.setNamespaceId(NAMESPACE_ID);
+        form.setAgentSpecName(AGENTSPEC_NAME);
+        form.setVersion("v1");
+        form.setUpdateLatestLabel(null);
+        doNothing().when(agentSpecOperationService).forcePublish(eq(NAMESPACE_ID), eq(AGENTSPEC_NAME), eq("v1"),
+                eq(true));
+
+        agentSpecInnerHandler.forcePublish(form);
+
+        verify(agentSpecOperationService).forcePublish(NAMESPACE_ID, AGENTSPEC_NAME, "v1", true);
     }
 }

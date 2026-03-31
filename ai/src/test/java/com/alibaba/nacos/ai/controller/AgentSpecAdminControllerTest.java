@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
@@ -122,6 +123,17 @@ class AgentSpecAdminControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         verify(agentSpecOperationService).updateBizTags("public", "test-agentspec", "[\"finance\"]");
+    }
+
+    @Test
+    void testForcePublishSuccess() throws Exception {
+        doNothing().when(agentSpecOperationService).forcePublish(eq("public"), eq("test-agentspec"), eq("v1"),
+                eq(true));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(AGENTSPEC_ADMIN_PATH + "/force-publish")
+                .param("agentSpecName", "test-agentspec").param("version", "v1");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(agentSpecOperationService).forcePublish("public", "test-agentspec", "v1", true);
     }
 
     private void assertServletException(Class<? extends Exception> expectedException, Executable executable,

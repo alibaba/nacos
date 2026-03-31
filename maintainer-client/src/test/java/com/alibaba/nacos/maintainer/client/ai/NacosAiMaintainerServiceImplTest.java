@@ -514,6 +514,15 @@ public class NacosAiMaintainerServiceImplTest {
     }
 
     @Test
+    void forcePublishAgentSpec() throws NacosException {
+        final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
+
+        assertTrue(aiMaintainerService.agentSpec().forcePublish("public", "testAgentSpec", "v1", true));
+    }
+
+    @Test
     void getAgentSpecVersionDetail() throws NacosException {
         AgentSpec agentSpec = new AgentSpec();
         agentSpec.setName("testAgentSpec");

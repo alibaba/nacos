@@ -476,6 +476,81 @@ class AgentSpecOperationServiceImplTest {
         assertEquals("[\"iot\"]", result.getPageItems().get(0).getBizTags());
     }
 
+    @Test
+    void testForcePublishSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(), eq(version)))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+
+        service.forcePublish(namespaceId, agentSpecName, version, true);
+
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(agentSpecName), anyString(),
+                eq(version), eq("online"));
+    }
+
+    @Test
+    void testForcePublishVersionNotFound() {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v99";
+
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(), eq(version)))
+                .thenReturn(null);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.forcePublish(namespaceId, agentSpecName, version, true));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+
+    @Test
+    void testForcePublishVersionAlreadyOnline() {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.forcePublish(namespaceId, agentSpecName, version, true));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+
     private byte[] createValidZipBytes() throws IOException {
         String manifest = "{\"version\":\"1.0\",\"description\":\"Test agentspec description\","
                 + "\"tags\":[\"design\",\"ux\"],"
