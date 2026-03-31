@@ -14,35 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.service.prompt;
+package com.alibaba.nacos.ai.form.prompt;
 
-import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
+import java.io.Serial;
 
 /**
- * Prompt meta snapshot.
+ * Prompt submit form.
  *
  * @author nacos
  */
-public class PromptMetaSnapshot {
+public class PromptSubmitForm extends PromptForm {
     
-    private final PromptMetaInfo meta;
+    @Serial
+    private static final long serialVersionUID = 1L;
     
-    private final String md5;
+    /**
+     * Optional; defaults to current editing version.
+     */
+    private String version;
     
-    public PromptMetaSnapshot(PromptMetaInfo meta, String md5) {
-        this.meta = meta;
-        this.md5 = md5;
+    public String getVersion() {
+        return version;
     }
     
-    public PromptMetaInfo getMeta() {
-        return meta;
-    }
-    
-    public String getMd5() {
-        return md5;
-    }
-    
-    public static PromptMetaSnapshot empty() {
-        return new PromptMetaSnapshot(null, null);
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

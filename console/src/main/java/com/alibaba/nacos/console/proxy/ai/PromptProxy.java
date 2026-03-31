@@ -18,20 +18,19 @@ package com.alibaba.nacos.console.proxy.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
-import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
-import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.PromptHandler;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Prompt proxy for console.
@@ -47,55 +46,12 @@ public class PromptProxy {
         this.promptHandler = promptHandler;
     }
     
-    /**
-     * Publish a new version of prompt.
-     *
-     * @param form    prompt publish form
-     * @param srcUser source user
-     * @param srcIp   source IP
-     * @return true if publish success
-     * @throws NacosException if publish fails
-     */
-    public boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException {
-        return promptHandler.publishPrompt(form, srcUser, srcIp);
-    }
+    // ========== Common APIs ==========
     
-    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
-        return promptHandler.getPromptMeta(form);
-    }
-    
-    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
-        return promptHandler.queryPromptDetail(form);
-    }
-    
-    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
-        return promptHandler.bindLabel(form, srcUser, srcIp);
-    }
-    
-    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
-        return promptHandler.unbindLabel(form, srcUser, srcIp);
-    }
-    
-    /**
-     * Delete prompt.
-     *
-     * @param form    prompt form
-     * @param srcUser source user
-     * @param srcIp   source IP
-     * @return true if delete success
-     * @throws NacosException if delete fails
-     */
     public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
         return promptHandler.deletePrompt(form, srcUser, srcIp);
     }
     
-    /**
-     * List prompts with pagination.
-     *
-     * @param form prompt list form
-     * @return prompt list page
-     * @throws NacosException if list fails
-     */
     public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
         return promptHandler.listPrompts(form);
     }
@@ -104,16 +60,61 @@ public class PromptProxy {
         return promptHandler.listPromptVersions(form);
     }
     
-    /**
-     * Update prompt metadata (description only).
-     *
-     * @param form    prompt metadata form
-     * @param srcUser source user
-     * @param srcIp   source IP
-     * @return true if update success
-     * @throws NacosException if update fails
-     */
-    public boolean updatePromptMetadata(PromptMetadataForm form, String srcUser, String srcIp) throws NacosException {
-        return promptHandler.updatePromptMetadata(form, srcUser, srcIp);
+    // ========== Lifecycle APIs ==========
+    
+    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException {
+        return promptHandler.getPromptGovernanceDetail(namespaceId, promptKey);
+    }
+    
+    public PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
+            throws NacosException {
+        return promptHandler.getVersionDetail(namespaceId, promptKey, version);
+    }
+    
+    public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
+            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
+            throws NacosException {
+        return promptHandler.createDraft(namespaceId, promptKey, basedOnVersion, targetVersion, template, variables,
+                commitMsg, description, bizTags);
+    }
+    
+    public void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
+            String commitMsg) throws NacosException {
+        promptHandler.updateDraft(namespaceId, promptKey, template, variables, commitMsg);
+    }
+    
+    public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
+        promptHandler.deleteDraft(namespaceId, promptKey);
+    }
+    
+    public String submit(String namespaceId, String promptKey, String version) throws NacosException {
+        return promptHandler.submit(namespaceId, promptKey, version);
+    }
+    
+    public void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException {
+        promptHandler.publish(namespaceId, promptKey, version, updateLatestLabel);
+    }
+    
+    public void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException {
+        promptHandler.forcePublish(namespaceId, promptKey, version, updateLatestLabel);
+    }
+    
+    public void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
+            throws NacosException {
+        promptHandler.changeOnlineStatus(namespaceId, promptKey, version, online);
+    }
+    
+    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException {
+        promptHandler.updateLabels(namespaceId, promptKey, labels);
+    }
+    
+    public void updateDescription(String namespaceId, String promptKey, String description) throws NacosException {
+        promptHandler.updateDescription(namespaceId, promptKey, description);
+    }
+    
+    public void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException {
+        promptHandler.updateBizTags(namespaceId, promptKey, bizTags);
     }
 }

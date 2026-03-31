@@ -18,14 +18,10 @@ package com.alibaba.nacos.console.handler.impl.noop.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
-import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
-import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -36,9 +32,11 @@ import com.alibaba.nacos.console.handler.ai.PromptHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- * Noop implementation of Prompt handler.
- * Used when AI module is not enabled or both `naming` and `config` modules are not available.
+ * Noop implementation of Prompt handler. Used when AI module is not enabled.
  *
  * @author nacos
  */
@@ -46,60 +44,97 @@ import org.springframework.stereotype.Service;
 @ConditionalOnMissingBean(value = PromptHandler.class, ignored = PromptNoopHandler.class)
 public class PromptNoopHandler implements PromptHandler {
     
-    private static final String PROMPT_NOT_ENABLED_MESSAGE = 
+    private static final String PROMPT_NOT_ENABLED_MESSAGE =
             "Nacos AI Prompt module and API required both `naming` and `config` module.";
     
-    @Override
-    public boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+    private NacosApiException notImplemented() {
+        return new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 PROMPT_NOT_ENABLED_MESSAGE);
     }
     
-    @Override
-    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
-    }
-    
-    @Override
-    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
-    }
-    
-    @Override
-    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
-    }
-    
-    @Override
-    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
-    }
+    // ========== Common APIs ==========
     
     @Override
     public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
+        throw notImplemented();
     }
     
     @Override
     public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
+        throw notImplemented();
     }
     
     @Override
     public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
+        throw notImplemented();
+    }
+    
+    // ========== Lifecycle APIs ==========
+    
+    @Override
+    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException {
+        throw notImplemented();
     }
     
     @Override
-    public boolean updatePromptMetadata(PromptMetadataForm form, String srcUser, String srcIp) throws NacosException {
-        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
-                PROMPT_NOT_ENABLED_MESSAGE);
+    public PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
+            throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
+            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
+            throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
+            String commitMsg) throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public String submit(String namespaceId, String promptKey, String version) throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
+            throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void updateDescription(String namespaceId, String promptKey, String description) throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
+    public void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException {
+        throw notImplemented();
     }
 }

@@ -18,18 +18,17 @@ package com.alibaba.nacos.console.handler.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
-import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
-import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
+import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Prompt handler interface.
@@ -38,94 +37,86 @@ import com.alibaba.nacos.api.model.Page;
  */
 public interface PromptHandler {
     
-    /**
-     * Publish a new version of prompt.
-     *
-     * @param form    prompt publish form
-     * @param srcUser source user
-     * @param srcIp   source IP
-     * @return true if publish success
-     * @throws NacosException if publish fails
-     */
-    boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException;
-    
-    /**
-     * Gets prompt meta.
-     *
-     * @param form the form
-     * @return the prompt meta
-     * @throws NacosException the nacos exception
-     */
-    PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException;
-    
-    /**
-     * Query prompt detail prompt version info.
-     *
-     * @param form the form
-     * @return the prompt version info
-     * @throws NacosException the nacos exception
-     */
-    PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException;
-    
-    /**
-     * Bind prompt label to version.
-     *
-     * @param form    bind form
-     * @param srcUser source user
-     * @param srcIp   source ip
-     * @return true if bind success
-     * @throws NacosException if bind fails
-     */
-    boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException;
-    
-    /**
-     * Unbind prompt label.
-     *
-     * @param form    label form
-     * @param srcUser source user
-     * @param srcIp   source ip
-     * @return true if unbind success
-     * @throws NacosException if unbind fails
-     */
-    boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException;
+    // ========== Common APIs ==========
     
     /**
      * Delete prompt.
-     *
-     * @param form    prompt form
-     * @param srcUser source user
-     * @param srcIp   source IP
-     * @return true if delete success
-     * @throws NacosException if delete fails
      */
     boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException;
     
     /**
      * List prompts with pagination.
-     *
-     * @param form prompt list form
-     * @return prompt list page
-     * @throws NacosException if list fails
      */
     Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException;
     
     /**
      * List prompt versions page.
-     *
-     * @param form the form
-     * @return the page
-     * @throws NacosException the nacos exception
      */
     Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException;
     
+    // ========== Lifecycle APIs ==========
+    
     /**
-     * Update prompt metadata (description only).
-     *
-     * @param form    prompt metadata form
-     * @param srcUser source user
-     * @param srcIp   source IP
-     * @return true if update success
-     * @throws NacosException if update fails
+     * Get prompt governance detail.
      */
-    boolean updatePromptMetadata(PromptMetadataForm form, String srcUser, String srcIp) throws NacosException;
+    PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException;
+    
+    /**
+     * Get specific version detail.
+     */
+    PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version) throws NacosException;
+    
+    /**
+     * Create draft version.
+     */
+    String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
+            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
+            throws NacosException;
+    
+    /**
+     * Update draft content.
+     */
+    void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
+            String commitMsg) throws NacosException;
+    
+    /**
+     * Delete draft.
+     */
+    void deleteDraft(String namespaceId, String promptKey) throws NacosException;
+    
+    /**
+     * Submit for review.
+     */
+    String submit(String namespaceId, String promptKey, String version) throws NacosException;
+    
+    /**
+     * Publish a reviewed version.
+     */
+    void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel) throws NacosException;
+    
+    /**
+     * Force-publish bypassing pipeline.
+     */
+    void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException;
+    
+    /**
+     * Online or offline a version.
+     */
+    void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online) throws NacosException;
+    
+    /**
+     * Update labels.
+     */
+    void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException;
+    
+    /**
+     * Update prompt description.
+     */
+    void updateDescription(String namespaceId, String promptKey, String description) throws NacosException;
+    
+    /**
+     * Update biz tags.
+     */
+    void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException;
 }

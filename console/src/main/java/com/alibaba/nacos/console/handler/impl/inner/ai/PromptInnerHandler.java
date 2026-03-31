@@ -18,32 +18,24 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.form.prompt.PromptForm;
 import com.alibaba.nacos.ai.form.prompt.PromptHistoryForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelBindForm;
-import com.alibaba.nacos.ai.form.prompt.PromptLabelForm;
 import com.alibaba.nacos.ai.form.prompt.PromptListForm;
-import com.alibaba.nacos.ai.form.prompt.PromptMetadataForm;
-import com.alibaba.nacos.ai.form.prompt.PromptPublishForm;
-import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
+import com.alibaba.nacos.ai.service.prompt.PromptOperationService;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
-import com.alibaba.nacos.ai.service.prompt.PromptAdminOperationService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.ai.PromptHandler;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Prompt inner handler implementation.
@@ -56,115 +48,99 @@ import java.util.List;
 @Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class PromptInnerHandler implements PromptHandler {
     
-    private final PromptAdminOperationService promptOperationService;
+    private final PromptOperationService promptOperationService;
     
-    public PromptInnerHandler(PromptAdminOperationService promptOperationService) {
+    public PromptInnerHandler(PromptOperationService promptOperationService) {
         this.promptOperationService = promptOperationService;
     }
     
-    @Override
-    public boolean publishPrompt(PromptPublishForm form, String srcUser, String srcIp) throws NacosException {
-        return promptOperationService.publishPromptVersion(
-                form.getNamespaceId(),
-                form.getPromptKey(),
-                form.getVersion(),
-                form.getTemplate(),
-                form.getCommitMsg(),
-                form.getDescription(),
-                parseBizTags(form.getBizTags()),
-                parseVariables(form.getVariables()),
-                srcUser,
-                srcIp
-        );
-    }
-    
-    @Override
-    public PromptMetaInfo getPromptMeta(PromptForm form) throws NacosException {
-        return promptOperationService.getPromptMeta(form.getNamespaceId(), form.getPromptKey());
-    }
-    
-    @Override
-    public PromptVersionInfo queryPromptDetail(PromptQueryForm form) throws NacosException {
-        return promptOperationService.queryPromptDetail(
-                form.getNamespaceId(), form.getPromptKey(), form.getVersion(), form.getLabel()
-        );
-    }
-    
-    @Override
-    public boolean bindLabel(PromptLabelBindForm form, String srcUser, String srcIp) throws NacosException {
-        return promptOperationService.bindLabel(
-                form.getNamespaceId(), form.getPromptKey(), form.getLabel(), form.getVersion(), srcUser, srcIp
-        );
-    }
-    
-    @Override
-    public boolean unbindLabel(PromptLabelForm form, String srcUser, String srcIp) throws NacosException {
-        return promptOperationService.unbindLabel(
-                form.getNamespaceId(), form.getPromptKey(), form.getLabel(), srcUser, srcIp
-        );
-    }
+    // ========== Common APIs ==========
     
     @Override
     public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
-        return promptOperationService.deletePrompt(form.getNamespaceId(), form.getPromptKey(), srcUser, srcIp);
+        promptOperationService.deletePrompt(form.getNamespaceId(), form.getPromptKey());
+        return true;
     }
     
     @Override
     public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
-        return promptOperationService.listPrompts(
-                form.getNamespaceId(),
-                form.getPromptKey(),
-                form.getSearch(),
-                form.getBizTags(),
-                form.getPageNo(),
-                form.getPageSize()
-        );
+        return promptOperationService.listPrompts(form.getNamespaceId(), form.getPromptKey(), form.getSearch(),
+                form.getBizTags(), form.getPageNo(), form.getPageSize());
     }
     
     @Override
     public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
-        return promptOperationService.listPromptVersions(
-                form.getNamespaceId(),
-                form.getPromptKey(),
-                form.getPageNo(),
-                form.getPageSize()
-        );
+        return promptOperationService.listPromptVersions(form.getNamespaceId(), form.getPromptKey(),
+                form.getPageNo(), form.getPageSize());
+    }
+    
+    // ========== Lifecycle APIs ==========
+    
+    @Override
+    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException {
+        return promptOperationService.getPromptDetail(namespaceId, promptKey);
     }
     
     @Override
-    public boolean updatePromptMetadata(PromptMetadataForm form, String srcUser, String srcIp) throws NacosException {
-        return promptOperationService.updatePromptMetadata(
-                form.getNamespaceId(),
-                form.getPromptKey(),
-                form.getDescription(),
-                parseBizTags(form.getBizTags()),
-                srcUser,
-                srcIp
-        );
+    public PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
+            throws NacosException {
+        return promptOperationService.getPromptVersionDetail(namespaceId, promptKey, version);
     }
     
-    private List<String> parseBizTags(String bizTags) {
-        if (bizTags == null) {
-            return null;
-        }
-        if (bizTags.trim().isEmpty()) {
-            return new ArrayList<>(0);
-        }
-        String[] split = bizTags.split(",");
-        List<String> result = new ArrayList<>(split.length);
-        for (String each : split) {
-            if (each != null && !each.trim().isEmpty()) {
-                result.add(each.trim());
-            }
-        }
-        return result;
+    @Override
+    public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
+            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
+            throws NacosException {
+        return promptOperationService.createDraft(namespaceId, promptKey, basedOnVersion, targetVersion, template,
+                variables, commitMsg, description, bizTags);
     }
     
-    private List<PromptVariable> parseVariables(String variables) {
-        if (StringUtils.isBlank(variables)) {
-            return null;
-        }
-        return JacksonUtils.toObj(variables, new TypeReference<List<PromptVariable>>() {
-        });
+    @Override
+    public void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
+            String commitMsg) throws NacosException {
+        promptOperationService.updateDraft(namespaceId, promptKey, template, variables, commitMsg);
+    }
+    
+    @Override
+    public void deleteDraft(String namespaceId, String promptKey) throws NacosException {
+        promptOperationService.deleteDraft(namespaceId, promptKey);
+    }
+    
+    @Override
+    public String submit(String namespaceId, String promptKey, String version) throws NacosException {
+        return promptOperationService.submit(namespaceId, promptKey, version);
+    }
+    
+    @Override
+    public void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException {
+        promptOperationService.publish(namespaceId, promptKey, version, updateLatestLabel);
+    }
+    
+    @Override
+    public void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+            throws NacosException {
+        promptOperationService.forcePublish(namespaceId, promptKey, version, updateLatestLabel);
+    }
+    
+    @Override
+    public void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
+            throws NacosException {
+        promptOperationService.changeOnlineStatus(namespaceId, promptKey, version, online);
+    }
+    
+    @Override
+    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException {
+        promptOperationService.updateLabels(namespaceId, promptKey, labels);
+    }
+    
+    @Override
+    public void updateDescription(String namespaceId, String promptKey, String description) throws NacosException {
+        promptOperationService.updateDescription(namespaceId, promptKey, description);
+    }
+    
+    @Override
+    public void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException {
+        promptOperationService.updateBizTags(namespaceId, promptKey, bizTags);
     }
 }
