@@ -52,6 +52,7 @@ import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
@@ -77,8 +78,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.ai.constant.Constants.Skills;
 import static com.alibaba.nacos.ai.model.skills.SkillIndexManifest.LABEL_LATEST;
@@ -125,9 +124,6 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private static final String SKILL_MD_RESOURCE_NAME = "SKILL.md";
 
     private static final String DEFAULT_INITIAL_UPLOAD_VERSION = "0.0.1";
-
-    private static final Pattern PURE_SEMVER_PATTERN =
-            Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
 
     private static final String SCOPE_SKILL = "skill";
 
@@ -309,24 +305,24 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (existingVersions.isEmpty()) {
             return candidateVersion;
         }
-        String maxSemver = maxSemver(existingVersions);
+        String maxSemver = VersionUtils.maxSemver(existingVersions);
         boolean candidateExists = existingVersions.contains(candidateVersion);
         if (candidateExists) {
-            return nextPatchVersion(maxSemver == null ? candidateVersion : maxSemver);
+            return VersionUtils.nextSemverPatch(maxSemver == null ? candidateVersion : maxSemver);
         }
-        if (maxSemver != null && compareSemver(candidateVersion, maxSemver) == 0) {
-            return nextPatchVersion(maxSemver);
+        if (maxSemver != null && VersionUtils.compareSemverVersion(candidateVersion, maxSemver) == 0) {
+            return VersionUtils.nextSemverPatch(maxSemver);
         }
         return candidateVersion;
     }
 
     private String resolveNextDraftVersion(String namespaceId, String skillName) throws NacosException {
         List<String> existingVersions = listExistingVersions(namespaceId, skillName);
-        String maxSemver = maxSemver(existingVersions);
+        String maxSemver = VersionUtils.maxSemver(existingVersions);
         if (StringUtils.isNotBlank(maxSemver)) {
-            return nextPatchVersion(maxSemver);
+            return VersionUtils.nextSemverPatch(maxSemver);
         }
-        int maxLegacy = maxVersionNumber(existingVersions);
+        int maxLegacy = VersionUtils.maxVNumber(existingVersions);
         if (maxLegacy > 0) {
             return "v" + (maxLegacy + 1);
         }
@@ -347,86 +343,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return versions;
     }
 
-    private static String maxSemver(List<String> versions) {
-        String max = null;
-        for (String raw : versions) {
-            String normalized = normalizePureSemver(raw);
-            if (normalized == null) {
-                continue;
-            }
-            if (max == null || compareSemver(normalized, max) > 0) {
-                max = normalized;
-            }
-        }
-        return max;
-    }
 
-    private static String nextPatchVersion(String version) {
-        String normalized = normalizePureSemver(version);
-        if (normalized == null) {
-            return DEFAULT_INITIAL_UPLOAD_VERSION;
-        }
-        int[] parts = parseSemverParts(normalized);
-        if (parts == null) {
-            return DEFAULT_INITIAL_UPLOAD_VERSION;
-        }
-        return parts[0] + "." + parts[1] + "." + (parts[2] + 1);
-    }
-
-    private static int compareSemver(String a, String b) {
-        int[] pa = parseSemverParts(a);
-        int[] pb = parseSemverParts(b);
-        if (pa == null && pb == null) {
-            return 0;
-        }
-        if (pa == null) {
-            return -1;
-        }
-        if (pb == null) {
-            return 1;
-        }
-        if (pa[0] != pb[0]) {
-            return Integer.compare(pa[0], pb[0]);
-        }
-        if (pa[1] != pb[1]) {
-            return Integer.compare(pa[1], pb[1]);
-        }
-        return Integer.compare(pa[2], pb[2]);
-    }
-
-    private static String normalizePureSemver(String version) {
-        if (StringUtils.isBlank(version)) {
-            return null;
-        }
-        String v = version.trim();
-        if (v.startsWith("v") || v.startsWith("V")) {
-            v = v.substring(1);
-        }
-        Matcher matcher = PURE_SEMVER_PATTERN.matcher(v);
-        if (!matcher.matches()) {
-            return null;
-        }
-        return v;
-    }
-
-    private static int[] parseSemverParts(String version) {
-        String normalized = normalizePureSemver(version);
-        if (normalized == null) {
-            return null;
-        }
-        String[] parts = normalized.split("\\.");
-        if (parts.length != 3) {
-            return null;
-        }
-        try {
-            return new int[] {
-                    Integer.parseInt(parts[0]),
-                    Integer.parseInt(parts[1]),
-                    Integer.parseInt(parts[2])};
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
-    }
     
     private String resolveSpecifiedDraftVersion(String namespaceId, String skillName, String targetVersion,
             String basedOnVersion, String baseVersion) throws NacosException {
@@ -434,7 +351,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return resolveNextDraftVersion(namespaceId, skillName);
         }
         String candidate = targetVersion.trim();
-        if (!isSupportedDraftVersionFormat(candidate)) {
+        if (!VersionUtils.isSupportedVersionFormat(candidate)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Invalid targetVersion format: " + candidate + ", expected x.y.z or vN");
         }
@@ -449,41 +366,21 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return candidate;
     }
     
-    private static boolean isSupportedDraftVersionFormat(String version) {
-        return normalizePureSemver(version) != null || parseLegacyVersionNumber(version) != null;
-    }
-    
     private static void validateTargetVersionGreaterThanBase(String targetVersion, String baseVersion)
             throws NacosApiException {
-        String targetSemver = normalizePureSemver(targetVersion);
-        String baseSemver = normalizePureSemver(baseVersion);
-        if (targetSemver != null && baseSemver != null && compareSemver(targetSemver, baseSemver) <= 0) {
+        String targetSemver = VersionUtils.normalizeSemver(targetVersion);
+        String baseSemver = VersionUtils.normalizeSemver(baseVersion);
+        if (targetSemver != null && baseSemver != null && VersionUtils.compareSemverVersion(targetSemver, baseSemver) <= 0) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "targetVersion must be greater than basedOnVersion, basedOnVersion=" + baseVersion
                             + ", targetVersion=" + targetVersion);
         }
-        Integer targetLegacy = parseLegacyVersionNumber(targetVersion);
-        Integer baseLegacy = parseLegacyVersionNumber(baseVersion);
+        Integer targetLegacy = VersionUtils.parseVNumber(targetVersion);
+        Integer baseLegacy = VersionUtils.parseVNumber(baseVersion);
         if (targetLegacy != null && baseLegacy != null && targetLegacy <= baseLegacy) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "targetVersion must be greater than basedOnVersion, basedOnVersion=" + baseVersion
                             + ", targetVersion=" + targetVersion);
-        }
-    }
-    
-    private static Integer parseLegacyVersionNumber(String version) {
-        if (StringUtils.isBlank(version)) {
-            return null;
-        }
-        String normalized = version.trim();
-        if (!(normalized.startsWith("v") || normalized.startsWith("V")) || normalized.length() <= 1) {
-            return null;
-        }
-        try {
-            int numeric = Integer.parseInt(normalized.substring(1));
-            return numeric > 0 ? numeric : null;
-        } catch (NumberFormatException ignored) {
-            return null;
         }
     }
 
@@ -1480,47 +1377,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private String maxVersionForDraftBase(String namespaceId, String name) throws NacosException {
         List<String> existingVersions = listExistingVersions(namespaceId, name);
-        String maxSemverVersion = maxSemver(existingVersions);
+        String maxSemverVersion = VersionUtils.maxSemver(existingVersions);
         if (StringUtils.isNotBlank(maxSemverVersion)) {
             return maxSemverVersion;
         }
-        return maxVersionByNumber(name, existingVersions);
-    }
-
-    /**
-     * Returns the version string with the highest numeric suffix (e.g. "v3" when versions are v1/v2/v3),
-     * or null if no numeric legacy version exists.
-     */
-    private String maxVersionByNumber(String name, List<String> existingVersions) {
-        int max = maxVersionNumber(existingVersions);
-        return max == 0 ? null : "v" + max;
-    }
-
-    /**
-     * Returns the highest legacy numeric version number from versions like v1/v2.
-     */
-    private int maxVersionNumber(List<String> existingVersions) {
-        int max = 0;
-        if (existingVersions != null) {
-            for (String version : existingVersions) {
-                if (StringUtils.isBlank(version)) {
-                    continue;
-                }
-                String s = version.trim();
-                if (!s.startsWith("v")) {
-                    continue;
-                }
-                try {
-                    int n = Integer.parseInt(s.substring(1));
-                    if (n > max) {
-                        max = n;
-                    }
-                } catch (Exception ignored) {
-                    // ignore non-numeric legacy versions
-                }
-            }
-        }
-        return max;
+        return VersionUtils.maxVNumberVersion(existingVersions);
     }
 
     /**

@@ -46,6 +46,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.plugin.ai.pipeline.model.AgentSpecPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFileContent;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -1273,56 +1274,27 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     private String nextVersion(String namespaceId, String name) {
-        Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
-                null, 1, 200);
-        int max = 0;
-        if (page != null && page.getPageItems() != null) {
-            for (AiResourceVersion v : page.getPageItems()) {
-                if (v == null || StringUtils.isBlank(v.getVersion())) {
-                    continue;
-                }
-                String s = v.getVersion().trim();
-                if (s.startsWith("v")) {
-                    try {
-                        int n = Integer.parseInt(s.substring(1));
-                        if (n > max) {
-                            max = n;
-                        }
-                    } catch (Exception ignored) {
-                        // ignore non-numeric version
-                    }
-                }
-            }
-        }
-        return "v" + (max + 1);
+        List<String> existingVersions = listExistingVersionStrings(namespaceId, name);
+        return VersionUtils.nextVNumberVersion(existingVersions);
     }
-
+    
     private String maxVersionByNumber(String namespaceId, String name) {
+        List<String> existingVersions = listExistingVersionStrings(namespaceId, name);
+        return VersionUtils.maxVNumberVersion(existingVersions);
+    }
+    
+    private List<String> listExistingVersionStrings(String namespaceId, String name) {
         Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, name, RESOURCE_TYPE_AGENTSPEC,
                 null, 1, 200);
-        int max = 0;
-        String resolved = null;
+        List<String> versions = new ArrayList<>();
         if (page != null && page.getPageItems() != null) {
             for (AiResourceVersion v : page.getPageItems()) {
-                if (v == null || StringUtils.isBlank(v.getVersion())) {
-                    continue;
-                }
-                String current = v.getVersion().trim();
-                if (!current.startsWith("v")) {
-                    continue;
-                }
-                try {
-                    int numeric = Integer.parseInt(current.substring(1));
-                    if (numeric > max) {
-                        max = numeric;
-                        resolved = current;
-                    }
-                } catch (Exception ignored) {
-                    // ignore non-numeric version
+                if (v != null && StringUtils.isNotBlank(v.getVersion())) {
+                    versions.add(v.getVersion().trim());
                 }
             }
         }
-        return resolved;
+        return versions;
     }
 
     private static boolean isBuiltInContentMissing(AgentSpec currentAgentSpec, AgentSpec bundledAgentSpec) {
