@@ -123,6 +123,13 @@ public class MetricsControllerV3 {
             e.printStackTrace();
         }
         
+        // Check if any member failed during aggregation
+        boolean hasPartialFailure = responseMap.keySet().stream()
+                .anyMatch(k -> k.startsWith("_nacos_metrics_member_error_"));
+        if (hasPartialFailure) {
+            responseMap.put("_nacos_metrics_partial_failure", true);
+            return Result.success(responseMap);
+        }
         return Result.success(responseMap);
     }
     
@@ -166,6 +173,7 @@ public class MetricsControllerV3 {
             Loggers.CORE.error(
                     "Get config metrics error from member address={}, ip={},dataId={},group={},namespaceId={},error={}",
                     member.getAddress(), ip, dataId, group, namespaceId, throwable);
+            responseMap.put("_nacos_metrics_member_error_" + member.getAddress(), true);
             latch.countDown();
         }
         
