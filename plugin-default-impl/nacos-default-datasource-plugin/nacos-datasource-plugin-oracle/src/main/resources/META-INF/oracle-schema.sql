@@ -26,8 +26,8 @@ CREATE TABLE config_info (
     app_name VARCHAR2(128),
     content CLOB,
     md5 VARCHAR2(32) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
-    gmt_modified TIMESTAMP NOT NULL DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
+    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
     src_user VARCHAR2(128) DEFAULT NULL,
     src_ip VARCHAR2(50) DEFAULT NULL,
     c_desc VARCHAR2(256) DEFAULT NULL,
@@ -53,8 +53,8 @@ CREATE TABLE his_config_info (
     app_name VARCHAR2(128),
     content CLOB,
     md5 VARCHAR2(32) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
-    gmt_modified TIMESTAMP NOT NULL DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
+    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
     src_user VARCHAR2(128),
     src_ip VARCHAR2(50) DEFAULT NULL,
     publish_type VARCHAR2(50) DEFAULT 'formal',
@@ -82,8 +82,8 @@ CREATE TABLE config_info_gray (
     content CLOB,
     md5 VARCHAR2(32) DEFAULT NULL,
     encrypted_data_key VARCHAR2(256) DEFAULT NULL,
-    gmt_create TIMESTAMP NOT NULL DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
-    gmt_modified TIMESTAMP NOT NULL DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
+    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
     CONSTRAINT configinfogray_id_key PRIMARY KEY (id),
     CONSTRAINT uk_configinfogray_datagrouptenantgrayname UNIQUE (data_id, group_id, tenant_id, gray_name)
 );
@@ -114,8 +114,8 @@ CREATE TABLE group_capacity (
     max_aggr_count NUMBER(10) DEFAULT 0,
     max_aggr_size NUMBER(10) DEFAULT 0,
     max_history_count NUMBER(10) DEFAULT 0,
-    gmt_create TIMESTAMP DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
-    gmt_modified TIMESTAMP DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
+    gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP,
     CONSTRAINT group_capacity_id_key PRIMARY KEY (id),
     CONSTRAINT uk_group_id UNIQUE (group_id)
 );
@@ -129,8 +129,8 @@ CREATE TABLE tenant_capacity (
     max_aggr_count NUMBER(10) DEFAULT 0,
     max_aggr_size NUMBER(10) DEFAULT 0,
     max_history_count NUMBER(10) DEFAULT 0,
-    gmt_create TIMESTAMP DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
-    gmt_modified TIMESTAMP DEFAULT TO_TIMESTAMP('2010-05-05 00:00:00', 'YYYY-MM-DD HH24:MI:SS'),
+    gmt_create TIMESTAMP DEFAULT SYSTIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT SYSTIMESTAMP,
     CONSTRAINT tenant_capacity_id_key PRIMARY KEY (id),
     CONSTRAINT uk_tenant_id UNIQUE (tenant_id)
 );
@@ -142,8 +142,8 @@ CREATE TABLE tenant_info (
     tenant_name VARCHAR2(128) DEFAULT '',
     tenant_desc VARCHAR2(256) DEFAULT NULL,
     create_source VARCHAR2(32) DEFAULT NULL,
-    gmt_create NUMBER(20) NOT NULL,
-    gmt_modified NUMBER(20) NOT NULL,
+    gmt_create TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
+    gmt_modified TIMESTAMP NOT NULL DEFAULT SYSTIMESTAMP,
     CONSTRAINT tenant_info_id_key PRIMARY KEY (id),
     CONSTRAINT uk_tenant_info_kptenantid UNIQUE (kp, tenant_id)
 );

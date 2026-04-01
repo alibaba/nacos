@@ -24,8 +24,8 @@ CREATE TABLE "config_info" (
   "group_id" varchar(255) ,
   "content" text  NOT NULL,
   "md5" varchar(32) ,
-  "gmt_create" timestamp(6) NOT NULL,
-  "gmt_modified" timestamp(6) NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "src_user" text ,
   "src_ip" varchar(20) ,
   "app_name" varchar(128) ,
@@ -143,8 +143,8 @@ CREATE TABLE "group_capacity" (
   "max_aggr_count" int4 NOT NULL,
   "max_aggr_size" int4 NOT NULL,
   "max_history_count" int4 NOT NULL,
-  "gmt_create" timestamp(6) NOT NULL,
-  "gmt_modified" timestamp(6) NOT NULL
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 ;
 COMMENT ON COLUMN "group_capacity"."id" IS '主键ID';
@@ -177,8 +177,8 @@ CREATE TABLE "his_config_info" (
   "app_name" varchar(128) ,
   "content" text  NOT NULL,
   "md5" varchar(32) ,
-  "gmt_create" timestamp(6) NOT NULL  DEFAULT '2010-05-05 00:00:00',
-  "gmt_modified" timestamp(6) NOT NULL,
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "src_user" text ,
   "src_ip" varchar(20) ,
   "op_type" char(10) ,
@@ -245,8 +245,8 @@ CREATE TABLE "tenant_capacity" (
   "max_aggr_count" int4 NOT NULL,
   "max_aggr_size" int4 NOT NULL,
   "max_history_count" int4 NOT NULL,
-  "gmt_create" timestamp(6) NOT NULL,
-  "gmt_modified" timestamp(6) NOT NULL
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 ;
 COMMENT ON COLUMN "tenant_capacity"."id" IS '主键ID';
@@ -278,8 +278,8 @@ CREATE TABLE "tenant_info" (
   "tenant_name" varchar(128) ,
   "tenant_desc" varchar(256) ,
   "create_source" varchar(32) ,
-  "gmt_create" int8 NOT NULL,
-  "gmt_modified" int8 NOT NULL
+  "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 ;
 COMMENT ON COLUMN "tenant_info"."id" IS 'id';
