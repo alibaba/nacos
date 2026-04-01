@@ -313,6 +313,8 @@
                         <exclude>.travis.yml</exclude>
                         <exclude>codecov.yml</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
+                        <exclude>AGENTS.md</exclude>
+                        <exclude>CLAUDE.md</exclude>
                         <exclude>CODE_OF_CONDUCT.md</exclude>
                         <exclude>CHANGELOG.md</exclude>
                         <exclude>style/codeStyle.md</exclude>
@@ -346,6 +348,7 @@
                         <exclude>**/failover_test/**</exclude>
                         <exclude>lefthook.yml</exclude>
                         <exclude>.vscode/**</exclude>
+                        <exclude>.claude/**</exclude>
                         <exclude>.cursor/**</exclude>
                         <exclude>.agents/**</exclude>
                         <exclude>.qoder/**</exclude>
