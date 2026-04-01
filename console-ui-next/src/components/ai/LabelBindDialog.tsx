@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Plus, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -42,21 +42,24 @@ export function LabelBindDialog({
   // Newly created labels in this session
   const [newLabels, setNewLabels] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const checked = new Set<string>();
+    for (const [key, val] of Object.entries(allLabels)) {
+      if (val === version) {
+        checked.add(key);
+      }
+    }
+    setCheckedLabels(checked);
+    setNewLabels([]);
+    setSearchText('');
+    setError('');
+  }, [open, version, allLabels]);
+
   // Initialize state when dialog opens
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      // Initialize checked labels: all labels currently pointing to this version
-      const checked = new Set<string>();
-      for (const [key, val] of Object.entries(allLabels)) {
-        if (val === version) {
-          checked.add(key);
-        }
-      }
-      setCheckedLabels(checked);
-      setNewLabels([]);
-      setSearchText('');
-      setError('');
-    }
     onOpenChange(nextOpen);
   };
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tag } from 'lucide-react';
 
@@ -41,11 +41,15 @@ export function BizTagEditDialog({
     [draftTags]
   );
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      setDraftTags(tags);
-      setInputValue('');
+  useEffect(() => {
+    if (!open) {
+      return;
     }
+    setDraftTags(tags);
+    setInputValue('');
+  }, [open, tags]);
+
+  const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
   };
 
