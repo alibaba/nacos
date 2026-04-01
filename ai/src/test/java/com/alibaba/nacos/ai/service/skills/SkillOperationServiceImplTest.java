@@ -74,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -1140,5 +1141,105 @@ class SkillOperationServiceImplTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> skillOperationService.forcePublish(namespaceId, skillName, version, true));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+
+    @Test
+    void testPublishShouldBeIdempotentWhenVersionAlreadyOnline() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":2}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        v.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:my-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+                new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setVersions(new HashMap<>());
+        manifest.setLabels(new HashMap<>());
+        when(manifestService.loadForUpdate(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+
+        skillOperationService.publish(namespaceId, skillName, version, true);
+
+        // Should NOT call updateStatus since already online
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+                anyString(), anyString());
+        // onlineCnt should remain 2 (not incremented)
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L),
+                argThat(resource -> {
+                    Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
+                    return ((Number) info.get("onlineCnt")).intValue() == 2;
+                }));
+    }
+
+    @Test
+    void testChangeOnlineStatusShouldSkipWhenVersionAlreadyOnline() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        skillOperationService.changeOnlineStatus(namespaceId, skillName, "version", version, true);
+
+        // Should NOT call updateStatus or updateMetaCas since already in target status
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+                anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
+    }
+
+    @Test
+    void testChangeOnlineStatusShouldSkipWhenVersionAlreadyOffline() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+
+        com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("offline");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        skillOperationService.changeOnlineStatus(namespaceId, skillName, "version", version, false);
+
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+                anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
     }
 }

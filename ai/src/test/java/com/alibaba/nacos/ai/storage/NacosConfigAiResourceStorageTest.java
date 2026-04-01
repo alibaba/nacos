@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.storage;
 
 import com.alibaba.nacos.api.ai.model.NacosAiConfigKeyCodec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
+import com.alibaba.nacos.api.ai.model.prompt.PromptUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
 import org.junit.jupiter.api.Test;
@@ -266,6 +267,47 @@ class NacosConfigAiResourceStorageTest {
                 assertEquals(expectedPath, parts.dataId());
                 assertTrue(parts.dataId().startsWith(AgentSpecUtils.RESOURCE_DATA_ID_PREFIX));
                 assertTrue(parts.dataId().endsWith(AgentSpecUtils.RESOURCE_DATA_ID_SUFFIX));
+            }
+        }
+    }
+
+    // ---- 5-part typed key format: Prompt ----
+
+    @Test
+    void testBuildStorageKeyTypedPromptFormat() {
+        StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                NacosConfigAiResourceStorage.TYPE, "ns1",
+                NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT, "myPrompt", "1.0.0", "content.json");
+        assertNotNull(key);
+        assertEquals("ns1:prompt:myPrompt:1.0.0:content.json", key.getKey());
+    }
+
+    @Test
+    void testParseTypedPromptKeyProducesPromptGroupPrefix() {
+        StorageKey key = new StorageKey(NacosConfigAiResourceStorage.TYPE,
+                "ns1:prompt:myPrompt:1.0.0:content.json");
+        NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+        assertEquals("ns1", parts.namespaceId());
+        assertEquals(PromptUtils.buildPromptVersionGroup("myPrompt", "1.0.0"), parts.group());
+        assertEquals("content.json", parts.dataId());
+    }
+
+    @Test
+    void testPromptGroupNamingConventionWithDeterministicInputs() {
+        List<String> namespaceIds = Arrays.asList("public", "test-ns", "ns-1");
+        List<String> names = Arrays.asList("greeting", "code-review", "translate_en");
+        List<String> versions = Arrays.asList("1.0.0", "2.3.4", "10.20.30");
+        for (String namespaceId : namespaceIds) {
+            for (String name : names) {
+                for (String version : versions) {
+                    StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                            NacosConfigAiResourceStorage.TYPE, namespaceId,
+                            NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT,
+                            name, version, PromptUtils.PROMPT_MAIN_DATA_ID);
+                    NacosConfigAiResourceStorage.KeyParts parts = NacosConfigAiResourceStorage.parse(key);
+                    assertEquals(PromptUtils.buildPromptVersionGroup(name, version), parts.group());
+                    assertTrue(parts.group().startsWith(PromptUtils.PROMPT_GROUP_PREFIX));
+                }
             }
         }
     }

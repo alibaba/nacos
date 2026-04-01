@@ -64,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -549,6 +550,99 @@ class AgentSpecOperationServiceImplTest {
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> service.forcePublish(namespaceId, agentSpecName, version, true));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+
+    @Test
+    void testPublishShouldBeIdempotentWhenVersionAlreadyOnline() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":2}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        service.publish(namespaceId, agentSpecName, version, true);
+
+        // Should NOT call updateStatus since already online
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+                anyString(), anyString());
+        // onlineCnt should remain 2 (not incremented)
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(agentSpecName), eq("agentspec"), eq(1L),
+                argThat(resource -> {
+                    Map<?, ?> info = JacksonUtils.toObj(resource.getVersionInfo(), Map.class);
+                    return ((Number) info.get("onlineCnt")).intValue() == 2;
+                }));
+    }
+
+    @Test
+    void testChangeOnlineStatusShouldSkipWhenAlreadyOnline() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        service.changeOnlineStatus(namespaceId, agentSpecName, "version", version, true);
+
+        // Should NOT call updateStatus or updateMetaCas
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+                anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
+    }
+
+    @Test
+    void testChangeOnlineStatusShouldSkipWhenAlreadyOffline() throws NacosException {
+        String namespaceId = "test-ns";
+        String agentSpecName = "my-agentspec";
+        String version = "v1";
+
+        AiResource meta = new AiResource();
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion(version);
+        v.setStatus("offline");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(agentSpecName), anyString(), eq(version)))
+                .thenReturn(v);
+
+        service.changeOnlineStatus(namespaceId, agentSpecName, "version", version, false);
+
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+                anyString(), anyString());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
     }
 
     private byte[] createValidZipBytes() throws IOException {
