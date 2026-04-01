@@ -42,7 +42,21 @@ Check if nacos-cli is installed:
 which nacos-cli
 ```
 
-If not found, install it using the official installer script:
+If not found, there are two options:
+
+**Option A: Use via npx (no install needed)**
+
+You can run nacos-cli directly through npx without any installation:
+
+```bash
+npx @nacos-group/cli <command>
+```
+
+For example: `npx @nacos-group/cli skill-list` or `npx @nacos-group/cli skill-get my-skill`.
+
+If using npx, replace all `nacos-cli` commands in the subsequent steps with `npx @nacos-group/cli`.
+
+**Option B: Install nacos-cli globally**
 
 **Linux / macOS:**
 
