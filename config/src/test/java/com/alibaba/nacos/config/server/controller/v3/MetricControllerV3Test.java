@@ -48,6 +48,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -135,8 +137,10 @@ class MetricControllerV3Test {
         String tenant = "t1";
         String ip = "192.168.0.1";
         Map<String, Object> responseMap = new HashMap<>();
+        Set<String> respondedMembers = ConcurrentHashMap.newKeySet();
+        Set<String> failedMembers = ConcurrentHashMap.newKeySet();
         MetricsControllerV3.ClusterMetricsCallBack clusterMetricsCallBack = new MetricsControllerV3.ClusterMetricsCallBack(
-                responseMap, latch, dataId, group, tenant, ip, m1);
+            responseMap, latch, respondedMembers, failedMembers, dataId, group, tenant, ip, m1);
         clusterMetricsCallBack.onReceive(result1);
         //fail result
         RestResult<Map> result2 = new RestResult<>();
@@ -150,6 +154,8 @@ class MetricControllerV3Test {
         clusterMetricsCallBack.onCancel();
         clusterMetricsCallBack.onCancel();
         assertEquals(stringObjectHashMap, responseMap);
+        assertEquals(true, respondedMembers.contains("127.0.0.1:8848"));
+        assertEquals(true, failedMembers.contains("127.0.0.1:8848"));
         assertEquals(0, latch.getCount());
     }
     

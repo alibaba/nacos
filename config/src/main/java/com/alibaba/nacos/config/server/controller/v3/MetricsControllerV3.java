@@ -55,9 +55,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -101,8 +104,10 @@ public class MetricsControllerV3 {
         
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},groupName={},namespaceId={}", ip,
                 dataId, groupName, namespaceId);
-        Map<String, Object> responseMap = new HashMap<>(3);
+        Map<String, Object> responseMap = new ConcurrentHashMap<>(3);
         Collection<Member> members = serverMemberManager.allMembers();
+        Set<String> respondedMembers = ConcurrentHashMap.newKeySet();
+        Set<String> failedMembers = ConcurrentHashMap.newKeySet();
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
                 Loggers.CLUSTER);
         CountDownLatch latch = new CountDownLatch(members.size());
@@ -115,15 +120,43 @@ public class MetricsControllerV3 {
             AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance()
                     .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
             nacosAsyncRestTemplate.get(url, header, query, new GenericType<Map>() {
-            }.getType(), new ClusterMetricsCallBack(responseMap, latch, dataId, groupName, namespaceId, ip, member));
+            }.getType(),
+                    new ClusterMetricsCallBack(responseMap, latch, respondedMembers, failedMembers, dataId, groupName,
+                            namespaceId, ip, member));
         }
+        boolean completed = false;
         try {
-            latch.await(3L, TimeUnit.SECONDS);
+            completed = latch.await(3L, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
+            Loggers.CORE.warn("Interrupted while waiting cluster config metrics, ip={},dataId={},groupName={},namespaceId={}",
+                    ip, dataId, groupName, namespaceId, e);
+            failedMembers.addAll(getAllMemberAddresses(members));
+        }
+        if (!completed) {
+            for (Member member : members) {
+                String address = member.getAddress();
+                if (!respondedMembers.contains(address)) {
+                    failedMembers.add(address);
+                }
+            }
+        }
+        if (!failedMembers.isEmpty()) {
+            List<String> failedMemberList = new java.util.ArrayList<>(failedMembers);
+            Collections.sort(failedMemberList);
+            responseMap.put("_partial", Boolean.TRUE);
+            responseMap.put("_failedMembers", failedMemberList);
         }
         
         return Result.success(responseMap);
+    }
+
+    private Set<String> getAllMemberAddresses(Collection<Member> members) {
+        Set<String> addresses = ConcurrentHashMap.newKeySet();
+        for (Member member : members) {
+            addresses.add(member.getAddress());
+        }
+        return addresses;
     }
     
     static class ClusterMetricsCallBack implements Callback<Map> {
@@ -131,6 +164,10 @@ public class MetricsControllerV3 {
         Map<String, Object> responseMap;
         
         CountDownLatch latch;
+
+        Set<String> respondedMembers;
+
+        Set<String> failedMembers;
         
         String dataId;
         
@@ -142,10 +179,12 @@ public class MetricsControllerV3 {
         
         Member member;
         
-        public ClusterMetricsCallBack(Map<String, Object> responseMap, CountDownLatch latch, String dataId,
-                String group, String namespaceId, String ip, Member member) {
+        public ClusterMetricsCallBack(Map<String, Object> responseMap, CountDownLatch latch, Set<String> respondedMembers,
+                Set<String> failedMembers, String dataId, String group, String namespaceId, String ip, Member member) {
             this.responseMap = responseMap;
             this.latch = latch;
+            this.respondedMembers = respondedMembers;
+            this.failedMembers = failedMembers;
             this.dataId = dataId;
             this.group = group;
             this.namespaceId = namespaceId;
@@ -155,14 +194,22 @@ public class MetricsControllerV3 {
         
         @Override
         public void onReceive(RestResult<Map> result) {
-            if (result.ok()) {
-                responseMap.putAll(result.getData());
+            try {
+                respondedMembers.add(member.getAddress());
+                if (result != null && result.ok() && result.getData() != null) {
+                    responseMap.putAll(result.getData());
+                } else {
+                    failedMembers.add(member.getAddress());
+                }
+            } finally {
+                latch.countDown();
             }
-            latch.countDown();
         }
         
         @Override
         public void onError(Throwable throwable) {
+            respondedMembers.add(member.getAddress());
+            failedMembers.add(member.getAddress());
             Loggers.CORE.error(
                     "Get config metrics error from member address={}, ip={},dataId={},group={},namespaceId={},error={}",
                     member.getAddress(), ip, dataId, group, namespaceId, throwable);
@@ -171,6 +218,8 @@ public class MetricsControllerV3 {
         
         @Override
         public void onCancel() {
+            respondedMembers.add(member.getAddress());
+            failedMembers.add(member.getAddress());
             latch.countDown();
         }
     }
