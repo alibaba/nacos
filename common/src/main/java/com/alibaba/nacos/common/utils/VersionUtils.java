@@ -92,15 +92,16 @@ public class VersionUtils {
     
     // ---- AI Resource Version Utilities (semver x.y.z + legacy vN) ----
     
-    private static final Pattern PURE_SEMVER_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
+    private static final Pattern PURE_SEMVER_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+(?:\\.[a-zA-Z0-9]+)*))?$");
     
     private static final String DEFAULT_INITIAL_SEMVER = "0.0.1";
     
     /**
-     * Normalize a version string to pure semver format (x.y.z). Strips leading 'v'/'V' prefix and validates format.
+     * Normalize a version string to semver format (x.y.z or x.y.z-prerelease). Strips leading 'v'/'V' prefix and
+     * validates format.
      *
-     * @param version version string, e.g. "1.2.3", "v1.2.3"
-     * @return normalized semver string (e.g. "1.2.3"), or null if not a valid semver
+     * @param version version string, e.g. "1.2.3", "v1.2.3", "0.0.1-beta"
+     * @return normalized semver string (e.g. "1.2.3", "0.0.1-beta"), or null if not a valid semver
      */
     public static String normalizeSemver(String version) {
         if (version == null || version.trim().isEmpty()) {
@@ -128,9 +129,10 @@ public class VersionUtils {
     }
     
     /**
-     * Parse semver string into [major, minor, patch] integer array.
+     * Parse semver string into [major, minor, patch] integer array. Pre-release suffix (e.g. "-beta") is stripped
+     * before parsing.
      *
-     * @param version version string, e.g. "1.2.3" or "v1.2.3"
+     * @param version version string, e.g. "1.2.3", "v1.2.3", "0.0.1-beta"
      * @return int array of [major, minor, patch], or null if not a valid semver
      */
     public static int[] parseSemverParts(String version) {
@@ -138,7 +140,8 @@ public class VersionUtils {
         if (normalized == null) {
             return null;
         }
-        String[] parts = normalized.split("\\.");
+        String numericPart = normalized.split("-")[0];
+        String[] parts = numericPart.split("\\.");
         if (parts.length != 3) {
             return null;
         }
@@ -150,13 +153,17 @@ public class VersionUtils {
     }
     
     /**
-     * Compare two semver version strings numerically.
+     * Compare two semver version strings numerically. Pre-release versions have lower precedence than the same version
+     * without pre-release (e.g. "1.0.0-beta" &lt; "1.0.0"). When both have pre-release labels, they are compared
+     * lexicographically.
      *
-     * @param a first version (e.g. "1.2.3" or "v1.2.3")
+     * @param a first version (e.g. "1.2.3", "v1.2.3", "0.0.1-beta")
      * @param b second version
      * @return negative if a &lt; b, 0 if equal, positive if a &gt; b; null values are treated as smallest
      */
     public static int compareSemverVersion(String a, String b) {
+        String na = normalizeSemver(a);
+        String nb = normalizeSemver(b);
         int[] pa = parseSemverParts(a);
         int[] pb = parseSemverParts(b);
         if (pa == null && pb == null) {
@@ -174,13 +181,41 @@ public class VersionUtils {
         if (pa[1] != pb[1]) {
             return Integer.compare(pa[1], pb[1]);
         }
-        return Integer.compare(pa[2], pb[2]);
+        if (pa[2] != pb[2]) {
+            return Integer.compare(pa[2], pb[2]);
+        }
+        String preA = extractPreRelease(na);
+        String preB = extractPreRelease(nb);
+        if (preA == null && preB == null) {
+            return 0;
+        }
+        if (preA != null && preB == null) {
+            return -1;
+        }
+        if (preA == null) {
+            return 1;
+        }
+        return preA.compareTo(preB);
     }
     
     /**
-     * Increment the patch number of a semver version string.
+     * Extract pre-release label from a normalized semver string.
      *
-     * @param version semver string, e.g. "1.2.3"
+     * @param normalizedVersion normalized version, e.g. "1.0.0-beta"
+     * @return pre-release part (e.g. "beta"), or null if none
+     */
+    private static String extractPreRelease(String normalizedVersion) {
+        if (normalizedVersion == null) {
+            return null;
+        }
+        int idx = normalizedVersion.indexOf('-');
+        return idx >= 0 ? normalizedVersion.substring(idx + 1) : null;
+    }
+
+    /**
+     * Increment the patch number of a semver version string. Pre-release suffix is stripped in the result.
+     *
+     * @param version semver string, e.g. "1.2.3" or "1.2.3-beta"
      * @return incremented version, e.g. "1.2.4"; returns "0.0.1" if input is not valid semver
      */
     public static String nextSemverPatch(String version) {
@@ -194,7 +229,7 @@ public class VersionUtils {
     /**
      * Find the maximum semver version from a list of version strings. Non-semver strings are ignored.
      *
-     * @param versions list of version strings
+     * @param versions list of version strings (supports x.y.z and x.y.z-prerelease)
      * @return the highest semver string (normalized, without 'v' prefix), or null if none found
      */
     public static String maxSemver(List<String> versions) {
