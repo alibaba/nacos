@@ -166,6 +166,8 @@ public class MetricsControllerV3 {
             Loggers.CORE.error(
                     "Get config metrics error from member address={}, ip={},dataId={},group={},namespaceId={},error={}",
                     member.getAddress(), ip, dataId, group, namespaceId, throwable);
+            responseMap.put("error", "failed");
+            responseMap.put("errorMember", member.getAddress());
             latch.countDown();
         }
         
