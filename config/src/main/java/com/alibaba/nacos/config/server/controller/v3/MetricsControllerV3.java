@@ -101,7 +101,8 @@ public class MetricsControllerV3 {
         
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},groupName={},namespaceId={}", ip,
                 dataId, groupName, namespaceId);
-        Map<String, Object> responseMap = new HashMap<>(3);
+        Map<String, Object> responseMap = new HashMap<>();
+        Map<String, Object> failedMembers = new HashMap<>();
         Collection<Member> members = serverMemberManager.allMembers();
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
                 Loggers.CLUSTER);
@@ -115,7 +116,7 @@ public class MetricsControllerV3 {
             AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance()
                     .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
             nacosAsyncRestTemplate.get(url, header, query, new GenericType<Map>() {
-            }.getType(), new ClusterMetricsCallBack(responseMap, latch, dataId, groupName, namespaceId, ip, member));
+            }.getType(), new ClusterMetricsCallBack(responseMap, failedMembers, latch, dataId, groupName, namespaceId, ip, member));
         }
         try {
             latch.await(3L, TimeUnit.SECONDS);
@@ -123,12 +124,22 @@ public class MetricsControllerV3 {
             e.printStackTrace();
         }
         
+        if (responseMap.isEmpty()) {
+            responseMap.put("code", 1);
+            responseMap.put("message", "partial failure: no metrics returned from any member");
+        }
+        if (!failedMembers.isEmpty()) {
+            responseMap.put("failedMembers", failedMembers);
+            responseMap.put("code", 1);
+            responseMap.put("message", "partial failure: some members failed");
+        }
         return Result.success(responseMap);
     }
     
     static class ClusterMetricsCallBack implements Callback<Map> {
         
         Map<String, Object> responseMap;
+        Map<String, Object> failedMembers;
         
         CountDownLatch latch;
         
@@ -142,9 +153,11 @@ public class MetricsControllerV3 {
         
         Member member;
         
-        public ClusterMetricsCallBack(Map<String, Object> responseMap, CountDownLatch latch, String dataId,
+        public ClusterMetricsCallBack(Map<String, Object> responseMap, Map<String, Object> failedMembers,
+                CountDownLatch latch, String dataId,
                 String group, String namespaceId, String ip, Member member) {
             this.responseMap = responseMap;
+            this.failedMembers = failedMembers;
             this.latch = latch;
             this.dataId = dataId;
             this.group = group;
@@ -166,6 +179,7 @@ public class MetricsControllerV3 {
             Loggers.CORE.error(
                     "Get config metrics error from member address={}, ip={},dataId={},group={},namespaceId={},error={}",
                     member.getAddress(), ip, dataId, group, namespaceId, throwable);
+            failedMembers.put(member.getAddress(), throwable.getMessage());
             latch.countDown();
         }
         
