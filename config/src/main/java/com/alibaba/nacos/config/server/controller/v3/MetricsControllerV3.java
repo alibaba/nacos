@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
@@ -102,6 +103,7 @@ public class MetricsControllerV3 {
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},groupName={},namespaceId={}", ip,
                 dataId, groupName, namespaceId);
         Map<String, Object> responseMap = new HashMap<>(3);
+        AtomicBoolean complete = new AtomicBoolean(true);
         Collection<Member> members = serverMemberManager.allMembers();
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
                 Loggers.CLUSTER);
@@ -115,13 +117,21 @@ public class MetricsControllerV3 {
             AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance()
                     .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
             nacosAsyncRestTemplate.get(url, header, query, new GenericType<Map>() {
-            }.getType(), new ClusterMetricsCallBack(responseMap, latch, dataId, groupName, namespaceId, ip, member));
+            }.getType(),
+                    new ClusterMetricsCallBack(responseMap, latch, complete, dataId, groupName, namespaceId, ip, member));
         }
         try {
-            latch.await(3L, TimeUnit.SECONDS);
+            boolean completed = latch.await(3L, TimeUnit.SECONDS);
+            if (!completed) {
+                complete.set(false);
+            }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
+            Loggers.CORE.warn("Interrupted while waiting cluster config metrics, ip={},dataId={},groupName={},namespaceId={}",
+                    ip, dataId, groupName, namespaceId, e);
+            complete.set(false);
         }
+        responseMap.put("complete", complete.get());
         
         return Result.success(responseMap);
     }
@@ -131,6 +141,8 @@ public class MetricsControllerV3 {
         Map<String, Object> responseMap;
         
         CountDownLatch latch;
+
+        AtomicBoolean complete;
         
         String dataId;
         
@@ -142,10 +154,12 @@ public class MetricsControllerV3 {
         
         Member member;
         
-        public ClusterMetricsCallBack(Map<String, Object> responseMap, CountDownLatch latch, String dataId,
-                String group, String namespaceId, String ip, Member member) {
+        public ClusterMetricsCallBack(Map<String, Object> responseMap, CountDownLatch latch, AtomicBoolean complete,
+                String dataId,
+            String group, String namespaceId, String ip, Member member) {
             this.responseMap = responseMap;
             this.latch = latch;
+            this.complete = complete;
             this.dataId = dataId;
             this.group = group;
             this.namespaceId = namespaceId;
@@ -155,14 +169,17 @@ public class MetricsControllerV3 {
         
         @Override
         public void onReceive(RestResult<Map> result) {
-            if (result.ok()) {
+            if (result != null && result.ok() && result.getData() != null) {
                 responseMap.putAll(result.getData());
+            } else {
+                complete.set(false);
             }
             latch.countDown();
         }
         
         @Override
         public void onError(Throwable throwable) {
+            complete.set(false);
             Loggers.CORE.error(
                     "Get config metrics error from member address={}, ip={},dataId={},group={},namespaceId={},error={}",
                     member.getAddress(), ip, dataId, group, namespaceId, throwable);
@@ -171,6 +188,7 @@ public class MetricsControllerV3 {
         
         @Override
         public void onCancel() {
+            complete.set(false);
             latch.countDown();
         }
     }
