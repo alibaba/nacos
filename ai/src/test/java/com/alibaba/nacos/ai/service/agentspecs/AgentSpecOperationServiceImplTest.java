@@ -26,6 +26,8 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecBasicInfo;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -49,6 +51,7 @@ import org.springframework.core.env.StandardEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +72,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -648,6 +652,368 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
     }
 
+    @Test
+    void testGetAgentSpecVersionDetailSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        String mainJson = "{\"name\":\"my-agentspec\",\"description\":\"desc\",\"resources\":[]}";
+        when(storage.get(any(StorageKey.class))).thenReturn(mainJson.getBytes(StandardCharsets.UTF_8));
+        AgentSpec result = service.getAgentSpecVersionDetail(namespaceId, name, "v1");
+        assertNotNull(result);
+        assertEquals("my-agentspec", result.getName());
+    }
+    
+    @Test
+    void testGetAgentSpecVersionDetailBlankVersion() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.getAgentSpecVersionDetail(namespaceId, name, ""));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
+    void testGetAgentSpecVersionDetailVersionNotFound() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v99")))
+                .thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.getAgentSpecVersionDetail(namespaceId, name, "v99"));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testDeleteAgentSpecSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion v1 = new AiResourceVersion();
+        v1.setVersion("v1");
+        v1.setStatus("online");
+        Page<AiResourceVersion> vPage = new Page<>();
+        vPage.setPageItems(List.of(v1));
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(name), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(vPage);
+        service.deleteAgentSpec(namespaceId, name);
+        verify(aiResourceVersionPersistService).deleteByNameAndType(eq(namespaceId), eq(name), eq("agentspec"));
+        verify(aiResourcePersistService).delete(eq(namespaceId), eq(name), eq("agentspec"));
+    }
+    
+    @Test
+    void testDeleteAgentSpecMetaNull() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "nonexistent";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(null);
+        service.deleteAgentSpec(namespaceId, name);
+        verify(aiResourcePersistService, never()).delete(anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testSearchAgentSpecsSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        Page<AiResource> metaPage = new Page<>();
+        AiResource meta = new AiResource();
+        meta.setName("my-agentspec");
+        meta.setStatus("enable");
+        meta.setDesc("desc");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        Page<AgentSpecBasicInfo> result = service.searchAgentSpecs(namespaceId, "my", 1, 10);
+        assertNotNull(result);
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("my-agentspec", result.getPageItems().get(0).getName());
+    }
+    
+    @Test
+    void testSearchAgentSpecsExcludesDisabledAndNoOnline() throws NacosException {
+        String namespaceId = "test-ns";
+        Page<AiResource> metaPage = new Page<>();
+        AiResource disabled = new AiResource();
+        disabled.setName("disabled");
+        disabled.setStatus("disable");
+        disabled.setVersionInfo("{\"onlineCnt\":1}");
+        AiResource noOnline = new AiResource();
+        noOnline.setName("no-online");
+        noOnline.setStatus("enable");
+        noOnline.setVersionInfo("{\"onlineCnt\":0}");
+        metaPage.setPageItems(List.of(disabled, noOnline));
+        metaPage.setTotalCount(2);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        Page<AgentSpecBasicInfo> result = service.searchAgentSpecs(namespaceId, null, 1, 10);
+        assertTrue(result.getPageItems().isEmpty());
+    }
+    
+    @Test
+    void testQueryAgentSpecSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        String mainJson = "{\"name\":\"my-agentspec\",\"description\":\"desc\",\"resources\":[]}";
+        when(storage.get(any(StorageKey.class))).thenReturn(mainJson.getBytes(StandardCharsets.UTF_8));
+        AgentSpec result = service.queryAgentSpec(namespaceId, name, null, null);
+        assertNotNull(result);
+        assertEquals("my-agentspec", result.getName());
+    }
+    
+    @Test
+    void testQueryAgentSpecNotFound() {
+        String namespaceId = "test-ns";
+        String name = "nonexistent";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.queryAgentSpec(namespaceId, name, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testQueryAgentSpecDisabled() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("disable");
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.queryAgentSpec(namespaceId, name, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testQueryAgentSpecVersionNotOnline() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.queryAgentSpec(namespaceId, name, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testUpdateDraftSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v2");
+        vRow.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
+                .thenReturn(vRow);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+        AgentSpec draft = new AgentSpec();
+        draft.setName(name);
+        draft.setDescription("updated desc");
+        service.updateDraft(namespaceId, draft);
+        verify(aiResourceVersionPersistService).updateStorageAndDesc(eq(namespaceId), eq(name),
+                eq("agentspec"), eq("v2"), anyString(), eq("updated desc"));
+    }
+    
+    @Test
+    void testUpdateDraftNullAgentSpec() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.updateDraft("test-ns", null));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
+    void testUpdateDraftNoEditing() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AgentSpec draft = new AgentSpec();
+        draft.setName(name);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.updateDraft(namespaceId, draft));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testDeleteDraftSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v2\",\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v2");
+        vRow.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v2")))
+                .thenReturn(vRow);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+        service.deleteDraft(namespaceId, name);
+        verify(aiResourceVersionPersistService).delete(eq(namespaceId), eq(name), eq("agentspec"), eq("v2"));
+    }
+    
+    @Test
+    void testDeleteDraftNoEditingReturnsEarly() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        service.deleteDraft(namespaceId, name);
+        verify(aiResourceVersionPersistService, never()).delete(anyString(), anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testSubmitDirectPublishWhenNoPipeline() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+        String result = service.submit(namespaceId, name, null);
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(name), anyString(),
+                eq("v1"), eq("online"));
+    }
+    
+    @Test
+    void testUpdateLabelsSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+        Map<String, String> labels = Map.of("latest", "v2");
+        service.updateLabels(namespaceId, name, labels);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any());
+    }
+    
+    @Test
+    void testChangeOnlineStatusAgentSpecScopeEnable() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("disable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+        service.changeOnlineStatus(namespaceId, name, "agentspec", null, true);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L),
+                argThat(resource -> "enable".equals(resource.getStatus())));
+    }
+    
+    @Test
+    void testChangeOnlineStatusAgentSpecScopeDisable() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L), any()))
+                .thenReturn(true);
+        service.changeOnlineStatus(namespaceId, name, "agentspec", null, false);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(name), eq("agentspec"), eq(1L),
+                argThat(resource -> "disable".equals(resource.getStatus())));
+    }
+    
     private byte[] createValidZipBytes() throws IOException {
         String manifest = "{\"version\":\"1.0\",\"description\":\"Test agentspec description\","
                 + "\"tags\":[\"design\",\"ux\"],"

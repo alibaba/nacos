@@ -26,6 +26,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
 import com.alibaba.nacos.api.ai.model.skills.SkillResource;
 import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
@@ -78,11 +79,13 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 /**
@@ -206,7 +209,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v1.setVersion("v1");
         vPage.setPageItems(List.of(v1));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), isNull(), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
         skillOperationService.deleteSkill(namespaceId, skillName);
@@ -332,7 +335,7 @@ class SkillOperationServiceImplTest {
         v1.setVersion("v2");
         versions.setPageItems(List.of(v1));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -414,7 +417,7 @@ class SkillOperationServiceImplTest {
         v2.setVersion("3.0.7");
         versions.setPageItems(List.of(v1, v2));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -442,7 +445,7 @@ class SkillOperationServiceImplTest {
         v1.setVersion("3.0.7");
         versions.setPageItems(List.of(v1));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -470,7 +473,7 @@ class SkillOperationServiceImplTest {
         v1.setVersion("3.0.7");
         versions.setPageItems(List.of(v1));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -873,7 +876,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v2.setVersion("1.2.0");
         versions.setPageItems(List.of(v, v2));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
 
         com.alibaba.nacos.ai.model.AiResourceVersion baseVersion = new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -912,7 +915,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v.setVersion("1.1.3");
         versions.setPageItems(List.of(v));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         
         com.alibaba.nacos.ai.model.AiResourceVersion baseVersion = new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -953,7 +956,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v2.setVersion("1.1.4");
         versions.setPageItems(List.of(v1, v2));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -979,7 +982,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v1.setVersion("1.1.3");
         versions.setPageItems(List.of(v1));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), isNull(), anyInt(), anyInt()))
                 .thenReturn(versions);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -1244,5 +1247,366 @@ class SkillOperationServiceImplTest {
         verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
                 anyString(), anyString());
         verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
+    }
+
+    // ========== Coverage gap tests ==========
+    
+    @Test
+    void testGetSkillVersionDetailSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "test-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion(version);
+        vRow.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(vRow);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+                ("---\nname: test-skill\ndescription: desc\n---\n\nbody").getBytes());
+        Skill result = skillOperationService.getSkillVersionDetail(namespaceId, skillName, version);
+        assertNotNull(result);
+        assertEquals("test-skill", result.getName());
+    }
+    
+    @Test
+    void testGetSkillVersionDetailBlankVersionThrows() {
+        String namespaceId = "test-ns";
+        String skillName = "test-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.getSkillVersionDetail(namespaceId, skillName, ""));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
+    void testGetSkillVersionDetailVersionNotFound() {
+        String namespaceId = "test-ns";
+        String skillName = "test-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq("v99")))
+                .thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.getSkillVersionDetail(namespaceId, skillName, "v99"));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testDownloadSkillVersionSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "test-skill";
+        String version = "v1";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion(version);
+        vRow.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"test-ns:test-skill:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq(version)))
+                .thenReturn(vRow);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+                ("---\nname: test-skill\ndescription: desc\n---\n\nbody").getBytes());
+        Skill result = skillOperationService.downloadSkillVersion(namespaceId, skillName, version);
+        assertNotNull(result);
+        assertEquals("test-skill", result.getName());
+    }
+    
+    @Test
+    void testUpdateDraftSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+        
+        Skill draft = new Skill();
+        draft.setName(skillName);
+        draft.setDescription("updated desc");
+        draft.setSkillMd("---\nname: my-skill\ndescription: updated desc\n---\n\nbody");
+        skillOperationService.updateDraft(namespaceId, draft);
+        verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq(skillName), anyString(),
+                eq("v1"), anyString());
+    }
+    
+    @Test
+    void testUpdateDraftNullSkillThrows() {
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.updateDraft("ns", null));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
+    void testUpdateDraftNoEditingThrows() {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        Skill draft = new Skill();
+        draft.setName(skillName);
+        draft.setDescription("desc");
+        draft.setSkillMd("---\nname: my-skill\n---\n\nbody");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.updateDraft(namespaceId, draft));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testDeleteDraftSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        vRow.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+        
+        skillOperationService.deleteDraft(namespaceId, skillName);
+        verify(aiResourceVersionPersistService).delete(eq(namespaceId), eq(skillName), anyString(), eq("v1"));
+    }
+    
+    @Test
+    void testDeleteDraftNoEditingShouldReturn() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        skillOperationService.deleteDraft(namespaceId, skillName);
+        verify(aiResourceVersionPersistService, never()).delete(anyString(), anyString(), anyString(), anyString());
+    }
+    
+    @Test
+    void testSubmitDirectPublishWhenNoPipeline() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"editingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        com.alibaba.nacos.ai.model.AiResourceVersion vRow = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("draft");
+        vRow.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(skillName), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+                ("---\nname: my-skill\ndescription: desc\n---\n\nbody").getBytes());
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+        doAnswer(inv -> { vRow.setStatus("reviewing"); return null; })
+                .when(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName), anyString(),
+                        eq("v1"), eq("reviewing"));
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+                new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setVersions(new HashMap<>());
+        manifest.setLabels(new HashMap<>());
+        when(manifestService.loadForUpdate(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        
+        String result = skillOperationService.submit(namespaceId, skillName, null);
+        assertEquals("v1", result);
+        verify(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName), anyString(),
+                eq("v1"), eq("online"));
+    }
+    
+    @Test
+    void testQuerySkillSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+                new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setVersions(new HashMap<>(Map.of("v1", List.of("SKILL.md"))));
+        manifest.setLabels(new HashMap<>(Map.of("latest", "v1")));
+        when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        when(storage.get(any(StorageKey.class))).thenReturn(
+                ("---\nname: my-skill\ndescription: desc\n---\n\nbody").getBytes());
+        Skill result = skillOperationService.querySkill(namespaceId, skillName, null, null);
+        assertNotNull(result);
+        assertEquals("my-skill", result.getName());
+    }
+    
+    @Test
+    void testQuerySkillNotFoundWhenNoManifest() {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.querySkill(namespaceId, skillName, null, null));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testSearchSkillsSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        Page<AiResource> metaPage = new Page<>();
+        AiResource meta = new AiResource();
+        meta.setName("my-skill");
+        meta.setStatus("enable");
+        meta.setDesc("desc");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        Page<SkillBasicInfo> result = skillOperationService.searchSkills(namespaceId, "my", 1, 10);
+        assertNotNull(result);
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("my-skill", result.getPageItems().get(0).getName());
+    }
+    
+    @Test
+    void testSearchSkillsExcludesDisabledAndNoOnline() throws NacosException {
+        String namespaceId = "test-ns";
+        Page<AiResource> metaPage = new Page<>();
+        AiResource disabled = new AiResource();
+        disabled.setName("disabled-skill");
+        disabled.setStatus("disable");
+        disabled.setVersionInfo("{\"onlineCnt\":1}");
+        AiResource noOnline = new AiResource();
+        noOnline.setName("no-online");
+        noOnline.setStatus("enable");
+        noOnline.setVersionInfo("{\"onlineCnt\":0}");
+        metaPage.setPageItems(List.of(disabled, noOnline));
+        metaPage.setTotalCount(2);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        Page<SkillBasicInfo> result = skillOperationService.searchSkills(namespaceId, null, 1, 10);
+        assertTrue(result.getPageItems().isEmpty());
+    }
+    
+    @Test
+    void testUpdateLabelsSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+        com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
+                new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
+        manifest.setLabels(new HashMap<>());
+        manifest.setVersions(new HashMap<>());
+        when(manifestService.query(eq(namespaceId), eq(skillName))).thenReturn(manifest);
+        Map<String, String> labels = Map.of("latest", "v2");
+        skillOperationService.updateLabels(namespaceId, skillName, labels);
+        verify(manifestService).write(eq(namespaceId), eq(skillName), any());
+    }
+    
+    @Test
+    void testChangeOnlineStatusSkillScopeEnable() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("disable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"v1\"},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+        com.alibaba.nacos.ai.model.AiResourceVersion onlineV = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        onlineV.setVersion("v1");
+        onlineV.setStatus("online");
+        onlineV.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
+        vPage.setPageItems(List.of(onlineV));
+        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+                .thenReturn(vPage);
+        
+        skillOperationService.changeOnlineStatus(namespaceId, skillName, "skill", null, true);
+        verify(aiResourcePersistService).updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L),
+                argThat(resource -> "enable".equals(resource.getStatus())));
+    }
+    
+    @Test
+    void testChangeOnlineStatusSkillScopeDisable() throws NacosException {
+        String namespaceId = "test-ns";
+        String skillName = "my-skill";
+        AiResource meta = new AiResource();
+        meta.setName(skillName);
+        meta.setType("skill");
+        meta.setNamespaceId(namespaceId);
+        meta.setStatus("enable");
+        meta.setMetaVersion(1L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
+                .thenReturn(true);
+        
+        skillOperationService.changeOnlineStatus(namespaceId, skillName, "skill", null, false);
+        verify(manifestService).delete(eq(namespaceId), eq(skillName));
     }
 }
