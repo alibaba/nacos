@@ -16,11 +16,16 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
+import com.alibaba.nacos.ai.form.AiResourceFilterableForm;
+import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecListForm;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.console.handler.ai.AgentSpecHandler;
+import com.alibaba.nacos.core.model.form.PageForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,12 +33,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for AgentSpecProxy.
@@ -85,5 +92,30 @@ public class AgentSpecProxyTest {
         
         NacosApiException ex = assertThrows(NacosApiException.class, () -> agentSpecProxy.forcePublish(form));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    public void testListAgentSpecs() throws NacosException {
+        AgentSpecListForm listForm = new AgentSpecListForm();
+        listForm.setNamespaceId(NAMESPACE_ID);
+        listForm.setAgentSpecName(AGENT_SPEC_NAME);
+        AiResourceFilterableForm filterableForm = new AiResourceFilterableForm();
+        filterableForm.setScope("PUBLIC");
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setTotalCount(1);
+        AgentSpecSummary item = new AgentSpecSummary();
+        item.setName(AGENT_SPEC_NAME);
+        page.setPageItems(java.util.List.of(item));
+        when(agentSpecHandler.listAgentSpecs(any(AgentSpecListForm.class), any(AiResourceFilterableForm.class),
+                any(PageForm.class))).thenReturn(page);
+        
+        Page<AgentSpecSummary> result = agentSpecProxy.listAgentSpecs(listForm, filterableForm, pageForm);
+        
+        assertNotNull(result);
+        assertEquals(1, result.getTotalCount());
+        verify(agentSpecHandler, times(1)).listAgentSpecs(listForm, filterableForm, pageForm);
     }
 }

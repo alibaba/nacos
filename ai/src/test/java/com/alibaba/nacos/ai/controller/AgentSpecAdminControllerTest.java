@@ -18,8 +18,14 @@ package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.agentspecs.AgentSpecOperationService;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,13 +45,17 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test for {@link AgentSpecAdminController} — scope endpoint.
@@ -56,18 +66,18 @@ import static org.mockito.Mockito.verify;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class AgentSpecAdminControllerTest {
-
+    
     private static final String AGENTSPEC_ADMIN_PATH = Constants.AgentSpecs.ADMIN_PATH;
-
+    
     private AgentSpecAdminController agentSpecAdminController;
-
+    
     private MockMvc mockMvc;
-
+    
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     @Mock
     private AgentSpecOperationService agentSpecOperationService;
-
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
@@ -75,12 +85,12 @@ class AgentSpecAdminControllerTest {
         agentSpecAdminController = new AgentSpecAdminController(agentSpecOperationService);
         mockMvc = MockMvcBuilders.standaloneSetup(agentSpecAdminController).build();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnvironment);
     }
-
+    
     @Test
     void testUpdateScopeSuccess() throws Exception {
         doNothing().when(agentSpecOperationService).updateScope(anyString(), anyString(), anyString());
@@ -90,7 +100,7 @@ class AgentSpecAdminControllerTest {
         assertEquals(200, response.getStatus());
         verify(agentSpecOperationService).updateScope("public", "test-agentspec", "PUBLIC");
     }
-
+    
     @Test
     void testUpdateScopeMissingAgentSpecName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(AGENTSPEC_ADMIN_PATH + "/scope")
@@ -98,7 +108,7 @@ class AgentSpecAdminControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "Required parameter 'agentSpecName' type String is not present");
     }
-
+    
     @Test
     void testUpdateScopeMissingScope() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(AGENTSPEC_ADMIN_PATH + "/scope")
@@ -106,7 +116,7 @@ class AgentSpecAdminControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "Required parameter 'scope' type String is not present");
     }
-
+    
     @Test
     void testUpdateScopeInvalidScope() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(AGENTSPEC_ADMIN_PATH + "/scope")
@@ -114,7 +124,7 @@ class AgentSpecAdminControllerTest {
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "must be PUBLIC or PRIVATE");
     }
-
+    
     @Test
     void testUpdateBizTagsSuccess() throws Exception {
         doNothing().when(agentSpecOperationService).updateBizTags(anyString(), anyString(), anyString());
@@ -124,18 +134,64 @@ class AgentSpecAdminControllerTest {
         assertEquals(200, response.getStatus());
         verify(agentSpecOperationService).updateBizTags("public", "test-agentspec", "[\"finance\"]");
     }
-
+    
     @Test
     void testForcePublishSuccess() throws Exception {
-        doNothing().when(agentSpecOperationService).forcePublish(eq("public"), eq("test-agentspec"), eq("v1"),
-                eq(true));
+        doNothing().when(agentSpecOperationService)
+                .forcePublish(eq("public"), eq("test-agentspec"), eq("v1"), eq(true));
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(AGENTSPEC_ADMIN_PATH + "/force-publish")
                 .param("agentSpecName", "test-agentspec").param("version", "v1");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         verify(agentSpecOperationService).forcePublish("public", "test-agentspec", "v1", true);
     }
-
+    
+    @Test
+    void testListAgentSpecsSuccess() throws Exception {
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setTotalCount(1);
+        page.setPagesAvailable(1);
+        AgentSpecSummary item = new AgentSpecSummary();
+        item.setName("test-agentspec");
+        page.setPageItems(Collections.singletonList(item));
+        when(agentSpecOperationService.listAgentSpecs(eq("public"), isNull(), isNull(), isNull(), isNull(), isNull(),
+                eq(1), eq(10))).thenReturn(page);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(AGENTSPEC_ADMIN_PATH + "/list")
+                .param("pageNo", "1").param("pageSize", "10");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(response.getContentAsString(),
+                new TypeReference<>() {
+                });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(1, result.getData().getTotalCount());
+    }
+    
+    @Test
+    void testListAgentSpecsWithOwnerFilter() throws Exception {
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setTotalCount(1);
+        page.setPagesAvailable(1);
+        AgentSpecSummary item = new AgentSpecSummary();
+        item.setName("test-agentspec");
+        page.setPageItems(Collections.singletonList(item));
+        when(agentSpecOperationService.listAgentSpecs(eq("public"), isNull(), isNull(), isNull(), eq("alice"), isNull(),
+                eq(1), eq(10))).thenReturn(page);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(AGENTSPEC_ADMIN_PATH + "/list")
+                .param("owner", "alice").param("pageNo", "1").param("pageSize", "10");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(agentSpecOperationService).listAgentSpecs("public", null, null, null, "alice", null, 1, 10);
+    }
+    
+    @Test
+    void testListAgentSpecsWithInvalidScope() throws Throwable {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(AGENTSPEC_ADMIN_PATH + "/list")
+                .param("scope", "INVALID").param("pageNo", "1").param("pageSize", "10");
+        assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
+                "must be PUBLIC or PRIVATE");
+    }
+    
     private void assertServletException(Class<? extends Exception> expectedException, Executable executable,
             String expectedMessage) throws Throwable {
         try {

@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.skills.admin.SkillPublishForm;
+import com.alibaba.nacos.api.ai.model.skills.SkillSummary;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for ConsoleSkillController.
@@ -48,37 +51,71 @@ import static org.mockito.Mockito.verify;
  */
 @ExtendWith(MockitoExtension.class)
 public class ConsoleSkillControllerTest {
-
+    
     @Mock
     private SkillProxy skillProxy;
-
+    
     private MockMvc mockMvc;
-
+    
     private ConsoleSkillController consoleSkillController;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         consoleSkillController = new ConsoleSkillController(skillProxy);
         mockMvc = MockMvcBuilders.standaloneSetup(consoleSkillController).build();
     }
-
+    
     @Test
     void testForcePublishSuccess() throws Exception {
         doNothing().when(skillProxy).forcePublish(any(SkillPublishForm.class));
-
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .post(Constants.Skills.CONSOLE_PATH + "/force-publish")
-                .param("namespaceId", "test-ns")
-                .param("skillName", "test-skill")
-                .param("version", "v1");
-
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+                        Constants.Skills.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
+                .param("skillName", "test-skill").param("version", "v1");
+        
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String content = response.getContentAsString();
-        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() { });
-
+        Result<String> result = JacksonUtils.toObj(content, new TypeReference<>() {
+        });
+        
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(skillProxy).forcePublish(any(SkillPublishForm.class));
+    }
+    
+    @Test
+    void testListSkillsSuccess() throws Exception {
+        Page<SkillSummary> page = new Page<>();
+        page.setTotalCount(1);
+        page.setPagesAvailable(1);
+        SkillSummary item = new SkillSummary();
+        item.setName("test-skill");
+        page.setPageItems(java.util.List.of(item));
+        when(skillProxy.listSkills(any(), any(), any())).thenReturn(page);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.Skills.CONSOLE_PATH + "/list")
+                .param("pageNo", "1").param("pageSize", "10");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        Result<Page<SkillSummary>> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(1, result.getData().getTotalCount());
+    }
+    
+    @Test
+    void testListSkillsWithOwnerFilter() throws Exception {
+        Page<SkillSummary> page = new Page<>();
+        page.setTotalCount(0);
+        page.setPageItems(java.util.Collections.emptyList());
+        when(skillProxy.listSkills(any(), any(), any())).thenReturn(page);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.Skills.CONSOLE_PATH + "/list")
+                .param("owner", "alice").param("pageNo", "1").param("pageSize", "10");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(skillProxy).listSkills(any(), any(), any());
     }
 }

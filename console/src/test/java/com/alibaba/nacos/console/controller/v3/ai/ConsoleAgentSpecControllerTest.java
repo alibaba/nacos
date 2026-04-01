@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.controller.v3.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.agentspecs.admin.AgentSpecPublishForm;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for ConsoleAgentSpecController.
@@ -67,11 +70,9 @@ public class ConsoleAgentSpecControllerTest {
     void testForcePublishSuccess() throws Exception {
         doNothing().when(agentSpecProxy).forcePublish(any(AgentSpecPublishForm.class));
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .post(Constants.AgentSpecs.CONSOLE_PATH + "/force-publish")
-                .param("namespaceId", "test-ns")
-                .param("agentSpecName", "test-agentspec")
-                .param("version", "v1");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+                        Constants.AgentSpecs.CONSOLE_PATH + "/force-publish").param("namespaceId", "test-ns")
+                .param("agentSpecName", "test-agentspec").param("version", "v1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String content = response.getContentAsString();
@@ -81,5 +82,41 @@ public class ConsoleAgentSpecControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(agentSpecProxy).forcePublish(any(AgentSpecPublishForm.class));
+    }
+    
+    @Test
+    void testListAgentSpecsSuccess() throws Exception {
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setTotalCount(1);
+        page.setPagesAvailable(1);
+        AgentSpecSummary item = new AgentSpecSummary();
+        item.setName("test-agentspec");
+        page.setPageItems(java.util.List.of(item));
+        when(agentSpecProxy.listAgentSpecs(any(), any(), any())).thenReturn(page);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
+                .param("pageNo", "1").param("pageSize", "10");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        Result<Page<AgentSpecSummary>> result = JacksonUtils.toObj(response.getContentAsString(),
+                new TypeReference<>() {
+                });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(1, result.getData().getTotalCount());
+    }
+    
+    @Test
+    void testListAgentSpecsWithScopeFilter() throws Exception {
+        Page<AgentSpecSummary> page = new Page<>();
+        page.setTotalCount(0);
+        page.setPageItems(java.util.Collections.emptyList());
+        when(agentSpecProxy.listAgentSpecs(any(), any(), any())).thenReturn(page);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.AgentSpecs.CONSOLE_PATH + "/list")
+                .param("scope", "PUBLIC").param("pageNo", "1").param("pageSize", "10");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(agentSpecProxy).listAgentSpecs(any(), any(), any());
     }
 }
