@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineContext;
 import com.alibaba.nacos.plugin.ai.pipeline.model.PublishPipelineResourceType;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -94,7 +95,9 @@ class AgentSpecSubmitResourceTypeTest {
 
             AgentSpecOperationServiceImpl service = new AgentSpecOperationServiceImpl(
                     aiResourcePersistService, aiResourceVersionPersistService,
-                    publishPipelineExecutor, pipelineExecutionRepository);
+                    publishPipelineExecutor,
+                    new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                            pipelineExecutionRepository));
             service.submit(input.namespaceId, input.name, input.version);
 
             ArgumentCaptor<PublishPipelineContext> captor = ArgumentCaptor.forClass(PublishPipelineContext.class);

@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecMeta;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecSummary;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -114,7 +115,9 @@ class AgentSpecOperationServiceImplTest {
                 new PublishPipelineManager(), pipelineConfigProvider, pipelineExecutionRepository,
                 Executors.newSingleThreadExecutor());
         service = new AgentSpecOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
-                publishPipelineExecutor, pipelineExecutionRepository);
+                publishPipelineExecutor,
+                new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                        pipelineExecutionRepository));
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
         visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);

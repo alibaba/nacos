@@ -297,4 +297,27 @@ public class VersionUtils {
     public static boolean isSupportedVersionFormat(String version) {
         return isSemver(version) || isVNumber(version);
     }
+    
+    /**
+     * Check if the target version is strictly greater than the base version. Both versions must be in the same format
+     * (semver x.y.z or legacy vN) for comparison.
+     *
+     * @param target target version string
+     * @param base   base version string
+     * @return {@code true} if target &gt; base, {@code false} if target &lt;= base, {@code null} if formats are
+     *         incompatible or not recognized
+     */
+    public static Boolean isGreaterVersion(String target, String base) {
+        String targetSemver = normalizeSemver(target);
+        String baseSemver = normalizeSemver(base);
+        if (targetSemver != null && baseSemver != null) {
+            return compareSemverVersion(targetSemver, baseSemver) > 0;
+        }
+        Integer targetLegacy = parseVNumber(target);
+        Integer baseLegacy = parseVNumber(base);
+        if (targetLegacy != null && baseLegacy != null) {
+            return targetLegacy > baseLegacy;
+        }
+        return null;
+    }
 }

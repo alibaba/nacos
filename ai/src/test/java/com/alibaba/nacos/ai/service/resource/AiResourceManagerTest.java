@@ -80,6 +80,9 @@ class AiResourceManagerTest {
     @Mock
     private AiResourceVersionPersistService aiResourceVersionPersistService;
     
+    @Mock
+    private com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository pipelineExecutionRepository;
+    
     private AiResourceManager manager;
     
     private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
@@ -91,7 +94,8 @@ class AiResourceManagerTest {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        manager = new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService);
+        manager = new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                pipelineExecutionRepository);
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
         visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);

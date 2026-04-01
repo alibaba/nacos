@@ -18,8 +18,12 @@ package com.alibaba.nacos.ai.service.resource;
 
 import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
+import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
+import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -32,6 +36,8 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.plugin.ai.pipeline.model.ResourceFilesPipelineContext;
 import com.alibaba.nacos.plugin.visibility.constant.VisibilityConstants;
 import com.alibaba.nacos.plugin.visibility.model.BaseVisibilityPredicate;
 import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
@@ -42,6 +48,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 /**
@@ -62,12 +72,16 @@ public class AiResourceManager {
     
     private final AiResourceVersionPersistService aiResourceVersionPersistService;
     
+    private final PipelineExecutionRepository pipelineExecutionRepository;
+    
     private final VisibilityAdvisorConverter visibilityAdvisorConverter;
     
     public AiResourceManager(AiResourcePersistService aiResourcePersistService,
-            AiResourceVersionPersistService aiResourceVersionPersistService) {
+            AiResourceVersionPersistService aiResourceVersionPersistService,
+            PipelineExecutionRepository pipelineExecutionRepository) {
         this.aiResourcePersistService = aiResourcePersistService;
         this.aiResourceVersionPersistService = aiResourceVersionPersistService;
+        this.pipelineExecutionRepository = pipelineExecutionRepository;
         this.visibilityAdvisorConverter = new DefaultVisibilityAdvisorConverter();
     }
     
@@ -386,6 +400,459 @@ public class AiResourceManager {
     }
     
     // ---- 2.4 Pipeline callback ----
+    
+    /**
+     * List all existing version strings for a given resource (name + type).
+     */
+    public List<String> listExistingVersions(String namespaceId, String name, String type) {
+        Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, name, type, null, 1, 500);
+        if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> versions = new ArrayList<>(page.getPageItems().size());
+        for (AiResourceVersion v : page.getPageItems()) {
+            if (v != null && StringUtils.isNotBlank(v.getVersion())) {
+                versions.add(v.getVersion().trim());
+            }
+        }
+        return versions;
+    }
+    
+    /**
+     * Construct and insert a version row.
+     */
+    public void insertVersionRow(String namespaceId, String name, String type, String author, String status,
+            String version, String description, String storageJson) {
+        AiResourceVersion row = new AiResourceVersion();
+        row.setNamespaceId(namespaceId);
+        row.setName(name);
+        row.setType(type);
+        row.setAuthor(author);
+        row.setStatus(status);
+        row.setVersion(version);
+        row.setDesc(description);
+        row.setStorage(storageJson);
+        aiResourceVersionPersistService.insert(row);
+    }
+    
+    /**
+     * Find a version row and verify it is in draft status.
+     *
+     * @throws NacosApiException if version not found or not in draft status
+     */
+    public AiResourceVersion requireDraftVersion(String namespaceId, String name, String type, String version)
+            throws NacosException {
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (v == null || !AiResourceConstants.VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Current editing version is not draft: " + version);
+        }
+        return v;
+    }
+    
+    /**
+     * Publish a version directly (bypass pipeline). Sets version online, clears editing/reviewing pointers,
+     * increments onlineCnt, and optionally updates the latest label.
+     */
+    public void directPublishVersion(String namespaceId, AiResource meta, ResourceVersionInfo info,
+            String version, boolean updateLatestLabel) throws NacosException {
+        String name = meta.getName();
+        String type = meta.getType();
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                AiResourceConstants.VERSION_STATUS_ONLINE);
+        if (StringUtils.equals(info.getEditingVersion(), version)) {
+            info.setEditingVersion(null);
+        }
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+        }
+        Integer cnt = info.getOnlineCnt();
+        info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        if (info.getLabels() == null) {
+            info.setLabels(new HashMap<>(4));
+        }
+        if (updateLatestLabel) {
+            info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
+        }
+        updateVersionInfoCas(namespaceId, meta, info);
+    }
+    
+    /**
+     * Create both an online version row and a meta row for bootstrap (built-in) resources.
+     */
+    public void insertBootstrapMeta(String namespaceId, String name, String type, String description,
+            String bizTags, String owner, String from, String version, String storageJson) {
+        insertVersionRow(namespaceId, name, type, owner, AiResourceConstants.VERSION_STATUS_ONLINE,
+                version, description, storageJson);
+        
+        ResourceVersionInfo versionInfo = new ResourceVersionInfo();
+        versionInfo.setOnlineCnt(1);
+        Map<String, String> labels = new HashMap<>(4);
+        labels.put(AiResourceConstants.LABEL_LATEST, version);
+        versionInfo.setLabels(labels);
+        
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(name);
+        meta.setType(type);
+        meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
+        meta.setDesc(description);
+        meta.setBizTags(bizTags);
+        meta.setOwner(owner);
+        meta.setFrom(from);
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        meta.setVersionInfo(JacksonUtils.toJson(versionInfo));
+        meta.setMetaVersion(1L);
+        aiResourcePersistService.insert(meta);
+    }
+    
+    /**
+     * Resolve the target version for a submit operation (explicit version or current editing).
+     *
+     * @throws NacosApiException if no target version can be determined
+     */
+    public String resolveSubmitTarget(ResourceVersionInfo info, String version, String type, String name)
+            throws NacosException {
+        String target = version;
+        if (StringUtils.isBlank(target)) {
+            target = info.getEditingVersion();
+        }
+        if (StringUtils.isBlank(target)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "No draft version to submit for " + type + ": " + name);
+        }
+        return target;
+    }
+    
+    /**
+     * Transition a version to reviewing status and update meta pointers accordingly.
+     */
+    public void moveToReviewing(String namespaceId, String name, String type, String version,
+            AiResource meta, ResourceVersionInfo info) throws NacosException {
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                AiResourceConstants.VERSION_STATUS_REVIEWING);
+        info.setEditingVersion(null);
+        info.setReviewingVersion(version);
+        updateVersionInfoCas(namespaceId, meta, info);
+    }
+    
+    /**
+     * Write an IN_PROGRESS pipeline info record for a version.
+     */
+    public void writePipelineInfoInProgress(String namespaceId, String name, String type, String version,
+            String executionId) {
+        PublishPipelineInfo pipelineInfo = new PublishPipelineInfo();
+        pipelineInfo.setExecutionId(executionId);
+        pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);
+        pipelineInfo.setPipeline(new ArrayList<>());
+        aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, type, version,
+                JacksonUtils.toJson(pipelineInfo));
+    }
+    
+    /**
+     * Clear pipeline info for a version (edge case when pipeline becomes unavailable).
+     */
+    public void clearPipelineInfo(String namespaceId, String name, String type, String version) {
+        aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, type, version, null);
+    }
+    
+    // ---- 2.5 High-level domain-agnostic operations ----
+    
+    /**
+     * Core publish logic: validate pipeline result, set version online, update meta pointers.
+     *
+     * @return the version row (caller may need it for post-processing, e.g. manifest sync)
+     */
+    public AiResourceVersion doPublish(String namespaceId, String name, String type, String version,
+            boolean updateLatestLabel) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name, type);
+        VisibilityHelper.checkWritableResource(meta);
+        ResourceVersionInfo info = requireVersionInfo(meta);
+        
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    type + " version not found: " + name + "@" + version);
+        }
+        if (!AiResourceConstants.VERSION_STATUS_REVIEWING.equalsIgnoreCase(v.getStatus())
+                && !AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Only reviewing version can be published: " + version);
+        }
+        
+        PublishPipelineInfo pipelineInfo = parsePublishPipelineInfo(v.getPublishPipelineInfo());
+        if (pipelineInfo != null && StringUtils.isNotBlank(pipelineInfo.getExecutionId())) {
+            PipelineExecution execution = pipelineExecutionRepository.findById(pipelineInfo.getExecutionId());
+            if (execution == null) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "Pipeline execution not found, cannot publish: " + version);
+            }
+            if (execution.getStatus() != PipelineExecutionStatus.APPROVED) {
+                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "Pipeline not approved, cannot publish: " + version);
+            }
+        }
+        
+        boolean alreadyOnline = AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus());
+        if (!alreadyOnline) {
+            aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                    AiResourceConstants.VERSION_STATUS_ONLINE);
+        }
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+        }
+        if (!alreadyOnline) {
+            Integer cnt = info.getOnlineCnt();
+            info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        }
+        if (info.getLabels() == null) {
+            info.setLabels(new HashMap<>(4));
+        }
+        if (updateLatestLabel) {
+            info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
+        }
+        updateVersionInfoCas(namespaceId, meta, info);
+        return v;
+    }
+    
+    /**
+     * Core force-publish logic: bypass pipeline validation, set version online, update meta pointers.
+     *
+     * @return the version row (caller may need it for post-processing, e.g. manifest sync)
+     */
+    public AiResourceVersion doForcePublish(String namespaceId, String name, String type, String version,
+            boolean updateLatestLabel) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name, type);
+        VisibilityHelper.checkWritableResource(meta);
+        ResourceVersionInfo info = requireVersionInfo(meta);
+        
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    type + " version not found: " + name + "@" + version);
+        }
+        if (AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Version is already online, force-publish is not needed: " + version);
+        }
+        
+        LOGGER.warn("[FORCE-PUBLISH] Bypassing pipeline validation for {} {}@{} by user {}",
+                type, name, version, VisibilityHelper.resolveCurrentIdentity());
+        
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                AiResourceConstants.VERSION_STATUS_ONLINE);
+        if (StringUtils.equals(info.getEditingVersion(), version)) {
+            info.setEditingVersion(null);
+        }
+        if (StringUtils.equals(info.getReviewingVersion(), version)) {
+            info.setReviewingVersion(null);
+        }
+        Integer cnt = info.getOnlineCnt();
+        info.setOnlineCnt(cnt == null ? 1 : (cnt + 1));
+        if (info.getLabels() == null) {
+            info.setLabels(new HashMap<>(4));
+        }
+        if (updateLatestLabel) {
+            info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
+        }
+        updateVersionInfoCas(namespaceId, meta, info);
+        return v;
+    }
+    
+    /**
+     * Validate that labels don't reference draft/reviewing versions, then CAS-update labels.
+     */
+    public void validateAndUpdateLabels(String namespaceId, String name, String type,
+            Map<String, String> labels) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name, type);
+        VisibilityHelper.checkWritableResource(meta);
+        ResourceVersionInfo info = requireVersionInfo(meta);
+        if (labels != null) {
+            String editing = info.getEditingVersion();
+            String reviewing = info.getReviewingVersion();
+            for (Map.Entry<String, String> entry : labels.entrySet()) {
+                String targetVersion = entry.getValue();
+                if (StringUtils.isNotBlank(editing) && editing.equals(targetVersion)) {
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                            ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "Label '" + entry.getKey() + "' cannot point to draft version: " + targetVersion);
+                }
+                if (StringUtils.isNotBlank(reviewing) && reviewing.equals(targetVersion)) {
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                            ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "Label '" + entry.getKey() + "' cannot point to reviewing version: " + targetVersion);
+                }
+            }
+        }
+        info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
+        updateVersionInfoCas(namespaceId, meta, info);
+    }
+    
+    /**
+     * Update the scope of a resource (requireMeta + checkWritable + persist).
+     */
+    public void doUpdateScope(String namespaceId, String name, String type, String scope) throws NacosException {
+        AiResource meta = requireMeta(namespaceId, name, type);
+        VisibilityHelper.checkWritableResource(meta);
+        boolean ok = aiResourcePersistService.updateScope(namespaceId, name, type, scope.toUpperCase());
+        if (!ok) {
+            LOGGER.error("Failed to update scope for {} {}, namespace: {}, scope: {}", type, name, namespaceId, scope);
+            throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                    "Failed to update scope for " + type + ": " + name);
+        }
+    }
+    
+    /**
+     * Toggle a single version's online/offline status and adjust meta onlineCnt.
+     *
+     * @return the version row if a status change occurred, or {@code null} if already in the target status
+     */
+    public AiResourceVersion toggleVersionOnlineStatus(String namespaceId, AiResource meta,
+            ResourceVersionInfo info, String version, boolean online) throws NacosException {
+        String name = meta.getName();
+        String type = meta.getType();
+        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (v == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    type + " version not found: " + name + "@" + version);
+        }
+        String targetStatus = online ? AiResourceConstants.VERSION_STATUS_ONLINE
+                : AiResourceConstants.VERSION_STATUS_OFFLINE;
+        if (targetStatus.equalsIgnoreCase(v.getStatus())) {
+            return null;
+        }
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version, targetStatus);
+        Integer cnt = info.getOnlineCnt() == null ? 0 : info.getOnlineCnt();
+        info.setOnlineCnt(online ? cnt + 1 : Math.max(0, cnt - 1));
+        updateVersionInfoCas(namespaceId, meta, info);
+        return v;
+    }
+    
+    /**
+     * Create a new meta row (when {@code isNew}) or CAS-update the editing pointer on an existing one.
+     */
+    public void initOrUpdateMetaForDraft(String namespaceId, String name, String type, String description,
+            String bizTags, String version, AiResource existedMeta, boolean isNew) throws NacosException {
+        if (isNew) {
+            String currentUser = VisibilityHelper.resolveCurrentIdentity();
+            AiResource meta = new AiResource();
+            meta.setNamespaceId(namespaceId);
+            meta.setName(name);
+            meta.setType(type);
+            meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
+            meta.setDesc(description);
+            meta.setBizTags(bizTags);
+            meta.setOwner(currentUser);
+            ResourceVersionInfo info = new ResourceVersionInfo();
+            info.setEditingVersion(version);
+            info.setOnlineCnt(0);
+            info.setLabels(new HashMap<>(4));
+            meta.setVersionInfo(JacksonUtils.toJson(info));
+            meta.setMetaVersion(1L);
+            aiResourcePersistService.insert(meta);
+        } else if (existedMeta != null) {
+            ResourceVersionInfo info = requireVersionInfo(existedMeta);
+            info.setEditingVersion(version);
+            updateVersionInfoCas(namespaceId, existedMeta, info);
+        }
+    }
+    
+    /**
+     * Resolve the base version to copy from when creating a draft.
+     *
+     * <p>Priority: explicit basedOnVersion → "latest" label → highest semver → highest vN.
+     * Returns {@code null} if no version exists yet.</p>
+     *
+     * @throws NacosApiException if an explicit basedOnVersion was given but cannot be resolved
+     */
+    public String resolveBaseVersion(String namespaceId, String name, String type, AiResource meta,
+            String basedOnVersion) throws NacosException {
+        if (StringUtils.isNotBlank(basedOnVersion)) {
+            String resolved = resolveVersion(meta, basedOnVersion, null);
+            if (StringUtils.isBlank(resolved)) {
+                throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                        "Base version not found for " + type + ": " + name + ", basedOnVersion: " + basedOnVersion);
+            }
+            return resolved;
+        }
+        String latest = resolveVersion(meta, null, AiResourceConstants.LABEL_LATEST);
+        if (StringUtils.isNotBlank(latest)) {
+            return latest;
+        }
+        List<String> existingVersions = listExistingVersions(namespaceId, name, type);
+        String maxSemver = VersionUtils.maxSemver(existingVersions);
+        return StringUtils.isNotBlank(maxSemver) ? maxSemver : VersionUtils.maxVNumberVersion(existingVersions);
+    }
+    
+    /**
+     * Ensure no editing or reviewing version exists; throw CONFLICT otherwise.
+     *
+     * @param info   the parsed version info
+     * @param action action description for error message (e.g. "upload", "create draft")
+     */
+    public static void ensureNoWorkingVersion(ResourceVersionInfo info, String action) throws NacosException {
+        if (StringUtils.isNotBlank(info.getEditingVersion()) || StringUtils.isNotBlank(info.getReviewingVersion())) {
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
+                    "There is already a working version (editing/reviewing), cannot " + action);
+        }
+    }
+    
+    /**
+     * Build a page result from items and the source meta page.
+     */
+    public static <T> Page<T> buildPageResult(List<T> items, Page<?> sourcePage, int pageNo) {
+        Page<T> result = new Page<>();
+        result.setPageItems(items);
+        result.setTotalCount(sourcePage == null ? 0 : sourcePage.getTotalCount());
+        result.setPagesAvailable(sourcePage == null ? 0 : sourcePage.getPagesAvailable());
+        result.setPageNumber(pageNo);
+        return result;
+    }
+    
+    /**
+     * Functional interface for deleting storage associated with a specific version.
+     */
+    @FunctionalInterface
+    public interface VersionStorageDeleter {
+        
+        void deleteStorage(AiResourceVersion version) throws NacosException;
+    }
+    
+    /**
+     * Delete meta and all version rows for a resource, invoking the given deleter for each version's storage.
+     */
+    public void deleteResourceWithVersions(String namespaceId, String name, String type,
+            VersionStorageDeleter storageDeleter) throws NacosException {
+        aiResourcePersistService.delete(namespaceId, name, type);
+        Page<AiResourceVersion> versions = aiResourceVersionPersistService.list(namespaceId, name, type, null, 1, 200);
+        aiResourceVersionPersistService.deleteByNameAndType(namespaceId, name, type);
+        if (versions != null && versions.getPageItems() != null) {
+            for (AiResourceVersion v : versions.getPageItems()) {
+                if (v == null || StringUtils.isBlank(v.getVersion())) {
+                    continue;
+                }
+                storageDeleter.deleteStorage(v);
+            }
+        }
+    }
+    
+    /**
+     * Execute the publish pipeline for a resource version. Returns {@code true} if the pipeline is processing
+     * asynchronously. Returns {@code false} if the pipeline fell through synchronously (caller should do direct
+     * publish).
+     */
+    public boolean runPipelineExecution(String namespaceId, String name, String type, String version,
+            ResourceFilesPipelineContext ctx, PublishPipelineExecutor executor) {
+        String executionId = UUID.randomUUID().toString();
+        writePipelineInfoInProgress(namespaceId, name, type, version, executionId);
+        String result = executor.execute(ctx,
+                r -> onPipelineComplete(namespaceId, name, type, version, r), executionId);
+        if (StringUtils.isBlank(result)) {
+            clearPipelineInfo(namespaceId, name, type, version);
+            return false;
+        }
+        return true;
+    }
     
     /**
      * Handle pipeline completion: persist pipeline info and rollback to draft on rejection.
