@@ -582,9 +582,22 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             }
         }
         
+        // Delete legacy latest mirror in nacos-ai-prompt group
+        deleteLegacyLatestMirror(namespaceId, promptKey);
+        
         // Delete DB rows
         aiResourceVersionPersistService.deleteByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         aiResourcePersistService.delete(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+    }
+    
+    private void deleteLegacyLatestMirror(String namespaceId, String promptKey) {
+        try {
+            final String latestDataId = PromptVersionUtils.buildDataId(promptKey);
+            configOperationService.deleteConfig(latestDataId, Constants.Prompt.PROMPT_GROUP, namespaceId, null, null,
+                    "nacos", null);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to delete legacy latest mirror for prompt: {}", promptKey, e);
+        }
     }
     
     @Override

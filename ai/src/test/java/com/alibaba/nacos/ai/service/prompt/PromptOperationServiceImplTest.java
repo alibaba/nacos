@@ -551,6 +551,41 @@ class PromptOperationServiceImplTest {
         verify(aiResourcePersistService).delete(NS, PROMPT_KEY, PROMPT_TYPE);
     }
     
+    @Test
+    void testDeletePromptShouldCleanLegacyLatestMirror() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{\"latest\":\"0.0.1\"}}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        
+        Page<AiResourceVersion> vPage = new Page<>();
+        vPage.setPageItems(Collections.singletonList(createVersionRow("0.0.1", "online")));
+        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(vPage);
+        
+        service.deletePrompt(NS, PROMPT_KEY);
+        
+        // Should delete legacy mirror: dataId=test-prompt.json, group=nacos-ai-prompt
+        verify(configOperationService).deleteConfig(eq(PROMPT_KEY + ".json"), eq("nacos-ai-prompt"), eq(NS),
+                any(), any(), eq("nacos"), any());
+    }
+    
+    @Test
+    void testDeletePromptShouldNotFailWhenLegacyMirrorDeleteThrows() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        
+        Page<AiResourceVersion> emptyPage = new Page<>();
+        emptyPage.setPageItems(new ArrayList<>());
+        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(emptyPage);
+        
+        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), any(), any(), anyString(),
+                any())).thenThrow(new RuntimeException("simulated failure"));
+        
+        // Should NOT throw despite legacy mirror delete failure
+        service.deletePrompt(NS, PROMPT_KEY);
+        
+        verify(aiResourceVersionPersistService).deleteByNameAndType(NS, PROMPT_KEY, PROMPT_TYPE);
+        verify(aiResourcePersistService).delete(NS, PROMPT_KEY, PROMPT_TYPE);
+    }
+    
     // ========== getPromptDetail / getPromptVersionDetail ==========
     
     @Test
