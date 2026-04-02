@@ -24,7 +24,7 @@ const styles = {
 };
 
 const distPath = path.join(__dirname, '../dist/');
-const rootPath = path.join(__dirname, '../../console/src/main/resources/static/');
+const rootPath = path.join(__dirname, '../../console/src/main/resources/static/legacy/');
 
 console.log('\n\n> Start copying the dist directory...\n');
 

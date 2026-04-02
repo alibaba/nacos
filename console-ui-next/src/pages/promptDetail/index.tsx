@@ -129,6 +129,7 @@ export default function PromptDetailPage() {
   const [isEditingDraft, setIsEditingDraft] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [editCommitMsg, setEditCommitMsg] = useState('');
+  const [editVariables, setEditVariables] = useState<Array<{ name: string; defaultValue: string; description: string }>>([]);
 
   // Delete confirm
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -232,6 +233,11 @@ export default function PromptDetailPage() {
       setTemplate(versionInfo.template || '');
       setIsEditingDraft(false);
       setEditCommitMsg(versionInfo.commitMsg || '');
+      setEditVariables((versionInfo.variables || []).map(v => ({
+        name: v.name,
+        defaultValue: v.defaultValue || '',
+        description: v.description || '',
+      })));
       const initialVals: Record<string, string> = {};
       (versionInfo.variables || []).forEach((v) => {
         if (v.defaultValue) initialVals[v.name] = v.defaultValue;
@@ -333,10 +339,14 @@ export default function PromptDetailPage() {
   const handleStartEdit = () => setIsEditingDraft(true);
 
   const handleCancelEdit = () => {
-    // Revert to server state
     if (versionInfo) {
       setTemplate(versionInfo.template || '');
       setEditCommitMsg(versionInfo.commitMsg || '');
+      setEditVariables((versionInfo.variables || []).map(v => ({
+        name: v.name,
+        defaultValue: v.defaultValue || '',
+        description: v.description || '',
+      })));
       const initialVals: Record<string, string> = {};
       (versionInfo.variables || []).forEach((v) => {
         if (v.defaultValue) initialVals[v.name] = v.defaultValue;
@@ -350,9 +360,14 @@ export default function PromptDetailPage() {
     if (!isEditingDraft) return;
     setSavingDraft(true);
     try {
+      // Use editVariables for variable definitions (defaults + descriptions)
       const variablesDef = variables.map((name) => {
-        const svrVar = (versionInfo?.variables || []).find((sv) => sv.name === name);
-        return { name, defaultValue: variableValues[name] || svrVar?.defaultValue || '', description: svrVar?.description || '' };
+        const editVar = editVariables.find((ev) => ev.name === name);
+        return {
+          name,
+          defaultValue: editVar?.defaultValue || '',
+          description: editVar?.description || '',
+        };
       });
       const ok = await storeUpdateDraft({
         promptKey,
@@ -1020,32 +1035,83 @@ export default function PromptDetailPage() {
 
           {/* Variables Card */}
           <Card className="overflow-hidden py-0 gap-0">
-            <div className="px-5 py-3.5 border-b bg-muted/30">
+            <div className="px-4 py-3 border-b bg-muted/30">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Variable className="h-4 w-4 text-amber-500" />
                 {t('prompt.variables')}
-                {(versionInfo?.variables?.length ?? 0) > 0 && (
-                  <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[11px] font-semibold px-1.5">
-                    {versionInfo!.variables.length}
-                  </span>
+                {variables.length > 0 && (
+                  <Badge variant="secondary" className="h-5 text-[10px] px-1.5 font-mono">{variables.length}</Badge>
                 )}
               </h2>
             </div>
-            <CardContent className="p-4">
-              {!versionInfo?.variables?.length ? (
-                <p className="text-sm text-muted-foreground text-center py-4">{t('prompt.noVariables')}</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {versionInfo.variables.map((v) => (
-                    <div key={v.name} className="rounded-lg border bg-muted/20 px-3 py-2 space-y-1">
-                      <span className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-400">{`{{${v.name}}}`}</span>
-                      {v.defaultValue && (
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <span className="text-muted-foreground shrink-0">{t('prompt.variableDefault')}:</span>
-                          <code className="text-xs bg-muted/50 px-1.5 py-0.5 rounded font-mono">{v.defaultValue}</code>
+            <CardContent className="p-0">
+              {variables.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <Variable className="h-6 w-6 text-muted-foreground/30 mb-2" />
+                  <p className="text-xs">{t('prompt.noVariables')}</p>
+                </div>
+              ) : isEditingDraft ? (
+                <div className="divide-y divide-border">
+                  {variables.map((varName) => {
+                    const editVar = editVariables.find((ev) => ev.name === varName);
+                    return (
+                      <div key={varName} className="p-3 space-y-2 hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                          <code className="text-[11px] font-mono font-medium text-amber-700 dark:text-amber-300">{varName}</code>
                         </div>
+                        <div className="pl-3.5 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground w-10 shrink-0">{t('prompt.variableDefault')}</span>
+                            <Input
+                              value={editVar?.defaultValue || ''}
+                              onChange={(e) => {
+                                setEditVariables((prev) => {
+                                  const next = [...prev];
+                                  const idx = next.findIndex((v) => v.name === varName);
+                                  if (idx >= 0) next[idx] = { ...next[idx], defaultValue: e.target.value };
+                                  else next.push({ name: varName, defaultValue: e.target.value, description: '' });
+                                  return next;
+                                });
+                              }}
+                              className="h-6 text-[11px] bg-background"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground w-10 shrink-0">{t('prompt.variableDescription')}</span>
+                            <Input
+                              value={editVar?.description || ''}
+                              onChange={(e) => {
+                                setEditVariables((prev) => {
+                                  const next = [...prev];
+                                  const idx = next.findIndex((v) => v.name === varName);
+                                  if (idx >= 0) next[idx] = { ...next[idx], description: e.target.value };
+                                  else next.push({ name: varName, defaultValue: '', description: e.target.value });
+                                  return next;
+                                });
+                              }}
+                              className="h-6 text-[11px] bg-background"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {(versionInfo?.variables || []).map((v) => (
+                    <div key={v.name} className="p-3 hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                        <code className="text-[11px] font-mono font-medium text-amber-700 dark:text-amber-300">{v.name}</code>
+                        {v.defaultValue && (
+                          <code className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-auto truncate max-w-[120px]">{v.defaultValue}</code>
+                        )}
+                      </div>
+                      {v.description && (
+                        <p className="text-[10px] text-muted-foreground mt-1 pl-3.5 leading-relaxed">{v.description}</p>
                       )}
-                      {v.description && <p className="text-[11px] text-muted-foreground">{v.description}</p>}
                     </div>
                   ))}
                 </div>
