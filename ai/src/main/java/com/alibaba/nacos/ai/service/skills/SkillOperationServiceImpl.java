@@ -334,7 +334,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     private List<String> listExistingVersions(String namespaceId, String skillName) throws NacosException {
-        Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 500);
+        Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, skillName,
+                RESOURCE_TYPE_SKILL, null, 1, 500);
         if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
             return Collections.emptyList();
         }
@@ -512,7 +513,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         SkillVersionInfo versionInfo = requireVersionInfo(meta);
 
         // Load all version summaries
-        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
+        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, skillName,
+                RESOURCE_TYPE_SKILL, null, 1, 200);
         List<SkillMeta.SkillVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
             for (AiResourceVersion v : versionPage.getPageItems()) {
@@ -595,7 +597,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         aiResourcePersistService.delete(namespaceId, skillName, RESOURCE_TYPE_SKILL);
 
         // 3) version rows (list before delete to get storage info)
-        Page<AiResourceVersion> versions = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
+        Page<AiResourceVersion> versions = aiResourceVersionPersistService.list(namespaceId, skillName,
+                RESOURCE_TYPE_SKILL, null, 1, 200);
         aiResourceVersionPersistService.deleteByNameAndType(namespaceId, skillName, RESOURCE_TYPE_SKILL);
 
         // 4) storage files
@@ -1333,7 +1336,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     ? new HashMap<>(vInfo.getLabels()) : new HashMap<>(4));
             manifest.setVersions(new HashMap<>(4));
 
-            Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
+            Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, name,
+                    RESOURCE_TYPE_SKILL, null, 1, 200);
             if (versionPage != null && versionPage.getPageItems() != null) {
                 for (AiResourceVersion v : versionPage.getPageItems()) {
                     if (v == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {

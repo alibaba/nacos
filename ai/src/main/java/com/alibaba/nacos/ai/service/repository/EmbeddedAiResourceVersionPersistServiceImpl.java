@@ -124,11 +124,6 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
     }
 
     @Override
-    public Page<AiResourceVersion> listAll(String namespaceId, String name, int pageNo, int pageSize) {
-        return list(namespaceId, name, null, null, pageNo, pageSize);
-    }
-
-    @Override
     public int delete(String namespaceId, String name, String type, String version) {
         AiResourceVersion existed = find(namespaceId, name, type, version);
         if (existed == null) {

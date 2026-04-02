@@ -161,7 +161,7 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
         vPage.setPageItems(List.of());
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
         SkillMeta skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
@@ -203,7 +203,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v1.setVersion("v1");
         vPage.setPageItems(List.of(v1));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
         skillOperationService.deleteSkill(namespaceId, skillName);
@@ -329,7 +329,7 @@ class SkillOperationServiceImplTest {
         v1.setVersion("v2");
         versions.setPageItems(List.of(v1));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -411,7 +411,7 @@ class SkillOperationServiceImplTest {
         v2.setVersion("3.0.7");
         versions.setPageItems(List.of(v1, v2));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -439,7 +439,7 @@ class SkillOperationServiceImplTest {
         v1.setVersion("3.0.7");
         versions.setPageItems(List.of(v1));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -467,7 +467,7 @@ class SkillOperationServiceImplTest {
         v1.setVersion("3.0.7");
         versions.setPageItems(List.of(v1));
         when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq("test-skill"), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
                 .thenReturn(true);
@@ -870,7 +870,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v2.setVersion("1.2.0");
         versions.setPageItems(List.of(v, v2));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
 
         com.alibaba.nacos.ai.model.AiResourceVersion baseVersion = new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -909,7 +909,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v.setVersion("1.1.3");
         versions.setPageItems(List.of(v));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         
         com.alibaba.nacos.ai.model.AiResourceVersion baseVersion = new com.alibaba.nacos.ai.model.AiResourceVersion();
@@ -950,7 +950,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v2 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v2.setVersion("1.1.4");
         versions.setPageItems(List.of(v1, v2));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
@@ -976,7 +976,7 @@ class SkillOperationServiceImplTest {
         com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
         v1.setVersion("1.1.3");
         versions.setPageItems(List.of(v1));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(versions);
         
         NacosApiException ex = assertThrows(NacosApiException.class,

@@ -33,8 +33,6 @@ public interface AiResourceVersionPersistService {
 
     Page<AiResourceVersion> list(String namespaceId, String name, String type, String status, int pageNo, int pageSize);
 
-    Page<AiResourceVersion> listAll(String namespaceId, String name, int pageNo, int pageSize);
-
     int delete(String namespaceId, String name, String type, String version);
 
     int deleteByName(String namespaceId, String name);
