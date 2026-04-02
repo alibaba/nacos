@@ -232,14 +232,25 @@ public class SkillScannerPipelineService implements PublishPipelineService {
 
     private List<ResourceFileContent> normalizeFilesForScanner(PublishPipelineContext context,
             List<ResourceFileContent> files) {
-        if (context.getResourceType() != PublishPipelineResourceType.AGENTSPEC || containsSkillMarkdown(files)) {
+        if (containsSkillMarkdown(files)) {
             return files;
         }
-
-        List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
-        result.add(new ResourceFileContent("SKILL.md", buildAgentSpecSkillMarkdown(context, files)));
-        result.addAll(files);
-        return result;
+        
+        if (context.getResourceType() == PublishPipelineResourceType.AGENTSPEC) {
+            List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
+            result.add(new ResourceFileContent("SKILL.md", buildAgentSpecSkillMarkdown(context, files)));
+            result.addAll(files);
+            return result;
+        }
+        
+        if (context.getResourceType() == PublishPipelineResourceType.PROMPT) {
+            List<ResourceFileContent> result = new ArrayList<>(files.size() + 1);
+            result.add(new ResourceFileContent("SKILL.md", buildPromptSkillMarkdown(context, files)));
+            result.addAll(files);
+            return result;
+        }
+        
+        return files;
     }
 
     private boolean containsSkillMarkdown(List<ResourceFileContent> files) {
@@ -255,6 +266,24 @@ public class SkillScannerPipelineService implements PublishPipelineService {
         StringBuilder builder = new StringBuilder();
         builder.append("# AgentSpec ").append(context.getResourceName()).append("\n\n");
         builder.append("Generated from AgentSpec pipeline context for skill-scanner compatibility.\n");
+        for (ResourceFileContent file : files) {
+            if (file == null || file.getFilePath() == null) {
+                continue;
+            }
+            builder.append("\n## File: ").append(file.getFilePath()).append("\n\n");
+            String content = file.getContent();
+            if (content != null) {
+                builder.append(content);
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
+    }
+    
+    private String buildPromptSkillMarkdown(PublishPipelineContext context, List<ResourceFileContent> files) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("# Prompt ").append(context.getResourceName()).append("\n\n");
+        builder.append("Generated from Prompt pipeline context for skill-scanner compatibility.\n");
         for (ResourceFileContent file : files) {
             if (file == null || file.getFilePath() == null) {
                 continue;
@@ -295,7 +324,8 @@ public class SkillScannerPipelineService implements PublishPipelineService {
     public PublishPipelineResourceType[] pipelineResourceTypes() {
         return new PublishPipelineResourceType[] {
                 PublishPipelineResourceType.SKILL,
-                PublishPipelineResourceType.AGENTSPEC
+                PublishPipelineResourceType.AGENTSPEC,
+                PublishPipelineResourceType.PROMPT
         };
     }
 }

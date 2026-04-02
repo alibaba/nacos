@@ -638,6 +638,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 vs.setSrcUser(v.getAuthor());
                 vs.setCommitMsg(v.getDesc());
                 vs.setGmtModified(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
+                vs.setPublishPipelineInfo(v.getPublishPipelineInfo());
                 versionDetails.add(vs);
             }
         }

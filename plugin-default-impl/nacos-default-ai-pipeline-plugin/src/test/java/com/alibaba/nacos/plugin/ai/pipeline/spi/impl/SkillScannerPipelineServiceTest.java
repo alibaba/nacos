@@ -73,6 +73,7 @@ class SkillScannerPipelineServiceTest {
         assertNotNull(service.pipelineResourceTypes());
         assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.SKILL));
         assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.AGENTSPEC));
+        assertTrue(Arrays.asList(service.pipelineResourceTypes()).contains(PublishPipelineResourceType.PROMPT));
     }
 
     @Test
@@ -350,6 +351,19 @@ class SkillScannerPipelineServiceTest {
         assertFalse(result.getCheckpoints().get(0).getPassed());
     }
 
+    @Test
+    void executePromptContextGeneratesSkillMdTest() {
+        SkillScannerPipelineService installedService = createStubService(StubScanMode.PASS_PROMPT);
+        ResourceFilesPipelineContext context = createPromptContext("test-prompt",
+                "{\"template\":\"You are a helpful assistant.\",\"variables\":[]}");
+
+        PublishPipelineResult result = installedService.execute(context);
+
+        assertNotNull(result);
+        assertTrue(result.isPassed(), "Expected pass: " + result.getMessage());
+        assertTrue(result.getMessage().contains("扫描通过"));
+    }
+
     private SkillScannerPipelineService createStubService(StubScanMode mode) {
         return createStubService(mode, SkillScannerScanOptions.none());
     }
@@ -417,11 +431,24 @@ class SkillScannerPipelineServiceTest {
         return ctx;
     }
 
+    private ResourceFilesPipelineContext createPromptContext(String name, String promptContent) {
+        ResourceFilesPipelineContext ctx = new ResourceFilesPipelineContext();
+        ctx.setResourceType(PublishPipelineResourceType.PROMPT);
+        ctx.setResourceName(name);
+        ctx.setNamespaceId("public");
+        ctx.setVersion("v1");
+        List<ResourceFileContent> files = new ArrayList<>();
+        files.add(new ResourceFileContent("prompt-main.json", promptContent));
+        ctx.setFiles(files);
+        return ctx;
+    }
+
     private enum StubScanMode {
         PASS_SKILL,
         REJECT_SKILL,
         PASS_AGENTSPEC,
         REJECT_AGENTSPEC,
+        PASS_PROMPT,
         VERIFY_LLM_ENV
     }
 
@@ -481,6 +508,10 @@ class SkillScannerPipelineServiceTest {
                             "Agent spec override",
                             "AgentSpec 聚合扫描中发现疑似指令覆盖（stub，模拟 `skill-scanner --format markdown --detailed` 报告形态）。");
                     System.exit(3);
+                    return;
+                case PASS_PROMPT:
+                    requireContains(root.resolve("SKILL.md"), "Generated from Prompt pipeline context");
+                    requireContains(root.resolve("prompt-main.json"), "helpful assistant");
                     return;
                 case VERIFY_LLM_ENV:
                     requireEnv("SKILL_SCANNER_LLM_API_KEY", "test-api-key");

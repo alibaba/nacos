@@ -39,6 +39,8 @@ public class PromptVersionSummary implements Serializable {
     
     private Long gmtModified;
     
+    private String publishPipelineInfo;
+    
     public String getPromptKey() {
         return promptKey;
     }
@@ -85,5 +87,13 @@ public class PromptVersionSummary implements Serializable {
     
     public void setGmtModified(Long gmtModified) {
         this.gmtModified = gmtModified;
+    }
+    
+    public String getPublishPipelineInfo() {
+        return publishPipelineInfo;
+    }
+    
+    public void setPublishPipelineInfo(String publishPipelineInfo) {
+        this.publishPipelineInfo = publishPipelineInfo;
     }
 }
