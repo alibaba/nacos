@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.repository;
 
 import com.alibaba.nacos.ai.model.AiResourceVersion;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -71,7 +72,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
 
         Object[] args = new Object[] {version.getType(), version.getAuthor(), version.getName(), version.getDesc(),
-                version.getStatus(), version.getVersion(), StringUtils.defaultEmptyIfBlank(version.getNamespaceId()),
+                version.getStatus(), version.getVersion(), normalizeNamespaceId(version.getNamespaceId()),
                 version.getStorage(), version.getPublishPipelineInfo()};
 
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -97,7 +98,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                         "namespace_id", "storage", "publish_pipeline_info", "download_count"),
                 Arrays.asList("namespace_id", "name", "type", "version"));
         return databaseOperate.queryOne(sql,
-                new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version},
+                new Object[] {normalizeNamespaceId(namespaceId), name, type, version},
                 AiResourceRowMappers.AI_RESOURCE_VERSION_ROW_MAPPER);
     }
 
@@ -109,7 +110,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 TableConstant.AI_RESOURCE_VERSION);
 
         MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
-        context.putWhereParameter(FieldConstant.NAMESPACE_ID, StringUtils.defaultEmptyIfBlank(namespaceId));
+        context.putWhereParameter(FieldConstant.NAMESPACE_ID, normalizeNamespaceId(namespaceId));
         context.putWhereParameter(FieldConstant.NAME, name);
         if (StringUtils.isNotBlank(type)) {
             context.putWhereParameter(FieldConstant.TYPE, type);
@@ -135,7 +136,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type", "version"));
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+                new Object[] {normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -146,7 +147,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name"));
 
-        EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name});
+        EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {normalizeNamespaceId(namespaceId), name});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -158,7 +159,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {StringUtils.defaultEmptyIfBlank(namespaceId), name, type});
+                new Object[] {normalizeNamespaceId(namespaceId), name, type});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -174,7 +175,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {status, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+                new Object[] {status, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -190,7 +191,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {storage, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+                new Object[] {storage, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -207,7 +208,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {storage, desc, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+                new Object[] {storage, desc, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -224,7 +225,7 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {publishPipelineInfo, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+                new Object[] {publishPipelineInfo, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
     }
@@ -240,9 +241,13 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
                 + mapper.getFunction("NOW()") + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
 
         EmbeddedStorageContextHolder.addSqlContext(sql,
-                new Object[] {increment, StringUtils.defaultEmptyIfBlank(namespaceId), name, type, version});
+                new Object[] {increment, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
         return (success != null && success) ? 1 : 0;
+    }
+    
+    private String normalizeNamespaceId(String namespaceId) {
+        return StringUtils.isBlank(namespaceId) ? Constants.DEFAULT_NAMESPACE_ID : namespaceId;
     }
 }
 

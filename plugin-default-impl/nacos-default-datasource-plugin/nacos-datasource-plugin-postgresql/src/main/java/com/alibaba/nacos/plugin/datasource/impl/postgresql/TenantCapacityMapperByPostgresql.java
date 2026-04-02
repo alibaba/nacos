@@ -105,7 +105,8 @@ public class TenantCapacityMapperByPostgresql extends BaseTenantCapacityMapper {
 
         return new MapperResult(
                 "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
-                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?",
+                        + "max_history_count, gmt_create, gmt_modified)"
+                        + " SELECT ?, ?, count(*), ?, ?, ?, 0, ?, ? FROM config_info WHERE tenant_id=?",
                 paramList);
     }
 }

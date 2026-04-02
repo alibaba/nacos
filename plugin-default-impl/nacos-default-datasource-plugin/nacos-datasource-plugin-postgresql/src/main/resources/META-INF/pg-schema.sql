@@ -142,7 +142,7 @@ CREATE TABLE "group_capacity" (
   "max_size" int4 NOT NULL,
   "max_aggr_count" int4 NOT NULL,
   "max_aggr_size" int4 NOT NULL,
-  "max_history_count" int4 NOT NULL,
+  "max_history_count" int4 NOT NULL DEFAULT 0,
   "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
@@ -228,8 +228,9 @@ CREATE TABLE "roles" (
 -- ----------------------------
 -- Records of roles
 -- ----------------------------
+-- No seed rows: MySQL schema also leaves `roles` empty so the console can run first-time admin setup.
+-- A row like ('nacos', 'ROLE_ADMIN') blocks that flow when the DB account name is `nacos` (common JDBC user).
 BEGIN;
-INSERT INTO "roles" VALUES ('nacos', 'ROLE_ADMIN');
 COMMIT;
 
 -- ----------------------------
@@ -244,7 +245,7 @@ CREATE TABLE "tenant_capacity" (
   "max_size" int4 NOT NULL,
   "max_aggr_count" int4 NOT NULL,
   "max_aggr_size" int4 NOT NULL,
-  "max_history_count" int4 NOT NULL,
+  "max_history_count" int4 NOT NULL DEFAULT 0,
   "gmt_create" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
@@ -419,7 +420,7 @@ CREATE TABLE "ai_resource" (
   "gmt_modified" timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "name" varchar(256) NOT NULL,
   "type" varchar(32) NOT NULL,
-  "c_desc" varchar(512),
+  "c_desc" varchar(1024),
   "status" varchar(32),
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
   "biz_tags" varchar(1024),
@@ -480,7 +481,7 @@ CREATE TABLE "ai_resource_version" (
   "type" varchar(32) NOT NULL,
   "author" varchar(128),
   "name" varchar(256) NOT NULL,
-  "c_desc" varchar(512),
+  "c_desc" varchar(1024),
   "status" varchar(32) NOT NULL,
   "version" varchar(64) NOT NULL,
   "namespace_id" varchar(128) NOT NULL DEFAULT '',
