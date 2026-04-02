@@ -1447,8 +1447,10 @@ class SkillOperationServiceImplTest {
                 ("---\nname: my-skill\ndescription: desc\n---\n\nbody").getBytes());
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(1L), any()))
                 .thenReturn(true);
-        doAnswer(inv -> { vRow.setStatus("reviewing"); return null; })
-                .when(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName), anyString(),
+        doAnswer(inv -> {
+            vRow.setStatus("reviewing");
+            return null;
+        }).when(aiResourceVersionPersistService).updateStatus(eq(namespaceId), eq(skillName), anyString(),
                         eq("v1"), eq("reviewing"));
         com.alibaba.nacos.ai.model.skills.SkillIndexManifest manifest =
                 new com.alibaba.nacos.ai.model.skills.SkillIndexManifest();
