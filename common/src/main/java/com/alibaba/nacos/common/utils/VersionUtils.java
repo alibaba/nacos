@@ -339,10 +339,10 @@ public class VersionUtils {
      *
      * @param target target version string
      * @param base   base version string
-     * @return {@code true} if target &gt; base, {@code false} if target &lt;= base, {@code null} if formats are
-     *         incompatible or not recognized
+     * @return {@code true} if target &gt; base, {@code false} if target &lt;= base or formats are incompatible / not
+     *         recognized
      */
-    public static Boolean isGreaterVersion(String target, String base) {
+    public static boolean isGreaterVersion(String target, String base) {
         String targetSemver = normalizeSemver(target);
         String baseSemver = normalizeSemver(base);
         if (targetSemver != null && baseSemver != null) {
@@ -353,6 +353,6 @@ public class VersionUtils {
         if (targetLegacy != null && baseLegacy != null) {
             return targetLegacy > baseLegacy;
         }
-        return null;
+        return false;
     }
 }

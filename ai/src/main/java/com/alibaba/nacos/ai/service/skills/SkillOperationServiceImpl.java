@@ -358,8 +358,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "targetVersion already exists: " + candidate);
         }
         if (StringUtils.isNotBlank(basedOnVersion) && StringUtils.isNotBlank(baseVersion)) {
-            Boolean isGreater = VersionUtils.isGreaterVersion(candidate, baseVersion);
-            if (isGreater != null && !isGreater) {
+            boolean isGreater = VersionUtils.isGreaterVersion(candidate, baseVersion);
+            if (!isGreater) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                         "targetVersion must be greater than basedOnVersion, basedOnVersion=" + baseVersion
                                 + ", targetVersion=" + candidate);
