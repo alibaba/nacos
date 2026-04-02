@@ -16,7 +16,7 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
 
 Nacos (Dynamic Naming and Configuration Service) is a platform for building cloud-native applications. It provides: service discovery, dynamic configuration management, dynamic DNS service, and service/metadata management.
 
-**Current Version**: 3.2.0-SNAPSHOT | **Main Branch**: `develop` | **Java**: JDK 17+ (client modules: JDK 8+) | **Build**: Maven 3.6.3+
+**Current Version**: 3.2.1-SNAPSHOT | **Main Branch**: `develop` | **Java**: JDK 17+ (client modules: JDK 8+) | **Build**: Maven 3.6.3+
 
 ## Core Architecture
 
@@ -30,7 +30,7 @@ Key modules and their roles:
 - **auth**: Authentication and authorization
 - **plugin / plugin-default-impl**: Extensible plugin system (Java SPI). Types: auth, encryption, datasource, control, trace, config, environment
 - **console / console-ui**: Web UI backend (Spring Boot) and frontend (React)
-- **ai / mcp-registry-adaptor**: AI Agent support and MCP (Model Context Protocol) integration
+- **ai / copilot / ai-registry-adaptor**: AI Agent support, Copilot integration, and AI registry adaptor
 - **bootstrap / server**: Server startup and aggregation
 - **persistence**: Data persistence with multi-database support (Derby, MySQL, PostgreSQL)
 - **maintainer-client**: Internal maintenance client
@@ -79,7 +79,7 @@ Every new source file **must** include the Apache License 2.0 header. CI enforce
 
 ```java
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2026 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
