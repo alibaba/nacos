@@ -16,13 +16,14 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
 
 Nacos (Dynamic Naming and Configuration Service) is a platform for building cloud-native applications. It provides: service discovery, dynamic configuration management, dynamic DNS service, and service/metadata management.
 
-**Current Version**: 3.2.1-SNAPSHOT | **Main Branch**: `develop` | **Java**: JDK 17+ (client modules: JDK 8+) | **Build**: Maven 3.6.3+
+**Current Version**: 3.2.1-SNAPSHOT | **Main Branch**: `develop` | **Java**: JDK 17+ (client modules: JDK 8+) | **Build**: Maven 3.2.5+
 
 ## Core Architecture
 
 Key modules and their roles:
 
 - **api / client / client-basic**: Client-facing APIs, gRPC definitions, SDK (Java 8 compatible)
+- **common**: Shared utilities, HTTP client, notify center, executor
 - **config**: Configuration management server
 - **naming**: Service discovery and registration server
 - **core**: Core server infrastructure (cluster, distributed consensus)
@@ -31,6 +32,7 @@ Key modules and their roles:
 - **plugin / plugin-default-impl**: Extensible plugin system (Java SPI). Types: auth, encryption, datasource, control, trace, config, environment
 - **console / console-ui**: Web UI backend (Spring Boot) and frontend (React)
 - **ai / copilot / ai-registry-adaptor**: AI Agent support, Copilot integration, and AI registry adaptor
+- **sys**: System environment utilities and JVM parameter management
 - **bootstrap / server**: Server startup and aggregation
 - **persistence**: Data persistence with multi-database support (Derby, MySQL, PostgreSQL)
 - **maintainer-client**: Internal maintenance client
@@ -67,7 +69,7 @@ Follows **Alibaba Java Coding Guidelines**. Checkstyle config: [`style/NacosChec
 | Line length | **150 characters** max |
 | Star imports | **Forbidden** — always use explicit imports |
 | Unused imports | **Forbidden** |
-| Javadoc | Required for API methods (exemptions: `@Override`, `@Test`, `@Before`, `@After`, `@Bean`) |
+| Javadoc | Required for API methods (exemptions: `@Override`, `@Test`, `@Before`, `@After`, `@BeforeClass`, `@AfterClass`, `@Parameterized`, `@Parameters`, `@Bean`) |
 | Braces | Required for all `if/else/for/while/do-while` blocks, even single-line |
 | Switch | Must have `default` case; fall-through must be commented |
 | Naming | `camelCase` for methods/variables, `PascalCase` for classes, `UPPER_SNAKE_CASE` for constants |
@@ -115,6 +117,7 @@ Nacos v3 APIs follow strict conventions. AI agents **must** comply with these st
 | Naming Service | `ns` | Service discovery |
 | Core | `core` | Cluster, namespace management |
 | AI | `ai` | AI resource management |
+| Auth | `auth` | User, role, permission management |
 | Plugin | `plugin` | Plugin management |
 
 ### HTTP Method Semantics
@@ -194,6 +197,7 @@ All PRs must target the `develop` branch. Follow the [PR template](.github/PULL_
 ```bash
 mvn -B clean package apache-rat:check spotbugs:check -DskipTests
 mvn clean install -DskipITs
+mvn clean test-compile failsafe:integration-test
 ```
 
 ## Security Vulnerabilities
