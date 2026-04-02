@@ -6,31 +6,45 @@ import type {
   PromptMetaInfo,
   PromptVersionInfo,
   PromptVersionListResponse,
+  PromptDraftCreateData,
+  PromptDraftUpdateData,
+  PromptSubmitData,
   PromptPublishData,
-  PromptUpdateMetadataData,
-  PromptLabelBindData,
+  PromptOnlineOfflineData,
+  PromptLabelsUpdateData,
+  PromptDescriptionUpdateData,
+  PromptBizTagsUpdateData,
 } from '@/types/prompt';
 
+const BASE = 'v3/console/ai/prompt';
+
+/** Build form-urlencoded params from a data object, skipping undefined/null values */
+function toFormParams(data: object): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined && value !== null) {
+      params.append(key, String(value));
+    }
+  }
+  return params;
+}
+
+const FORM_HEADERS = { 'Content-Type': 'application/x-www-form-urlencoded' };
+
 export const promptApi = {
+  // ===== Read operations =====
+
   /** List prompts with pagination and search */
   listPrompts: (params: PromptListParams): ApiResult<PromptListResponse> =>
-    client.get('v3/console/ai/prompt/list', { params }) as ApiResult<PromptListResponse>,
+    client.get(`${BASE}/list`, { params }) as ApiResult<PromptListResponse>,
 
-  /** Get prompt metadata (versions, labels, description, bizTags) */
-  getPromptMetadata: (params: {
-    promptKey: string;
-    namespaceId?: string;
-  }): ApiResult<PromptMetaInfo> =>
-    client.get('v3/console/ai/prompt/metadata', { params }) as ApiResult<PromptMetaInfo>,
+  /** Get governance detail (full meta info with version details) */
+  getGovernanceDetail: (params: { promptKey: string; namespaceId?: string }): ApiResult<PromptMetaInfo> =>
+    client.get(`${BASE}/governance`, { params }) as ApiResult<PromptMetaInfo>,
 
-  /** Get prompt version detail */
-  getPromptDetail: (params: {
-    promptKey: string;
-    version?: string;
-    label?: string;
-    namespaceId?: string;
-  }): ApiResult<PromptVersionInfo> =>
-    client.get('v3/console/ai/prompt/detail', { params }) as ApiResult<PromptVersionInfo>,
+  /** Get version detail */
+  getVersionDetail: (params: { promptKey: string; version: string; namespaceId?: string }): ApiResult<PromptVersionInfo> =>
+    client.get(`${BASE}/version`, { params }) as ApiResult<PromptVersionInfo>,
 
   /** List version history (paginated) */
   listVersions: (params: {
@@ -39,60 +53,59 @@ export const promptApi = {
     pageNo?: number;
     pageSize?: number;
   }): ApiResult<PromptVersionListResponse> =>
-    client.get('v3/console/ai/prompt/versions', { params }) as ApiResult<PromptVersionListResponse>,
+    client.get(`${BASE}/versions`, { params }) as ApiResult<PromptVersionListResponse>,
 
-  /** Publish new prompt version (form-urlencoded) */
-  publishVersion: (data: PromptPublishData): ApiResult<boolean> => {
-    const params = new URLSearchParams();
-    params.append('promptKey', data.promptKey);
-    params.append('version', data.version);
-    params.append('template', data.template);
-    if (data.commitMsg) params.append('commitMsg', data.commitMsg);
-    if (data.description) params.append('description', data.description);
-    if (data.bizTags) params.append('bizTags', data.bizTags);
-    if (data.variables) params.append('variables', data.variables);
-    if (data.namespaceId) params.append('namespaceId', data.namespaceId);
-    return client.post('v3/console/ai/prompt', params, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    }) as ApiResult<boolean>;
-  },
+  // ===== Lifecycle write operations =====
 
-  /** Update prompt metadata (description/bizTags) */
-  updateMetadata: (data: PromptUpdateMetadataData): ApiResult<boolean> => {
-    const params = new URLSearchParams();
-    params.append('promptKey', data.promptKey);
-    if (data.description !== undefined) params.append('description', data.description);
-    if (data.bizTags !== undefined) params.append('bizTags', data.bizTags);
-    if (data.namespaceId) params.append('namespaceId', data.namespaceId);
-    return client.put('v3/console/ai/prompt/metadata', params, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    }) as ApiResult<boolean>;
-  },
+  /** Create draft */
+  createDraft: (data: PromptDraftCreateData): ApiResult<string> =>
+    client.post(`${BASE}/draft`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<string>,
 
-  /** Bind label to version */
-  bindLabel: (data: PromptLabelBindData): ApiResult<boolean> => {
-    const params = new URLSearchParams();
-    params.append('promptKey', data.promptKey);
-    params.append('label', data.label);
-    params.append('version', data.version);
-    if (data.namespaceId) params.append('namespaceId', data.namespaceId);
-    return client.put('v3/console/ai/prompt/label', params, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    }) as ApiResult<boolean>;
-  },
+  /** Update draft */
+  updateDraft: (data: PromptDraftUpdateData): ApiResult<boolean> =>
+    client.put(`${BASE}/draft`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
 
-  /** Unbind label */
-  unbindLabel: (params: {
-    promptKey: string;
-    label: string;
-    namespaceId?: string;
-  }): ApiResult<boolean> =>
-    client.delete('v3/console/ai/prompt/label', { params }) as ApiResult<boolean>,
+  /** Delete draft */
+  deleteDraft: (params: { promptKey: string; namespaceId?: string }): ApiResult<boolean> =>
+    client.delete(`${BASE}/draft`, { params }) as ApiResult<boolean>,
+
+  /** Submit for review */
+  submit: (data: PromptSubmitData): ApiResult<string> =>
+    client.post(`${BASE}/submit`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<string>,
+
+  /** Publish version */
+  publish: (data: PromptPublishData): ApiResult<boolean> =>
+    client.post(`${BASE}/publish`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  /** Force publish version (admin) */
+  forcePublish: (data: PromptPublishData): ApiResult<boolean> =>
+    client.post(`${BASE}/force-publish`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  /** Online version */
+  online: (data: PromptOnlineOfflineData): ApiResult<boolean> =>
+    client.post(`${BASE}/online`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  /** Offline version */
+  offline: (data: PromptOnlineOfflineData): ApiResult<boolean> =>
+    client.post(`${BASE}/offline`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  // ===== Metadata update operations =====
+
+  /** Update labels */
+  updateLabels: (data: PromptLabelsUpdateData): ApiResult<boolean> =>
+    client.put(`${BASE}/labels`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  /** Update description */
+  updateDescription: (data: PromptDescriptionUpdateData): ApiResult<boolean> =>
+    client.put(`${BASE}/description`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  /** Update biz tags */
+  updateBizTags: (data: PromptBizTagsUpdateData): ApiResult<boolean> =>
+    client.put(`${BASE}/biz-tags`, toFormParams(data), { headers: FORM_HEADERS }) as ApiResult<boolean>,
+
+  // ===== Delete =====
 
   /** Delete prompt */
-  deletePrompt: (params: {
-    promptKey: string;
-    namespaceId?: string;
-  }): ApiResult<boolean> =>
-    client.delete('v3/console/ai/prompt', { params }) as ApiResult<boolean>,
+  deletePrompt: (params: { promptKey: string; namespaceId?: string }): ApiResult<boolean> =>
+    client.delete(`${BASE}`, { params }) as ApiResult<boolean>,
 };
