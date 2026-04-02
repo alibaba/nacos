@@ -14,7 +14,7 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
 
 ## Repository Overview
 
-Nacos (Dynamic Naming and Configuration Service) is a platform for building cloud-native applications. It provides: service discovery, dynamic configuration management, dynamic DNS service, and service/metadata management.
+Nacos (Dynamic Naming and Configuration Service) is an easy-to-use platform designed for dynamic service discovery, configuration management, and AI agent management. It helps you build cloud-native applications and AI Agent applications easily. Key capabilities: service discovery, dynamic configuration, dynamic DNS service, service/metadata management, and AI registry (Prompt, MCP, A2A).
 
 **Current Version**: 3.2.1-SNAPSHOT | **Main Branch**: `develop` | **Java**: JDK 17+ (client modules: JDK 8+) | **Build**: Maven 3.2.5+
 
@@ -44,7 +44,7 @@ Communication: **gRPC** (primary) + **HTTP/REST** (legacy compatibility). Protob
 
 ```bash
 # Full build (skip tests)
-mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
+mvn '-Prelease-nacos,!dev' -Dmaven.test.skip=true clean install -U
 
 # Run all unit tests
 mvn test
@@ -59,7 +59,10 @@ mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTest
 
 ## Code Style
 
-Follows **Alibaba Java Coding Guidelines**. Checkstyle config: [`style/NacosCheckStyle.xml`](style/NacosCheckStyle.xml).
+Follows **Alibaba Java Coding Guidelines**.
+
+- Checkstyle config: [`style/NacosCheckStyle.xml`](style/NacosCheckStyle.xml)
+- IDEA code style: [`style/nacos-code-style-for-idea.xml`](style/nacos-code-style-for-idea.xml)
 
 ### Key Rules for AI Agents
 
@@ -81,7 +84,7 @@ Every new source file **must** include the Apache License 2.0 header. CI enforce
 
 ```java
 /*
- * Copyright 1999-2026 Alibaba Group Holding Ltd.
+ * Copyright 1999-${year} Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,8 +120,9 @@ Nacos v3 APIs follow strict conventions. AI agents **must** comply with these st
 | Naming Service | `ns` | Service discovery |
 | Core | `core` | Cluster, namespace management |
 | AI | `ai` | AI resource management |
-| Auth | `auth` | User, role, permission management |
 | Plugin | `plugin` | Plugin management |
+
+> **Note**: Auth APIs (`/v3/auth/user`, `/v3/auth/role`, `/v3/auth/permission`) are defined in `plugin-default-impl` module, not in core.
 
 ### HTTP Method Semantics
 
