@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
@@ -384,6 +385,9 @@ public class McpServerOperationService {
         
         // Delete the relevant cache after a successful database operation
         invalidateCacheAfterDbOperation(namespaceId, serverSpecification.getName(), id);
+        AiResourceTraceService.logSuccess("mcp", serverSpecification.getName(),
+                versionDetail.getVersion(), AiResourceTraceService.OP_CREATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         
         return id;
     }
@@ -489,6 +493,9 @@ public class McpServerOperationService {
         // Delete the relevant cache after a successful database operation
         invalidateCacheAfterDbUpdateOperation(namespaceId, mcpServerVersionInfo.getName(),
                 serverSpecification.getName(), mcpServerId);
+        AiResourceTraceService.logSuccess("mcp", serverSpecification.getName(),
+                updateVersion, isPublish ? AiResourceTraceService.OP_PUBLISH : AiResourceTraceService.OP_UPDATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -523,6 +530,10 @@ public class McpServerOperationService {
         
         // Delete the relevant cache after a successful database operation
         invalidateCacheAfterDbOperation(namespaceId, mcpName, mcpServerId);
+        AiResourceTraceService.logSuccess("mcp", mcpName, version,
+                StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
+                        : AiResourceTraceService.OP_DELETE_RESOURCE,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     private void injectToolAndEndpoint(String namespaceId, String mcpServerId, McpServerStorageInfo serverSpecification,

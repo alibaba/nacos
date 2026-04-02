@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
@@ -377,6 +378,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             // Brand-new agentspec: create v1 draft
             String version = "v1";
             createDraftWithAgentSpec(namespaceId, agentSpec, version, null, true);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, version, AiResourceTraceService.OP_UPLOAD,
+                    VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return name;
         }
         
@@ -389,6 +392,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String newVersion = nextVersion(namespaceId, name);
         createDraftWithAgentSpec(namespaceId, agentSpec, newVersion, meta, false);
         resourceManager.syncImportedMeta(namespaceId, meta, agentSpec.getDescription(), agentSpec.getBizTags());
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, newVersion, AiResourceTraceService.OP_UPLOAD,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return name;
     }
     
@@ -626,6 +631,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             emptyAgentSpec.setName(name);
             emptyAgentSpec.setNamespaceId(namespaceId);
             createDraftWithAgentSpec(namespaceId, emptyAgentSpec, "v1", null, true);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, "v1", AiResourceTraceService.OP_CREATE_DRAFT,
+                    VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return "v1";
         }
 
@@ -642,6 +649,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
             emptyAgentSpec.setName(name);
             emptyAgentSpec.setNamespaceId(namespaceId);
             createDraftWithAgentSpec(namespaceId, emptyAgentSpec, newVersion, meta, false);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, newVersion,
+                    AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                    VisibilityHelper.resolveClientIp());
             return newVersion;
         }
 
@@ -658,6 +668,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         // Step 3: Update meta's editingVersion pointer
         info.setEditingVersion(newVersion);
         resourceManager.updateVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, newVersion, AiResourceTraceService.OP_CREATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return newVersion;
     }
     
@@ -676,6 +688,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         // Auto-create brand-new draft when meta does not exist (unlike Skill, AgentSpec's updateDraft supports auto-creation)
         if (meta == null) {
             createDraftWithAgentSpec(namespaceId, draftAgentSpec, "v1", null, true);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, "v1",
+                    AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                    VisibilityHelper.resolveClientIp());
             return;
         }
         // Confirm write permission and an editing draft exists
@@ -694,6 +709,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, name, RESOURCE_TYPE_AGENTSPEC, editing,
             buildStorageJson(namespaceId, name, editing), draftAgentSpec.getDescription());
         resourceManager.bumpMetaDescription(namespaceId, meta, draftAgentSpec.getDescription());
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, editing, AiResourceTraceService.OP_UPDATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -719,6 +736,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         // Step 2: Clear meta's editingVersion pointer
         info.setEditingVersion(null);
         resourceManager.updateVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, editing, AiResourceTraceService.OP_DELETE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -811,6 +830,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_AGENTSPEC);
         VisibilityHelper.checkWritableResource(meta);
         resourceManager.updateBizTagsCas(namespaceId, meta, bizTags);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_AGENTSPEC, name, null, AiResourceTraceService.OP_UPDATE_BIZ_TAGS,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**

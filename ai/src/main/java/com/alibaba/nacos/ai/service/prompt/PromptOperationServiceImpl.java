@@ -27,6 +27,7 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -174,6 +175,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             newMeta.setVersionInfo(JacksonUtils.toJson(info));
             newMeta.setMetaVersion(1L);
             aiResourcePersistService.insert(newMeta);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version,
+                    AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                    VisibilityHelper.resolveClientIp());
             
             return version;
         }
@@ -211,6 +215,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             
             info.setEditingVersion(newVersion);
             updateMetaVersionInfoCas(namespaceId, meta, info);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, newVersion,
+                    AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                    VisibilityHelper.resolveClientIp(), "basedOn=" + basedOnVersion);
             return newVersion;
         }
         
@@ -234,6 +241,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         
         info.setEditingVersion(newVersion);
         updateMetaVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, newVersion,
+                AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
         return newVersion;
     }
     
@@ -271,6 +281,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                     editing, storageJson, commitMsg);
         }
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, editing,
+                AiResourceTraceService.OP_UPDATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
     }
     
     @Override
@@ -295,6 +308,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             aiResourceVersionPersistService.delete(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, editing);
             deletePromptStorageForVersion(namespaceId, promptKey, editing);
         }
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, editing,
+                AiResourceTraceService.OP_DELETE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
     }
     
     @Override
@@ -549,6 +565,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         updateMetaBizTagsCas(namespaceId, meta, bizTags);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
+                AiResourceTraceService.OP_UPDATE_BIZ_TAGS, VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
     }
     
     @Override

@@ -78,6 +78,20 @@ public class VisibilityHelper {
     }
     
     /**
+     * Resolve the client IP from request context.
+     *
+     * @return client IP address, empty string when absent
+     */
+    public static String resolveClientIp() {
+        try {
+            String sourceIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
+            return sourceIp == null ? "" : sourceIp;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    
+    /**
      * Filter candidate resources by read permission for current user.
      *
      * @param candidates candidate resources

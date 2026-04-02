@@ -28,6 +28,7 @@ import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.service.visibility.DefaultVisibilityAdvisorConverter;
 import com.alibaba.nacos.ai.service.visibility.VisibilityAdvisorConverter;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -209,6 +210,9 @@ public class AiResourceManager {
                     nv.setExt(latest.getExt());
                 });
         handleStrictCasResult(result);
+        String operation = enable ? AiResourceTraceService.OP_ENABLE : AiResourceTraceService.OP_DISABLE;
+        AiResourceTraceService.logSuccess(meta.getType(), meta.getName(), null, operation,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -555,6 +559,8 @@ public class AiResourceManager {
         info.setEditingVersion(null);
         info.setReviewingVersion(version);
         updateVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_SUBMIT_REVIEW,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -633,6 +639,8 @@ public class AiResourceManager {
             info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         }
         updateVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_PUBLISH,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return v;
     }
     
@@ -677,6 +685,8 @@ public class AiResourceManager {
             info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         }
         updateVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_FORCE_PUBLISH,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return v;
     }
     
@@ -707,6 +717,8 @@ public class AiResourceManager {
         }
         info.setLabels(labels == null ? null : new LinkedHashMap<>(labels));
         updateVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(type, name, null, AiResourceTraceService.OP_UPDATE_LABELS,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -721,6 +733,8 @@ public class AiResourceManager {
             throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
                     "Failed to update scope for " + type + ": " + name);
         }
+        AiResourceTraceService.logSuccess(type, name, null, AiResourceTraceService.OP_UPDATE_SCOPE,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp(), "scope=" + scope);
     }
     
     /**
@@ -746,6 +760,9 @@ public class AiResourceManager {
         Integer cnt = info.getOnlineCnt() == null ? 0 : info.getOnlineCnt();
         info.setOnlineCnt(online ? cnt + 1 : Math.max(0, cnt - 1));
         updateVersionInfoCas(namespaceId, meta, info);
+        String operation = online ? AiResourceTraceService.OP_ONLINE_VERSION : AiResourceTraceService.OP_OFFLINE_VERSION;
+        AiResourceTraceService.logSuccess(type, name, version, operation,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return v;
     }
     
@@ -855,6 +872,8 @@ public class AiResourceManager {
                 storageDeleter.deleteStorage(v);
             }
         }
+        AiResourceTraceService.logSuccess(type, name, null, AiResourceTraceService.OP_DELETE_RESOURCE,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -905,6 +924,11 @@ public class AiResourceManager {
                         }
                     }
                 }
+                AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_REVIEW_REJECTED,
+                        "system", "", result == null ? null : result.getExecutionId());
+            } else {
+                AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_REVIEW_APPROVED,
+                        "system", "", result.getExecutionId());
             }
         } catch (Throwable ex) {
             LOGGER.error("Pipeline callback failed for {}@{}", name, version, ex);

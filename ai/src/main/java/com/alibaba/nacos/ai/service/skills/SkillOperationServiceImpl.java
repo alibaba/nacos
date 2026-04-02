@@ -29,6 +29,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
@@ -175,6 +176,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         if (meta == null) {
             // Brand-new skill: create draft directly
             createDraftWithSkill(namespaceId, skill, uploadVersion, null, true);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, uploadVersion, AiResourceTraceService.OP_UPLOAD,
+                    VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return name;
         }
 
@@ -186,6 +189,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Step 4: Resolve version conflicts and create new draft
         String newVersion = resolveFinalUploadVersion(namespaceId, name, uploadVersion);
         createDraftWithSkill(namespaceId, skill, newVersion, meta, false);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, newVersion, AiResourceTraceService.OP_UPLOAD,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return name;
     }
 
@@ -598,6 +603,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     ? resolveFinalUploadVersion(namespaceId, name, resolveUploadVersion(initialContent.getSkillMd(), null))
                     : resolveSpecifiedDraftVersion(namespaceId, name, targetVersion, null, null);
             createDraftWithSkill(namespaceId, initialContent, version, null, true);
+            AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, version, AiResourceTraceService.OP_CREATE_DRAFT,
+                    VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return version;
         }
 
@@ -642,6 +649,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             info.setEditingVersion(newVersion);
             resourceManager.updateVersionInfoCas(namespaceId, meta, info);
         }
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, newVersion, AiResourceTraceService.OP_CREATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
         return newVersion;
     }
 
@@ -680,6 +689,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         aiResourceVersionPersistService.updateStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
                 buildStorageJson(namespaceId, name, editing, files));
         resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing, AiResourceTraceService.OP_UPDATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
 
     /**
@@ -708,6 +719,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             aiResourceVersionPersistService.delete(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
             deleteSkillStorageForVersion(namespaceId, name, editing, v.getStorage());
         }
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing, AiResourceTraceService.OP_DELETE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
 
     /**
@@ -818,6 +831,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         VisibilityHelper.checkWritableResource(meta);
         resourceManager.updateBizTagsCas(namespaceId, meta, bizTags);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, null, AiResourceTraceService.OP_UPDATE_BIZ_TAGS,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
 
     /**
