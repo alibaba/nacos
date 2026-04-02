@@ -1060,8 +1060,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         int pageNo = 1;
         int pageSize = 200;
         while (true) {
-            Page<AiResourceVersion> page = aiResourceVersionPersistService.listAll(namespaceId, promptKey, pageNo,
-                    pageSize);
+            Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, promptKey,
+                    RESOURCE_TYPE_PROMPT, null, pageNo, pageSize);
             if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
                 break;
             }

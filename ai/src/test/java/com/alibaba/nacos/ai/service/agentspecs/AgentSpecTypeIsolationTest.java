@@ -368,19 +368,6 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public Page<AiResourceVersion> listAll(String namespaceId, String name, int pageNo, int pageSize) {
-            List<AiResourceVersion> filtered = store.stream()
-                    .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()))
-                    .collect(java.util.stream.Collectors.toList());
-            Page<AiResourceVersion> page = new Page<>();
-            page.setPageItems(filtered);
-            page.setTotalCount(filtered.size());
-            page.setPagesAvailable(1);
-            page.setPageNumber(pageNo);
-            return page;
-        }
-        
-        @Override
         public int delete(String namespaceId, String name, String type, String version) {
             store.removeIf(
                     v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()) && type.equals(v.getType())

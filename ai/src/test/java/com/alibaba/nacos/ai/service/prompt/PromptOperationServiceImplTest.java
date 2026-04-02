@@ -530,7 +530,7 @@ class PromptOperationServiceImplTest {
         Page<AiResourceVersion> vPage = new Page<>();
         AiResourceVersion v1 = createVersionRow("0.0.1", "online");
         vPage.setPageItems(Collections.singletonList(v1));
-        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), any(), eq(1), eq(200))).thenReturn(vPage);
         
         service.deletePrompt(NS, PROMPT_KEY);
         
@@ -543,7 +543,7 @@ class PromptOperationServiceImplTest {
         when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(null);
         Page<AiResourceVersion> emptyPage = new Page<>();
         emptyPage.setPageItems(new ArrayList<>());
-        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(emptyPage);
+        when(aiResourceVersionPersistService.list(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), any(), eq(1), eq(200))).thenReturn(emptyPage);
         
         service.deletePrompt(NS, PROMPT_KEY);
         
@@ -558,7 +558,7 @@ class PromptOperationServiceImplTest {
         
         Page<AiResourceVersion> vPage = new Page<>();
         vPage.setPageItems(Collections.singletonList(createVersionRow("0.0.1", "online")));
-        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), any(), eq(1), eq(200))).thenReturn(vPage);
         
         service.deletePrompt(NS, PROMPT_KEY);
         
@@ -574,7 +574,7 @@ class PromptOperationServiceImplTest {
         
         Page<AiResourceVersion> emptyPage = new Page<>();
         emptyPage.setPageItems(new ArrayList<>());
-        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(emptyPage);
+        when(aiResourceVersionPersistService.list(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), any(), eq(1), eq(200))).thenReturn(emptyPage);
         
         when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), any(), any(), anyString(),
                 any())).thenThrow(new RuntimeException("simulated failure"));
@@ -596,7 +596,7 @@ class PromptOperationServiceImplTest {
         
         Page<AiResourceVersion> vPage = new Page<>();
         vPage.setPageItems(Collections.singletonList(createVersionRow("0.0.1", "online")));
-        when(aiResourceVersionPersistService.listAll(eq(NS), eq(PROMPT_KEY), eq(1), eq(200))).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(NS), eq(PROMPT_KEY), eq(PROMPT_TYPE), any(), eq(1), eq(200))).thenReturn(vPage);
         
         PromptMetaInfo detail = service.getPromptDetail(NS, PROMPT_KEY);
         

@@ -395,7 +395,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ResourceVersionInfo versionInfo = AiResourceManager.requireVersionInfo(meta);
 
         // Step 2: Load all version rows and assemble version summary list
-        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, skillName, 1, 200);
+        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, skillName,
+                RESOURCE_TYPE_SKILL, null, 1, 200);
         List<SkillMeta.SkillVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
             for (AiResourceVersion v : versionPage.getPageItems()) {
@@ -1044,7 +1045,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             manifest.setVersions(new HashMap<>(4));
 
             // Step 2: Iterate all version rows, collect online versions and their file lists
-            Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.listAll(namespaceId, name, 1, 200);
+            Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, name,
+                    RESOURCE_TYPE_SKILL, null, 1, 200);
             if (versionPage != null && versionPage.getPageItems() != null) {
                 for (AiResourceVersion v : versionPage.getPageItems()) {
                     if (v == null || !AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {

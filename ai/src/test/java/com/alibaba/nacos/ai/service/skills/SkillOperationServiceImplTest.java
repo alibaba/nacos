@@ -167,7 +167,7 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.find(eq(namespaceId), eq(skillName), anyString())).thenReturn(meta);
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
         vPage.setPageItems(List.of());
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt())).thenReturn(vPage);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt())).thenReturn(vPage);
 
         // When
         SkillMeta skillDetail = skillOperationService.getSkillDetail(namespaceId, skillName);
@@ -1585,7 +1585,7 @@ class SkillOperationServiceImplTest {
         onlineV.setStorage("{\"provider\":\"nacos_config\",\"scope\":\"ns:s:v1\",\"files\":[\"SKILL.md\"]}");
         Page<com.alibaba.nacos.ai.model.AiResourceVersion> vPage = new Page<>();
         vPage.setPageItems(List.of(onlineV));
-        when(aiResourceVersionPersistService.listAll(eq(namespaceId), eq(skillName), anyInt(), anyInt()))
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(skillName), anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(vPage);
         
         skillOperationService.changeOnlineStatus(namespaceId, skillName, "skill", null, true);

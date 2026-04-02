@@ -110,7 +110,8 @@ class AgentSpecDeletionTest {
 
             simulateDeleteAgentSpec(resourceService, versionService, storage, NAMESPACE_ID, testData.name);
 
-            Page<AiResourceVersion> remaining = versionService.listAll(NAMESPACE_ID, testData.name, 1, 200);
+            Page<AiResourceVersion> remaining = versionService.list(NAMESPACE_ID, testData.name,
+                    RESOURCE_TYPE_AGENTSPEC, null, 1, 200);
             assertTrue(remaining == null || remaining.getPageItems() == null || remaining.getPageItems().isEmpty(),
                     "All version rows should be removed after deletion for: " + testData.name);
         }
@@ -181,7 +182,8 @@ class AgentSpecDeletionTest {
         
         resourceService.delete(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         
-        Page<AiResourceVersion> versions = versionService.listAll(namespaceId, agentSpecName, 1, 200);
+        Page<AiResourceVersion> versions = versionService.list(namespaceId, agentSpecName,
+                RESOURCE_TYPE_AGENTSPEC, null, 1, 200);
         versionService.deleteByNameAndType(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
         
         if (versions != null && versions.getPageItems() != null) {
@@ -369,19 +371,6 @@ class AgentSpecDeletionTest {
             List<AiResourceVersion> filtered = store.stream()
                     .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()) && type.equals(
                             v.getType())).filter(v -> status == null || status.equals(v.getStatus()))
-                    .collect(Collectors.toList());
-            Page<AiResourceVersion> page = new Page<>();
-            page.setPageItems(filtered);
-            page.setTotalCount(filtered.size());
-            page.setPagesAvailable(1);
-            page.setPageNumber(pageNo);
-            return page;
-        }
-        
-        @Override
-        public Page<AiResourceVersion> listAll(String namespaceId, String name, int pageNo, int pageSize) {
-            List<AiResourceVersion> filtered = store.stream()
-                    .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()))
                     .collect(Collectors.toList());
             Page<AiResourceVersion> page = new Page<>();
             page.setPageItems(filtered);
