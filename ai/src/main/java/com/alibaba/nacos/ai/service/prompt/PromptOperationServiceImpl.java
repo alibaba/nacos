@@ -532,6 +532,10 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             info.setOnlineCnt(Math.max(0, cnt - 1));
         }
         updateMetaVersionInfoCas(namespaceId, meta, info);
+        String traceOp = online ? AiResourceTraceService.OP_ONLINE_VERSION
+                : AiResourceTraceService.OP_OFFLINE_VERSION;
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version, traceOp,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     @Override
@@ -549,6 +553,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         
         info.setLabels(newLabels);
         updateMetaVersionInfoCas(namespaceId, meta, info);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
+                AiResourceTraceService.OP_UPDATE_LABELS, VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
         
         // Refresh latest mirror if latest label changed
         if (labels != null && labels.containsKey(LABEL_LATEST)) {
@@ -575,6 +582,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         AiResource meta = requireMeta(namespaceId, promptKey);
         VisibilityHelper.checkWritableResource(meta);
         updateMetaDescriptionCas(namespaceId, meta, description);
+        AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, null,
+                AiResourceTraceService.OP_UPDATE_DESCRIPTION, VisibilityHelper.resolveCurrentIdentity(),
+                VisibilityHelper.resolveClientIp());
     }
     
     @Override

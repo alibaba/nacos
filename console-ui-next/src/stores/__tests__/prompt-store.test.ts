@@ -8,7 +8,7 @@ const mockGovernanceData = {
   schemaVersion: 1,
   promptKey: 'test-prompt',
   description: 'test',
-  bizTags: [],
+  bizTags: '',
   latestVersion: '1.0.0',
   gmtModified: Date.now(),
   editingVersion: null,

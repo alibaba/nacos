@@ -70,6 +70,7 @@ import { promptApi } from '@/api/prompt';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
 import { parsePipelineInfo } from '@/types/skill';
+import { parseBizTags } from '@/types/prompt';
 import { PromptVersionTimeline } from '@/pages/promptManagement/components/PromptVersionTimeline';
 import { PipelineStatusDisplay } from '@/pages/skillManagement/components/PipelineStatusDisplay';
 import { LabelBindDialog } from '@/components/ai/LabelBindDialog';
@@ -525,7 +526,7 @@ export default function PromptDetailPage() {
   // --- Edit metadata ---
   const handleEdit = () => {
     setEditDescription(meta?.description || '');
-    setEditBizTags(meta?.bizTags || []);
+    setEditBizTags(parseBizTags(meta?.bizTags));
     setEditTagInput('');
     setEditDialogOpen(true);
   };
@@ -695,9 +696,9 @@ export default function PromptDetailPage() {
                     {dayjs(meta.gmtModified).format('YYYY-MM-DD HH:mm')}
                   </span>
                 )}
-                {meta.bizTags && meta.bizTags.length > 0 && (
+                {meta.bizTags && parseBizTags(meta.bizTags).length > 0 && (
                   <div className="flex items-center gap-1">
-                    {meta.bizTags.slice(0, 3).map((tag) => (
+                    {parseBizTags(meta.bizTags).slice(0, 3).map((tag) => (
                       <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
                     ))}
                   </div>
@@ -995,9 +996,9 @@ export default function PromptDetailPage() {
               </Button>
             </div>
             <CardContent className="p-3.5">
-              {meta.bizTags && meta.bizTags.length > 0 ? (
+              {meta.bizTags && parseBizTags(meta.bizTags).length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {meta.bizTags.map((tag) => (
+                  {parseBizTags(meta.bizTags).map((tag) => (
                     <DetailTagChip key={tag} label={tag} />
                   ))}
                 </div>
@@ -1303,7 +1304,7 @@ export default function PromptDetailPage() {
       <BizTagEditDialog
         open={bizTagDialogOpen}
         onOpenChange={setBizTagDialogOpen}
-        tags={meta?.bizTags || []}
+        tags={parseBizTags(meta?.bizTags)}
         placeholder={t('prompt.tagPlaceholder')}
         emptyText={t('prompt.noLabels')}
         onSave={handleSaveBizTags}

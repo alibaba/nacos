@@ -73,6 +73,10 @@ class PromptDetail extends React.Component {
       editingDescription: false,
       descriptionValue: '',
       savingDescription: false,
+      // BizTags editing
+      editingBizTags: false,
+      bizTagsValue: '',
+      savingBizTags: false,
       // Pipeline
       pipelineInfo: null,
       // Operation states
@@ -354,6 +358,67 @@ class PromptDetail extends React.Component {
       error: () => {
         this.setState({ savingDescription: false });
         Message.error(locale.updateDescFailed || 'Failed to update description');
+      },
+    });
+  };
+
+  // ===== BizTags Editor =====
+
+  handleEditBizTags = () => {
+    const bizTags = this.state.governanceData?.bizTags;
+    let parsed = [];
+    if (bizTags) {
+      try {
+        const arr = JSON.parse(bizTags);
+        parsed = Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        parsed = bizTags
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+    }
+    this.setState({
+      editingBizTags: true,
+      bizTagsValue: parsed.join(','),
+    });
+  };
+
+  handleCancelBizTags = () => {
+    this.setState({ editingBizTags: false });
+  };
+
+  handleSaveBizTags = () => {
+    const { locale = {} } = this.props;
+    const { bizTagsValue } = this.state;
+    const promptKey = getParams('promptKey') || '';
+    const namespaceId = getParams('namespace') || '';
+    const tags = bizTagsValue
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const bizTagsJson = JSON.stringify(tags);
+
+    this.setState({ savingBizTags: true });
+
+    request({
+      method: 'PUT',
+      url: 'v3/console/ai/prompt/biz-tags',
+      data: { promptKey, bizTags: bizTagsJson, namespaceId },
+      contentType: 'application/x-www-form-urlencoded',
+      success: data => {
+        this.setState({ savingBizTags: false });
+        if (data && data.code === 0) {
+          Message.success(locale.bizTagsUpdateSuccess || 'Biz tags updated');
+          this.setState({ editingBizTags: false });
+          this.loadGovernanceData();
+        } else {
+          Message.error(data?.message || locale.updateBizTagsFailed || 'Failed to update biz tags');
+        }
+      },
+      error: () => {
+        this.setState({ savingBizTags: false });
+        Message.error(locale.updateBizTagsFailed || 'Failed to update biz tags');
       },
     });
   };
@@ -1063,6 +1128,9 @@ class PromptDetail extends React.Component {
       editingDescription,
       descriptionValue,
       savingDescription,
+      editingBizTags,
+      bizTagsValue,
+      savingBizTags,
       optimizeDialogVisible,
       variableValues,
       userInput,
@@ -1095,7 +1163,19 @@ class PromptDetail extends React.Component {
     const editingVersionStr = governanceData?.editingVersion || null;
     const reviewingVersionStr = governanceData?.reviewingVersion || null;
     const description = governanceData?.description || '';
-    const bizTags = governanceData?.bizTags || [];
+    const bizTags = (() => {
+      const raw = governanceData?.bizTags;
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return raw
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+    })();
     const isDraft = selectedVersionStatus === 'draft';
     const isReviewing = selectedVersionStatus === 'reviewing';
 
@@ -1276,16 +1356,41 @@ class PromptDetail extends React.Component {
               </span>
             )}
           </div>
-          {bizTags.length > 0 && (
-            <div className="tags-row">
-              <span className="meta-label">{locale.bizTags || 'Biz Tags'}:</span>
-              {bizTags.map(tag => (
-                <Tag key={tag} size="small" style={{ borderRadius: 4 }}>
-                  {tag}
-                </Tag>
-              ))}
-            </div>
-          )}
+          <div className="tags-row">
+            <span className="meta-label">{locale.bizTags || 'Biz Tags'}:</span>
+            {editingBizTags ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
+                <Input
+                  value={bizTagsValue}
+                  onChange={val => this.setState({ bizTagsValue: val })}
+                  style={{ flex: 1 }}
+                  placeholder={locale.bizTagsPlaceholder || 'Enter tags separated by commas'}
+                />
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={this.handleSaveBizTags}
+                  loading={savingBizTags}
+                >
+                  {locale.save || 'Save'}
+                </Button>
+                <Button size="small" onClick={this.handleCancelBizTags}>
+                  {locale.cancel || 'Cancel'}
+                </Button>
+              </div>
+            ) : (
+              <span className="description-text">
+                {bizTags.length > 0
+                  ? bizTags.map(tag => (
+                      <Tag key={tag} size="small" style={{ borderRadius: 4 }}>
+                        {tag}
+                      </Tag>
+                    ))
+                  : '--'}
+                <Icon type="edit" className="edit-icon" onClick={this.handleEditBizTags} />
+              </span>
+            )}
+          </div>
           {versionLabels.length > 0 && (
             <div className="tags-row">
               <span className="meta-label">{locale.versionLabels || 'Labels'}:</span>

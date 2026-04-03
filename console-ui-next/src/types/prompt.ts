@@ -20,7 +20,7 @@ export interface PromptMetaSummary {
   schemaVersion: number;
   promptKey: string;
   description: string;
-  bizTags: string[];
+  bizTags: string; // raw string, use parseBizTags() to get string[]
   latestVersion: string;
   gmtModified: number;
   editingVersion: string | null;
@@ -141,4 +141,16 @@ export interface PromptBizTagsUpdateData {
   promptKey: string;
   bizTags: string;
   namespaceId?: string;
+}
+
+/** Safely parse bizTags string into an array (handles JSON array, comma-separated, or plain string) */
+export function parseBizTags(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    // fallback: treat as comma-separated
+    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  }
 }

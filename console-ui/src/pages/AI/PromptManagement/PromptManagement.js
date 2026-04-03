@@ -393,18 +393,20 @@ class PromptManagement extends React.Component {
               )}
             />
             <Table.Column
-              title={locale.bizTags || 'Biz Tags'}
-              dataIndex="bizTags"
+              title={locale.labels || 'Labels'}
+              dataIndex="labels"
               width={150}
               cell={value => {
-                if (!value || !Array.isArray(value) || value.length === 0) return '--';
-                const displayed = value.slice(0, 2);
-                const rest = value.slice(2);
+                if (!value || typeof value !== 'object') return '--';
+                const keys = Object.keys(value);
+                if (keys.length === 0) return '--';
+                const displayed = keys.slice(0, 2);
+                const rest = keys.slice(2);
                 return (
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {displayed.map(tag => (
-                      <Tag key={tag} size="small" style={{ borderRadius: 4 }}>
-                        {tag}
+                    {displayed.map(key => (
+                      <Tag key={key} size="small" style={{ borderRadius: 4 }}>
+                        {key}
                       </Tag>
                     ))}
                     {rest.length > 0 && (
@@ -417,9 +419,9 @@ class PromptManagement extends React.Component {
                         triggerType="hover"
                         closable={false}
                       >
-                        {rest.map(tag => (
-                          <Tag key={tag} size="small" style={{ margin: 2 }}>
-                            {tag}
+                        {rest.map(key => (
+                          <Tag key={key} size="small" style={{ margin: 2 }}>
+                            {key}
                           </Tag>
                         ))}
                       </Balloon>

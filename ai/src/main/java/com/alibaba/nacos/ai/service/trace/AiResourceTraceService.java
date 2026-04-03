@@ -134,6 +134,11 @@ public class AiResourceTraceService {
     public static final String OP_UPDATE_SCOPE = "UPDATE_SCOPE";
     
     /**
+     * Update resource description.
+     */
+    public static final String OP_UPDATE_DESCRIPTION = "UPDATE_DESCRIPTION";
+    
+    /**
      * Update resource bizTags.
      */
     public static final String OP_UPDATE_BIZ_TAGS = "UPDATE_BIZ_TAGS";
