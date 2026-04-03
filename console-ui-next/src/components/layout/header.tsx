@@ -11,6 +11,7 @@ import {
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
+import { useServerStore } from '@/stores/server-store';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,6 +64,7 @@ export function Header() {
   const { theme, setTheme, language, setLanguage } = useAppStore();
   const { username, logout } = useAuthStore();
   const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
+  const { authEnabled } = useServerStore();
 
   const baseUrl = getBaseUrl(language);
 
@@ -162,6 +164,7 @@ export function Header() {
         </Tooltip>
 
         {/* User menu */}
+        {authEnabled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 gap-2 px-2 text-muted-foreground">
@@ -187,6 +190,7 @@ export function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        )}
       </div>
     </header>
   );

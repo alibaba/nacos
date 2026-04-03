@@ -37,7 +37,7 @@ function ConsoleDisabledPage() {
  */
 export function AuthGuard() {
   const token = getToken();
-  const { consoleUiEnable, stateLoaded, fetchState, fetchGuide } = useServerStore();
+  const { consoleUiEnable, authEnabled, loginPageEnabled, stateLoaded, fetchState, fetchGuide } = useServerStore();
 
   // Fetch server state once on mount
   useEffect(() => {
@@ -54,6 +54,11 @@ export function AuthGuard() {
 
   if (!consoleUiEnable) {
     return <ConsoleDisabledPage />;
+  }
+
+  // When auth is disabled or login page is not enabled, allow access without token
+  if (!authEnabled || !loginPageEnabled) {
+    return <Outlet />;
   }
 
   if (!token) {
