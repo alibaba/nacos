@@ -217,7 +217,7 @@ export const routes: RouteObject[] = [
           },
           {
             path: 'newPrompt',
-            element: lazyPage(() => import('@/pages/newPrompt')),
+            element: <Navigate to="/promptManagement" replace />,
           },
           {
             path: 'promptDetail',
@@ -225,7 +225,7 @@ export const routes: RouteObject[] = [
           },
           {
             path: 'publishPromptVersion',
-            element: lazyPage(() => import('@/pages/publishPromptVersion')),
+            element: <Navigate to="/newPrompt" replace />,
           },
           
           // Plugin Management (Admin only)

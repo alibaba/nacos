@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Pencil, Trash2, ExternalLink, Clock } from 'lucide-react';
+import { MessageSquare, Trash2, ExternalLink, FileEdit, Clock, Globe } from 'lucide-react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import dayjs from 'dayjs';
 import type { PromptMetaSummary } from '@/types/prompt';
 
 interface PromptCardProps {
@@ -12,7 +13,6 @@ interface PromptCardProps {
   selected?: boolean;
   onSelect?: (key: string) => void;
   onDetail?: (key: string) => void;
-  onEdit?: (key: string) => void;
   onDelete?: (key: string) => void;
 }
 
@@ -21,21 +21,17 @@ export function PromptCard({
   selected,
   onSelect,
   onDetail,
-  onEdit,
   onDelete,
 }: PromptCardProps) {
   const { t } = useTranslation();
 
-  const formatDate = (timestamp: number) => {
-    if (!timestamp) return '-';
-    return new Date(timestamp).toLocaleDateString();
-  };
+  const bizTags = (prompt.bizTags || []).slice(0, 2);
 
   return (
     <Card
       className={cn(
         'group relative flex flex-col py-0 gap-0 transition-all duration-200 hover:shadow-sm hover:border-primary/20 cursor-pointer overflow-hidden',
-        selected && 'ring-2 ring-primary border-primary/40'
+        selected && 'ring-2 ring-primary border-primary/40',
       )}
       onClick={() => onDetail?.(prompt.promptKey)}
     >
@@ -75,13 +71,42 @@ export function PromptCard({
         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
           {prompt.description || t('prompt.noDescription')}
         </p>
+
+        {/* Meta indicators */}
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          {bizTags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
+            >
+              {tag}
+            </span>
+          ))}
+          <span className={cn(
+            'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+            prompt.onlineCnt > 0
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+              : 'bg-muted text-muted-foreground',
+          )}>
+            <Globe className="h-2.5 w-2.5" />
+            {prompt.onlineCnt > 0
+              ? t('prompt.onlineCount', { count: prompt.onlineCnt })
+              : t('prompt.noOnlineVersion')}
+          </span>
+          {prompt.editingVersion && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+              <FileEdit className="h-2.5 w-2.5" />
+              {t('prompt.hasDraft')}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Footer */}
       <CardFooter className="px-4 py-1.5 border-t bg-muted/20 flex items-center justify-between [.border-t]:pt-1.5">
         <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
           <Clock className="h-3 w-3" />
-          {prompt.gmtModified ? formatDate(prompt.gmtModified) : '-'}
+          {prompt.gmtModified ? dayjs(prompt.gmtModified).format('YYYY-MM-DD HH:mm') : '-'}
         </span>
         <div className="flex items-center -mr-1" onClick={(e) => e.stopPropagation()}>
           <Tooltip>
@@ -91,14 +116,6 @@ export function PromptCard({
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('common.detail')}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit?.(prompt.promptKey)}>
-                <Pencil className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('common.edit')}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>

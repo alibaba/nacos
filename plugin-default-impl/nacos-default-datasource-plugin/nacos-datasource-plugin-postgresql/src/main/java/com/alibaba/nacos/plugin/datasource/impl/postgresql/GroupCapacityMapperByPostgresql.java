@@ -60,16 +60,18 @@ public class GroupCapacityMapperByPostgresql extends BaseGroupCapacityMapper {
         paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
 
         String sql =
-                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,gmt_create,"
-                        + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info";
+                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,"
+                        + " max_history_count, gmt_create, gmt_modified)"
+                        + " SELECT ?, ?, count(*), ?, ?, ?, 0, ?, ? FROM config_info";
         return new MapperResult(sql, paramList);
     }
 
     @Override
     public MapperResult insertIntoSelectByWhere(MapperContext context) {
         final String sql =
-                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size, gmt_create,"
-                        + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = '"
+                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,"
+                        + " max_history_count, gmt_create, gmt_modified)"
+                        + " SELECT ?, ?, count(*), ?, ?, ?, 0, ?, ? FROM config_info WHERE group_id=? AND tenant_id = '"
                         + NamespaceUtil.getNamespaceDefaultId() + "'";
         List<Object> paramList = new ArrayList<>();
         paramList.add(context.getUpdateParameter(FieldConstant.GROUP_ID));

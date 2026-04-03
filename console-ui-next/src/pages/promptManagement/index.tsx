@@ -6,11 +6,7 @@ import { Plus, Trash2, Search, X, ChevronLeft, ChevronRight, MessageSquare } fro
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
@@ -21,10 +17,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { PromptCard } from '@/components/ai/prompt/PromptCard';
+import { CreatePromptDialog } from './components/CreatePromptDialog';
 import { usePromptStore } from '@/stores/prompt-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { promptApi } from '@/api/prompt';
-import type { PromptMetaInfo } from '@/types/prompt';
 
 export default function PromptManagementPage() {
   const { t } = useTranslation();
@@ -52,15 +48,7 @@ export default function PromptManagementPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(searchKey);
-
-  // Edit metadata dialog state
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editDialogLoading, setEditDialogLoading] = useState(false);
-  const [editSaving, setEditSaving] = useState(false);
-  const [editPromptKey, setEditPromptKey] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editBizTags, setEditBizTags] = useState<string[]>([]);
-  const [editTagInput, setEditTagInput] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
 
   const namespaceId = currentNamespace || 'public';
 
@@ -86,52 +74,6 @@ export default function PromptManagementPage() {
   const handleDetail = (key: string) => {
     const params = new URLSearchParams({ promptKey: key, namespaceId });
     navigate(`/promptDetail?${params}`);
-  };
-
-  // Open edit metadata dialog
-  const handleEdit = async (key: string) => {
-    setEditPromptKey(key);
-    setEditDialogOpen(true);
-    setEditDialogLoading(true);
-    try {
-      const res = await promptApi.getPromptMetadata({ promptKey: key, namespaceId });
-      const meta = (res as unknown as { data: PromptMetaInfo }).data;
-      setEditDescription(meta.description || '');
-      setEditBizTags(meta.bizTags || []);
-    } catch {
-      // Fall back to card summary data
-      const prompt = prompts.find((p) => p.promptKey === key);
-      setEditDescription(prompt?.description || '');
-      setEditBizTags(prompt?.bizTags || []);
-    } finally {
-      setEditDialogLoading(false);
-    }
-  };
-
-  const handleEditSave = async () => {
-    setEditSaving(true);
-    try {
-      await promptApi.updateMetadata({
-        promptKey: editPromptKey,
-        description: editDescription.trim(),
-        bizTags: editBizTags.join(','),
-        namespaceId,
-      });
-      toast.success(t('prompt.updateSuccess'));
-      setEditDialogOpen(false);
-      loadData();
-    } catch {
-      // handled by interceptor
-    } finally {
-      setEditSaving(false);
-    }
-  };
-
-  const handleEditAddTag = () => {
-    const tag = editTagInput.trim();
-    if (!tag || editBizTags.includes(tag)) { setEditTagInput(''); return; }
-    setEditBizTags((prev) => [...prev, tag]);
-    setEditTagInput('');
   };
 
   const handleDelete = async () => {
@@ -180,7 +122,7 @@ export default function PromptManagementPage() {
             {t('prompt.totalPrompts', { total })}
           </p>
         </div>
-        <Button size="sm" onClick={() => navigate('/newPrompt')}>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           {t('prompt.createPrompt')}
         </Button>
@@ -258,7 +200,7 @@ export default function PromptManagementPage() {
           </div>
           <p className="text-sm font-medium">{t('common.noData')}</p>
           <p className="text-xs text-muted-foreground/70 mt-1">{t('prompt.searchPlaceholder')}</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate('/newPrompt')}>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t('prompt.createPrompt')}
           </Button>
@@ -286,7 +228,6 @@ export default function PromptManagementPage() {
                 selected={selectedKeys.has(prompt.promptKey)}
                 onSelect={toggleSelect}
                 onDetail={handleDetail}
-                onEdit={handleEdit}
                 onDelete={setDeleteTarget}
               />
             ))}
@@ -342,102 +283,6 @@ export default function PromptManagementPage() {
         </div>
       )}
 
-      {/* Edit Metadata Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!editSaving) setEditDialogOpen(open); }}>
-        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
-          {/* Header */}
-          <div className="px-6 pt-6 pb-4">
-            <DialogHeader className="space-y-1.5">
-              <DialogTitle className="text-base">{t('prompt.editMetadata')}</DialogTitle>
-              <DialogDescription className="font-mono text-xs tracking-wide">{editPromptKey}</DialogDescription>
-            </DialogHeader>
-          </div>
-
-          <Separator />
-
-          {editDialogLoading ? (
-            <div className="px-6 py-5 space-y-3">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : (
-            <div className="px-6 py-5 space-y-3">
-              {/* Description */}
-              <div className="flex flex-col gap-3">
-                <Label className="text-sm font-medium text-muted-foreground">{t('prompt.description')}</Label>
-                <Textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder={t('prompt.descriptionPlaceholder')}
-                  rows={3}
-                  className="bg-transparent resize-none text-sm"
-                />
-              </div>
-
-              {/* Biz Tags */}
-              <div className="flex flex-col gap-3">
-                <Label className="text-sm font-medium text-muted-foreground">{t('prompt.bizTags')}</Label>
-                <div className="rounded-lg border bg-muted/20 p-3 space-y-2.5">
-                  {editBizTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {editBizTags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="gap-1.5 pl-2.5 pr-1 py-0.5 text-xs font-normal bg-background border shadow-sm"
-                        >
-                          {tag}
-                          <button
-                            onClick={() => setEditBizTags((prev) => prev.filter((t) => t !== tag))}
-                            className="rounded-full hover:bg-destructive/10 hover:text-destructive p-0.5 transition-colors"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Input
-                      value={editTagInput}
-                      onChange={(e) => setEditTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); handleEditAddTag(); }
-                      }}
-                      placeholder={t('prompt.tagPlaceholder')}
-                      className="bg-transparent flex-1 h-8 text-sm"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 shrink-0"
-                      onClick={handleEditAddTag}
-                      disabled={!editTagInput.trim()}
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      {t('common.add', { defaultValue: '添加' })}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Footer */}
-          <div className="px-6 py-4 flex justify-end gap-2 bg-muted/20">
-            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(false)} disabled={editSaving}>
-              {t('common.cancel')}
-            </Button>
-            <Button size="sm" onClick={handleEditSave} disabled={editSaving || editDialogLoading}>
-              {editSaving ? t('common.loading') : t('common.save')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete confirm dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-md">
@@ -477,6 +322,18 @@ export default function PromptManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create prompt dialog */}
+      <CreatePromptDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        namespaceId={namespaceId}
+        onSuccess={(key) => {
+          loadData();
+          const params = new URLSearchParams({ promptKey: key, namespaceId });
+          navigate(`/promptDetail?${params}`);
+        }}
+      />
     </div>
   );
 }

@@ -42,7 +42,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.Arrays;
 
 /**
@@ -79,7 +78,7 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jt.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
             ps.setString(1, resource.getName());
             ps.setString(2, resource.getType());
             ps.setString(3, resource.getDesc());

@@ -2,6 +2,10 @@
 
 export type PromptSearchMode = 'accurate' | 'blur';
 
+// ===== Prompt Version Status =====
+
+export type PromptVersionStatus = 'draft' | 'reviewing' | 'online' | 'offline';
+
 // ===== Prompt Variable =====
 
 export interface PromptVariable {
@@ -19,13 +23,17 @@ export interface PromptMetaSummary {
   bizTags: string[];
   latestVersion: string;
   gmtModified: number;
+  editingVersion: string | null;
+  reviewingVersion: string | null;
+  onlineCnt: number;
+  labels: Record<string, string>;
 }
 
-// ===== Prompt Meta Info (detail metadata) =====
+// ===== Prompt Meta Info (governance detail) =====
 
 export interface PromptMetaInfo extends PromptMetaSummary {
   versions: string[];
-  labels: Record<string, string>; // label -> version mapping
+  versionDetails: PromptVersionSummary[];
 }
 
 // ===== Prompt Version Summary =====
@@ -33,9 +41,11 @@ export interface PromptMetaInfo extends PromptMetaSummary {
 export interface PromptVersionSummary {
   promptKey: string;
   version: string;
+  status: PromptVersionStatus;
   commitMsg: string;
   srcUser: string;
   gmtModified: number;
+  publishPipelineInfo: string | null;
 }
 
 // ===== Prompt Version Info (full detail) =====
@@ -74,33 +84,61 @@ export interface PromptVersionListResponse {
   pageItems: PromptVersionSummary[];
 }
 
-// ===== Publish Data =====
+// ===== Lifecycle API Request Types =====
+
+export interface PromptDraftCreateData {
+  promptKey: string;
+  template?: string;
+  variables?: string;
+  commitMsg?: string;
+  description?: string;
+  bizTags?: string;
+  basedOnVersion?: string;
+  targetVersion?: string;
+  namespaceId?: string;
+}
+
+export interface PromptDraftUpdateData {
+  promptKey: string;
+  template: string;
+  variables?: string;
+  commitMsg?: string;
+  namespaceId?: string;
+}
+
+export interface PromptSubmitData {
+  promptKey: string;
+  version?: string;
+  namespaceId?: string;
+}
 
 export interface PromptPublishData {
   promptKey: string;
   version: string;
-  template: string;
-  commitMsg?: string;
-  description?: string;
-  bizTags?: string;
-  variables?: string; // JSON string of PromptVariable[]
+  updateLatestLabel?: boolean;
   namespaceId?: string;
 }
 
-// ===== Update Metadata =====
-
-export interface PromptUpdateMetadataData {
+export interface PromptOnlineOfflineData {
   promptKey: string;
-  description?: string;
-  bizTags?: string;
-  namespaceId?: string;
-}
-
-// ===== Label Bind =====
-
-export interface PromptLabelBindData {
-  promptKey: string;
-  label: string;
   version: string;
+  namespaceId?: string;
+}
+
+export interface PromptLabelsUpdateData {
+  promptKey: string;
+  labels: string; // JSON string
+  namespaceId?: string;
+}
+
+export interface PromptDescriptionUpdateData {
+  promptKey: string;
+  description: string;
+  namespaceId?: string;
+}
+
+export interface PromptBizTagsUpdateData {
+  promptKey: string;
+  bizTags: string;
   namespaceId?: string;
 }

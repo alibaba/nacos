@@ -44,6 +44,7 @@ import com.alibaba.nacos.plugin.visibility.model.VisibilityQueryContext;
 import com.alibaba.nacos.plugin.visibility.spi.QueryAdvisor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -423,6 +424,13 @@ public class AiResourceManager {
      */
     public void insertVersionRow(String namespaceId, String name, String type, String author, String status,
             String version, String description, String storageJson) {
+        // Check if a version row already exists (e.g. orphaned row from a failed delete, or concurrent insert).
+        // If so, fall back to updating the existing row instead of inserting a duplicate.
+        AiResourceVersion existing = aiResourceVersionPersistService.find(namespaceId, name, type, version);
+        if (existing != null) {
+            updateExistingVersionRow(namespaceId, name, type, version, status, description, storageJson);
+            return;
+        }
         AiResourceVersion row = new AiResourceVersion();
         row.setNamespaceId(namespaceId);
         row.setName(name);
@@ -432,7 +440,20 @@ public class AiResourceManager {
         row.setVersion(version);
         row.setDesc(description);
         row.setStorage(storageJson);
-        aiResourceVersionPersistService.insert(row);
+        try {
+            aiResourceVersionPersistService.insert(row);
+        } catch (DuplicateKeyException e) {
+            // Race condition: version was inserted after our check, fallback to update
+            LOGGER.warn("[insertVersionRow] duplicate key for {}/{}/{}/{}, falling back to update",
+                    namespaceId, name, type, version);
+            updateExistingVersionRow(namespaceId, name, type, version, status, description, storageJson);
+        }
+    }
+    
+    private void updateExistingVersionRow(String namespaceId, String name, String type, String version,
+            String status, String description, String storageJson) {
+        aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, name, type, version, storageJson, description);
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version, status);
     }
     
     /**
