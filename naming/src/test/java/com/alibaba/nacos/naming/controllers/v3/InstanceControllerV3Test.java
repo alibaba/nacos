@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +48,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -263,5 +266,12 @@ class InstanceControllerV3Test extends BaseTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(instance.getInstanceId(), result.getData().getInstanceId());
+    }
+
+    @Test
+    void detailUsesReadPermission() throws Exception {
+        Method method = InstanceControllerV3.class.getMethod("detail", InstanceForm.class);
+        Secured secured = method.getAnnotation(Secured.class);
+        assertEquals(ActionTypes.READ, secured.action());
     }
 }
