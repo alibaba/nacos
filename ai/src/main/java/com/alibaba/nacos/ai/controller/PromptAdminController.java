@@ -60,7 +60,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -283,23 +282,6 @@ public class PromptAdminController {
         });
     }
     
-    private List<String> parseBizTags(String bizTags) {
-        if (bizTags == null) {
-            return null;
-        }
-        if (bizTags.trim().isEmpty()) {
-            return new ArrayList<>(0);
-        }
-        String[] split = bizTags.split(",");
-        List<String> result = new ArrayList<>(split.length);
-        for (String each : split) {
-            if (each != null && !each.trim().isEmpty()) {
-                result.add(each.trim());
-            }
-        }
-        return result;
-    }
-    
     // ========== Legacy compatibility endpoints (deprecated) ==========
     
     /**
@@ -314,7 +296,7 @@ public class PromptAdminController {
         form.validate();
         boolean success = promptOperationService.publishPromptVersion(form.getNamespaceId(), form.getPromptKey(),
                 form.getVersion(), form.getTemplate(), form.getCommitMsg(), form.getDescription(),
-                parseBizTags(form.getBizTags()), parseVariables(form.getVariables()));
+                form.getBizTags(), parseVariables(form.getVariables()));
         return Result.success(success);
     }
     
@@ -389,7 +371,7 @@ public class PromptAdminController {
             throws NacosException {
         form.validate();
         boolean success = promptOperationService.updatePromptMetadata(form.getNamespaceId(), form.getPromptKey(),
-                form.getDescription(), parseBizTags(form.getBizTags()));
+                form.getDescription(), form.getBizTags());
         return Result.success(success);
     }
 }

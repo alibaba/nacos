@@ -634,14 +634,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         detail.setOnlineCnt(versionInfo.getOnlineCnt());
         detail.setLabels(versionInfo.getLabels());
         detail.setGmtModified(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
-        
-        if (meta.getBizTags() != null) {
-            try {
-                detail.setBizTags(JacksonUtils.toObj(meta.getBizTags(), List.class));
-            } catch (Exception e) {
-                detail.setBizTags(new ArrayList<>());
-            }
-        }
+        detail.setBizTags(meta.getBizTags());
         
         // Load version list
         List<AiResourceVersion> allVersions = loadAllVersionRows(namespaceId, promptKey);
@@ -724,13 +717,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 summary.setLabels(vInfo != null ? vInfo.getLabels() : null);
                 summary.setGmtModified(
                         resource.getGmtModified() == null ? null : resource.getGmtModified().getTime());
-                if (resource.getBizTags() != null) {
-                    try {
-                        summary.setBizTags(JacksonUtils.toObj(resource.getBizTags(), List.class));
-                    } catch (Exception e) {
-                        summary.setBizTags(new ArrayList<>());
-                    }
-                }
+                summary.setBizTags(resource.getBizTags());
                 items.add(summary);
             }
         }
@@ -1272,10 +1259,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Deprecated
     @Override
     public boolean publishPromptVersion(String namespaceId, String promptKey, String version, String template,
-            String commitMsg, String description, List<String> bizTags, List<PromptVariable> variables)
+            String commitMsg, String description, String bizTags, List<PromptVariable> variables)
             throws NacosException {
-        String bizTagsJson = (bizTags != null) ? JacksonUtils.toJson(bizTags) : null;
-        createDraft(namespaceId, promptKey, null, version, template, variables, commitMsg, description, bizTagsJson);
+        createDraft(namespaceId, promptKey, null, version, template, variables, commitMsg, description, bizTags);
         submit(namespaceId, promptKey, version);
         return true;
     }
@@ -1316,13 +1302,13 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Deprecated
     @Override
-    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description, List<String> bizTags)
+    public boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String bizTags)
             throws NacosException {
         if (description != null) {
             updateDescription(namespaceId, promptKey, description);
         }
         if (bizTags != null) {
-            updateBizTags(namespaceId, promptKey, JacksonUtils.toJson(bizTags));
+            updateBizTags(namespaceId, promptKey, bizTags);
         }
         return true;
     }

@@ -254,7 +254,7 @@ public interface PromptOperationService {
      */
     @Deprecated
     boolean publishPromptVersion(String namespaceId, String promptKey, String version, String template,
-            String commitMsg, String description, List<String> bizTags, List<PromptVariable> variables)
+            String commitMsg, String description, String bizTags, List<PromptVariable> variables)
             throws NacosException;
     
     /**
@@ -296,6 +296,6 @@ public interface PromptOperationService {
      * @deprecated Use {@link #updateDescription} and {@link #updateBizTags} instead.
      */
     @Deprecated
-    boolean updatePromptMetadata(String namespaceId, String promptKey, String description, List<String> bizTags)
+    boolean updatePromptMetadata(String namespaceId, String promptKey, String description, String bizTags)
             throws NacosException;
 }
