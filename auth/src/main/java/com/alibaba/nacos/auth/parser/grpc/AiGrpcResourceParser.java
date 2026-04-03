@@ -26,6 +26,13 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.util.Properties;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_MCP;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_PROMPT;
+
 /**
  * AI Grpc resource parser.
  *
@@ -91,5 +98,18 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
     private String getPromptName(AbstractPromptRequest request) {
         String promptKey = request.getPromptKey();
         return StringUtils.isBlank(promptKey) ? StringUtils.EMPTY : promptKey;
+    }
+    
+    @Override
+    protected Properties getProperties(Request request) {
+        Properties properties = super.getProperties(request);
+        if (request instanceof AbstractMcpRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_MCP);
+        } else if (request instanceof AbstractAgentRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_AGENT);
+        } else if (request instanceof AbstractPromptRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_PROMPT);
+        }
+        return properties;
     }
 }
