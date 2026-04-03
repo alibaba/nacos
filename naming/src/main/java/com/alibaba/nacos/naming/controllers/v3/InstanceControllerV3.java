@@ -277,7 +277,7 @@ public class InstanceControllerV3 {
      */
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
-    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Instance> detail(InstanceForm instanceForm) throws NacosException {
         instanceForm.validate();
         String namespaceId = instanceForm.getNamespaceId();
