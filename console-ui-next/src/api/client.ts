@@ -20,9 +20,18 @@ const SILENT_ENDPOINTS = [
 ];
 const SESSION_EXPIRED_MESSAGES = [
   'unknown user!',
+  'user not found',
   'token invalid!',
   'token expired!',
+  'expired token',
   'session expired!',
+  'invalid signature',
+  'unsupported signature algorithm',
+  'invalid token',
+  'token is required',
+  'token is empty',
+  'token has expired',
+  'token signature verification failed',
 ];
 
 /**
@@ -107,6 +116,23 @@ client.interceptors.response.use(
       // Handle auth_admin_request flag
       if ('auth_admin_request' in response.data) {
         // This is handled by the server store
+      }
+
+      // Handle session expired in success responses (HTTP 200 with business error code).
+      // Some auth failures are returned with HTTP 200 but contain access denied info in the body,
+      // e.g. when the filter writes the response body before setting the HTTP status code.
+      const data = response.data as Record<string, unknown>;
+      if (data.code && data.code !== 0) {
+        const message = typeof data.message === 'string' ? data.message.toLowerCase() : '';
+        const dataStr = typeof data.data === 'string' ? data.data.toLowerCase() : '';
+        const combined = message + ' ' + dataStr;
+        const isSessionExpired = SESSION_EXPIRED_MESSAGES.some(msg => combined.includes(msg));
+        if (isSessionExpired) {
+          localStorage.removeItem('token');
+          window.location.hash = '#/login';
+          toast.error(i18n.t('common.sessionExpired'));
+          return Promise.reject(new Error('session expired'));
+        }
       }
     }
     return response.data;
