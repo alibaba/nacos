@@ -38,10 +38,12 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
 
     @Override
     public JsonNode getPipeline(String pipelineId) throws NacosException {
+        Map<String, String> params = new HashMap<>(2);
+        params.put("pipelineId", pipelineId);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(StringUtils.EMPTY, pipelineId))
                 .setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH + "/" + pipelineId)
-                .setParamValue(new HashMap<>(2)).build();
+                .setPath(Constants.AdminApiPath.AI_PIPELINE_DETAIL_ADMIN_PATH)
+                .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<JsonNode>>() {
         });
@@ -60,7 +62,7 @@ final class PipelineMaintainerServiceImpl extends AbstractAiDelegateMaintainerSe
         params.put("pageSize", String.valueOf(pageSize));
         String resolvedNamespace = StringUtils.isNotBlank(namespaceId) ? namespaceId : StringUtils.EMPTY;
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(resolvedNamespace, resourceName))
-                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_PIPELINE_ADMIN_PATH)
+                .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_PIPELINE_LIST_ADMIN_PATH)
                 .setParamValue(params).build();
         HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
         Result<JsonNode> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<JsonNode>>() {

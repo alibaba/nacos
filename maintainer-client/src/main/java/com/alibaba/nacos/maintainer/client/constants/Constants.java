@@ -128,6 +128,10 @@ public class Constants {
         public static final String AI_AGENTSPEC_UPLOAD_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/upload";
         
         public static final String AI_PIPELINE_ADMIN_PATH = "/v3/admin/ai/pipelines";
+        
+        public static final String AI_PIPELINE_LIST_ADMIN_PATH = AI_PIPELINE_ADMIN_PATH + "/list";
+        
+        public static final String AI_PIPELINE_DETAIL_ADMIN_PATH = AI_PIPELINE_ADMIN_PATH + "/detail";
     }
     
 }
