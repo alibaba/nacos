@@ -615,6 +615,24 @@
         </encoder>
     </appender>
     
+    <!--AI module logback config-->
+    <appender name="aiResourceTrace"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/ai-resource-trace.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/ai-resource-trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
     <logger name="com.alibaba.nacos.address.main" additivity="false" level="INFO">
         <appender-ref ref="nacos-address"/>
     </logger>
@@ -711,6 +729,10 @@
     <logger name="com.alibaba.nacos.k8s.sync.main" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="k8s-sync-main"/>
+    </logger>
+
+    <logger name="com.alibaba.nacos.ai.resource.trace" additivity="false" level="INFO">
+        <appender-ref ref="aiResourceTrace"/>
     </logger>
 
     <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false" level="INFO">

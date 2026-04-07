@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
+import com.alibaba.nacos.plugin.auth.impl.AnonymousAccessInitializer;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
@@ -48,5 +49,13 @@ public class NacosAuthPluginInnerServiceConfig {
     @Bean
     public NacosUserService nacosUserService(AuthConfigs authConfigs, UserPersistService userPersistService) {
         return new NacosUserServiceDirectImpl(authConfigs, userPersistService);
+    }
+    
+    @Bean
+    public AnonymousAccessInitializer anonymousAccessInitializer(AuthConfigs authConfigs,
+            UserPersistService userPersistService, RolePersistService rolePersistService,
+            PermissionPersistService permissionPersistService) {
+        return new AnonymousAccessInitializer(authConfigs, userPersistService, rolePersistService,
+                permissionPersistService);
     }
 }

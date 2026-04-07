@@ -32,4 +32,27 @@ class ModifyRequestTest {
         request.setExecuteNo(1);
         assertEquals("SQL{executeNo=1, sql='SELECT 1', args=[1, test]}", request.toString());
     }
+
+    @Test
+    void testModifyRequestConstructorWithSql() {
+        ModifyRequest request = new ModifyRequest("INSERT INTO t VALUES (?)");
+        assertEquals("INSERT INTO t VALUES (?)", request.getSql());
+        assertEquals(0, request.getExecuteNo());
+        assertEquals(false, request.isRollBackOnUpdateFail());
+        assertEquals(null, request.getArgs());
+    }
+
+    @Test
+    void testModifyRequestGettersSetters() {
+        ModifyRequest request = new ModifyRequest();
+        request.setExecuteNo(2);
+        request.setSql("UPDATE t SET x=?");
+        request.setArgs(new Object[] {100});
+        request.setRollBackOnUpdateFail(true);
+        assertEquals(2, request.getExecuteNo());
+        assertEquals("UPDATE t SET x=?", request.getSql());
+        assertEquals(1, request.getArgs().length);
+        assertEquals(100, request.getArgs()[0]);
+        assertEquals(true, request.isRollBackOnUpdateFail());
+    }
 }

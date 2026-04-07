@@ -76,7 +76,8 @@ public class NamingMetadataManager extends SmartSubscriber {
      * @return true if contain instance metadata, otherwise false
      */
     public boolean containInstanceMetadata(Service service, String metadataId) {
-        return instanceMetadataMap.containsKey(service) && instanceMetadataMap.get(service).containsKey(metadataId);
+        ConcurrentMap<String, InstanceMetadata> metadataMap = instanceMetadataMap.get(service);
+        return metadataMap != null && metadataMap.containsKey(metadataId);
     }
     
     /**

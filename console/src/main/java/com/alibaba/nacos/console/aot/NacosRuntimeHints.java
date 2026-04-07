@@ -58,7 +58,9 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.caucho.hessian.io.ContextSerializerFactory.class};
     // endregion
     
-    // region SQL
+        // region SQL
+        // TODO: Replace hard Derby class literals with optional reflection-based registration,
+        //       then remove direct Derby compile dependency from console.
     private final Class<?>[] sqlClasses = {org.apache.derby.impl.store.raw.data.CachedPage.class,
             org.apache.derby.catalog.types.TypesImplInstanceGetter.class,
             org.apache.derby.impl.services.uuid.BasicUUIDGetter.class, org.apache.derby.iapi.types.DTSClassInfo.class,
@@ -281,7 +283,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             // reflect
             com.alibaba.nacos.common.notify.SlowEvent.class, com.alibaba.nacos.common.packagescan.PackageScan.class,
             com.alibaba.nacos.common.packagescan.DefaultPackageScan.class,
-            com.alibaba.nacos.naming.controllers.CatalogController.class,
             com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent.ServiceMetadataEvent.class,
             com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.class,
             com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.InstanceStoreRequest.class,
@@ -425,7 +426,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.pojo.ClusterInfo.class, com.alibaba.nacos.naming.pojo.InstanceOperationInfo.class,
             com.alibaba.nacos.naming.pojo.IpAddressInfo.class, com.alibaba.nacos.naming.pojo.Record.class,
             com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class, com.alibaba.nacos.naming.pojo.ServiceNameView.class,
-            com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload.class,
             // sys and plugin
             com.alibaba.nacos.config.server.filter.ConfigEnabledFilter.class,
             com.alibaba.nacos.naming.config.NamingEnabledFilter.class,
@@ -480,12 +480,28 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
                 jraftCliClasses, jraftUtilClasses, nacosClasses).flatMap(Stream::of).forEach(type -> hints.reflection()
                 .registerType(type, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS, MemberCategory.INVOKE_DECLARED_METHODS,
                         MemberCategory.DECLARED_FIELDS, MemberCategory.DECLARED_CLASSES));
-        
+
+        // Register optional plugin classes by name to avoid compile-time dependency
+        registerOptionalClass(hints, "com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload");
+        // Register optional legacy adapter naming controllers (when api-legacy-adapter is on classpath, e.g. via bootstrap)
+        registerOptionalClass(hints, "com.alibaba.nacos.legacy.adapter.naming.CatalogController");
+
         for (String pattern : resourcePattern) {
             hints.resources().registerPattern(pattern);
         }
-        
+
         serializer.forEach(type -> hints.serialization().registerType(type));
     }
-    
+
+    private void registerOptionalClass(RuntimeHints hints, String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            hints.reflection().registerType(clazz, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                    MemberCategory.INVOKE_DECLARED_METHODS, MemberCategory.DECLARED_FIELDS,
+                    MemberCategory.DECLARED_CLASSES);
+        } catch (ClassNotFoundException e) {
+            // Optional plugin class not available, skip registration
+        }
+    }
+
 }

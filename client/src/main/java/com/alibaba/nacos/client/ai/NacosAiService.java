@@ -20,28 +20,44 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.listener.NacosAgentCardEvent;
+import com.alibaba.nacos.api.ai.listener.NacosAgentSpecEvent;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.listener.NacosPromptEvent;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.ai.cache.NacosAgentCardCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosAgentSpecCacheHolder;
 import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.cache.NacosPromptCacheHolder;
 import com.alibaba.nacos.client.ai.event.AgentCardListenerInvoker;
+import com.alibaba.nacos.client.ai.event.AgentSpecChangedEvent;
+import com.alibaba.nacos.client.ai.event.AgentSpecListenerInvoker;
 import com.alibaba.nacos.client.ai.event.AiChangeNotifier;
 import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
+import com.alibaba.nacos.client.ai.event.PromptChangedEvent;
+import com.alibaba.nacos.client.ai.event.PromptListenerInvoker;
+import com.alibaba.nacos.client.ai.remote.AiClientProxy;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
+import com.alibaba.nacos.client.ai.remote.AiHttpClientProxy;
+import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -59,7 +75,6 @@ import java.util.Set;
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAiService implements AiService {
     
     private static final Logger LOGGER = LogUtils.logger(NacosAiService.class);
@@ -68,19 +83,41 @@ public class NacosAiService implements AiService {
     
     private final AiGrpcClient grpcClient;
     
+    private final AiHttpClientProxy httpProxy;
+    
+    private final AiClientProxy aiClientProxy;
+    
     private final NacosMcpServerCacheHolder mcpServerCacheHolder;
     
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
     
+    private final NacosPromptCacheHolder promptCacheHolder;
+    
+    private final NacosAgentSpecCacheHolder agentSpecCacheHolder;
+    
     private final AiChangeNotifier aiChangeNotifier;
+
+    private final ConfigService skillConfigService;
     
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
+        this.httpProxy = new AiHttpClientProxy(namespaceId, clientProperties);
+        String transportMode = clientProperties.getProperty(AiConstants.AI_TRANSPORT_MODE,
+                AiConstants.AI_TRANSPORT_MODE_GRPC);
+        if (AiConstants.AI_TRANSPORT_MODE_HTTP.equalsIgnoreCase(transportMode)) {
+            LOGGER.info("AI transport mode is HTTP, using AiHttpClientProxy as primary proxy.");
+            this.aiClientProxy = this.httpProxy;
+        } else {
+            this.aiClientProxy = this.grpcClient;
+        }
+        this.skillConfigService = new NacosConfigService(properties);
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
+        this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
+        this.agentSpecCacheHolder = new NacosAgentSpecCacheHolder(this.skillConfigService, this.namespaceId);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -96,6 +133,8 @@ public class NacosAiService implements AiService {
     private void start() throws NacosException {
         this.grpcClient.start(this.mcpServerCacheHolder, this.agentCardCacheHolder);
         NotifyCenter.registerToPublisher(McpServerChangedEvent.class, 16384);
+        NotifyCenter.registerToPublisher(PromptChangedEvent.class, 16384);
+        NotifyCenter.registerToPublisher(AgentSpecChangedEvent.class, 16384);
         NotifyCenter.registerSubscriber(this.aiChangeNotifier);
     }
     
@@ -324,8 +363,162 @@ public class NacosAiService implements AiService {
     }
     
     @Override
+    public byte[] downloadSkillZip(String skillName) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skillName` not present");
+        }
+        return httpProxy.downloadSkillZip(skillName, null, null);
+    }
+    
+    @Override
+    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skillName` not present");
+        }
+        return httpProxy.downloadSkillZip(skillName, version, null);
+    }
+    
+    @Override
+    public byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
+        if (StringUtils.isBlank(skillName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `skillName` not present");
+        }
+        return httpProxy.downloadSkillZip(skillName, null, label);
+    }
+    
+    // ==================== AgentSpec Methods ====================
+    
+    @Override
+    public AgentSpec loadAgentSpec(String agentSpecName) throws NacosException {
+        if (StringUtils.isBlank(agentSpecName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `agentSpecName` not present");
+        }
+        return agentSpecCacheHolder.queryAgentSpec(agentSpecName);
+    }
+    
+    @Override
+    public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException {
+        if (StringUtils.isBlank(agentSpecName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentSpecName` can't be empty or null");
+        }
+        if (null == agentSpecListener) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentSpecListener` can't be empty or null");
+        }
+        
+        AgentSpecListenerInvoker listenerInvoker = new AgentSpecListenerInvoker(agentSpecListener);
+        aiChangeNotifier.registerListener(agentSpecName, listenerInvoker);
+        AgentSpec result = agentSpecCacheHolder.subscribeAgentSpec(agentSpecName);
+        if (null != result && !listenerInvoker.isInvoked()) {
+            listenerInvoker.invoke(new NacosAgentSpecEvent(agentSpecName, result));
+        }
+        return result;
+    }
+    
+    @Override
+    public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException {
+        if (StringUtils.isBlank(agentSpecName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `agentSpecName` can't be empty or null");
+        }
+        if (null == agentSpecListener) {
+            return;
+        }
+        AgentSpecListenerInvoker listenerInvoker = new AgentSpecListenerInvoker(agentSpecListener);
+        aiChangeNotifier.deregisterListener(agentSpecName, listenerInvoker);
+        if (!aiChangeNotifier.isAgentSpecSubscribed(agentSpecName)) {
+            agentSpecCacheHolder.unsubscribeAgentSpec(agentSpecName);
+        }
+    }
+    
+    // ==================== Prompt Methods ====================
+    
+    @Override
+    public Prompt getPrompt(String promptKey) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        return getPromptByVersion(promptKey, null);
+    }
+    
+    @Override
+    public Prompt getPromptByVersion(String promptKey, String version) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        if (StringUtils.isBlank(version)) {
+            return aiClientProxy.queryPrompt(promptKey, null, null, null);
+        }
+        return aiClientProxy.queryPrompt(promptKey, version, null, null);
+    }
+    
+    @Override
+    public Prompt getPromptByLabel(String promptKey, String label) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        if (StringUtils.isBlank(label)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `label` can't be empty or null");
+        }
+        return aiClientProxy.queryPrompt(promptKey, null, label, null);
+    }
+    
+    @Override
+    public Prompt subscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        if (null == promptListener) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptListener` can't be null");
+        }
+        
+        PromptListenerInvoker listenerInvoker = new PromptListenerInvoker(promptListener);
+        aiChangeNotifier.registerListener(promptKey, version, label, listenerInvoker);
+        Prompt result = promptCacheHolder.subscribePrompt(promptKey, version, label);
+        if (null != result && !listenerInvoker.isInvoked()) {
+            listenerInvoker.invoke(new NacosPromptEvent(promptKey, result));
+        }
+        return result;
+    }
+    
+    @Override
+    public void unsubscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException {
+        if (StringUtils.isBlank(promptKey)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `promptKey` can't be empty or null");
+        }
+        if (null == promptListener) {
+            return;
+        }
+        PromptListenerInvoker listenerInvoker = new PromptListenerInvoker(promptListener);
+        aiChangeNotifier.deregisterListener(promptKey, version, label, listenerInvoker);
+        if (!aiChangeNotifier.isPromptSubscribed(promptKey, version, label)) {
+            promptCacheHolder.unsubscribePrompt(promptKey, version, label);
+        }
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
+        this.httpProxy.shutdown();
+        this.skillConfigService.shutDown();
         this.mcpServerCacheHolder.shutdown();
+        this.promptCacheHolder.shutdown();
+        this.agentSpecCacheHolder.shutdown();
     }
 }

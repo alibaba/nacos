@@ -283,8 +283,9 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      * @param clientId        client id.
      */
     public void removeFuzzyWatchContext(String groupKeyPattern, String clientId) {
-        if (watchedClientsMap.containsKey(groupKeyPattern)) {
-            watchedClientsMap.get(groupKeyPattern).remove(clientId);
+        Set<String> clients = watchedClientsMap.get(groupKeyPattern);
+        if (clients != null) {
+            clients.remove(clientId);
         }
     }
     
@@ -325,7 +326,6 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
                             NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(), service.getName()));
                 }
             }
-            matchedServiceKeysMap.putIfAbsent(completedPattern, matchedServices);
             Loggers.SRV_LOG.info("FUZZY_WATCH: pattern {} match {} services, overMatchCount={},cost {}ms",
                     completedPattern, matchedServices.size(), overMatchCount,
                     System.currentTimeMillis() - matchBeginTime);

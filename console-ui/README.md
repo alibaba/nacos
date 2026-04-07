@@ -1,53 +1,32 @@
-# 开始项目
-国内访问 npm 比较慢,我们可以使用阿里的镜像,
-在 npm 或者 yarn 命令后面加参数:
-> --registry=https://registry.npmmirror.com
-例: 
-```
-npm install --registry=https://registry.npmmirror.com
-yarn --registry=https://registry.npmmirror.com
-```
-[详情地址: https://npmmirror.com/](http://npm.taobao.org/) 
+# Nacos Console UI (Legacy)
 
-## Node安装
+The legacy Nacos console frontend, built with React + Webpack 4.
 
-NodeJS提供了一些安装程序，都可以在[nodejs.org](https://nodejs.org/download/release/) 这里下载并安装。mac系统选择.pkg结尾的文件下载安装。
-注意node版本号过高可能导致 `npm install` 时失败，建议版本:
-- node:v14.20.1
+## Prerequisites
 
-## 安装依赖
-```sh
-yarn
+- Node.js >= 14 (recommended 14.x ~ 22.x)
+- npm
+- Global CLI tools:
+
+```bash
+npm install -g cross-env webpack webpack-cli
 ```
-或
-```
+
+## Install Dependencies
+
+```bash
 npm install
 ```
 
-## 启动
-```sh
-yarn start
-```
-或
-```
+## Local Development
+
+```bash
 npm start
 ```
 
-## 构建打包
-```sh
-yarn build
-```
-或
-```
-npm run build
-```
-## 
+Proxy configuration is in `build/webpack.dev.conf.js` under the `proxy` property:
 
-# 代理配置
-`build/webpack.dev.conf.js`
-修改proxy属性
-
-```
+```js
 proxy: [{
   context: ['/'],
   changeOrigin: true,
@@ -55,3 +34,35 @@ proxy: [{
   target: 'http://ip:port',
 }],
 ```
+
+## Build
+
+```bash
+npm run build
+```
+
+Build output goes to the `dist/` directory.
+
+> Note: Node.js 17+ requires the `--openssl-legacy-provider` flag (already configured in the package.json build script).
+
+## Deploy
+
+Copy build artifacts to the backend static resources directory:
+
+```bash
+rm -rf ../console/src/main/resources/static/legacy/*
+cp -r dist/* ../console/src/main/resources/static/legacy/
+```
+
+Deployed directory structure:
+
+```
+console/src/main/resources/static/legacy/
+├── index.html
+├── css/
+└── js/
+```
+
+## contextPath Adaptation
+
+Build artifacts use relative paths (`../`), adapting to any `nacos.console.contextPath` configuration value. No rebuild is needed for different contextPath settings.

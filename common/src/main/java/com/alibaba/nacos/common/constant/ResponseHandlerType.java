@@ -27,6 +27,8 @@ public final class ResponseHandlerType {
     
     public static final String RESTRESULT_TYPE = "com.alibaba.nacos.common.model.RestResult";
     
+    public static final String BYTE_ARRAY_TYPE = byte[].class.getName();
+    
     public static final String DEFAULT_BEAN_TYPE = "default_bean_handler";
     
 }

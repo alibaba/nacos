@@ -125,6 +125,11 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService imple
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
         
+        if (AuthConstants.ANONYMOUS_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.ANONYMOUS_ROLE + "' is reserved by the system");
+        }
+        
         if (isUserBoundToRole(role, username)) {
             throw new IllegalArgumentException("user '" + username + "' already bound to the role '" + role + "'!");
         }
@@ -149,19 +154,13 @@ public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService imple
     
     @Override
     public void deleteRole(String role, String userName) {
-        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
-        }
+        rejectReservedRole(role);
         rolePersistService.deleteRole(role, userName);
     }
     
     @Override
     public void deleteRole(String role) {
-        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to delete!");
-        }
+        rejectReservedRole(role);
         rolePersistService.deleteRole(role);
         getCachedRoleInfoMap().remove(role);
     }

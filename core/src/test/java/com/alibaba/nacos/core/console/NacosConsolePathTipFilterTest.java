@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.console;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +36,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -76,7 +81,7 @@ class NacosConsolePathTipFilterTest {
         environment.setProperty("nacos.console.contextPath", "/console");
         responseWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(responseWriter);
-        when(response.getWriter()).thenReturn(printWriter);
+        lenient().when(response.getWriter()).thenReturn(printWriter);
     }
     
     @Test
@@ -203,6 +208,87 @@ class NacosConsolePathTipFilterTest {
         filter.doFilter(request, response, filterChain);
         response.getWriter().flush();
         verify(filterChain).doFilter(request, response);
+    }
+    
+    @Test
+    void testDoFilterWhenNotHttpRequestOrResponseDelegatesToChain() throws IOException, ServletException {
+        ServletRequest servletRequest = mock(ServletRequest.class);
+        ServletResponse servletResponse = mock(ServletResponse.class);
+        filter.doFilter(servletRequest, servletResponse, filterChain);
+        verify(filterChain).doFilter(servletRequest, servletResponse);
+    }
+    
+    @Test
+    void testDoFilterWhenHttpRequestButNotHttpResponseDelegatesToChain() throws IOException, ServletException {
+        ServletResponse servletResponse = mock(ServletResponse.class);
+        filter.doFilter(request, servletResponse, filterChain);
+        verify(filterChain).doFilter(request, servletResponse);
+    }
+    
+    @Test
+    void testDoFilterWhenHttpResponseButNotHttpRequestDelegatesToChain() throws IOException, ServletException {
+        ServletRequest servletRequest = mock(ServletRequest.class);
+        filter.doFilter(servletRequest, response, filterChain);
+        verify(filterChain).doFilter(servletRequest, response);
+    }
+    
+    @Test
+    void testBlankServerContextPathReturnsTipWithDefaultPath() throws IOException, ServletException {
+        MockEnvironment env = new MockEnvironment();
+        env.setProperty("nacos.server.main.port", "18848");
+        env.setProperty("nacos.server.contextPath", "");
+        EnvUtil.setEnvironment(env);
+        when(request.getRequestURI()).thenReturn("/");
+        responseWriter.getBuffer().setLength(0);
+        filter.doFilter(request, response, filterChain);
+        response.getWriter().flush();
+        String responseText = responseWriter.toString();
+        assertTrue(responseText.contains("path is /."));
+        EnvUtil.setEnvironment(environment);
+    }
+    
+    @Test
+    void testBlankConsoleContextPathUsesDefaultPath() throws IOException, ServletException {
+        MockEnvironment env = new MockEnvironment();
+        env.setProperty("nacos.server.main.port", "18848");
+        env.setProperty("nacos.server.contextPath", NACOS_CONSOLE_DEFAULT_PATH);
+        env.setProperty("nacos.console.port", "18080");
+        EnvUtil.setEnvironment(env);
+        when(request.getRequestURI()).thenReturn("/");
+        responseWriter.getBuffer().setLength(0);
+        filter.doFilter(request, response, filterChain);
+        response.getWriter().flush();
+        String responseText = responseWriter.toString();
+        assertTrue(responseText.contains("path is /."));
+        EnvUtil.setEnvironment(environment);
+    }
+    
+    @Test
+    void testDefaultConsolePortWhenNotSet() throws IOException, ServletException {
+        MockEnvironment env = new MockEnvironment();
+        env.setProperty("nacos.server.main.port", "18848");
+        env.setProperty("nacos.server.contextPath", NACOS_CONSOLE_DEFAULT_PATH);
+        env.setProperty("nacos.console.contextPath", "/console");
+        EnvUtil.setEnvironment(env);
+        when(request.getRequestURI()).thenReturn("/");
+        responseWriter.getBuffer().setLength(0);
+        filter.doFilter(request, response, filterChain);
+        response.getWriter().flush();
+        String responseText = responseWriter.toString();
+        assertTrue(responseText.contains("port is 8080"));
+        EnvUtil.setEnvironment(environment);
+    }
+    
+    @Test
+    void testContextPathWithoutTrailingSlashNormalizedWithSlash() throws IOException, ServletException {
+        environment.setProperty("nacos.server.contextPath", "/nacos");
+        when(request.getRequestURI()).thenReturn("/nacos/");
+        responseWriter.getBuffer().setLength(0);
+        filter.doFilter(request, response, filterChain);
+        response.getWriter().flush();
+        String responseText = responseWriter.toString();
+        assertEquals(responseText, String.format("Nacos Console default port is %s, and the path is %s.",
+                EnvUtil.getProperty("nacos.console.port"), EnvUtil.getProperty("nacos.console.contextPath")));
     }
     
 }

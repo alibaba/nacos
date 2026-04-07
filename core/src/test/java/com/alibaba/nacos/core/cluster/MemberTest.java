@@ -25,7 +25,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MemberTest {
@@ -87,5 +92,79 @@ class MemberTest {
         assertEquals(member.getAddress(), actualMember.getAddress());
         assertEquals(member.getExtendInfo(), actualMember.getExtendInfo());
         assertEquals(member.getAbilities(), actualMember.getAbilities());
+    }
+
+    @Test
+    void testCheckValidMember() {
+        assertTrue(member.check());
+    }
+
+    @Test
+    void testCheckInvalidMemberMissingIp() {
+        Member invalid = Member.builder().ip("").port(8848).state(NodeState.UP).build();
+        assertFalse(invalid.check());
+    }
+
+    @Test
+    void testCheckInvalidMemberPort() {
+        Member invalid = Member.builder().ip("127.0.0.1").port(-1).state(NodeState.UP).build();
+        assertFalse(invalid.check());
+    }
+
+    @Test
+    void testCompareTo() {
+        Member other = Member.builder().ip("127.0.0.2").port(8080).state(NodeState.UP).build();
+        assertTrue(member.compareTo(other) < 0);
+        assertTrue(other.compareTo(member) > 0);
+        assertEquals(0, member.compareTo(member));
+    }
+
+    @Test
+    void testEqualsNull() {
+        assertFalse(member.equals(null));
+    }
+
+    @Test
+    void testEqualsDifferentClass() {
+        assertFalse(member.equals("127.0.0.1:8080"));
+        assertFalse(member.equals(new Object()));
+    }
+
+    @Test
+    void testCopy() {
+        Member copied = member.copy();
+        assertNotNull(copied);
+        assertEquals(member.getIp(), copied.getIp());
+        assertEquals(member.getPort(), copied.getPort());
+        assertEquals(member.getAddress(), copied.getAddress());
+    }
+
+    @Test
+    void testGetExtendValSetExtendValDelExtendVal() {
+        member.setExtendVal("key1", "value1");
+        assertEquals("value1", member.getExtendVal("key1"));
+        member.delExtendVal("key1");
+        assertTrue(member.getExtendInfo().get("key1") == null || member.getExtendInfo().get("key1") == null);
+    }
+
+    @Test
+    void testBuilderExtendInfo() {
+        Map<String, String> extra = new HashMap<>();
+        extra.put("custom", "v");
+        Member m = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).extendInfo(extra).build();
+        assertNotNull(m.getExtendInfo());
+        assertEquals("v", m.getExtendInfo().get("custom"));
+    }
+
+    @Test
+    void testFailAccessCnt() {
+        member.setFailAccessCnt(5);
+        assertEquals(5, member.getFailAccessCnt());
+    }
+
+    @Test
+    void testGrpcReportEnabled() {
+        member.setGrpcReportEnabled(true);
+        assertTrue(member.isGrpcReportEnabled());
     }
 }

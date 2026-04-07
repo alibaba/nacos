@@ -53,7 +53,6 @@ import static com.alibaba.nacos.sys.env.Constants.NACOS_REMOTE_GRPC_LISTEN_IP;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.LowerCamelCaseVariableNamingRule")
 public class InetUtils {
     
     private static final Logger LOG = LoggerFactory.getLogger(InetUtils.class);
@@ -282,7 +281,7 @@ public class InetUtils {
     /**
      * {@link com.alibaba.nacos.core.cluster.ServerMemberManager} is listener.
      */
-    @SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static class IPChangeEvent extends SlowEvent {
         
         private String oldIP;

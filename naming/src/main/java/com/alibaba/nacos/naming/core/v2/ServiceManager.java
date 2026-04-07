@@ -100,8 +100,9 @@ public class ServiceManager {
      * @return removed service
      */
     public Service removeSingleton(Service service) {
-        if (namespaceSingletonMaps.containsKey(service.getNamespace())) {
-            namespaceSingletonMaps.get(service.getNamespace()).remove(service);
+        Set<Service> services = namespaceSingletonMaps.get(service.getNamespace());
+        if (services != null) {
+            services.remove(service);
         }
         return singletonRepository.remove(service);
     }

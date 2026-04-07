@@ -39,8 +39,15 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.List;
+
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerTransportFilter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
@@ -116,6 +123,39 @@ class GrpcServerTest {
                 grpcSdkServer.getSource())).thenReturn(true);
         grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
         Mockito.verify(mockAcceptor, Mockito.times(1)).request(eq(convert), eq(streamObserverMock));
-        
+    }
+
+    @Test
+    void testReloadProtocolNegotiatorWhenNull() {
+        grpcSdkServer = new GrpcSdkServer();
+        grpcSdkServer.reloadProtocolNegotiator();
+    }
+
+    @Test
+    void testBaseGrpcServerKeepAliveAndMaxMessageDefaults() throws Exception {
+        grpcSdkServer = new GrpcSdkServer();
+        java.lang.reflect.Method getKeepAliveTime = BaseGrpcServer.class.getDeclaredMethod("getKeepAliveTime");
+        getKeepAliveTime.setAccessible(true);
+        assertNotNull(getKeepAliveTime.invoke(grpcSdkServer));
+        java.lang.reflect.Method getMaxInboundMessageSize = BaseGrpcServer.class.getDeclaredMethod("getMaxInboundMessageSize");
+        getMaxInboundMessageSize.setAccessible(true);
+        assertNotNull(getMaxInboundMessageSize.invoke(grpcSdkServer));
+    }
+
+    @Test
+    void testGetSeverInterceptorsAndGetServerTransportFilters() throws Exception {
+        grpcSdkServer = new GrpcSdkServer();
+        Method getSeverInterceptors = BaseGrpcServer.class.getDeclaredMethod("getSeverInterceptors");
+        getSeverInterceptors.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<ServerInterceptor> interceptors = (List<ServerInterceptor>) getSeverInterceptors.invoke(grpcSdkServer);
+        assertNotNull(interceptors);
+        assertFalse(interceptors.isEmpty());
+        Method getServerTransportFilters = BaseGrpcServer.class.getDeclaredMethod("getServerTransportFilters");
+        getServerTransportFilters.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<ServerTransportFilter> filters = (List<ServerTransportFilter>) getServerTransportFilters.invoke(grpcSdkServer);
+        assertNotNull(filters);
+        assertFalse(filters.isEmpty());
     }
 }

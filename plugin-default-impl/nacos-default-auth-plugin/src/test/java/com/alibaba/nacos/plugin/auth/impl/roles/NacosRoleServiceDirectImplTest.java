@@ -155,6 +155,22 @@ class NacosRoleServiceDirectImplTest {
     }
     
     @Test
+    void addAnonymousRoleRejected() {
+        when(userDetailsService.getUser("testUser")).thenReturn(new User());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> nacosRoleService.addRole(AuthConstants.ANONYMOUS_ROLE, "testUser"));
+        assertTrue(exception.getMessage().contains("reserved by the system"));
+    }
+    
+    @Test
+    void deleteAnonymousRoleRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> nacosRoleService.deleteRole(AuthConstants.ANONYMOUS_ROLE));
+        assertThrows(IllegalArgumentException.class,
+                () -> nacosRoleService.deleteRole(AuthConstants.ANONYMOUS_ROLE, "mockUser"));
+    }
+    
+    @Test
     void getPermissionsPage() {
         Page<PermissionInfo> permissionsFromDatabase = nacosRoleService.getPermissions("role-admin", 1,
                 Integer.MAX_VALUE);

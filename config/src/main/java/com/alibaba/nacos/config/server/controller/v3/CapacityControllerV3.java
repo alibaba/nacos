@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -29,7 +30,6 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtracto
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,13 +77,15 @@ public class CapacityControllerV3 {
         try {
             Capacity capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             if (capacity == null) {
-                LOGGER.warn("[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}", groupName, namespaceId);
+                LOGGER.warn("[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}", groupName,
+                        namespaceId);
                 capacityService.initCapacity(groupName, namespaceId);
                 capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             }
             return Result.success(capacity);
         } catch (Exception e) {
-            LOGGER.error("[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}", groupName, namespaceId, e);
+            LOGGER.error("[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}", groupName,
+                    namespaceId, e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
     }
@@ -112,10 +114,12 @@ public class CapacityControllerV3 {
                 return Result.success(true);
             } else {
                 return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
-                        String.format("Failed to update the capacity for groupName: %s, namespaceId: %s", groupName, namespaceId), null);
+                        String.format("Failed to update the capacity for groupName: %s, namespaceId: %s", groupName,
+                                namespaceId), null);
             }
         } catch (Exception e) {
-            LOGGER.error("[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}", groupName, namespaceId, e);
+            LOGGER.error("[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}", groupName,
+                    namespaceId, e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
     }

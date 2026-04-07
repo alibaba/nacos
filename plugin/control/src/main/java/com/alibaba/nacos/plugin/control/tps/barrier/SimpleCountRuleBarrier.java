@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     RateCounter rateCounter;

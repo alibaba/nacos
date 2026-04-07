@@ -44,7 +44,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
     
     /**

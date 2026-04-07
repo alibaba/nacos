@@ -18,7 +18,9 @@ package com.alibaba.nacos.ai.service.a2a;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.SyncEffectService;
+import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
+import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
@@ -111,6 +113,9 @@ public class A2aServerOperationService {
             configOperationService.publishConfig(configFormVersion, agentCardConfigRequest, null);
             
             syncEffectService.toSync(configFormVersion, startOperationTime);
+            AiResourceTraceService.logSuccess("a2a", agentCard.getName(), agentCard.getVersion(),
+                    AiResourceTraceService.OP_CREATE_DRAFT, VisibilityHelper.resolveCurrentIdentity(),
+                    VisibilityHelper.resolveClientIp());
         } catch (ConfigAlreadyExistsException e) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     String.format("AgentCard name %s already exist", agentCard.getName()));
@@ -177,6 +182,10 @@ public class A2aServerOperationService {
             
             configOperationService.deleteConfig(encodedName, AGENT_GROUP, namespaceId, null, null, "nacos", null);
         }
+        AiResourceTraceService.logSuccess("a2a", agentName, version,
+                StringUtils.isNotEmpty(version) ? AiResourceTraceService.OP_DELETE_VERSION
+                        : AiResourceTraceService.OP_DELETE_RESOURCE,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**
@@ -236,6 +245,9 @@ public class A2aServerOperationService {
         configOperationService.publishConfig(versionConfigForm, versionConfigRequestInfo, null);
         
         syncEffectService.toSync(versionConfigForm, startOperationTime);
+        AiResourceTraceService.logSuccess("a2a", agentCard.getName(), agentCard.getVersion(),
+                setAsLatest ? AiResourceTraceService.OP_PUBLISH : AiResourceTraceService.OP_UPDATE_DRAFT,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
     /**

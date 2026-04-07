@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.model.form.v3;
 
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.api.model.NacosForm;
@@ -49,6 +50,14 @@ public class RaftCommandForm implements NacosForm {
     
     @Override
     public void validate() throws NacosApiException {
+        if (StringUtils.isBlank(command)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Raft command is required.");
+        }
+        if (StringUtils.isBlank(value)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Raft command value is required.");
+        }
     }
     
     public String getGroupId() {

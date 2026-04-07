@@ -16,13 +16,29 @@
 
 import axios from 'axios';
 import qs from 'qs';
-import { Message } from '@alifd/next';
+import { toastError } from './message';
 import { browserHistory } from 'react-router';
 import { isPlainObject } from './nacosutil';
 // import { SUCCESS_RESULT_CODE } from '../constants';
 import { goRegister } from '../globalLib';
 
 const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
+
+const SESSION_EXPIRED_MESSAGES = [
+  'unknown user!',
+  'user not found',
+  'token invalid!',
+  'token expired!',
+  'expired token',
+  'session expired!',
+  'invalid signature',
+  'unsupported signature algorithm',
+  'invalid token',
+  'token is required',
+  'token is empty',
+  'token has expired',
+  'token signature verification failed',
+];
 
 function goLogin() {
   const url = window.location.href;
@@ -31,8 +47,14 @@ function goLogin() {
   window.location.href = `${base_url}#/login`;
 }
 
+function getContextPath() {
+  return window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+}
+
 const request = () => {
-  const instance = axios.create();
+  const instance = axios.create({
+    baseURL: getContextPath(),
+  });
 
   instance.interceptors.request.use(
     config => {
@@ -87,6 +109,24 @@ const request = () => {
           goLogin();
         }
       }
+      // Handle session expired in success responses (HTTP 200 with business error code).
+      if (
+        response.data &&
+        typeof response.data === 'object' &&
+        response.data.code &&
+        response.data.code !== 0
+      ) {
+        const msg = (response.data.message || '').toLowerCase();
+        const dataField = (typeof response.data.data === 'string'
+          ? response.data.data
+          : ''
+        ).toLowerCase();
+        const combined = msg + ' ' + dataField;
+        if (SESSION_EXPIRED_MESSAGES.some(m => combined.includes(m))) {
+          goLogin();
+          return Promise.reject(new Error('session expired'));
+        }
+      }
       return response.data;
     },
     error => {
@@ -98,19 +138,20 @@ const request = () => {
         } else if (typeof data === 'object') {
           message = data.message;
         }
-        Message.error(message);
+        toastError(message);
 
-        if (
-          [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid!', 'token expired!', 'session expired!'].includes(
-            message
-          )
-        ) {
+        const dataStr = typeof data === 'string' ? data : data.data || '';
+        const isSessionExpired = SESSION_EXPIRED_MESSAGES.some(
+          msg =>
+            (message && message.toLowerCase().includes(msg)) ||
+            (dataStr && dataStr.toLowerCase().includes(msg))
+        );
+        if ([401, 403].includes(status) && isSessionExpired) {
           goLogin();
         }
         return Promise.reject(error.response);
       }
-      Message.error(API_GENERAL_ERROR_MESSAGE);
+      toastError(API_GENERAL_ERROR_MESSAGE);
       return Promise.reject(error);
     }
   );

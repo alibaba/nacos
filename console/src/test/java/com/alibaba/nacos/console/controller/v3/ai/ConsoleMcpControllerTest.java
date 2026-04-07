@@ -21,17 +21,14 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
-import com.alibaba.nacos.core.auth.AuthFilter;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
@@ -53,12 +50,6 @@ class ConsoleMcpControllerTest {
     @Mock
     McpProxy mcpProxy;
     
-    @Mock
-    private NacosAuthConfig authConfig;
-    
-    @InjectMocks
-    private AuthFilter authFilter;
-    
     private MockMvc mockmvc;
     
     ConsoleMcpController consoleMcpController;
@@ -67,8 +58,7 @@ class ConsoleMcpControllerTest {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         consoleMcpController = new ConsoleMcpController(mcpProxy);
-        mockmvc = MockMvcBuilders.standaloneSetup(consoleMcpController).addFilter(authFilter).build();
-        when(authConfig.isAuthEnabled()).thenReturn(false);
+        mockmvc = MockMvcBuilders.standaloneSetup(consoleMcpController).build();
     }
     
     @AfterEach

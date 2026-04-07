@@ -55,22 +55,22 @@ public class McpRemoteHandler implements McpHandler {
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) throws NacosException {
         if (Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)) {
-            return clientHolder.getAiMaintainerService().listMcpServer(namespaceId, mcpName, pageNo, pageSize);
+            return clientHolder.getAiMaintainerService().mcp().listMcpServer(namespaceId, mcpName, pageNo, pageSize);
         } else {
-            return clientHolder.getAiMaintainerService().searchMcpServer(namespaceId, mcpName, pageNo, pageSize);
+            return clientHolder.getAiMaintainerService().mcp().searchMcpServer(namespaceId, mcpName, pageNo, pageSize);
         }
     }
     
     @Override
     public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version)
             throws NacosException {
-        return clientHolder.getAiMaintainerService().getMcpServerDetail(namespaceId, mcpName, mcpId, version);
+        return clientHolder.getAiMaintainerService().mcp().getMcpServerDetail(namespaceId, mcpName, mcpId, version);
     }
     
     @Override
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        return clientHolder.getAiMaintainerService()
+        return clientHolder.getAiMaintainerService().mcp()
                 .createMcpServer(namespaceId, serverSpecification.getName(), serverSpecification, toolSpecification,
                         endpointSpecification);
     }
@@ -78,7 +78,7 @@ public class McpRemoteHandler implements McpHandler {
     @Override
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
-        clientHolder.getAiMaintainerService()
+        clientHolder.getAiMaintainerService().mcp()
                 .updateMcpServer(namespaceId, serverSpecification.getName(), isPublish, serverSpecification,
                         toolSpecification, endpointSpecification, overrideExisting);
     }
@@ -86,7 +86,7 @@ public class McpRemoteHandler implements McpHandler {
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
             throws NacosException {
-        clientHolder.getAiMaintainerService().deleteMcpServer(namespaceId, mcpName, mcpId, version);
+        clientHolder.getAiMaintainerService().mcp().deleteMcpServer(namespaceId, mcpName, mcpId, version);
     }
     
     @Override

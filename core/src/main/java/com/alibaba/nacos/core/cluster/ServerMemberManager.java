@@ -110,11 +110,6 @@ public class ServerMemberManager implements NacosMemberManager {
     private volatile ConcurrentSkipListMap<String, Member> serverList;
     
     /**
-     * Is this node in the cluster list.
-     */
-    private static volatile boolean isInIpList = true;
-    
-    /**
      * port.
      */
     private int port;
@@ -173,10 +168,6 @@ public class ServerMemberManager implements NacosMemberManager {
         
         // Initializes the lookup mode
         initAndStartLookup();
-        
-        if (serverList.isEmpty()) {
-            throw new NacosException(NacosException.SERVER_ERROR, "cannot get serverlist, so exit.");
-        }
         
         Loggers.CORE.info("The cluster resource is initialized");
     }
@@ -362,10 +353,7 @@ public class ServerMemberManager implements NacosMemberManager {
         boolean isContainSelfIp = members.stream()
                 .anyMatch(ipPortTmp -> Objects.equals(localAddress, ipPortTmp.getAddress()));
         
-        if (isContainSelfIp) {
-            isInIpList = true;
-        } else {
-            isInIpList = false;
+        if (!isContainSelfIp) {
             members.add(this.self);
             Loggers.CLUSTER.warn("[serverlist] self ip {} not in serverlist {}", self, members);
         }
@@ -519,13 +507,6 @@ public class ServerMemberManager implements NacosMemberManager {
     public Map<String, Member> getServerList() {
         return Collections.unmodifiableMap(serverList);
     }
-    
-    public static boolean isInIpList() {
-        return isInIpList;
-    }
-    
-    // Synchronize the metadata information of a node
-    // A health check of the target node is also attached
     
     class MemberInfoReportTask extends Task {
         

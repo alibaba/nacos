@@ -43,6 +43,14 @@
   width: 250px;
   border-right: 1px solid #e6e6e6;
   margin-right: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tools-sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 600px;
 }
 
 .tools-content {
@@ -55,7 +63,7 @@
   cursor: pointer;
   border-bottom: 1px solid #f0f0f0;
   background-color: transparent;
-  border-left: 3px solid transparent;
+  border-left: 4px solid transparent;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -69,6 +77,7 @@
 .tool-item.active {
   background-color: #e6f7ff;
   border-left-color: #1890ff;
+  font-weight: 500;
 }
 
 /* Tool Item Title */
@@ -194,67 +203,129 @@
 }
 
 .tree-group-label {
-  font-family: Monaco, Consolas, 'Courier New', monospace;
-  font-weight: bold;
-  color: #000;
+  font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+  font-weight: 600;
+  color: #333;
   font-size: 14px;
+}
+
+.group-type-badge {
+  display: inline-block;
+  font-size: 11px;
+  color: #888;
+  background: #f0f0f0;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .param-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  /* Align text baselines */
   gap: 8px;
   width: 100%;
   flex-wrap: wrap;
+  padding: 2px 0;
 }
 
 .param-name {
-  font-family: Monaco, Consolas, 'Courier New', monospace;
-  font-weight: bold;
+  font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+  font-weight: 600;
   color: #000;
-  font-size: 14px;
+  /* Darker for emphasis */
+  font-size: 13px;
 }
 
 .type-badge {
-  font-family: Monaco, Consolas, 'Courier New', monospace;
-  color: #666;
-  font-size: 12px;
-  background-color: #f5f5f5;
-  padding: 2px 6px;
-  border-radius: 3px;
-  border: 1px solid #ddd;
+  font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  /* default transparent border */
+  text-transform: lowercase;
 }
 
-.required-badge {
-  font-family: Monaco, Consolas, 'Courier New', monospace;
-  color: #000;
-  font-size: 11px;
-  font-weight: bold;
+/* Color Coding for Types */
+.type-badge.type-string {
+  color: #22863a;
+  background-color: #f0fff4;
+  border-color: #c6f6d5;
 }
 
-.default-tag,
-.default-value,
-.enum-values {
-  font-family: Monaco, Consolas, 'Courier New', monospace;
-  color: #000;
+.type-badge.type-number,
+.type-badge.type-integer {
+  color: #005cc5;
+  background-color: #f1f8ff;
+  border-color: #c8e1ff;
+}
+
+.type-badge.type-boolean {
+  color: #d73a49;
+  background-color: #ffeef0;
+  border-color: #ffdce0;
+}
+
+.type-badge.type-object {
+  color: #6f42c1;
+  background-color: #f8f6ff;
+  border-color: #e2d9f3;
+}
+
+.type-badge.type-array {
+  color: #e36209;
+  background-color: #fff8f2;
+  border-color: #ffecd6;
+}
+
+.required-prop {
+  color: #cf222e;
   font-size: 11px;
+  font-weight: 600;
+  background: #ffebe9;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.default-prop {
+  color: #57606a;
+  font-size: 11px;
+  background: #f6f8fa;
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid #d0d7de;
+}
+
+.enum-prop {
+  color: #0969da;
+  font-size: 11px;
+  font-family: 'SF Mono', monospace;
 }
 
 .param-desc,
 .info-label,
 .plain-label {
-  font-family: Monaco, Consolas, 'Courier New', monospace;
-  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Use system UI font for descriptions */
+  color: #57606a;
   font-size: 13px;
 }
 
 .param-desc {
-  font-size: 12px;
   flex: 1;
   min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-left: 4px;
+}
+
+.info-key {
+  font-weight: 600;
+  color: #333;
+  margin-right: 4px;
 }
 
 /* Protocol Conversion Section */
@@ -283,12 +354,15 @@
 .show-tools-mb-16 {
   margin-bottom: 16px;
 }
+
 .show-tools-mb-12 {
   margin-bottom: 12px;
 }
+
 .show-tools-mb-6 {
   margin-bottom: 6px;
 }
+
 .show-tools-mb-4 {
   margin-bottom: 4px;
 }
@@ -297,6 +371,7 @@
 .kv-row {
   margin-bottom: 4px;
 }
+
 .kv-row-lg {
   margin-bottom: 12px;
 }
@@ -309,12 +384,15 @@
 .kv-value {
   color: #666;
 }
+
 .kv-value.blue {
   color: #1890ff;
 }
+
 .kv-value.orange {
   color: #fa8c16;
 }
+
 .kv-value.green {
   color: #52c41a;
   font-weight: bold;
@@ -328,18 +406,23 @@
   font-size: 11px;
   font-weight: bold;
 }
+
 .http-method-badge.get {
   background-color: #52c41a;
 }
+
 .http-method-badge.post {
   background-color: #1890ff;
 }
+
 .http-method-badge.put {
   background-color: #fa8c16;
 }
+
 .http-method-badge.delete {
   background-color: #f5222d;
 }
+
 .http-method-badge.other {
   background-color: #999;
 }
@@ -378,17 +461,20 @@
   align-items: flex-start;
   gap: 8px;
 }
+
 .header-key {
   font-weight: bold;
   color: #000;
   font-family: Monaco, Consolas, 'Courier New', monospace;
   min-width: fit-content;
 }
+
 .header-value {
   color: #1890ff;
   font-family: Monaco, Consolas, 'Courier New', monospace;
   word-break: break-word;
 }
+
 .header-raw {
   color: #1890ff;
   font-family: Monaco, Consolas, 'Courier New', monospace;
@@ -447,6 +533,7 @@
   font-weight: bold;
   color: #fa8c16;
 }
+
 .other-config-value {
   color: #666;
 }
@@ -532,6 +619,7 @@
 .btn-wide {
   min-width: 140px;
 }
+
 .show-tools-btn-mr {
   margin-right: 10px;
 }
@@ -563,14 +651,27 @@
 }
 
 .upload-drag-inner {
-  padding: 20px;
+  padding: 40px 20px;
   text-align: center;
+  cursor: pointer;
+}
+
+.upload-drag-icon {
+  font-size: 48px;
+  color: #40a9ff;
+  margin-bottom: 16px;
+}
+
+.upload-drag-text {
+  font-size: 14px;
+  color: #666;
 }
 
 /* Dialog widths */
 .next-dialog.openapi-dialog {
   width: 800px;
 }
+
 .next-dialog.token-dialog {
   width: 600px;
 }
@@ -588,4 +689,35 @@
     margin-right: 0;
     margin-bottom: 16px;
   }
+}
+
+/* Override Upload List Item Style for custom green background */
+/* We target all list items regardless of state to ensure green background */
+.openapi-dialog .next-upload-list-item,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-error,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-uploading,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-done,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-select {
+  background-color: #f6ffed !important;
+  border-color: #b7eb8f !important;
+}
+
+/* Ensure hover state also stays green */
+.openapi-dialog .next-upload-list-item:hover,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-error:hover,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-uploading:hover,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-done:hover,
+.openapi-dialog .next-upload-list-item.next-upload-list-item-select:hover {
+  background-color: #f6ffed !important;
+  border-color: #b7eb8f !important;
+}
+
+.openapi-dialog .next-upload-list-item-name {
+  color: #333 !important;
+}
+
+/* Hide error icon if present */
+.openapi-dialog .next-upload-list-item-error .next-icon-error,
+.openapi-dialog .next-upload-list-item .next-icon-error {
+  display: none !important;
 }

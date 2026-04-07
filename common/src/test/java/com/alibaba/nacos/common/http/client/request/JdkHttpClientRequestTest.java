@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
@@ -42,9 +43,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -117,6 +120,33 @@ class JdkHttpClientRequestTest {
         verify(outputStream, never()).write(any(), eq(0), anyInt());
         assertEquals(connection, getActualConnection(response));
         
+    }
+    
+    @Test
+    void testExecuteDisconnectsOnOutputStreamException() throws Exception {
+        when(connection.getOutputStream()).thenThrow(new IOException("output stream error"));
+        Header header = Header.newInstance();
+        HttpClientConfig config = HttpClientConfig.builder().build();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, "body");
+        assertThrows(IOException.class, () -> httpClientRequest.execute(uri, "GET", httpEntity));
+        verify(connection).disconnect();
+    }
+    
+    @Test
+    void testExecuteDisconnectsOnConnectException() throws Exception {
+        doThrow(new IOException("connect error")).when(connection).connect();
+        Header header = Header.newInstance();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY);
+        assertThrows(IOException.class, () -> httpClientRequest.execute(uri, "GET", httpEntity));
+        verify(connection).disconnect();
+    }
+    
+    @Test
+    void testExecuteNoDisconnectOnSuccess() throws Exception {
+        Header header = Header.newInstance();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY);
+        httpClientRequest.execute(uri, "GET", httpEntity);
+        verify(connection, never()).disconnect();
     }
     
     private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {

@@ -71,11 +71,11 @@ public class YamlParserUtil {
     
     public static class YamlParserConstructor extends SafeConstructor {
         
-        public static Tag configMetadataTag = new Tag(ConfigMetadata.class);
+        public static final Tag CONFIG_METADATA_TAG = new Tag(ConfigMetadata.class);
         
         public YamlParserConstructor() {
             super(new LoaderOptions());
-            yamlConstructors.put(configMetadataTag, new ConstructYamlConfigMetadata());
+            yamlConstructors.put(CONFIG_METADATA_TAG, new ConstructYamlConfigMetadata());
         }
     }
     
@@ -100,7 +100,7 @@ public class YamlParserUtil {
         
         @Override
         public Object construct(Node node) {
-            if (!YamlParserConstructor.configMetadataTag.getValue().equals(node.getTag().getValue())) {
+            if (!YamlParserConstructor.CONFIG_METADATA_TAG.getValue().equals(node.getTag().getValue())) {
                 throw new NacosRuntimeException(NacosException.INVALID_PARAM,
                         "could not determine a constructor for the tag " + node.getTag() + node.getStartMark());
             }

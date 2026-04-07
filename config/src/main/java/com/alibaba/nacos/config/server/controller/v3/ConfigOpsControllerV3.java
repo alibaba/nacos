@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -37,7 +38,6 @@ import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
@@ -79,8 +79,7 @@ public class ConfigOpsControllerV3 {
      * Manually trigger dump of a local configuration file.
      */
     @PostMapping(value = "/localCache")
-    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<String> updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         try {
@@ -88,21 +87,23 @@ public class ConfigOpsControllerV3 {
             return Result.success("Local cache updated from store successfully!");
         } catch (Exception e) {
             LOGGER.error("[updateLocalCacheFromStore] ", e);
-            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Local cache updated from store failed!", e.getMessage());
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Local cache updated from store failed!",
+                    e.getMessage());
         }
     }
     
     @PutMapping(value = "/log")
-    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<String> setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         try {
             LogUtil.setLogLevel(logName, logLevel);
-            return Result.success(String.format("Log level updated successfully! Module: %s, Log Level: %s", logName, logLevel));
+            return Result.success(
+                    String.format("Log level updated successfully! Module: %s, Log Level: %s", logName, logLevel));
         } catch (Exception e) {
             LOGGER.error("Failed to set log level for module {} to {}", logName, logLevel, e);
-            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), String.format("Failed to set log level for module %s to %s: %s",
-                    logName, logLevel, e.getMessage()), null);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
+                    String.format("Failed to set log level for module %s to %s: %s", logName, logLevel, e.getMessage()),
+                    null);
         }
     }
     
@@ -110,16 +111,15 @@ public class ConfigOpsControllerV3 {
      * Can only run select statements and is a direct query to the native Derby database without any additional logic.
      *
      * <p>
-     *     This API is used for maintainer of Nacos to do datasource management when using derby datasource.
-     *     So This API required ADMIN permission and need open switch `nacos.config.derby.ops.enabled=true`.
+     * This API is used for maintainer of Nacos to do datasource management when using derby datasource. So This API
+     * required ADMIN permission and need open switch `nacos.config.derby.ops.enabled=true`.
      * </p>
      *
      * @param sql The query
      * @return {@link RestResult}
      */
     @GetMapping(value = "/derby")
-    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
@@ -130,7 +130,8 @@ public class ConfigOpsControllerV3 {
             }
             if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
                 return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
-                        "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature.", null);
+                        "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature.",
+                        null);
             }
             
             LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
@@ -143,7 +144,8 @@ public class ConfigOpsControllerV3 {
                 List<Map<String, Object>> result = template.queryForList(sql);
                 return Result.success(result);
             }
-            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Only query statements are allowed to be executed", null);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Only query statements are allowed to be executed",
+                    null);
         } catch (Exception e) {
             LOGGER.error("Derby failed to execute sql: " + sql);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Failed to execute sql: " + sql, null);
@@ -157,16 +159,15 @@ public class ConfigOpsControllerV3 {
      * --complete-insert=TRUE \ --skip-triggers --no-create-info --skip-column-statistics "{SCHEMA}" "{TABLE_NAME}"
      *
      * <p>
-     *     This API is used for maintainer of Nacos to do datasource management when using derby datasource.
-     *     So This API required ADMIN permission and need open switch `nacos.config.derby.ops.enabled=true`.
+     * This API is used for maintainer of Nacos to do datasource management when using derby datasource. So This API
+     * required ADMIN permission and need open switch `nacos.config.derby.ops.enabled=true`.
      * </p>
      *
      * @param multipartFile {@link MultipartFile}
      * @return {@link DeferredResult}
      */
     @PostMapping(value = "/derby/import")
-    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public DeferredResult<Result<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {
@@ -190,7 +191,7 @@ public class ConfigOpsControllerV3 {
                 response.setResult(result);
             });
         }, response);
-
+        
         return convertToResult(response);
     }
     

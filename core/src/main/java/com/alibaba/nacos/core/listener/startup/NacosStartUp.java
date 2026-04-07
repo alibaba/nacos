@@ -33,7 +33,7 @@ public interface NacosStartUp {
     
     String CONSOLE_START_UP_PHASE = "console";
     
-    String MCP_REGISTRY_START_UP_PHASE = "mcp-registry";
+    String AI_REGISTRY_START_UP_PHASE = "ai-registry";
     
     /**
      * Current Nacos Server start up phase.

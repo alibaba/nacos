@@ -21,7 +21,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
+
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -73,7 +77,21 @@ public class AuthPluginManager {
      * @return AuthPluginService instance.
      */
     public Optional<AuthPluginService> findAuthServiceSpiImpl(String authServiceName) {
+        // Check if plugin is enabled
+        if (!PluginStateCheckerHolder.isPluginEnabled(PluginType.AUTH.getType(), authServiceName)) {
+            LOGGER.debug("[AuthPluginManager] Plugin AUTH:{} is disabled", authServiceName);
+            return Optional.empty();
+        }
         return Optional.ofNullable(authServiceMap.get(authServiceName));
     }
-    
+
+    /**
+     * Get all registered auth plugins.
+     *
+     * @return unmodifiable map of auth service name to AuthPluginService
+     */
+    public Map<String, AuthPluginService> getAllPlugins() {
+        return Collections.unmodifiableMap(authServiceMap);
+    }
+
 }

@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -271,9 +272,25 @@ class ServiceInfoHolderTest {
         String serviceName = "b";
         String groupName = "a";
         ServiceInfo actual = holder.getServiceInfo(serviceName, groupName);
+        
+        // Verify it's a clone (different object)
+        assertNotSame(expect, actual);
+        
+        // Verify content is the same
         assertEquals(expect.getKey(), actual.getKey());
         assertEquals(expect.getHosts().size(), actual.getHosts().size());
         assertEquals(expect.getHosts().get(0), actual.getHosts().get(0));
+        
+        // Verify hosts list is different
+        assertNotSame(expect.getHosts(), actual.getHosts());
+    }
+    
+    @Test
+    void testGetServiceInfoReturnsNull() {
+        String serviceName = "nonExistent";
+        String groupName = "group";
+        ServiceInfo actual = holder.getServiceInfo(serviceName, groupName);
+        assertNull(actual);
     }
     
     @Test

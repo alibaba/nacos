@@ -19,11 +19,19 @@ package com.alibaba.nacos.auth.parser.grpc;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.ai.remote.request.AbstractPromptRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseAgentCardRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.utils.StringUtils;
+
+import java.util.Properties;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_AGENT;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_MCP;
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Resource.AI_TYPE_PROMPT;
 
 /**
  * AI Grpc resource parser.
@@ -35,10 +43,12 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
     @Override
     protected String getNamespaceId(Request request) {
         String namespaceId = null;
-        if (request instanceof  AbstractMcpRequest) {
+        if (request instanceof AbstractMcpRequest) {
             namespaceId = ((AbstractMcpRequest) request).getNamespaceId();
         } else if (request instanceof AbstractAgentRequest) {
             namespaceId = ((AbstractAgentRequest) request).getNamespaceId();
+        } else if (request instanceof AbstractPromptRequest) {
+            namespaceId = ((AbstractPromptRequest) request).getNamespaceId();
         }
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
@@ -57,6 +67,8 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             return getMcpName((AbstractMcpRequest) request);
         } else if (request instanceof AbstractAgentRequest) {
             return getAgentName((AbstractAgentRequest) request);
+        } else if (request instanceof AbstractPromptRequest) {
+            return getPromptName((AbstractPromptRequest) request);
         }
         return StringUtils.EMPTY;
     }
@@ -81,5 +93,23 @@ public class AiGrpcResourceParser extends AbstractGrpcResourceParser {
             }
         }
         return StringUtils.isBlank(agentName) ? StringUtils.EMPTY : agentName;
+    }
+    
+    private String getPromptName(AbstractPromptRequest request) {
+        String promptKey = request.getPromptKey();
+        return StringUtils.isBlank(promptKey) ? StringUtils.EMPTY : promptKey;
+    }
+    
+    @Override
+    protected Properties getProperties(Request request) {
+        Properties properties = super.getProperties(request);
+        if (request instanceof AbstractMcpRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_MCP);
+        } else if (request instanceof AbstractAgentRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_AGENT);
+        } else if (request instanceof AbstractPromptRequest) {
+            properties.setProperty(AI_TYPE, AI_TYPE_PROMPT);
+        }
+        return properties;
     }
 }

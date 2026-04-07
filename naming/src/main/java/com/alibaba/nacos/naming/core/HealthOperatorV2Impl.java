@@ -65,7 +65,7 @@ public class HealthOperatorV2Impl implements HealthOperator {
     @Override
     public void updateHealthStatusForPersistentInstance(String namespace, String groupName, String serviceName,
             String clusterName, String ip, int port, boolean healthy) throws NacosException {
-        Service service = Service.newService(namespace, groupName, serviceName);
+        Service service = Service.newService(namespace, groupName, serviceName, false);
         Optional<ServiceMetadata> serviceMetadata = metadataManager.getServiceMetadata(service);
         if (serviceMetadata.isEmpty() || !serviceMetadata.get().getClusters().containsKey(clusterName)) {
             throwHealthCheckerException(groupName, serviceName, clusterName);

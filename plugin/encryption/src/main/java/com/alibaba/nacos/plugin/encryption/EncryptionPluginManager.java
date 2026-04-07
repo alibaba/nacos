@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.encryption;
 
+import com.alibaba.nacos.api.plugin.PluginStateChecker;
+import com.alibaba.nacos.api.plugin.PluginStateCheckerHolder;
+import com.alibaba.nacos.api.plugin.PluginType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
@@ -23,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -79,6 +83,11 @@ public class EncryptionPluginManager {
      * @return EncryptionPluginService instance.
      */
     public Optional<EncryptionPluginService> findEncryptionService(String algorithmName) {
+        Optional<PluginStateChecker> checker = PluginStateCheckerHolder.getInstance();
+        if (checker.isPresent() && !checker.get().isPluginEnabled(PluginType.ENCRYPTION.getType(), algorithmName)) {
+            LOGGER.debug("[EncryptionPluginManager] Plugin ENCRYPTION:{} is disabled", algorithmName);
+            return Optional.empty();
+        }
         return Optional.ofNullable(ENCRYPTION_SPI_MAP.get(algorithmName));
     }
     
@@ -94,5 +103,14 @@ public class EncryptionPluginManager {
         ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(), encryptionPluginService);
         LOGGER.info("[EncryptionPluginManager] join successfully.");
     }
-    
+
+    /**
+     * Get all encryption plugin services.
+     *
+     * @return unmodifiable map of all encryption plugin services
+     */
+    public Map<String, EncryptionPluginService> getAllPlugins() {
+        return Collections.unmodifiableMap(ENCRYPTION_SPI_MAP);
+    }
+
 }

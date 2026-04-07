@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Properties;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -63,7 +63,7 @@ public class NamingServerListManager extends AbstractServerListManager {
         if (serverList.isEmpty()) {
             throw new NacosLoadException("serverList is empty,please check configuration");
         } else {
-            currentIndex.set(new Random().nextInt(serverList.size()));
+            currentIndex.set(ThreadLocalRandom.current().nextInt(serverList.size()));
         }
         if (serverListProvider instanceof PropertiesListProvider) {
             if (serverList.size() == 1) {

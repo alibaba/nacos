@@ -17,12 +17,17 @@
 package com.alibaba.nacos.console.handler.impl.remote;
 
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.A2aMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.McpMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.PipelineMaintainerService;
+import com.alibaba.nacos.maintainer.client.ai.PromptMaintainerService;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +44,18 @@ public abstract class AbstractRemoteHandlerTest {
     
     @Mock
     protected AiMaintainerService aiMaintainerService;
+
+    @Mock
+    protected McpMaintainerService mcpMaintainerService;
+
+    @Mock
+    protected A2aMaintainerService a2aMaintainerService;
+
+    @Mock
+    protected PromptMaintainerService promptMaintainerService;
+
+    @Mock
+    protected PipelineMaintainerService pipelineMaintainerService;
     
     protected void setUpWithNaming() {
         when(clientHolder.getNamingMaintainerService()).thenReturn(namingMaintainerService);
@@ -49,6 +66,10 @@ public abstract class AbstractRemoteHandlerTest {
     }
     
     protected void setUpWithAi() {
-        when(clientHolder.getAiMaintainerService()).thenReturn(aiMaintainerService);
+        lenient().when(clientHolder.getAiMaintainerService()).thenReturn(aiMaintainerService);
+        lenient().when(aiMaintainerService.mcp()).thenReturn(mcpMaintainerService);
+        lenient().when(aiMaintainerService.a2a()).thenReturn(a2aMaintainerService);
+        lenient().when(aiMaintainerService.prompt()).thenReturn(promptMaintainerService);
+        lenient().when(aiMaintainerService.pipeline()).thenReturn(pipelineMaintainerService);
     }
 }

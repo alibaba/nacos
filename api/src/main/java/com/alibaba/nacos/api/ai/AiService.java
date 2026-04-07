@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -173,6 +177,131 @@ public interface AiService extends A2aService {
      */
     void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException;
+    
+    /**
+     * Download skill as ZIP byte array by skill name. Defaults to latest version.
+     *
+     * <p>The ZIP contains the skill directory structure: SKILL.md and all resource files.
+     * Binary resources are decoded from Base64 back to raw bytes.</p>
+     *
+     * @param skillName skill name (unique identifier)
+     * @return ZIP file as byte array
+     * @throws NacosException if skill not found or query error
+     */
+    byte[] downloadSkillZip(String skillName) throws NacosException;
+
+    /**
+     * Download skill as ZIP byte array by skill name and target version.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param version   target skill version, if null, will get latest version
+     * @return ZIP file as byte array
+     * @throws NacosException if skill not found or query error
+     */
+    byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException;
+
+    /**
+     * Download skill as ZIP byte array by skill name and target label.
+     *
+     * @param skillName skill name (unique identifier)
+     * @param label     target skill label (e.g. "latest", "stable")
+     * @return ZIP file as byte array
+     * @throws NacosException if skill not found or query error
+     */
+    byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException;
+    
+    // ==================== AgentSpec Management APIs ====================
+    
+    /**
+     * Load agent spec by agent spec name.
+     *
+     * <p>
+     * This method will query the agent spec main configuration and all resource configurations,
+     * then assemble them into a complete AgentSpec object.
+     * </p>
+     *
+     * @param agentSpecName agent spec name (unique identifier)
+     * @return complete AgentSpec object with all resources
+     * @throws NacosException if agent spec not found or query error
+     */
+    AgentSpec loadAgentSpec(String agentSpecName) throws NacosException;
+    
+    /**
+     * Subscribe agent spec.
+     *
+     * @param agentSpecName       name of agent spec
+     * @param agentSpecListener   listener of agent spec, callback when agent spec configuration is changed
+     * @return The agent spec object at current time, nullable if agent spec not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException;
+    
+    /**
+     * Un-subscribe agent spec.
+     *
+     * @param agentSpecName       name of agent spec
+     * @param agentSpecListener   listener of agent spec
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException;
+    
+    // ==================== Prompt Management APIs ====================
+    
+    /**
+     * Get prompt by prompt key.
+     *
+     * @param promptKey prompt key (unique identifier)
+     * @return prompt object with current version
+     * @throws NacosException if prompt not found or query error
+     */
+    Prompt getPrompt(String promptKey) throws NacosException;
+    
+    /**
+     * Get prompt by prompt key and target version.
+     *
+     * @param promptKey prompt key (unique identifier)
+     * @param version target prompt version, if null, will get latest version
+     * @return prompt object with target version
+     * @throws NacosException if prompt not found or query error
+     */
+    Prompt getPromptByVersion(String promptKey, String version) throws NacosException;
+    
+    /**
+     * Get prompt by prompt key and target label.
+     *
+     * @param promptKey prompt key (unique identifier)
+     * @param label target prompt label
+     * @return prompt object with target label
+     * @throws NacosException if prompt not found or query error
+     */
+    Prompt getPromptByLabel(String promptKey, String label) throws NacosException;
+    
+    /**
+     * Subscribe prompt changes.
+     *
+     * @param promptKey      prompt key
+     * @param version        target prompt version, optional
+     * @param label          target prompt label, optional
+     * @param promptListener listener for prompt changes
+     * @return current prompt object, may be null if prompt not found
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    Prompt subscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException;
+    
+    /**
+     * Un-subscribe prompt changes.
+     *
+     * @param promptKey      prompt key
+     * @param version        target prompt version, optional
+     * @param label          target prompt label, optional
+     * @param promptListener listener for prompt changes
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

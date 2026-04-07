@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.client.handler.BeanResponseHandler;
+import com.alibaba.nacos.common.http.client.handler.ByteArrayResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.RestResultResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
@@ -55,6 +56,11 @@ class AbstractNacosRestTemplateTest {
     @Test
     void testSelectResponseHandlerForRestResult() {
         assertTrue(restTemplate.testFindResponseHandler(RestResult.class) instanceof RestResultResponseHandler);
+    }
+    
+    @Test
+    void testSelectResponseHandlerForByteArray() {
+        assertTrue(restTemplate.testFindResponseHandler(byte[].class) instanceof ByteArrayResponseHandler);
     }
     
     @Test

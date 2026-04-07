@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.ADD_CONFIG;
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.DELETE_CONFIG;
@@ -82,6 +83,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     
     @AfterEach
     void after() {
+        configFuzzyWatchGroupKeyHolder.shutdown();
     }
     
     @Test
@@ -116,9 +118,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
                 FUZZY_WATCH_INIT_NOTIFY, contexts, groupKeyPattern, 1, 1);
         configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(initNotifyRequest);
         //check watcher notified
-        Thread.sleep(100L);
-        System.out.println(watcher1Flag.get());
-        Assertions.assertTrue(watcher1Flag.get() == 1);
+        awaitCondition(() -> watcher1Flag.get() == 1, 3000L, "watcher1 should be notified once by init notify");
         
         //build change notify add
         String changedGroupKey2Add = GroupKey.getKeyTenant(dataId + 2, group, tenant);
@@ -127,8 +127,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(changedNotifyRequest);
         
         //check watcher notified
-        Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 2);
+        awaitCondition(() -> watcher1Flag.get() == 2, 3000L, "watcher1 should be notified once by add notify");
         
         //check not complete future timeout
         ConfigFuzzyWatchContext configFuzzyWatchContext = configFuzzyWatchGroupKeyHolder.getFuzzyListenContext(
@@ -170,9 +169,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
                 changedGroupKey2Delete, DELETE_CONFIG);
         configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(changedNotifyRequestDelete);
         //check watcher notified delete
-        Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 3);
-        Assertions.assertTrue(watcher1Flag.get() == 3);
+        awaitCondition(() -> watcher1Flag.get() == 3, 3000L, "watcher1 should be notified once by delete notify");
         
         Future<Set<String>> newFuture = configFuzzyWatchContext.createNewFuture();
         
@@ -194,9 +191,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(deleteNotifyRequest);
         
         //check watcher notified delete
-        Thread.sleep(100L);
-        Assertions.assertTrue(watcher1Flag.get() == 4);
-        Assertions.assertTrue(watcher1Flag.get() == 4);
+        awaitCondition(() -> watcher1Flag.get() == 4, 3000L, "watcher1 should be notified by sync delete");
         
         Future<Set<String>> newFutureEmpty = configFuzzyWatchContext.createNewFuture();
         
@@ -323,7 +318,9 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class))).thenReturn(
                 overloadResponse);
         configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(configFuzzyWatchContext, rpcClient);
-        Thread.sleep(100L);
+        awaitCondition(configFuzzyWatchContext::patternLimitSuppressed, 3000L,
+                "pattern limit suppression should be set");
+        awaitCondition(patternOvrFlag::get, 3000L, "pattern over-limit callback should be triggered");
         Assertions.assertTrue(configFuzzyWatchContext.patternLimitSuppressed());
         Assertions.assertTrue(!configFuzzyWatchContext.isConsistentWithServer());
         Assertions.assertTrue(patternOvrFlag.get());
@@ -336,7 +333,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         when(rpcTransportClient.requestProxy(eq(rpcClient), any(ConfigFuzzyWatchRequest.class))).thenReturn(
                 countOverloadResponse);
         configFuzzyWatchGroupKeyHolder.executeFuzzyWatchRequest(configFuzzyWatchContext, rpcClient);
-        Thread.sleep(100L);
+        awaitCondition(configCountOverFlag::get, 3000L, "config count over-limit callback should be triggered");
         Assertions.assertTrue(configFuzzyWatchContext.patternLimitSuppressed());
         Assertions.assertTrue(!configFuzzyWatchContext.isConsistentWithServer());
         Assertions.assertTrue(configCountOverFlag.get());
@@ -373,7 +370,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
                 groupKey, ADD_CONFIG);
         configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(configFuzzyWatchChangeNotifyRequest);
         
-        TimeUnit.MILLISECONDS.sleep(100L);
+        awaitCondition(() -> watcherFlag.get() == 1, 3000L, "first notify should happen before retry sync");
         
         //notify 1, fail
         configFuzzyWatchContext.syncFuzzyWatchers();
@@ -385,6 +382,14 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchContext.syncFuzzyWatchers();
         //expect  2 times notified
         Assertions.assertEquals(2, watcherFlag.get());
+    }
+
+    private void awaitCondition(BooleanSupplier condition, long timeoutMs, String message) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
+            TimeUnit.MILLISECONDS.sleep(20L);
+        }
+        Assertions.assertTrue(condition.getAsBoolean(), message);
     }
     
     @Test

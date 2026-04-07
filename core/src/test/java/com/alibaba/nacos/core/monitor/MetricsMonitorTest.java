@@ -136,6 +136,12 @@ class MetricsMonitorTest {
     }
     
     @Test
+    void testRecordGrpcRequestEvent() {
+        MetricsMonitor.recordGrpcRequestEvent("TestRequest", true, 0, "java.lang.RuntimeException", "naming", 100_000L);
+        MetricsMonitor.recordGrpcRequestEvent("TestRequest2", false, 500, null, null, 200_000L);
+    }
+
+    @Test
     void testRefreshModuleConnectionCount() {
         // refresh
         Map<String, Integer> map = new HashMap<>();

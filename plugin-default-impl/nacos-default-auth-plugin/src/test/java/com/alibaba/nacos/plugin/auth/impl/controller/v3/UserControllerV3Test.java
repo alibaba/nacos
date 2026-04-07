@@ -70,6 +70,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UserControllerV3Test {
     
+    static {
+        try {
+            MockEnvironment environment = new MockEnvironment();
+            environment.setProperty("nacos.core.auth.system.type", "nacos");
+            environment.setProperty("nacos.core.auth.server.identity.key", "nacos");
+            environment.setProperty("nacos.core.auth.server.identity.value", "nacos");
+            environment.setProperty("nacos.core.auth.admin.enabled", "true");
+            com.alibaba.nacos.sys.env.EnvUtil.setEnvironment(environment);
+        } catch (Exception e) {
+            // Ignore exception during static initialization
+        }
+    }
+    
     @Mock
     private NacosUserService userDetailsService;
     

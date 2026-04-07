@@ -130,7 +130,6 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
     }
     
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private void run() throws NacosException {
         // With the address server, you need to perform a synchronous member node pull at startup
         // Repeat three times, successfully jump out

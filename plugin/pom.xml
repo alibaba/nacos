@@ -30,6 +30,7 @@
     <name>nacos-plugin ${project.version}</name>
     <url>https://nacos.io</url>
     <modules>
+        <module>ai</module>
         <module>auth</module>
         <module>encryption</module>
         <module>trace</module>
@@ -37,6 +38,7 @@
         <module>environment</module>
         <module>control</module>
         <module>config</module>
+        <module>visibility</module>
     </modules>
     <packaging>pom</packaging>
 

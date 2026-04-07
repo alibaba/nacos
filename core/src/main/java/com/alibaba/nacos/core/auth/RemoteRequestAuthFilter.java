@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -34,7 +35,6 @@ import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.springframework.stereotype.Component;
@@ -72,6 +72,8 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(Secured.class)) {
                 Secured secured = method.getAnnotation(Secured.class);
+                RequestContext requestContext = RequestContextHolder.getContext();
+                requestContext.getAuthContext().setApiType(secured.apiType().name());
                 // During Upgrading, Old Nacos server might not with server identity for some Inner API, follow old version logic.
                 if (ApiType.INNER_API.equals(secured.apiType()) && !innerApiAuthEnabled.isEnabled()) {
                     return null;
@@ -102,7 +104,6 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
                 AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
-                RequestContext requestContext = RequestContextHolder.getContext();
                 requestContext.getAuthContext().setIdentityContext(identityContext);
                 requestContext.getAuthContext().setResource(resource);
                 requestContext.getAuthContext().setAuthResult(result);

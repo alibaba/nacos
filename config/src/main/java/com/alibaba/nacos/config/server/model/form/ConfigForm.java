@@ -94,26 +94,13 @@ public class ConfigForm implements NacosForm, Cloneable {
     
     @Override
     public ConfigForm clone() {
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(this.dataId);
-        configForm.setGroup(this.group);
-        configForm.setNamespaceId(this.namespaceId);
-        configForm.setContent(this.content);
-        configForm.setTag(this.tag);
-        configForm.setAppName(this.appName);
-        configForm.setSrcUser(this.srcUser);
-        configForm.setConfigTags(this.configTags);
-        configForm.setDesc(this.desc);
-        configForm.setUse(this.use);
-        configForm.setEffect(this.effect);
-        configForm.setType(this.type);
-        configForm.setSchema(this.schema);
-        configForm.setEncryptedDataKey(this.encryptedDataKey);
-        configForm.setGrayName(this.grayName);
-        configForm.setGrayRuleExp(this.grayRuleExp);
-        configForm.setGrayVersion(this.grayVersion);
-        configForm.setGrayPriority(this.grayPriority);
-        return configForm;
+        try {
+            // Object.clone() 是浅拷贝，但对于 String 和基本类型已经足够
+            return (ConfigForm) super.clone();
+        } catch (CloneNotSupportedException e) {
+            // 理论上不会发生，因为实现了接口Cloneable
+            throw new AssertionError(e);
+        }
     }
     
     public String getDataId() {

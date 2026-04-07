@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
@@ -69,7 +70,6 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -138,7 +138,7 @@ public class ConfigControllerV3 {
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
     private final ConfigMigrateService configMigrateService;
-
+    
     /**
      * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
      */
@@ -244,6 +244,7 @@ public class ConfigControllerV3 {
     public Result<Boolean> publishConfigMetadata(HttpServletRequest request, ConfigFormV3 configForm)
             throws NacosException {
         configForm.validate();
+        String remoteIp = getRemoteIp(request);
         String configTags = configForm.getConfigTags();
         String description = configForm.getDesc();
         String dataId = configForm.getDataId();
@@ -251,6 +252,10 @@ public class ConfigControllerV3 {
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         configInfoPersistService.updateConfigInfoMetadata(dataId, group, namespaceId, configTags, description);
         configMigrateService.updateConfigMetadataMigrate(dataId, group, namespaceId, configTags, description);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), remoteIp,
+                ConfigTraceService.PERSISTENCE_EVENT_METADATA, ConfigTraceService.PERSISTENCE_TYPE_PUB, null);
+        ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(dataId, group, namespaceId, time.getTime()));
         return Result.success(true);
     }
     

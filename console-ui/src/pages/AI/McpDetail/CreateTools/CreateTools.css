@@ -1,0 +1,130 @@
+.create-tools-dialog-body {
+    padding: 24px;
+    background-color: #fafafa;
+}
+
+.create-tools-form-container {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+/* Unify card styles for BasicInfo, SchemaEditor, and AdvancedConfig */
+.create-tools-card {
+    padding: 24px;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Ensure text visibility within the card */
+.create-tools-card .next-form-item-label {
+    color: #333 !important;
+}
+
+.create-tools-card .next-input,
+.create-tools-card .next-select {
+    color: #333 !important;
+}
+
+.create-tools-card input {
+    color: #333 !important;
+}
+
+.basic-info-container,
+.schema-container,
+.advanced-config-container {
+    /* Retain these for backward compatibility or compose them */
+    padding: 24px;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.tree-wrapper {
+    background-color: #fafafa;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.tree-scroll-container {
+    background-color: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    padding: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.detail-info-container {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px dashed #e8e8e8;
+    /* Removed card styles to reduce nesting */
+}
+
+/* Explicitly set color for labels and inputs in detail info container */
+.detail-info-container .next-form-item-label,
+.detail-info-container .next-form-item-label label {
+    color: #333 !important;
+}
+
+.detail-info-container .next-input,
+.detail-info-container .next-input input,
+.detail-info-container .next-input textarea,
+.detail-info-container .next-select,
+.detail-info-container .next-select .next-select-inner,
+.detail-info-container .next-select-value {
+    color: #333 !important;
+    -webkit-text-fill-color: #333 !important;
+    /* For Safari/Chrome autocofill or disabled state overrides */
+}
+
+/* Specific ID overrides to ensure visibility */
+[id="args.name"],
+[id="outputArgs.name"],
+[id="args.description"],
+[id="outputArgs.description"],
+[id="args.defaultValue"],
+[id="outputArgs.defaultValue"] {
+    color: #333 !important;
+    -webkit-text-fill-color: #333 !important;
+}
+
+/* Broad override for all form controls in the detail container */
+.detail-info-container .next-form-item-control * {
+    color: #333 !important;
+    -webkit-text-fill-color: #333 !important;
+}
+
+
+.detail-info-header {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+    border-bottom: 2px solid #d9d9d9;
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.template-generator-container {
+    margin-bottom: 12px;
+    padding: 12px;
+    background-color: #fafbfc;
+    border-radius: 6px;
+    border: 1px solid #e1e4e8;
+}
+
+.security-schemes-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}

@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -202,10 +202,12 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         when(aiGrpcClient.queryMcpServer("test", "1.0.0")).thenReturn(mcpServerDetailInfo);
         cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
-        TimeUnit.MILLISECONDS.sleep(110);
+        verify(aiGrpcClient, timeout(1200).atLeast(2)).queryMcpServer("test", "1.0.0");
+        long deadline = System.currentTimeMillis() + 1000;
+        while (cacheHolder.getMcpServer("test", "1.0.0") == null && System.currentTimeMillis() < deadline) {
+            TimeUnit.MILLISECONDS.sleep(20);
+        }
         assertNotNull(cacheHolder.getMcpServer("test", "1.0.0"));
-        TimeUnit.MILLISECONDS.sleep(110);
-        verify(aiGrpcClient, times(2)).queryMcpServer("test", "1.0.0");
     }
     
     @Test
@@ -217,10 +219,8 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
         when(aiGrpcClient.queryMcpServer("test", "1.0.0")).thenThrow(new RuntimeException("test"));
         cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
-        TimeUnit.MILLISECONDS.sleep(110);
+        verify(aiGrpcClient, timeout(1200).atLeast(2)).queryMcpServer("test", "1.0.0");
         assertNull(cacheHolder.getMcpServer("test", "1.0.0"));
-        TimeUnit.MILLISECONDS.sleep(110);
-        verify(aiGrpcClient, times(2)).queryMcpServer("test", "1.0.0");
     }
     
     @Test

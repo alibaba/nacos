@@ -26,9 +26,37 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class ProtoMessageUtilTest {
+
+    @Test
+    void testConstructor() {
+        new ProtoMessageUtil();
+    }
+
+    @Test
+    void testParseInvalidBytes() {
+        byte[] invalidBytes = new byte[]{1, 2, 3};
+        try {
+            ProtoMessageUtil.parse(invalidBytes);
+            fail("Should throw ConsistencyException");
+        } catch (Exception e) {
+            assertTrue(e instanceof com.alibaba.nacos.consistency.exception.ConsistencyException);
+        }
+    }
     
+    @Test
+    void testParseWithCorruptRequestTypeField() {
+        byte[] corruptBytes = new byte[]{(byte) ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG,
+                (byte) ProtoMessageUtil.REQUEST_TYPE_READ, (byte) 0x80};
+        try {
+            ProtoMessageUtil.parse(corruptBytes);
+        } catch (Exception ignored) {
+        }
+    }
+
     @Test
     void testProto() throws Exception {
         WriteRequest request = WriteRequest.newBuilder().setKey("test-proto-new").build();

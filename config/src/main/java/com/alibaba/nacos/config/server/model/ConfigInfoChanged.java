@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * ConfigInfoChanged.
@@ -87,7 +88,12 @@ public class ConfigInfoChanged implements Serializable {
         }
         return true;
     }
-    
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dataId, group);
+    }
+
     @Override
     public String toString() {
         return "ConfigInfoChanged [dataId=" + dataId + ", group=" + group + "]";

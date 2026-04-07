@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.Observer;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;
@@ -27,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ProtocolMetaDataTest {
     
@@ -67,5 +70,79 @@ class ProtocolMetaDataTest {
         assertEquals(2, count.get());
         
     }
-    
+
+    @Test
+    void testGetWithBlankSubKey() {
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        Map<String, Map<String, Object>> map = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("key1", "value1");
+        map.put("group1", data);
+        metaData.load(map);
+
+        Object result = metaData.get("group1", "");
+        assertNotNull(result);
+    }
+
+    @Test
+    void testGetWithSubKey() {
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        Map<String, Map<String, Object>> map = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("key1", "value1");
+        map.put("group1", data);
+        metaData.load(map);
+
+        Object result = metaData.get("group1", "key1");
+        assertNotNull(result);
+    }
+
+    @Test
+    void testGetWithNonExistGroup() {
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        Object result = metaData.get("nonExist", "key1");
+        assertNull(result);
+    }
+
+    @Test
+    void testUnSubscribe() {
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        Map<String, Map<String, Object>> map = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("key1", "value1");
+        map.put("group1", data);
+        metaData.load(map);
+
+        Observer observer = o -> { };
+        metaData.subscribe("group1", "key1", observer);
+        metaData.unSubscribe("group1", "key1", observer);
+    }
+
+    @Test
+    void testUnSubscribeNonExistKey() {
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        Observer observer = o -> { };
+        metaData.unSubscribe("newGroup", "nonExistKey", observer);
+    }
+
+    @Test
+    void testGetMetaDataMap() {
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        Map<String, Map<String, Object>> map = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("key1", "value1");
+        map.put("group1", data);
+        metaData.load(map);
+
+        Map<String, Map<Object, Object>> result = metaData.getMetaDataMap();
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void testValueItemGetPath() {
+        ProtocolMetaData.ValueItem item = new ProtocolMetaData.ValueItem("test/path");
+        assertEquals("test/path", item.getPath());
+    }
+
 }

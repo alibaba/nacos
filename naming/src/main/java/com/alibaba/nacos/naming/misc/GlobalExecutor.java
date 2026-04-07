@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author nacos
  */
-@SuppressWarnings({"checkstyle:indentation", "PMD.ThreadPoolCreationRule"})
+@SuppressWarnings("checkstyle:indentation")
 public class GlobalExecutor {
     
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
@@ -67,11 +67,7 @@ public class GlobalExecutor {
     private static final ScheduledExecutorService RETRANSMITTER_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.push.retransmitter"));
-    
-    private static final ScheduledExecutorService UDP_SENDER_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.push.udpSender"));
-    
+
     private static final ScheduledExecutorService SERVER_PERFORMANCE_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.nacos-server-performance"));
@@ -124,15 +120,7 @@ public class GlobalExecutor {
     public static void scheduleRetransmitter(Runnable runnable, long delay, TimeUnit unit) {
         RETRANSMITTER_EXECUTOR.schedule(runnable, delay, unit);
     }
-    
-    public static ScheduledFuture<?> scheduleUdpSender(Runnable runnable, long delay, TimeUnit unit) {
-        return UDP_SENDER_EXECUTOR.schedule(runnable, delay, unit);
-    }
-    
-    public static void scheduleUdpReceiver(Runnable runnable) {
-        NAMING_TIMER_EXECUTOR.submit(runnable);
-    }
-    
+
     public static void schedulePerformanceLogger(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         SERVER_PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }

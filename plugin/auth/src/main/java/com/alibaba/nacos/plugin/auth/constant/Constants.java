@@ -50,6 +50,20 @@ public class Constants {
         public static final String ACTION = "action";
         
         public static final String REQUEST_CLASS = "requestClass";
+
+        public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
+        
+        public static final String AI_TYPE = "aiType";
+        
+        public static final String AI_TYPE_MCP = "mcp";
+        
+        public static final String AI_TYPE_AGENT = "agent";
+        
+        public static final String AI_TYPE_SKILL = "skill";
+        
+        public static final String AI_TYPE_PROMPT = "prompt";
+        
+        public static final String AI_TYPE_AGENT_SPEC = "agentSpec";
     }
     
     public static class Identity {
@@ -66,9 +80,14 @@ public class Constants {
     public static class Tag {
         
         public static final String ONLY_IDENTITY = "only_identity";
-        
-        public static final String SECURED_SPECIAL_TAGS =
-                com.alibaba.nacos.api.common.Constants.NAMESPACE_ID + Resource.SPLITTER
-                        + com.alibaba.nacos.api.common.Constants.TARGET_NAMESPACE_ID;
+
+        /**
+         * Tag value that marks a {@link com.alibaba.nacos.auth.annotation.Secured} API as allowing anonymous access.
+         */
+        public static final String ALLOW_ANONYMOUS = "allowAnonymous";
+
+        public static final String SECURED_SPECIAL_TAGS = com.alibaba.nacos.api.common.Constants.NAMESPACE_ID
+                + Resource.SPLITTER
+                + com.alibaba.nacos.api.common.Constants.TARGET_NAMESPACE_ID;
     }
 }

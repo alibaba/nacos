@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2026 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<FindBugsFilter>
+    <!-- ==================== Generated code / Third-party ported code ==================== -->
+    <Match><Package name="com.alibaba.nacos.api.grpc.auto"/></Match>
+    <Match><Package name="~com\.alibaba\.nacos\.consistency\.entity\..*"/></Match>
+    <Match><Package name="~com\.alibaba\.nacos\.istio\..*"/></Match>
+    <Match><Package name="~com\.google\.protobuf\..*"/></Match>
+    <!-- packagescan ported from Spring Framework, already excluded in JaCoCo/RAT -->
+    <Match><Package name="~com\.alibaba\.nacos\.common\.packagescan\..*"/></Match>
+
+    <!-- ==================== Existing High bug patterns ==================== -->
+    <!-- The following exclusions suppress existing High-priority bugs so that   -->
+    <!-- spotbugs:check can be enabled. They will be removed one by one via     -->
+    <!-- follow-up PRs that fix the underlying issues (ratchet approach).       -->
+
+    <!-- DMI_BLOCKING_METHODS_ON_URL: 2 occurrences, URL.equals/hashCode triggers DNS -->
+    <Match><Bug pattern="DMI_BLOCKING_METHODS_ON_URL"/></Match>
+    <!-- SE_BAD_FIELD: 1 occurrence (High), non-serializable field in serializable class -->
+    <Match><Bug pattern="SE_BAD_FIELD"/></Match>
+
+    <!-- ==================== Targeted class-level exclusions ==================== -->
+    <!-- ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD: Spring ApplicationContextInitializer callback -->
+    <Match>
+        <Class name="com.alibaba.nacos.sys.utils.ApplicationUtils"/>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: TLS config fields are set via system properties at runtime -->
+    <Match>
+        <Class name="com.alibaba.nacos.common.tls.TlsSystemConfig"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: version is conditionally assigned in static initializer -->
+    <Match>
+        <Class name="com.alibaba.nacos.common.utils.VersionUtils"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: public mutable map used by external plugins -->
+    <Match>
+        <Class name="com.alibaba.nacos.persistence.repository.RowMapperManager"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <!-- MS_SHOULD_BE_FINAL: URL fields reassigned at runtime via InitUtils -->
+    <Match>
+        <Class name="com.alibaba.nacos.client.naming.utils.UtilAndComs"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+</FindBugsFilter>

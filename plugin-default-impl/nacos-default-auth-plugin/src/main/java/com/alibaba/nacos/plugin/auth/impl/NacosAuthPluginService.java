@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
@@ -25,26 +26,32 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
+
+import static com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID;
 
 /**
  * Nacos default auth plugin service implementation.
  *
  * @author xiweng.yy
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosAuthPluginService.class);
     
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
@@ -56,6 +63,8 @@ public class NacosAuthPluginService implements AuthPluginService {
     };
     
     protected IAuthenticationManager authenticationManager;
+    
+    private volatile AuthConfigs authConfigs;
     
     @Override
     public Collection<String> identityNames() {
@@ -74,7 +83,36 @@ public class NacosAuthPluginService implements AuthPluginService {
             NacosUser nacosUser = validateUser(identityContext);
             return AuthResult.successResult(nacosUser);
         } catch (AccessException e) {
+            if (isAnonymousAllowed(resource)) {
+                LOGGER.debug("Anonymous access granted for resource: {}", resource);
+                NacosUser anonymousUser = new NacosUser(AuthConstants.ANONYMOUS_USER);
+                identityContext.setParameter(AuthConstants.NACOS_USER_KEY, anonymousUser);
+                identityContext.setParameter(IDENTITY_ID, AuthConstants.ANONYMOUS_USER);
+                return AuthResult.successResult(anonymousUser);
+            }
             return AuthResult.failureResult(HttpStatus.UNAUTHORIZED.value(), e.getErrMsg());
+        }
+    }
+    
+    private boolean isAnonymousAllowed(Resource resource) {
+        if (resource == null || resource.getProperties() == null) {
+            return false;
+        }
+        Properties props = resource.getProperties();
+        if (!props.containsKey(AuthConstants.TAG_ALLOW_ANONYMOUS)) {
+            return false;
+        }
+        try {
+            checkAuthConfigs();
+            return authConfigs.isAiAnonymousEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private void checkAuthConfigs() {
+        if (null == authConfigs) {
+            authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
         }
     }
     
@@ -90,8 +128,7 @@ public class NacosAuthPluginService implements AuthPluginService {
             nacosUser = authenticationManager.authenticate(userName, password);
         }
         identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
-        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                nacosUser.getUserName());
+        identityContext.setParameter(IDENTITY_ID, nacosUser.getUserName());
         return nacosUser;
     }
     

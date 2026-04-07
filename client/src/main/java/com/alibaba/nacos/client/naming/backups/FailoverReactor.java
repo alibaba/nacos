@@ -157,7 +157,8 @@ public class FailoverReactor implements Closeable {
     }
     
     public boolean isFailoverSwitch(String serviceName) {
-        return failoverSwitchEnable && serviceMap.containsKey(serviceName) && serviceMap.get(serviceName).ipCount() > 0;
+        ServiceInfo serviceInfo = serviceMap.get(serviceName);
+        return failoverSwitchEnable && serviceInfo != null && serviceInfo.ipCount() > 0;
     }
     
     public ServiceInfo getService(String key) {

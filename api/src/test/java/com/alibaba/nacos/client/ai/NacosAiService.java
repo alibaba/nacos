@@ -18,14 +18,18 @@ package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentCardListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosAgentSpecListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.prompt.Prompt;
 import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.Collection;
@@ -123,5 +127,62 @@ public class NacosAiService implements AiService {
     public void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
             throws NacosException {
         
+    }
+    
+    @Override
+    public byte[] downloadSkillZip(String skillName) throws NacosException {
+        return new byte[0];
+    }
+    
+    @Override
+    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
+        return new byte[0];
+    }
+    
+    @Override
+    public byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
+        return new byte[0];
+    }
+    
+    @Override
+    public AgentSpec loadAgentSpec(String agentSpecName) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+            throws NacosException {
+    }
+    
+    @Override
+    public Prompt getPrompt(String promptKey) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Prompt getPromptByVersion(String promptKey, String version) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Prompt getPromptByLabel(String promptKey, String label) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public Prompt subscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void unsubscribePrompt(String promptKey, String version, String label,
+            AbstractNacosPromptListener promptListener) throws NacosException {
     }
 }

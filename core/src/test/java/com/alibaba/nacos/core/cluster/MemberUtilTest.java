@@ -189,6 +189,20 @@ class MemberUtilTest {
         Set<Member> actual = MemberUtil.selectTargetMembers(input, member1 -> member1.getIp().equals(IP));
         assertEquals(1, actual.size());
     }
+
+    @Test
+    void testSimpleMembers() {
+        Collection<Member> members = new HashSet<>();
+        members.add(originalMember);
+        Member other = buildMember();
+        other.setIp("2.2.2.2");
+        other.setPort(8849);
+        members.add(other);
+        java.util.List<String> addresses = MemberUtil.simpleMembers(members);
+        assertEquals(2, addresses.size());
+        assertEquals(IP + ":" + PORT, addresses.get(0));
+        assertEquals("2.2.2.2:8849", addresses.get(1));
+    }
     
     @Test
     void testIsBasicInfoChangedNoChangeWithoutExtendInfo() {

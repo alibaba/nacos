@@ -88,6 +88,14 @@ class StringTopNCounterTest {
     }
     
     @Test
+    void testIncrementWithCount() {
+        stringTopNCounter.increment("a", 3);
+        stringTopNCounter.increment("b", 2);
+        List<Pair<String, AtomicInteger>> actual = stringTopNCounter.getCounterOfTopN(10);
+        assertTopNCounter(actual, 2, new String[] {"a", "b"}, new Integer[] {3, 2});
+    }
+
+    @Test
     void testForTopnDisabled() {
         MockEnvironment env = new MockEnvironment();
         env.setProperty("nacos.core.monitor.topn.enabled", "false");

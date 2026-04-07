@@ -69,6 +69,16 @@ class McpToolSpecificationTest extends BasicRequestTest {
         aSchema.put("type", "string");
         aSchema.put("description", "aaa");
         mcpTool.setInputSchema(inputSchema);
+
+        Map<String, Object> outputSchema = new HashMap<>();
+        outputSchema.put("type", "object");
+        Map<String, Object> outProperties = new HashMap<>();
+        Map<String, String> resultSchema = new HashMap<>();
+        resultSchema.put("type", "string");
+        resultSchema.put("description", "result");
+        outProperties.put("result", resultSchema);
+        outputSchema.put("properties", outProperties);
+        mcpTool.setOutputSchema(outputSchema);
         
         McpToolMeta mcpToolMeta = new McpToolMeta();
         Map<String, Object> templates = new HashMap<>();
@@ -116,6 +126,7 @@ class McpToolSpecificationTest extends BasicRequestTest {
         assertTrue(json.contains("\"inputSchema\":{"));
         assertTrue(json.contains("{\"type\":\"object\""));
         assertTrue(json.contains("\"properties\":{\"a\":{"));
+        assertTrue(json.contains("\"outputSchema\":{"));
         assertTrue(json.contains("\"toolsMeta\":{\"testTool\":{"));
         assertTrue(json.contains("\"invokeContext\":{"));
         assertTrue(json.contains("\"templates\":{"));
@@ -127,12 +138,19 @@ class McpToolSpecificationTest extends BasicRequestTest {
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"specificationType\":\"encrypted\",\"encryptData\":{\"data\":\"encryptedData\","
                 + "\"encryptInfo\":{\"alg\":\"AES\",\"iv\":\"initialVector\"}},"
-                + "\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\",\"inputSchema\":{\"type\":\"object\","
-                + "\"properties\":{\"a\":{\"description\":\"aaa\",\"type\":\"string\"}}}}],\"toolsMeta\":{\"testTool\":"
+                + "\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\","
+                + "\"inputSchema\":{\"type\":\"object\","
+                + "\"properties\":{\"a\":{\"description\":\"aaa\",\"type\":\"string\"}}},"
+                + "\"outputSchema\":{\"type\":\"object\","
+                + "\"properties\":{\"result\":{\"type\":\"string\","
+                + "\"description\":\"result\"}}}}],"
+                + "\"toolsMeta\":{\"testTool\":"
                 + "{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,\"templates\":"
                 + "{\"json-go-tamplate\":{\"templateType\":\"string\",\"responseTemplate\":{\"body\":\"string\"},"
-                + "\"requestTemplate\":{\"headers\":[],\"method\":\"GET\",\"argsToFormBody\":true,\"argsToJsonBody\":false,"
-                + "\"body\":\"string\",\"url\":\"\",\"argsToUrlParam\":true}}}}},\"securitySchemes\":[{\"id\":\"1\","
+                + "\"requestTemplate\":{\"headers\":[],\"method\":\"GET\",\"argsToFormBody\":true,"
+                + "\"argsToJsonBody\":false,"
+                + "\"body\":\"string\",\"url\":\"\",\"argsToUrlParam\":true}}}}},"
+                + "\"securitySchemes\":[{\"id\":\"1\","
                 + "\"type\":\"apiKey\",\"scheme\":\"\",\"in\":\"header\",\"name\":\"testSecurity\","
                 + "\"defaultCredential\":\"publicKey\"}]}";
         
@@ -148,6 +166,8 @@ class McpToolSpecificationTest extends BasicRequestTest {
         assertEquals("test tool description", result.getTools().get(0).getDescription());
         assertEquals("object", result.getTools().get(0).getInputSchema().get("type"));
         assertNotNull(result.getTools().get(0).getInputSchema().get("properties"));
+        assertEquals("object", result.getTools().get(0).getOutputSchema().get("type"));
+        assertNotNull(result.getTools().get(0).getOutputSchema().get("properties"));
         assertEquals(1, result.getToolsMeta().size());
         assertNotNull(result.getToolsMeta().get("testTool"));
         assertNotNull(result.getToolsMeta().get("testTool").getInvokeContext());

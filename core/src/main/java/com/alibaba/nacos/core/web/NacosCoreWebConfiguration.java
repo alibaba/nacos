@@ -17,7 +17,11 @@
 package com.alibaba.nacos.core.web;
 
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.unit.DataSize;
 
 import javax.annotation.PostConstruct;
 
@@ -25,6 +29,7 @@ import javax.annotation.PostConstruct;
  * Nacos core web configuration.
  *
  * @author xiweng.yy
+ * @author Huang Xiao
  */
 @Configuration
 @NacosWebBean
@@ -39,5 +44,34 @@ public class NacosCoreWebConfiguration {
     @PostConstruct
     public void init() {
         methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
+    }
+
+    /**
+     * auth admin filter registration.
+     *
+     * @param formSizeFilter form size filter
+     * @return filter registration
+     * @see com.alibaba.nacos.core.auth.AbstractWebAuthFilter
+     */
+    @Bean
+    public FilterRegistrationBean<FormSizeFilter> formSizeFilterRegistration(FormSizeFilter formSizeFilter) {
+        FilterRegistrationBean<FormSizeFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(formSizeFilter);
+        registration.addUrlPatterns("/*");
+        registration.setName("formSizeFilter");
+        // Note: The priority must be higher than "com.alibaba.nacos.core.auth.AuthFilter", otherwise the verification will not take effect.
+        registration.setOrder(5);
+        return registration;
+    }
+
+    /**
+     * form size filter.
+     *
+     * @param maxFormSize max form size (default 2MB, same as Tomcat's default)
+     * @return filter
+     */
+    @Bean
+    public FormSizeFilter formSizeFilter(@Value("${server.tomcat.max-http-form-post-size:2MB}") DataSize maxFormSize) {
+        return new FormSizeFilter(maxFormSize.toBytes());
     }
 }

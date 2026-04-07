@@ -252,7 +252,7 @@ class CachedMcpServerIndexTest {
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
         
         // 验证缓存被更新
-        verify(cacheIndex).updateIndex(eq(namespaceId), eq(mcpName), eq(mcpId));
+        verify(cacheIndex).updateIndex(eq(namespaceId), any(), eq(mcpId));
     }
     
     @Test

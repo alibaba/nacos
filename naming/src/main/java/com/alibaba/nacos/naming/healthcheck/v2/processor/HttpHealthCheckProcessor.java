@@ -150,7 +150,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             Throwable cause = throwable;
             instance.setCheckRt(System.currentTimeMillis() - startTime);
             int maxStackDepth = 50;
-            for (int deepth = 0; deepth < maxStackDepth && cause != null; deepth++) {
+            for (int depth = 0; depth < maxStackDepth && cause != null; depth++) {
                 if (HttpUtils.isTimeoutException(cause)) {
                     healthCheckCommon.checkFail(task, service, "http:" + cause.getMessage());
                     healthCheckCommon.reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,

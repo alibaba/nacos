@@ -159,8 +159,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     private void doDerbyBackup(String backupDirectory) throws Exception {
         DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
-        try (Connection holder = Objects.requireNonNull(dataSource, "dataSource").getConnection()) {
-            CallableStatement cs = holder.prepareCall(backupSql);
+        try (Connection holder = Objects.requireNonNull(dataSource, "dataSource").getConnection();
+             CallableStatement cs = holder.prepareCall(backupSql)) {
             cs.setString(1, backupDirectory);
             cs.execute();
         }

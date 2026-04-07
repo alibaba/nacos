@@ -401,6 +401,14 @@ public class ConfigRowMapperInjector {
             } catch (SQLException ignore) {
                 // 字段不存在时设置为 null，保证向后兼容
             }
+            try {
+                java.sql.Timestamp gmtModified = rs.getTimestamp("gmt_modified");
+                if (gmtModified != null) {
+                    info.setGmtModified(gmtModified.getTime());
+                }
+            } catch (SQLException ignore) {
+                // 字段不存在时设置为 null，保证向后兼容
+            }
             
             return info;
         }
@@ -425,7 +433,7 @@ public class ConfigRowMapperInjector {
         @Override
         public ConfigAdvanceInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigAdvanceInfo info = new ConfigAdvanceInfo();
-            info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
+            info.setCreateTime(rs.getTimestamp("gmt_create").getTime());
             info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
             info.setCreateUser(rs.getString("src_user"));
             info.setCreateIp(rs.getString("src_ip"));
@@ -459,7 +467,7 @@ public class ConfigRowMapperInjector {
                 info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
-            info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
+            info.setCreateTime(rs.getTimestamp("gmt_create").getTime());
             info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
             info.setCreateUser(rs.getString("src_user"));
             info.setCreateIp(rs.getString("src_ip"));

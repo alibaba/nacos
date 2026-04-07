@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -34,6 +35,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
+import com.alibaba.nacos.api.model.v2.Result;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
@@ -41,7 +44,10 @@ import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -127,7 +133,7 @@ public class ClientHttpProxy implements Closeable {
                 if (result.ok()) {
                     return result;
                 }
-                throw new NacosException(result.getCode(), result.getMessage());
+                throw new NacosException(result.getCode(), resolveErrorMessage(result));
             } catch (NacosException nacosException) {
                 requestException = nacosException;
                 resultCode = nacosException.getErrCode();
@@ -156,6 +162,33 @@ public class ClientHttpProxy implements Closeable {
         throw new NacosException(NacosException.BAD_GATEWAY,
                 "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
     }
+
+    private String resolveErrorMessage(HttpRestResult<String> result) {
+        String responseBody = result.getData();
+        if (StringUtils.isNotBlank(responseBody)) {
+            try {
+                Result<Object> response = JacksonUtils.toObj(responseBody, new TypeReference<Result<Object>>() {
+                });
+                if (response != null) {
+                    String message = response.getMessage();
+                    Object data = response.getData();
+                    if (data instanceof String && StringUtils.isNotBlank((String) data)) {
+                        if (StringUtils.isNotBlank(message) && !data.equals(message)) {
+                            return message + ": " + data;
+                        }
+                        return (String) data;
+                    }
+                    if (StringUtils.isNotBlank(message)) {
+                        return message;
+                    }
+                }
+            } catch (Exception ignored) {
+                // Fall back to the raw response body for non-Result payloads.
+            }
+            return responseBody;
+        }
+        return result.getMessage();
+    }
     
     private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr) throws Exception {
         long readTimeoutMs = ParamUtil.getReadTimeout();
@@ -174,6 +207,10 @@ public class ClientHttpProxy implements Closeable {
         Query query = Query.newInstance().initParams(paramValues);
         String url = buildUrl(serverAddr, request.getPath());
         
+        if (request.isFileUpload()) {
+            return executeMultipartPost(url, httpConfig, httpHeaders, query, request);
+        }
+        
         switch (request.getHttpMethod()) {
             case HttpMethod.GET:
                 return nacosRestTemplate.get(url, httpConfig, httpHeaders, query, String.class);
@@ -190,6 +227,64 @@ public class ClientHttpProxy implements Closeable {
             default:
                 throw new IllegalArgumentException("Unsupported HTTP method: " + request.getHttpMethod());
         }
+    }
+    
+    private static final String LINE_FEED = "\r\n";
+    
+    private static final String BOUNDARY_PREFIX = "----NacosBoundary";
+    
+    private HttpRestResult<String> executeMultipartPost(String url, HttpClientConfig httpConfig, Header httpHeaders,
+            Query query, HttpRequest request) throws IOException {
+        String fullUrl = query != null && !query.isEmpty() ? url + "?" + query.toQueryUrl() : url;
+        String boundary = BOUNDARY_PREFIX + System.currentTimeMillis();
+        
+        java.net.URL urlObj = new java.net.URL(fullUrl);
+        HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+        conn.setRequestMethod(HttpMethod.POST);
+        conn.setConnectTimeout(httpConfig.getConTimeOutMillis());
+        conn.setReadTimeout(httpConfig.getReadTimeOutMillis());
+        conn.setDoOutput(true);
+        
+        for (Map.Entry<String, String> entry : httpHeaders.getHeader().entrySet()) {
+            conn.setRequestProperty(entry.getKey(), entry.getValue());
+        }
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        
+        byte[] fileBytes = request.getFileBytes();
+        String fieldName = request.getFileFieldName();
+        String fileName = request.getFileName();
+        
+        StringBuilder header = new StringBuilder();
+        header.append("--").append(boundary).append(LINE_FEED);
+        header.append("Content-Disposition: form-data; name=\"").append(fieldName).append("\"; filename=\"")
+                .append(fileName).append("\"").append(LINE_FEED);
+        header.append("Content-Type: application/octet-stream").append(LINE_FEED).append(LINE_FEED);
+        
+        byte[] headerBytes = header.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] tailBytes = (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
+        
+        try (OutputStream outputStream = conn.getOutputStream()) {
+            outputStream.write(headerBytes);
+            outputStream.write(fileBytes);
+            outputStream.write(tailBytes);
+            outputStream.flush();
+        }
+        
+        conn.connect();
+        
+        HttpRestResult<String> result = new HttpRestResult<>();
+        result.setCode(conn.getResponseCode());
+        result.setMessage(conn.getResponseMessage());
+        try {
+            java.io.InputStream inputStream = conn.getResponseCode() >= 400
+                    ? conn.getErrorStream() : conn.getInputStream();
+            if (inputStream != null) {
+                result.setData(com.alibaba.nacos.common.utils.IoUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+            }
+        } finally {
+            conn.disconnect();
+        }
+        return result;
     }
     
     private void addAuthHeader(Header header, RequestResource resource) {

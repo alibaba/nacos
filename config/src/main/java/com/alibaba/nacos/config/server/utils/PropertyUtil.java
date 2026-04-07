@@ -24,7 +24,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,7 +63,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     public static final ThreadLocal<Boolean> GRAY_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
     
-    public static final ThreadLocal<Boolean> CONFIG_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
+    // CONFIG_MIGRATE_FLAG has been replaced by {@link ConfigPersistContext}.
     
     /**
      * Whether to enable the limit check function of capacity management, including the upper limit of configuration
@@ -412,7 +413,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
                     "/sys/fs/cgroup/memory/memory.limit_in_bytes");
         }
         File file = new File(limitMemoryFile);
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             long memoryLimit = Long.parseLong(reader.readLine().trim());
             return Optional.of(memoryLimit / 1024L / 1024L);
         } catch (IOException | NumberFormatException ignored) {

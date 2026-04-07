@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.maintainer.client.remote.HttpClientManager;
 
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -47,7 +47,7 @@ public class DefaultServerListManager extends AbstractServerListManager {
         if (serverList.isEmpty()) {
             throw new NacosLoadException("serverList is empty,please check configuration");
         } else {
-            currentIndex.set(new Random().nextInt(serverList.size()));
+            currentIndex.set(ThreadLocalRandom.current().nextInt(serverList.size()));
         }
     }
     

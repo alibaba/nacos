@@ -160,6 +160,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService implem
     
     @Override
     public void deleteUser(String username) {
+        rejectReservedUsername(username);
         Query query = Query.newInstance().addParam("username", username);
         try {
             HttpRestResult<String> result = nacosRestTemplate.delete(buildRemoteUserUrlPath(AuthConstants.USER_PATH),

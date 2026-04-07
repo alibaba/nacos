@@ -36,6 +36,8 @@ public class ConfigInfo extends ConfigInfoBase {
     
     private String configTags;
     
+    private Long gmtModified;
+    
     public ConfigInfo() {
     }
     
@@ -92,6 +94,14 @@ public class ConfigInfo extends ConfigInfoBase {
     
     public void setConfigTags(String configTags) {
         this.configTags = configTags;
+    }
+    
+    public Long getGmtModified() {
+        return gmtModified;
+    }
+    
+    public void setGmtModified(Long gmtModified) {
+        this.gmtModified = gmtModified;
     }
     
     @Override

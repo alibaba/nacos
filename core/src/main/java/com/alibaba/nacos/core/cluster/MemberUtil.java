@@ -76,7 +76,6 @@ public class MemberUtil {
      * @param member ip:port
      * @return {@link Member}
      */
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
         int defaultPort = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
