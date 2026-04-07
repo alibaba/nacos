@@ -39,6 +39,10 @@ import MagicWandIcon from '../../../components/MagicWandIcon/MagicWandIcon';
 import JSZip from 'jszip';
 import { getLanguageFromFileName } from '../../../utils/languageDetector';
 import { getParams, request } from '@/globalLib';
+import {
+  fetchPipelineExecutionDetail,
+  mapExecutionToPipelineInfo,
+} from '@/utils/pipelineApi';
 
 const { Row, Col } = Grid;
 const { Panel } = Collapse;
@@ -369,21 +373,50 @@ class SkillDetail extends React.Component {
               ? fileTree.find(file => file.name === 'SKILL.md' && file.fileType === 'skill-md')
               : null;
 
-          this.setState({
-            skillData: updatedSkillData,
-            fileTree,
-            selectedFile: skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
-            resources,
-            selectedVersion: version,
-            selectedVersionStatus: versionSummary?.status || null,
-            pipelineInfo,
-          });
+          this.setState(
+            {
+              skillData: updatedSkillData,
+              fileTree,
+              selectedFile: skillMdFile || (fileTree && fileTree.length > 0 ? fileTree[0] : null),
+              resources,
+              selectedVersion: version,
+              selectedVersionStatus: versionSummary?.status || null,
+              pipelineInfo,
+            },
+            () => {
+              if (pipelineInfo && pipelineInfo.executionId) {
+                this.syncPipelineExecutionFromConsole(pipelineInfo.executionId);
+              }
+            }
+          );
         }
       },
       error: () => {
         this.setState({ versionLoading: false });
         const { locale = {} } = this.props;
         Message.error(locale.getSkillInfoFailed || 'Failed to get version content');
+      },
+    });
+  };
+
+  /**
+   * Refreshes pipeline status/nodes from Console pipeline API (GET .../pipelines/detail).
+   */
+  syncPipelineExecutionFromConsole = executionId => {
+    if (!executionId) {
+      return;
+    }
+    fetchPipelineExecutionDetail(executionId, {
+      success: data => {
+        if (data && (data.code === 0 || data.code === 200) && data.data) {
+          const merged = mapExecutionToPipelineInfo(data.data);
+          if (merged) {
+            this.setState({ pipelineInfo: merged });
+          }
+        }
+      },
+      error: () => {
+        // Keep governance snapshot on failure (e.g. older server without /detail).
       },
     });
   };

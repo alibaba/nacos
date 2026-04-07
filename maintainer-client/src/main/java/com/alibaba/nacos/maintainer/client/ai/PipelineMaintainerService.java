@@ -22,23 +22,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * Nacos AI module Pipeline relative maintainer service.
  *
- * <p>Returns {@link JsonNode} because PipelineExecution resides in the ai module,
- * which is not a compile-time dependency of maintainer-client. Callers (e.g.
- * PipelineRemoteHandler in the console module) should deserialize the JsonNode
+ * <p>Extends {@link PipelineAdminClient} for {@link com.alibaba.nacos.api.model.v2.Result} responses.
+ * Legacy {@link JsonNode}-only accessors are retained for existing callers.</p>
+ *
+ * <p>Returns {@link JsonNode} on deprecated methods because {@code PipelineExecution} resides in the ai module,
+ * which is not a compile-time dependency of maintainer-client. Callers should deserialize the JsonNode
  * to the concrete type.</p>
  *
  * @author kiro
  * @since 3.2.0
  */
-public interface PipelineMaintainerService {
+public interface PipelineMaintainerService extends PipelineAdminClient {
     
     /**
      * Get pipeline execution detail by ID.
      *
      * @param pipelineId the pipeline execution ID
-     * @return JSON representation of the pipeline execution
-     * @throws NacosException if the request fails
+     * @return JSON representation of the pipeline execution data field on success
+     * @throws NacosException if the request fails or the server returns a non-success Result
+     * @deprecated since 3.2.1 use {@link #getPipelineDetail(String)} to handle {@code Result} explicitly
      */
+    @Deprecated
     JsonNode getPipeline(String pipelineId) throws NacosException;
     
     /**
@@ -50,9 +54,11 @@ public interface PipelineMaintainerService {
      * @param version      the version (optional)
      * @param pageNo       the page number
      * @param pageSize     the page size
-     * @return JSON representation of the paginated pipeline executions
-     * @throws NacosException if the request fails
+     * @return JSON representation of the page data field on success
+     * @throws NacosException if the request fails or the server returns a non-success Result
+     * @deprecated since 3.2.1 use {@link #listPipelineExecutions(String, String, String, String, int, int)}
      */
+    @Deprecated
     JsonNode listPipelines(String resourceType, String resourceName, String namespaceId,
             String version, int pageNo, int pageSize) throws NacosException;
 }
