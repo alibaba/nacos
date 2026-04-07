@@ -35,6 +35,8 @@ class VisibilityPluginManagerTest {
     
     private static final String TEST_SERVICE_NAME = "test-visibility";
     
+    private static final String VISIBILITY_ENABLED_KEY = "nacos.plugin.visibility.enabled";
+    
     private VisibilityPluginManager manager;
     
     @Mock
@@ -42,6 +44,7 @@ class VisibilityPluginManagerTest {
     
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
+        System.clearProperty(VISIBILITY_ENABLED_KEY);
         manager = VisibilityPluginManager.getInstance();
         Field field = VisibilityPluginManager.class.getDeclaredField("visibilityServiceMap");
         field.setAccessible(true);
@@ -60,5 +63,13 @@ class VisibilityPluginManagerTest {
         Optional<VisibilityService> result = manager.findVisibilityService(TEST_SERVICE_NAME);
         assertTrue(result.isPresent());
         assertEquals(mockVisibilityService, result.get());
+    }
+    
+    @Test
+    void testFindVisibilityServiceWhenVisibilityPluginDisabled() {
+        System.setProperty(VISIBILITY_ENABLED_KEY, "false");
+        Optional<VisibilityService> result = manager.findVisibilityService(TEST_SERVICE_NAME);
+        assertTrue(result.isEmpty());
+        System.clearProperty(VISIBILITY_ENABLED_KEY);
     }
 }
