@@ -71,46 +71,51 @@ public class ParamUtil {
         refreshIntervalMills = initRefreshIntervalMills();
         LOGGER.info("[settings] [maintainer-http-client] auth refresh interval mills:{}", refreshIntervalMills);
     }
-    
+
+    //修复
     private static int initConnectionTimeout() {
+        final String connectTimeoutStr = NacosClientProperties.PROTOTYPE.getProperty(
+                MAINTAINER_CLIENT_CONNECT_TIMEOUT_KEY, DEFAULT_CONNECT_TIMEOUT);
         try {
-            String connectTimeout = NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_CONNECT_TIMEOUT_KEY, DEFAULT_CONNECT_TIMEOUT);
-            return Integer.parseInt(connectTimeout);
+            return Integer.parseInt(connectTimeoutStr);
         } catch (NumberFormatException e) {
-            final String msg = "[http-client] invalid connect timeout:" + connectTimeout;
+            final String msg = "[http-client] invalid connect timeout: " + connectTimeoutStr;
             LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
     
     private static int initReadTimeout() {
+        final String readTimeoutStr = NacosClientProperties.PROTOTYPE.getProperty(
+                MAINTAINER_CLIENT_READ_TIMEOUT_KEY, DEFAULT_READ_TIMEOUT);
         try {
-            String readTimeout = NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_READ_TIMEOUT_KEY, DEFAULT_READ_TIMEOUT);
-            return Integer.parseInt(readTimeout);
+            return Integer.parseInt(readTimeoutStr);
         } catch (NumberFormatException e) {
-            final String msg = "[http-client] invalid read timeout:" + readTimeout;
+            final String msg = "[http-client] invalid read timeout: " + readTimeoutStr;
             LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
     
     private static int initMaxRetryTimes() {
+        final String maxRetryTimesStr = NacosClientProperties.PROTOTYPE.getProperty(
+                MAINTAINER_CLIENT_MAX_RETRY_TIMES_KEY, String.valueOf(DEFAULT_MAX_RETRY_TIMES));
         try {
-            return Integer.parseInt(NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_MAX_RETRY_TIMES_KEY,
-                    String.valueOf(DEFAULT_MAX_RETRY_TIMES)));
+            return Integer.parseInt(maxRetryTimesStr);
         } catch (NumberFormatException e) {
-            final String msg = "[http-client] invalid max retry times:" + maxRetryTimes;
+            final String msg = "[http-client] invalid max retry times: " + maxRetryTimesStr;
             LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
     
     private static long initRefreshIntervalMills() {
+        final String refreshIntervalMillsStr = NacosClientProperties.PROTOTYPE.getProperty(
+                MAINTAINER_CLIENT_REFRESH_INTERVAL_MILLS_KEY, String.valueOf(DEFAULT_REFRESH_INTERVAL_MILLS));
         try {
-            return Long.parseLong(NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_REFRESH_INTERVAL_MILLS_KEY,
-                    String.valueOf(DEFAULT_REFRESH_INTERVAL_MILLS)));
+            return Long.parseLong(refreshIntervalMillsStr);
         } catch (NumberFormatException e) {
-            final String msg = "[http-client] invalid auth refresh interval :" + refreshIntervalMills;
+            final String msg = "[http-client] invalid auth refresh interval: " + refreshIntervalMillsStr;
             LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
