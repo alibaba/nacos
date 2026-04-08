@@ -26,6 +26,7 @@ import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -148,5 +149,64 @@ class PipelineMaintainerServiceImplTest {
 
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("legacy", result.getData().get("executionId").asText());
+    }
+
+    // ========== Additional Tests for Coverage ==========
+
+    @Test
+    @DisplayName("listPipelineExecutions falls back on 404")
+    void listPipelineExecutionsFallsBackOn404() throws NacosException {
+        final String pageJson = "{\"pageNumber\":1,\"pageSize\":10,\"totalCount\":0,\"pageItems\":[]}";
+        JsonNode pageNode = JacksonUtils.toObj(pageJson, JsonNode.class);
+        HttpRestResult<String> ok = new HttpRestResult<>();
+        ok.setData(JacksonUtils.toJson(Result.success(pageNode)));
+        doThrow(new NacosException(NacosException.NOT_FOUND, "not found")).doAnswer(invocation -> ok).when(clientHttpProxy)
+                .executeSyncHttpRequest(any(HttpRequest.class));
+
+        Result<JsonNode> result = pipelineMaintainerService.listPipelineExecutions("SKILL", "test", "public", "v1", 1, 10);
+
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertNotNull(result.getData());
+    }
+
+    @Test
+    @DisplayName("parseResultFromHttp with empty body should throw SERVER_ERROR")
+    void parseResultFromHttp_withEmptyBody_shouldThrowServerError() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData("");
+        doAnswer(invocation -> mockRestResult).when(clientHttpProxy).executeSyncHttpRequest(any(HttpRequest.class));
+
+        NacosException ex = assertThrows(NacosException.class, 
+                () -> pipelineMaintainerService.getPipelineDetail("exec-1"));
+        assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+        assertTrue(ex.getErrMsg().contains("empty response body"));
+    }
+
+    @Test
+    @DisplayName("getPipeline deprecated throws when result is not success")
+    void getPipelineDeprecatedThrowsOnBusinessFailure() throws NacosException {
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.failure(ErrorCode.SERVER_ERROR)));
+        doAnswer(invocation -> mockRestResult).when(clientHttpProxy).executeSyncHttpRequest(any(HttpRequest.class));
+
+        NacosException ex = assertThrows(NacosException.class, 
+                () -> pipelineMaintainerService.getPipeline("exec-1"));
+        assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+    }
+
+    @Test
+    @DisplayName("listPipelines deprecated unwraps success data")
+    void listPipelinesDeprecatedUnwrapsSuccessData() throws NacosException {
+        final String pageJson = "{\"pageNumber\":2,\"pageSize\":20,\"totalCount\":5,\"pageItems\":[]}";
+        JsonNode pageNode = JacksonUtils.toObj(pageJson, JsonNode.class);
+        HttpRestResult<String> mockRestResult = new HttpRestResult<>();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(pageNode)));
+        doAnswer(invocation -> mockRestResult).when(clientHttpProxy).executeSyncHttpRequest(any(HttpRequest.class));
+
+        JsonNode data = pipelineMaintainerService.listPipelines("AGENT_SPEC", "agent", "public", "v1", 2, 20);
+        assertNotNull(data);
+        assertEquals(2, data.get("pageNumber").asInt());
+        assertEquals(20, data.get("pageSize").asInt());
+        assertEquals(5, data.get("totalCount").asInt());
     }
 }

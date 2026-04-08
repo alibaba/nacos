@@ -19,10 +19,16 @@ package com.alibaba.nacos.maintainer.client.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpClientManagerTest {
     
@@ -42,6 +48,54 @@ public class HttpClientManagerTest {
     public void testGetNacosRestTemplate() {
         HttpClientManager httpClientManager = HttpClientManager.getInstance();
         NacosRestTemplate template = httpClientManager.getNacosRestTemplate();
-        assert template != null : "NacosRestTemplate should not be null.";
+        assertNotNull(template, "NacosRestTemplate should not be null.");
+    }
+
+    // ========== Additional Tests for Coverage ==========
+
+    @Test
+    @DisplayName("getInstance concurrent access should return same instance")
+    void getInstance_concurrentAccess_shouldReturnSameInstance() throws InterruptedException {
+        final int threadCount = 10;
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch endLatch = new CountDownLatch(threadCount);
+        final AtomicReference<HttpClientManager> firstInstance = new AtomicReference<>();
+        final ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    HttpClientManager instance = HttpClientManager.getInstance();
+                    if (firstInstance.get() == null) {
+                        firstInstance.set(instance);
+                    }
+                    assertEquals(firstInstance.get(), instance, 
+                            "All threads should get the same HttpClientManager instance");
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    endLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        endLatch.await();
+        executor.shutdown();
+        
+        assertNotNull(firstInstance.get(), "HttpClientManager instance should be created");
+    }
+
+    @Test
+    @DisplayName("shutdown should complete without throwing")
+    void shutdown_shouldCompleteWithoutThrowing() throws NacosException {
+        HttpClientManager instance = HttpClientManager.getInstance();
+        assertNotNull(instance.getNacosRestTemplate());
+        
+        // Shutdown should work even if called multiple times
+        instance.shutdown();
+        // Second shutdown should also work without throwing
+        instance.shutdown();
     }
 }
