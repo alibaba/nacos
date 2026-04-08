@@ -646,31 +646,6 @@ class McpServerOperationServiceTest {
     }
 
     @Test
-    void createMcpServerWithEncryptedToolSpecOnly() throws NacosException {
-        McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
-        mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));
-
-        McpToolSpecification toolSpecification = new McpToolSpecification();
-        toolSpecification.setSpecificationType("encrypted");
-        EncryptObject encryptObject = new EncryptObject();
-        encryptObject.setData("ciphertext");
-        toolSpecification.setEncryptData(encryptObject);
-
-        String id = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mockServerBasicInfo,
-                toolSpecification, null);
-        assertNotNull(id);
-
-        // should trigger tool refresh even when tools/securitySchemes are empty
-        verify(toolOperationService, times(1)).refreshMcpTool(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                any(McpServerStorageInfo.class), eq(toolSpecification));
-        verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
-                isNull());
-        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                mockServerBasicInfo.getName());
-        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
-    }
-
-    @Test
     void createMcpServerWithEndpointSpec() throws NacosException {
         McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
         mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));

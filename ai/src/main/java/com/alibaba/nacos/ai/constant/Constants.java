@@ -115,6 +115,7 @@ public class Constants {
 
         public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
     }
+
     public static class Skills {
 
         public static final String CONSOLE_PATH = "/v3/console/ai/skills";
@@ -172,6 +173,7 @@ public class Constants {
 
         public static final String CONSOLE_PATH = "/v3/console/ai/pipelines";
     }
+
     public static class Prompt {
 
         public static final String CONSOLE_PATH = "/v3/console/ai/prompt";

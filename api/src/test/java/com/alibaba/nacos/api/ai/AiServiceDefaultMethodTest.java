@@ -22,10 +22,12 @@ import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.client.ai.NacosAiService;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,9 +39,9 @@ class AiServiceDefaultMethodTest {
     AiService aiService;
     
     @BeforeEach
-    void setUp() {
+    void setUp() throws NacosException {
         invokeMark = new AtomicBoolean(false);
-        aiService = new AiService() {
+        aiService = new NacosAiService(new Properties()) {
             @Override
             public McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {
                 invokeMark.set(true);
@@ -82,10 +84,6 @@ class AiServiceDefaultMethodTest {
             public void unsubscribeMcpServer(String mcpName, String version,
                     AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
                 invokeMark.set(true);
-            }
-            
-            @Override
-            public void shutdown() throws NacosException {
             }
         };
     }

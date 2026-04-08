@@ -454,6 +454,18 @@ public class McpServerOperationService {
                 overrideExisting);
     }
 
+    /**
+     * Update current mcp server specification, tools, resources and endpoint information.
+     *
+     * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
+     * @param isPublish             whether publish latest version after update
+     * @param serverSpecification   mcp server basic specification
+     * @param toolSpecification     mcp server included tools, optional
+     * @param resourceSpecification mcp server included resources, optional
+     * @param endpointSpecification mcp server endpoint specification, optional
+     * @param overrideExisting      if replace all the instances when update the mcp server
+     * @throws NacosException any exception during handling
+     */
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification,
             McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
