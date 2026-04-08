@@ -96,10 +96,9 @@ class MonacoEditor extends React.Component<PropsType, StateType> {
   }
 
   editorDidMount(editor: any) {
-    const { onChange } = this.props;
     editor.onDidChangeModelContent(event => {
       const value = editor.getValue();
-
+      const { onChange } = this.props;
       typeof onChange === 'function' && onChange(value);
     });
   }
