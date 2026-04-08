@@ -195,6 +195,22 @@ CREATE TABLE permissions (
 
 
 /******************************************/
+/*   表名称 = pipeline_execution           */
+/******************************************/
+CREATE TABLE pipeline_execution (
+    execution_id  VARCHAR2(64)  NOT NULL,
+    resource_type VARCHAR2(32)  NOT NULL,
+    resource_name VARCHAR2(256) NOT NULL,
+    namespace_id  VARCHAR2(128) DEFAULT NULL,
+    version       VARCHAR2(64)  DEFAULT NULL,
+    status        VARCHAR2(32)  NOT NULL,
+    pipeline      CLOB          NOT NULL,
+    create_time   NUMBER(20)    NOT NULL,
+    update_time   NUMBER(20)    NOT NULL,
+    CONSTRAINT pk_pipeline_execution PRIMARY KEY (execution_id)
+);
+
+/******************************************/
 /*   表名称 = ai_resource                 */
 /******************************************/
 CREATE TABLE ai_resource (
