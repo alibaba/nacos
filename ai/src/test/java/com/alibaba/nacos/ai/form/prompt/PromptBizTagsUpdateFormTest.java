@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.ai.form.prompt;
 
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PromptBizTagsUpdateFormTest {
     
@@ -33,9 +31,9 @@ class PromptBizTagsUpdateFormTest {
     }
     
     @Test
-    void validateShouldThrowWhenBizTagsMissing() {
+    void validateShouldPassWhenBizTagsMissing() {
         PromptBizTagsUpdateForm form = new PromptBizTagsUpdateForm();
         form.setPromptKey("p1");
-        assertThrows(NacosApiException.class, form::validate);
+        assertDoesNotThrow(form::validate);
     }
 }
