@@ -960,11 +960,6 @@ const I18N_CONF = {
     deletePrompt: '删除 Prompt',
     getPromptFailed: '获取 Prompt 详情失败',
     getHistoryFailed: '获取历史版本失败',
-    // PublishPromptVersion page
-    currentVersion: '当前版本',
-    newVersion: '新版本号',
-    versionMustBeGreater: '新版本号必须大于当前版本 {0}',
-    versionMustBeGreaterHelp: '必须大于当前版本 {0}',
     publish: '发布',
     publishSuccess: '发布成功',
     publishFailed: '发布失败',

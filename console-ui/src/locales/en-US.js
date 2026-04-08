@@ -970,11 +970,6 @@ const I18N_CONF = {
     deletePrompt: 'Delete Prompt',
     getPromptFailed: 'Failed to get Prompt detail',
     getHistoryFailed: 'Failed to get history version',
-    // PublishPromptVersion page
-    currentVersion: 'Current Version',
-    newVersion: 'New Version',
-    versionMustBeGreater: 'New version must be greater than current version {0}',
-    versionMustBeGreaterHelp: 'Must be greater than current version {0}',
     publish: 'Publish',
     publishSuccess: 'Published successfully',
     publishFailed: 'Failed to publish',
