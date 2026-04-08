@@ -45,10 +45,6 @@ public class SkillBizTagsUpdateForm extends SkillForm {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Request parameter `skillName` should not be blank.");
         }
-        if (StringUtils.isBlank(bizTags)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Request parameter `bizTags` should not be blank.");
-        }
     }
 
     public String getBizTags() {
