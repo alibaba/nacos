@@ -764,7 +764,8 @@ class SkillOptimizeDialog extends React.Component {
       ...skill,
       name: skill.name, // Always use original skill name
       description: optimizedSkill.description || skill.description,
-      instruction: optimizedSkill.instruction || skill.instruction,
+      instruction:
+        optimizedSkill.instruction || optimizedSkill.skillMd || skill.skillMd || skill.instruction,
       // Use optimized resources
       resource: optimizedSkill.resource || optimizedSkill.resources || {},
     };
@@ -823,7 +824,7 @@ class SkillOptimizeDialog extends React.Component {
     const skillCard = {
       name: mergedSkill.name,
       description: mergedSkill.description || '',
-      instruction: mergedSkill.instruction || '',
+      skillMd: mergedSkill.instruction || '',
     };
 
     // Use optimized resources (may be empty or have removed resources)
@@ -1483,7 +1484,8 @@ class SkillOptimizeDialog extends React.Component {
           // 检查是否有任何变化
           const hasNameChange = optimizedSkill.name !== skill.name;
           const hasDescriptionChange = optimizedSkill.description !== skill.description;
-          const hasInstructionChange = optimizedSkill.instruction !== skill.instruction;
+          const hasInstructionChange =
+            optimizedSkill.instruction !== (skill.skillMd || skill.instruction);
 
           // 检查资源变化 - 包括名称和内容
           const optimizedResourcesSorted = [...optimizedResources].sort();
@@ -1590,7 +1592,9 @@ class SkillOptimizeDialog extends React.Component {
                     {hasInstructionChange && (
                       <div className="comparison-item">
                         <label>{locale.instruction || 'Instruction'}:</label>
-                        <pre className="comparison-pre">{skill.instruction || '--'}</pre>
+                        <pre className="comparison-pre">
+                          {skill.skillMd || skill.instruction || '--'}
+                        </pre>
                       </div>
                     )}
                     {resourceChanged && resourceChanges.length > 0 && (

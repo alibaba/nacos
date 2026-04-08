@@ -229,7 +229,7 @@ class NewSkill extends React.Component {
               const originalFormData = {
                 name: originalSkillData.name,
                 description: originalSkillData.description || '',
-                instruction: originalSkillData.instruction || '',
+                instruction: originalSkillData.skillMd || '',
               };
 
               // Fill form with optimized skill data
@@ -272,7 +272,7 @@ class NewSkill extends React.Component {
               // 比较优化后的数据与原始数据，判断是否有变化
               const formChanged =
                 (optimizedSkill.description || '') !== (originalSkillData.description || '') ||
-                (optimizedSkill.instruction || '') !== (originalSkillData.instruction || '');
+                (optimizedSkill.instruction || '') !== (originalSkillData.skillMd || '');
               const resourcesChanged =
                 JSON.stringify(resources) !== JSON.stringify(originalResources);
               const hasChanges = formChanged || resourcesChanged;
@@ -424,7 +424,7 @@ class NewSkill extends React.Component {
                   const mergedSkillData = {
                     ...skillData,
                     name: draftContent.name || skillData.name || skillName,
-                    instruction: draftContent.instruction || '',
+                    instruction: draftContent.skillMd || '',
                     description: draftContent.description || '',
                     resource: draftContent.resource || skillData.resource || {},
                   };
@@ -465,14 +465,14 @@ class NewSkill extends React.Component {
     this.field.setValues({
       name: skillData.name,
       description: skillData.description || '',
-      instruction: skillData.instruction || '',
+      instruction: skillData.skillMd || skillData.instruction || '',
     });
 
     // 保存原始数据用于比较
     const originalFormData = {
       name: skillData.name,
       description: skillData.description || '',
-      instruction: skillData.instruction || '',
+      instruction: skillData.skillMd || skillData.instruction || '',
     };
     const originalResources = JSON.parse(JSON.stringify(resources)); // 深拷贝
 
@@ -600,7 +600,7 @@ class NewSkill extends React.Component {
       const skillCard = {
         name: values.name,
         description: values.description || '',
-        instruction: values.instruction || '',
+        skillMd: values.instruction || '',
       };
 
       // 构建 resource Map，过滤掉无效的资源（没有 name 或 name 为空的资源）
@@ -1378,7 +1378,7 @@ class NewSkill extends React.Component {
     this.field.setValues({
       name: skill.name || '',
       description: skill.description || '',
-      instruction: skill.instruction || '',
+      instruction: skill.instruction || skill.skillMd || '',
     });
 
     // Fill resources if any
