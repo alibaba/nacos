@@ -1190,9 +1190,10 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                     version, JacksonUtils.toJson(pipelineInfo));
             
             if (result.getStatus() == PipelineExecutionStatus.APPROVED) {
-                publish(namespaceId, promptKey, version, true);
-            } else if (result.getStatus() == PipelineExecutionStatus.REJECTED) {
-                // Revert to draft
+                AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version,
+                        AiResourceTraceService.OP_REVIEW_APPROVED, "system", "", result.getExecutionId());
+            } else {
+                // Reject back to draft and move reviewing -> editing (best effort).
                 aiResourceVersionPersistService.updateStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
                         VERSION_STATUS_DRAFT);
                 AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
@@ -1201,9 +1202,15 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                     if (StringUtils.equals(info.getReviewingVersion(), version)) {
                         info.setReviewingVersion(null);
                         info.setEditingVersion(version);
-                        updateMetaVersionInfoCas(namespaceId, meta, info);
+                        try {
+                            updateMetaVersionInfoCas(namespaceId, meta, info);
+                        } catch (Exception ex) {
+                            LOGGER.warn("Failed to rollback meta working pointers for {}@{}", promptKey, version, ex);
+                        }
                     }
                 }
+                AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, version,
+                        AiResourceTraceService.OP_REVIEW_REJECTED, "system", "", result.getExecutionId());
             }
         } catch (Exception e) {
             LOGGER.error("Failed to handle pipeline completion for prompt: {}@{}", promptKey, version, e);

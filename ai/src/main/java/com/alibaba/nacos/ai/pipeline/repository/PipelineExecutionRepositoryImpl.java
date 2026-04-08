@@ -24,6 +24,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -45,6 +48,8 @@ import java.util.List;
  * @since 3.2.0
  */
 public class PipelineExecutionRepositoryImpl implements PipelineExecutionRepository {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineExecutionRepositoryImpl.class);
     
     private static final String SQL_INSERT = "INSERT INTO pipeline_execution "
             + "(execution_id, resource_type, resource_name, namespace_id, version, status, pipeline, create_time, update_time) "
@@ -155,69 +160,89 @@ public class PipelineExecutionRepositoryImpl implements PipelineExecutionReposit
             return getJdbcTemplate().queryForObject(SQL_FIND_BY_ID, ROW_MAPPER, executionId);
         } catch (EmptyResultDataAccessException e) {
             return null;
+        } catch (DataAccessException e) {
+            LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}", e.getMessage());
+            return null;
         }
     }
     
     @Override
     public PipelineExecution findByResource(String resourceType, String resourceName, String namespaceId,
             String version) {
-        List<PipelineExecution> executions = getJdbcTemplate().query(SQL_FIND_BY_RESOURCE, ROW_MAPPER, resourceType,
-                resourceName, namespaceId, version);
-        if (executions.isEmpty()) {
+        try {
+            List<PipelineExecution> executions = getJdbcTemplate().query(SQL_FIND_BY_RESOURCE, ROW_MAPPER,
+                    resourceType, resourceName, namespaceId, version);
+            if (executions.isEmpty()) {
+                return null;
+            }
+            return executions.get(0);
+        } catch (DataAccessException e) {
+            LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}", e.getMessage());
             return null;
         }
-        return executions.get(0);
     }
     
     @Override
     public List<PipelineExecution> findByResourceWithPage(String resourceType, String resourceName,
             String namespaceId, String version, int offset, int limit) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM pipeline_execution WHERE resource_type = ?");
-        List<Object> params = new ArrayList<>();
-        params.add(resourceType);
-        
-        if (StringUtils.isNotBlank(resourceName)) {
-            sql.append(" AND resource_name = ?");
-            params.add(resourceName);
-        }
-        if (StringUtils.isNotBlank(namespaceId)) {
-            sql.append(" AND namespace_id = ?");
-            params.add(namespaceId);
-        }
-        if (StringUtils.isNotBlank(version)) {
-            sql.append(" AND version = ?");
-            params.add(version);
-        }
-        sql.append(" ORDER BY create_time DESC");
-        
-        List<PipelineExecution> executions = getJdbcTemplate().query(sql.toString(), ROW_MAPPER, params.toArray());
-        if (executions.isEmpty() || offset >= executions.size()) {
+        try {
+            StringBuilder sql = new StringBuilder("SELECT * FROM pipeline_execution WHERE resource_type = ?");
+            List<Object> params = new ArrayList<>();
+            params.add(resourceType);
+            
+            if (StringUtils.isNotBlank(resourceName)) {
+                sql.append(" AND resource_name = ?");
+                params.add(resourceName);
+            }
+            if (StringUtils.isNotBlank(namespaceId)) {
+                sql.append(" AND namespace_id = ?");
+                params.add(namespaceId);
+            }
+            if (StringUtils.isNotBlank(version)) {
+                sql.append(" AND version = ?");
+                params.add(version);
+            }
+            sql.append(" ORDER BY create_time DESC");
+            
+            List<PipelineExecution> executions = getJdbcTemplate().query(sql.toString(), ROW_MAPPER, params.toArray());
+            if (executions.isEmpty() || offset >= executions.size()) {
+                return Collections.emptyList();
+            }
+            int toIndex = Math.min(executions.size(), offset + limit);
+            return new ArrayList<>(executions.subList(offset, toIndex));
+        } catch (DataAccessException e) {
+            LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}", e.getMessage());
             return Collections.emptyList();
         }
-        int toIndex = Math.min(executions.size(), offset + limit);
-        return new ArrayList<>(executions.subList(offset, toIndex));
     }
     
     @Override
     public int countByResource(String resourceType, String resourceName, String namespaceId, String version) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM pipeline_execution WHERE resource_type = ?");
-        List<Object> params = new ArrayList<>();
-        params.add(resourceType);
-        
-        if (StringUtils.isNotBlank(resourceName)) {
-            sql.append(" AND resource_name = ?");
-            params.add(resourceName);
+        try {
+            StringBuilder sql = new StringBuilder(
+                    "SELECT COUNT(*) FROM pipeline_execution WHERE resource_type = ?");
+            List<Object> params = new ArrayList<>();
+            params.add(resourceType);
+            
+            if (StringUtils.isNotBlank(resourceName)) {
+                sql.append(" AND resource_name = ?");
+                params.add(resourceName);
+            }
+            if (StringUtils.isNotBlank(namespaceId)) {
+                sql.append(" AND namespace_id = ?");
+                params.add(namespaceId);
+            }
+            if (StringUtils.isNotBlank(version)) {
+                sql.append(" AND version = ?");
+                params.add(version);
+            }
+            
+            Integer count = getJdbcTemplate().queryForObject(sql.toString(), Integer.class, params.toArray());
+            return count != null ? count : 0;
+        } catch (DataAccessException e) {
+            LOGGER.warn("Failed to query pipeline_execution table (table may not exist): {}", e.getMessage());
+            return 0;
         }
-        if (StringUtils.isNotBlank(namespaceId)) {
-            sql.append(" AND namespace_id = ?");
-            params.add(namespaceId);
-        }
-        if (StringUtils.isNotBlank(version)) {
-            sql.append(" AND version = ?");
-            params.add(version);
-        }
-        
-        return getJdbcTemplate().queryForObject(sql.toString(), Integer.class, params.toArray());
     }
     
     /**
