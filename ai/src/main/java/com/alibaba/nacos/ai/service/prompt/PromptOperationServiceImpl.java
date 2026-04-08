@@ -644,7 +644,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         detail.setOnlineCnt(versionInfo.getOnlineCnt());
         detail.setLabels(versionInfo.getLabels());
         detail.setGmtModified(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
-        detail.setBizTags(meta.getBizTags());
+        detail.setBizTags(parseBizTagsList(meta.getBizTags()));
+        detail.setBizTagsStr(meta.getBizTags());
         
         // Load version list
         List<AiResourceVersion> allVersions = loadAllVersionRows(namespaceId, promptKey);
@@ -727,7 +728,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 summary.setLabels(vInfo != null ? vInfo.getLabels() : null);
                 summary.setGmtModified(
                         resource.getGmtModified() == null ? null : resource.getGmtModified().getTime());
-                summary.setBizTags(resource.getBizTags());
+                summary.setBizTags(parseBizTagsList(resource.getBizTags()));
+                summary.setBizTagsStr(resource.getBizTags());
                 items.add(summary);
             }
         }
@@ -929,6 +931,28 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                     "Prompt not found: " + promptKey);
         }
         return meta;
+    }
+    
+    /**
+     * Parse biz tags JSON string to list. Supports JSON array format and comma-separated fallback.
+     */
+    private static List<String> parseBizTagsList(String bizTags) {
+        if (StringUtils.isBlank(bizTags)) {
+            return new ArrayList<>();
+        }
+        try {
+            return JacksonUtils.toObj(bizTags, List.class);
+        } catch (Exception e) {
+            // Fallback: treat as comma-separated
+            List<String> result = new ArrayList<>();
+            for (String tag : bizTags.split(",")) {
+                String trimmed = tag.trim();
+                if (!trimmed.isEmpty()) {
+                    result.add(trimmed);
+                }
+            }
+            return result;
+        }
     }
     
     private static PromptVersionInfoPojo requireVersionInfo(AiResource meta) {

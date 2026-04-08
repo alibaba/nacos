@@ -20,7 +20,8 @@ export interface PromptMetaSummary {
   schemaVersion: number;
   promptKey: string;
   description: string;
-  bizTags: string; // raw string, use parseBizTags() to get string[]
+  bizTags: string[]; // parsed list of biz tags
+  bizTagsStr: string; // raw biz tags string for console-ui compatibility
   latestVersion: string;
   gmtModified: number;
   editingVersion: string | null;

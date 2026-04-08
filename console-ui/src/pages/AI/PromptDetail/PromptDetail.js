@@ -365,7 +365,7 @@ class PromptDetail extends React.Component {
   // ===== BizTags Editor =====
 
   handleEditBizTags = () => {
-    const bizTags = this.state.governanceData?.bizTags;
+    const bizTags = this.state.governanceData?.bizTagsStr;
     let parsed = [];
     if (bizTags) {
       try {
@@ -1164,7 +1164,7 @@ class PromptDetail extends React.Component {
     const reviewingVersionStr = governanceData?.reviewingVersion || null;
     const description = governanceData?.description || '';
     const bizTags = (() => {
-      const raw = governanceData?.bizTags;
+      const raw = governanceData?.bizTagsStr;
       if (!raw) return [];
       try {
         const parsed = JSON.parse(raw);

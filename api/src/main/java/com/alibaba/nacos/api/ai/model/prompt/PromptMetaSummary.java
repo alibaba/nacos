@@ -17,6 +17,8 @@
 package com.alibaba.nacos.api.ai.model.prompt;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +36,9 @@ public class PromptMetaSummary implements Serializable {
     
     private String description;
     
-    private String bizTags;
+    private List<String> bizTags = new ArrayList<>();
+    
+    private String bizTagsStr;
     
     private String latestVersion;
     
@@ -84,12 +88,20 @@ public class PromptMetaSummary implements Serializable {
         this.description = description;
     }
     
-    public String getBizTags() {
+    public List<String> getBizTags() {
         return bizTags;
     }
     
-    public void setBizTags(String bizTags) {
+    public void setBizTags(List<String> bizTags) {
         this.bizTags = bizTags;
+    }
+    
+    public String getBizTagsStr() {
+        return bizTagsStr;
+    }
+    
+    public void setBizTagsStr(String bizTagsStr) {
+        this.bizTagsStr = bizTagsStr;
     }
     
     public String getLatestVersion() {

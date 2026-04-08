@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
-import { parseBizTags, type PromptMetaSummary } from '@/types/prompt';
+import { type PromptMetaSummary } from '@/types/prompt';
 
 interface PromptCardProps {
   prompt: PromptMetaSummary;
@@ -25,7 +25,7 @@ export function PromptCard({
 }: PromptCardProps) {
   const { t } = useTranslation();
 
-  const bizTags = parseBizTags(prompt.bizTags).slice(0, 2);
+  const bizTags = (prompt.bizTags || []).slice(0, 2);
 
   return (
     <Card
