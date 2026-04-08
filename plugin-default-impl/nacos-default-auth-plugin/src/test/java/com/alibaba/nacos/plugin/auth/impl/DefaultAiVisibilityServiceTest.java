@@ -185,6 +185,13 @@ class DefaultAiVisibilityServiceTest {
         }
     }
     
+    @Test
+    void resolveDefaultScopeForCreateShouldReturnPrivate() {
+        DefaultAiVisibilityService service = new DefaultAiVisibilityService();
+        String actual = service.resolveDefaultScopeForCreate("userA", "ADMIN_API", "skill");
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, actual);
+    }
+    
     static class TestResource extends VisibilityResource {
         
         private final String namespaceId;

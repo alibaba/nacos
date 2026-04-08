@@ -773,6 +773,7 @@ public class AiResourceManager {
             String bizTags, String version, AiResource existedMeta, boolean isNew) throws NacosException {
         if (isNew) {
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
+            String defaultScope = VisibilityHelper.resolveDefaultScopeForCreate(type);
             AiResource meta = new AiResource();
             meta.setNamespaceId(namespaceId);
             meta.setName(name);
@@ -781,6 +782,7 @@ public class AiResourceManager {
             meta.setDesc(description);
             meta.setBizTags(bizTags);
             meta.setOwner(currentUser);
+            meta.setScope(defaultScope);
             ResourceVersionInfo info = new ResourceVersionInfo();
             info.setEditingVersion(version);
             info.setOnlineCnt(0);

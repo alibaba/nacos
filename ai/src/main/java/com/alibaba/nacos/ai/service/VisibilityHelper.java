@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
@@ -32,6 +33,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -150,6 +152,22 @@ public class VisibilityHelper {
             throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
                     "No permission to modify " + resource.getType() + ": " + resource.getName());
         }
+    }
+    
+    /**
+     * Resolve default scope for creating a new resource, delegated to visibility plugin.
+     *
+     * @param resourceType resource type, such as skill / agentspec
+     * @return resolved default scope, fallback to PRIVATE
+     */
+    public static String resolveDefaultScopeForCreate(String resourceType) {
+        String identity = resolveCurrentIdentity();
+        String apiType = resolveCurrentApiType();
+        return findVisibilityService()
+                .map(service -> service.resolveDefaultScopeForCreate(identity, apiType, resourceType))
+                .filter(StringUtils::isNotBlank)
+                .map(each -> each.toUpperCase(Locale.ROOT))
+                .orElse(VisibilityConstants.SCOPE_PRIVATE);
     }
     
     private static String resolveVisibilityServiceName() {

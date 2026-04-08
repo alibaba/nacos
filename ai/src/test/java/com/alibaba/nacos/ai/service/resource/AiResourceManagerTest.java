@@ -1512,7 +1512,22 @@ class AiResourceManagerTest {
         assertEquals(AiResourceConstants.META_STATUS_ENABLE, meta.getStatus());
         assertEquals("desc", meta.getDesc());
         assertEquals("[\"tag\"]", meta.getBizTags());
+        assertEquals(VisibilityConstants.SCOPE_PRIVATE, meta.getScope());
         assertEquals(1L, meta.getMetaVersion());
+    }
+    
+    @Test
+    void initOrUpdateMetaForDraftShouldUsePluginDefaultScopeWhenCreateNewMeta() throws NacosException {
+        com.alibaba.nacos.plugin.visibility.spi.VisibilityService mockVisibilityService =
+                mock(com.alibaba.nacos.plugin.visibility.spi.VisibilityService.class);
+        when(mockVisibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString()))
+                .thenReturn(VisibilityConstants.SCOPE_PUBLIC);
+        when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.of(mockVisibilityService));
+        manager.initOrUpdateMetaForDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "desc", "[\"tag\"]",
+                "v1", null, true);
+        ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).insert(captor.capture());
+        assertEquals(VisibilityConstants.SCOPE_PUBLIC, captor.getValue().getScope());
     }
     
     @Test
