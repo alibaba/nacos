@@ -170,27 +170,49 @@ class PublishPromptVersion extends React.Component {
         description: variableDescriptions[name] || null,
       }));
 
+      // Step 1: Create draft
       request({
         method: 'POST',
-        url: 'v3/console/ai/prompt',
+        url: 'v3/console/ai/prompt/draft',
         data: {
           namespaceId: namespaceId,
           promptKey: promptKey,
-          version: values.version,
+          targetVersion: values.version,
           template: template,
           commitMsg: values.commitMsg || '',
+          description: description || '',
           variables: JSON.stringify(variablesDef),
         },
-        success: data => {
-          this.setState({ loading: false });
-          if (data && data.code === 0) {
-            Message.success(locale.publishSuccess || '发布成功');
-            setTimeout(() => {
-              // Navigate to list page after publish success
-              this.handleGoToList();
-            }, 1000);
+        success: draftData => {
+          if (draftData && draftData.code === 0) {
+            // Step 2: Submit draft for publish
+            request({
+              method: 'POST',
+              url: 'v3/console/ai/prompt/submit',
+              data: {
+                namespaceId: namespaceId,
+                promptKey: promptKey,
+                version: values.version,
+              },
+              success: submitData => {
+                this.setState({ loading: false });
+                if (submitData && submitData.code === 0) {
+                  Message.success(locale.publishSuccess || '发布成功');
+                  setTimeout(() => {
+                    this.handleGoToList();
+                  }, 1000);
+                } else {
+                  Message.error(submitData?.message || locale.publishFailed || '发布失败');
+                }
+              },
+              error: () => {
+                this.setState({ loading: false });
+                Message.error(locale.publishFailed || '发布失败');
+              },
+            });
           } else {
-            Message.error(data?.message || locale.publishFailed || '发布失败');
+            this.setState({ loading: false });
+            Message.error(draftData?.message || locale.publishFailed || '发布失败');
           }
         },
         error: () => {

@@ -1458,7 +1458,7 @@ class PromptDetail extends React.Component {
         </div>
 
         {/* Pipeline Status */}
-        {isReviewing && pipelineInfo && (
+        {pipelineInfo && (
           <div className="pipeline-section">
             <span className="meta-label">{locale.pipelineStatus || 'Pipeline'}:</span>
             <Tag
