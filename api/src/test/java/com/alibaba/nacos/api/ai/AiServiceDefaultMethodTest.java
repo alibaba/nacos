@@ -41,6 +41,7 @@ class AiServiceDefaultMethodTest {
     @BeforeEach
     void setUp() throws NacosException {
         invokeMark = new AtomicBoolean(false);
+        NacosAiService.IS_THROW_EXCEPTION.set(false);
         aiService = new NacosAiService(new Properties()) {
             @Override
             public McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {

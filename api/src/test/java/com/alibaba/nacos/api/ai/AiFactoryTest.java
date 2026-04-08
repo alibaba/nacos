@@ -31,10 +31,12 @@ class AiFactoryTest {
     
     @BeforeEach
     void setUp() {
+        NacosAiService.IS_THROW_EXCEPTION.set(false);
     }
     
     @AfterEach
     void tearDown() {
+        NacosAiService.IS_THROW_EXCEPTION.set(false);
     }
     
     @Test
