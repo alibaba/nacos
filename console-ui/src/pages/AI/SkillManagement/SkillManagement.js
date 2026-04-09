@@ -60,6 +60,7 @@ class SkillManagement extends React.Component {
       selectedRowKeys: [],
       selectedRows: [],
       searchName: getParams('searchName') || '',
+      searchBizTag: getParams('searchBizTag') || '',
       nownamespace_name: '',
       nownamespace_id: '',
       nownamespace_desc: '',
@@ -103,6 +104,7 @@ class SkillManagement extends React.Component {
     if (needclean) {
       this.setState({
         searchName: '',
+        searchBizTag: '',
         selectedRowKeys: [],
         selectedRows: [],
       });
@@ -112,13 +114,14 @@ class SkillManagement extends React.Component {
         namespace,
         namespaceShowName,
         searchName: '',
+        searchBizTag: '',
       });
     }
     this.getData();
   };
 
   getData = (pageNo = this.state.currentPage) => {
-    const { pageSize, searchName, orderBy } = this.state;
+    const { pageSize, searchName, searchBizTag, orderBy } = this.state;
     const { locale = {} } = this.props;
     const namespaceId = getParams('namespace') || '';
 
@@ -133,6 +136,9 @@ class SkillManagement extends React.Component {
     };
     if (orderBy) {
       data.orderBy = orderBy;
+    }
+    if (searchBizTag) {
+      data.bizTag = searchBizTag;
     }
 
     request({
@@ -161,8 +167,10 @@ class SkillManagement extends React.Component {
 
   handleSearch = () => {
     const searchName = this.field.getValue('searchName') || '';
-    this.setState({ searchName, currentPage: 1 }, () => {
+    const searchBizTag = this.field.getValue('searchBizTag') || '';
+    this.setState({ searchName, searchBizTag, currentPage: 1 }, () => {
       setParams('searchName', searchName);
+      setParams('searchBizTag', searchBizTag);
       setParams('pageNo', '1');
       this.getData(1);
     });
@@ -540,29 +548,37 @@ class SkillManagement extends React.Component {
                     onPressEnter={this.handleSearch}
                   />
                 </Form.Item>
+                <Form.Item label={`${locale.bizTag || 'BizTag'}：`}>
+                  <Input
+                    name="searchBizTag"
+                    placeholder={locale.bizTagPlaceholder || 'Please enter business tag'}
+                    style={{ width: 200 }}
+                    onPressEnter={this.handleSearch}
+                  />
+                </Form.Item>
                 <Form.Item>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <Button type="primary" onClick={this.handleSearch}>
-                      {locale.search || 'Search'}
-                    </Button>
-                    <Button type="primary" onClick={this.handleCreateSkill}>
-                      {locale.createSkill || 'Create Skill'}
-                    </Button>
-                    <Upload
-                      accept=".zip"
-                      action={this.getUploadAction()}
-                      headers={this.getUploadHeaders()}
-                      beforeUpload={this.beforeUpload}
-                      formatter={this.uploadFormatter}
-                      onSuccess={this.handleUploadSuccess}
-                      onError={this.handleUploadError}
-                      showUploadList={false}
-                    >
-                      <Button type="normal">{locale.uploadSkill || 'Upload Skill'}</Button>
-                    </Upload>
-                  </div>
+                  <Button type="primary" onClick={this.handleSearch}>
+                    {locale.search || 'Search'}
+                  </Button>
                 </Form.Item>
               </Form>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: 10 }}>
+                <Button type="primary" onClick={this.handleCreateSkill}>
+                  {locale.createSkill || 'Create Skill'}
+                </Button>
+                <Upload
+                  accept=".zip"
+                  action={this.getUploadAction()}
+                  headers={this.getUploadHeaders()}
+                  beforeUpload={this.beforeUpload}
+                  formatter={this.uploadFormatter}
+                  onSuccess={this.handleUploadSuccess}
+                  onError={this.handleUploadError}
+                  showUploadList={false}
+                >
+                  <Button type="normal">{locale.uploadSkill || 'Upload Skill'}</Button>
+                </Upload>
+              </div>
             </div>
 
             <Table

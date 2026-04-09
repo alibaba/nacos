@@ -98,6 +98,7 @@ public class SkillRemoteHandler implements SkillHandler {
                 skillListForm.getOrderBy(),
                 filterableForm.getOwner(),
                 filterableForm.getScope(),
+                filterableForm.getBizTag(),
                 pageForm.getPageNo(),
                 pageForm.getPageSize()
         );

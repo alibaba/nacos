@@ -87,7 +87,7 @@ public class SkillInnerHandler implements SkillHandler {
             PageForm pageForm) throws NacosException {
         return skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
                 skillListForm.getSearch(), skillListForm.getOrderBy(),
-                filterableForm.getOwner(), filterableForm.getScope(),
+                filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
                 pageForm.getPageNo(), pageForm.getPageSize());
     }
     

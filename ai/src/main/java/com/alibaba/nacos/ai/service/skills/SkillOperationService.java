@@ -185,8 +185,30 @@ public interface SkillOperationService {
      */
     default Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
             String owner, String scope, int pageNo, int pageSize) throws NacosException {
-        return listSkills(namespaceId, skillName, search, orderBy, pageNo, pageSize);
+        return listSkills(namespaceId, skillName, search, orderBy, owner, scope, null, pageNo, pageSize);
     }
+
+    /**
+     * List skills with pagination, optional ordering, and additional filter criteria including bizTag for admin usage.
+     *
+     * <p>Backward-compatible: when {@code owner}, {@code scope} and {@code bizTag} are all {@code null}/empty,
+     * the behaviour is identical to
+     * {@link #listSkills(String, String, String, String, int, int)}.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param skillName   skill name (for search)
+     * @param search      search type (accurate/blur)
+     * @param orderBy     sort field (e.g. "download_count"), null defaults to gmt_modified
+     * @param owner       optional filter by resource owner; null or empty means no owner filter
+     * @param scope       optional filter by visibility scope ("PUBLIC"/"PRIVATE"); null or empty means no scope filter
+     * @param bizTag      optional filter by business tag (fuzzy match on bizTags column); null or empty means no filter
+     * @param pageNo      page number
+     * @param pageSize    page size
+     * @return skill admin list page with governance metadata
+     * @throws NacosException if query failed
+     */
+    Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
+            String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException;
 
     /**
      * Create a new draft version.

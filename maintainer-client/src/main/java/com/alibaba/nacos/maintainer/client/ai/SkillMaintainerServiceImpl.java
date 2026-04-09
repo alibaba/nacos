@@ -97,12 +97,12 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, int pageNo,
             int pageSize) throws NacosException {
-        return listSkills(namespaceId, skillName, search, null, null, null, pageNo, pageSize);
+        return listSkills(namespaceId, skillName, search, null, null, null, null, pageNo, pageSize);
     }
 
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
-            String owner, String scope, int pageNo, int pageSize) throws NacosException {
+            String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(12);
         params.put("namespaceId", namespaceId);
@@ -118,6 +118,9 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         }
         if (StringUtils.isNotBlank(scope)) {
             params.put("scope", scope);
+        }
+        if (StringUtils.isNotBlank(bizTag)) {
+            params.put("bizTag", bizTag);
         }
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
                 .setHttpMethod(HttpMethod.GET).setPath(Constants.AdminApiPath.AI_SKILL_LIST_ADMIN_PATH)

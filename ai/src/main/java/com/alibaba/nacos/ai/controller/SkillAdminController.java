@@ -157,7 +157,7 @@ public class SkillAdminController {
         return Result.success(
                 skillOperationService.listSkills(skillListForm.getNamespaceId(), skillListForm.getSkillName(),
                         skillListForm.getSearch(), skillListForm.getOrderBy(),
-                        filterableForm.getOwner(), filterableForm.getScope(),
+                        filterableForm.getOwner(), filterableForm.getScope(), filterableForm.getBizTag(),
                         pageForm.getPageNo(), pageForm.getPageSize()));
     }
     

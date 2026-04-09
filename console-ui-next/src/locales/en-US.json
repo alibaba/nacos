@@ -1175,6 +1175,8 @@
     "filterScopeAll": "All scopes",
     "filterScopePublic": "Public only",
     "filterScopePrivate": "Private only",
+    "filterByBizTag": "Filter by business tag",
+    "filterBizTagPlaceholder": "Enter business tag",
     "labelKeyRequired": "Label key is required",
     "labelKeyInvalid": "Invalid label key format",
     "labelKeyDuplicate": "Label key already exists",

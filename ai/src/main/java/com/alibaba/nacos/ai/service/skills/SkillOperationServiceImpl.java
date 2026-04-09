@@ -509,12 +509,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     /**
-     * List skills with optional name filter, ordering, owner/scope filter, and pagination.
+     * List skills with optional name filter, ordering, owner/scope/bizTag filter, and pagination.
      * Supports both accurate and fuzzy name matching.
      */
     @Override
     public Page<SkillSummary> listSkills(String namespaceId, String skillName, String search, String orderBy,
-            String owner, String scope, int pageNo, int pageSize) throws NacosException {
+            String owner, String scope, String bizTag, int pageNo, int pageSize) throws NacosException {
         // Step 1: Build name matching condition: exact match or fuzzy match (with wildcards)
         String nameLike = null;
         if (StringUtils.isNotBlank(skillName)) {
@@ -535,6 +535,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         if (StringUtils.isNotBlank(scope)) {
             queryCondition.setScope(scope);
+        }
+        if (StringUtils.isNotBlank(bizTag)) {
+            queryCondition.setBizTagsLike(
+                    aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + bizTag + Constants.ALL_PATTERN));
         }
         if (queryCondition.isAlwaysEmpty()) {
             return AiResourceManager.buildEmptyPage(pageNo);

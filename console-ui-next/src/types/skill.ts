@@ -82,6 +82,8 @@ export interface SkillListParams {
   owner?: string;
   /** Filter by visibility scope: "PUBLIC" or "PRIVATE". Empty = no filter. */
   scope?: string;
+  /** Filter by business tag (fuzzy match on bizTags). Empty = no filter. */
+  bizTag?: string;
   pageNo?: number;
   pageSize?: number;
 }

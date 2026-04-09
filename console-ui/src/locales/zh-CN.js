@@ -1043,6 +1043,8 @@ const I18N_CONF = {
     skillName: '名称',
     skillId: 'Skill ID',
     search: '搜索',
+    bizTag: '业务标签',
+    bizTagPlaceholder: '请输入业务标签',
     details: '详情',
     edit: '编辑',
     delete: '删除',

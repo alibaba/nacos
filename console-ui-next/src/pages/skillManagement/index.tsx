@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Trash2, Search, X, ChevronLeft, ChevronRight, Wand2, Upload, Plus } from 'lucide-react';
+import { Trash2, Search, X, ChevronLeft, ChevronRight, Wand2, Upload, Plus, SlidersHorizontal, Tag } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,7 @@ export default function SkillManagementPage() {
     orderBy,
     filterOwner,
     filterScope,
+    filterBizTag,
     selectedNames,
     error,
     fetchList,
@@ -56,6 +57,7 @@ export default function SkillManagementPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [searchInput, setSearchInput] = useState(searchName);
   const [ownerInput, setOwnerInput] = useState(filterOwner);
+  const [bizTagInput, setBizTagInput] = useState(filterBizTag);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -73,6 +75,7 @@ export default function SkillManagementPage() {
     setSearchParams({
       searchName: searchInput,
       filterOwner: globalAdmin ? ownerInput : (ownerInput ? username || '' : ''),
+      filterBizTag: bizTagInput,
     });
     fetchList(namespaceId);
   };
@@ -80,6 +83,7 @@ export default function SkillManagementPage() {
   const handleReset = () => {
     setSearchInput('');
     setOwnerInput('');
+    setBizTagInput('');
     resetSearch();
     fetchList(namespaceId);
   };
@@ -146,108 +150,126 @@ export default function SkillManagementPage() {
         </div>
       </div>
 
-      {/* Search & filters bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[220px] max-w-md">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder={t('skill.searchPlaceholder')}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-8 h-8 text-sm"
-          />
-        </div>
-        <Button size="sm" variant="secondary" className="h-8" onClick={handleSearch}>
-          {t('common.search')}
-        </Button>
-        {(searchInput || filterOwner || filterScope) && (
-          <Button size="sm" variant="ghost" className="h-8" onClick={handleReset}>
-            <X className="mr-1 h-3 w-3" />
-            {t('common.reset')}
+      {/* Search & filters */}
+      <div className="space-y-2">
+        {/* Row 1: Search inputs + action buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder={t('skill.searchPlaceholder')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <div className="relative min-w-[160px] max-w-[200px]">
+            <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder={t('skill.filterBizTagPlaceholder')}
+              value={bizTagInput}
+              onChange={(e) => setBizTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <Button size="sm" variant="secondary" className="h-8" onClick={handleSearch}>
+            {t('common.search')}
           </Button>
-        )}
+          {(searchInput || filterOwner || filterScope || filterBizTag) && (
+            <Button size="sm" variant="ghost" className="h-8" onClick={handleReset}>
+              <X className="mr-1 h-3 w-3" />
+              {t('common.reset')}
+            </Button>
+          )}
+        </div>
 
-        {/* Owner filter: admin gets free-text input; non-admin gets "only mine" toggle */}
-        {globalAdmin ? (
-          <Input
-            placeholder={t('skill.filterOwnerPlaceholder')}
-            value={ownerInput}
-            onChange={(e) => setOwnerInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-[160px] h-8 text-xs"
-            title={t('skill.filterByOwner')}
-          />
-        ) : (
-          <Button
-            size="sm"
-            variant={filterOwner ? 'default' : 'outline'}
-            className="h-8 text-xs"
-            onClick={() => {
-              const next = filterOwner ? '' : (username || '');
-              setSearchParams({ filterOwner: next });
+        {/* Row 2: Filter dropdowns + batch operations */}
+        <div className="flex flex-wrap items-center gap-2">
+          <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+
+          {/* Owner filter: admin gets free-text input; non-admin gets "only mine" toggle */}
+          {globalAdmin ? (
+            <Input
+              placeholder={t('skill.filterOwnerPlaceholder')}
+              value={ownerInput}
+              onChange={(e) => setOwnerInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-[160px] h-8 text-xs"
+              title={t('skill.filterByOwner')}
+            />
+          ) : (
+            <Button
+              size="sm"
+              variant={filterOwner ? 'default' : 'outline'}
+              className="h-8 text-xs"
+              onClick={() => {
+                const next = filterOwner ? '' : (username || '');
+                setSearchParams({ filterOwner: next });
+                fetchList(namespaceId);
+              }}
+            >
+              {t('skill.filterOnlyMine')}
+            </Button>
+          )}
+
+          {/* Scope filter */}
+          <Select
+            value={filterScope || ''}
+            onValueChange={(v) => {
+              setSearchParams({ filterScope: v === '_all' ? '' : v });
               fetchList(namespaceId);
             }}
           >
-            {t('skill.filterOnlyMine')}
-          </Button>
-        )}
+            <SelectTrigger className="w-[130px] h-8 text-xs">
+              <SelectValue placeholder={t('skill.filterScopeAll')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">{t('skill.filterScopeAll')}</SelectItem>
+              <SelectItem value="PUBLIC">{t('skill.filterScopePublic')}</SelectItem>
+              <SelectItem value="PRIVATE">{t('skill.filterScopePrivate')}</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* Scope filter: everyone can choose all / public / private */}
-        <Select
-          value={filterScope || ''}
-          onValueChange={(v) => {
-            setSearchParams({ filterScope: v === '_all' ? '' : v });
-            fetchList(namespaceId);
-          }}
-        >
-          <SelectTrigger className="w-[130px] h-8 text-xs">
-            <SelectValue placeholder={t('skill.filterScopeAll')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_all">{t('skill.filterScopeAll')}</SelectItem>
-            <SelectItem value="PUBLIC">{t('skill.filterScopePublic')}</SelectItem>
-            <SelectItem value="PRIVATE">{t('skill.filterScopePrivate')}</SelectItem>
-          </SelectContent>
-        </Select>
+          {/* Sort */}
+          <Select
+            value={orderBy}
+            onValueChange={(v) => {
+              setSearchParams({ orderBy: v });
+              fetchList(namespaceId);
+            }}
+          >
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue placeholder={t('skill.sortDefault')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value=" ">{t('skill.sortDefault')}</SelectItem>
+              <SelectItem value="download_count">{t('skill.sortByDownloads')}</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* Sort */}
-        <Select
-          value={orderBy}
-          onValueChange={(v) => {
-            setSearchParams({ orderBy: v });
-            fetchList(namespaceId);
-          }}
-        >
-          <SelectTrigger className="w-[140px] h-8 text-xs">
-            <SelectValue placeholder={t('skill.sortDefault')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value=" ">{t('skill.sortDefault')}</SelectItem>
-            <SelectItem value="download_count">{t('skill.sortByDownloads')}</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Batch operations */}
-        {selectedNames.size > 0 && (
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-muted-foreground">
-              {t('config.selectedCount', { count: selectedNames.size })}
-            </span>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="h-8"
-              onClick={() => setBatchDeleteOpen(true)}
-            >
-              <Trash2 className="mr-1 h-3 w-3" />
-              {t('skill.batchDelete')}
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
-              {t('common.cancel')}
-            </Button>
-          </div>
-        )}
+          {/* Batch operations */}
+          {selectedNames.size > 0 && (
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-xs text-muted-foreground">
+                {t('config.selectedCount', { count: selectedNames.size })}
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8"
+                onClick={() => setBatchDeleteOpen(true)}
+              >
+                <Trash2 className="mr-1 h-3 w-3" />
+                {t('skill.batchDelete')}
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                {t('common.cancel')}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content area */}

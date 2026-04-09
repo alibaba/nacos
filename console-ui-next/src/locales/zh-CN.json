@@ -1175,6 +1175,8 @@
     "filterScopeAll": "所有范围",
     "filterScopePublic": "仅公开",
     "filterScopePrivate": "仅私有",
+    "filterByBizTag": "按业务标签过滤",
+    "filterBizTagPlaceholder": "输入业务标签",
     "labelKeyRequired": "标签键不能为空",
     "labelKeyInvalid": "标签键格式不合法",
     "labelKeyDuplicate": "标签键已存在",

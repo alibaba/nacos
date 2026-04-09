@@ -64,6 +64,14 @@ public class AiResourceFilterableForm implements NacosForm, Serializable {
      */
     private String scope;
 
+    /**
+     * Optional filter by business tag.
+     *
+     * <p>When specified, only resources whose {@code bizTags} column contains the given value
+     * are returned (fuzzy match). When {@code null} or empty, no bizTag filter is applied.</p>
+     */
+    private String bizTag;
+
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isNotBlank(scope)
@@ -88,5 +96,13 @@ public class AiResourceFilterableForm implements NacosForm, Serializable {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public String getBizTag() {
+        return bizTag;
+    }
+
+    public void setBizTag(String bizTag) {
+        this.bizTag = bizTag;
     }
 }
