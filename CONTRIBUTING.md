@@ -80,21 +80,21 @@ To avoid duplicate work and ensure efficient collaboration, please follow this p
 
 #### How to claim an issue
 
-1. Comment on the issue expressing your intent (e.g., "I'd like to work on this")
-2. Briefly describe your approach so maintainers can provide early feedback
-3. Wait for a maintainer to assign the issue to you — **do not start working until assigned**
+1. Comment `/assign` on the issue to claim it — you will be automatically assigned
+2. If the issue is already assigned, please wait or discuss in the comments
+3. To give up a claimed issue, comment `/unassign`
 
 #### Expectations after claiming
 
 - Submit a PR within **14 days** of being assigned
 - If you need more time, comment on the issue to let others know
-- If no PR or update is provided within 14 days, the issue may be unassigned and made available for other contributors
+- If no PR or update is provided within 14 days, you will be **automatically unassigned** and the issue will be made available for other contributors
 
 #### Tips
 
 - Check if an issue already has an assignee before claiming
 - For complex issues, consider discussing your approach in the issue before starting
-- It's okay to unassign yourself if you can't continue — just leave a comment
+- It's okay to unassign yourself if you can't continue — comment `/unassign`
 
 ### Contribution Notice
 
