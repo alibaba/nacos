@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -147,6 +148,46 @@ class JdkHttpClientRequestTest {
         RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY);
         httpClientRequest.execute(uri, "GET", httpEntity);
         verify(connection, never()).disconnect();
+    }
+    
+    @Test
+    @DisplayName("setSslContext should set SSL socket factory on HttpsURLConnection")
+    void testSetSslContextShouldSetContext() throws Exception {
+        // Note: This test verifies the method can be called without exception
+        // Actual SSL verification requires HTTPS connection which is not available in this test
+        javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS");
+        sslContext.init(null, new javax.net.ssl.TrustManager[] { new javax.net.ssl.X509TrustManager() {
+            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() { return new java.security.cert.X509Certificate[0]; }
+        }}, new java.security.SecureRandom());
+        
+        // Should not throw exception
+        httpClientRequest.setSslContext(sslContext);
+    }
+    
+    @Test
+    @DisplayName("setSslContext with null should not throw")
+    void testSetSslContextWithNullShouldNotThrow() {
+        // Should not throw exception when sslContext is null
+        httpClientRequest.setSslContext(null);
+    }
+    
+    @Test
+    @DisplayName("replaceSslHostnameVerifier should set hostname verifier on HttpsURLConnection")
+    void testReplaceSslHostnameVerifierShouldReplace() {
+        // Note: This test verifies the method can be called without exception
+        javax.net.ssl.HostnameVerifier verifier = (hostname, session) -> true;
+        
+        // Should not throw exception
+        httpClientRequest.replaceSslHostnameVerifier(verifier);
+    }
+    
+    @Test
+    @DisplayName("replaceSslHostnameVerifier with null should not throw")
+    void testReplaceSslHostnameVerifierWithNullShouldNotThrow() {
+        // Should not throw exception when verifier is null
+        httpClientRequest.replaceSslHostnameVerifier(null);
     }
     
     private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {

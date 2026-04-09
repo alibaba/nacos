@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -189,5 +191,94 @@ class VersionUtilsTest {
         assertTrue(VersionUtils.isGreaterVersion("1.0.0", "1.0.0-beta"));
         assertFalse(VersionUtils.isGreaterVersion("1.0.0-alpha", "1.0.0-beta"));
         assertTrue(VersionUtils.isGreaterVersion("1.0.1-beta", "1.0.0"));
+    }
+    
+    // ---- VNumber (legacy vN format) tests ----
+    
+    @Test
+    @DisplayName("parseVNumber should return numeric value for valid vN format")
+    void testParseVNumberShouldReturnNumeric() {
+        assertEquals(3, VersionUtils.parseVNumber("v3"));
+        assertEquals(10, VersionUtils.parseVNumber("V10"));
+        assertEquals(1, VersionUtils.parseVNumber("v1"));
+    }
+    
+    @Test
+    @DisplayName("parseVNumber with invalid format should return null")
+    void testParseVNumberWithInvalidFormatShouldReturnNull() {
+        assertNull(VersionUtils.parseVNumber("3"));
+        assertNull(VersionUtils.parseVNumber("version3"));
+        assertNull(VersionUtils.parseVNumber("v"));
+        assertNull(VersionUtils.parseVNumber("v0"));
+        assertNull(VersionUtils.parseVNumber("v-1"));
+        assertNull(VersionUtils.parseVNumber(null));
+        assertNull(VersionUtils.parseVNumber(""));
+    }
+    
+    @Test
+    @DisplayName("isVNumber should return true for valid vN format")
+    void testIsVNumberShouldReturnTrueForVFormat() {
+        assertTrue(VersionUtils.isVNumber("v1"));
+        assertTrue(VersionUtils.isVNumber("V10"));
+        assertTrue(VersionUtils.isVNumber("v100"));
+    }
+    
+    @Test
+    @DisplayName("isVNumber with invalid format should return false")
+    void testIsVNumberWithInvalidFormatShouldReturnFalse() {
+        assertFalse(VersionUtils.isVNumber("1"));
+        assertFalse(VersionUtils.isVNumber("version1"));
+        assertFalse(VersionUtils.isVNumber("v"));
+        assertFalse(VersionUtils.isVNumber("1.0.0"));
+    }
+    
+    @Test
+    @DisplayName("maxVNumber should return highest number")
+    void testMaxVNumberShouldReturnHighestNumber() {
+        List<String> versions = Arrays.asList("v1", "v5", "v3");
+        assertEquals(5, VersionUtils.maxVNumber(versions));
+    }
+    
+    @Test
+    @DisplayName("maxVNumber with empty list should return 0")
+    void testMaxVNumberWithEmptyListShouldReturnZero() {
+        assertEquals(0, VersionUtils.maxVNumber(Collections.emptyList()));
+        assertEquals(0, VersionUtils.maxVNumber(null));
+    }
+    
+    @Test
+    @DisplayName("maxVNumberVersion should return version string with highest number")
+    void testMaxVNumberVersionShouldReturnHighestVersion() {
+        List<String> versions = Arrays.asList("v1", "v5", "v3");
+        assertEquals("v5", VersionUtils.maxVNumberVersion(versions));
+    }
+    
+    @Test
+    @DisplayName("maxVNumberVersion with no valid versions should return null")
+    void testMaxVNumberVersionWithNoValidVersionsShouldReturnNull() {
+        assertNull(VersionUtils.maxVNumberVersion(Collections.emptyList()));
+        assertNull(VersionUtils.maxVNumberVersion(Arrays.asList("1.0.0", "invalid")));
+    }
+    
+    @Test
+    @DisplayName("nextVNumberVersion should increment highest vN")
+    void testNextVNumberVersionShouldIncrement() {
+        List<String> versions = Arrays.asList("v1", "v3", "v2");
+        assertEquals("v4", VersionUtils.nextVNumberVersion(versions));
+    }
+    
+    @Test
+    @DisplayName("nextVNumberVersion with empty list should return v1")
+    void testNextVNumberVersionWithEmptyListShouldReturnV1() {
+        assertEquals("v1", VersionUtils.nextVNumberVersion(Collections.emptyList()));
+        assertEquals("v1", VersionUtils.nextVNumberVersion(null));
+    }
+    
+    @Test
+    @DisplayName("isGreaterVersion with vN format should compare correctly")
+    void testIsGreaterVersionWithVNumberFormat() {
+        assertTrue(VersionUtils.isGreaterVersion("v3", "v2"));
+        assertFalse(VersionUtils.isGreaterVersion("v1", "v2"));
+        assertFalse(VersionUtils.isGreaterVersion("v1", "1.0.0")); // incompatible formats
     }
 }
