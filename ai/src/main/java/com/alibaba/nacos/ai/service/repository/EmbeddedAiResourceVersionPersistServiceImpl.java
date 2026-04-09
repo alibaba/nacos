@@ -66,27 +66,36 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
 
     @Override
     public long insert(AiResourceVersion version) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = mapper.insert(Arrays.asList("type", "author", "name", "c_desc", "status", "version", "namespace_id",
-                "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
-
-        Object[] args = new Object[] {version.getType(), version.getAuthor(), version.getName(), version.getDesc(),
-                version.getStatus(), version.getVersion(), normalizeNamespaceId(version.getNamespaceId()),
-                version.getStorage(), version.getPublishPipelineInfo()};
-
-        EmbeddedStorageContextHolder.addSqlContext(sql, args);
-        Boolean success = databaseOperate.blockUpdate();
-        if (success == null || !success) {
-            throw new IllegalStateException("insert ai_resource_version failed");
+        String sqlOperation = "INSERT";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = mapper.insert(Arrays.asList("type", "author", "name", "c_desc", "status", "version", "namespace_id",
+                    "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
+            
+            Object[] args = new Object[] {version.getType(), version.getAuthor(), version.getName(), version.getDesc(),
+                    version.getStatus(), version.getVersion(), normalizeNamespaceId(version.getNamespaceId()),
+                    version.getStorage(), version.getPublishPipelineInfo()};
+            
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
+            Boolean success = databaseOperate.blockUpdate();
+            if (success == null || !success) {
+                throw new IllegalStateException("insert ai_resource_version failed");
+            }
+            
+            AiResourceVersion inserted = find(version.getNamespaceId(), version.getName(), version.getType(),
+                    version.getVersion());
+            if (inserted == null || inserted.getId() == null) {
+                throw new IllegalStateException("insert ai_resource_version failed, cannot query inserted row");
+            }
+            AiResourceVersionTraceHelper.traceSuccess(version.getType(), version.getName(), version.getVersion(),
+                    sqlOperation, 1);
+            return inserted.getId();
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(version.getType(), version.getName(), version.getVersion(),
+                    sqlOperation, e.getMessage());
+            throw e;
         }
-
-        AiResourceVersion inserted = find(version.getNamespaceId(), version.getName(), version.getType(),
-                version.getVersion());
-        if (inserted == null || inserted.getId() == null) {
-            throw new IllegalStateException("insert ai_resource_version failed, cannot query inserted row");
-        }
-        return inserted.getId();
     }
 
     @Override
@@ -126,8 +135,10 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
 
     @Override
     public int delete(String namespaceId, String name, String type, String version) {
+        String sqlOperation = "DELETE_BY_PK";
         AiResourceVersion existed = find(namespaceId, name, type, version);
         if (existed == null) {
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 0);
             return 0;
         }
 
@@ -138,22 +149,34 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, "delete blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int deleteByName(String namespaceId, String name) {
+        String sqlOperation = "DELETE_BY_NAME";
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name"));
 
         EmbeddedStorageContextHolder.addSqlContext(sql, new Object[] {normalizeNamespaceId(namespaceId), name});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(null, name, null, sqlOperation, "delete by name blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(null, name, null, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int deleteByNameAndType(String namespaceId, String name, String type) {
+        String sqlOperation = "DELETE_BY_NAME_TYPE";
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.AI_RESOURCE_VERSION);
         String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
@@ -161,12 +184,20 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {normalizeNamespaceId(namespaceId), name, type});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, null, sqlOperation,
+                    "delete by name and type blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, null, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int updateStatus(String namespaceId, String name, String type, String version, String status) {
+        String sqlOperation = "UPDATE_STATUS";
         if (find(namespaceId, name, type, version) == null) {
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 0);
             return 0;
         }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -177,12 +208,19 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {status, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, "update status blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int updateStorage(String namespaceId, String name, String type, String version, String storage) {
+        String sqlOperation = "UPDATE_STORAGE";
         if (find(namespaceId, name, type, version) == null) {
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 0);
             return 0;
         }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -193,13 +231,20 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {storage, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, "update storage blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage,
             String desc) {
+        String sqlOperation = "UPDATE_STORAGE_DESC";
         if (find(namespaceId, name, type, version) == null) {
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 0);
             return 0;
         }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -210,13 +255,21 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {storage, desc, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation,
+                    "update storage and desc blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
             String publishPipelineInfo) {
+        String sqlOperation = "UPDATE_PUBLISH_PIPELINE_INFO";
         if (find(namespaceId, name, type, version) == null) {
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 0);
             return 0;
         }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -227,12 +280,20 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {publishPipelineInfo, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation,
+                    "update publish pipeline info blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 1);
+        return 1;
     }
 
     @Override
     public int incrementDownloadCount(String namespaceId, String name, String type, String version, long increment) {
+        String sqlOperation = "UPDATE_DOWNLOAD_COUNT";
         if (find(namespaceId, name, type, version) == null) {
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 0);
             return 0;
         }
         AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -243,7 +304,13 @@ public class EmbeddedAiResourceVersionPersistServiceImpl implements AiResourceVe
         EmbeddedStorageContextHolder.addSqlContext(sql,
                 new Object[] {increment, normalizeNamespaceId(namespaceId), name, type, version});
         Boolean success = databaseOperate.blockUpdate();
-        return (success != null && success) ? 1 : 0;
+        if (success == null || !success) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation,
+                    "increment download count blockUpdate failed");
+            return 0;
+        }
+        AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, 1);
+        return 1;
     }
     
     private String normalizeNamespaceId(String namespaceId) {

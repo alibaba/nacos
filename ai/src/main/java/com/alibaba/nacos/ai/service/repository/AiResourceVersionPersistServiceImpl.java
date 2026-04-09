@@ -69,31 +69,40 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
 
     @Override
     public long insert(AiResourceVersion version) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = mapper.insert(Arrays.asList("type", "author", "name", "c_desc", "status", "version", "namespace_id",
-                "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
-
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jt.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
-            ps.setString(1, version.getType());
-            ps.setString(2, version.getAuthor());
-            ps.setString(3, version.getName());
-            ps.setString(4, version.getDesc());
-            ps.setString(5, version.getStatus());
-            ps.setString(6, version.getVersion());
-            ps.setString(7, normalizeNamespaceId(version.getNamespaceId()));
-            ps.setString(8, version.getStorage());
-            ps.setString(9, version.getPublishPipelineInfo());
-            return ps;
-        }, keyHolder);
-
-        Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new IllegalStateException("insert ai_resource_version failed, no generated key");
+        String sqlOperation = "INSERT";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = mapper.insert(Arrays.asList("type", "author", "name", "c_desc", "status", "version", "namespace_id",
+                    "storage", "publish_pipeline_info", "gmt_create@NOW()", "gmt_modified@NOW()"));
+            
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jt.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+                ps.setString(1, version.getType());
+                ps.setString(2, version.getAuthor());
+                ps.setString(3, version.getName());
+                ps.setString(4, version.getDesc());
+                ps.setString(5, version.getStatus());
+                ps.setString(6, version.getVersion());
+                ps.setString(7, normalizeNamespaceId(version.getNamespaceId()));
+                ps.setString(8, version.getStorage());
+                ps.setString(9, version.getPublishPipelineInfo());
+                return ps;
+            }, keyHolder);
+            
+            Number key = keyHolder.getKey();
+            if (key == null) {
+                throw new IllegalStateException("insert ai_resource_version failed, no generated key");
+            }
+            AiResourceVersionTraceHelper.traceSuccess(version.getType(), version.getName(), version.getVersion(),
+                    sqlOperation, 1);
+            return key.longValue();
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(version.getType(), version.getName(), version.getVersion(),
+                    sqlOperation, e.getMessage());
+            throw e;
         }
-        return key.longValue();
     }
 
     @Override
@@ -138,73 +147,137 @@ public class AiResourceVersionPersistServiceImpl implements AiResourceVersionPer
 
     @Override
     public int delete(String namespaceId, String name, String type, String version) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type", "version"));
-        return jt.update(sql, normalizeNamespaceId(namespaceId), name, type, version);
+        String sqlOperation = "DELETE_BY_PK";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type", "version"));
+            int affected = jt.update(sql, normalizeNamespaceId(namespaceId), name, type, version);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int deleteByName(String namespaceId, String name) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = mapper.delete(Arrays.asList("namespace_id", "name"));
-        return jt.update(sql, normalizeNamespaceId(namespaceId), name);
+        String sqlOperation = "DELETE_BY_NAME";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = mapper.delete(Arrays.asList("namespace_id", "name"));
+            int affected = jt.update(sql, normalizeNamespaceId(namespaceId), name);
+            AiResourceVersionTraceHelper.traceSuccess(null, name, null, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(null, name, null, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int deleteByNameAndType(String namespaceId, String name, String type) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
-        return jt.update(sql, normalizeNamespaceId(namespaceId), name, type);
+        String sqlOperation = "DELETE_BY_NAME_TYPE";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = mapper.delete(Arrays.asList("namespace_id", "name", "type"));
+            int affected = jt.update(sql, normalizeNamespaceId(namespaceId), name, type);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, null, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, null, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int updateStatus(String namespaceId, String name, String type, String version, String status) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = "UPDATE ai_resource_version SET status=?, gmt_modified=" + mapper.getFunction("NOW()")
-                + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, status, normalizeNamespaceId(namespaceId), name, type, version);
+        String sqlOperation = "UPDATE_STATUS";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = "UPDATE ai_resource_version SET status=?, gmt_modified=" + mapper.getFunction("NOW()")
+                    + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+            int affected = jt.update(sql, status, normalizeNamespaceId(namespaceId), name, type, version);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int updateStorage(String namespaceId, String name, String type, String version, String storage) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = "UPDATE ai_resource_version SET storage=?, gmt_modified=" + mapper.getFunction("NOW()")
-                + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, storage, normalizeNamespaceId(namespaceId), name, type, version);
+        String sqlOperation = "UPDATE_STORAGE";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = "UPDATE ai_resource_version SET storage=?, gmt_modified=" + mapper.getFunction("NOW()")
+                    + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+            int affected = jt.update(sql, storage, normalizeNamespaceId(namespaceId), name, type, version);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage,
             String desc) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = "UPDATE ai_resource_version SET storage=?, c_desc=?, gmt_modified=" + mapper.getFunction("NOW()")
-                + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, storage, desc, normalizeNamespaceId(namespaceId), name, type, version);
+        String sqlOperation = "UPDATE_STORAGE_DESC";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = "UPDATE ai_resource_version SET storage=?, c_desc=?, gmt_modified=" + mapper.getFunction("NOW()")
+                    + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+            int affected = jt.update(sql, storage, desc, normalizeNamespaceId(namespaceId), name, type, version);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
             String publishPipelineInfo) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = "UPDATE ai_resource_version SET publish_pipeline_info=?, gmt_modified=" + mapper.getFunction("NOW()")
-                + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, publishPipelineInfo, normalizeNamespaceId(namespaceId), name, type, version);
+        String sqlOperation = "UPDATE_PUBLISH_PIPELINE_INFO";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = "UPDATE ai_resource_version SET publish_pipeline_info=?, gmt_modified="
+                    + mapper.getFunction("NOW()") + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+            int affected = jt.update(sql, publishPipelineInfo, normalizeNamespaceId(namespaceId), name, type, version);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public int incrementDownloadCount(String namespaceId, String name, String type, String version, long increment) {
-        AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.AI_RESOURCE_VERSION);
-        String sql = "UPDATE ai_resource_version SET download_count = download_count + ?, gmt_modified="
-                + mapper.getFunction("NOW()") + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
-        return jt.update(sql, increment, normalizeNamespaceId(namespaceId), name, type, version);
+        String sqlOperation = "UPDATE_DOWNLOAD_COUNT";
+        try {
+            AiResourceVersionMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.AI_RESOURCE_VERSION);
+            String sql = "UPDATE ai_resource_version SET download_count = download_count + ?, gmt_modified="
+                    + mapper.getFunction("NOW()") + " WHERE namespace_id=? AND name=? AND type=? AND version=?";
+            int affected = jt.update(sql, increment, normalizeNamespaceId(namespaceId), name, type, version);
+            AiResourceVersionTraceHelper.traceSuccess(type, name, version, sqlOperation, affected);
+            return affected;
+        } catch (RuntimeException e) {
+            AiResourceVersionTraceHelper.traceFailure(type, name, version, sqlOperation, e.getMessage());
+            throw e;
+        }
     }
     
     private String normalizeNamespaceId(String namespaceId) {

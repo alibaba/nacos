@@ -153,6 +153,11 @@ public class AiResourceTraceService {
      */
     public static final String OP_DISABLE = "DISABLE";
     
+    /**
+     * Persist layer row-level operation on ai_resource_version.
+     */
+    public static final String OP_VERSION_ROW_PERSIST = "VERSION_ROW_PERSIST";
+    
     // ==================== Status Constants ====================
     
     /**
