@@ -4,11 +4,7 @@
   }
 
   .plugin-list-card {
-    background: #fff;
-    border-radius: 8px;
-    padding: 24px;
-    border: 1px solid #e6ebf1;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    padding: 0;
   }
 
   .plugin-type-list {
@@ -42,7 +38,16 @@
   }
 
   .plugin-type-table {
-    padding: 0 12px 12px;
+    padding: 0;
+
+    .next-table {
+      border: none;
+    }
+
+    .next-table-body,
+    .next-table-header {
+      border: none;
+    }
   }
 
   .plugin-type-card-icon {

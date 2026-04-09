@@ -145,10 +145,10 @@ export default function PluginManagementPage() {
                 className={`cursor-pointer transition-colors hover:bg-muted/50 ${expanded ? 'border-b' : ''}`}
                 onClick={() => toggleType(type)}
               >
-                <CardContent className="py-5 px-5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                      <IconComponent className="h-5 w-5 text-primary" />
+                <CardContent className="py-3 px-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <IconComponent className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm">{getTypeLabel(type)}</div>
@@ -210,6 +210,7 @@ export default function PluginManagementPage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-auto px-0"
                               onClick={() => { setSelectedPlugin(plugin); setDetailOpen(true); }}
                             >
                               {t('common.detail')}
