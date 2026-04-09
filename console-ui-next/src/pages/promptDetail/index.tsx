@@ -849,6 +849,7 @@ export default function PromptDetailPage() {
           </Card>
 
           {/* Debug Panel Card */}
+          {copilotEnabled && (
           <Card className="overflow-hidden py-0 gap-0">
             <div className="px-5 py-3.5 border-b bg-muted/30 flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -895,12 +896,10 @@ export default function PromptDetailPage() {
                   <Textarea value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder={t('prompt.userInputPlaceholder')} rows={3} className="bg-transparent text-xs resize-none" disabled={debugging} />
                 </div>
                 <div className="flex justify-end">
-                  {copilotEnabled && (
-                    <Button size="sm" className="h-7 text-xs gap-1.5" onClick={handleStartDebug} disabled={debugging || !userInput.trim()}>
-                      {debugging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                      {debugging ? t('prompt.streaming') : t('prompt.startDebug')}
-                    </Button>
-                  )}
+                  <Button size="sm" className="h-7 text-xs gap-1.5" onClick={handleStartDebug} disabled={debugging || !userInput.trim()}>
+                    {debugging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                    {debugging ? t('prompt.streaming') : t('prompt.startDebug')}
+                  </Button>
                 </div>
               </div>
               {debugError && (
@@ -937,9 +936,8 @@ export default function PromptDetailPage() {
               </div>
             </CardContent>
           </Card>
+          )}
         </div>
-
-        {/* Right: Sidebar */}
         <div className="space-y-4 lg:w-[320px]">
           {/* Basic Info Card */}
           <Card className="overflow-hidden py-0 gap-0">

@@ -1610,81 +1610,81 @@ class PromptDetail extends React.Component {
             </div>
 
             {/* Right: Debug Panel */}
-            <div className="detail-right">
-              <div className="debug-card">
-                <div className="debug-title">
-                  <Icon type="bug" style={{ marginRight: 8 }} />
-                  {locale.debugPanel || 'Prompt 调试'}
-                </div>
-
-                <div className="debug-input-section">
-                  {/* Variable Inputs */}
-                  {variables.length > 0 && (
-                    <div className="variable-inputs">
-                      <div className="section-subtitle">
-                        {locale.templateVariables || '模板参数'}
-                        <span className="variables-count">{variables.length}</span>
-                      </div>
-                      <div className="variable-list">
-                        {variables.map((variable, index) => {
-                          const svrVar = (this.state.serverVariables || []).find(
-                            v => v.name === variable
-                          );
-                          const defaultVal = svrVar?.defaultValue;
-                          const desc = svrVar?.description;
-                          const placeholder = defaultVal
-                            ? `默认值: ${defaultVal}`
-                            : `输入 ${variable}`;
-                          return (
-                            <div key={index} className="variable-input-item">
-                              <label className="variable-label">
-                                {`{{${variable}}}`}
-                                {desc && (
-                                  <span
-                                    style={{
-                                      fontWeight: 'normal',
-                                      color: '#999',
-                                      marginLeft: 4,
-                                      fontSize: 12,
-                                    }}
-                                  >
-                                    {desc}
-                                  </span>
-                                )}
-                              </label>
-                              <Input
-                                size="small"
-                                placeholder={placeholder}
-                                value={variableValues[variable] || ''}
-                                onChange={value => this.handleVariableChange(variable, value)}
-                                disabled={debugging}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {variables.length > 0 && <div className="input-divider"></div>}
-
-                  {/* User Input */}
-                  <div className="user-input-wrapper">
-                    <div className="section-subtitle">
-                      {locale.userInput || '用户输入'}
-                      <span className="required">*</span>
-                    </div>
-                    <Input.TextArea
-                      placeholder={locale.userInputPlaceholder || '输入要发送给模型的用户消息...'}
-                      value={userInput}
-                      onChange={this.handleUserInputChange}
-                      disabled={debugging}
-                      style={{ width: '100%', flex: 1, resize: 'none' }}
-                    />
+            {localStorage.getItem(COPILOT_ENABLED) === 'true' && (
+              <div className="detail-right">
+                <div className="debug-card">
+                  <div className="debug-title">
+                    <Icon type="bug" style={{ marginRight: 8 }} />
+                    {locale.debugPanel || 'Prompt 调试'}
                   </div>
 
-                  {/* Debug Button */}
-                  {localStorage.getItem(COPILOT_ENABLED) === 'true' && (
+                  <div className="debug-input-section">
+                    {/* Variable Inputs */}
+                    {variables.length > 0 && (
+                      <div className="variable-inputs">
+                        <div className="section-subtitle">
+                          {locale.templateVariables || '模板参数'}
+                          <span className="variables-count">{variables.length}</span>
+                        </div>
+                        <div className="variable-list">
+                          {variables.map((variable, index) => {
+                            const svrVar = (this.state.serverVariables || []).find(
+                              v => v.name === variable
+                            );
+                            const defaultVal = svrVar?.defaultValue;
+                            const desc = svrVar?.description;
+                            const placeholder = defaultVal
+                              ? `默认值: ${defaultVal}`
+                              : `输入 ${variable}`;
+                            return (
+                              <div key={index} className="variable-input-item">
+                                <label className="variable-label">
+                                  {`{{${variable}}}`}
+                                  {desc && (
+                                    <span
+                                      style={{
+                                        fontWeight: 'normal',
+                                        color: '#999',
+                                        marginLeft: 4,
+                                        fontSize: 12,
+                                      }}
+                                    >
+                                      {desc}
+                                    </span>
+                                  )}
+                                </label>
+                                <Input
+                                  size="small"
+                                  placeholder={placeholder}
+                                  value={variableValues[variable] || ''}
+                                  onChange={value => this.handleVariableChange(variable, value)}
+                                  disabled={debugging}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {variables.length > 0 && <div className="input-divider"></div>}
+
+                    {/* User Input */}
+                    <div className="user-input-wrapper">
+                      <div className="section-subtitle">
+                        {locale.userInput || '用户输入'}
+                        <span className="required">*</span>
+                      </div>
+                      <Input.TextArea
+                        placeholder={locale.userInputPlaceholder || '输入要发送给模型的用户消息...'}
+                        value={userInput}
+                        onChange={this.handleUserInputChange}
+                        disabled={debugging}
+                        style={{ width: '100%', flex: 1, resize: 'none' }}
+                      />
+                    </div>
+
+                    {/* Debug Button */}
                     <div className="debug-actions">
                       <Button
                         type="primary"
@@ -1703,55 +1703,56 @@ class PromptDetail extends React.Component {
                         </Button>
                       )}
                     </div>
-                  )}
 
-                  {/* Debug Error */}
-                  {debugError && (
-                    <div className="debug-error">
-                      <Icon type="warning" style={{ marginRight: 8, color: '#ff4d4f' }} />
-                      {debugError}
+                    {/* Debug Error */}
+                    {debugError && (
+                      <div className="debug-error">
+                        <Icon type="warning" style={{ marginRight: 8, color: '#ff4d4f' }} />
+                        {debugError}
+                      </div>
+                    )}
+
+                    {/* Model Response Section */}
+                    <div className="response-divider"></div>
+                    <div className="section-subtitle">
+                      {locale.modelOutput || '模型响应'}
+                      {debugging && <Loading size="small" style={{ marginLeft: 8 }} />}
                     </div>
-                  )}
-
-                  {/* Model Response Section */}
-                  <div className="response-divider"></div>
-                  <div className="section-subtitle">
-                    {locale.modelOutput || '模型响应'}
-                    {debugging && <Loading size="small" style={{ marginLeft: 8 }} />}
-                  </div>
-                  <div className="model-response-box" ref={this.debugResultRef}>
-                    {!debugThinking && !debugContent && !debugging && (
-                      <div className="response-placeholder">
-                        {locale.responsePlaceholder || '点击"开始调试"后，模型响应将显示在这里...'}
-                      </div>
-                    )}
-                    {debugThinking && (
-                      <div className="result-section thinking-section">
-                        <div className="result-label">
-                          <Icon type="eye" style={{ marginRight: 4 }} />
-                          {locale.thinking || '思考过程'}
+                    <div className="model-response-box" ref={this.debugResultRef}>
+                      {!debugThinking && !debugContent && !debugging && (
+                        <div className="response-placeholder">
+                          {locale.responsePlaceholder ||
+                            '点击"开始调试"后，模型响应将显示在这里...'}
                         </div>
-                        <div className="result-content thinking-content">{debugThinking}</div>
-                      </div>
-                    )}
-                    {debugContent && (
-                      <div className="result-section content-section">
-                        <div className="result-label">
-                          <Icon type="success" style={{ marginRight: 4, color: '#52c41a' }} />
-                          {locale.modelOutput || '模型输出'}
+                      )}
+                      {debugThinking && (
+                        <div className="result-section thinking-section">
+                          <div className="result-label">
+                            <Icon type="eye" style={{ marginRight: 4 }} />
+                            {locale.thinking || '思考过程'}
+                          </div>
+                          <div className="result-content thinking-content">{debugThinking}</div>
                         </div>
-                        <div className="result-content output-content">{debugContent}</div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                      {debugContent && (
+                        <div className="result-section content-section">
+                          <div className="result-label">
+                            <Icon type="success" style={{ marginRight: 4, color: '#52c41a' }} />
+                            {locale.modelOutput || '模型输出'}
+                          </div>
+                          <div className="result-content output-content">{debugContent}</div>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="debug-hint">
-                    {locale.debugHint ||
-                      '调试时会将 Prompt 模板中的变量替换后作为系统提示词发送给模型'}
+                    <div className="debug-hint">
+                      {locale.debugHint ||
+                        '调试时会将 Prompt 模板中的变量替换后作为系统提示词发送给模型'}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </Loading>
 

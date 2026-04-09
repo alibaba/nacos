@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Bot, Save, Eye, EyeOff, Loader2,
@@ -40,7 +41,15 @@ const QWEN_MODELS = [
 
 export default function SettingCenterPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const copilotEnabled = useServerStore((s) => s.copilotEnabled);
+  const stateLoaded = useServerStore((s) => s.stateLoaded);
+
+  useEffect(() => {
+    if (stateLoaded && !copilotEnabled) {
+      navigate('/', { replace: true });
+    }
+  }, [stateLoaded, copilotEnabled, navigate]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,8 +74,10 @@ export default function SettingCenterPage() {
   }, []);
 
   useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+    if (copilotEnabled) {
+      loadConfig();
+    }
+  }, [copilotEnabled, loadConfig]);
 
   const handleSave = async () => {
     setSaving(true);
