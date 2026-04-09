@@ -22,7 +22,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpRequestTest {
     
@@ -63,7 +67,7 @@ class HttpRequestTest {
 
     @Test
     @DisplayName("isFileUpload with fileBytes should return true")
-    void isFileUpload_withFileBytes_shouldReturnTrue() {
+    void testIsFileUploadWithFileBytes() {
         byte[] fileBytes = "test file content".getBytes();
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod("POST")
@@ -75,7 +79,7 @@ class HttpRequestTest {
 
     @Test
     @DisplayName("isFileUpload with empty fileBytes should return false")
-    void isFileUpload_withEmptyFileBytes_shouldReturnFalse() {
+    void testIsFileUploadWithEmptyFileBytes() {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod("POST")
                 .setPath("/upload")
@@ -86,7 +90,7 @@ class HttpRequestTest {
 
     @Test
     @DisplayName("isFileUpload with null fileBytes should return false")
-    void isFileUpload_withNullFileBytes_shouldReturnFalse() {
+    void testIsFileUploadWithNullFileBytes() {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod("POST")
                 .setPath("/upload")
@@ -97,7 +101,7 @@ class HttpRequestTest {
 
     @Test
     @DisplayName("Builder setFileUpload should set all fields")
-    void builderSetFileUpload_shouldSetAllFields() {
+    void testBuilderSetFileUpload() {
         byte[] fileBytes = "test file content".getBytes();
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod("POST")
@@ -113,7 +117,7 @@ class HttpRequestTest {
 
     @Test
     @DisplayName("getFileBytes should return byte array")
-    void getFileBytes_shouldReturnByteArray() {
+    void testGetFileBytes() {
         byte[] fileBytes = "test content".getBytes();
         HttpRequest httpRequest = new HttpRequest("POST", "/upload", null, null, null, 
                 new RequestResource(), fileBytes, "test.zip", "file");

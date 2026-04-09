@@ -171,7 +171,7 @@ class PipelineMaintainerServiceImplTest {
 
     @Test
     @DisplayName("parseResultFromHttp with empty body should throw SERVER_ERROR")
-    void parseResultFromHttp_withEmptyBody_shouldThrowServerError() throws NacosException {
+    void testParseResultFromHttpWithEmptyBody() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData("");
         doAnswer(invocation -> mockRestResult).when(clientHttpProxy).executeSyncHttpRequest(any(HttpRequest.class));

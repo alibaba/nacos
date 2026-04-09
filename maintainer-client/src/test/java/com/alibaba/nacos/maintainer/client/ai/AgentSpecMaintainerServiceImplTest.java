@@ -39,9 +39,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for AgentSpecMaintainerServiceImpl.
@@ -85,7 +92,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getAgentSpecDetail with editingVersion should return spec")
-    void getAgentSpecDetail_withEditingVersion_shouldReturnSpec() throws NacosException {
+    void testGetAgentSpecDetailWithEditingVersion() throws NacosException {
         AgentSpecMeta meta = new AgentSpecMeta();
         meta.setEditingVersion("v1");
         
@@ -107,7 +114,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getAgentSpecDetail with reviewingVersion should return spec")
-    void getAgentSpecDetail_withReviewingVersion_shouldReturnSpec() throws NacosException {
+    void testGetAgentSpecDetailWithReviewingVersion() throws NacosException {
         AgentSpecMeta meta = new AgentSpecMeta();
         meta.setReviewingVersion("v2");
         
@@ -129,7 +136,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getAgentSpecDetail with latest label should return spec")
-    void getAgentSpecDetail_withLatestLabel_shouldReturnSpec() throws NacosException {
+    void testGetAgentSpecDetailWithLatestLabel() throws NacosException {
         AgentSpecMeta meta = new AgentSpecMeta();
         Map<String, String> labels = new HashMap<>();
         labels.put("latest", "v3");
@@ -153,7 +160,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getAgentSpecDetail with null meta should return null")
-    void getAgentSpecDetail_withNullMeta_shouldReturnNull() throws NacosException {
+    void testGetAgentSpecDetailWithNullMeta() throws NacosException {
         HttpRestResult<String> metaResult = new HttpRestResult<>();
         metaResult.setData(JacksonUtils.toJson(Result.success(null)));
         
@@ -165,7 +172,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getAgentSpecDetail with first available version should return spec")
-    void getAgentSpecDetail_withFirstAvailableVersion_shouldReturnSpec() throws NacosException {
+    void testGetAgentSpecDetailWithFirstAvailableVersion() throws NacosException {
         AgentSpecMeta meta = new AgentSpecMeta();
         AgentSpecMeta.AgentSpecVersionSummary versionSummary = new AgentSpecMeta.AgentSpecVersionSummary();
         versionSummary.setVersion("v4");
@@ -191,7 +198,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("createDraft should return draft version")
-    void createDraft_shouldReturnDraftVersion() throws NacosException {
+    void testCreateDraftReturnsVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -202,7 +209,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateDraft with setAsLatest should execute")
-    void updateDraft_withSetAsLatest_shouldExecute() throws NacosException {
+    void testUpdateDraftWithSetAsLatest() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -213,7 +220,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateDraft with null setAsLatest should skip param")
-    void updateDraft_withNullSetAsLatest_shouldSkipParam() throws NacosException {
+    void testUpdateDraftWithNullSetAsLatest() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -224,7 +231,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("deleteDraft should return true")
-    void deleteDraft_shouldReturnTrue() throws NacosException {
+    void testDeleteDraftReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -235,7 +242,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("submit should return submitted version")
-    void submit_shouldReturnSubmittedVersion() throws NacosException {
+    void testSubmitReturnsVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -246,7 +253,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("publish should return true")
-    void publish_shouldReturnTrue() throws NacosException {
+    void testPublishReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -257,7 +264,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("changeOnlineStatus online should return true")
-    void changeOnlineStatus_online_shouldReturnTrue() throws NacosException {
+    void testChangeOnlineStatusOnline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -268,7 +275,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("changeOnlineStatus offline should return true")
-    void changeOnlineStatus_offline_shouldReturnTrue() throws NacosException {
+    void testChangeOnlineStatusOffline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -279,7 +286,7 @@ class AgentSpecMaintainerServiceImplTest {
 
     @Test
     @DisplayName("uploadAgentSpecFromZip should return agentSpec name")
-    void uploadAgentSpecFromZip_shouldReturnAgentSpecName() throws NacosException {
+    void testUploadAgentSpecFromZip() throws NacosException {
         byte[] zipBytes = "test zip content".getBytes();
 
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();

@@ -36,9 +36,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for SkillMaintainerServiceImpl.
@@ -82,7 +87,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("createDraft with targetVersion should return version")
-    void createDraft_withTargetVersion_shouldReturnVersion() throws NacosException {
+    void testCreateDraftWithTargetVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -93,7 +98,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("createDraft with null skillCard should still create")
-    void createDraft_withNullSkillCard_shouldStillCreate() throws NacosException {
+    void testCreateDraftWithNullSkillCard() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -104,7 +109,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateDraft with setAsLatest should return true")
-    void updateDraft_withSetAsLatest_shouldReturnTrue() throws NacosException {
+    void testUpdateDraftWithSetAsLatest() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -115,7 +120,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("deleteDraft should return true")
-    void deleteDraft_shouldReturnTrue() throws NacosException {
+    void testDeleteDraftReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -126,7 +131,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("submit should return submitted version")
-    void submit_shouldReturnSubmittedVersion() throws NacosException {
+    void testSubmitReturnsVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -137,7 +142,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("publish should return true")
-    void publish_shouldReturnTrue() throws NacosException {
+    void testPublishReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -148,7 +153,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("changeOnlineStatus online should return true")
-    void changeOnlineStatus_online_shouldReturnTrue() throws NacosException {
+    void testChangeOnlineStatusOnline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -159,7 +164,7 @@ class SkillMaintainerServiceImplTest {
 
     @Test
     @DisplayName("changeOnlineStatus with null scope should handle gracefully")
-    void changeOnlineStatus_withNullScope_shouldHandleGracefully() throws NacosException {
+    void testChangeOnlineStatusWithNullScope() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(new Result<>(ErrorCode.SUCCESS.getCode(), "ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);

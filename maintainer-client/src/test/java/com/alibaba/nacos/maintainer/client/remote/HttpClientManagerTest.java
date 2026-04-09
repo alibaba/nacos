@@ -28,7 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class HttpClientManagerTest {
     
@@ -55,7 +56,7 @@ public class HttpClientManagerTest {
 
     @Test
     @DisplayName("getInstance concurrent access should return same instance")
-    void getInstance_concurrentAccess_shouldReturnSameInstance() throws InterruptedException {
+    void testGetInstanceConcurrentAccess() throws InterruptedException {
         final int threadCount = 10;
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch endLatch = new CountDownLatch(threadCount);
@@ -89,7 +90,7 @@ public class HttpClientManagerTest {
 
     @Test
     @DisplayName("shutdown should complete without throwing")
-    void shutdown_shouldCompleteWithoutThrowing() throws NacosException {
+    void testShutdownCompletes() throws NacosException {
         HttpClientManager instance = HttpClientManager.getInstance();
         assertNotNull(instance.getNacosRestTemplate());
         

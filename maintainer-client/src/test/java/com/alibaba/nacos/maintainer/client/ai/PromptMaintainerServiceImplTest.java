@@ -39,9 +39,15 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for PromptMaintainerServiceImpl.
@@ -85,7 +91,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("listPrompts with all params should return paged result")
-    void listPrompts_withAllParams_shouldReturnPagedResult() throws NacosException {
+    void testListPromptsWithAllParams() throws NacosException {
         Page<PromptMetaSummary> page = new Page<>();
         page.setPagesAvailable(1);
         page.setTotalCount(1);
@@ -104,7 +110,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("listPrompts with null bizTags should handle gracefully")
-    void listPrompts_withNullBizTags_shouldHandleGracefully() throws NacosException {
+    void testListPromptsWithNullBizTags() throws NacosException {
         Page<PromptMetaSummary> page = new Page<>();
         page.setTotalCount(0);
         page.setPageNumber(1);
@@ -120,7 +126,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("deletePrompt should return true on success")
-    void deletePrompt_shouldReturnTrueOnSuccess() throws NacosException {
+    void testDeletePromptReturnsTrue() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -131,7 +137,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("deletePrompt should return false on failure")
-    void deletePrompt_shouldReturnFalseOnFailure() throws NacosException {
+    void testDeletePromptReturnsFalse() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(false)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -142,7 +148,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("listPromptVersions should return paged versions")
-    void listPromptVersions_shouldReturnPagedVersions() throws NacosException {
+    void testListPromptVersions() throws NacosException {
         Page<PromptVersionSummary> page = new Page<>();
         page.setPagesAvailable(1);
         page.setTotalCount(1);
@@ -162,7 +168,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getPromptGovernanceDetail should return meta info")
-    void getPromptGovernanceDetail_shouldReturnMetaInfo() throws NacosException {
+    void testGetPromptGovernanceDetail() throws NacosException {
         PromptMetaInfo metaInfo = new PromptMetaInfo();
         metaInfo.setPromptKey("testPrompt");
 
@@ -177,7 +183,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getVersionDetail should return version info")
-    void getVersionDetail_shouldReturnVersionInfo() throws NacosException {
+    void testGetVersionDetail() throws NacosException {
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("v1");
 
@@ -192,7 +198,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("createDraft with all params should return version")
-    void createDraft_withAllParams_shouldReturnVersion() throws NacosException {
+    void testCreateDraftWithAllParams() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -204,7 +210,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("createDraft with null optional params should still create")
-    void createDraft_withNullOptionalParams_shouldStillCreate() throws NacosException {
+    void testCreateDraftWithNullOptionalParams() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -216,7 +222,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateDraft should execute successfully")
-    void updateDraft_shouldExecuteSuccessfully() throws NacosException {
+    void testUpdateDraft() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -227,7 +233,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("deleteDraft should execute successfully")
-    void deleteDraft_shouldExecuteSuccessfully() throws NacosException {
+    void testDeleteDraft() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -238,7 +244,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("submit should return submitted version")
-    void submit_shouldReturnSubmittedVersion() throws NacosException {
+    void testSubmitReturnsVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -249,7 +255,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("submit with null version should use editing version")
-    void submit_withNullVersion_shouldUseEditingVersion() throws NacosException {
+    void testSubmitWithNullVersion() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("editing-version")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -260,7 +266,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("publish with updateLatestLabel true should execute")
-    void publish_withUpdateLatestLabelTrue_shouldExecute() throws NacosException {
+    void testPublishWithUpdateLatestLabel() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -271,7 +277,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("publish with null updateLatestLabel should skip param")
-    void publish_withNullUpdateLatestLabel_shouldSkipParam() throws NacosException {
+    void testPublishWithNullUpdateLatestLabel() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -282,7 +288,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("forcePublish should execute force publish path")
-    void forcePublish_shouldExecuteForcePublishPath() throws NacosException {
+    void testForcePublish() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -293,7 +299,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("changeOnlineStatus online should call online path")
-    void changeOnlineStatus_online_shouldCallOnlinePath() throws NacosException {
+    void testChangeOnlineStatusOnline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -304,7 +310,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("changeOnlineStatus offline should call offline path")
-    void changeOnlineStatus_offline_shouldCallOfflinePath() throws NacosException {
+    void testChangeOnlineStatusOffline() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -315,7 +321,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateLabels should execute successfully")
-    void updateLabels_shouldExecuteSuccessfully() throws NacosException {
+    void testUpdateLabels() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -326,7 +332,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateDescription should execute successfully")
-    void updateDescription_shouldExecuteSuccessfully() throws NacosException {
+    void testUpdateDescription() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -337,7 +343,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updateBizTags should execute successfully")
-    void updateBizTags_shouldExecuteSuccessfully() throws NacosException {
+    void testUpdateBizTags() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -350,7 +356,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("getPromptMeta deprecated should return meta info")
-    void getPromptMeta_deprecated_shouldReturnMetaInfo() throws NacosException {
+    void testGetPromptMetaDeprecated() throws NacosException {
         PromptMetaInfo metaInfo = new PromptMetaInfo();
         metaInfo.setPromptKey("testPrompt");
 
@@ -365,7 +371,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("queryPromptDetail deprecated should return version info")
-    void queryPromptDetail_deprecated_shouldReturnVersionInfo() throws NacosException {
+    void testQueryPromptDetailDeprecated() throws NacosException {
         PromptVersionInfo versionInfo = new PromptVersionInfo();
         versionInfo.setVersion("v1");
 
@@ -380,7 +386,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("bindLabel deprecated should return true")
-    void bindLabel_deprecated_shouldReturnTrue() throws NacosException {
+    void testBindLabelDeprecated() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -391,7 +397,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("unbindLabel deprecated should return true")
-    void unbindLabel_deprecated_shouldReturnTrue() throws NacosException {
+    void testUnbindLabelDeprecated() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -402,7 +408,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("publishPrompt deprecated should return true")
-    void publishPrompt_deprecated_shouldReturnTrue() throws NacosException {
+    void testPublishPromptDeprecated() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
@@ -414,7 +420,7 @@ class PromptMaintainerServiceImplTest {
 
     @Test
     @DisplayName("updatePromptMetadata deprecated should return true")
-    void updatePromptMetadata_deprecated_shouldReturnTrue() throws NacosException {
+    void testUpdatePromptMetadataDeprecated() throws NacosException {
         HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         mockRestResult.setData(JacksonUtils.toJson(Result.success(true)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
