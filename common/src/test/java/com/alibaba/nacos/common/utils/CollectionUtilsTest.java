@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -419,5 +420,69 @@ class CollectionUtilsTest {
     void testIsMapEmpty() {
         assertTrue(CollectionUtils.isMapEmpty(null));
         assertTrue(CollectionUtils.isMapEmpty(Collections.emptyMap()));
+    }
+    
+    @Test
+    @DisplayName("getCardinalityMap should count element occurrences correctly")
+    void testGetCardinalityMapShouldCountElements() {
+        List<String> list = Arrays.asList("a", "b", "a", "c", "a", "b");
+        Map<?, ?> result = CollectionUtils.getCardinalityMap(list);
+        
+        assertEquals(3, result.get("a"));
+        assertEquals(2, result.get("b"));
+        assertEquals(1, result.get("c"));
+    }
+    
+    @Test
+    @DisplayName("getCardinalityMap with empty collection should return empty map")
+    void testGetCardinalityMapEmptyCollection() {
+        Map<?, ?> result = CollectionUtils.getCardinalityMap(Collections.emptyList());
+        assertTrue(result.isEmpty());
+    }
+    
+    @Test
+    @DisplayName("getCardinalityMap with single element should return count of 1")
+    void testGetCardinalityMapSingleElement() {
+        Map<?, ?> result = CollectionUtils.getCardinalityMap(Collections.singletonList("only"));
+        assertEquals(1, result.size());
+        assertEquals(1, result.get("only"));
+    }
+    
+    @Test
+    @DisplayName("isEqualCollection with equal collections should return true")
+    void testIsEqualCollectionEqualCollections() {
+        List<String> a = Arrays.asList("a", "b", "c");
+        List<String> b = Arrays.asList("c", "b", "a");
+        assertTrue(CollectionUtils.isEqualCollection(a, b));
+    }
+    
+    @Test
+    @DisplayName("isEqualCollection with different sizes should return false")
+    void testIsEqualCollectionDifferentSizes() {
+        List<String> a = Arrays.asList("a", "b");
+        List<String> b = Arrays.asList("a", "b", "c");
+        assertFalse(CollectionUtils.isEqualCollection(a, b));
+    }
+    
+    @Test
+    @DisplayName("isEqualCollection with same size different elements should return false")
+    void testIsEqualCollectionSameSizeDifferentElements() {
+        List<String> a = Arrays.asList("a", "b", "c");
+        List<String> b = Arrays.asList("a", "b", "d");
+        assertFalse(CollectionUtils.isEqualCollection(a, b));
+    }
+    
+    @Test
+    @DisplayName("isEqualCollection with different cardinalities should return false")
+    void testIsEqualCollectionDifferentCardinalities() {
+        List<String> a = Arrays.asList("a", "a", "b");
+        List<String> b = Arrays.asList("a", "b", "b");
+        assertFalse(CollectionUtils.isEqualCollection(a, b));
+    }
+    
+    @Test
+    @DisplayName("isEqualCollection with empty collections should return true")
+    void testIsEqualCollectionEmptyCollections() {
+        assertTrue(CollectionUtils.isEqualCollection(Collections.emptyList(), Collections.emptyList()));
     }
 }

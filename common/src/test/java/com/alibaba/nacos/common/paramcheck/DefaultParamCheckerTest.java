@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.paramcheck;
 
 import com.alibaba.nacos.common.utils.RandomUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -310,6 +311,70 @@ class DefaultParamCheckerTest {
         // Success
         paramInfo.setSkillName("skill-name1");
         actual = paramChecker.checkParamInfoList(paramInfos);
+        assertTrue(actual.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("checkMcpNameFormat with too long name should fail")
+    void testCheckMcpNameFormatTooLong() {
+        String longMcpName = buildStringLength(256);
+        ParamCheckResponse actual = paramChecker.checkMcpNameFormat(longMcpName);
+        assertFalse(actual.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("checkMcpNameFormat with illegal characters should fail")
+    void testCheckMcpNameFormatIllegalCharacters() {
+        ParamCheckResponse actual = paramChecker.checkMcpNameFormat("mcp@name#invalid");
+        assertFalse(actual.isSuccess());
+        assertEquals("Param 'mcpName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+    }
+    
+    @Test
+    @DisplayName("checkMcpNameFormat with valid name should succeed")
+    void testCheckMcpNameFormatValid() {
+        ParamCheckResponse actual = paramChecker.checkMcpNameFormat("valid-mcp-name");
+        assertTrue(actual.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("checkMcpNameFormat with blank name should succeed")
+    void testCheckMcpNameFormatBlank() {
+        ParamCheckResponse actual = paramChecker.checkMcpNameFormat("");
+        assertTrue(actual.isSuccess());
+        actual = paramChecker.checkMcpNameFormat(null);
+        assertTrue(actual.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("checkAgentNameFormat with too long name should fail")
+    void testCheckAgentNameFormatTooLong() {
+        String longAgentName = buildStringLength(256);
+        ParamCheckResponse actual = paramChecker.checkAgentNameFormat(longAgentName);
+        assertFalse(actual.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("checkAgentNameFormat with illegal characters should fail")
+    void testCheckAgentNameFormatIllegalCharacters() {
+        ParamCheckResponse actual = paramChecker.checkAgentNameFormat("agent@name#invalid");
+        assertFalse(actual.isSuccess());
+        assertEquals("Param 'agentName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+    }
+    
+    @Test
+    @DisplayName("checkAgentNameFormat with valid name should succeed")
+    void testCheckAgentNameFormatValid() {
+        ParamCheckResponse actual = paramChecker.checkAgentNameFormat("valid-agent-name");
+        assertTrue(actual.isSuccess());
+    }
+    
+    @Test
+    @DisplayName("checkAgentNameFormat with blank name should succeed")
+    void testCheckAgentNameFormatBlank() {
+        ParamCheckResponse actual = paramChecker.checkAgentNameFormat("");
+        assertTrue(actual.isSuccess());
+        actual = paramChecker.checkAgentNameFormat(null);
         assertTrue(actual.isSuccess());
     }
     
