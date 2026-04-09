@@ -140,7 +140,7 @@ export default function PluginManagementPage() {
           const IconComponent = PLUGIN_TYPE_ICONS[type] || Puzzle;
           const expanded = !!expandedTypes[type];
           return (
-            <Card key={type} className="py-0 overflow-hidden">
+            <Card key={type} className="py-0 gap-0 overflow-hidden">
               <div
                 className={`cursor-pointer transition-colors hover:bg-muted/50 ${expanded ? 'border-b' : ''}`}
                 onClick={() => toggleType(type)}
@@ -169,12 +169,12 @@ export default function PluginManagementPage() {
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
-                      <TableRow className="h-9">
+                      <TableRow>
                         <TableHead className="pl-6 w-[30%]">{t('plugin.pluginName')}</TableHead>
-                        <TableHead className="w-[20%]">{t('plugin.status')}</TableHead>
+                        <TableHead className="w-[20%] text-center">{t('plugin.status')}</TableHead>
                         <TableHead className="w-[15%] text-center">{t('plugin.critical')}</TableHead>
                         <TableHead className="w-[20%] text-center">{t('plugin.availableNodes')}</TableHead>
-                        <TableHead className="w-[15%] text-right pr-6">{t('common.operation')}</TableHead>
+                        <TableHead className="w-[15%] text-center">{t('common.operation')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -182,7 +182,7 @@ export default function PluginManagementPage() {
                         <TableRow key={plugin.pluginId || `${plugin.pluginType}-${plugin.pluginName}`}>
                           <TableCell className="pl-6 font-medium">{plugin.pluginName}</TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               {canSwitch(plugin) ? (
                                 <Switch
                                   checked={plugin.enabled}
@@ -206,7 +206,7 @@ export default function PluginManagementPage() {
                               {plugin.availableNodeCount} / {plugin.totalNodeCount}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right pr-6">
+                          <TableCell className="text-center">
                             <Button
                               variant="ghost"
                               size="sm"

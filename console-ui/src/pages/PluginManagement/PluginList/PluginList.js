@@ -160,7 +160,7 @@ class PluginList extends React.Component {
     const { locale = {} } = this.props;
     const canSwitch = !record.critical && !record.exclusive;
     return (
-      <div style={{ textAlign: 'right' }}>
+      <div>
         <Button
           type="primary"
           text
@@ -258,11 +258,7 @@ class PluginList extends React.Component {
                         </div>
                       )}
                     />
-                    <Column
-                      title={locale.operation || 'Operation'}
-                      cell={this.renderAction}
-                      align="right"
-                    />
+                    <Column title={locale.operation || 'Operation'} cell={this.renderAction} />
                   </Table>
                 </div>
               )}

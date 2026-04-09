@@ -48,6 +48,12 @@
     .next-table-header {
       border: none;
     }
+
+    .next-table-header th {
+      padding-top: 4px;
+      padding-bottom: 4px;
+      border-bottom: none;
+    }
   }
 
   .plugin-type-card-icon {

@@ -32,10 +32,8 @@ import {
 import MonacoEditor from '../../../components/MonacoEditor/MonacoEditor';
 import PromptOptimizeDialog from '../PromptOptimizeDialog';
 import { getParams, request } from '@/globalLib';
-import {
-  fetchPipelineExecutionDetail,
-  mapExecutionToPipelineInfo,
-} from '@/utils/pipelineApi';
+import { COPILOT_ENABLED } from '@/constants';
+import { fetchPipelineExecutionDetail, mapExecutionToPipelineInfo } from '@/utils/pipelineApi';
 import './PromptDetail.scss';
 
 @ConfigProvider.config
