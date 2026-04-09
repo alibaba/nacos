@@ -16,265 +16,324 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Dialog, Loading, Select, Table, Message, ConfigProvider } from '@alifd/next';
+import { Button, Dialog, Icon, Loading, Table, Message, ConfigProvider } from '@alifd/next';
 import { request } from '../../../globalLib';
 import PageTitle from '../../../components/PageTitle';
 import PluginDetail from './PluginDetail';
 import './PluginList.scss';
 const { Column } = Table;
 
+const PLUGIN_TYPE_ICONS = {
+    auth: 'lock',
+    'datasource-dialect': 'database',
+    'config-change': 'edit',
+    encryption: 'key',
+    trace: 'chart',
+    environment: 'cloud',
+    control: 'set',
+    visibility: 'eye',
+    'ai-pipeline': 'process',
+    'ai-storage': 'attachment',
+};
+
 @ConfigProvider.config
 class PluginList extends React.Component {
-  static displayName = 'PluginManagement';
+    static displayName = 'PluginManagement';
 
-  static propTypes = {
-    locale: PropTypes.object,
-    history: PropTypes.object,
-  };
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: false,
-      dataSource: [],
-      pluginType: '',
-      status: '', // Filter status: '', 'enabled', 'disabled'
-      detailVisible: false,
-      currentPluginId: null,
+    static propTypes = {
+        locale: PropTypes.object,
+        history: PropTypes.object,
+        location: PropTypes.object,
     };
-  }
 
-  componentDidMount() {
-    this.queryPluginList();
-  }
-
-  openLoading() {
-    this.setState({ loading: true });
-  }
-
-  closeLoading() {
-    this.setState({ loading: false });
-  }
-
-  queryPluginList() {
-    const { pluginType } = this.state;
-    const parameter = pluginType ? `pluginType=${pluginType}` : '';
-
-    request({
-      url: `v3/console/plugin/list?${parameter}`,
-      beforeSend: () => this.openLoading(),
-      success: res => {
-        if (res.code === 0) {
-          this.setState({
-            dataSource: res.data || [],
-          });
-        } else {
-          Message.error(res.message);
-        }
-      },
-      error: err => {
-        Message.error(err.message || 'Failed to fetch plugin list');
-        this.setState({ dataSource: [] });
-      },
-      complete: () => this.closeLoading(),
-    });
-  }
-
-  updatePluginStatus(record) {
-    const { locale = {} } = this.props;
-    const newStatus = !record.enabled;
-    const action = newStatus ? 'enable' : 'disable';
-
-    Dialog.confirm({
-      title: locale.confirm || 'Confirm',
-      content: `${locale[action] || action} plugin ${record.pluginName}?`,
-      onOk: () => {
-        this.openLoading();
-        request({
-          url: `v3/console/plugin/status?pluginType=${encodeURIComponent(
-            record.pluginType
-          )}&pluginName=${encodeURIComponent(record.pluginName)}&enabled=${newStatus}`,
-          type: 'PUT',
-          dataType: 'json',
-          success: res => {
-            if (res.code === 0) {
-              Message.success(locale.updateSuccess || 'Status updated successfully');
-              this.queryPluginList();
-            } else {
-              Message.error(res.message);
-            }
-          },
-          error: err => {
-            Message.error(err.message || 'Failed to update status');
-          },
-          complete: () => this.closeLoading(),
-        });
-      },
-    });
-  }
-
-  showDetail(record) {
-    this.setState({
-      detailVisible: true,
-      currentPluginId: record.pluginId,
-    });
-  }
-
-  closeDetail = () => {
-    this.setState({ detailVisible: false, currentPluginId: null });
-  };
-
-  renderAction = (value, index, record) => {
-    const { locale = {} } = this.props;
-    // Hide switch button for critical plugins (datasource) or exclusive plugins (auth, datasource)
-    const canSwitch = !record.critical && !record.exclusive;
-    return (
-      <div>
-        <Button
-          type="primary"
-          text
-          onClick={() => this.showDetail(record)}
-          style={{ marginRight: 10 }}
-        >
-          {locale.detail || 'Detail'}
-        </Button>
-        {canSwitch && (
-          <Button
-            type={record.enabled ? 'normal' : 'primary'}
-            text
-            warning={record.enabled}
-            onClick={() => this.updatePluginStatus(record)}
-          >
-            {record.enabled ? locale.disable || 'Disable' : locale.enable || 'Enable'}
-          </Button>
-        )}
-      </div>
-    );
-  };
-
-  render() {
-    const { locale = {} } = this.props;
-    const { pluginType, status, detailVisible, currentPluginId, dataSource } = this.state;
-
-    const pluginTypes = [
-      { value: 'auth', label: locale.auth || 'Authentication' },
-      { value: 'datasource-dialect', label: locale['datasource-dialect'] || 'Datasource Dialect' },
-      { value: 'config-change', label: locale['config-change'] || 'Config Change' },
-      { value: 'encryption', label: locale.encryption || 'Encryption' },
-      { value: 'trace', label: locale.trace || 'Trace' },
-      { value: 'environment', label: locale.environment || 'Environment' },
-      { value: 'control', label: locale.control || 'Control' },
-    ];
-
-    const statusOptions = [
-      { value: 'enabled', label: locale.enabled || 'Enabled' },
-      { value: 'disabled', label: locale.disabled || 'Disabled' },
-    ];
-
-    // Client-side filtering for Status
-    let filteredDataSource = dataSource;
-    if (status) {
-      const isEnabled = status === 'enabled';
-      filteredDataSource = dataSource.filter(item => item.enabled === isEnabled);
+    constructor(props) {
+        super(props);
+        this.state = {
+            loading: false,
+            dataSource: [],
+            expandedTypes: {},
+            detailVisible: false,
+            currentPluginId: null,
+        };
     }
 
-    return (
-      <div className="main-container plugin-management">
-        <Loading
-          shape="flower"
-          style={{ position: 'relative', width: '100%' }}
-          visible={this.state.loading}
-          tip="Loading..."
-          color="#333"
-        >
-          <PageTitle title={locale.pluginManagement || 'Plugin Management'} />
+    componentDidMount() {
+        this.queryPluginList();
+    }
 
-          <div className="plugin-list-card">
-            <div className="plugin-list-toolbar">
-              <div className="filter-section">
-                <span style={{ marginRight: 10 }}>{locale.pluginType || 'Plugin Type'}:</span>
-                <Select
-                  hasClear
-                  style={{ width: 200, marginRight: 20 }}
-                  value={pluginType}
-                  onChange={val => this.setState({ pluginType: val }, () => this.queryPluginList())}
-                  dataSource={pluginTypes}
-                  placeholder={locale.pluginTypeAll || 'All Types'}
-                />
+    openLoading() {
+        this.setState({ loading: true });
+    }
 
-                <span style={{ marginRight: 10 }}>{locale.status || 'Status'}:</span>
-                <Select
-                  hasClear
-                  style={{ width: 150 }}
-                  value={status}
-                  onChange={val => this.setState({ status: val })}
-                  dataSource={statusOptions}
-                  placeholder={locale.statusAll || 'All Statuses'}
-                />
+    closeLoading() {
+        this.setState({ loading: false });
+    }
+
+    queryPluginList() {
+        request({
+            url: 'v3/console/plugin/list',
+            beforeSend: () => this.openLoading(),
+            success: res => {
+                if (res.code === 0) {
+                    this.setState({
+                        dataSource: res.data || [],
+                    });
+                } else {
+                    Message.error(res.message);
+                }
+            },
+            error: err => {
+                Message.error(err.message || 'Failed to fetch plugin list');
+                this.setState({ dataSource: [] });
+            },
+            complete: () => this.closeLoading(),
+        });
+    }
+
+    updatePluginStatus(record) {
+        const { locale = {} } = this.props;
+        const newStatus = !record.enabled;
+        const action = newStatus ? 'enable' : 'disable';
+
+        Dialog.confirm({
+            title: locale.confirm || 'Confirm',
+            content: `${locale[action] || action} plugin ${record.pluginName}?`,
+            onOk: () => {
+                this.openLoading();
+                request({
+                    url: `v3/console/plugin/status?pluginType=${encodeURIComponent(
+                        record.pluginType
+                    )}&pluginName=${encodeURIComponent(record.pluginName)}&enabled=${newStatus}`,
+                    type: 'PUT',
+                    dataType: 'json',
+                    success: res => {
+                        if (res.code === 0) {
+                            Message.success(locale.updateSuccess || 'Status updated successfully');
+                            this.queryPluginList();
+                        } else {
+                            Message.error(res.message);
+                        }
+                    },
+                    error: err => {
+                        Message.error(err.message || 'Failed to update status');
+                    },
+                    complete: () => this.closeLoading(),
+                });
+            },
+        });
+    }
+
+    showDetail(record) {
+        this.setState({
+            detailVisible: true,
+            currentPluginId: record.pluginId,
+        });
+    }
+
+    closeDetail = () => {
+        this.setState({ detailVisible: false, currentPluginId: null });
+    };
+
+    toggleType = type => {
+        this.setState(prevState => ({
+            expandedTypes: {
+                ...prevState.expandedTypes,
+                [type]: !prevState.expandedTypes[type],
+            },
+        }));
+    };
+
+    groupByType() {
+        const { dataSource } = this.state;
+        const groups = {};
+        dataSource.forEach(item => {
+            const type = item.pluginType;
+            if (!groups[type]) {
+                groups[type] = [];
+            }
+            groups[type].push(item);
+        });
+        return groups;
+    }
+
+    renderAction = (value, index, record) => {
+        const { locale = {} } = this.props;
+        const canSwitch = !record.critical && !record.exclusive;
+        return (
+            <div>
                 <Button
-                  type="primary"
-                  style={{ marginLeft: 20 }}
-                  onClick={() => this.queryPluginList()}
+                    type="primary"
+                    text
+                    onClick={() => this.showDetail(record)}
+                    style={{ marginRight: 10 }}
                 >
-                  {locale.refresh || 'Refresh'}
+                    {locale.detail || 'Detail'}
                 </Button>
-              </div>
+                {canSwitch && (
+                    <Button
+                        type={record.enabled ? 'normal' : 'primary'}
+                        text
+                        warning={record.enabled}
+                        onClick={() => this.updatePluginStatus(record)}
+                    >
+                        {record.enabled ? locale.disable || 'Disable' : locale.enable || 'Enable'}
+                    </Button>
+                )}
             </div>
+        );
+    };
 
-            <Table
-              dataSource={filteredDataSource}
-              locale={{ empty: locale.pubNoData || 'No Data' }}
-            >
-              <Column title={locale.pluginName || 'Plugin Name'} dataIndex="pluginName" />
-              <Column
-                title={locale.pluginType || 'Plugin Type'}
-                dataIndex="pluginType"
-                cell={val => locale[val] || val}
-              />
-              <Column
-                title={locale.status || 'Status'}
-                dataIndex="enabled"
-                cell={val => (
-                  <span className={`plugin-status-tag ${val ? 'enabled' : 'disabled'}`}>
-                    {val ? locale.enabled || 'Enabled' : locale.disabled || 'Disabled'}
-                  </span>
-                )}
-              />
-              <Column
-                title={locale.critical || 'Key Plugin'}
-                dataIndex="critical"
-                cell={val => (
-                  <div className="status-dot-cell">
-                    <span className={`status-dot ${val ? 'active' : 'inactive'}`} />
-                    <span>{val ? locale.yes || 'Yes' : locale.no || 'No'}</span>
-                  </div>
-                )}
-              />
-              <Column
-                title={locale.availableNodes || 'Available Nodes'}
-                dataIndex="availableNodeCount"
-                cell={(val, index, record) => (
-                  <div className="status-dot-cell">
-                    <span className={`status-dot ${val > 0 ? 'active' : 'inactive'}`} />
-                    <span>{`${val} / ${record.totalNodeCount}`}</span>
-                  </div>
-                )}
-              />
-              <Column title={locale.operation || 'Operation'} cell={this.renderAction} />
-            </Table>
-          </div>
+    renderTypeCards() {
+        const { locale = {} } = this.props;
+        const { expandedTypes, detailVisible, currentPluginId } = this.state;
+        const groups = this.groupByType();
+        const types = Object.keys(groups);
 
-          <PluginDetail
-            visible={detailVisible}
-            pluginId={currentPluginId}
-            onClose={this.closeDetail}
-            onSuccess={() => this.queryPluginList()}
-            locale={locale}
-          />
-        </Loading>
-      </div>
-    );
-  }
+        if (types.length === 0) {
+            return (
+                <div className="plugin-empty">
+                    {locale.pubNoData || 'No Data'}
+                </div>
+            );
+        }
+
+        return (
+            <div className="plugin-type-list">
+                {types.map(type => {
+                    const plugins = groups[type];
+                    const enabledCount = plugins.filter(p => p.enabled).length;
+                    const iconType = PLUGIN_TYPE_ICONS[type] || 'appstore';
+                    const expanded = !!expandedTypes[type];
+                    return (
+                        <div key={type} className="plugin-type-section">
+                            <div
+                                className={`plugin-type-card ${expanded ? 'expanded' : ''}`}
+                                onClick={() => this.toggleType(type)}
+                            >
+                                <div className="plugin-type-card-icon">
+                                    <Icon type={iconType} size="xl" />
+                                </div>
+                                <div className="plugin-type-card-body">
+                                    <div className="plugin-type-card-title">
+                                        {locale[type] || type}
+                                    </div>
+                                    <div className="plugin-type-card-meta">
+                                        <span className="meta-total">
+                                            {plugins.length} {locale.pluginCount || 'plugins'}
+                                        </span>
+                                        <span className="meta-separator">·</span>
+                                        <span className="meta-enabled">
+                                            {enabledCount} {locale.enabled || 'Enabled'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="plugin-type-card-arrow">
+                                    <Icon
+                                        type={expanded ? 'arrow-down' : 'arrow-right'}
+                                        size="xs"
+                                    />
+                                </div>
+                            </div>
+                            {expanded && (
+                                <div className="plugin-type-table">
+                                    <Table
+                                        dataSource={plugins}
+                                        locale={{ empty: locale.pubNoData || 'No Data' }}
+                                    >
+                                        <Column
+                                            title={locale.pluginName || 'Plugin Name'}
+                                            dataIndex="pluginName"
+                                        />
+                                        <Column
+                                            title={locale.status || 'Status'}
+                                            dataIndex="enabled"
+                                            cell={val => (
+                                                <span
+                                                    className={`plugin-status-tag ${
+                                                        val ? 'enabled' : 'disabled'
+                                                    }`}
+                                                >
+                                                    {val
+                                                        ? locale.enabled || 'Enabled'
+                                                        : locale.disabled || 'Disabled'}
+                                                </span>
+                                            )}
+                                        />
+                                        <Column
+                                            title={locale.critical || 'Key Plugin'}
+                                            dataIndex="critical"
+                                            cell={val => (
+                                                <div className="status-dot-cell">
+                                                    <span
+                                                        className={`status-dot ${
+                                                            val ? 'active' : 'inactive'
+                                                        }`}
+                                                    />
+                                                    <span>
+                                                        {val
+                                                            ? locale.yes || 'Yes'
+                                                            : locale.no || 'No'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        />
+                                        <Column
+                                            title={locale.availableNodes || 'Available Nodes'}
+                                            dataIndex="availableNodeCount"
+                                            cell={(val, index, record) => (
+                                                <div className="status-dot-cell">
+                                                    <span
+                                                        className={`status-dot ${
+                                                            val > 0 ? 'active' : 'inactive'
+                                                        }`}
+                                                    />
+                                                    <span>{`${val} / ${record.totalNodeCount}`}</span>
+                                                </div>
+                                            )}
+                                        />
+                                        <Column
+                                            title={locale.operation || 'Operation'}
+                                            cell={this.renderAction}
+                                        />
+                                    </Table>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+
+                <PluginDetail
+                    visible={detailVisible}
+                    pluginId={currentPluginId}
+                    onClose={this.closeDetail}
+                    onSuccess={() => this.queryPluginList()}
+                    locale={locale}
+                />
+            </div>
+        );
+    }
+
+    render() {
+        const { locale = {} } = this.props;
+
+        return (
+            <div className="main-container plugin-management">
+                <Loading
+                    shape="flower"
+                    style={{ position: 'relative', width: '100%' }}
+                    visible={this.state.loading}
+                    tip="Loading..."
+                    color="#333"
+                >
+                    <PageTitle title={locale.pluginManagement || 'Plugin Management'} />
+
+                    <div className="plugin-list-card">
+                        {this.renderTypeCards()}
+                    </div>
+                </Loading>
+            </div>
+        );
+    }
 }
 
 export default PluginList;

@@ -86,6 +86,8 @@ const I18N_CONF = {
     pluginName: '插件名称',
     pluginType: '插件类型',
     pluginTypeAll: '全部类型',
+    pluginCount: '个插件',
+    back: '返回',
     enabled: '已启用',
     disabled: '已禁用',
     critical: '关键插件',

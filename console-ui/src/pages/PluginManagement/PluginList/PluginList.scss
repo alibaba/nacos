@@ -11,6 +11,108 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
 
+  .plugin-type-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .plugin-type-section {
+    border: 1px solid #e6ebf1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .plugin-type-card {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+
+    &:hover {
+      background: #f7f9fc;
+    }
+
+    &.expanded {
+      border-bottom: 1px solid #e6ebf1;
+    }
+  }
+
+  .plugin-type-table {
+    padding: 0 12px 12px;
+  }
+
+  .plugin-type-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: #f0f5ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+    color: #1890ff;
+  }
+
+  .plugin-type-card-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .plugin-type-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .plugin-type-card-meta {
+    font-size: 13px;
+    color: #999;
+
+    .meta-separator {
+      margin: 0 6px;
+    }
+
+    .meta-enabled {
+      color: #52c41a;
+    }
+  }
+
+  .plugin-type-card-arrow {
+    color: #bbb;
+    margin-left: 12px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+
+  .plugin-type-card:hover .plugin-type-card-arrow {
+    color: #1890ff;
+  }
+
+  .plugin-empty {
+    text-align: center;
+    padding: 60px 0;
+    color: #999;
+    font-size: 14px;
+  }
+
+  .plugin-list-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .plugin-list-type-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+
   .plugin-list-toolbar {
     margin-bottom: 20px;
     display: flex;

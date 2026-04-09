@@ -92,6 +92,8 @@ const I18N_CONF = {
     pluginName: 'Plugin Name',
     pluginType: 'Plugin Type',
     pluginTypeAll: 'All Types',
+    pluginCount: 'plugins',
+    back: 'Back',
     enabled: 'Enabled',
     disabled: 'Disabled',
     critical: 'Critical',

@@ -799,7 +799,8 @@
     "typeVisibility": "Visibility",
     "availableNodes": "Available Nodes",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "pluginCount": "plugins"
   },
   "authority": {
     "title": "Authority Control",

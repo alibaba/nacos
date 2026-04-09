@@ -799,7 +799,8 @@
     "typeVisibility": "可见性",
     "availableNodes": "可用节点",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "pluginCount": "个插件"
   },
   "authority": {
     "title": "权限控制",

@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  Puzzle, RotateCcw,
+  Puzzle, RotateCcw, Shield, Database, FileEdit, Lock, Activity,
+  Cloud, Settings2, Eye, Bot, HardDrive, ChevronRight, ChevronDown,
 } from 'lucide-react';
 
 import { pluginApi } from '@/api/plugin';
@@ -18,9 +19,6 @@ import {
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
 // Known plugin type i18n keys
@@ -37,17 +35,27 @@ const PLUGIN_TYPE_KEYS: Record<string, string> = {
   'visibility': 'plugin.typeVisibility',
 };
 
+const PLUGIN_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  'auth': Shield,
+  'datasource-dialect': Database,
+  'config-change': FileEdit,
+  'encryption': Lock,
+  'trace': Activity,
+  'environment': Cloud,
+  'control': Settings2,
+  'visibility': Eye,
+  'ai-pipeline': Bot,
+  'ai-storage': HardDrive,
+};
+
 export default function PluginManagementPage() {
   const { t } = useTranslation();
 
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all');
+  const [expandedTypes, setExpandedTypes] = useState<Record<string, boolean>>({});
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedPlugin, setSelectedPlugin] = useState<PluginInfo | null>(null);
-
-  // Derive plugin types from data
-  const pluginTypes = [...new Set(plugins.map((p) => p.pluginType))].sort();
 
   const getTypeLabel = (type: string) => {
     const key = PLUGIN_TYPE_KEYS[type];
@@ -57,8 +65,7 @@ export default function PluginManagementPage() {
   const fetchPlugins = useCallback(async () => {
     setLoading(true);
     try {
-      const typeParam = filterType === 'all' ? undefined : filterType;
-      const response = await pluginApi.list(typeParam);
+      const response = await pluginApi.list(undefined);
       const body = response as unknown as { data: PluginInfo[] };
       setPlugins(body.data || []);
     } catch {
@@ -66,7 +73,7 @@ export default function PluginManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterType]);
+  }, []);
 
   useEffect(() => {
     fetchPlugins();
@@ -89,9 +96,137 @@ export default function PluginManagementPage() {
 
   const canSwitch = (plugin: PluginInfo) => !plugin.critical && !plugin.exclusive;
 
-  const filteredPlugins = filterType === 'all'
-    ? plugins
-    : plugins.filter((p) => p.pluginType === filterType);
+  const toggleType = (type: string) => {
+    setExpandedTypes(prev => ({ ...prev, [type]: !prev[type] }));
+  };
+
+  // Group plugins by type
+  const groupedPlugins = plugins.reduce<Record<string, PluginInfo[]>>((acc, plugin) => {
+    const type = plugin.pluginType;
+    if (!acc[type]) {
+      acc[type] = [];
+    }
+    acc[type].push(plugin);
+    return acc;
+  }, {});
+
+  const renderTypeCards = () => {
+    const types = Object.keys(groupedPlugins).sort();
+
+    if (loading) {
+      return (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          ))}
+        </div>
+      );
+    }
+
+    if (types.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Puzzle className="h-10 w-10 mb-3 opacity-40" />
+          <p className="text-lg">{t('plugin.noPlugins')}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-3">
+        {types.map((type) => {
+          const items = groupedPlugins[type];
+          const enabledCount = items.filter((p) => p.enabled).length;
+          const IconComponent = PLUGIN_TYPE_ICONS[type] || Puzzle;
+          const expanded = !!expandedTypes[type];
+          return (
+            <Card key={type} className="py-0 overflow-hidden">
+              <div
+                className={`cursor-pointer transition-colors hover:bg-muted/50 ${expanded ? 'border-b' : ''}`}
+                onClick={() => toggleType(type)}
+              >
+                <CardContent className="py-5 px-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <IconComponent className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm">{getTypeLabel(type)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        <span>{items.length} {t('plugin.pluginCount')}</span>
+                        <span className="mx-1.5">·</span>
+                        <span className="text-emerald-600">{enabledCount} {t('plugin.enabled')}</span>
+                      </div>
+                    </div>
+                    {expanded
+                      ? <ChevronDown className="h-4 w-4 text-muted-foreground/50" />
+                      : <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                    }
+                  </div>
+                </CardContent>
+              </div>
+              {expanded && (
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="pl-6">{t('plugin.pluginName')}</TableHead>
+                        <TableHead>{t('plugin.status')}</TableHead>
+                        <TableHead>{t('plugin.critical')}</TableHead>
+                        <TableHead>{t('plugin.availableNodes')}</TableHead>
+                        <TableHead className="text-right pr-6">{t('common.operation')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((plugin) => (
+                        <TableRow key={plugin.pluginId || `${plugin.pluginType}-${plugin.pluginName}`}>
+                          <TableCell className="pl-6 font-medium">{plugin.pluginName}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {canSwitch(plugin) ? (
+                                <Switch
+                                  checked={plugin.enabled}
+                                  onCheckedChange={() => handleToggleStatus(plugin)}
+                                />
+                              ) : null}
+                              <span className={plugin.enabled ? 'text-emerald-600 text-sm' : 'text-muted-foreground text-sm'}>
+                                {plugin.enabled ? t('plugin.enabled') : t('plugin.disabled')}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {plugin.critical && (
+                              <Badge className="bg-amber-500/15 text-amber-600 border-amber-200 hover:bg-amber-500/15">
+                                {t('plugin.critical')}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">
+                              {plugin.availableNodeCount} / {plugin.totalNodeCount}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right pr-6">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setSelectedPlugin(plugin); setDetailOpen(true); }}
+                            >
+                              {t('common.detail')}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,111 +239,7 @@ export default function PluginManagementPage() {
         </Button>
       </div>
 
-      {/* Filter */}
-      <Card className="py-0">
-        <CardContent className="py-4">
-          <div className="flex items-end gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                {t('plugin.pluginType')}
-              </label>
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('plugin.allTypes')}</SelectItem>
-                  {pluginTypes.map((type) => (
-                    <SelectItem key={type} value={type}>{getTypeLabel(type)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Table */}
-      <Card className="py-0">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-6 space-y-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : filteredPlugins.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Puzzle className="h-10 w-10 mb-3 opacity-40" />
-              <p className="text-lg">{t('plugin.noPlugins')}</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-6">{t('plugin.pluginName')}</TableHead>
-                  <TableHead>{t('plugin.pluginType')}</TableHead>
-                  <TableHead>{t('plugin.status')}</TableHead>
-                  <TableHead>{t('plugin.critical')}</TableHead>
-                  <TableHead>{t('plugin.availableNodes')}</TableHead>
-                  <TableHead className="text-right pr-6">{t('common.operation')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPlugins.map((plugin) => (
-                  <TableRow key={plugin.pluginId || `${plugin.pluginType}-${plugin.pluginName}`}>
-                    <TableCell className="pl-6 font-medium">{plugin.pluginName}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{getTypeLabel(plugin.pluginType)}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {canSwitch(plugin) ? (
-                          <Switch
-                            checked={plugin.enabled}
-                            onCheckedChange={() => handleToggleStatus(plugin)}
-                          />
-                        ) : null}
-                        <span className={plugin.enabled ? 'text-emerald-600 text-sm' : 'text-muted-foreground text-sm'}>
-                          {plugin.enabled ? t('plugin.enabled') : t('plugin.disabled')}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {plugin.critical && (
-                        <Badge className="bg-amber-500/15 text-amber-600 border-amber-200 hover:bg-amber-500/15">
-                          {t('plugin.critical')}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {plugin.availableNodeCount} / {plugin.totalNodeCount}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => { setSelectedPlugin(plugin); setDetailOpen(true); }}
-                      >
-                        {t('common.detail')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Footer */}
-      {filteredPlugins.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {t('plugin.total', { total: filteredPlugins.length })}
-        </div>
-      )}
+      {renderTypeCards()}
 
       {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
