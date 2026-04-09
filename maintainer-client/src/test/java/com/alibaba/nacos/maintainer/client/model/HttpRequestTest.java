@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.maintainer.client.model;
 
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class HttpRequestTest {
     
@@ -56,5 +57,66 @@ class HttpRequestTest {
         assertEquals("value", httpRequest.getParamValues().get("test"));
         assertEquals("value", httpRequest.getHeaders().get("testH"));
         assertEquals("testBody", httpRequest.getBody());
+    }
+    
+    // ========== File Upload Tests ==========
+
+    @Test
+    @DisplayName("isFileUpload with fileBytes should return true")
+    void isFileUpload_withFileBytes_shouldReturnTrue() {
+        byte[] fileBytes = "test file content".getBytes();
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod("POST")
+                .setPath("/upload")
+                .setFileUpload(fileBytes, "test.zip", "file")
+                .build();
+        assertTrue(httpRequest.isFileUpload());
+    }
+
+    @Test
+    @DisplayName("isFileUpload with empty fileBytes should return false")
+    void isFileUpload_withEmptyFileBytes_shouldReturnFalse() {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod("POST")
+                .setPath("/upload")
+                .setFileUpload(new byte[0], "test.zip", "file")
+                .build();
+        assertFalse(httpRequest.isFileUpload());
+    }
+
+    @Test
+    @DisplayName("isFileUpload with null fileBytes should return false")
+    void isFileUpload_withNullFileBytes_shouldReturnFalse() {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod("POST")
+                .setPath("/upload")
+                .setFileUpload(null, "test.zip", "file")
+                .build();
+        assertFalse(httpRequest.isFileUpload());
+    }
+
+    @Test
+    @DisplayName("Builder setFileUpload should set all fields")
+    void builderSetFileUpload_shouldSetAllFields() {
+        byte[] fileBytes = "test file content".getBytes();
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod("POST")
+                .setPath("/upload")
+                .setFileUpload(fileBytes, "test.zip", "file")
+                .build();
+        
+        assertNotNull(httpRequest);
+        assertArrayEquals(fileBytes, httpRequest.getFileBytes());
+        assertEquals("test.zip", httpRequest.getFileName());
+        assertEquals("file", httpRequest.getFileFieldName());
+    }
+
+    @Test
+    @DisplayName("getFileBytes should return byte array")
+    void getFileBytes_shouldReturnByteArray() {
+        byte[] fileBytes = "test content".getBytes();
+        HttpRequest httpRequest = new HttpRequest("POST", "/upload", null, null, null, 
+                new RequestResource(), fileBytes, "test.zip", "file");
+        assertArrayEquals(fileBytes, httpRequest.getFileBytes());
     }
 }
