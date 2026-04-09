@@ -39,6 +39,7 @@ import MagicWandIcon from '../../../components/MagicWandIcon/MagicWandIcon';
 import JSZip from 'jszip';
 import { getLanguageFromFileName } from '../../../utils/languageDetector';
 import { getParams, request } from '@/globalLib';
+import { COPILOT_ENABLED } from '@/constants';
 import {
   fetchPipelineExecutionDetail,
   mapExecutionToPipelineInfo,
@@ -1974,10 +1975,12 @@ class SkillDetail extends React.Component {
                   </Button>
                 </>
               )}
-              <Button onClick={this.handleOptimize}>
-                <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
-                {locale.aiOptimize || 'AI Optimize'}
-              </Button>
+              {localStorage.getItem(COPILOT_ENABLED) === 'true' && (
+                <Button onClick={this.handleOptimize}>
+                  <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
+                  {locale.aiOptimize || 'AI Optimize'}
+                </Button>
+              )}
               <Button warning onClick={this.handleDelete}>
                 <Icon type="delete" /> {locale.delete || 'Delete'}
               </Button>

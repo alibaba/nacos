@@ -66,6 +66,7 @@ import {
 } from '@/components/ui/sheet';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { usePromptStore } from '@/stores/prompt-store';
+import { useServerStore } from '@/stores/server-store';
 import { promptApi } from '@/api/prompt';
 import { cn } from '@/lib/utils';
 import dayjs from 'dayjs';
@@ -103,6 +104,7 @@ export default function PromptDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentNamespace } = useNamespaceStore();
+  const copilotEnabled = useServerStore((s) => s.copilotEnabled);
   const {
     currentGovernance,
     currentVersion: storeVersion,
@@ -817,7 +819,7 @@ export default function PromptDetailPage() {
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 {t('prompt.template')}
               </h2>
-              {isEditingDraft && (
+              {isEditingDraft && copilotEnabled && (
                 <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setOptimizeOpen(true)} disabled={!template.trim()}>
                   <Sparkles className="h-3 w-3" />
                   {t('prompt.aiOptimize')}
@@ -893,10 +895,12 @@ export default function PromptDetailPage() {
                   <Textarea value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder={t('prompt.userInputPlaceholder')} rows={3} className="bg-transparent text-xs resize-none" disabled={debugging} />
                 </div>
                 <div className="flex justify-end">
-                  <Button size="sm" className="h-7 text-xs gap-1.5" onClick={handleStartDebug} disabled={debugging || !userInput.trim()}>
-                    {debugging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                    {debugging ? t('prompt.streaming') : t('prompt.startDebug')}
-                  </Button>
+                  {copilotEnabled && (
+                    <Button size="sm" className="h-7 text-xs gap-1.5" onClick={handleStartDebug} disabled={debugging || !userInput.trim()}>
+                      {debugging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                      {debugging ? t('prompt.streaming') : t('prompt.startDebug')}
+                    </Button>
+                  )}
                 </div>
               </div>
               {debugError && (

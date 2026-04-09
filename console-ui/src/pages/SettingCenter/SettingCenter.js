@@ -28,13 +28,18 @@ import CopilotConfig from './CopilotConfig';
 
 const { Group: RadioGroup } = Radio;
 
-@connect(state => ({ ...state.locale }), { changeLanguage, changeTheme, changeNameShow })
+@connect(state => ({ ...state.locale, copilotEnabled: state.base.copilotEnabled }), {
+  changeLanguage,
+  changeTheme,
+  changeNameShow,
+})
 @ConfigProvider.config
 class SettingCenter extends React.Component {
   static displayName = 'SettingCenter';
 
   static propTypes = {
     locale: PropTypes.object,
+    copilotEnabled: PropTypes.bool,
     changeLanguage: PropTypes.func,
     changeTheme: PropTypes.func,
     changeNameShow: PropTypes.func,
@@ -88,12 +93,12 @@ class SettingCenter extends React.Component {
     changeNameShow(currentNameShow);
   };
 
-  handleCopilotSaveReady = (saveMethod) => {
+  handleCopilotSaveReady = saveMethod => {
     this.copilotSaveConfig = saveMethod;
   };
 
   render() {
-    const { locale = {} } = this.props;
+    const { locale = {}, copilotEnabled } = this.props;
     const themeList = [
       { value: 'light', label: locale.settingLight },
       { value: 'dark', label: locale.settingDark },
@@ -135,10 +140,12 @@ class SettingCenter extends React.Component {
                 onChange={this.newNameShow.bind(this)}
               />
             </div>
-            <div className="setting-checkbox" style={{ flex: '0 0 100%', height: 'auto' }}>
-              <div className="setting-span">{locale.copilotConfigSection || 'Copilot配置'}</div>
-              <CopilotConfig locale={locale} onSaveReady={this.handleCopilotSaveReady} />
-            </div>
+            {copilotEnabled && (
+              <div className="setting-checkbox" style={{ flex: '0 0 100%', height: 'auto' }}>
+                <div className="setting-span">{locale.copilotConfigSection || 'Copilot配置'}</div>
+                <CopilotConfig locale={locale} onSaveReady={this.handleCopilotSaveReady} />
+              </div>
+            )}
           </div>
           <Button type="primary" onClick={this.submit.bind(this)}>
             {locale.settingSubmit}

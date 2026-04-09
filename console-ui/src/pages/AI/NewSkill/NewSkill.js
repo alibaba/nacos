@@ -41,6 +41,7 @@ import MarkdownRenderer from '../../../components/MarkdownRenderer/MarkdownRende
 import MagicWandIcon from '../../../components/MagicWandIcon/MagicWandIcon';
 import { getLanguageFromFileName } from '../../../utils/languageDetector';
 import { getParams, request } from '@/globalLib';
+import { COPILOT_ENABLED } from '@/constants';
 import './NewSkill.scss';
 
 const { Row, Col } = Grid;
@@ -3308,13 +3309,13 @@ class NewSkill extends React.Component {
                 : this.getLocaleValue('createSkill', 'Create Skill')}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {!isEdit && (
+              {!isEdit && localStorage.getItem(COPILOT_ENABLED) === 'true' && (
                 <Button type="primary" onClick={this.handleShowAiGenerate}>
                   <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
                   {this.getLocaleValue('aiGenerate', 'AI生成')}
                 </Button>
               )}
-              {isEdit && (
+              {isEdit && localStorage.getItem(COPILOT_ENABLED) === 'true' && (
                 <Button onClick={this.handleShowOptimizeDialog}>
                   <MagicWandIcon size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />{' '}
                   {this.getLocaleValue('aiOptimize', 'AI 优化')}

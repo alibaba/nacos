@@ -9,6 +9,7 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
+import { useServerStore } from '@/stores/server-store';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,7 @@ export function CreatePromptDialog({
   onSuccess,
 }: CreatePromptDialogProps) {
   const { t } = useTranslation();
+  const copilotEnabled = useServerStore((s) => s.copilotEnabled);
 
   const [promptKey, setPromptKey] = useState('');
   const [description, setDescription] = useState('');
@@ -200,10 +202,12 @@ export function CreatePromptDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>{t('prompt.template')} *</Label>
-              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setOptimizeOpen(true)} disabled={!template.trim()}>
-                <Sparkles className="h-3 w-3" />
-                {t('prompt.aiOptimize')}
-              </Button>
+              {copilotEnabled && (
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setOptimizeOpen(true)} disabled={!template.trim()}>
+                  <Sparkles className="h-3 w-3" />
+                  {t('prompt.aiOptimize')}
+                </Button>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">{t('prompt.templatePlaceholder')}</p>
             <div className="rounded-md border overflow-hidden">

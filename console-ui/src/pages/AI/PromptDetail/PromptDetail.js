@@ -1292,9 +1292,11 @@ class PromptDetail extends React.Component {
                 <Button onClick={this.handleCancelEditDraft}>
                   {locale.cancelEdit || 'Cancel'}
                 </Button>
-                <Button onClick={this.handleOpenOptimizeDialog} disabled={!template}>
-                  {locale.aiOptimize || 'AI Optimize'}
-                </Button>
+                {localStorage.getItem(COPILOT_ENABLED) === 'true' && (
+                  <Button onClick={this.handleOpenOptimizeDialog} disabled={!template}>
+                    {locale.aiOptimize || 'AI Optimize'}
+                  </Button>
+                )}
               </>
             )}
             {isReviewing && (
@@ -1682,24 +1684,26 @@ class PromptDetail extends React.Component {
                   </div>
 
                   {/* Debug Button */}
-                  <div className="debug-actions">
-                    <Button
-                      type="primary"
-                      onClick={this.handleStartDebug}
-                      loading={debugging}
-                      disabled={!userInput || !userInput.trim()}
-                    >
-                      <Icon type="play" style={{ marginRight: 4 }} />
-                      {debugging
-                        ? locale.streaming || '调试中...'
-                        : locale.startDebug || '开始调试'}
-                    </Button>
-                    {(debugThinking || debugContent) && (
-                      <Button onClick={this.handleClearDebug} disabled={debugging}>
-                        {locale.clearResult || '清除结果'}
+                  {localStorage.getItem(COPILOT_ENABLED) === 'true' && (
+                    <div className="debug-actions">
+                      <Button
+                        type="primary"
+                        onClick={this.handleStartDebug}
+                        loading={debugging}
+                        disabled={!userInput || !userInput.trim()}
+                      >
+                        <Icon type="play" style={{ marginRight: 4 }} />
+                        {debugging
+                          ? locale.streaming || '调试中...'
+                          : locale.startDebug || '开始调试'}
                       </Button>
-                    )}
-                  </div>
+                      {(debugThinking || debugContent) && (
+                        <Button onClick={this.handleClearDebug} disabled={debugging}>
+                          {locale.clearResult || '清除结果'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Debug Error */}
                   {debugError && (

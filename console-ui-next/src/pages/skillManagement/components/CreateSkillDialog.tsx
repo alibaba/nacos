@@ -5,6 +5,7 @@ import MDEditor from '@uiw/react-md-editor';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkFrontmatter from 'remark-frontmatter';
+import { useServerStore } from '@/stores/server-store';
 import {
   Sparkles,
   Loader2,
@@ -98,6 +99,7 @@ export function CreateSkillDialog({
   onSuccess,
 }: CreateSkillDialogProps) {
   const { t } = useTranslation();
+  const copilotEnabled = useServerStore((s) => s.copilotEnabled);
 
   // Manual tab state
   const [skillName, setSkillName] = useState('');
@@ -337,10 +339,12 @@ export function CreateSkillDialog({
               <FileText className="h-3.5 w-3.5" />
               {t('skill.manualCreate')}
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex-1 gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" />
-              {t('skill.aiGenerate')}
-            </TabsTrigger>
+            {copilotEnabled && (
+              <TabsTrigger value="ai" className="flex-1 gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                {t('skill.aiGenerate')}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* ===== Manual Tab ===== */}

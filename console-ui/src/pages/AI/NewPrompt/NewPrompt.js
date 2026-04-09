@@ -21,6 +21,7 @@ import PageTitle from 'components/PageTitle';
 import MonacoEditor from '../../../components/MonacoEditor/MonacoEditor';
 import PromptOptimizeDialog from '../PromptOptimizeDialog';
 import { getParams, request } from '@/globalLib';
+import { COPILOT_ENABLED } from '@/constants';
 import './NewPrompt.scss';
 
 @ConfigProvider.config
@@ -302,15 +303,17 @@ class NewPrompt extends React.Component {
                 >
                   <div className="editor-container">
                     <div className="editor-toolbar">
-                      <Button
-                        type="secondary"
-                        size="small"
-                        onClick={this.handleOpenOptimizeDialog}
-                        disabled={!template || !template.trim()}
-                      >
-                        <Icon type="magic" style={{ marginRight: 4 }} />
-                        {locale.aiOptimize || 'AI 优化'}
-                      </Button>
+                      {localStorage.getItem(COPILOT_ENABLED) === 'true' && (
+                        <Button
+                          type="secondary"
+                          size="small"
+                          onClick={this.handleOpenOptimizeDialog}
+                          disabled={!template || !template.trim()}
+                        >
+                          <Icon type="magic" style={{ marginRight: 4 }} />
+                          {locale.aiOptimize || 'AI 优化'}
+                        </Button>
+                      )}
                     </div>
                     <MonacoEditor
                       language="plaintext"

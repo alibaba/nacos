@@ -60,7 +60,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { sidebarCollapsed, toggleSidebar } = useAppStore();
   const { globalAdmin } = useAuthStore();
-  const { version, startupMode, functionMode } = useServerStore();
+  const { version, startupMode, functionMode, copilotEnabled } = useServerStore();
   const { currentNamespace, namespaceShowName } = useNamespaceStore();
   const [platformOpen, setPlatformOpen] = useState(false);
 
@@ -317,17 +317,19 @@ export function Sidebar() {
             {startupMode && ` · ${startupMode}`}
           </div>
         )}
-        <NavLink
-          item={{
-            key: 'settings',
-            label: t('menu.settingCenter'),
-            icon: <Settings size={18} />,
-            path: '/settingCenter',
-          }}
-          collapsed={sidebarCollapsed}
-          active={isActive('/settingCenter')}
-          onClick={() => navTo('/settingCenter')}
-        />
+        {copilotEnabled && (
+          <NavLink
+            item={{
+              key: 'settings',
+              label: t('menu.settingCenter'),
+              icon: <Settings size={18} />,
+              path: '/settingCenter',
+            }}
+            collapsed={sidebarCollapsed}
+            active={isActive('/settingCenter')}
+            onClick={() => navTo('/settingCenter')}
+          />
+        )}
         <button
           onClick={toggleSidebar}
           className="flex w-full items-center justify-center gap-2 rounded-md px-2 py-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"

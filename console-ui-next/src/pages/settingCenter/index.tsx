@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 import client from '@/api/client';
+import { useServerStore } from '@/stores/server-store';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ const QWEN_MODELS = [
 
 export default function SettingCenterPage() {
   const { t } = useTranslation();
+  const copilotEnabled = useServerStore((s) => s.copilotEnabled);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -95,81 +97,83 @@ export default function SettingCenterPage() {
       </div>
 
       {/* Copilot Config Card */}
-      <Card className="py-0">
-        <CardContent className="py-6">
-          {/* Section Header */}
-          <div className="flex items-start gap-3 mb-6">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <Bot className="h-[18px] w-[18px] text-primary" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold leading-none mt-0.5">{t('settings.copilotConfig')}</h2>
-              <p className="text-sm text-muted-foreground mt-1.5">{t('settings.copilotConfigDesc')}</p>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="space-y-6">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2.5">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {/* API Key */}
-              <div className="space-y-2.5">
-                <Label>{t('settings.apiKey')}</Label>
-                <div className="relative">
-                  <Input
-                    type={showApiKey ? 'text' : 'password'}
-                    placeholder={t('settings.apiKeyPlaceholder')}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground">{t('settings.apiKeyHint')}</p>
+      {copilotEnabled && (
+        <Card className="py-0">
+          <CardContent className="py-6">
+            {/* Section Header */}
+            <div className="flex items-start gap-3 mb-6">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Bot className="h-[18px] w-[18px] text-primary" />
               </div>
-
-              {/* Model */}
-              <div className="space-y-2.5">
-                <Label>{t('settings.model')}</Label>
-                <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('settings.modelPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {QWEN_MODELS.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>
-                        <span>{m.label}</span>
-                        <span className="ml-2 text-muted-foreground text-xs">({m.desc})</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div>
+                <h2 className="text-base font-semibold leading-none mt-0.5">{t('settings.copilotConfig')}</h2>
+                <p className="text-sm text-muted-foreground mt-1.5">{t('settings.copilotConfigDesc')}</p>
               </div>
             </div>
-          )}
 
-          {/* Save Action */}
-          <div className="flex justify-end mt-6 pt-5 border-t">
-            <Button onClick={handleSave} disabled={saving || loading} className="gap-2 min-w-[120px]">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? t('common.loading') : t('common.save')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            {loading ? (
+              <div className="space-y-6">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-2.5">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {/* API Key */}
+                <div className="space-y-2.5">
+                  <Label>{t('settings.apiKey')}</Label>
+                  <div className="relative">
+                    <Input
+                      type={showApiKey ? 'text' : 'password'}
+                      placeholder={t('settings.apiKeyPlaceholder')}
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t('settings.apiKeyHint')}</p>
+                </div>
+
+                {/* Model */}
+                <div className="space-y-2.5">
+                  <Label>{t('settings.model')}</Label>
+                  <Select value={model} onValueChange={setModel}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('settings.modelPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {QWEN_MODELS.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>
+                          <span>{m.label}</span>
+                          <span className="ml-2 text-muted-foreground text-xs">({m.desc})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Save Action */}
+            <div className="flex justify-end mt-6 pt-5 border-t">
+              <Button onClick={handleSave} disabled={saving || loading} className="gap-2 min-w-[120px]">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {saving ? t('common.loading') : t('common.save')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -66,6 +66,7 @@ import {
 import { useSkillStore } from '@/stores/skill-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { useServerStore } from '@/stores/server-store';
 import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
@@ -92,6 +93,7 @@ export default function SkillDetailPage() {
   const { currentNamespace } = useNamespaceStore();
   const namespaceId = currentNamespace || 'public';
   const { globalAdmin } = useAuthStore();
+  const copilotEnabled = useServerStore((s) => s.copilotEnabled);
 
   const {
     currentDetail,
@@ -863,15 +865,17 @@ export default function SkillDetailPage() {
                             <Pencil className="h-3 w-3" />
                             {t('skill.editDraft')}
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1.5"
-                            onClick={() => setOptimizeDialogOpen(true)}
-                          >
-                            <Sparkles className="h-3 w-3" />
-                            {t('skill.aiOptimize')}
-                          </Button>
+                          {copilotEnabled && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1.5"
+                              onClick={() => setOptimizeDialogOpen(true)}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              {t('skill.aiOptimize')}
+                            </Button>
+                          )}
                           <div className="h-4 w-px bg-border mx-0.5" />
                           <Button
                             size="sm"

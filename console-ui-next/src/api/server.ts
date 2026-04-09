@@ -12,6 +12,7 @@ export interface ServerState {
   startupMode: string;
   configRetentionDays: number;
   authAdminRequest: boolean;
+  copilotEnabled: boolean;
 }
 
 export const serverApi = {
