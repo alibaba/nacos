@@ -169,12 +169,12 @@ export default function PluginManagementPage() {
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="pl-6">{t('plugin.pluginName')}</TableHead>
-                        <TableHead>{t('plugin.status')}</TableHead>
-                        <TableHead>{t('plugin.critical')}</TableHead>
-                        <TableHead>{t('plugin.availableNodes')}</TableHead>
-                        <TableHead className="text-right pr-6">{t('common.operation')}</TableHead>
+                      <TableRow className="h-9">
+                        <TableHead className="pl-6 w-[30%]">{t('plugin.pluginName')}</TableHead>
+                        <TableHead className="w-[20%]">{t('plugin.status')}</TableHead>
+                        <TableHead className="w-[15%] text-center">{t('plugin.critical')}</TableHead>
+                        <TableHead className="w-[20%] text-center">{t('plugin.availableNodes')}</TableHead>
+                        <TableHead className="w-[15%] text-right pr-6">{t('common.operation')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -194,14 +194,14 @@ export default function PluginManagementPage() {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             {plugin.critical && (
                               <Badge className="bg-amber-500/15 text-amber-600 border-amber-200 hover:bg-amber-500/15">
                                 {t('plugin.critical')}
                               </Badge>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <span className="text-sm">
                               {plugin.availableNodeCount} / {plugin.totalNodeCount}
                             </span>
