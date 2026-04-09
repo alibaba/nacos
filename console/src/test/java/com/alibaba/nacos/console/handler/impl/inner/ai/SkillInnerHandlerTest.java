@@ -149,12 +149,12 @@ class SkillInnerHandlerTest {
         item.setName(SKILL_NAME);
         page.setPageItems(List.of(item));
         when(skillOperationService.listSkills(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("blur"), eq("download_count"),
-                isNull(), isNull(), eq(1), eq(10))).thenReturn(page);
+                isNull(), isNull(), isNull(), eq(1), eq(10))).thenReturn(page);
         
         Page<SkillSummary> result = skillInnerHandler.listSkills(listForm, new AiResourceFilterableForm(), pageForm);
         
         assertEquals(1, result.getTotalCount());
-        verify(skillOperationService).listSkills(NAMESPACE_ID, SKILL_NAME, "blur", "download_count", null, null, 1, 10);
+        verify(skillOperationService).listSkills(NAMESPACE_ID, SKILL_NAME, "blur", "download_count", null, null, null, 1, 10);
     }
     
     @Test

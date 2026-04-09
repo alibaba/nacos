@@ -162,7 +162,7 @@ class SkillRemoteHandlerTest {
         info.setDescription("desc");
         sourcePage.setPageItems(List.of(info));
         when(skillMaintainerService.listSkills(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("blur"), isNull(), isNull(),
-                isNull(), eq(1), eq(10))).thenReturn(sourcePage);
+                isNull(), isNull(), eq(1), eq(10))).thenReturn(sourcePage);
         
         Page<SkillSummary> result = skillRemoteHandler.listSkills(listForm, new AiResourceFilterableForm(), pageForm);
         
@@ -179,7 +179,7 @@ class SkillRemoteHandlerTest {
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
         when(skillMaintainerService.listSkills(eq(NAMESPACE_ID), eq(null), eq(null), isNull(), isNull(), isNull(),
-                eq(1), eq(10))).thenReturn(null);
+                isNull(), eq(1), eq(10))).thenReturn(null);
         
         Page<SkillSummary> result = skillRemoteHandler.listSkills(listForm, new AiResourceFilterableForm(), pageForm);
         
