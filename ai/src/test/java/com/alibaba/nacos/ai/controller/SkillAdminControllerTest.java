@@ -160,7 +160,7 @@ class SkillAdminControllerTest {
         SkillSummary item = new SkillSummary();
         item.setName("test-skill");
         page.setPageItems(Collections.singletonList(item));
-        when(skillOperationService.listSkills(eq("public"), isNull(), isNull(), isNull(), isNull(), isNull(), eq(1),
+        when(skillOperationService.listSkills(eq("public"), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(1),
                 eq(10))).thenReturn(page);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_ADMIN_PATH + "/list")
                 .param("pageNo", "1").param("pageSize", "10");
@@ -180,13 +180,13 @@ class SkillAdminControllerTest {
         SkillSummary item = new SkillSummary();
         item.setName("test-skill");
         page.setPageItems(Collections.singletonList(item));
-        when(skillOperationService.listSkills(eq("public"), isNull(), isNull(), isNull(), eq("alice"), isNull(), eq(1),
+        when(skillOperationService.listSkills(eq("public"), isNull(), isNull(), isNull(), eq("alice"), isNull(), isNull(), eq(1),
                 eq(10))).thenReturn(page);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_ADMIN_PATH + "/list")
                 .param("owner", "alice").param("pageNo", "1").param("pageSize", "10");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
-        verify(skillOperationService).listSkills("public", null, null, null, "alice", null, 1, 10);
+        verify(skillOperationService).listSkills("public", null, null, null, "alice", null, null, 1, 10);
     }
     
     @Test
@@ -195,12 +195,12 @@ class SkillAdminControllerTest {
         page.setTotalCount(0);
         page.setPageItems(Collections.emptyList());
         when(skillOperationService.listSkills(eq("public"), isNull(), isNull(), isNull(), isNull(), eq("PRIVATE"),
-                eq(1), eq(10))).thenReturn(page);
+                isNull(), eq(1), eq(10))).thenReturn(page);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_ADMIN_PATH + "/list")
                 .param("scope", "PRIVATE").param("pageNo", "1").param("pageSize", "10");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
-        verify(skillOperationService).listSkills("public", null, null, null, null, "PRIVATE", 1, 10);
+        verify(skillOperationService).listSkills("public", null, null, null, null, "PRIVATE", null, 1, 10);
     }
     
     @Test
