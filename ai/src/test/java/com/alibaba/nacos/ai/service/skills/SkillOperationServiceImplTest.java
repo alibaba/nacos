@@ -1044,6 +1044,55 @@ class SkillOperationServiceImplTest {
     }
 
     @Test
+    void testListSkillsWithBizTagFilter() throws NacosException {
+        String namespaceId = "test-namespace";
+        Page<AiResource> metaPage = new Page<>();
+        AiResource meta = new AiResource();
+        meta.setName("tagged-skill");
+        meta.setDesc("Skill with tag");
+        meta.setBizTags("[\"retail\"]");
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPageNumber(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        when(aiResourcePersistService.generateLikeArgument(anyString())).thenReturn("%retail%");
+
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, null, null, null,
+                "retail", 1, 10);
+
+        assertNotNull(result);
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("[\"retail\"]", result.getPageItems().get(0).getBizTags());
+        verify(aiResourcePersistService).generateLikeArgument("*retail*");
+    }
+
+    @Test
+    void testListSkillsWithOwnerAndScopeAndBizTagFilters() throws NacosException {
+        String namespaceId = "test-namespace";
+        Page<AiResource> metaPage = new Page<>();
+        AiResource meta = new AiResource();
+        meta.setName("filtered-skill");
+        meta.setDesc("Filtered skill");
+        meta.setBizTags("[\"ops\"]");
+        meta.setOwner("alice");
+        meta.setScope(VisibilityConstants.SCOPE_PUBLIC);
+        metaPage.setPageItems(List.of(meta));
+        metaPage.setTotalCount(1);
+        metaPage.setPageNumber(1);
+        metaPage.setPagesAvailable(1);
+        when(aiResourcePersistService.list(any(), eq(1), eq(10))).thenReturn(metaPage);
+        when(aiResourcePersistService.generateLikeArgument(anyString())).thenReturn("%ops%");
+
+        Page<SkillSummary> result = skillOperationService.listSkills(namespaceId, null, null, "name", "alice",
+                "PUBLIC", "ops", 1, 10);
+
+        assertNotNull(result);
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("filtered-skill", result.getPageItems().get(0).getName());
+    }
+
+    @Test
     void testUpdateBizTagsSuccess() throws NacosException {
         String namespaceId = "test-ns";
         String skillName = "my-skill";

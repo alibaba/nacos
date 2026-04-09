@@ -114,7 +114,9 @@ class AiResourceFilterableFormTest {
         AiResourceFilterableForm form = new AiResourceFilterableForm();
         form.setOwner("bob");
         form.setScope("PRIVATE");
+        form.setBizTag("retail");
         assertEquals("bob", form.getOwner());
         assertEquals("PRIVATE", form.getScope());
+        assertEquals("retail", form.getBizTag());
     }
 }
