@@ -49,31 +49,31 @@ public class McpConfigUtils {
     public static String formatServerVersionInfoDataId(String id) {
         return String.format(Constants.SERVER_VERSION_CONFIG_DATA_ID_TEMPLATE, id);
     }
-    
+
     public static String formatServerSpecInfoDataId(String id, String version) {
         return String.format(Constants.SERVER_SPECIFICATION_CONFIG_DATA_ID_TEMPLATE, id, version);
     }
-    
+
     public static String formatServerToolSpecDataId(String id, String version) {
         return String.format(Constants.SERVER_TOOLS_SPEC_CONFIG_DATA_ID_TEMPLATE, id, version);
     }
-    
+
     public static String formatServerResourceSpecDataId(String id, String version) {
         return String.format(Constants.SERVER_RESOURCE_SPEC_CONFIG_DATA_ID_TEMPLATE, id, version);
     }
-    
+
     public static String formatServerNameTagBlurSearchValue(String serverName) {
         return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + Constants.ALL_PATTERN + serverName + Constants.ALL_PATTERN;
     }
-    
+
     public static String formatServerNameTagAccurateSearchValue(String serverName) {
         return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX +  serverName;
     }
-    
+
     public static boolean isConfigFound(ConfigQueryChainResponse.ConfigQueryStatus status) {
         return ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL.equals(status);
     }
-    
+
     public static boolean isConfigNotFound(ConfigQueryChainResponse.ConfigQueryStatus status) {
         return ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND.equals(status);
     }

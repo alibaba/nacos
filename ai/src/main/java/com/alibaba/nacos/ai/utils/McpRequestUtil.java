@@ -42,9 +42,9 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class McpRequestUtil {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(McpRequestUtil.class);
-    
+
     /**
      * Parse Mcp detail request form to {@link McpServerBasicInfo}.
      *
@@ -61,7 +61,7 @@ public class McpRequestUtil {
         }
         return result;
     }
-    
+
     /**
      * Parse Mcp tools request form to {@link McpTool}.
      *
@@ -76,7 +76,7 @@ public class McpRequestUtil {
         return McpRequestUtil.deserializeSpec(mcpForm.getToolSpecification(), new TypeReference<>() {
         });
     }
-    
+
     /**
      * Parse Mcp resources request form to {@link McpResourceSpecification}.
      *
@@ -91,7 +91,7 @@ public class McpRequestUtil {
         return McpRequestUtil.deserializeSpec(mcpForm.getResourceSpecification(), new TypeReference<>() {
         });
     }
-    
+
     /**
      * Parse Mcp endpoint request form to {@link McpEndpointSpec}.
      *
@@ -112,7 +112,7 @@ public class McpRequestUtil {
         return McpRequestUtil.deserializeSpec(mcpForm.getEndpointSpecification(), new TypeReference<>() {
         });
     }
-    
+
     /**
      * Deserialize spec from json request.
      *
@@ -125,7 +125,7 @@ public class McpRequestUtil {
     public static <T> T deserializeSpec(String spec, TypeReference<T> typeReference) throws NacosApiException {
         return deserializeSpec(spec, typeReference, LOGGER);
     }
-    
+
     /**
      * Deserialize spec from json request.
      *
@@ -147,7 +147,7 @@ public class McpRequestUtil {
                     "serverSpecification or toolSpecification is invalid. Can't be parsed.");
         }
     }
-    
+
     /**
      * Transfer input to McpServiceRef.
      *
@@ -163,7 +163,7 @@ public class McpRequestUtil {
         }
         throw new IllegalArgumentException("input must be instance of McpServiceRef or Map");
     }
-    
+
     /**
      * If request contains valid namespaceId, do nothing. If not, fill default namespaceId.
      *

@@ -39,17 +39,17 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class McpResourceOperationService {
-    
+
     private final ConfigQueryChainService configQueryChainService;
-    
+
     private final ConfigOperationService configOperationService;
-    
+
     public McpResourceOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
     }
-    
+
     /**
      * Create or update mcp server resources. If mcp server resources already exist, will fully replace it.
      *
@@ -64,7 +64,7 @@ public class McpResourceOperationService {
         ConfigFormV3 resourceConfigForm = buildMcpResourceConfigForm(namespaceId, serverBasicInfo, resourceSpecification);
         configOperationService.publishConfig(resourceConfigForm, configRequestInfo, null);
     }
-    
+
     public McpResourceSpecification getMcpResource(String namespaceId, String resourceDescriptionRef) {
         ConfigQueryChainRequest request = buildQueryMcpResourceRequest(namespaceId, resourceDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
@@ -73,12 +73,12 @@ public class McpResourceOperationService {
         }
         return transferToMcpServerResource(response);
     }
-    
+
     public void deleteMcpResource(String namespaceId, String mcpServerId, String version) throws NacosException {
         configOperationService.deleteConfig(McpConfigUtils.formatServerResourceSpecDataId(mcpServerId, version),
                 Constants.MCP_SERVER_RESOURCE_GROUP, namespaceId, null, null, "nacos", null);
     }
-    
+
     private ConfigFormV3 buildMcpResourceConfigForm(String namespaceId, McpServerBasicInfo mcpServerBasicInfo,
             McpResourceSpecification resourceSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
@@ -95,7 +95,7 @@ public class McpResourceOperationService {
         configFormV3.setConfigTags(Constants.MCP_SERVER_CONFIG_MARK);
         return configFormV3;
     }
-    
+
     private ConfigQueryChainRequest buildQueryMcpResourceRequest(String namespaceId, String resourceDescriptionRef) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId(resourceDescriptionRef);
@@ -103,7 +103,7 @@ public class McpResourceOperationService {
         request.setTenant(namespaceId);
         return request;
     }
-    
+
     private McpResourceSpecification transferToMcpServerResource(ConfigQueryChainResponse response) {
         return JacksonUtils.toObj(response.getContent(), new TypeReference<>() {
         });

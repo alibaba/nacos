@@ -26,45 +26,45 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class McpServerDetailInfo extends McpServerBasicInfo {
-    
+
     private List<McpEndpointInfo> backendEndpoints;
-    
+
     private List<McpEndpointInfo> frontendEndpoints;
-    
+
     private McpToolSpecification toolSpec;
-    
+
     private McpResourceSpecification resourceSpec;
-    
+
     private List<ServerVersionDetail> allVersions;
-    
+
     public List<McpEndpointInfo> getBackendEndpoints() {
         return backendEndpoints;
     }
-    
+
     public void setBackendEndpoints(List<McpEndpointInfo> backendEndpoints) {
         this.backendEndpoints = backendEndpoints;
     }
-    
+
     public List<McpEndpointInfo> getFrontendEndpoints() {
         return frontendEndpoints;
     }
-    
+
     public void setFrontendEndpoints(List<McpEndpointInfo> frontendEndpoints) {
         this.frontendEndpoints = frontendEndpoints;
     }
-    
+
     public McpToolSpecification getToolSpec() {
         return toolSpec;
     }
-    
+
     public void setToolSpec(McpToolSpecification toolSpec) {
         this.toolSpec = toolSpec;
     }
-    
+
     public McpResourceSpecification getResourceSpec() {
         return resourceSpec;
     }
-    
+
     public void setResourceSpec(McpResourceSpecification resourceSpec) {
         this.resourceSpec = resourceSpec;
     }

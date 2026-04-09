@@ -29,18 +29,18 @@ import java.io.Serial;
  * @author xiweng.yy
  */
 public class McpDetailForm extends McpForm {
-    
+
     @Serial
     private static final long serialVersionUID = 8016131725604983670L;
-    
+
     private String serverSpecification;
-    
+
     private String toolSpecification;
-    
+
     private String resourceSpecification;
-    
+
     private String endpointSpecification;
-    
+
     @Override
     public void validate() throws NacosApiException {
         fillDefaultValue();
@@ -49,37 +49,37 @@ public class McpDetailForm extends McpForm {
                     "Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
         }
     }
-    
+
     public String getServerSpecification() {
         return serverSpecification;
     }
-    
+
     public void setServerSpecification(String serverSpecification) {
         this.serverSpecification = serverSpecification;
     }
-    
+
     public String getToolSpecification() {
         return toolSpecification;
     }
-    
+
     public void setToolSpecification(String toolSpecification) {
         this.toolSpecification = toolSpecification;
     }
-    
+
     public String getResourceSpecification() {
         return resourceSpecification;
     }
-    
+
     public void setResourceSpecification(String resourceSpecification) {
         this.resourceSpecification = resourceSpecification;
     }
-    
+
     public String getEndpointSpecification() {
         return endpointSpecification;
     }
-    
+
     public void setEndpointSpecification(String endpointSpecification) {
         this.endpointSpecification = endpointSpecification;
     }
-    
+
 }

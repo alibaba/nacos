@@ -57,13 +57,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(Constants.MCP_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class McpAdminController {
-    
+
     private final McpServerOperationService mcpServerOperationService;
-    
+
     public McpAdminController(McpServerOperationService mcpServerOperationService) {
         this.mcpServerOperationService = mcpServerOperationService;
     }
-    
+
     /**
      * List mcp server.
      *
@@ -82,7 +82,7 @@ public class McpAdminController {
                 mcpServerOperationService.listMcpServerWithPage(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(),
                         mcpListForm.getSearch(), pageForm.getPageNo(), pageForm.getPageSize()));
     }
-    
+
     /**
      * Get specified mcp server detail info.
      *
@@ -97,7 +97,7 @@ public class McpAdminController {
         return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(), mcpForm.getMcpId(),
                 mcpForm.getMcpName(), mcpForm.getVersion()));
     }
-    
+
     /**
      * Create new mcp server.
      *
@@ -116,7 +116,7 @@ public class McpAdminController {
                 mcpResources, endpointSpec);
         return Result.success(mcpId);
     }
-    
+
     /**
      * Update existed mcp server.
      *
@@ -139,7 +139,7 @@ public class McpAdminController {
                 mcpResources, endpointSpec, mcpForm.isOverrideExisting());
         return Result.success("ok");
     }
-    
+
     /**
      * Delete existed mcp server.
      *

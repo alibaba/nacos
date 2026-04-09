@@ -34,7 +34,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author xiweng.yy
  */
 public interface AiService extends A2aService {
-    
+
     /**
      * Get mcp server detail info for latest version.
      *
@@ -45,7 +45,7 @@ public interface AiService extends A2aService {
     default McpServerDetailInfo getMcpServer(String mcpName) throws NacosException {
         return getMcpServer(mcpName, null);
     }
-    
+
     /**
      * Get mcp server detail info.
      *
@@ -55,7 +55,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
      */
     McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException;
-    
+
     /**
      * Release new mcp server or release new version of exist mcp server request.
      *
@@ -74,7 +74,7 @@ public interface AiService extends A2aService {
             throws NacosException {
         return releaseMcpServer(serverSpecification, toolSpecification, (McpEndpointSpec) null);
     }
-    
+
     /**
      * Release new mcp server or release new version of exist mcp server request.
      *
@@ -88,7 +88,7 @@ public interface AiService extends A2aService {
             McpResourceSpecification resourceSpecification) throws NacosException {
         return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification, null);
     }
-    
+
     /**
      * Release new mcp server or release new version of exist mcp server request.
      *
@@ -106,7 +106,7 @@ public interface AiService extends A2aService {
      */
     String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
             McpEndpointSpec endpointSpecification) throws NacosException;
-    
+
     /**
      * Release new mcp server or release new version of exist mcp server request.
      *
@@ -120,7 +120,7 @@ public interface AiService extends A2aService {
     String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
             McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
             throws NacosException;
-    
+
     /**
      * Register an endpoint into target mcp server for all version.
      *
@@ -132,7 +132,7 @@ public interface AiService extends A2aService {
     default void registerMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
         registerMcpServerEndpoint(mcpName, address, port, null);
     }
-    
+
     /**
      * Register an endpoint into target mcp server for target version.
      *
@@ -143,7 +143,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     void registerMcpServerEndpoint(String mcpName, String address, int port, String version) throws NacosException;
-    
+
     /**
      * Deregister an endpoint from target mcp server for any version.
      *
@@ -158,7 +158,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException;
-    
+
     /**
      * Subscribe mcp server.
      *
@@ -171,7 +171,7 @@ public interface AiService extends A2aService {
             throws NacosException {
         return subscribeMcpServer(mcpName, null, mcpServerListener);
     }
-    
+
     /**
      * Subscribe mcp server.
      *
@@ -183,7 +183,7 @@ public interface AiService extends A2aService {
      */
     McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
             AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
-    
+
     /**
      * Un-subscribe mcp server.
      *
@@ -195,7 +195,7 @@ public interface AiService extends A2aService {
             throws NacosException {
         unsubscribeMcpServer(mcpName, null, mcpServerListener);
     }
-    
+
     /**
      * Un-subscribe mcp server.
      *
@@ -206,7 +206,7 @@ public interface AiService extends A2aService {
      */
     void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException;
-    
+
     /**
      * Download skill as ZIP byte array by skill name. Defaults to latest version.
      *
@@ -238,9 +238,9 @@ public interface AiService extends A2aService {
      * @throws NacosException if skill not found or query error
      */
     byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException;
-    
+
     // ==================== AgentSpec Management APIs ====================
-    
+
     /**
      * Load agent spec by agent spec name.
      *
@@ -254,7 +254,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if agent spec not found or query error
      */
     AgentSpec loadAgentSpec(String agentSpecName) throws NacosException;
-    
+
     /**
      * Subscribe agent spec.
      *
@@ -265,7 +265,7 @@ public interface AiService extends A2aService {
      */
     AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException;
-    
+
     /**
      * Un-subscribe agent spec.
      *
@@ -275,9 +275,9 @@ public interface AiService extends A2aService {
      */
     void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException;
-    
+
     // ==================== Prompt Management APIs ====================
-    
+
     /**
      * Get prompt by prompt key.
      *
@@ -286,7 +286,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if prompt not found or query error
      */
     Prompt getPrompt(String promptKey) throws NacosException;
-    
+
     /**
      * Get prompt by prompt key and target version.
      *
@@ -296,7 +296,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if prompt not found or query error
      */
     Prompt getPromptByVersion(String promptKey, String version) throws NacosException;
-    
+
     /**
      * Get prompt by prompt key and target label.
      *
@@ -306,7 +306,7 @@ public interface AiService extends A2aService {
      * @throws NacosException if prompt not found or query error
      */
     Prompt getPromptByLabel(String promptKey, String label) throws NacosException;
-    
+
     /**
      * Subscribe prompt changes.
      *
@@ -319,7 +319,7 @@ public interface AiService extends A2aService {
      */
     Prompt subscribePrompt(String promptKey, String version, String label,
             AbstractNacosPromptListener promptListener) throws NacosException;
-    
+
     /**
      * Un-subscribe prompt changes.
      *
@@ -331,12 +331,12 @@ public interface AiService extends A2aService {
      */
     void unsubscribePrompt(String promptKey, String version, String label,
             AbstractNacosPromptListener promptListener) throws NacosException;
-    
+
     /**
      * Shutdown the AI service and close resources.
      *
      * @throws NacosException exception.
      */
     void shutdown() throws NacosException;
-    
+
 }

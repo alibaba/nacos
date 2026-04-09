@@ -48,20 +48,20 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class McpResourceOperationServiceTest {
-    
+
     @Mock
     private ConfigQueryChainService configQueryChainService;
-    
+
     @Mock
     private ConfigOperationService configOperationService;
-    
+
     private McpResourceOperationService resourceOperationService;
-    
+
     @BeforeEach
     void setUp() {
         resourceOperationService = new McpResourceOperationService(configQueryChainService, configOperationService);
     }
-    
+
     @Test
     void refreshMcpResource() throws NacosException {
         McpServerBasicInfo serverBasicInfo = getMcpServerBasicInfo();
@@ -70,7 +70,7 @@ class McpResourceOperationServiceTest {
                 resourceSpecification);
         verify(configOperationService).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class), isNull());
     }
-    
+
     @Test
     void getMcpResource() {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
@@ -84,7 +84,7 @@ class McpResourceOperationServiceTest {
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, resourceRef);
         assertNotNull(actual);
     }
-    
+
     @Test
     void getMcpResourceNotFound() {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
@@ -97,7 +97,7 @@ class McpResourceOperationServiceTest {
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, resourceRef);
         assertNull(actual);
     }
-    
+
     @Test
     void deleteMcpResource() throws NacosException {
         String id = UUID.randomUUID().toString();
@@ -106,7 +106,7 @@ class McpResourceOperationServiceTest {
                 Constants.MCP_SERVER_RESOURCE_GROUP, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos",
                 null);
     }
-    
+
     private McpServerBasicInfo getMcpServerBasicInfo() {
         String id = UUID.randomUUID().toString();
         McpServerBasicInfo serverBasicInfo = new McpServerBasicInfo();
@@ -121,7 +121,7 @@ class McpResourceOperationServiceTest {
         serverBasicInfo.setVersionDetail(serverVersionDetail);
         return serverBasicInfo;
     }
-    
+
     private McpResourceSpecification getMcpResourceSpecification() {
         McpResourceSpecification resourceSpecification = new McpResourceSpecification();
         HashMap<String, Object> resource = new HashMap<>();

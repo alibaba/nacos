@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReleaseMcpServerRequestTest extends BasicRequestTest {
-    
+
     @Test
     void testSerialize() throws Exception {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -73,7 +73,7 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
         assertTrue(json.contains(String.format("\"protocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
         assertTrue(json.contains(String.format("\"frontProtocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
     }
-    
+
     @Test
     void testDeserialize() throws Exception {
         String json =
