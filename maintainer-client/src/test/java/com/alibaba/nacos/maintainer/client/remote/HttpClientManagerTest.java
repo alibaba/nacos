@@ -19,6 +19,7 @@ package com.alibaba.nacos.maintainer.client.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
