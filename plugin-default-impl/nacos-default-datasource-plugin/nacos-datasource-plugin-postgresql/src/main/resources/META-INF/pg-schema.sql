@@ -554,3 +554,35 @@ CREATE UNIQUE INDEX "uk_ai_resource_ver_ns_name_type_ver" ON "ai_resource_versio
 CREATE INDEX "idx_ai_resource_ver_name" ON "ai_resource_version" USING btree ("name");
 CREATE INDEX "idx_ai_resource_ver_status" ON "ai_resource_version" USING btree ("status");
 CREATE INDEX "idx_ai_resource_ver_gmt_modified" ON "ai_resource_version" USING btree ("gmt_modified");
+
+-- ----------------------------
+-- Table structure for pipeline_execution since 3.2.0
+-- ----------------------------
+CREATE TABLE "pipeline_execution" (
+    "execution_id"  varchar(64)  NOT NULL,
+    "resource_type" varchar(32)  NOT NULL,
+    "resource_name" varchar(256) NOT NULL,
+    "namespace_id"  varchar(128) DEFAULT NULL,
+    "version"       varchar(64)  DEFAULT NULL,
+    "status"        varchar(32)  NOT NULL,
+    "pipeline"      text         NOT NULL,
+    "create_time"   bigint       NOT NULL,
+    "update_time"   bigint       NOT NULL
+);
+
+COMMENT ON TABLE "pipeline_execution" IS 'AI资源发布审核Pipeline执行记录';
+
+COMMENT ON COLUMN "pipeline_execution"."execution_id"  IS '执行ID';
+COMMENT ON COLUMN "pipeline_execution"."resource_type" IS '资源类型';
+COMMENT ON COLUMN "pipeline_execution"."resource_name" IS '资源名称';
+COMMENT ON COLUMN "pipeline_execution"."namespace_id"  IS '命名空间ID';
+COMMENT ON COLUMN "pipeline_execution"."version"       IS '版本';
+COMMENT ON COLUMN "pipeline_execution"."status"        IS '执行状态';
+COMMENT ON COLUMN "pipeline_execution"."pipeline"      IS 'pipeline节点结果JSON';
+COMMENT ON COLUMN "pipeline_execution"."create_time"   IS '创建时间';
+COMMENT ON COLUMN "pipeline_execution"."update_time"   IS '修改时间';
+
+-- ----------------------------
+-- Primary Key structure for table pipeline_execution
+-- ----------------------------
+ALTER TABLE "pipeline_execution" ADD CONSTRAINT "pipeline_execution_pkey" PRIMARY KEY ("execution_id");
