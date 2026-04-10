@@ -357,7 +357,9 @@ class DefaultParamCheckerTest {
     @Test
     @DisplayName("checkAgentNameFormat with illegal characters should fail")
     void testCheckAgentNameFormatIllegalCharacters() {
-        ParamCheckResponse actual = paramChecker.checkAgentNameFormat("agent@name#invalid");
+        // agentNamePattern is "^[\\x20-\\x7E]+$" - only printable ASCII allowed
+        // Chinese characters are outside ASCII range and should fail
+        ParamCheckResponse actual = paramChecker.checkAgentNameFormat("agent名字invalid");
         assertFalse(actual.isSuccess());
         assertEquals("Param 'agentName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
     }

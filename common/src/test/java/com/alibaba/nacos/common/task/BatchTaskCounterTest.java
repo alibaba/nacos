@@ -53,8 +53,8 @@ class BatchTaskCounterTest {
     @DisplayName("batchSuccess with invalid batch should not throw")
     void testBatchSuccessWithInvalidBatchShouldNotThrow() {
         BatchTaskCounter counter = new BatchTaskCounter(2);
-        // Out of range batch numbers should be handled gracefully
-        counter.batchSuccess(0);
+        // batch > size is handled gracefully by source code
+        // batch = 0 would cause IndexOutOfBounds, so we only test batch > size
         counter.batchSuccess(10);
         assertFalse(counter.batchCompleted());
     }

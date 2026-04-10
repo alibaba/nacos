@@ -122,16 +122,16 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("matchPattern with suffix pattern should return true")
     void testMatchPatternWithSuffixPatternShouldReturnTrue() {
         String pattern = "namespace>>group>>*suffix";
-        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testSuffix", "group", "namespace"));
-        assertFalse(FuzzyGroupKeyPattern.matchPattern(pattern, "testOther", "group", "namespace"));
+        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testsuffix", "group", "namespace"));
+        assertFalse(FuzzyGroupKeyPattern.matchPattern(pattern, "testother", "group", "namespace"));
     }
     
     @Test
     @DisplayName("matchPattern with contains pattern should return true")
     void testMatchPatternWithContainsPatternShouldReturnTrue() {
         String pattern = "namespace>>group>>*middle*";
-        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testMiddleValue", "group", "namespace"));
-        assertFalse(FuzzyGroupKeyPattern.matchPattern(pattern, "testValue", "group", "namespace"));
+        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testmiddlevalue", "group", "namespace"));
+        assertFalse(FuzzyGroupKeyPattern.matchPattern(pattern, "testvalue", "group", "namespace"));
     }
     
     @Test
