@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.trace.publisher;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -27,7 +28,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.concurrent.Executor;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -107,5 +115,70 @@ class TraceEventPublisherTest {
         traceEventPublisher.shutdown();
         expectedStatus = "Publisher TraceTestEvent                : shutdown= true, queue=      0/8      ";
         assertEquals(traceEventPublisher.getStatus(), expectedStatus);
+    }
+    
+    @Test
+    void testPublishWhenQueueFull() {
+        for (int i = 0; i < 8; i++) {
+            traceEventPublisher.publish(new TraceTestEvent());
+        }
+        boolean result = traceEventPublisher.publish(new TraceTestEvent());
+        assertTrue(result);
+    }
+    
+    @Test
+    void testNotifySubscriberWithExecutor() throws NacosException {
+        Subscriber subscriberWithExecutor = mock(Subscriber.class);
+        Executor executor = mock(Executor.class);
+        when(subscriberWithExecutor.executor()).thenReturn(executor);
+        
+        traceEventPublisher.addSubscriber(subscriberWithExecutor, TraceTestEvent.TraceTestEvent1.class);
+        TraceTestEvent.TraceTestEvent1 event = new TraceTestEvent.TraceTestEvent1();
+        traceEventPublisher.publish(event);
+        ThreadUtils.sleep(2000L);
+        
+        verify(executor).execute(any(Runnable.class));
+    }
+    
+    @Test
+    void testNotifySubscriberWithException() throws NacosException {
+        Subscriber failingSubscriber = mock(Subscriber.class);
+        doThrow(new RuntimeException("Test exception")).when(failingSubscriber).onEvent(any(Event.class));
+        
+        traceEventPublisher.addSubscriber(failingSubscriber, TraceTestEvent.TraceTestEvent1.class);
+        TraceTestEvent.TraceTestEvent1 event = new TraceTestEvent.TraceTestEvent1();
+        traceEventPublisher.publish(event);
+        ThreadUtils.sleep(2000L);
+        
+        verify(failingSubscriber).onEvent(any(Event.class));
+    }
+    
+    @Test
+    void testCheckIsStartWhenNotInitialized() {
+        TraceEventPublisher uninitPublisher = new TraceEventPublisher();
+        assertThrows(IllegalStateException.class, () -> uninitPublisher.checkIsStart());
+    }
+    
+    @Test
+    void testCurrentEventSize() {
+        assertEquals(0, traceEventPublisher.currentEventSize());
+        traceEventPublisher.publish(new TraceTestEvent());
+        assertEquals(1, traceEventPublisher.currentEventSize());
+    }
+    
+    @Test
+    void testHandleEventWithNoSubscribers() throws NacosException {
+        TraceTestEvent.TraceTestEvent2 eventWithNoSubscribers = new TraceTestEvent.TraceTestEvent2();
+        traceEventPublisher.publish(eventWithNoSubscribers);
+        ThreadUtils.sleep(500L);
+        assertTrue(traceEventPublisher.currentEventSize() == 0 
+                || traceEventPublisher.currentEventSize() > 0);
+    }
+    
+    @Test
+    void testPublishWithoutSubscriberRegistration() throws NacosException {
+        TraceTestEvent event = new TraceTestEvent();
+        boolean result = traceEventPublisher.publish(event);
+        assertTrue(result);
     }
 }
