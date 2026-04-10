@@ -205,7 +205,7 @@ class SkillRemoteHandlerTest {
         form.setSkillName(SKILL_NAME);
         form.setBasedOnVersion("v1");
         form.prepareCreateDraftRequest();
-        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull())).thenReturn("v2");
+        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull(), isNull())).thenReturn("v2");
         
         String result = skillRemoteHandler.createDraft(form);
         
