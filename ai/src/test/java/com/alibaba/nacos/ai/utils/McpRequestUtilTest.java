@@ -36,15 +36,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpRequestUtilTest {
-
+    
     private static final String MCP_SERVER_SPEC_OLD = "{\"protocol\":\"stdio\",\"name\":\"nacos-mcp-server\","
             + "\"description\":\"nacos local mcp server(test version)\",\"version\":\"0.1.0\",\"enabled\":true,\"localServerConfig\":{}}";
-
+    
     private static final String MCP_SERVER_SPEC_NEW =
             "{\"protocol\":\"stdio\",\"frontProtocol\":\"stdio\",\"name\":\"nacos-mcp-server\","
                     + "\"id\":\"\",\"description\":\"nacos local mcp server(test version)\",\"versionDetail\":{\"version\":\"1.0.0\"},"
                     + "\"enabled\":true,\"localServerConfig\":{}}'";
-
+    
     private static final String MCP_TOOL_SPEC =
             "{\"tools\":[{\"name\":\"list_namespace\",\"description\":\"list namespace in nacos\","
                 + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"description\":\"aaa\"}}},"
@@ -53,9 +53,9 @@ class McpRequestUtilTest {
                     + "\"templates\":{\"json-go-tamplate\":{\"templateType\":\"string\",\"requestTemplate\":{\"url\":\"\",\"method\":\"GET\","
                     + "\"headers\":[],\"argsToJsonBody\":false,\"argsToUrlParam\":true,\"argsToFormBody\":true,\"body\":\"string\"},"
                     + "\"responseTemplate\":{\"body\":\"string\"}}}}}}";
-
+    
     private static final String MCP_ENDPOINT_SPEC = "{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\",\"port\":8848}}";
-
+    
     private static final String MCP_RESOURCE_SPEC =
             "{\"resources\":[{\"name\":\"readme\",\"uri\":\"file:///README.md\",\"description\":\"test resource\"}]}";
 
@@ -72,7 +72,7 @@ class McpRequestUtilTest {
         assertTrue(actual.isEnabled());
         assertTrue(actual.getLocalServerConfig().isEmpty());
     }
-
+    
     @Test
     void parseMcpServerBasicInfoWithNewData() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -87,7 +87,7 @@ class McpRequestUtilTest {
         assertTrue(actual.isEnabled());
         assertTrue(actual.getLocalServerConfig().isEmpty());
     }
-
+    
     @Test
     void parseMcpServerBasicInfoWithNewDataNoName() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -103,7 +103,7 @@ class McpRequestUtilTest {
         assertTrue(actual.isEnabled());
         assertTrue(actual.getLocalServerConfig().isEmpty());
     }
-
+    
     @Test
     void parseMcpServerBasicInfoWithWrongData() {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -111,13 +111,13 @@ class McpRequestUtilTest {
         assertThrows(NacosApiException.class, () -> McpRequestUtil.parseMcpServerBasicInfo(mcpForm),
                 "serverSpecification or toolSpecification is invalid. Can't be parsed.");
     }
-
+    
     @Test
     void parseMcpToolsWithoutToolSpec() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
         assertNull(McpRequestUtil.parseMcpTools(mcpForm));
     }
-
+    
     @Test
     void parseMcpToolsWithWrongData() {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -125,7 +125,7 @@ class McpRequestUtilTest {
         assertThrows(NacosApiException.class, () -> McpRequestUtil.parseMcpTools(mcpForm),
                 "serverSpecification or toolSpecification is invalid. Can't be parsed.");
     }
-
+    
     @Test
     void parseMcpToolsSuccess() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -143,7 +143,7 @@ class McpRequestUtilTest {
         assertTrue(actual.getToolsMeta().get("list_namespace").isEnabled());
         assertNotNull(actual.getToolsMeta().get("list_namespace").getTemplates());
     }
-
+    
     @Test
     void parseMcpResourcesWithoutResourceSpec() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -168,7 +168,7 @@ class McpRequestUtilTest {
         mcpForm.setEndpointSpecification(MCP_ENDPOINT_SPEC);
         assertNull(McpRequestUtil.parseMcpEndpointSpec(mcpServerBasicInfo, mcpForm));
     }
-
+    
     @Test
     void parseMcpEndpointSpecWithoutSpec() {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
@@ -177,7 +177,7 @@ class McpRequestUtilTest {
                 () -> McpRequestUtil.parseMcpEndpointSpec(mcpServerBasicInfo, new McpDetailForm()),
                 "request parameter `endpointSpecification` is required if mcp server type not `local`.");
     }
-
+    
     @Test
     void parseMcpEndpointSpecSuccess() throws NacosApiException {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
@@ -190,14 +190,14 @@ class McpRequestUtilTest {
         assertEquals("127.0.0.1", actual.getData().get("address"));
         assertEquals("8848", actual.getData().get("port"));
     }
-
+    
     @Test
     void transferToMcpServiceRefForMcpServiceRef() {
         McpServiceRef mcpServiceRef = new McpServiceRef();
         McpServiceRef actual = McpRequestUtil.transferToMcpServiceRef(mcpServiceRef);
         assertEquals(mcpServiceRef, actual);
     }
-
+    
     @Test
     void transferToMcpServiceRefForMap() {
         Map<String, String> input = new HashMap<>();
@@ -209,7 +209,7 @@ class McpRequestUtilTest {
         assertEquals("testGroup", actual.getGroupName());
         assertEquals("testService", actual.getServiceName());
     }
-
+    
     @Test
     void transferToMcpServiceRefForOther() {
         assertThrows(IllegalArgumentException.class, () -> McpRequestUtil.transferToMcpServiceRef(new Object()));

@@ -92,27 +92,27 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
  * @author xiweng.yy
  */
 public class AiGrpcClient implements AiClientProxy {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AiGrpcClient.class);
-
+    
     private final String namespaceId;
-
+    
     private final String uuid;
-
+    
     private final Long requestTimeout;
-
+    
     private final RpcClient rpcClient;
-
+    
     private final AbstractServerListManager serverListManager;
-
+    
     private final AiGrpcRedoService redoService;
 
     private final NacosClientProperties properties;
 
     private SecurityProxy securityProxy;
-
+    
     private NacosMcpServerCacheHolder mcpServerCacheHolder;
-
+    
     private NacosAgentCardCacheHolder agentCardCacheHolder;
 
     private ScheduledThreadPoolExecutor executorService;
@@ -126,7 +126,7 @@ public class AiGrpcClient implements AiClientProxy {
         this.redoService = new AiGrpcRedoService(properties, this);
         this.properties = properties;
     }
-
+    
     private RpcClient buildRpcClient(NacosClientProperties properties) {
         Map<String, String> labels = new HashMap<>(3);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
@@ -136,7 +136,7 @@ public class AiGrpcClient implements AiClientProxy {
                 .createGrpcClientConfig(properties.asProperties(), labels);
         return RpcClientFactory.createClient(uuid, ConnectionType.GRPC, grpcClientConfig);
     }
-
+    
     /**
      * Start the grpc client.
      *
@@ -163,7 +163,7 @@ public class AiGrpcClient implements AiClientProxy {
         this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0,
                 SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
-
+    
     /**
      * Do query mcp server by mcpId and version.
      *
@@ -184,7 +184,7 @@ public class AiGrpcClient implements AiClientProxy {
         QueryMcpServerResponse response = requestToServer(request, QueryMcpServerResponse.class);
         return response.getMcpServerDetailInfo();
     }
-
+    
     /**
      * Query prompt by version/label/latest.
      *
@@ -197,7 +197,7 @@ public class AiGrpcClient implements AiClientProxy {
     public Prompt queryPrompt(String promptKey, String version, String label) throws NacosException {
         return queryPrompt(promptKey, version, label, null);
     }
-
+    
     /**
      * Query prompt by version/label/latest with optional md5.
      *
@@ -261,7 +261,7 @@ public class AiGrpcClient implements AiClientProxy {
         ReleaseMcpServerResponse response = requestToServer(request, ReleaseMcpServerResponse.class);
         return response.getMcpId();
     }
-
+    
     /**
      * Register endpoint to target mcp server and cached to redo service.
      *
@@ -282,7 +282,7 @@ public class AiGrpcClient implements AiClientProxy {
         redoService.cachedMcpServerEndpointForRedo(mcpName, address, port, version);
         doRegisterMcpServerEndpoint(mcpName, address, port, version);
     }
-
+    
     /**
      * Actual do Register endpoint to target mcp server.
      *
@@ -304,7 +304,7 @@ public class AiGrpcClient implements AiClientProxy {
         requestToServer(request, McpServerEndpointResponse.class);
         redoService.mcpServerEndpointRegistered(mcpName);
     }
-
+    
     /**
      * Deregister endpoint from target mcp server and cached to redo service.
      *
@@ -322,7 +322,7 @@ public class AiGrpcClient implements AiClientProxy {
         redoService.mcpServerEndpointDeregister(mcpName);
         doDeregisterMcpServerEndpoint(mcpName, address, port);
     }
-
+    
     /**
      * Actual do deregister endpoint from target mcp server.
      *
@@ -341,7 +341,7 @@ public class AiGrpcClient implements AiClientProxy {
         requestToServer(request, McpServerEndpointResponse.class);
         redoService.mcpServerEndpointDeregistered(mcpName);
     }
-
+    
     /**
      * Subscribe mcp server latest version.
      *
@@ -369,7 +369,7 @@ public class AiGrpcClient implements AiClientProxy {
         }
         return cachedServer;
     }
-
+    
     /**
      * Un-subscribe mcp server.
      *
@@ -384,7 +384,7 @@ public class AiGrpcClient implements AiClientProxy {
         }
         mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName, version);
     }
-
+    
     /**
      * Get agent card with nacos extension detail with target version.
      *
@@ -408,7 +408,7 @@ public class AiGrpcClient implements AiClientProxy {
         QueryAgentCardResponse response = requestToServer(request, QueryAgentCardResponse.class);
         return response.getAgentCardDetailInfo();
     }
-
+    
     /**
      * Release new agent card or new version.
      *
@@ -440,7 +440,7 @@ public class AiGrpcClient implements AiClientProxy {
         request.setSetAsLatest(setAsLatest);
         requestToServer(request, ReleaseAgentCardResponse.class);
     }
-
+    
     /**
      * Register agent endpoint into agent.
      *
@@ -457,7 +457,7 @@ public class AiGrpcClient implements AiClientProxy {
         redoService.cachedAgentEndpointForRedo(agentName, AgentEndpointWrapper.wrap(endpoint));
         doRegisterAgentEndpoint(agentName, endpoint);
     }
-
+    
     /**
      * Batch Register agent endpoint into agent.
      *
@@ -474,7 +474,7 @@ public class AiGrpcClient implements AiClientProxy {
         redoService.cachedAgentEndpointForRedo(agentName, AgentEndpointWrapper.wrap(endpoints));
         doRegisterAgentEndpoint(agentName, endpoints);
     }
-
+    
     /**
      * Actual do register agent endpoint into agent.
      *
@@ -491,7 +491,7 @@ public class AiGrpcClient implements AiClientProxy {
         requestToServer(request, AgentEndpointResponse.class);
         redoService.agentEndpointRegistered(agentName);
     }
-
+    
     /**
      * Actual do batch register agent endpoint into agent.
      *
@@ -507,7 +507,7 @@ public class AiGrpcClient implements AiClientProxy {
         requestToServer(request, AgentEndpointResponse.class);
         redoService.agentEndpointRegistered(agentName);
     }
-
+    
     /**
      * Deregister agent endpoint from agent.
      *
@@ -524,7 +524,7 @@ public class AiGrpcClient implements AiClientProxy {
         redoService.agentEndpointDeregister(agentName);
         doDeregisterAgentEndpoint(agentName, endpoint);
     }
-
+    
     /**
      * Actual do deregister agent endpoint from agent.
      *
@@ -541,7 +541,7 @@ public class AiGrpcClient implements AiClientProxy {
         requestToServer(request, AgentEndpointResponse.class);
         redoService.agentEndpointDeregistered(agentName);
     }
-
+    
     /**
      * Subscribe agent card.
      *
@@ -569,7 +569,7 @@ public class AiGrpcClient implements AiClientProxy {
         }
         return cachedAgentCard;
     }
-
+    
     /**
      * Un-subscribe agent card.
      *
@@ -584,11 +584,11 @@ public class AiGrpcClient implements AiClientProxy {
         }
         agentCardCacheHolder.removeAgentCardUpdateTask(agentName, version);
     }
-
+    
     public boolean isEnable() {
         return rpcClient.isRunning();
     }
-
+    
     /**
      * Determine whether nacos-server supports the capability.
      *
@@ -598,7 +598,7 @@ public class AiGrpcClient implements AiClientProxy {
     public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
         return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
     }
-
+    
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
         Response response = null;
         try {
@@ -615,7 +615,7 @@ public class AiGrpcClient implements AiClientProxy {
                 throw new NacosException(400,
                         String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));
             }
-
+            
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 // If the 403 login operation is triggered, refresh the accessToken of the client
@@ -637,12 +637,12 @@ public class AiGrpcClient implements AiClientProxy {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
     }
-
+    
     private Map<String, String> getSecurityHeaders(String namespace, String mcpName) {
         RequestResource resource = buildRequestResource(namespace, mcpName);
         return securityProxy.getIdentityContext(resource);
     }
-
+    
     private RequestResource buildRequestResource(String namespaceId, String mcpName) {
         RequestResource.Builder builder = RequestResource.aiBuilder();
         builder.setNamespace(namespaceId);
@@ -650,7 +650,7 @@ public class AiGrpcClient implements AiClientProxy {
         builder.setResource(null == mcpName ? StringUtils.EMPTY : mcpName);
         return builder.build();
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         rpcClient.shutdown();

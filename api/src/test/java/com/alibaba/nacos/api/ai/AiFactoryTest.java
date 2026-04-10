@@ -28,23 +28,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AiFactoryTest {
-
+    
     @BeforeEach
     void setUp() {
         NacosAiService.IS_THROW_EXCEPTION.set(false);
     }
-
+    
     @AfterEach
     void tearDown() {
         NacosAiService.IS_THROW_EXCEPTION.set(false);
     }
-
+    
     @Test
     void createAiServiceWithException() {
         NacosAiService.IS_THROW_EXCEPTION.set(true);
         assertThrows(NacosException.class, () -> AiFactory.createAiService(new Properties()));
     }
-
+    
     @Test
     void createAiServiceSuccess() throws NacosException {
         NacosAiService.IS_THROW_EXCEPTION.set(false);

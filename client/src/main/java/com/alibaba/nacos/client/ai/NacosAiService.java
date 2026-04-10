@@ -77,29 +77,29 @@ import java.util.Set;
  * @author xiweng.yy
  */
 public class NacosAiService implements AiService {
-
+    
     private static final Logger LOGGER = LogUtils.logger(NacosAiService.class);
-
+    
     private final String namespaceId;
-
+    
     private final AiGrpcClient grpcClient;
-
+    
     private final AiHttpClientProxy httpProxy;
-
+    
     private final AiClientProxy aiClientProxy;
-
+    
     private final NacosMcpServerCacheHolder mcpServerCacheHolder;
-
+    
     private final NacosAgentCardCacheHolder agentCardCacheHolder;
-
+    
     private final NacosPromptCacheHolder promptCacheHolder;
-
+    
     private final NacosAgentSpecCacheHolder agentSpecCacheHolder;
-
+    
     private final AiChangeNotifier aiChangeNotifier;
 
     private final ConfigService skillConfigService;
-
+    
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
@@ -122,7 +122,7 @@ public class NacosAiService implements AiService {
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
-
+    
     private String initNamespace(NacosClientProperties properties) {
         String tempNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         if (StringUtils.isBlank(tempNamespace)) {
@@ -130,7 +130,7 @@ public class NacosAiService implements AiService {
         }
         return tempNamespace;
     }
-
+    
     private void start() throws NacosException {
         this.grpcClient.start(this.mcpServerCacheHolder, this.agentCardCacheHolder);
         NotifyCenter.registerToPublisher(McpServerChangedEvent.class, 16384);
@@ -138,7 +138,7 @@ public class NacosAiService implements AiService {
         NotifyCenter.registerToPublisher(AgentSpecChangedEvent.class, 16384);
         NotifyCenter.registerSubscriber(this.aiChangeNotifier);
     }
-
+    
     @Override
     public McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
@@ -147,7 +147,7 @@ public class NacosAiService implements AiService {
         }
         return grpcClient.queryMcpServer(mcpName, version);
     }
-
+    
     @Override
     public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
             McpEndpointSpec endpointSpecification) throws NacosException {
@@ -174,7 +174,7 @@ public class NacosAiService implements AiService {
         return grpcClient.releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
                 endpointSpecification);
     }
-
+    
     @Override
     public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
             throws NacosException {
@@ -188,7 +188,7 @@ public class NacosAiService implements AiService {
         instance.validate();
         grpcClient.registerMcpServerEndpoint(mcpName, address, port, version);
     }
-
+    
     @Override
     public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
@@ -201,7 +201,7 @@ public class NacosAiService implements AiService {
         instance.validate();
         grpcClient.deregisterMcpServerEndpoint(mcpName, address, port);
     }
-
+    
     @Override
     public McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
             AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
@@ -221,7 +221,7 @@ public class NacosAiService implements AiService {
         }
         return result;
     }
-
+    
     @Override
     public void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException {
@@ -238,7 +238,7 @@ public class NacosAiService implements AiService {
             grpcClient.unsubscribeMcpServer(mcpName, version);
         }
     }
-
+    
     @Override
     public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
             throws NacosException {
@@ -248,7 +248,7 @@ public class NacosAiService implements AiService {
         }
         return grpcClient.getAgentCard(agentName, version, registrationType);
     }
-
+    
     @Override
     public void releaseAgentCard(AgentCard agentCard, String registrationType, boolean setAsLatest)
             throws NacosException {
@@ -264,7 +264,7 @@ public class NacosAiService implements AiService {
         }
         grpcClient.releaseAgentCard(agentCard, registrationType, setAsLatest);
     }
-
+    
     @Override
     public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
         if (StringUtils.isBlank(agentName)) {
@@ -274,7 +274,7 @@ public class NacosAiService implements AiService {
         validateAgentEndpoint(endpoint);
         grpcClient.registerAgentEndpoint(agentName, endpoint);
     }
-
+    
     @Override
     public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
         if (StringUtils.isBlank(agentName)) {
@@ -284,7 +284,7 @@ public class NacosAiService implements AiService {
         validateAgentEndpoint(endpoints);
         grpcClient.registerAgentEndpoints(agentName, endpoints);
     }
-
+    
     @Override
     public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
         if (StringUtils.isBlank(agentName)) {
@@ -294,7 +294,7 @@ public class NacosAiService implements AiService {
         validateAgentEndpoint(endpoint);
         grpcClient.deregisterAgentEndpoint(agentName, endpoint);
     }
-
+    
     @Override
     public AgentCardDetailInfo subscribeAgentCard(String agentName, String version,
             AbstractNacosAgentCardListener agentCardListener) throws NacosException {
@@ -314,7 +314,7 @@ public class NacosAiService implements AiService {
         }
         return result;
     }
-
+    
     @Override
     public void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
             throws NacosException {
@@ -331,7 +331,7 @@ public class NacosAiService implements AiService {
             grpcClient.unsubscribeAgentCard(agentName, version);
         }
     }
-
+    
     private void validateAgentEndpoint(Collection<AgentEndpoint> endpoints) throws NacosApiException {
         if (null == endpoints || endpoints.isEmpty()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -348,7 +348,7 @@ public class NacosAiService implements AiService {
                             String.join(",", versions)));
         }
     }
-
+    
     private void validateAgentEndpoint(AgentEndpoint endpoint) throws NacosApiException {
         if (null == endpoint) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -363,14 +363,14 @@ public class NacosAiService implements AiService {
         instance.setPort(endpoint.getPort());
         instance.validate();
     }
-
+    
     private static void validateAgentCardField(String fieldName, String fieldValue) throws NacosApiException {
         if (StringUtils.isEmpty(fieldValue)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `agentCard." + fieldName + "` not present");
         }
     }
-
+    
     @Override
     public byte[] downloadSkillZip(String skillName) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
@@ -379,7 +379,7 @@ public class NacosAiService implements AiService {
         }
         return httpProxy.downloadSkillZip(skillName, null, null);
     }
-
+    
     @Override
     public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
@@ -388,7 +388,7 @@ public class NacosAiService implements AiService {
         }
         return httpProxy.downloadSkillZip(skillName, version, null);
     }
-
+    
     @Override
     public byte[] downloadSkillZipByLabel(String skillName, String label) throws NacosException {
         if (StringUtils.isBlank(skillName)) {
@@ -397,9 +397,9 @@ public class NacosAiService implements AiService {
         }
         return httpProxy.downloadSkillZip(skillName, null, label);
     }
-
+    
     // ==================== AgentSpec Methods ====================
-
+    
     @Override
     public AgentSpec loadAgentSpec(String agentSpecName) throws NacosException {
         if (StringUtils.isBlank(agentSpecName)) {
@@ -408,7 +408,7 @@ public class NacosAiService implements AiService {
         }
         return agentSpecCacheHolder.queryAgentSpec(agentSpecName);
     }
-
+    
     @Override
     public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException {
@@ -420,7 +420,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `agentSpecListener` can't be empty or null");
         }
-
+        
         AgentSpecListenerInvoker listenerInvoker = new AgentSpecListenerInvoker(agentSpecListener);
         aiChangeNotifier.registerListener(agentSpecName, listenerInvoker);
         AgentSpec result = agentSpecCacheHolder.subscribeAgentSpec(agentSpecName);
@@ -429,7 +429,7 @@ public class NacosAiService implements AiService {
         }
         return result;
     }
-
+    
     @Override
     public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException {
@@ -446,9 +446,9 @@ public class NacosAiService implements AiService {
             agentSpecCacheHolder.unsubscribeAgentSpec(agentSpecName);
         }
     }
-
+    
     // ==================== Prompt Methods ====================
-
+    
     @Override
     public Prompt getPrompt(String promptKey) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
@@ -457,7 +457,7 @@ public class NacosAiService implements AiService {
         }
         return getPromptByVersion(promptKey, null);
     }
-
+    
     @Override
     public Prompt getPromptByVersion(String promptKey, String version) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
@@ -469,7 +469,7 @@ public class NacosAiService implements AiService {
         }
         return aiClientProxy.queryPrompt(promptKey, version, null, null);
     }
-
+    
     @Override
     public Prompt getPromptByLabel(String promptKey, String label) throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
@@ -482,7 +482,7 @@ public class NacosAiService implements AiService {
         }
         return aiClientProxy.queryPrompt(promptKey, null, label, null);
     }
-
+    
     @Override
     public Prompt subscribePrompt(String promptKey, String version, String label,
             AbstractNacosPromptListener promptListener) throws NacosException {
@@ -494,7 +494,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `promptListener` can't be null");
         }
-
+        
         PromptListenerInvoker listenerInvoker = new PromptListenerInvoker(promptListener);
         aiChangeNotifier.registerListener(promptKey, version, label, listenerInvoker);
         Prompt result = promptCacheHolder.subscribePrompt(promptKey, version, label);
@@ -503,7 +503,7 @@ public class NacosAiService implements AiService {
         }
         return result;
     }
-
+    
     @Override
     public void unsubscribePrompt(String promptKey, String version, String label,
             AbstractNacosPromptListener promptListener) throws NacosException {
@@ -520,7 +520,7 @@ public class NacosAiService implements AiService {
             promptCacheHolder.unsubscribePrompt(promptKey, version, label);
         }
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();

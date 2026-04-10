@@ -53,22 +53,22 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpServerRequest, ReleaseMcpServerResponse> {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseMcpServerRequest.class);
-
+    
     private final McpServerOperationService mcpServerOperationService;
-
+    
     private final McpEndpointOperationService endpointOperationService;
-
+    
     private final McpServerIndex mcpServerIndex;
-
+    
     public ReleaseMcpServerRequestHandler(McpServerOperationService mcpServerOperationService,
             McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex) {
         this.mcpServerOperationService = mcpServerOperationService;
         this.endpointOperationService = endpointOperationService;
         this.mcpServerIndex = mcpServerIndex;
     }
-
+    
     @Override
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
@@ -84,7 +84,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
             return response;
         }
     }
-
+    
     private void checkParameters(ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo serverSpecification = request.getServerSpecification();
         if (null == serverSpecification) {
@@ -102,7 +102,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
                     "Required parameter `serverSpecification.versionDetail.version` not present");
         }
     }
-
+    
     private ReleaseMcpServerResponse doHandler(ReleaseMcpServerRequest request, RequestMeta meta)
             throws NacosException {
         String namespaceId = request.getNamespaceId();
@@ -142,7 +142,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         }
         return response;
     }
-
+    
     private String createNewMcpServer(String namespaceId, ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = request.getServerSpecification();
         McpToolSpecification toolSpecification = request.getToolSpecification();
@@ -153,7 +153,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         return mcpServerOperationService.createMcpServer(namespaceId, mcpServerBasicInfo, toolSpecification,
                 resourceSpecification, endpointSpecification);
     }
-
+    
     private void createNewVersionMcpServer(String namespaceId, ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = request.getServerSpecification();
         McpToolSpecification toolSpecification = request.getToolSpecification();
@@ -165,9 +165,9 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         boolean isPublish = isLatest != null && isLatest;
         mcpServerOperationService.updateMcpServer(namespaceId, isPublish, mcpServerBasicInfo, toolSpecification,
                 resourceSpecification, endpointSpecification, Boolean.FALSE);
-
+        
     }
-
+    
     private McpEndpointSpec autoBuildMcpEndpointSpecification(String namespaceId,
             McpServerBasicInfo mcpServerBasicInfo) {
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(mcpServerBasicInfo.getProtocol())) {
@@ -177,7 +177,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         return autoBuildMcpEndpointSpecification(namespaceId, mcpServerBasicInfo.getName(),
                 mcpServerBasicInfo.getVersionDetail().getVersion());
     }
-
+    
     private McpEndpointSpec autoBuildMcpEndpointSpecification(String namespaceId, String mcpName, String version) {
         String versionMcpName = mcpName + "::" + version;
         Service service = endpointOperationService.generateService(namespaceId, versionMcpName);

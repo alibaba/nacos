@@ -54,31 +54,31 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReleaseMcpServerRequestHandlerTest {
-
+    
     @Mock
     private McpServerOperationService mcpServerOperationService;
-
+    
     @Mock
     private McpEndpointOperationService endpointOperationService;
-
+    
     @Mock
     private McpServerIndex mcpServerIndex;
-
+    
     @Mock
     private RequestMeta meta;
-
+    
     ReleaseMcpServerRequestHandler requestHandler;
-
+    
     @BeforeEach
     void setUp() {
         requestHandler = new ReleaseMcpServerRequestHandler(mcpServerOperationService, endpointOperationService,
                 mcpServerIndex);
     }
-
+    
     @AfterEach
     void tearDown() {
     }
-
+    
     @Test
     void handleWithInvalidParameter() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -100,7 +100,7 @@ class ReleaseMcpServerRequestHandlerTest {
         assertErrorResponse(response, NacosException.INVALID_PARAM,
                 "Required parameter `serverSpecification.versionDetail.version` not present");
     }
-
+    
     @Test
     void handleReleaseExistedServerAndVersion() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -113,7 +113,7 @@ class ReleaseMcpServerRequestHandlerTest {
         assertErrorResponse(response, NacosException.CONFLICT,
                 "Mcp Server test and target version 1.0.0 already exist, do not do release");
     }
-
+    
     @Test
     void handleReleaseNewServerForSse() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -130,7 +130,7 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
     }
-
+    
     @Test
     void handleReleaseNewServerForSseWithSpecifiedEndpoint() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -147,7 +147,7 @@ class ReleaseMcpServerRequestHandlerTest {
         assertEquals(id, response.getMcpId());
         verify(endpointOperationService, never()).generateService(anyString(), anyString());
     }
-
+    
     @Test
     void handleReleaseNewServerForStdio() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -162,7 +162,7 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
     }
-
+    
     @Test
     void handleReleaseNewVersionWithoutLatest() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -181,7 +181,7 @@ class ReleaseMcpServerRequestHandlerTest {
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
                 eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
     }
-
+    
     @Test
     void handleReleaseNewVersionWithoutLatestWithSpecifiedEndpoint() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -200,7 +200,7 @@ class ReleaseMcpServerRequestHandlerTest {
                 eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
         verify(endpointOperationService, never()).generateService(anyString(), anyString());
     }
-
+    
     @Test
     void handleReleaseNewVersionWithLatest() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
@@ -219,7 +219,7 @@ class ReleaseMcpServerRequestHandlerTest {
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
                 eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
     }
-
+    
     @Test
     void handleReleaseWithException() throws NacosException {
         NacosApiException exceptedException = new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
@@ -234,7 +234,7 @@ class ReleaseMcpServerRequestHandlerTest {
             assertEquals(exceptedException, e);
         }
     }
-
+    
     private McpServerBasicInfo buildMockServerSpecification(boolean isStdio, boolean isLatest) {
         McpServerBasicInfo result = new McpServerBasicInfo();
         result.setName("test");
@@ -253,7 +253,7 @@ class ReleaseMcpServerRequestHandlerTest {
         }
         return result;
     }
-
+    
     private McpServerDetailInfo buildMockServerDetail() {
         McpServerDetailInfo result = new McpServerDetailInfo();
         result.setName("test");
@@ -263,7 +263,7 @@ class ReleaseMcpServerRequestHandlerTest {
         result.setId(UUID.randomUUID().toString());
         return result;
     }
-
+    
     private void assertErrorResponse(ReleaseMcpServerResponse response, int code, String message) {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(code, response.getErrorCode());

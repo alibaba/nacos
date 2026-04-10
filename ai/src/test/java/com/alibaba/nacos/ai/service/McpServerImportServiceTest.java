@@ -438,7 +438,7 @@ class McpServerImportServiceTest {
         List<McpServerDetailInfo> servers = new ArrayList<>();
         when(transformService.adaptExternalDataToNacosMcpServerFormat(any())).thenReturn(
                 servers);
-
+        
         // Mock existing server in cache index
         McpServerIndexData data = new McpServerIndexData();
         when(mcpCacheIndex.getMcpServerByName(eq("test-namespace"), eq("Test Server"))).thenReturn(data);

@@ -33,31 +33,31 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
  * @author xiweng.yy
  */
 public class ReleaseMcpServerRequest extends AbstractMcpRequest {
-
+    
     private McpServerBasicInfo serverSpecification;
-
+    
     private McpToolSpecification toolSpecification;
-
+    
     private McpResourceSpecification resourceSpecification;
 
     private McpEndpointSpec endpointSpecification;
-
+    
     public McpServerBasicInfo getServerSpecification() {
         return serverSpecification;
     }
-
+    
     public void setServerSpecification(McpServerBasicInfo serverSpecification) {
         this.serverSpecification = serverSpecification;
     }
-
+    
     public McpToolSpecification getToolSpecification() {
         return toolSpecification;
     }
-
+    
     public void setToolSpecification(McpToolSpecification toolSpecification) {
         this.toolSpecification = toolSpecification;
     }
-
+    
     public McpResourceSpecification getResourceSpecification() {
         return resourceSpecification;
     }
@@ -69,7 +69,7 @@ public class ReleaseMcpServerRequest extends AbstractMcpRequest {
     public McpEndpointSpec getEndpointSpecification() {
         return endpointSpecification;
     }
-
+    
     public void setEndpointSpecification(McpEndpointSpec endpointSpecification) {
         this.endpointSpecification = endpointSpecification;
     }
