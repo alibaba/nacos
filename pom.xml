@@ -280,7 +280,7 @@
                 <configuration>
                     <configLocation>style/NacosCheckStyle.xml</configLocation>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                    <encoding>UTF-8</encoding>
+                    <inputEncoding>UTF-8</inputEncoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**
