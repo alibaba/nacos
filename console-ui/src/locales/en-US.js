@@ -43,6 +43,12 @@ const I18N_CONF = {
     invalidUsernameOrPassword: 'invalid username or password',
     productDesc:
       'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
+    signInWithSSO: 'Sign in with SSO',
+    ssoLoginTip:
+      'Single sign-on is enabled by your administrator. Click the button below to continue to the identity provider.',
+    oidcRedirectFailed: 'Failed to redirect to SSO login page. Please contact your administrator.',
+    getStateFailed: 'Failed to determine authentication method. Please refresh the page.',
+    oidcAuthFailed: 'SSO authentication failed',
   },
   MainLayout: {
     nacosName: 'NACOS',

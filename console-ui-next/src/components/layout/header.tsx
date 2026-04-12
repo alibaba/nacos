@@ -62,7 +62,7 @@ const NAV_LINKS: NavLink[] = [
 export function Header() {
   const { t } = useTranslation();
   const { theme, setTheme, language, setLanguage } = useAppStore();
-  const { username, logout } = useAuthStore();
+  const { username, logout, isOidcUser } = useAuthStore();
   const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
   const { authEnabled } = useServerStore();
 
@@ -179,11 +179,15 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-48">
             <div className="px-2 py-1.5 text-xs text-muted-foreground">{username}</div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-xs">
-              <KeyRound size={14} />
-              {t('header.changePassword')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {!isOidcUser() && (
+              <>
+                <DropdownMenuItem className="gap-2 text-xs">
+                  <KeyRound size={14} />
+                  {t('header.changePassword')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={logout}>
               <LogOut size={14} />
               {t('header.logout')}

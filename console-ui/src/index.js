@@ -201,6 +201,63 @@ class App extends React.Component {
   }
 }
 
+// Handle OIDC Cookie-based authentication (cluster-friendly, no server-side storage)
+(function() {
+  const hash = window.location.hash;
+
+  // Handle error response from OIDC
+  if (hash && hash.includes('error=')) {
+    try {
+      const queryString = hash.split('?')[1];
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        const error = params.get('error');
+        if (error) {
+          console.error('[OIDC] Authentication failed:', decodeURIComponent(error));
+          sessionStorage.setItem('oidcError', decodeURIComponent(error));
+          const newUrl = window.location.href.split('#')[0] + '#/login';
+          window.history.replaceState(null, '', newUrl);
+        }
+      }
+    } catch (e) {
+      console.error('[OIDC] Failed to parse error from URL', e);
+    }
+    return;
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2)
+      return parts
+        .pop()
+        .split(';')
+        .shift();
+    return null;
+  }
+
+  function deleteCookie(name) {
+    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  }
+
+  const accessToken = getCookie('accessToken');
+  const username = getCookie('username');
+
+  if (accessToken && username) {
+    localStorage.setItem(
+      'token',
+      JSON.stringify({
+        accessToken,
+        username: decodeURIComponent(username),
+        globalAdmin: false,
+        oidc: true,
+      })
+    );
+    deleteCookie('accessToken');
+    deleteCookie('username');
+  }
+})();
+
 ReactDOM.render(
   <Provider store={store}>
     <App />

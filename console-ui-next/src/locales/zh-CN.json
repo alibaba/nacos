@@ -25,7 +25,11 @@
     "usernameRequired": "用户名不能为空",
     "productDesc": "一个易于构建 AI Agent 应用的动态服务发现、配置管理和 AI 智能体管理平台",
     "consoleClosed": "控制台已关闭",
-    "consoleClosedDesc": "Nacos 控制台已关闭。"
+    "consoleClosedDesc": "Nacos 控制台已关闭。",
+    "signInWithSSO": "使用 SSO 登录",
+    "ssoLoginTip": "您的管理员已启用单点登录。点击下方按钮跳转到身份提供商完成登录。",
+    "oidcRedirectFailed": "跳转到 SSO 登录页失败，请联系管理员。",
+    "oidcAuthFailed": "SSO 认证失败"
   },
   "menu": {
     "configManagement": "配置管理",

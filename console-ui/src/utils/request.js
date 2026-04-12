@@ -38,6 +38,11 @@ const SESSION_EXPIRED_MESSAGES = [
   'token is empty',
   'token has expired',
   'token signature verification failed',
+  'no valid oidc token found',
+  'token audience validation failed',
+  'token issuer mismatch',
+  'token is not yet valid',
+  'token processing error',
 ];
 
 function goLogin() {

@@ -41,6 +41,11 @@ const I18N_CONF = {
     passwordRequired: '密码不能为空',
     usernameRequired: '用户名不能为空',
     productDesc: '一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台',
+    signInWithSSO: '使用 SSO 登录',
+    ssoLoginTip: '您的管理员已启用单点登录。点击下方按钮跳转到身份提供商完成登录。',
+    oidcRedirectFailed: '跳转到 SSO 登录页失败，请联系管理员。',
+    getStateFailed: '获取认证方式失败，请刷新页面重试。',
+    oidcAuthFailed: 'SSO 认证失败',
   },
   MainLayout: {
     nacosName: 'NACOS',

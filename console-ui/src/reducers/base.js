@@ -33,6 +33,7 @@ const initialState = {
   notice: '',
   consoleUiEnable: '',
   authAdminRequest: '',
+  authSystemType: '',
   copilotEnabled: false,
   guideMsg: '',
   configRetentionDays: 30, // config default retention days is 30
@@ -69,6 +70,7 @@ const getState = () => dispatch =>
           functionMode: res.function_mode,
           loginPageEnabled: res.login_page_enabled,
           authEnabled: res.auth_enabled,
+          authSystemType: res.auth_system_type,
           authAdminRequest: res.auth_admin_request,
           consoleUiEnable: res.console_ui_enabled,
           startupMode: res.startup_mode,

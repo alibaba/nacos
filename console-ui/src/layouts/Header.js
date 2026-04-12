@@ -49,8 +49,17 @@ class Header extends React.Component {
   };
 
   logout = () => {
-    window.localStorage.clear();
-    this.props.history.push('/login');
+    const isOAuth = this.isOAuthUser();
+    window.localStorage.removeItem('token');
+    window.sessionStorage.clear();
+    const contextPath = window.location.pathname.replace(/\/(legacy)(\/.*)?$/, '/') || '/';
+
+    if (isOAuth) {
+      window.location.href = contextPath + 'v1/auth/oidc/logout?redirect=true';
+    } else {
+      window.location.href =
+        window.location.protocol + '//' + window.location.host + contextPath + '#/login';
+    }
   };
 
   changePassword = () => {
@@ -63,6 +72,15 @@ class Header extends React.Component {
   getUsername = () => {
     const token = window.localStorage.getItem('token');
     if (token) {
+      try {
+        const tokenObj = JSON.parse(token);
+        if (tokenObj && tokenObj.username) {
+          return tokenObj.username;
+        }
+      } catch (e) {
+        // not JSON, try JWT
+      }
+
       const [, base64Url = ''] = token.split('.');
       const base64 = base64Url.replace('-', '+').replace('_', '/');
       try {
@@ -74,6 +92,16 @@ class Header extends React.Component {
       }
     }
     return '';
+  };
+
+  isOAuthUser = () => {
+    const token = window.localStorage.getItem('token');
+    try {
+      const tokenObj = JSON.parse(token);
+      return !!(tokenObj && tokenObj.oidc);
+    } catch (e) {
+      return false;
+    }
   };
 
   indexAction = () => {
@@ -125,7 +153,9 @@ class Header extends React.Component {
               <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
                 <Menu>
                   <Menu.Item onClick={this.logout}>{locale.logout}</Menu.Item>
-                  <Menu.Item onClick={this.changePassword}>{locale.changePassword}</Menu.Item>
+                  {!this.isOAuthUser() && (
+                    <Menu.Item onClick={this.changePassword}>{locale.changePassword}</Menu.Item>
+                  )}
                 </Menu>
               </Dropdown>
             )}
@@ -133,11 +163,7 @@ class Header extends React.Component {
               {languageSwitchButton}
             </span>
             {pathname !== '/login' && (
-              <a
-                href="../next/"
-                className="ui-switch-btn"
-                title="Switch to new console"
-              >
+              <a href="../next/" className="ui-switch-btn" title="Switch to new console">
                 &#8599; {locale.newConsole || '新版控制台'}
               </a>
             )}

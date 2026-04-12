@@ -10,6 +10,7 @@ interface ServerState {
   consoleUiEnable: boolean;
   startupMode: string;
   configRetentionDays: number;
+  authSystemType: string;
   authAdminRequest: boolean;
   copilotEnabled: boolean;
   notice: string;
@@ -36,6 +37,7 @@ const initialState: ServerState = {
   consoleUiEnable: true,
   startupMode: '',
   configRetentionDays: 0,
+  authSystemType: '',
   authAdminRequest: false,
   copilotEnabled: false,
   notice: '',
@@ -64,6 +66,7 @@ export const useServerStore = create<ServerStore>((set) => ({
         startup_mode?: string;
         config_retention_days?: string | number;
         auth_admin_request?: string | boolean;
+        auth_system_type?: string;
         copilot_enabled?: string | boolean;
       };
       
@@ -76,6 +79,7 @@ export const useServerStore = create<ServerStore>((set) => ({
         consoleUiEnable: String(data.console_ui_enabled) === 'true',
         startupMode: data.startup_mode || '',
         configRetentionDays: Number(data.config_retention_days) || 0,
+        authSystemType: data.auth_system_type || '',
         authAdminRequest: String(data.auth_admin_request) === 'true',
         copilotEnabled: String(data.copilot_enabled) === 'true',
         loading: false,

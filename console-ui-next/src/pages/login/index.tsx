@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,12 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth-store';
 import { useServerStore } from '@/stores/server-store';
+import { getContextPath } from '@/lib/sse-utils';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, loading: authLoading } = useAuthStore();
-  const { fetchState, fetchGuide, stateLoaded, loginPageEnabled, authAdminRequest, consoleUiEnable, guideMsg } = useServerStore();
+  const { fetchState, fetchGuide, stateLoaded, loginPageEnabled, authAdminRequest, authSystemType, consoleUiEnable, guideMsg } = useServerStore();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -28,6 +29,26 @@ export default function LoginPage() {
     fetchState();
     fetchGuide();
   }, [fetchState, fetchGuide]);
+
+  // Show OIDC error from sessionStorage
+  useEffect(() => {
+    const oidcError = sessionStorage.getItem('oidcError');
+    if (oidcError) {
+      toast.error(`${t('login.oidcAuthFailed')}: ${oidcError}`);
+      sessionStorage.removeItem('oidcError');
+    }
+  }, [t]);
+
+  const handleOidcLogin = () => {
+    try {
+      const loginUrl = `${getContextPath()}v1/auth/oidc/login`;
+      console.log('[OIDC] Redirecting to:', loginUrl);
+      window.location.href = loginUrl;
+    } catch (error) {
+      console.error('[OIDC] Failed to redirect to OIDC login:', error);
+      toast.error(t('login.oidcRedirectFailed'));
+    }
+  };
 
   // Redirect if login page is disabled
   useEffect(() => {
@@ -98,9 +119,27 @@ export default function LoginPage() {
               </div>
             </div>
 
-              {/* Right - Form or Disabled notice */}
+              {/* Right - Form or Disabled notice or OIDC */}
             <div className="flex flex-col justify-center bg-white p-8 md:p-12">
-              {stateLoaded && !consoleUiEnable ? (
+              {stateLoaded && authSystemType === 'oidc' ? (
+                <>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-1">{t('login.login')}</h2>
+                  <p className="text-sm text-gray-500 mb-6">
+                    {t('login.ssoLoginTip')}
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleOidcLogin}
+                    className={cn(
+                      'w-full h-10 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-md shadow-blue-500/25',
+                      'hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-200'
+                    )}
+                  >
+                    <KeyRound size={16} className="mr-2" />
+                    {t('login.signInWithSSO')}
+                  </Button>
+                </>
+              ) : stateLoaded && !consoleUiEnable ? (
                 <>
                   <div className="flex items-center gap-2 mb-4">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100">

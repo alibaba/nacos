@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '@/api';
+import { getContextPath } from '@/lib/sse-utils';
 import type { AxiosError } from 'axios';
 
 interface TokenData {
@@ -12,6 +13,7 @@ interface AuthState {
   token: string | null;
   username: string | null;
   globalAdmin: boolean;
+  oidc: boolean;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
@@ -22,6 +24,7 @@ interface AuthActions {
   logout: () => void;
   loadFromStorage: () => void;
   clearError: () => void;
+  isOidcUser: () => boolean;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -31,6 +34,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   token: null,
   username: null,
   globalAdmin: false,
+  oidc: false,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -55,6 +59,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         token: data.accessToken,
         username: tokenData.username,
         globalAdmin: tokenData.globalAdmin,
+        oidc: false,
         isAuthenticated: true,
         loading: false,
         error: null,
@@ -74,15 +79,22 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: () => {
+    const isOidc = useAuthStore.getState().oidc;
     localStorage.removeItem('token');
+    sessionStorage.clear();
     set({
       token: null,
       username: null,
       globalAdmin: false,
+      oidc: false,
       isAuthenticated: false,
       error: null,
     });
-    window.location.hash = '#/login';
+    if (isOidc) {
+      window.location.href = getContextPath() + 'v1/auth/oidc/logout?redirect=true';
+    } else {
+      window.location.hash = '#/login';
+    }
   },
 
   loadFromStorage: () => {
@@ -90,11 +102,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const tokenStr = localStorage.getItem('token');
       if (tokenStr) {
         const tokenData: TokenData = JSON.parse(tokenStr);
+        const parsed = tokenData as TokenData & { oidc?: boolean };
         set({
-          token: tokenData.accessToken,
-          username: tokenData.username,
-          globalAdmin: tokenData.globalAdmin,
-          isAuthenticated: !!tokenData.accessToken,
+          token: parsed.accessToken,
+          username: parsed.username,
+          globalAdmin: parsed.globalAdmin,
+          oidc: !!parsed.oidc,
+          isAuthenticated: !!parsed.accessToken,
         });
       }
     } catch {
@@ -109,5 +123,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  isOidcUser: (): boolean => {
+    return useAuthStore.getState().oidc;
   },
 }));
