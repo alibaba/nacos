@@ -337,6 +337,18 @@ class ConfigInnerHandlerTest {
             assertEquals(ErrorCode.METADATA_ILLEGAL.getCode(), actual.getCode());
         }
     }
+
+    @Test
+    void importAndPublishConfigWithNullMetadataItem() throws NacosException {
+        ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(new ArrayList<>(), null);
+        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
+            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
+                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            assertEquals(ErrorCode.METADATA_ILLEGAL.getCode(), actual.getCode());
+        }
+    }
     
     @Test
     void importAndPublishConfigWithWrongMetadata() throws NacosException {

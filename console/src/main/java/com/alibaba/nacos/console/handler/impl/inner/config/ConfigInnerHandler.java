@@ -334,8 +334,12 @@ public class ConfigInnerHandler implements ConfigHandler {
     private Result<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
-        String metaData = metaDataItem.getItemData();
         Map<String, Object> failedData = new HashMap<>(4);
+        if (metaDataItem == null) {
+            failedData.put("succCount", 0);
+            return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
+        }
+        String metaData = metaDataItem.getItemData();
         
         ConfigMetadata configMetadata = YamlParserUtil.loadObject(metaData, ConfigMetadata.class);
         if (configMetadata == null || CollectionUtils.isEmpty(configMetadata.getMetadata())) {
