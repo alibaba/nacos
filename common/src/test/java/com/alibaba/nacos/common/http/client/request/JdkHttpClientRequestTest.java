@@ -263,7 +263,6 @@ class JdkHttpClientRequestTest {
         verify(connection).setRequestProperty("Authorization", "Bearer token");
         assertNotNull(response);
     }
-     (test(common): add tests to improve line coverage to 96.47%) (test(common): add tests to improve line coverage to 96.47%)
     private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("conn");
         field.setAccessible(true);
