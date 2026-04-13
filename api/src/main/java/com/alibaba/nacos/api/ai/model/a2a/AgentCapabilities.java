@@ -33,6 +33,13 @@ public class AgentCapabilities {
     
     private Boolean stateTransitionHistory;
     
+    /**
+     * For A2A 1.0.0.
+     *
+     * @since 3.2.1
+     */
+    private Boolean extendedAgentCard;
+    
     private List<AgentExtension> extensions;
     
     public Boolean getStreaming() {
@@ -59,6 +66,14 @@ public class AgentCapabilities {
         this.stateTransitionHistory = stateTransitionHistory;
     }
     
+    public Boolean getExtendedAgentCard() {
+        return extendedAgentCard;
+    }
+    
+    public void setExtendedAgentCard(Boolean extendedAgentCard) {
+        this.extendedAgentCard = extendedAgentCard;
+    }
+    
     public List<AgentExtension> getExtensions() {
         return extensions;
     }
@@ -74,12 +89,12 @@ public class AgentCapabilities {
         }
         AgentCapabilities that = (AgentCapabilities) o;
         return Objects.equals(streaming, that.streaming) && Objects.equals(pushNotifications, that.pushNotifications)
-                && Objects.equals(stateTransitionHistory, that.stateTransitionHistory) && Objects.equals(extensions,
-                that.extensions);
+                && Objects.equals(stateTransitionHistory, that.stateTransitionHistory) && Objects.equals(
+                extendedAgentCard, that.extendedAgentCard) && Objects.equals(extensions, that.extensions);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(streaming, pushNotifications, stateTransitionHistory, extensions);
+        return Objects.hash(streaming, pushNotifications, stateTransitionHistory, extendedAgentCard, extensions);
     }
 }

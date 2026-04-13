@@ -37,6 +37,7 @@ class AgentCapabilitiesTest extends BasicRequestTest {
         agentCapabilities.setStreaming(true);
         agentCapabilities.setPushNotifications(false);
         agentCapabilities.setStateTransitionHistory(true);
+        agentCapabilities.setExtendedAgentCard(true);
         
         // Create extension
         AgentExtension extension = new AgentExtension();
@@ -54,6 +55,7 @@ class AgentCapabilitiesTest extends BasicRequestTest {
         assertTrue(json.contains("\"streaming\":true"));
         assertTrue(json.contains("\"pushNotifications\":false"));
         assertTrue(json.contains("\"stateTransitionHistory\":true"));
+        assertTrue(json.contains("\"extendedAgentCard\":true"));
         assertTrue(json.contains("\"uri\":\"test-uri\""));
         assertTrue(json.contains("\"description\":\"test description\""));
         assertTrue(json.contains("\"required\":true"));
@@ -63,6 +65,7 @@ class AgentCapabilitiesTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"streaming\":true,\"pushNotifications\":false,\"stateTransitionHistory\":true,"
+                + "\"extendedAgentCard\":true,"
                 + "\"extensions\":[{\"uri\":\"test-uri\",\"description\":\"test description\",\"required\":true,"
                 + "\"params\":{\"param1\":\"value1\"}}]}";
         
@@ -71,6 +74,7 @@ class AgentCapabilitiesTest extends BasicRequestTest {
         assertEquals(true, agentCapabilities.getStreaming());
         assertEquals(false, agentCapabilities.getPushNotifications());
         assertEquals(true, agentCapabilities.getStateTransitionHistory());
+        assertEquals(true, agentCapabilities.getExtendedAgentCard());
         assertEquals(1, agentCapabilities.getExtensions().size());
         
         AgentExtension extension = agentCapabilities.getExtensions().get(0);
@@ -86,11 +90,13 @@ class AgentCapabilitiesTest extends BasicRequestTest {
         cap1.setStreaming(true);
         cap1.setPushNotifications(false);
         cap1.setStateTransitionHistory(true);
+        cap1.setExtendedAgentCard(true);
         
         AgentCapabilities cap2 = new AgentCapabilities();
         cap2.setStreaming(true);
         cap2.setPushNotifications(false);
         cap2.setStateTransitionHistory(true);
+        cap2.setExtendedAgentCard(true);
         
         AgentCapabilities cap3 = new AgentCapabilities();
         cap3.setStreaming(false);

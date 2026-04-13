@@ -26,6 +26,13 @@ import java.util.Objects;
  */
 public class AgentCardBasicInfo {
     
+    /**
+     * Legacy field for old A2A protocol compatibility, may be removed in future versions.
+     * Use {@link AgentCard#getSupportedInterfaces()} for A2A 1.0.0.
+     *
+     * @deprecated For old A2A protocol compatibility only.
+     */
+    @Deprecated
     private String protocolVersion;
     
     private String name;

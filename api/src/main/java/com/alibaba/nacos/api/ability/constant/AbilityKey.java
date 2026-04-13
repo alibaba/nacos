@@ -60,6 +60,11 @@ public enum AbilityKey {
             AbilityMode.SERVER),
     
     /**
+     * For AI module A2A AgentCard 1.0 protocol.
+     */
+    SERVER_AGENT_CARD_V1("agentCardV1", "Server whether support A2A AgentCard 1.0 protocol", AbilityMode.SERVER),
+    
+    /**
      * For fuzzy watch naming or config.
      */
     SDK_CLIENT_FUZZY_WATCH("fuzzyWatch", "Client whether support fuzzy watch service or config",

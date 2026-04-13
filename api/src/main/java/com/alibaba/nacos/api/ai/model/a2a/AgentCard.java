@@ -28,11 +28,39 @@ import java.util.Objects;
  */
 public class AgentCard extends AgentCardBasicInfo {
     
+    /**
+     * Legacy field for old A2A protocol compatibility, may be removed in future versions.
+     * Use {@link #supportedInterfaces} for A2A 1.0.0.
+     *
+     * @deprecated For old A2A protocol compatibility only.
+     */
+    @Deprecated
     private String url;
     
+    /**
+     * Legacy field for old A2A protocol compatibility, may be removed in future versions.
+     * Use {@link AgentInterface#getProtocolBinding()} for A2A 1.0.0.
+     *
+     * @deprecated For old A2A protocol compatibility only.
+     */
+    @Deprecated
     private String preferredTransport;
     
+    /**
+     * Legacy field for old A2A protocol compatibility, may be removed in future versions.
+     * Use {@link #supportedInterfaces} for A2A 1.0.0.
+     *
+     * @deprecated For old A2A protocol compatibility only.
+     */
+    @Deprecated
     private List<AgentInterface> additionalInterfaces;
+    
+    /**
+     * For A2A 1.0.0.
+     *
+     * @since 3.2.1
+     */
+    private List<AgentInterface> supportedInterfaces;
     
     private AgentProvider provider;
     
@@ -42,11 +70,32 @@ public class AgentCard extends AgentCardBasicInfo {
     
     private List<Map<String, List<String>>> security;
     
+    /**
+     * For A2A 1.0.0.
+     *
+     * @since 3.2.1
+     */
+    private List<Map<String, List<String>>> securityRequirements;
+    
     private List<String> defaultInputModes;
     
     private List<String> defaultOutputModes;
     
+    /**
+     * Legacy field for old A2A protocol compatibility, may be removed in future versions.
+     * Use {@link AgentCapabilities#getExtendedAgentCard()} for A2A 1.0.0.
+     *
+     * @deprecated For old A2A protocol compatibility only.
+     */
+    @Deprecated
     private Boolean supportsAuthenticatedExtendedCard;
+    
+    /**
+     * For A2A 1.0.0.
+     *
+     * @since 3.2.1
+     */
+    private List<Map<String, Object>> signatures;
     
     public String getUrl() {
         return url;
@@ -70,6 +119,14 @@ public class AgentCard extends AgentCardBasicInfo {
     
     public void setAdditionalInterfaces(List<AgentInterface> additionalInterfaces) {
         this.additionalInterfaces = additionalInterfaces;
+    }
+    
+    public List<AgentInterface> getSupportedInterfaces() {
+        return supportedInterfaces;
+    }
+    
+    public void setSupportedInterfaces(List<AgentInterface> supportedInterfaces) {
+        this.supportedInterfaces = supportedInterfaces;
     }
     
     public AgentProvider getProvider() {
@@ -104,6 +161,14 @@ public class AgentCard extends AgentCardBasicInfo {
         this.security = security;
     }
     
+    public List<Map<String, List<String>>> getSecurityRequirements() {
+        return securityRequirements;
+    }
+    
+    public void setSecurityRequirements(List<Map<String, List<String>>> securityRequirements) {
+        this.securityRequirements = securityRequirements;
+    }
+    
     public List<String> getDefaultInputModes() {
         return defaultInputModes;
     }
@@ -128,6 +193,14 @@ public class AgentCard extends AgentCardBasicInfo {
         this.supportsAuthenticatedExtendedCard = supportsAuthenticatedExtendedCard;
     }
     
+    public List<Map<String, Object>> getSignatures() {
+        return signatures;
+    }
+    
+    public void setSignatures(List<Map<String, Object>> signatures) {
+        this.signatures = signatures;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -142,16 +215,20 @@ public class AgentCard extends AgentCardBasicInfo {
         AgentCard agentCard = (AgentCard) o;
         return super.equals(agentCard) && Objects.equals(url, agentCard.url) && Objects.equals(preferredTransport,
                 agentCard.preferredTransport) && Objects.equals(additionalInterfaces, agentCard.additionalInterfaces)
+                && Objects.equals(supportedInterfaces, agentCard.supportedInterfaces)
                 && Objects.equals(provider, agentCard.provider) && Objects.equals(documentationUrl,
                 agentCard.documentationUrl) && Objects.equals(securitySchemes, agentCard.securitySchemes)
-                && Objects.equals(security, agentCard.security) && Objects.equals(defaultInputModes,
+                && Objects.equals(security, agentCard.security) && Objects.equals(securityRequirements,
+                agentCard.securityRequirements) && Objects.equals(defaultInputModes,
                 agentCard.defaultInputModes) && Objects.equals(defaultOutputModes, agentCard.defaultOutputModes)
-                && Objects.equals(supportsAuthenticatedExtendedCard, agentCard.supportsAuthenticatedExtendedCard);
+                && Objects.equals(supportsAuthenticatedExtendedCard, agentCard.supportsAuthenticatedExtendedCard)
+                && Objects.equals(signatures, agentCard.signatures);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), url, preferredTransport, additionalInterfaces, provider, documentationUrl,
-                securitySchemes, security, defaultInputModes, defaultOutputModes, supportsAuthenticatedExtendedCard);
+        return Objects.hash(super.hashCode(), url, preferredTransport, additionalInterfaces, supportedInterfaces,
+                provider, documentationUrl, securitySchemes, security, securityRequirements, defaultInputModes,
+                defaultOutputModes, supportsAuthenticatedExtendedCard, signatures);
     }
 }

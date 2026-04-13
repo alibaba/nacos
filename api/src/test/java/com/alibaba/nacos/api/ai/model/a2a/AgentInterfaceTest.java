@@ -32,21 +32,31 @@ class AgentInterfaceTest extends BasicRequestTest {
         AgentInterface agentInterface = new AgentInterface();
         agentInterface.setUrl("http://test.com/api");
         agentInterface.setTransport("JSONRPC");
+        agentInterface.setProtocolBinding("JSONRPC");
+        agentInterface.setProtocolVersion("1.0");
+        agentInterface.setTenant("public");
         
         String json = mapper.writeValueAsString(agentInterface);
         assertNotNull(json);
         assertTrue(json.contains("\"url\":\"http://test.com/api\""));
         assertTrue(json.contains("\"transport\":\"JSONRPC\""));
+        assertTrue(json.contains("\"protocolBinding\":\"JSONRPC\""));
+        assertTrue(json.contains("\"protocolVersion\":\"1.0\""));
+        assertTrue(json.contains("\"tenant\":\"public\""));
     }
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"url\":\"http://test.com/api\",\"transport\":\"JSONRPC\"}";
+        String json = "{\"url\":\"http://test.com/api\",\"transport\":\"JSONRPC\",\"protocolBinding\":\"JSONRPC\","
+                + "\"protocolVersion\":\"1.0\",\"tenant\":\"public\"}";
         
         AgentInterface agentInterface = mapper.readValue(json, AgentInterface.class);
         assertNotNull(agentInterface);
         assertEquals("http://test.com/api", agentInterface.getUrl());
         assertEquals("JSONRPC", agentInterface.getTransport());
+        assertEquals("JSONRPC", agentInterface.getProtocolBinding());
+        assertEquals("1.0", agentInterface.getProtocolVersion());
+        assertEquals("public", agentInterface.getTenant());
     }
     
     @Test
@@ -54,10 +64,16 @@ class AgentInterfaceTest extends BasicRequestTest {
         AgentInterface interface1 = new AgentInterface();
         interface1.setUrl("http://test.com/api");
         interface1.setTransport("JSONRPC");
+        interface1.setProtocolBinding("JSONRPC");
+        interface1.setProtocolVersion("1.0");
+        interface1.setTenant("public");
         
         AgentInterface interface2 = new AgentInterface();
         interface2.setUrl("http://test.com/api");
         interface2.setTransport("JSONRPC");
+        interface2.setProtocolBinding("JSONRPC");
+        interface2.setProtocolVersion("1.0");
+        interface2.setTenant("public");
         
         AgentInterface interface3 = new AgentInterface();
         interface3.setUrl("http://other.com/api");
