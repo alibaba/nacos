@@ -64,6 +64,10 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
             username = username.toLowerCase();
         }
         
+        if (username.toUpperCase().startsWith(AuthConstants.LDAP_PREFIX)) {
+            throw new AccessException("user not found!");
+        }
+        
         try {
             return super.authenticate(username, rawPassword);
         } catch (AccessException | UsernameNotFoundException ignored) {
