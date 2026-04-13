@@ -188,7 +188,7 @@ class JdkHttpClientRequestTest {
     @DisplayName("execute with File body should handle file upload")
     void testExecuteFileUpload() throws Exception {
         File testFile = tempDir.resolve("test-upload.txt").toFile();
-        Files.writeString(testFile.toPath(), "test file content");
+        Files.write(testFile.toPath(), "test file content".getBytes(StandardCharsets.UTF_8));
         
         Header header = Header.newInstance();
         HttpClientConfig config = HttpClientConfig.builder().build();
