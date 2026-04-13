@@ -27,6 +27,11 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.core.Authentication;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -100,5 +105,89 @@ class CachedJwtTokenManagerTest {
     void testGetTokenValidityInSeconds() {
         assertTrue(cachedJwtTokenManager.getTokenValidityInSeconds() > 0);
     }
-    
+
+    @Test
+    void testCreateTokenReturnsCachedWhenNotExpired() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(10000L);
+        String secondToken = cachedJwtTokenManager.createToken("nacos");
+        assertEquals("token", secondToken);
+    }
+
+    @Test
+    void testGetAuthenticationFallsBackWhenNotCached() throws AccessException {
+        Authentication result = cachedJwtTokenManager.getAuthentication("uncached-token");
+        assertNotNull(result);
+    }
+
+    @Test
+    void testGetAuthenticationReturnsCachedEntry() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        Authentication result = cachedJwtTokenManager.getAuthentication("token");
+        assertNotNull(result);
+    }
+
+    @Test
+    void testParseTokenFallsBackWhenNotCached() throws AccessException {
+        NacosUser result = cachedJwtTokenManager.parseToken("uncached-token");
+        assertNotNull(result);
+    }
+
+    @Test
+    void testGetTokenTtlFallsBackWhenNotCached() throws AccessException {
+        long ttl = cachedJwtTokenManager.getTokenTtlInSeconds("uncached-token");
+        assertTrue(ttl > 0);
+    }
+
+    @Test
+    void testGetTokenTtlReturnsCachedValue() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        long ttl = cachedJwtTokenManager.getTokenTtlInSeconds("token");
+        assertTrue(ttl > 0);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testCreateTokenSafeWhenCacheEvictedConcurrently() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        Field userMapField = CachedJwtTokenManager.class.getDeclaredField("userMap");
+        userMapField.setAccessible(true);
+        Map<String, ?> userMap = (Map<String, ?>) userMapField.get(cachedJwtTokenManager);
+        userMap.clear();
+        assertDoesNotThrow(() -> cachedJwtTokenManager.createToken("nacos"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testGetAuthenticationSafeWhenCacheEvictedConcurrently() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        Field tokenMapField = CachedJwtTokenManager.class.getDeclaredField("tokenMap");
+        tokenMapField.setAccessible(true);
+        Map<String, ?> tokenMap = (Map<String, ?>) tokenMapField.get(cachedJwtTokenManager);
+        tokenMap.clear();
+        assertDoesNotThrow(() -> cachedJwtTokenManager.getAuthentication("token"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testParseTokenSafeWhenCacheEvictedConcurrently() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        Field tokenMapField = CachedJwtTokenManager.class.getDeclaredField("tokenMap");
+        tokenMapField.setAccessible(true);
+        Map<String, ?> tokenMap = (Map<String, ?>) tokenMapField.get(cachedJwtTokenManager);
+        tokenMap.clear();
+        assertDoesNotThrow(() -> cachedJwtTokenManager.parseToken("token"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testGetTokenTtlSafeWhenCacheEvictedConcurrently() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        Field tokenMapField = CachedJwtTokenManager.class.getDeclaredField("tokenMap");
+        tokenMapField.setAccessible(true);
+        Map<String, ?> tokenMap = (Map<String, ?>) tokenMapField.get(cachedJwtTokenManager);
+        tokenMap.clear();
+        assertDoesNotThrow(() -> cachedJwtTokenManager.getTokenTtlInSeconds("token"));
+    }
+
 }
