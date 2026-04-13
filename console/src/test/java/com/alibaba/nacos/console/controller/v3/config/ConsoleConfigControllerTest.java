@@ -73,6 +73,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -331,9 +332,29 @@ public class ConsoleConfigControllerTest {
         int actualStatus = response.getStatus();
         
         assertEquals(200, actualStatus);
-        
+
     }
-    
+
+    @Test
+    void testExportConfigV2WithoutIds() throws Exception {
+        String dataId = "dataId2.json";
+        String group = "group2";
+        String tenant = "tenant234";
+        String appname = "appname2";
+
+        byte[] serializedData = new byte[]{1, 2, 3};
+        ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(serializedData, HttpStatus.OK);
+
+        Mockito.when(configProxy.exportConfigV2(eq(dataId), eq(group), eq(tenant), eq(appname), isNull()))
+                .thenReturn(responseEntity);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/export2")
+                .param("dataId", dataId).param("groupName", group).param("tenant", tenant)
+                .param("appName", appname);
+
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+    }
+
     @Test
     void testImportAndPublishConfig() throws Exception {
         String srcUser = "testUser";

@@ -307,7 +307,9 @@ public class ConsoleConfigController {
     public ResponseEntity<byte[]> exportConfigV2(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws Exception {
         configForm.blurSearchValidate();
-        ids.removeAll(Collections.singleton(null));
+        if (ids != null) {
+            ids.removeAll(Collections.singleton(null));
+        }
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
