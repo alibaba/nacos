@@ -29,7 +29,6 @@ import org.springframework.security.core.Authentication;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,6 +143,23 @@ class CachedJwtTokenManagerTest {
         cachedJwtTokenManager.createToken("nacos");
         long ttl = cachedJwtTokenManager.getTokenTtlInSeconds("token");
         assertTrue(ttl > 0);
+    }
+
+    @Test
+    void testValidateTokenSkipsWhenCached() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        assertDoesNotThrow(() -> cachedJwtTokenManager.validateToken("token"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testValidateTokenSafeWhenCacheEvictedConcurrently() throws Exception {
+        cachedJwtTokenManager.createToken("nacos");
+        Field tokenMapField = CachedJwtTokenManager.class.getDeclaredField("tokenMap");
+        tokenMapField.setAccessible(true);
+        Map<String, ?> tokenMap = (Map<String, ?>) tokenMapField.get(cachedJwtTokenManager);
+        tokenMap.clear();
+        assertDoesNotThrow(() -> cachedJwtTokenManager.validateToken("token"));
     }
 
     @SuppressWarnings("unchecked")
