@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineConfig;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
+import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 
@@ -109,6 +111,8 @@ class PromptOperationServiceImplTest {
     
     private MockedStatic<VisibilityPluginManager> visibilityManagerStatic;
     
+    private VisibilityPluginManager mockVisibilityManager;
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -120,10 +124,12 @@ class PromptOperationServiceImplTest {
         lenient().when(pipelineConfigProvider.getConfig()).thenReturn(disabledConfig);
         PublishPipelineExecutor publishPipelineExecutor = new PublishPipelineExecutor(new PublishPipelineManager(),
                 pipelineConfigProvider, pipelineExecutionRepository, Executors.newSingleThreadExecutor());
+        AiResourceManager resourceManager = new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
+                pipelineExecutionRepository);
         service = new PromptOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
                 publishPipelineExecutor, pipelineExecutionRepository,
-                configOperationService);
-        VisibilityPluginManager mockVisibilityManager = mock(VisibilityPluginManager.class);
+                configOperationService, resourceManager);
+        mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
         visibilityManagerStatic = mockStatic(VisibilityPluginManager.class);
         visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
@@ -149,6 +155,22 @@ class PromptOperationServiceImplTest {
         verify(aiResourcePersistService).insert(any(AiResource.class));
         verify(aiResourceVersionPersistService).insert(any(AiResourceVersion.class));
         verify(storage).save(any(StorageKey.class), any(byte[].class));
+    }
+    
+    @Test
+    void testCreateDraftNewPromptShouldUseVisibilityDefaultScope() throws NacosException {
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(null);
+        com.alibaba.nacos.plugin.visibility.spi.VisibilityService visibilityService =
+                mock(com.alibaba.nacos.plugin.visibility.spi.VisibilityService.class);
+        when(visibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), eq(PROMPT_TYPE)))
+                .thenReturn("public");
+        when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.of(visibilityService));
+        
+        service.createDraft(NS, PROMPT_KEY, null, null, "Hello {{name}}", null, null, "desc", null);
+        
+        ArgumentCaptor<AiResource> metaCaptor = ArgumentCaptor.forClass(AiResource.class);
+        verify(aiResourcePersistService).insert(metaCaptor.capture());
+        assertEquals("PUBLIC", metaCaptor.getValue().getScope());
     }
     
     @Test
