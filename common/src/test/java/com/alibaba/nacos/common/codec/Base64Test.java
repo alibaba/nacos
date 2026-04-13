@@ -19,10 +19,12 @@ package com.alibaba.nacos.common.codec;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class Base64Test {
     
@@ -97,5 +99,134 @@ class Base64Test {
             String a = "very large characters to test chunk encoding and see if the result is expected or not";
             Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, 10);
         });
+    }
+    
+    @Test
+    void testEncodeModulus1() {
+        // Test encoding with modulus = 1 (1 byte remaining)
+        byte[] input = new byte[] {65};
+        byte[] encoded = Base64.encodeBase64(input);
+        assertEquals("QQ==", new String(encoded));
+        byte[] decoded = Base64.decodeBase64(encoded);
+        assertTrue(Arrays.equals(input, decoded));
+    }
+    
+    @Test
+    void testEncodeModulus2() {
+        // Test encoding with modulus = 2 (2 bytes remaining)
+        byte[] input = new byte[] {65, 66};
+        byte[] encoded = Base64.encodeBase64(input);
+        assertEquals("QUI=", new String(encoded));
+        byte[] decoded = Base64.decodeBase64(encoded);
+        assertTrue(Arrays.equals(input, decoded));
+    }
+    
+    @Test
+    void testEncodeModulus1UrlSafe() {
+        // Test URL-safe encoding with modulus = 1
+        byte[] input = new byte[] {65};
+        byte[] encoded = Base64.encodeBase64(input, false, true, Integer.MAX_VALUE);
+        assertEquals("QQ", new String(encoded));
+    }
+    
+    @Test
+    void testEncodeModulus2UrlSafe() {
+        // Test URL-safe encoding with modulus = 2
+        byte[] input = new byte[] {65, 66};
+        byte[] encoded = Base64.encodeBase64(input, false, true, Integer.MAX_VALUE);
+        assertEquals("QUI", new String(encoded));
+    }
+    
+    @Test
+    void testLargeDataEncoding() {
+        // Test encoding large data to trigger buffer expansion
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10000; i++) {
+            sb.append("a");
+        }
+        String input = sb.toString();
+        byte[] encoded = Base64.encodeBase64(input.getBytes(StandardCharsets.UTF_8));
+        byte[] decoded = Base64.decodeBase64(encoded);
+        assertEquals(input, new String(decoded));
+    }
+    
+    @Test
+    void testChunkedEncodingWithLineSeparator() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 100; i++) {
+            sb.append("abcdefghij");
+        }
+        String input = sb.toString();
+        byte[] encoded = Base64.encodeBase64(input.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
+        String encodedStr = new String(encoded);
+        assertTrue(encodedStr.contains("\r\n"));
+        byte[] decoded = Base64.decodeBase64(encoded);
+        assertEquals(input, new String(decoded));
+    }
+    
+    @Test
+    void testDecodeWithInvalidBytes() {
+        String input = "YWJj\r\nMTIz";
+        byte[] decoded = Base64.decodeBase64(input.getBytes(StandardCharsets.UTF_8));
+        assertEquals("abc123", new String(decoded));
+    }
+    
+    @Test
+    void testDecodeModulus2() {
+        String input = "QQ==";
+        byte[] decoded = Base64.decodeBase64(input.getBytes(StandardCharsets.UTF_8));
+        assertEquals(1, decoded.length);
+        assertEquals(65, decoded[0]);
+    }
+    
+    @Test
+    void testDecodeModulus3() {
+        String input = "QUI=";
+        byte[] decoded = Base64.decodeBase64(input.getBytes(StandardCharsets.UTF_8));
+        assertEquals(2, decoded.length);
+        assertEquals(65, decoded[0]);
+        assertEquals(66, decoded[1]);
+    }
+    
+    @Test
+    void testDecodeWithNegativeByte() {
+        byte[] input = new byte[] {-1};
+        byte[] decoded = Base64.decodeBase64(input);
+        assertEquals(0, decoded.length);
+    }
+    
+    @Test
+    void testRoundTripMultipleOfThree() {
+        byte[] input = new byte[] {65, 66, 67};
+        byte[] encoded = Base64.encodeBase64(input);
+        assertEquals("QUJD", new String(encoded));
+        byte[] decoded = Base64.decodeBase64(encoded);
+        assertTrue(Arrays.equals(input, decoded));
+    }
+    
+    @Test
+    void testDecodeWithPadding() {
+        assertEquals("a", new String(Base64.decodeBase64("YQ==".getBytes())));
+        assertEquals("ab", new String(Base64.decodeBase64("YWI=".getBytes())));
+        assertEquals("abc", new String(Base64.decodeBase64("YWJj".getBytes())));
+    }
+    
+    @Test
+    void testDecodePartialBlockAtEof() {
+        byte[] result1 = Base64.decodeBase64("YQ==".getBytes());
+        assertEquals("a", new String(result1));
+        byte[] result2 = Base64.decodeBase64("YWI=".getBytes());
+        assertEquals("ab", new String(result2));
+    }
+    
+    @Test
+    void testChunkedEncodingRoundTrip() {
+        byte[] data = new byte[200];
+        for (int i = 0; i < 200; i++) {
+            data[i] = (byte) (i % 256);
+        }
+        byte[] encoded = Base64.encodeBase64(data, true, false, Integer.MAX_VALUE);
+        byte[] decoded = Base64.decodeBase64(encoded);
+        assertTrue(Arrays.equals(data, decoded));
     }
 }

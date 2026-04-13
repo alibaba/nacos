@@ -28,11 +28,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
@@ -40,21 +42,24 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-// todo remove this
 @MockitoSettings(strictness = Strictness.LENIENT)
 class JdkHttpClientRequestTest {
     
@@ -73,6 +78,9 @@ class JdkHttpClientRequestTest {
     private OutputStream outputStream;
     
     private HttpClientConfig httpClientConfig;
+    
+    @TempDir
+    Path tempDir;
     
     @BeforeEach
     void setUp() throws Exception {
@@ -120,7 +128,6 @@ class JdkHttpClientRequestTest {
         HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
         verify(outputStream, never()).write(any(), eq(0), anyInt());
         assertEquals(connection, getActualConnection(response));
-        
     }
     
     @Test
@@ -177,6 +184,86 @@ class JdkHttpClientRequestTest {
         httpClientRequest.replaceSslHostnameVerifier(null);
     }
     
+    @Test
+    @DisplayName("execute with File body should handle file upload")
+    void testExecuteFileUpload() throws Exception {
+        File testFile = tempDir.resolve("test-upload.txt").toFile();
+        Files.writeString(testFile.toPath(), "test file content");
+        
+        Header header = Header.newInstance();
+        HttpClientConfig config = HttpClientConfig.builder().build();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, testFile);
+        
+        HttpClientResponse response = httpClientRequest.execute(uri, "POST", httpEntity);
+        
+        verify(connection, atLeast(1)).setDoOutput(true);
+        verify(outputStream, atLeast(1)).flush();
+        assertNotNull(response);
+    }
+    
+    @Test
+    @DisplayName("execute with empty string body should not write to output")
+    void testExecuteEmptyStringBody() throws Exception {
+        Header header = Header.newInstance();
+        HttpClientConfig config = HttpClientConfig.builder().build();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, "");
+        
+        HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
+        
+        verify(outputStream, never()).write(any(), eq(0), anyInt());
+        assertNotNull(response);
+    }
+    
+    @Test
+    @DisplayName("execute with object body should serialize to JSON")
+    void testExecuteObjectBody() throws Exception {
+        Header header = Header.newInstance();
+        HttpClientConfig config = HttpClientConfig.builder().build();
+        
+        Map<String, Object> bodyObject = new HashMap<>();
+        bodyObject.put("key", "value");
+        
+        RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, bodyObject);
+        
+        HttpClientResponse response = httpClientRequest.execute(uri, "POST", httpEntity);
+        
+        verify(outputStream).write(any(byte[].class), eq(0), anyInt());
+        assertNotNull(response);
+    }
+    
+    @Test
+    @DisplayName("replaceDefaultConfig should update httpClientConfig when config provided")
+    void testReplaceDefaultConfig() throws Exception {
+        HttpClientConfig newConfig = HttpClientConfig.builder()
+                .setConTimeOutMillis(5000)
+                .setReadTimeOutMillis(10000)
+                .build();
+        
+        Header header = Header.newInstance();
+        RequestHttpEntity httpEntity = new RequestHttpEntity(newConfig, header, Query.EMPTY, "body");
+        
+        httpClientRequest.execute(uri, "GET", httpEntity);
+        
+        verify(connection).setConnectTimeout(5000);
+        verify(connection).setReadTimeout(10000);
+    }
+    
+    @Test
+    @DisplayName("execute with headers should set all header properties")
+    void testExecuteWithHeaders() throws Exception {
+        Header header = Header.newInstance();
+        header.addParam("X-Custom-Header", "custom-value");
+        header.addParam("Authorization", "Bearer token");
+        
+        RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY);
+        
+        HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
+        
+        verify(connection).setRequestProperty("X-Custom-Header", "custom-value");
+        verify(connection).setRequestProperty("Authorization", "Bearer token");
+        assertNotNull(response);
+    }
+     (test(common): add tests to improve line coverage to 96.47%) (test(common): add tests to improve line coverage to 96.47%)
     private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("conn");
         field.setAccessible(true);
