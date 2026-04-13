@@ -25,8 +25,6 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.pipeline.model.PipelineNodeResult;
 import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
-import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
-import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
@@ -104,10 +102,6 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final AiResourceStorageRouter storageRouter;
     
-    private final AiResourcePersistService aiResourcePersistService;
-    
-    private final AiResourceVersionPersistService aiResourceVersionPersistService;
-    
     private final PublishPipelineExecutor publishPipelineExecutor;
     
     private final PipelineExecutionRepository pipelineExecutionRepository;
@@ -116,15 +110,11 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final AiResourceManager resourceManager;
     
-    public PromptOperationServiceImpl(AiResourcePersistService aiResourcePersistService,
-            AiResourceVersionPersistService aiResourceVersionPersistService,
-            PublishPipelineExecutor publishPipelineExecutor,
+    public PromptOperationServiceImpl(PublishPipelineExecutor publishPipelineExecutor,
             PipelineExecutionRepository pipelineExecutionRepository,
             ConfigOperationService configOperationService,
             AiResourceManager resourceManager) {
         this.storageRouter = AiResourceStorageRouter.getInstance();
-        this.aiResourcePersistService = aiResourcePersistService;
-        this.aiResourceVersionPersistService = aiResourceVersionPersistService;
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.pipelineExecutionRepository = pipelineExecutionRepository;
         this.configOperationService = configOperationService;
@@ -142,7 +132,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                     "promptKey is required");
         }
         
-        AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         
         if (meta == null) {
             // Brand-new prompt: require template
@@ -179,7 +169,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         
         if (StringUtils.isNotBlank(basedOnVersion)) {
             // Fork from existing version
-            AiResourceVersion baseRow = aiResourceVersionPersistService.find(namespaceId, promptKey,
+            AiResourceVersion baseRow = resourceManager.findVersion(namespaceId, promptKey,
                     RESOURCE_TYPE_PROMPT, basedOnVersion);
             if (baseRow == null) {
                 throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -258,7 +248,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Update commitMsg in DB if provided
         if (StringUtils.isNotBlank(commitMsg)) {
             String storageJson = buildStorageJson(namespaceId, promptKey, editing);
-            aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            resourceManager.updateVersionStorageAndDesc(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                     editing, storageJson, commitMsg);
         }
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, editing,
@@ -276,7 +266,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             return;
         }
         
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 editing);
         
         // 1) meta: clear editingVersion reference first
@@ -285,7 +275,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         
         // 2) version row, then storage files
         if (v != null && VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
-            aiResourceVersionPersistService.delete(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, editing);
+            resourceManager.deleteVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, editing);
             deletePromptStorageForVersion(namespaceId, promptKey, editing);
         }
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_PROMPT, promptKey, editing,
@@ -308,7 +298,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                     "No draft version to submit for prompt: " + promptKey);
         }
         
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 target);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -318,7 +308,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         final String finalTarget = target;
         
         // Move to reviewing before pipeline execution
-        aiResourceVersionPersistService.updateStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, finalTarget,
+        resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, finalTarget,
                 VERSION_STATUS_REVIEWING);
         info.setEditingVersion(null);
         info.setReviewingVersion(finalTarget);
@@ -352,13 +342,13 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         pipelineInfo.setExecutionId(executionId);
         pipelineInfo.setStatus(PipelineExecutionStatus.IN_PROGRESS);
         pipelineInfo.setPipeline(new ArrayList<>());
-        aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        resourceManager.updateVersionPublishPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 finalTarget, JacksonUtils.toJson(pipelineInfo));
         
         String result = publishPipelineExecutor.execute(ctx,
                 r -> onPipelineComplete(namespaceId, promptKey, finalTarget, r), executionId);
         if (StringUtils.isBlank(result)) {
-            aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            resourceManager.updateVersionPublishPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                     finalTarget, null);
             publish(namespaceId, promptKey, finalTarget, true);
         }
@@ -373,7 +363,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
         
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 version);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -402,7 +392,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // 1) version status -> online (idempotent)
         boolean alreadyOnline = VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus());
         if (!alreadyOnline) {
-            aiResourceVersionPersistService.updateStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
+            resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
                     VERSION_STATUS_ONLINE);
         }
         
@@ -439,7 +429,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
         
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 version);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -449,7 +439,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         // Allow force-publish from draft/reviewing status
         boolean alreadyOnline = VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus());
         if (!alreadyOnline) {
-            aiResourceVersionPersistService.updateStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
+            resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
                     VERSION_STATUS_ONLINE);
         }
         
@@ -488,7 +478,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         VisibilityHelper.checkWritableResource(meta);
         PromptVersionInfoPojo info = requireVersionInfo(meta);
         
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 version);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -502,7 +492,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             return;
         }
         
-        aiResourceVersionPersistService.updateStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
+        resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
                 targetStatus);
         
         Integer cnt = info.getOnlineCnt() == null ? 0 : info.getOnlineCnt();
@@ -573,7 +563,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "promptKey is required");
         }
-        AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         if (meta != null) {
             VisibilityHelper.checkWritableResource(meta);
         }
@@ -595,8 +585,8 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         deleteLegacyLatestMirror(namespaceId, promptKey);
         
         // Delete DB rows
-        aiResourceVersionPersistService.deleteByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
-        aiResourcePersistService.delete(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        resourceManager.deleteVersionsByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        resourceManager.deleteMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
     }
     
     private void deleteLegacyLatestMirror(String namespaceId, String promptKey) {
@@ -658,7 +648,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "version is required");
         }
-        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, promptKey,
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, promptKey,
                 RESOURCE_TYPE_PROMPT, version);
         if (versionRow == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -677,17 +667,17 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         String nameLike = null;
         if (StringUtils.isNotBlank(promptKey)) {
             if ("blur".equalsIgnoreCase(search)) {
-                nameLike = aiResourcePersistService.generateLikeArgument(
+                nameLike = resourceManager.generateLikeArgument(
                         Constants.ALL_PATTERN + promptKey + Constants.ALL_PATTERN);
             } else {
                 nameLike = promptKey;
             }
         }
         String bizTagsLike = StringUtils.isNotBlank(bizTags)
-                ? aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + bizTags + Constants.ALL_PATTERN)
+                ? resourceManager.generateLikeArgument(Constants.ALL_PATTERN + bizTags + Constants.ALL_PATTERN)
                 : null;
         
-        Page<AiResource> metaPage = aiResourcePersistService.list(namespaceId, RESOURCE_TYPE_PROMPT, nameLike,
+        Page<AiResource> metaPage = resourceManager.listMetaByType(namespaceId, RESOURCE_TYPE_PROMPT, nameLike,
                 bizTagsLike, pageNo, pageSize);
         
         List<PromptMetaSummary> items = new ArrayList<>();
@@ -727,7 +717,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             int pageSize) throws NacosException {
         requireMeta(namespaceId, promptKey);
         
-        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, promptKey,
+        Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, promptKey,
                 RESOURCE_TYPE_PROMPT, null, pageNo, pageSize);
         
         List<PromptVersionSummary> items = new ArrayList<>();
@@ -760,7 +750,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     @Override
     public PromptVersionInfo queryPrompt(String namespaceId, String promptKey, String version, String label)
             throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Prompt not found: " + promptKey);
@@ -774,7 +764,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         }
         
         // Verify version is online
-        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, promptKey,
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, promptKey,
                 RESOURCE_TYPE_PROMPT, resolved);
         if (versionRow == null || !VERSION_STATUS_ONLINE.equalsIgnoreCase(versionRow.getStatus())) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -789,7 +779,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     @Override
     public void refreshLatestMirror(String namespaceId, String promptKey) throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         if (meta == null) {
             return;
         }
@@ -889,7 +879,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     private AiResource requireMeta(String namespaceId, String promptKey) throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+        AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Prompt not found: " + promptKey);
@@ -984,7 +974,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         int pageNo = 1;
         int pageSize = 200;
         while (true) {
-            Page<AiResourceVersion> page = aiResourceVersionPersistService.list(namespaceId, promptKey,
+            Page<AiResourceVersion> page = resourceManager.listVersions(namespaceId, promptKey,
                     RESOURCE_TYPE_PROMPT, null, pageNo, pageSize);
             if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
                 break;
@@ -999,7 +989,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     }
     
     private void checkVersionNotExists(String namespaceId, String promptKey, String version) throws NacosException {
-        AiResourceVersion existing = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+        AiResourceVersion existing = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                 version);
         if (existing != null) {
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
@@ -1056,7 +1046,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     private void onPipelineComplete(String namespaceId, String promptKey, String version,
             PipelineExecutionResult result) {
         try {
-            AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            AiResourceVersion v = resourceManager.findVersion(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                     version);
             if (v == null) {
                 LOGGER.warn("Pipeline complete but version row not found: {}@{}", promptKey, version);
@@ -1069,7 +1059,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
             }
             pipelineInfo.setStatus(result.getStatus());
             pipelineInfo.setPipeline(result.getPipeline());
-            aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
+            resourceManager.updateVersionPublishPipelineInfo(namespaceId, promptKey, RESOURCE_TYPE_PROMPT,
                     version, JacksonUtils.toJson(pipelineInfo));
             
             if (result.getStatus() == PipelineExecutionStatus.APPROVED) {
@@ -1077,9 +1067,9 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                         AiResourceTraceService.OP_REVIEW_APPROVED, "system", "", result.getExecutionId());
             } else {
                 // Reject back to draft and move reviewing -> editing (best effort).
-                aiResourceVersionPersistService.updateStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
+                resourceManager.updateVersionStatus(namespaceId, promptKey, RESOURCE_TYPE_PROMPT, version,
                         VERSION_STATUS_DRAFT);
-                AiResource meta = aiResourcePersistService.find(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
+                AiResource meta = resourceManager.findMeta(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);
                 if (meta != null) {
                     PromptVersionInfoPojo info = requireVersionInfo(meta);
                     if (StringUtils.equals(info.getReviewingVersion(), version)) {

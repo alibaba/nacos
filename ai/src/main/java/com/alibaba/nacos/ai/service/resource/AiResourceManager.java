@@ -275,6 +275,101 @@ public class AiResourceManager {
     }
     
     /**
+     * Find meta row by namespace/name/type.
+     */
+    public AiResource findMeta(String namespaceId, String name, String type) {
+        return aiResourcePersistService.find(namespaceId, name, type);
+    }
+    
+    /**
+     * Find version row by namespace/name/type/version.
+     */
+    public AiResourceVersion findVersion(String namespaceId, String name, String type, String version) {
+        return aiResourceVersionPersistService.find(namespaceId, name, type, version);
+    }
+    
+    /**
+     * Update version row storage/description.
+     */
+    public void updateVersionStorageAndDesc(String namespaceId, String name, String type, String version,
+            String storageJson, String description) {
+        aiResourceVersionPersistService.updateStorageAndDesc(namespaceId, name, type, version, storageJson, description);
+    }
+    
+    /**
+     * Update version row storage.
+     */
+    public void updateVersionStorage(String namespaceId, String name, String type, String version, String storageJson) {
+        aiResourceVersionPersistService.updateStorage(namespaceId, name, type, version, storageJson);
+    }
+    
+    /**
+     * Update version row status.
+     */
+    public void updateVersionStatus(String namespaceId, String name, String type, String version, String status) {
+        aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version, status);
+    }
+    
+    /**
+     * Update version row publish pipeline info.
+     */
+    public void updateVersionPublishPipelineInfo(String namespaceId, String name, String type, String version,
+            String publishPipelineInfo) {
+        aiResourceVersionPersistService.updatePublishPipelineInfo(namespaceId, name, type, version, publishPipelineInfo);
+    }
+    
+    /**
+     * Delete one version row.
+     */
+    public void deleteVersion(String namespaceId, String name, String type, String version) {
+        aiResourceVersionPersistService.delete(namespaceId, name, type, version);
+    }
+    
+    /**
+     * Delete all version rows for a resource.
+     */
+    public void deleteVersionsByNameAndType(String namespaceId, String name, String type) {
+        aiResourceVersionPersistService.deleteByNameAndType(namespaceId, name, type);
+    }
+    
+    /**
+     * Delete meta row by namespace/name/type.
+     */
+    public void deleteMeta(String namespaceId, String name, String type) {
+        aiResourcePersistService.delete(namespaceId, name, type);
+    }
+    
+    /**
+     * Generate LIKE argument.
+     */
+    public String generateLikeArgument(String value) {
+        return aiResourcePersistService.generateLikeArgument(value);
+    }
+    
+    /**
+     * List meta rows by basic prompt-style filtering.
+     */
+    public Page<AiResource> listMetaByType(String namespaceId, String type, String nameLike, String bizTagsLike,
+            int pageNo, int pageSize) {
+        return aiResourcePersistService.list(namespaceId, type, nameLike, bizTagsLike, pageNo, pageSize);
+    }
+    
+    /**
+     * List meta rows by query condition.
+     */
+    public Page<AiResource> listMeta(QueryCondition queryCondition, int pageNo, int pageSize) {
+        return aiResourcePersistService.list(queryCondition, pageNo, pageSize);
+    }
+    
+    /**
+     * List version rows.
+     */
+    public Page<AiResourceVersion> listVersions(String namespaceId, String name, String type, String status,
+            int pageNo, int pageSize) {
+        return aiResourceVersionPersistService.list(namespaceId, name, type, status, pageNo, pageSize);
+    }
+    
+    /**
      * Parse and guarantee a non-null {@link ResourceVersionInfo} from the meta row.
      */
     public static ResourceVersionInfo requireVersionInfo(AiResource meta) {

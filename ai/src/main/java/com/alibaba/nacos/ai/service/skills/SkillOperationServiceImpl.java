@@ -168,7 +168,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String uploadVersion = resolveUploadVersion(skill.getSkillMd(), zipBytes);
         String name = skill.getName();
         // Step 3: Check if a meta record already exists for this skill name
-        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (overwrite) {
             // Overwrite mode: replace existing editing draft or create new draft
             return overwriteUploadedSkill(namespaceId, skill, uploadVersion, meta);
@@ -218,7 +218,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         validateSkillNameByParamChecker(skill.getName());
         String skillName = skill.getName();
         // Step 2: Skip if already exists, don't overwrite user-customized content
-        if (aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL) != null) {
+        if (resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL) != null) {
             LOGGER.info("Skip built-in skill bootstrap because skill already exists: {}", skillName);
             return;
         }
@@ -380,7 +380,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throws NacosException {
         resourceManager.requireDraftVersion(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing);
         List<String> files = writeSkillToStorage(namespaceId, skill, editing);
-        aiResourceVersionPersistService.updateStorage(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing,
+        resourceManager.updateVersionStorage(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing,
                 buildStorageJson(namespaceId, skill.getName(), editing, files));
         resourceManager.bumpMetaDescription(namespaceId, meta, skill.getDescription());
     }
@@ -391,7 +391,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public SkillMeta getSkillDetail(String namespaceId, String skillName) throws NacosException {
         // Step 1: Find meta and verify read permission
-        AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
@@ -400,7 +400,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         ResourceVersionInfo versionInfo = AiResourceManager.requireVersionInfo(meta);
 
         // Step 2: Load all version rows and assemble version summary list
-        Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, skillName,
+        Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, skillName,
                 RESOURCE_TYPE_SKILL, null, 1, 200);
         List<SkillMeta.SkillVersionSummary> versionSummaries = new ArrayList<>();
         if (versionPage != null && versionPage.getPageItems() != null) {
@@ -445,7 +445,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public Skill getSkillVersionDetail(String namespaceId, String skillName, String version) throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + skillName);
@@ -455,7 +455,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Version is required for skill version detail");
         }
-        AiResourceVersion versionRow = aiResourceVersionPersistService.find(namespaceId, skillName,
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, skillName,
                 RESOURCE_TYPE_SKILL, version);
         if (versionRow == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
@@ -481,7 +481,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public void deleteSkill(String namespaceId, String skillName) throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, skillName, RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, skillName, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             return;
         }
@@ -521,7 +521,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             if (Skills.SEARCH_ACCURATE.equalsIgnoreCase(search)) {
                 nameLike = skillName;
             } else {
-                nameLike = aiResourcePersistService.generateLikeArgument(
+                nameLike = resourceManager.generateLikeArgument(
                         Constants.ALL_PATTERN + skillName + Constants.ALL_PATTERN);
             }
         }
@@ -538,12 +538,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         if (StringUtils.isNotBlank(bizTag)) {
             queryCondition.setBizTagsLike(
-                    aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + bizTag + Constants.ALL_PATTERN));
+                    resourceManager.generateLikeArgument(Constants.ALL_PATTERN + bizTag + Constants.ALL_PATTERN));
         }
         if (queryCondition.isAlwaysEmpty()) {
             return AiResourceManager.buildEmptyPage(pageNo);
         }
-        Page<AiResource> metaPage = aiResourcePersistService.list(queryCondition, pageNo, pageSize);
+        Page<AiResource> metaPage = resourceManager.listMeta(queryCondition, pageNo, pageSize);
         // Step 3: Convert meta rows to SkillSummary (with version labels, editing/reviewing status, etc.)
         List<AiResource> filtered = metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>()
                 : metaPage.getPageItems();
@@ -589,7 +589,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     public String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion,
             Skill initialContent)
             throws NacosException {
-        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
 
         // ---- Case A: Brand-new skill (meta does not exist) ----
         if (meta == null) {
@@ -636,7 +636,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                         "skillCard must not be set when creating a draft from an existing version; omit it to fork, then use PUT /draft to edit");
             }
             // Step 1: Read content from base version and copy to new version's storage path
-            AiResourceVersion baseVersionRow = aiResourceVersionPersistService.find(namespaceId, name,
+            AiResourceVersion baseVersionRow = resourceManager.findVersion(namespaceId, name,
                     RESOURCE_TYPE_SKILL, base);
             Skill baseSkill = loadSkillFromStorage(namespaceId, name, base,
                     baseVersionRow != null ? baseVersionRow.getStorage() : null);
@@ -690,7 +690,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
-        aiResourceVersionPersistService.updateStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
+        resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
                 buildStorageJson(namespaceId, name, editing, files));
         resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing, AiResourceTraceService.OP_UPDATE_DRAFT,
@@ -711,7 +711,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             return;
         }
         // Read version row upfront (need status check and storage info before modifying)
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
 
         // Delete in reverse order of creation (storage -> version -> meta):
         // 1) meta: clear editingVersion reference first
@@ -720,7 +720,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // 2) version row, then storage files
         if (v != null && AiResourceConstants.VERSION_STATUS_DRAFT.equalsIgnoreCase(v.getStatus())) {
-            aiResourceVersionPersistService.delete(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
+            resourceManager.deleteVersion(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
             deleteSkillStorageForVersion(namespaceId, name, editing, v.getStorage());
         }
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing, AiResourceTraceService.OP_DELETE_DRAFT,
@@ -744,7 +744,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         // Step 2: Determine the target version to submit (prefer explicit version, otherwise infer from editing/reviewing)
         String target = resourceManager.resolveSubmitTarget(info, version, RESOURCE_TYPE_SKILL, name);
 
-        AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL, target);
+        AiResourceVersion v = resourceManager.findVersion(namespaceId, name, RESOURCE_TYPE_SKILL, target);
         if (v == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill version not found: " + name + "@" + target);
@@ -909,13 +909,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throws NacosException {
         // Build fuzzy query condition
         String nameLike = StringUtils.isBlank(keyword) ? null
-                : aiResourcePersistService.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
+                : resourceManager.generateLikeArgument(Constants.ALL_PATTERN + keyword + Constants.ALL_PATTERN);
         QueryCondition queryCondition = resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, nameLike, null,
                 VisibilityConstants.ACTION_READ);
         if (queryCondition.isAlwaysEmpty()) {
             return AiResourceManager.buildEmptyPage(pageNo);
         }
-        Page<AiResource> metaPage = aiResourcePersistService.list(queryCondition, pageNo, pageSize);
+        Page<AiResource> metaPage = resourceManager.listMeta(queryCondition, pageNo, pageSize);
         List<AiResource> filtered = metaPage == null || metaPage.getPageItems() == null ? new ArrayList<>()
                 : metaPage.getPageItems();
         List<SkillBasicInfo> items = new ArrayList<>();
@@ -946,7 +946,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     @Override
     public Skill querySkill(String namespaceId, String name, String version, String label) throws NacosException {
         // Step 1: Verify meta exists and is readable
-        AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+        AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
         if (meta == null) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     "Skill not found: " + name);
@@ -1051,7 +1051,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private void refreshSkillIndexManifest(String namespaceId, String name) {
         try {
-            AiResource meta = aiResourcePersistService.find(namespaceId, name, RESOURCE_TYPE_SKILL);
+            AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
             if (meta == null) {
                 return;
             }
@@ -1064,7 +1064,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             manifest.setVersions(new HashMap<>(4));
 
             // Step 2: Iterate all version rows, collect online versions and their file lists
-            Page<AiResourceVersion> versionPage = aiResourceVersionPersistService.list(namespaceId, name,
+            Page<AiResourceVersion> versionPage = resourceManager.listVersions(namespaceId, name,
                     RESOURCE_TYPE_SKILL, null, 1, 200);
             if (versionPage != null && versionPage.getPageItems() != null) {
                 for (AiResourceVersion v : versionPage.getPageItems()) {

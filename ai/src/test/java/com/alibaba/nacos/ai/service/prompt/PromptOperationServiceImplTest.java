@@ -126,8 +126,7 @@ class PromptOperationServiceImplTest {
                 pipelineConfigProvider, pipelineExecutionRepository, Executors.newSingleThreadExecutor());
         AiResourceManager resourceManager = new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                 pipelineExecutionRepository);
-        service = new PromptOperationServiceImpl(aiResourcePersistService, aiResourceVersionPersistService,
-                publishPipelineExecutor, pipelineExecutionRepository,
+        service = new PromptOperationServiceImpl(publishPipelineExecutor, pipelineExecutionRepository,
                 configOperationService, resourceManager);
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
