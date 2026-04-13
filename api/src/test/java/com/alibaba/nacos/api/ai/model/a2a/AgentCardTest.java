@@ -134,10 +134,25 @@ class AgentCardTest extends BasicRequestTest {
         AgentCard card3 = new AgentCard();
         card3.setProtocolVersion("2.0");
         
+        AgentCard card4 = new AgentCard();
+        card4.setProtocolVersion("1.0");
+        card4.setName("test agent");
+        card4.setDescription("test description");
+        card4.setVersion("1.0.0");
+        card4.setIconUrl("http://test.com/icon.png");
+        card4.setUrl("http://test.com/agent");
+        card4.setPreferredTransport("JSONRPC");
+        AgentInterface changedInterface = new AgentInterface();
+        changedInterface.setUrl("http://test.com/changed");
+        changedInterface.setProtocolBinding("JSONRPC");
+        changedInterface.setProtocolVersion("1.0");
+        card4.setSupportedInterfaces(Collections.singletonList(changedInterface));
+        
         assertEquals(card1, card1);
         assertEquals(card1, card2);
         assertEquals(card1.hashCode(), card2.hashCode());
         assertNotEquals(card1, card3);
+        assertNotEquals(card1, card4);
         assertNotEquals(card1.hashCode(), card3.hashCode());
         assertNotEquals(card1, null);
         assertNotEquals(card1, new Object());

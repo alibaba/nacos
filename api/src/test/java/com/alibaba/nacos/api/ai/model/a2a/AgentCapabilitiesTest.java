@@ -101,9 +101,16 @@ class AgentCapabilitiesTest extends BasicRequestTest {
         AgentCapabilities cap3 = new AgentCapabilities();
         cap3.setStreaming(false);
         
+        AgentCapabilities cap4 = new AgentCapabilities();
+        cap4.setStreaming(true);
+        cap4.setPushNotifications(false);
+        cap4.setStateTransitionHistory(true);
+        cap4.setExtendedAgentCard(false);
+        
         assertEquals(cap1, cap2);
         assertEquals(cap1.hashCode(), cap2.hashCode());
         assertNotEquals(cap1, cap3);
+        assertNotEquals(cap1, cap4);
         assertNotEquals(cap1.hashCode(), cap3.hashCode());
         assertNotEquals(cap1, null);
         assertNotEquals(cap1, new Object());

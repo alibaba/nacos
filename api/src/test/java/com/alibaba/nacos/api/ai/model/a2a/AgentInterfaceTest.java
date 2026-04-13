@@ -78,9 +78,17 @@ class AgentInterfaceTest extends BasicRequestTest {
         AgentInterface interface3 = new AgentInterface();
         interface3.setUrl("http://other.com/api");
         
+        AgentInterface interface4 = new AgentInterface();
+        interface4.setUrl("http://test.com/api");
+        interface4.setTransport("JSONRPC");
+        interface4.setProtocolBinding("SSE");
+        interface4.setProtocolVersion("1.0");
+        interface4.setTenant("public");
+        
         assertEquals(interface1, interface2);
         assertEquals(interface1.hashCode(), interface2.hashCode());
         assertNotEquals(interface1, interface3);
+        assertNotEquals(interface1, interface4);
         assertNotEquals(interface1.hashCode(), interface3.hashCode());
         assertNotEquals(interface1, null);
         assertNotEquals(interface1, new Object());

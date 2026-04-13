@@ -20,12 +20,15 @@ import com.alibaba.nacos.ai.form.a2a.admin.AgentCardForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCapabilities;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.remote.request.AbstractAgentRequest;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,6 +56,8 @@ class AgentRequestUtilTest {
         assertEquals(agentCard.getPreferredTransport(), result.getPreferredTransport());
         assertEquals(agentCard.getUrl(), result.getUrl());
         assertEquals(agentCard.getDescription(), result.getDescription());
+        assertEquals(1, result.getSupportedInterfaces().size());
+        assertEquals(agentCard.getUrl(), result.getSupportedInterfaces().get(0).getUrl());
     }
     
     @Test
@@ -111,19 +116,24 @@ class AgentRequestUtilTest {
     }
     
     @Test
-    void testValidateAgentCardWithMissingProtocolVersion() {
+    void testValidateAgentCardWithLegacyFieldsMissingButV1Present() {
         // Given
         AgentCard agentCard = createValidAgentCard();
         agentCard.setProtocolVersion(null);
+        agentCard.setPreferredTransport(null);
+        agentCard.setUrl(null);
+        AgentInterface agentInterface = new AgentInterface();
+        agentInterface.setUrl("http://example.com/v1");
+        agentInterface.setProtocolBinding("JSONRPC");
+        agentInterface.setProtocolVersion("1.0");
+        agentCard.setSupportedInterfaces(Collections.singletonList(agentInterface));
         
         // When & Then
-        NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> AgentRequestUtil.validateAgentCard(agentCard));
-        assertEquals("Required parameter `agentCard.protocolVersion` not present", exception.getMessage());
+        assertDoesNotThrow(() -> AgentRequestUtil.validateAgentCard(agentCard));
     }
     
     @Test
-    void testValidateAgentCardWithMissingPreferredTransport() {
+    void testValidateAgentCardWithMissingPreferredTransportAndNoV1ShouldFail() {
         // Given
         AgentCard agentCard = createValidAgentCard();
         agentCard.setPreferredTransport(null);
@@ -131,11 +141,13 @@ class AgentRequestUtilTest {
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
                 () -> AgentRequestUtil.validateAgentCard(agentCard));
-        assertEquals("Required parameter `agentCard.preferredTransport` not present", exception.getMessage());
+        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+                + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
     }
     
     @Test
-    void testValidateAgentCardWithMissingUrl() {
+    void testValidateAgentCardWithMissingUrlAndNoV1ShouldFail() {
         // Given
         AgentCard agentCard = createValidAgentCard();
         agentCard.setUrl(null);
@@ -143,7 +155,79 @@ class AgentRequestUtilTest {
         // When & Then
         NacosApiException exception = assertThrows(NacosApiException.class,
                 () -> AgentRequestUtil.validateAgentCard(agentCard));
-        assertEquals("Required parameter `agentCard.url` not present", exception.getMessage());
+        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+                + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
+    }
+    
+    @Test
+    void testValidateAgentCardWithInvalidV1AndNoLegacyShouldFail() {
+        AgentCard agentCard = createValidAgentCard();
+        agentCard.setProtocolVersion(null);
+        agentCard.setPreferredTransport(null);
+        agentCard.setUrl(null);
+        AgentInterface invalid = new AgentInterface();
+        invalid.setUrl("http://example.com/v1");
+        invalid.setProtocolBinding("JSONRPC");
+        // protocolVersion missing
+        agentCard.setSupportedInterfaces(Collections.singletonList(invalid));
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> AgentRequestUtil.validateAgentCard(agentCard));
+        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+                + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
+    }
+    
+    @Test
+    void testValidateAgentCardShouldNormalizeLegacyToSupportedInterfaces() throws NacosApiException {
+        AgentCard agentCard = createValidAgentCard();
+        agentCard.setSupportedInterfaces(null);
+        AgentRequestUtil.validateAgentCard(agentCard);
+        assertNotNull(agentCard.getSupportedInterfaces());
+        assertEquals(1, agentCard.getSupportedInterfaces().size());
+        assertEquals(agentCard.getUrl(), agentCard.getSupportedInterfaces().get(0).getUrl());
+        assertEquals(agentCard.getPreferredTransport(), agentCard.getSupportedInterfaces().get(0).getProtocolBinding());
+        assertEquals(agentCard.getProtocolVersion(), agentCard.getSupportedInterfaces().get(0).getProtocolVersion());
+    }
+    
+    @Test
+    void testValidateAgentCardShouldNormalizeSupportedInterfacesToLegacyFields() throws NacosApiException {
+        AgentCard agentCard = createValidAgentCard();
+        AgentInterface preferred = new AgentInterface();
+        preferred.setUrl("http://example.com/v1");
+        preferred.setProtocolBinding("JSONRPC");
+        preferred.setProtocolVersion("1.0");
+        AgentInterface secondary = new AgentInterface();
+        secondary.setUrl("http://example.com/v1/secondary");
+        secondary.setProtocolBinding("SSE");
+        secondary.setProtocolVersion("1.0");
+        List<AgentInterface> interfaces = new ArrayList<>();
+        interfaces.add(preferred);
+        interfaces.add(secondary);
+        agentCard.setSupportedInterfaces(interfaces);
+        AgentRequestUtil.validateAgentCard(agentCard);
+        assertEquals("http://example.com/v1", agentCard.getUrl());
+        assertEquals("JSONRPC", agentCard.getPreferredTransport());
+        assertEquals("1.0", agentCard.getProtocolVersion());
+        assertNotNull(agentCard.getAdditionalInterfaces());
+        assertEquals(1, agentCard.getAdditionalInterfaces().size());
+        assertEquals("http://example.com/v1/secondary", agentCard.getAdditionalInterfaces().get(0).getUrl());
+    }
+    
+    @Test
+    void testValidateAgentCardShouldNormalizeProtocolBindingAndTransport() throws NacosApiException {
+        AgentCard agentCard = createValidAgentCard();
+        agentCard.setProtocolVersion(null);
+        agentCard.setPreferredTransport(null);
+        agentCard.setUrl(null);
+        AgentInterface preferred = new AgentInterface();
+        preferred.setUrl("http://example.com/v1");
+        preferred.setTransport("JSONRPC");
+        preferred.setProtocolVersion("1.0");
+        agentCard.setSupportedInterfaces(Collections.singletonList(preferred));
+        AgentRequestUtil.validateAgentCard(agentCard);
+        assertEquals("JSONRPC", agentCard.getSupportedInterfaces().get(0).getProtocolBinding());
+        assertEquals("JSONRPC", agentCard.getSupportedInterfaces().get(0).getTransport());
     }
     
     @Test
@@ -170,6 +254,24 @@ class AgentRequestUtilTest {
         
         // Then
         assertNotNull(agentCard.getCapabilities());
+    }
+    
+    @Test
+    void testValidateAgentCardShouldNormalizeExtendedAgentCardFromLegacy() throws NacosApiException {
+        AgentCard agentCard = createValidAgentCard();
+        agentCard.getCapabilities().setExtendedAgentCard(null);
+        agentCard.setSupportsAuthenticatedExtendedCard(true);
+        AgentRequestUtil.validateAgentCard(agentCard);
+        assertEquals(true, agentCard.getCapabilities().getExtendedAgentCard());
+    }
+    
+    @Test
+    void testValidateAgentCardShouldNormalizeExtendedAgentCardFromCapabilities() throws NacosApiException {
+        AgentCard agentCard = createValidAgentCard();
+        agentCard.setSupportsAuthenticatedExtendedCard(null);
+        agentCard.getCapabilities().setExtendedAgentCard(true);
+        AgentRequestUtil.validateAgentCard(agentCard);
+        assertEquals(true, agentCard.getSupportsAuthenticatedExtendedCard());
     }
     
     @Test
@@ -264,7 +366,9 @@ class AgentRequestUtilTest {
         agentCard.setPreferredTransport("JSONRPC");
         agentCard.setUrl("http://example.com/agent");
         agentCard.setDescription("Test Agent");
-        agentCard.setCapabilities(new AgentCapabilities());
+        AgentCapabilities capabilities = new AgentCapabilities();
+        capabilities.setExtendedAgentCard(false);
+        agentCard.setCapabilities(capabilities);
         agentCard.setDefaultInputModes(Collections.emptyList());
         agentCard.setDefaultOutputModes(Collections.emptyList());
         agentCard.setSkills(Collections.emptyList());
