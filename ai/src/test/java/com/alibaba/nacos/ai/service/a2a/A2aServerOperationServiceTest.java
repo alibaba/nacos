@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentProvider;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -54,6 +55,7 @@ import org.mockito.quality.Strictness;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -699,6 +701,69 @@ public class A2aServerOperationServiceTest {
         assertNotNull(result);
         assertEquals(TEST_AGENT_NAME, result.getName());
         assertEquals(TEST_AGENT_VERSION, result.getVersion());
+        assertNotNull(result.getSupportedInterfaces());
+        assertEquals(1, result.getSupportedInterfaces().size());
+        assertEquals("http://127.0.0.1:8080", result.getSupportedInterfaces().get(0).getUrl());
+    }
+    
+    @Test
+    void testGetAgentCardWithServiceEndpointsShouldInheritCardProtocolVersion() throws NacosApiException {
+        final AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
+        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
+        detailInfo.setRegistrationType("service");
+        detailInfo.setProtocolVersion("1.0");
+        detailInfo.setPreferredTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
+        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
+        when(versionResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
+        when(detailResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
+        final Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+        final ServiceInfo serviceInfo = new ServiceInfo();
+        com.alibaba.nacos.api.naming.pojo.Instance instance = new com.alibaba.nacos.api.naming.pojo.Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        instance.setMetadata(Map.of(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
+        serviceInfo.addHost(instance);
+        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionResponse)
+                .thenReturn(detailResponse);
+        AgentCardDetailInfo result = a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
+                TEST_AGENT_VERSION, "service");
+        AgentInterface endpoint = result.getSupportedInterfaces().get(0);
+        assertEquals("1.0", endpoint.getProtocolVersion());
+        assertEquals("JSONRPC", endpoint.getProtocolBinding());
+    }
+    
+    @Test
+    void testGetAgentCardWithServiceEndpointsShouldFailWhenProtocolVersionMissingEverywhere() {
+        final AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
+        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
+        detailInfo.setRegistrationType("service");
+        detailInfo.setProtocolVersion(null);
+        detailInfo.setPreferredTransport(AiConstants.A2a.A2A_ENDPOINT_DEFAULT_TRANSPORT);
+        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
+        when(versionResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
+        when(detailResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
+        final Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+        final ServiceInfo serviceInfo = new ServiceInfo();
+        com.alibaba.nacos.api.naming.pojo.Instance instance = new com.alibaba.nacos.api.naming.pojo.Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        instance.setMetadata(Map.of(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC"));
+        serviceInfo.addHost(instance);
+        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionResponse)
+                .thenReturn(detailResponse);
+        NacosApiException exception = assertThrows(NacosApiException.class, () -> a2aServerOperationService
+                .getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME, TEST_AGENT_VERSION, "service"));
+        assertEquals(ErrorCode.PARAMETER_MISSING.getCode(), exception.getDetailErrCode());
     }
     
     @Test
@@ -824,6 +889,7 @@ public class A2aServerOperationServiceTest {
         AgentProvider agentProvider = new AgentProvider();
         agentProvider.setOrganization("Test Organization");
         detailInfo.setProvider(agentProvider);
+        detailInfo.setProtocolVersion("1.0");
         detailInfo.setRegistrationType(TEST_REGISTRATION_TYPE);
         return detailInfo;
     }

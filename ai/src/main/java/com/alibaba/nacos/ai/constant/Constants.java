@@ -108,6 +108,10 @@ public class Constants {
         public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_KEY = "__nacos.agent.endpoint.protocol__";
         
         public static final String NACOS_AGENT_ENDPOINT_QUERY_KEY = "__nacos.agent.endpoint.query__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY = "__nacos.agent.endpoint.protocolVersion__";
+        
+        public static final String NACOS_AGENT_ENDPOINT_TENANT_KEY = "__nacos.agent.endpoint.tenant__";
     }
     
     public static class Skills {

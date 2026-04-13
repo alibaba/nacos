@@ -123,7 +123,12 @@ public class AgentCardUtil {
             url += "?" + query;
         }
         agentInterface.setUrl(url);
-        agentInterface.setTransport(instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY));
+        String transport = instance.getMetadata().get(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY);
+        agentInterface.setTransport(transport);
+        agentInterface.setProtocolBinding(transport);
+        agentInterface.setProtocolVersion(
+                instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        agentInterface.setTenant(instance.getMetadata().get(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY));
         return agentInterface;
     }
     
@@ -145,12 +150,15 @@ public class AgentCardUtil {
         target.setUrl(source.getUrl());
         target.setPreferredTransport(source.getPreferredTransport());
         target.setAdditionalInterfaces(source.getAdditionalInterfaces());
+        target.setSupportedInterfaces(source.getSupportedInterfaces());
         target.setProvider(source.getProvider());
         target.setSecuritySchemes(source.getSecuritySchemes());
         target.setSecurity(source.getSecurity());
+        target.setSecurityRequirements(source.getSecurityRequirements());
         target.setDefaultInputModes(source.getDefaultInputModes());
         target.setDefaultOutputModes(source.getDefaultOutputModes());
         target.setSupportsAuthenticatedExtendedCard(source.getSupportsAuthenticatedExtendedCard());
+        target.setSignatures(source.getSignatures());
         target.setDocumentationUrl(source.getDocumentationUrl());
     }
     

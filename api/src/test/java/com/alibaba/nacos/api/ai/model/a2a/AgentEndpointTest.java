@@ -37,6 +37,8 @@ class AgentEndpointTest extends BasicRequestTest {
         agentEndpoint.setPath("/test");
         agentEndpoint.setSupportTls(true);
         agentEndpoint.setVersion("1.0.0");
+        agentEndpoint.setProtocolVersion("1.0");
+        agentEndpoint.setTenant("public");
         agentEndpoint.setProtocol("HTTP");
         agentEndpoint.setQuery("param1=value1&param2=value2");
         
@@ -48,6 +50,8 @@ class AgentEndpointTest extends BasicRequestTest {
         assertTrue(json.contains("\"path\":\"/test\""));
         assertTrue(json.contains("\"supportTls\":true"));
         assertTrue(json.contains("\"version\":\"1.0.0\""));
+        assertTrue(json.contains("\"protocolVersion\":\"1.0\""));
+        assertTrue(json.contains("\"tenant\":\"public\""));
         assertTrue(json.contains("\"protocol\":\"HTTP\""));
         assertTrue(json.contains("\"query\":\"param1=value1&param2=value2\""));
     }
@@ -55,7 +59,8 @@ class AgentEndpointTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"address\":\"127.0.0.1\",\"port\":8080,\"transport\":\"JSONRPC\","
-                + "\"path\":\"/test\",\"supportTls\":true,\"version\":\"1.0.0\",\"protocol\":\"HTTP\",\"query\":\"param1=value1&param2=value2\"}";
+                + "\"path\":\"/test\",\"supportTls\":true,\"version\":\"1.0.0\",\"protocolVersion\":\"1.0\","
+                + "\"tenant\":\"public\",\"protocol\":\"HTTP\",\"query\":\"param1=value1&param2=value2\"}";
         
         AgentEndpoint agentEndpoint = mapper.readValue(json, AgentEndpoint.class);
         assertNotNull(agentEndpoint);
@@ -65,6 +70,8 @@ class AgentEndpointTest extends BasicRequestTest {
         assertEquals("/test", agentEndpoint.getPath());
         assertTrue(agentEndpoint.isSupportTls());
         assertEquals("1.0.0", agentEndpoint.getVersion());
+        assertEquals("1.0", agentEndpoint.getProtocolVersion());
+        assertEquals("public", agentEndpoint.getTenant());
         assertEquals("HTTP", agentEndpoint.getProtocol());
         assertEquals("param1=value1&param2=value2", agentEndpoint.getQuery());
     }
@@ -78,6 +85,8 @@ class AgentEndpointTest extends BasicRequestTest {
         endpoint1.setPath("/test");
         endpoint1.setSupportTls(true);
         endpoint1.setVersion("1.0.0");
+        endpoint1.setProtocolVersion("1.0");
+        endpoint1.setTenant("public");
         endpoint1.setProtocol("HTTP");
         endpoint1.setQuery("param1=value1");
         
@@ -88,6 +97,8 @@ class AgentEndpointTest extends BasicRequestTest {
         endpoint2.setPath("/test");
         endpoint2.setSupportTls(true);
         endpoint2.setVersion("1.0.0");
+        endpoint2.setProtocolVersion("1.0");
+        endpoint2.setTenant("public");
         endpoint2.setProtocol("HTTP");
         endpoint2.setQuery("param1=value1");
         
@@ -137,6 +148,8 @@ class AgentEndpointTest extends BasicRequestTest {
         agentEndpoint.setPath("/test");
         agentEndpoint.setSupportTls(true);
         agentEndpoint.setVersion("1.0.0");
+        agentEndpoint.setProtocolVersion("1.0");
+        agentEndpoint.setTenant("public");
         agentEndpoint.setProtocol("HTTP");
         agentEndpoint.setQuery("param1=value1");
         
@@ -148,6 +161,8 @@ class AgentEndpointTest extends BasicRequestTest {
         assertTrue(toStringResult.contains("path='/test'"));
         assertTrue(toStringResult.contains("supportTls=true"));
         assertTrue(toStringResult.contains("version='1.0.0'"));
+        assertTrue(toStringResult.contains("protocolVersion='1.0'"));
+        assertTrue(toStringResult.contains("tenant='public'"));
         assertTrue(toStringResult.contains("protocol='HTTP'"));
         assertTrue(toStringResult.contains("query='param1=value1'"));
     }

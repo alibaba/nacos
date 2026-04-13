@@ -56,6 +56,9 @@ class AgentEndpointUtilTest {
                 metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS));
         assertEquals(endpoint.getProtocol(), metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
         assertEquals(endpoint.getQuery(), metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY));
+        assertEquals(endpoint.getProtocolVersion(),
+                metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        assertEquals(endpoint.getTenant(), metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY));
         
         assertDoesNotThrow(instance::validate);
     }
@@ -82,6 +85,8 @@ class AgentEndpointUtilTest {
         assertEquals("", metadata.get(Constants.A2A.AGENT_ENDPOINT_PATH_KEY));
         assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_KEY));
         assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_QUERY_KEY));
+        assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY));
+        assertEquals("", metadata.get(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY));
         
         assertDoesNotThrow(instance::validate);
     }
@@ -168,6 +173,8 @@ class AgentEndpointUtilTest {
         endpoint.setPath("/agent");
         endpoint.setSupportTls(true);
         endpoint.setVersion("1.0.0");
+        endpoint.setProtocolVersion("1.0");
+        endpoint.setTenant("public");
         endpoint.setProtocol("https");
         endpoint.setQuery("param1=value1&param2=value2");
         return endpoint;
@@ -181,6 +188,8 @@ class AgentEndpointUtilTest {
         endpoint.setPath("/grpc-agent");
         endpoint.setSupportTls(false);
         endpoint.setVersion("2.0.0");
+        endpoint.setProtocolVersion("1.0");
+        endpoint.setTenant("public");
         endpoint.setProtocol("http");
         endpoint.setQuery("token=abc123");
         return endpoint;

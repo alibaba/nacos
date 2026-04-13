@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -151,6 +152,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("https://127.0.0.1:8080/agent", result.getUrl());
         assertEquals("JSONRPC", result.getTransport());
+        assertEquals("JSONRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -173,6 +175,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("http://127.0.0.1:8080/agent", result.getUrl());
         assertEquals("JSONRPC", result.getTransport());
+        assertEquals("JSONRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -194,6 +197,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("http://127.0.0.1:8080", result.getUrl());
         assertEquals("JSONRPC", result.getTransport());
+        assertEquals("JSONRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -216,6 +220,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("http://127.0.0.1:8080/agent", result.getUrl());
         assertEquals("JSONRPC", result.getTransport());
+        assertEquals("JSONRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -239,6 +244,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("grpc://127.0.0.1:8080/agent", result.getUrl());
         assertEquals("GRPC", result.getTransport());
+        assertEquals("GRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -262,6 +268,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("http://127.0.0.1:8080/agent?param1=value1&param2=value2", result.getUrl());
         assertEquals("JSONRPC", result.getTransport());
+        assertEquals("JSONRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -286,6 +293,7 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("https://127.0.0.1:8080/agent?token=abc123", result.getUrl());
         assertEquals("JSONRPC", result.getTransport());
+        assertEquals("JSONRPC", result.getProtocolBinding());
     }
     
     @Test
@@ -303,6 +311,22 @@ class AgentCardUtilTest {
         assertNotNull(result);
         assertEquals("http://127.0.0.1:8080", result.getUrl());
         assertEquals(null, result.getTransport());
+    }
+    
+    @Test
+    void testBuildAgentInterfaceWithProtocolVersionAndTenant() {
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_SUPPORT_TLS, "false");
+        metadata.put(Constants.A2A.AGENT_ENDPOINT_TRANSPORT_KEY, "JSONRPC");
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_PROTOCOL_VERSION_KEY, "1.0");
+        metadata.put(Constants.A2A.NACOS_AGENT_ENDPOINT_TENANT_KEY, "public");
+        instance.setMetadata(metadata);
+        AgentInterface result = AgentCardUtil.buildAgentInterface(instance);
+        assertEquals("1.0", result.getProtocolVersion());
+        assertEquals("public", result.getTenant());
     }
     
     @Test
@@ -328,7 +352,14 @@ class AgentCardUtilTest {
         agentCard.setUrl("http://example.com/agent");
         agentCard.setPreferredTransport("JSONRPC");
         agentCard.setAdditionalInterfaces(Collections.emptyList());
+        AgentInterface preferred = new AgentInterface();
+        preferred.setUrl("http://example.com/agent");
+        preferred.setProtocolBinding("JSONRPC");
+        preferred.setProtocolVersion("1.0");
+        agentCard.setSupportedInterfaces(List.of(preferred));
         agentCard.setDocumentationUrl("http://example.com/docs");
+        agentCard.setSecurityRequirements(Collections.emptyList());
+        agentCard.setSignatures(Collections.emptyList());
         agentCard.setDefaultInputModes(Collections.emptyList());
         agentCard.setDefaultOutputModes(Collections.emptyList());
         agentCard.setSupportsAuthenticatedExtendedCard(false);
@@ -344,5 +375,6 @@ class AgentCardUtilTest {
         assertEquals(expected.getUrl(), actual.getUrl());
         assertEquals(expected.getPreferredTransport(), actual.getPreferredTransport());
         assertEquals(expected.getDocumentationUrl(), actual.getDocumentationUrl());
+        assertEquals(expected.getSupportedInterfaces(), actual.getSupportedInterfaces());
     }
 }

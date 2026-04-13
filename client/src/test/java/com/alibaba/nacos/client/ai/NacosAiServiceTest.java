@@ -19,7 +19,9 @@ package com.alibaba.nacos.client.ai;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -44,6 +46,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -222,6 +225,46 @@ class NacosAiServiceTest {
     @Test
     void unsubscribeMcpServerWithInvalidParameters() {
         assertThrows(NacosApiException.class, () -> nacosAiService.unsubscribeMcpServer("", null));
+    }
+    
+    @Test
+    void releaseAgentCardShouldAcceptLegacyFields() throws Exception {
+        injectMocks();
+        AgentCard agentCard = new AgentCard();
+        agentCard.setName("testAgent");
+        agentCard.setVersion("1.0.0");
+        agentCard.setProtocolVersion("1.0");
+        agentCard.setPreferredTransport("JSONRPC");
+        agentCard.setUrl("http://127.0.0.1:8080/agent");
+        nacosAiService.releaseAgentCard(agentCard, "service", true);
+        verify(grpcClient).releaseAgentCard(agentCard, "service", true);
+    }
+    
+    @Test
+    void releaseAgentCardShouldAcceptV1Interfaces() throws Exception {
+        injectMocks();
+        AgentCard agentCard = new AgentCard();
+        agentCard.setName("testAgent");
+        agentCard.setVersion("1.0.0");
+        AgentInterface agentInterface = new AgentInterface();
+        agentInterface.setUrl("http://127.0.0.1:8080/agent");
+        agentInterface.setProtocolBinding("JSONRPC");
+        agentInterface.setProtocolVersion("1.0");
+        agentCard.setSupportedInterfaces(Collections.singletonList(agentInterface));
+        nacosAiService.releaseAgentCard(agentCard, "service", true);
+        verify(grpcClient).releaseAgentCard(agentCard, "service", true);
+    }
+    
+    @Test
+    void releaseAgentCardShouldShowUnifiedErrorWhenFormatsInvalid() {
+        AgentCard agentCard = new AgentCard();
+        agentCard.setName("testAgent");
+        agentCard.setVersion("1.0.0");
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> nacosAiService.releaseAgentCard(agentCard, "service", true));
+        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+                + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
+                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
     }
     
     @Test
