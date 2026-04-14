@@ -136,24 +136,29 @@ public class NacosAgentCardCacheHolder implements Closeable {
         if (!Objects.equals(oldAgentCard.getVersion(), newAgentCard.getVersion())) {
             return true;
         }
+        return isInterfacesChanged(oldAgentCard, newAgentCard);
+    }
+    
+    private boolean isInterfacesChanged(AgentCardDetailInfo oldAgentCard, AgentCardDetailInfo newAgentCard) {
+        List<AgentInterface> oldSupported = oldAgentCard.getSupportedInterfaces();
+        List<AgentInterface> newSupported = newAgentCard.getSupportedInterfaces();
+        boolean oldHasSupported = !CollectionUtils.isEmpty(oldSupported);
+        boolean newHasSupported = !CollectionUtils.isEmpty(newSupported);
+        if (oldHasSupported || newHasSupported) {
+            if (oldHasSupported != newHasSupported) {
+                return true;
+            }
+            return !CollectionUtils.isEqualCollection(oldSupported, newSupported);
+        }
         List<AgentInterface> oldInterfaces = oldAgentCard.getAdditionalInterfaces();
         List<AgentInterface> newInterfaces = newAgentCard.getAdditionalInterfaces();
         if (Objects.isNull(oldInterfaces) && Objects.isNull(newInterfaces)) {
             return !Objects.equals(oldAgentCard.getUrl(), newAgentCard.getUrl());
         }
-        if (anyOneIsNull(oldInterfaces, newInterfaces)) {
+        if (Objects.isNull(oldInterfaces) || Objects.isNull(newInterfaces)) {
             return true;
         }
-        // two interfaces both not null.
         return !CollectionUtils.isEqualCollection(oldInterfaces, newInterfaces);
-    }
-    
-    private boolean anyOneIsNull(List<AgentInterface> oldAdditionalInterfaces,
-            List<AgentInterface> newAdditionalInterfaces) {
-        if (Objects.isNull(oldAdditionalInterfaces)) {
-            return true;
-        }
-        return Objects.isNull(newAdditionalInterfaces);
     }
     
     @Override

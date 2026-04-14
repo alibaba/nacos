@@ -19,6 +19,7 @@ package com.alibaba.nacos.maintainer.client.ai;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
+import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.a2a.AgentVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -27,15 +28,21 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService implements A2aMaintainerService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(A2aMaintainerServiceImpl.class);
 
     private static final String SEARCH_BLUR = "blur";
 
@@ -47,6 +54,19 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
 
     @Override
     public boolean registerAgent(AgentCard agentCard, String namespaceId, String registrationType)
+            throws NacosException {
+        try {
+            return doRegisterAgent(agentCard, namespaceId, registrationType);
+        } catch (NacosException e) {
+            if (shouldRetryWithLegacyFormat(e)) {
+                LOGGER.info("Retry register agent {} with legacy fields for compatibility.", agentCard.getName());
+                return doRegisterAgent(buildLegacyCompatibleAgentCard(agentCard), namespaceId, registrationType);
+            }
+            throw e;
+        }
+    }
+    
+    private boolean doRegisterAgent(AgentCard agentCard, String namespaceId, String registrationType)
             throws NacosException {
         Map<String, String> params = new HashMap<>(4);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
@@ -82,6 +102,20 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
 
     @Override
     public boolean updateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
+            String registrationType) throws NacosException {
+        try {
+            return doUpdateAgentCard(agentCard, namespaceId, setAsLatest, registrationType);
+        } catch (NacosException e) {
+            if (shouldRetryWithLegacyFormat(e)) {
+                LOGGER.info("Retry update agent card {} with legacy fields for compatibility.", agentCard.getName());
+                return doUpdateAgentCard(buildLegacyCompatibleAgentCard(agentCard), namespaceId, setAsLatest,
+                        registrationType);
+            }
+            throw e;
+        }
+    }
+    
+    private boolean doUpdateAgentCard(AgentCard agentCard, String namespaceId, boolean setAsLatest,
             String registrationType) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
         params.put("agentCard", JacksonUtils.toJson(agentCard));
@@ -156,5 +190,33 @@ final class A2aMaintainerServiceImpl extends AbstractAiDelegateMaintainerService
                 new TypeReference<Result<Page<AgentCardVersionInfo>>>() {
                 });
         return result.getData();
+    }
+    
+    private boolean shouldRetryWithLegacyFormat(NacosException e) {
+        if (e.getErrCode() != NacosException.INVALID_PARAM) {
+            return false;
+        }
+        String errMsg = e.getErrMsg();
+        if (StringUtils.isEmpty(errMsg)) {
+            return false;
+        }
+        return errMsg.contains("agentCard.protocolVersion") || errMsg.contains("agentCard.preferredTransport")
+                || errMsg.contains("agentCard.url");
+    }
+    
+    private AgentCard buildLegacyCompatibleAgentCard(AgentCard source) {
+        AgentCard result = JacksonUtils.toObj(JacksonUtils.toJson(source), AgentCard.class);
+        List<AgentInterface> supportedInterfaces = result.getSupportedInterfaces();
+        if (null != supportedInterfaces && !supportedInterfaces.isEmpty()) {
+            AgentInterface preferred = supportedInterfaces.get(0);
+            result.setUrl(preferred.getUrl());
+            result.setPreferredTransport(preferred.getProtocolBinding());
+            result.setProtocolVersion(preferred.getProtocolVersion());
+            if (supportedInterfaces.size() > 1) {
+                result.setAdditionalInterfaces(
+                        new ArrayList<>(supportedInterfaces.subList(1, supportedInterfaces.size())));
+            }
+        }
+        return result;
     }
 }
