@@ -34,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,25 +77,23 @@ class NacosAgentCardCacheHolderTest {
     
     @Test
     void testProcessSameAgentCardShouldNotPublishEvent() throws InterruptedException {
-        AgentInterface iface = buildInterface("http://a", "jsonrpc", "1.0");
-        
-        AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
-        first.setSupportedInterfaces(List.of(iface));
-        cacheHolder.processAgentCardDetailInfo(first);
-        assertTrue(subscriber.latch.await(3, TimeUnit.SECONDS));
-        
-        TestAgentCardSubscriber secondSubscriber = new TestAgentCardSubscriber();
-        NotifyCenter.registerSubscriber(secondSubscriber);
+        CountingAgentCardSubscriber countingSubscriber = new CountingAgentCardSubscriber();
+        NotifyCenter.registerSubscriber(countingSubscriber);
         try {
+            AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
+            first.setSupportedInterfaces(List.of(buildInterface("http://a", "jsonrpc", "1.0")));
+            cacheHolder.processAgentCardDetailInfo(first);
+            assertTrue(countingSubscriber.firstLatch.await(3, TimeUnit.SECONDS));
+            assertEquals(1, countingSubscriber.eventCount.get());
+            
             AgentCardDetailInfo second = buildDetailInfo("test-agent", "1.0", true);
-            AgentInterface sameIface = buildInterface("http://a", "jsonrpc", "1.0");
-            second.setSupportedInterfaces(List.of(sameIface));
+            second.setSupportedInterfaces(List.of(buildInterface("http://a", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(second);
-            boolean eventFired = secondSubscriber.latch.await(1, TimeUnit.SECONDS);
-            assertTrue(!eventFired || secondSubscriber.lastEvent.get() == null,
+            Thread.sleep(500);
+            assertEquals(1, countingSubscriber.eventCount.get(),
                     "Should NOT publish event for identical agent card");
         } finally {
-            NotifyCenter.deregisterSubscriber(secondSubscriber);
+            NotifyCenter.deregisterSubscriber(countingSubscriber);
         }
     }
     
@@ -242,6 +241,24 @@ class NacosAgentCardCacheHolderTest {
         public void onEvent(AgentCardChangedEvent event) {
             lastEvent.set(event);
             latch.countDown();
+        }
+        
+        @Override
+        public Class<? extends Event> subscribeType() {
+            return AgentCardChangedEvent.class;
+        }
+    }
+    
+    private static class CountingAgentCardSubscriber extends Subscriber<AgentCardChangedEvent> {
+        
+        final AtomicInteger eventCount = new AtomicInteger(0);
+        
+        final CountDownLatch firstLatch = new CountDownLatch(1);
+        
+        @Override
+        public void onEvent(AgentCardChangedEvent event) {
+            eventCount.incrementAndGet();
+            firstLatch.countDown();
         }
         
         @Override
