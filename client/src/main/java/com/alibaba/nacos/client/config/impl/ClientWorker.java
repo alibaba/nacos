@@ -93,6 +93,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -651,7 +652,7 @@ public class ClientWorker implements Closeable {
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
-        Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
+        Map<String, ExecutorService> multiTaskExecutor = new ConcurrentHashMap<>();
 
         private ExecutorService listenExecutor;
 
@@ -997,15 +998,12 @@ public class ClientWorker implements Closeable {
         }
         
         private ExecutorService ensureSyncExecutor(String taskId) {
-            if (!multiTaskExecutor.containsKey(taskId)) {
-                multiTaskExecutor.put(taskId,
-                        new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> {
-                            Thread thread = new Thread(r, "nacos.client.config.listener.task-" + taskId);
-                            thread.setDaemon(true);
-                            return thread;
-                        }));
-            }
-            return multiTaskExecutor.get(taskId);
+            return multiTaskExecutor.computeIfAbsent(taskId, k -> new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<>(), r -> {
+                        Thread thread = new Thread(r, "nacos.client.config.listener.task-" + taskId);
+                        thread.setDaemon(true);
+                        return thread;
+                    }));
         }
         
         private void refreshContentAndCheck(RpcClient rpcClient, String groupKey, boolean notify) {
