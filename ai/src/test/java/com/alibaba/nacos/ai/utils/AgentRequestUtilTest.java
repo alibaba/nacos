@@ -231,6 +231,26 @@ class AgentRequestUtilTest {
     }
     
     @Test
+    void testIsAgentCardNormalizedShouldReturnTrueAfterNormalize() {
+        AgentCard agentCard = createValidAgentCard();
+        agentCard.setSupportedInterfaces(null);
+        AgentRequestUtil.normalizeAgentCard(agentCard);
+        assertEquals(true, AgentRequestUtil.isAgentCardNormalized(agentCard));
+    }
+    
+    @Test
+    void testIsAgentCardNormalizedShouldReturnFalseWhenLegacyMirrorNotMatch() {
+        AgentCard agentCard = createValidAgentCard();
+        AgentInterface preferred = new AgentInterface();
+        preferred.setUrl("http://example.com/v1");
+        preferred.setProtocolBinding("JSONRPC");
+        preferred.setProtocolVersion("1.0");
+        agentCard.setSupportedInterfaces(Collections.singletonList(preferred));
+        agentCard.setUrl("http://not-match");
+        assertEquals(false, AgentRequestUtil.isAgentCardNormalized(agentCard));
+    }
+    
+    @Test
     void testValidateAgentCardWithNullDescriptionShouldSetEmptyString() throws NacosApiException {
         // Given
         AgentCard agentCard = createValidAgentCard();

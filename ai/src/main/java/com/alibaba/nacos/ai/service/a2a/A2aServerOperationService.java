@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.a2a.identity.AgentIdCodecHolder;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.utils.AgentCardUtil;
+import com.alibaba.nacos.ai.utils.AgentRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCard;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
@@ -337,6 +338,9 @@ public class A2aServerOperationService {
                     String.format("Agent %s version %s not found.", agentCardVersionInfo.getName(), version));
         }
         AgentCardDetailInfo result = JacksonUtils.toObj(response.getContent(), AgentCardDetailInfo.class);
+        if (!AgentRequestUtil.isAgentCardNormalized(result)) {
+            AgentRequestUtil.normalizeAgentCard(result);
+        }
         if (StringUtils.isBlank(registrationType)) {
             registrationType = result.getRegistrationType();
         }
@@ -356,11 +360,18 @@ public class A2aServerOperationService {
         if (serviceInfo.getHosts().isEmpty()) {
             return;
         }
+        String fallbackProtocolVersion = resolveEndpointFallbackProtocolVersion(agentCard);
         List<AgentInterface> allAgentEndpoints = serviceInfo.getHosts().stream().map(AgentCardUtil::buildAgentInterface)
                 .toList();
         for (AgentInterface each : allAgentEndpoints) {
+            if (StringUtils.isEmpty(each.getProtocolBinding()) && StringUtils.isNotEmpty(each.getTransport())) {
+                each.setProtocolBinding(each.getTransport());
+            }
+            if (StringUtils.isEmpty(each.getTransport()) && StringUtils.isNotEmpty(each.getProtocolBinding())) {
+                each.setTransport(each.getProtocolBinding());
+            }
             if (StringUtils.isEmpty(each.getProtocolVersion())) {
-                each.setProtocolVersion(agentCard.getProtocolVersion());
+                each.setProtocolVersion(fallbackProtocolVersion);
             }
             if (StringUtils.isEmpty(each.getProtocolVersion())) {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -387,6 +398,21 @@ public class A2aServerOperationService {
      */
     private AgentInterface randomOne(List<AgentInterface> agentInterfaces) {
         return agentInterfaces.get(ThreadLocalRandom.current().nextInt(agentInterfaces.size()));
+    }
+
+    private String resolveEndpointFallbackProtocolVersion(AgentCardDetailInfo agentCard) {
+        if (StringUtils.isNotEmpty(agentCard.getProtocolVersion())) {
+            return agentCard.getProtocolVersion();
+        }
+        if (null == agentCard.getSupportedInterfaces() || agentCard.getSupportedInterfaces().isEmpty()) {
+            return null;
+        }
+        for (AgentInterface each : agentCard.getSupportedInterfaces()) {
+            if (StringUtils.isNotEmpty(each.getProtocolVersion())) {
+                return each.getProtocolVersion();
+            }
+        }
+        return null;
     }
     
     private ConfigForm transferVersionInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, String namespaceId) {

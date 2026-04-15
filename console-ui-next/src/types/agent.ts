@@ -20,6 +20,7 @@ export interface AgentCapabilities {
   streaming?: boolean;
   pushNotifications?: boolean;
   stateTransitionHistory?: boolean;
+  extendedAgentCard?: boolean;
 }
 
 // ===== Provider =====
@@ -37,6 +38,17 @@ export interface AgentAdditionalInterface {
   description?: string;
   transport?: string;
   uri?: string;
+  protocolBinding?: string;
+  protocolVersion?: string;
+  tenant?: string;
+}
+
+export interface AgentInterface {
+  url?: string;
+  transport?: string;
+  protocolBinding?: string;
+  protocolVersion?: string;
+  tenant?: string;
 }
 
 // ===== Version =====
@@ -74,8 +86,10 @@ export interface AgentDetailInfo extends AgentBasicInfo {
   documentationUrl?: string;
   security?: unknown;
   securitySchemes?: unknown;
+  supportedInterfaces?: AgentInterface[];
   additionalInterfaces?: AgentAdditionalInterface[];
   supportsAuthenticatedExtendedCard?: boolean;
+  signatures?: Array<Record<string, unknown>>;
   latestVersion?: boolean;
 }
 

@@ -206,6 +206,18 @@ class AgentDetail extends React.Component {
     return modes.toString();
   };
 
+  getSupportedInterfaces = agentData => {
+    const interfaces = Array.isArray(agentData?.supportedInterfaces)
+      ? agentData.supportedInterfaces
+      : [];
+    return interfaces.filter(item => item && item.url);
+  };
+
+  getPrimaryInterface = agentData => {
+    const interfaces = this.getSupportedInterfaces(agentData);
+    return interfaces.length > 0 ? interfaces[0] : null;
+  };
+
   renderSkillsContent = skills => {
     if (!skills || (Array.isArray(skills) && skills.length === 0)) {
       return (
@@ -525,6 +537,15 @@ class AgentDetail extends React.Component {
       );
     }
 
+    const primaryInterface = this.getPrimaryInterface(agentData);
+    const supportedInterfaces = this.getSupportedInterfaces(agentData);
+    const transport =
+      (primaryInterface && (primaryInterface.protocolBinding || primaryInterface.transport)) ||
+      '--';
+    const protocolVersion = (primaryInterface && primaryInterface.protocolVersion) || '--';
+    const serviceUrl = (primaryInterface && primaryInterface.url) || '--';
+    const extendedCardSupported = !!agentData?.capabilities?.extendedAgentCard;
+
     // 构造包含版本信息的标题
     const pageTitle = getParams('version')
       ? `Agent详情 - ${agentData.name} (版本: ${getParams('version')})`
@@ -548,9 +569,9 @@ class AgentDetail extends React.Component {
             <div style={{ flex: 1 }}>
               {this.renderDetailItem('Agent名称', agentData.name)}
               {this.renderDetailItem('版本号', agentData.version)}
-              {this.renderDetailItem('服务地址', agentData.url)}
+              {this.renderDetailItem('服务地址', serviceUrl)}
               {this.renderDetailItem('描述信息', agentData.description)}
-              {this.renderDetailItem('协议版本', agentData.protocolVersion)}
+              {this.renderDetailItem('协议版本', protocolVersion)}
               {this.renderDetailItem('图标URL', agentData.iconUrl, 'url')}
               {this.renderDetailItem('文档URL', agentData.documentationUrl, 'url')}
             </div>
@@ -559,12 +580,8 @@ class AgentDetail extends React.Component {
               {this.renderDetailItem('输出模式', this.formatModes(agentData.defaultOutputModes))}
               {this.renderDetailItem('提供商名称', agentData.provider?.organization)}
               {this.renderDetailItem('提供商URL', agentData.provider?.url)}
-              {this.renderDetailItem('传输协议', agentData.preferredTransport)}
-              {this.renderDetailItem(
-                '支持认证扩展卡',
-                agentData.supportsAuthenticatedExtendedCard,
-                'tag'
-              )}
+              {this.renderDetailItem('传输协议', transport)}
+              {this.renderDetailItem('支持认证扩展卡', extendedCardSupported, 'tag')}
             </div>
           </div>
         </Card>
@@ -621,10 +638,10 @@ class AgentDetail extends React.Component {
           )}
         </Card>
 
-        <Card title="附加接口" style={{ marginBottom: 16 }} contentHeight="auto">
-          {agentData.additionalInterfaces && agentData.additionalInterfaces.length > 0 ? (
+        <Card title="附加接口（支持接口）" style={{ marginBottom: 16 }} contentHeight="auto">
+          {supportedInterfaces.length > 0 ? (
             <div>
-              {agentData.additionalInterfaces.map((interfaceItem, index) => (
+              {supportedInterfaces.map((interfaceItem, index) => (
                 <div
                   key={index}
                   style={{
@@ -636,21 +653,31 @@ class AgentDetail extends React.Component {
                   }}
                 >
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                    {interfaceItem.name || `接口 ${index + 1}`}
+                    {`接口 ${index + 1}`}
                   </div>
                   {interfaceItem.url && (
                     <div style={{ color: '#666', fontSize: '13px' }}>URL: {interfaceItem.url}</div>
                   )}
-                  {interfaceItem.description && (
+                  {(interfaceItem.protocolBinding || interfaceItem.transport) && (
                     <div style={{ color: '#666', fontSize: '13px' }}>
-                      描述: {interfaceItem.description}
+                      传输协议: {interfaceItem.protocolBinding || interfaceItem.transport}
+                    </div>
+                  )}
+                  {interfaceItem.protocolVersion && (
+                    <div style={{ color: '#666', fontSize: '13px' }}>
+                      协议版本: {interfaceItem.protocolVersion}
+                    </div>
+                  )}
+                  {interfaceItem.tenant && (
+                    <div style={{ color: '#666', fontSize: '13px' }}>
+                      租户: {interfaceItem.tenant}
                     </div>
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无附加接口</div>
+            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无支持接口</div>
           )}
         </Card>
 

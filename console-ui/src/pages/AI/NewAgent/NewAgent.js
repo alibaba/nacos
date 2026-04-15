@@ -83,6 +83,14 @@ class NewAgent extends React.Component {
         this.setState({ loading: false });
         if (data && (data.code === 0 || data.code === 200) && data.data) {
           const agentData = data.data;
+          const supportedInterfaces = Array.isArray(agentData.supportedInterfaces)
+            ? agentData.supportedInterfaces
+            : [];
+          const primaryInterface = supportedInterfaces.length > 0 ? supportedInterfaces[0] : {};
+          const additionalInterfaceList =
+            supportedInterfaces.length > 1
+              ? supportedInterfaces.slice(1)
+              : agentData.additionalInterfaces || [];
           // 处理 capabilities 字段，确保正确解析三个能力开关的状态
           const capabilities = {
             streaming: false,
@@ -102,9 +110,12 @@ class NewAgent extends React.Component {
             name: agentData.name,
             description: agentData.description,
             version: agentData.version,
-            protocolVersion: agentData.protocolVersion,
-            url: agentData.url,
-            preferredTransport: agentData.preferredTransport,
+            protocolVersion: primaryInterface.protocolVersion || agentData.protocolVersion,
+            url: primaryInterface.url || agentData.url,
+            preferredTransport:
+              primaryInterface.protocolBinding ||
+              primaryInterface.transport ||
+              agentData.preferredTransport,
             iconUrl: agentData.iconUrl,
             documentationUrl: agentData.documentationUrl,
             organization: agentData.provider?.organization || '',
@@ -120,10 +131,14 @@ class NewAgent extends React.Component {
               : '',
             defaultInputModes: agentData.defaultInputModes?.join(',') || '',
             defaultOutputModes: agentData.defaultOutputModes?.join(',') || '',
-            additionalInterfaces: agentData.additionalInterfaces
-              ? JSON.stringify(agentData.additionalInterfaces, null, 2)
-              : '',
-            supportsAuthenticatedExtendedCard: agentData.supportsAuthenticatedExtendedCard || false,
+            additionalInterfaces:
+              additionalInterfaceList.length > 0
+                ? JSON.stringify(additionalInterfaceList, null, 2)
+                : '',
+            supportsAuthenticatedExtendedCard:
+              agentData.capabilities?.extendedAgentCard ||
+              agentData.supportsAuthenticatedExtendedCard ||
+              false,
             setAsLatest: true,
           });
         } else {
@@ -153,16 +168,32 @@ class NewAgent extends React.Component {
       const namespaceId = getParams('namespace') || '';
       const { isEdit } = this.state;
 
-      // 构建 agentCard 对象，包含所有需要放入 JSON 字符串的字段
+      // 构建 agentCard 对象，按 A2A 1.0.0 的 supportedInterfaces 结构提交
+      const normalizeInterface = item => {
+        const protocolBinding = item.protocolBinding || item.transport || '';
+        return {
+          ...item,
+          protocolBinding,
+          transport: item.transport || protocolBinding,
+          protocolVersion: item.protocolVersion || '',
+          url: item.url || '',
+          tenant: item.tenant || '',
+        };
+      };
+      const supportedInterfaces = [
+        normalizeInterface({
+          url: values.url,
+          protocolBinding: values.preferredTransport,
+          protocolVersion: values.protocolVersion,
+        }),
+      ];
       const agentCard = {
         name: values.name,
         description: values.description,
         version: values.version,
-        protocolVersion: values.protocolVersion,
-        url: values.url,
-        preferredTransport: values.preferredTransport,
         iconUrl: values.iconUrl,
         documentationUrl: values.documentationUrl,
+        supportedInterfaces,
         // Add provider info if provided
         provider:
           values.organization || values.providerUrl
@@ -178,6 +209,7 @@ class NewAgent extends React.Component {
         streaming: !!values.streaming,
         pushNotifications: !!values.pushNotifications,
         stateTransitionHistory: !!values.stateTransitionHistory,
+        extendedAgentCard: !!values.supportsAuthenticatedExtendedCard,
       };
 
       if (values.skills && values.skills.trim() && values.skills.trim() !== 'null') {
@@ -231,7 +263,14 @@ class NewAgent extends React.Component {
         try {
           const parsed = JSON.parse(values.additionalInterfaces.trim());
           if (parsed !== null && parsed !== undefined) {
-            agentCard.additionalInterfaces = parsed;
+            if (!Array.isArray(parsed)) {
+              Message.error('额外接口JSON格式错误: 必须是JSON数组');
+              this.setState({ loading: false });
+              return;
+            }
+            parsed.forEach(item => {
+              supportedInterfaces.push(normalizeInterface(item));
+            });
           }
         } catch (e) {
           Message.error('额外接口JSON格式错误: ' + e.message);
@@ -252,10 +291,6 @@ class NewAgent extends React.Component {
           .split(',')
           .map(s => s.trim())
           .filter(s => s);
-      }
-
-      if (values.supportsAuthenticatedExtendedCard !== undefined) {
-        agentCard.supportsAuthenticatedExtendedCard = values.supportsAuthenticatedExtendedCard;
       }
 
       // 准备请求数据
