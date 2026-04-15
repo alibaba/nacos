@@ -19,9 +19,9 @@ package com.alibaba.nacos.config.server.model;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.core.utils.StringPool;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -80,7 +80,11 @@ public class CacheItem {
      */
     public void initConfigGrayIfEmpty() {
         if (this.configCacheGray == null) {
-            this.configCacheGray = new HashMap<>(4);
+            synchronized (this) {
+                if (this.configCacheGray == null) {
+                    this.configCacheGray = new ConcurrentHashMap<>(4);
+                }
+            }
         }
     }
 
@@ -91,9 +95,8 @@ public class CacheItem {
      */
     public void initConfigGrayIfEmpty(String grayName) {
         initConfigGrayIfEmpty();
-        if (!this.configCacheGray.containsKey(grayName)) {
-            this.configCacheGray.put(grayName, ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray(grayName));
-        }
+        this.configCacheGray.computeIfAbsent(grayName,
+                k -> ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray(k));
     }
 
     public List<ConfigCacheGray> getSortConfigGrays() {
