@@ -37,9 +37,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Properties;
@@ -61,21 +61,21 @@ class ConfigChangeAspectTest {
     ConfigChangeAspect configChangeAspect;
     
     ConfigChangeConfigs configChangeConfigs;
-    
-    @Mock
+
+    @MockitoBean
     ConfigChangePluginService configChangePluginService;
     
     MockedStatic<PropertiesUtil> propertiesStatic;
     
     MockedStatic<RequestUtil> requestUtilMockedStatic;
-    
-    @Mock
+
+    @MockitoBean
     private ProceedingJoinPoint pjp;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigForm configForm;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigRequestInfo configRequestInfo;
     
     @BeforeEach
@@ -120,10 +120,9 @@ class ConfigChangeAspectTest {
         when(pjp.proceed(any())).thenReturn("Success");
         
         Object o = configChangeAspect.publishOrUpdateConfigAround(pjp);
-        Thread.sleep(20L);
         
         // expect service executed.
-        verify(configChangePluginService, Mockito.times(1))
+        verify(configChangePluginService, Mockito.timeout(1000).times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
         assertEquals("Success", o);
@@ -144,10 +143,9 @@ class ConfigChangeAspectTest {
         when(pjp.getArgs()).thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         Mockito.when(pjp.proceed(any())).thenReturn("mock success return");
         Object o = configChangeAspect.removeConfigByIdAround(pjp);
-        Thread.sleep(20L);
         
         // expect service executed.
-        verify(configChangePluginService, Mockito.times(1))
+        verify(configChangePluginService, Mockito.timeout(1000).times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
         assertEquals("mock success return", o);
@@ -213,6 +211,7 @@ class ConfigChangeAspectTest {
         
         Object result = configChangeAspect.publishOrUpdateConfigAround(pjp);
         
+        verify(configChangePluginService, Mockito.timeout(1000).times(1)).execute(any(), any());
         assertEquals(false, result);
     }
     
@@ -246,7 +245,7 @@ class ConfigChangeAspectTest {
         
         configChangeAspect.publishOrUpdateConfigAround(pjp);
         ArgumentCaptor<ConfigChangeRequest> requestCaptor = ArgumentCaptor.forClass(ConfigChangeRequest.class);
-        verify(configChangePluginService).execute(requestCaptor.capture(), any());
+        verify(configChangePluginService, Mockito.timeout(1000).times(1)).execute(requestCaptor.capture(), any());
         assertEquals(ConfigChangePointCutTypes.PUBLISH_BY_RPC, requestCaptor.getValue().getRequestType());
     }
     

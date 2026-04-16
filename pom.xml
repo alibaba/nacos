@@ -128,7 +128,7 @@
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.4</nacos.logback.adapter.version>
-        <spring-boot-dependencies.version>3.5.13</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>4.0.5</spring-boot-dependencies.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
@@ -153,7 +153,7 @@
         <gson.version>2.11.0</gson.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
-        <junit5.version>5.10.2</junit5.version>
+        <junit6.version>6.0.3</junit6.version>
         <mcp.version>0.17.0</mcp.version>
         <ojdbc.version>19.7.0.0</ojdbc.version>
 
@@ -695,7 +695,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>${junit5.version}</version>
+                <version>${junit6.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

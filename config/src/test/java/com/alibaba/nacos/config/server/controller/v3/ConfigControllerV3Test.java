@@ -45,19 +45,18 @@ import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -80,49 +79,44 @@ import static org.mockito.Mockito.when;
 @WebAppConfiguration
 class ConfigControllerV3Test {
     
-    @InjectMocks
     ConfigControllerV3 configControllerV3;
     
     private MockMvc mockmvc;
-    
-    @Mock
+
+    @MockitoBean
     private ServletContext servletContext;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
-    @Mock
+
+    @MockitoBean
     private NamespacePersistService namespacePersistService;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigOperationService configOperationService;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigListenerStateDelegate configListenerStateDelegate;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigDetailService configDetailService;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigMigrateService configMigrateService;
     
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(configControllerV3, "configListenerStateDelegate", configListenerStateDelegate);
-        ReflectionTestUtils.setField(configControllerV3, "configInfoPersistService", configInfoPersistService);
-        ReflectionTestUtils.setField(configControllerV3, "configInfoBetaPersistService", configInfoBetaPersistService);
-        ReflectionTestUtils.setField(configControllerV3, "configInfoGrayPersistService", configInfoGrayPersistService);
-        ReflectionTestUtils.setField(configControllerV3, "namespacePersistService", namespacePersistService);
-        ReflectionTestUtils.setField(configControllerV3, "configOperationService", configOperationService);
-        ReflectionTestUtils.setField(configControllerV3, "configMigrateService", configMigrateService);
+        configControllerV3 = new ConfigControllerV3(configOperationService, configInfoPersistService,
+                configDetailService, configInfoGrayPersistService, configInfoBetaPersistService,
+                namespacePersistService, configListenerStateDelegate, configMigrateService);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV3).build();
     }
     
@@ -374,8 +368,8 @@ class ConfigControllerV3Test {
             map.put("test", "test");
             when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
                     any())).thenReturn(map);
-            
-            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
+
+            MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
                             Constants.CONFIG_ADMIN_V3_PATH + "/import").file(file).param("src_user", "test")
                     .param("namespace", "public").param("policy", "ABORT");
             

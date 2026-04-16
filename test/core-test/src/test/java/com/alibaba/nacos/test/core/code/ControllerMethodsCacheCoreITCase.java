@@ -84,12 +84,11 @@ class ControllerMethodsCacheCoreITCase {
     private Request buildRequest(String method, String path, Map<String, String> parameters) {
         Connector connector = new Connector();
         connector.setParseBodyMethods("GET,POST,PUT,DELETE,PATCH");
-        Request request = new Request(connector);
         org.apache.coyote.Request coyoteRequest = new org.apache.coyote.Request();
+        Request request = new Request(connector, coyoteRequest);
         MessageBytes messageBytes = coyoteRequest.requestURI();
         messageBytes.setString(path);
-        request.setCoyoteRequest(coyoteRequest);
-        coyoteRequest.method().setString(method);
+        coyoteRequest.setMethod(method);
         if (parameters != null) {
             for (Map.Entry<String, String> entry : parameters.entrySet()) {
                 coyoteRequest.getParameters().addParameter(entry.getKey(), entry.getValue());

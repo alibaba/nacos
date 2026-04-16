@@ -33,9 +33,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,27 +56,27 @@ class CapacityManagementAspectTest {
     final String mockGroup = "mockGroup";
     
     final String mockTenant = "mockTenant";
-    
-    @Mock
+
+    @MockitoBean
     private ConfigForm configForm;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigRequestInfo configRequestInfo;
-    
-    @Mock
+
+    @MockitoBean
     ProceedingJoinPoint proceedingJoinPoint;
-    
-    @Mock
+
+    @MockitoBean
     ProceedingJoinPoint localMockProceedingJoinPoint;
     
     RuntimeException mockException = new RuntimeException("mock exception");
     
     CapacityManagementAspect capacityManagementAspect;
-    
-    @Mock
+
+    @MockitoBean
     CapacityService capacityService;
-    
-    @Mock
+
+    @MockitoBean
     ConfigInfoPersistService configInfoPersistService;
     
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;

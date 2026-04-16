@@ -56,6 +56,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -373,8 +374,8 @@ public class ConsoleConfigControllerTest {
         Mockito.when(
                 configProxy.importAndPublishConfig(eq(srcUser), eq(namespaceId), eq(policy), eq(mockFile), eq(srcIp),
                         eq(requestIpApp))).thenReturn(expectedResult);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/v3/console/cs/config/import")
+
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/v3/console/cs/config/import")
                 .file(mockFile).param("srcUser", "").param("namespaceId", namespaceId)
                 .param("policy", policy.toString()).header("X-Real-IP", srcIp).header("X-Forwarded-For", srcIp)
                 .header("X-App-Name", requestIpApp != null ? requestIpApp : "");

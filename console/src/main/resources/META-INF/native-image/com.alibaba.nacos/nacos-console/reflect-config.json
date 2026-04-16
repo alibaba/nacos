@@ -1717,7 +1717,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"corsFilter","parameterTypes":[] }, {"name":"init","parameterTypes":[] }, {"name":"jacksonObjectMapperCustomization","parameterTypes":[] }, {"name":"xssFilter","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"corsFilter","parameterTypes":[] }, {"name":"init","parameterTypes":[] }, {"name":"jacksonJsonMapperCustomization","parameterTypes":[] }, {"name":"xssFilter","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.console.config.ConsoleModuleStateBuilder"
@@ -12400,7 +12400,7 @@
   "name":"org.springframework.boot.autoconfigure.jsonb.JsonbAutoConfiguration"
 },
 {
-  "name":"org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration"
+  "name":"org.springframework.boot.ldap.autoconfigure.LdapAutoConfiguration"
 },
 {
   "name":"org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener",

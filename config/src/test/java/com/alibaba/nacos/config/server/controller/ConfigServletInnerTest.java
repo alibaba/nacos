@@ -44,16 +44,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
@@ -73,8 +71,7 @@ import static org.mockito.Mockito.when;
 class ConfigServletInnerTest {
     
     static MockedStatic<ConfigDiskServiceFactory> configDiskServiceFactoryMockedStatic;
-    
-    @InjectMocks
+
     ConfigServletInner configServletInner;
     
     MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
@@ -82,18 +79,17 @@ class ConfigServletInnerTest {
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
     MockedStatic<MD5Util> md5UtilMockedStatic;
-    
-    @Mock
+
+    @MockitoBean
     private LongPollingService longPollingService;
-    
-    @Mock
+
+    @MockitoBean
     private ConfigRocksDbDiskService configRocksDbDiskService;
     
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        ReflectionTestUtils.setField(configServletInner, "longPollingService", longPollingService);
-        ReflectionTestUtils.setField(configServletInner, "configQueryChainService", new ConfigQueryChainService());
+        configServletInner = new ConfigServletInner(longPollingService, new ConfigQueryChainService());
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);

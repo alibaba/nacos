@@ -17,7 +17,7 @@
 package com.alibaba.nacos.airegistry.config;
 
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
-import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
+import org.springframework.boot.tomcat.TomcatConnectorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;

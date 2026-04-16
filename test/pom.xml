@@ -102,7 +102,13 @@
             <artifactId>httpclient5</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-resttestclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- issue#12028 httpmime merged in httpclient5 -->
 <!--        <dependency>-->
 <!--            <groupId>org.apache.httpcomponents</groupId>-->

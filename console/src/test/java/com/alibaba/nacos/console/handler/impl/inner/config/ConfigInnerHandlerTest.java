@@ -299,7 +299,7 @@ class ConfigInnerHandlerTest {
                 Collections.singletonList(1L));
         assertNotNull(actual);
         assertEquals(HttpStatus.OK, actual.getStatusCode());
-        assertTrue(actual.getHeaders().containsKey("Content-Disposition"));
+        assertTrue(actual.getHeaders().containsHeader("Content-Disposition"));
     }
     
     @Test

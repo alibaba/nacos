@@ -30,19 +30,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -56,10 +55,9 @@ import static org.mockito.Mockito.when;
 @WebAppConfiguration
 class ConfigOpsControllerV3Test {
     
-    @InjectMocks
     ConfigOpsControllerV3 configOpsControllerV3;
-    
-    @Mock
+
+    @MockitoBean
     DumpService dumpService;
     
     MockedStatic<DatasourceConfiguration> datasourceConfigurationMockedStatic;
@@ -69,8 +67,8 @@ class ConfigOpsControllerV3Test {
     MockedStatic<ApplicationUtils> applicationUtilsMockedStatic;
     
     private MockMvc mockMvc;
-    
-    @Mock
+
+    @MockitoBean
     private ServletContext servletContext;
     
     @AfterEach
@@ -84,7 +82,7 @@ class ConfigOpsControllerV3Test {
     @BeforeEach
     void init() {
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(configOpsControllerV3, "dumpService", dumpService);
+        configOpsControllerV3 = new ConfigOpsControllerV3(dumpService);
         mockMvc = MockMvcBuilders.standaloneSetup(configOpsControllerV3).build();
         
         datasourceConfigurationMockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
@@ -136,7 +134,7 @@ class ConfigOpsControllerV3Test {
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
                 .thenReturn(Mockito.mock(DatabaseOperate.class));
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.OPS_CONTROLLER_V3_ADMIN_PATH + "/derby/import")
                 .file(file);
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);

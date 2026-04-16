@@ -99,7 +99,7 @@ public class LdapAuthPluginConfig {
             LdapAuthenticationProvider ldapAuthenticationProvider) {
         return new GlobalAuthenticationConfigurerAdapter() {
             @Override
-            public void init(AuthenticationManagerBuilder auth) throws Exception {
+            public void init(AuthenticationManagerBuilder auth) {
                 auth.authenticationProvider(ldapAuthenticationProvider);
             }
         };

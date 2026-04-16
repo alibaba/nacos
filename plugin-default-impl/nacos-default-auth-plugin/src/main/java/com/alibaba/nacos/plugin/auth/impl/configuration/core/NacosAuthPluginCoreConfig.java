@@ -72,7 +72,7 @@ public class NacosAuthPluginCoreConfig {
     public GlobalAuthenticationConfigurerAdapter authenticationConfigurer() {
         return new GlobalAuthenticationConfigurerAdapter() {
             @Override
-            public void init(AuthenticationManagerBuilder auth) throws Exception {
+            public void init(AuthenticationManagerBuilder auth) {
                 if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(NacosAuthConfigHolder.getInstance()
                         .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
                         .getNacosAuthSystemType())) {
