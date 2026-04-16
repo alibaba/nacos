@@ -33,6 +33,7 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -569,5 +570,62 @@ class SkillZipParserTest {
             zos.closeEntry();
         }
         return baos.toByteArray();
+    }
+
+    // ========== syncVersionInSkillMd tests ==========
+
+    @Test
+    void testSyncVersionReplacesTopLevelVersion() {
+        String skillMd = "---\nname: my-skill\nversion: 1.0.0\ndescription: desc\n---\n\nBody content";
+        String result = SkillZipParser.syncVersionInSkillMd(skillMd, "2.0.0");
+        Map<String, String> yaml = SkillZipParser.parseYamlFrontMatterFromMarkdown(result);
+        assertEquals("2.0.0", yaml.get("version"));
+        assertTrue(result.contains("Body content"));
+    }
+
+    @Test
+    void testSyncVersionReplacesNestedMetadataVersion() {
+        String skillMd = "---\nname: my-skill\ndescription: desc\nmetadata:\n  version: 1.0.0\n  author: test\n---\n\nBody";
+        String result = SkillZipParser.syncVersionInSkillMd(skillMd, "1.0.1");
+        Map<String, String> yaml = SkillZipParser.parseYamlFrontMatterFromMarkdown(result);
+        assertEquals("1.0.1", yaml.get("metadata.version"));
+        assertTrue(result.contains("Body"));
+    }
+
+    @Test
+    void testSyncVersionAddsVersionWhenMissing() {
+        String skillMd = "---\nname: my-skill\ndescription: desc\n---\n\nBody";
+        String result = SkillZipParser.syncVersionInSkillMd(skillMd, "0.0.1");
+        Map<String, String> yaml = SkillZipParser.parseYamlFrontMatterFromMarkdown(result);
+        assertEquals("0.0.1", yaml.get("version"));
+        assertTrue(result.contains("Body"));
+    }
+
+    @Test
+    void testSyncVersionNoOpWhenAlreadyMatches() {
+        String skillMd = "---\nname: my-skill\nversion: 1.0.0\ndescription: desc\n---\n\nBody";
+        String result = SkillZipParser.syncVersionInSkillMd(skillMd, "1.0.0");
+        assertEquals(skillMd, result);
+    }
+
+    @Test
+    void testSyncVersionReplacesQuotedVersion() {
+        String skillMd = "---\nname: my-skill\nversion: \"1.0.0\"\ndescription: desc\n---\n\nBody";
+        String result = SkillZipParser.syncVersionInSkillMd(skillMd, "1.0.1");
+        Map<String, String> yaml = SkillZipParser.parseYamlFrontMatterFromMarkdown(result);
+        assertEquals("1.0.1", yaml.get("version"));
+    }
+
+    @Test
+    void testSyncVersionReturnsOriginalWhenNoFrontMatter() {
+        String skillMd = "No front matter here";
+        String result = SkillZipParser.syncVersionInSkillMd(skillMd, "1.0.0");
+        assertEquals(skillMd, result);
+    }
+
+    @Test
+    void testSyncVersionReturnsOriginalForBlankInput() {
+        assertNull(SkillZipParser.syncVersionInSkillMd(null, "1.0.0"));
+        assertEquals("", SkillZipParser.syncVersionInSkillMd("", "1.0.0"));
     }
 }

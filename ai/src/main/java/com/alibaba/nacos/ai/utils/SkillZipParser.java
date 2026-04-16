@@ -103,6 +103,12 @@ public class SkillZipParser {
     private static final Pattern YAML_FRONT_MATTER = Pattern.compile(
             "^---\\s*\\n(.*?)\\n---\\s*\\n(.*)$", Pattern.DOTALL);
 
+    private static final Pattern TOP_LEVEL_VERSION_PATTERN = Pattern.compile(
+            "(?m)^(version\\s*:\\s*)(.+)$");
+
+    private static final Pattern NESTED_VERSION_PATTERN = Pattern.compile(
+            "(?m)^(\\s+version\\s*:\\s*)(.+)$");
+
     /**
      * Parse YAML front matter map from full SKILL.md content.
      *
@@ -119,6 +125,45 @@ public class SkillZipParser {
         }
         String yamlContent = matcher.group(1);
         return parseYamlFrontMatter(yamlContent);
+    }
+
+    /**
+     * Sync the version field in SKILL.md YAML front matter to match the target version.
+     * Handles both top-level {@code version:} and nested {@code metadata:\n  version:} formats.
+     * If no version field exists in the front matter, a top-level one is added.
+     *
+     * @param skillMd full SKILL.md content
+     * @param targetVersion the version string to set
+     * @return updated SKILL.md content with the version field matching targetVersion
+     */
+    public static String syncVersionInSkillMd(String skillMd, String targetVersion) {
+        if (StringUtils.isBlank(skillMd) || StringUtils.isBlank(targetVersion)) {
+            return skillMd;
+        }
+        Matcher fmMatcher = YAML_FRONT_MATTER.matcher(skillMd);
+        if (!fmMatcher.matches()) {
+            return skillMd;
+        }
+        String yamlContent = fmMatcher.group(1);
+        String bodyContent = fmMatcher.group(2);
+
+        String updatedYaml = replaceVersionInYaml(yamlContent, targetVersion);
+        if (updatedYaml.equals(yamlContent)) {
+            return skillMd;
+        }
+        return "---\n" + updatedYaml + "\n---\n" + bodyContent;
+    }
+
+    private static String replaceVersionInYaml(String yamlContent, String newVersion) {
+        Matcher m = TOP_LEVEL_VERSION_PATTERN.matcher(yamlContent);
+        if (m.find()) {
+            return m.replaceFirst(Matcher.quoteReplacement(m.group(1) + newVersion));
+        }
+        m = NESTED_VERSION_PATTERN.matcher(yamlContent);
+        if (m.find()) {
+            return m.replaceFirst(Matcher.quoteReplacement(m.group(1) + newVersion));
+        }
+        return yamlContent + "\nversion: " + newVersion;
     }
 
     /**

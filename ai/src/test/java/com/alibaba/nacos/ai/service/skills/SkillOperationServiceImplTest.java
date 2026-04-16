@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.pipeline.repository.PipelineExecutionRepository;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
+import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
 import com.alibaba.nacos.api.ai.model.skills.SkillMeta;
@@ -59,6 +60,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -427,6 +430,39 @@ class SkillOperationServiceImplTest {
         assertEquals("test-skill", result);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
                 && "3.0.8".equals(inserted.getVersion())));
+    }
+
+    @Test
+    void testUploadSkillFromZipSyncsVersionInStoredSkillMd() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytes("3.0.6");
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName("test-skill");
+        meta.setType("skill");
+        meta.setStatus("enable");
+        meta.setMetaVersion(2L);
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
+        Page<com.alibaba.nacos.ai.model.AiResourceVersion> versions = new Page<>();
+        com.alibaba.nacos.ai.model.AiResourceVersion v1 = new com.alibaba.nacos.ai.model.AiResourceVersion();
+        v1.setVersion("3.0.6");
+        versions.setPageItems(List.of(v1));
+        when(aiResourcePersistService.find(eq(namespaceId), eq("test-skill"), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq("test-skill"), anyString(), isNull(), anyInt(), anyInt()))
+                .thenReturn(versions);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq("test-skill"), anyString(), eq(2L), any()))
+                .thenReturn(true);
+
+        skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false);
+
+        ArgumentCaptor<StorageKey> keyCaptor = ArgumentCaptor.forClass(StorageKey.class);
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(storage, times(1)).save(keyCaptor.capture(), dataCaptor.capture());
+
+        String storedMd = new String(dataCaptor.getValue(), StandardCharsets.UTF_8);
+        Map<String, String> yaml = SkillZipParser.parseYamlFrontMatterFromMarkdown(storedMd);
+        assertEquals("3.0.7", yaml.get("version"),
+                "Stored SKILL.md version should match the bumped metadata version");
     }
 
     @Test

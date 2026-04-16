@@ -1116,9 +1116,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         Executor executor = ExecutorUtils.getSkillStorageIoExecutor();
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
 
-        // 1) Store SKILL.md as raw markdown content
+        // 1) Store SKILL.md with version synced to the storage version
         String mdPath = SKILL_MD_RESOURCE_NAME;
-        byte[] mdBytes = (skill.getSkillMd() == null ? "" : skill.getSkillMd()).getBytes(StandardCharsets.UTF_8);
+        String skillMdContent = SkillZipParser.syncVersionInSkillMd(
+                skill.getSkillMd() == null ? "" : skill.getSkillMd(), version);
+        byte[] mdBytes = skillMdContent.getBytes(StandardCharsets.UTF_8);
         StorageKey mdKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName, version,
                 mdPath);
         files.add(mdPath);
