@@ -53,6 +53,8 @@ import type {
 } from '@/types/skill-ai';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
+const SKILL_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+const SKILL_NAME_MAX_LENGTH = 64;
 
 function toYamlQuotedValue(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
@@ -160,11 +162,32 @@ export function CreateSkillDialog({
     [onOpenChange, reset],
   );
 
+  // ===== Skill name validation (consistent with backend DefaultParamChecker) =====
+  const validateSkillName = useCallback(
+    (name: string): string | null => {
+      if (!name) {
+        return t('skill.nameRequired');
+      }
+      if (name.length > SKILL_NAME_MAX_LENGTH) {
+        return t('skill.nameTooLong');
+      }
+      if (!SKILL_NAME_PATTERN.test(name)) {
+        return t('skill.nameInvalidFormat');
+      }
+      if (name.includes('--')) {
+        return t('skill.nameNoConsecutiveHyphens');
+      }
+      return null;
+    },
+    [t],
+  );
+
   // ===== Manual Create =====
   const handleCreate = useCallback(async () => {
     const trimmedName = skillName.trim();
-    if (!trimmedName) {
-      setError(t('skill.nameRequired'));
+    const nameError = validateSkillName(trimmedName);
+    if (nameError) {
+      setError(nameError);
       return;
     }
     if (!description.trim()) {
@@ -194,7 +217,7 @@ export function CreateSkillDialog({
     } finally {
       setLoading(false);
     }
-  }, [skillName, description, instruction, namespaceId, t, handleClose, onSuccess]);
+  }, [skillName, description, instruction, namespaceId, t, handleClose, onSuccess, validateSkillName]);
 
   // ===== AI Generate =====
   const handleGenerate = useCallback(() => {
@@ -356,13 +379,15 @@ export function CreateSkillDialog({
                   id="skill-name"
                   placeholder={t('skill.namePlaceholder')}
                   value={skillName}
+                  maxLength={SKILL_NAME_MAX_LENGTH}
                   onChange={(e) => {
                     const nextName = e.target.value;
                     setSkillName(nextName);
                     setInstruction((prev) =>
                       syncSkillMdFrontmatter(prev, nextName, description),
                     );
-                    setError(null);
+                    const nameError = validateSkillName(nextName.trim());
+                    setError(nameError);
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 />
@@ -424,7 +449,12 @@ export function CreateSkillDialog({
                 </Button>
                 <Button
                   onClick={handleCreate}
-                  disabled={!skillName.trim() || !description.trim() || !instruction.trim() || loading}
+                  disabled={
+                    !!validateSkillName(skillName.trim()) ||
+                    !description.trim() ||
+                    !instruction.trim() ||
+                    loading
+                  }
                 >
                   {loading ? t('common.loading') : t('skill.createSkill')}
                 </Button>
