@@ -97,6 +97,28 @@ public class SkillRequestUtil {
         validateSkillField("name", skill.getName());
         validateSkillField("description", skill.getDescription());
         validateSkillField("skillMd", skill.getSkillMd());
+        validateSkillMdName(skill.getName(), skill.getSkillMd());
+    }
+
+    /**
+     * Validate that the {@code name} field in the YAML front matter of {@code skillMd} is present and matches
+     * the top-level skill name in the JSON request.
+     *
+     * @param expectedName the skill name from the JSON {@code skillCard}
+     * @param skillMd      the raw skill markdown content
+     * @throws NacosApiException if front matter name is missing or does not match
+     */
+    static void validateSkillMdName(String expectedName, String skillMd) throws NacosApiException {
+        java.util.Map<String, String> fm = SkillZipParser.parseYamlFrontMatterFromMarkdown(skillMd);
+        String fmName = fm.get("name");
+        if (StringUtils.isBlank(fmName)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "skillCard.skillMd YAML front matter must contain a non-empty `name` field");
+        }
+        if (!fmName.trim().equals(expectedName)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "skillCard.skillMd front matter `name` must match skillCard.name");
+        }
     }
     
     private static void validateSkillField(String fieldName, String fieldValue) throws NacosApiException {
