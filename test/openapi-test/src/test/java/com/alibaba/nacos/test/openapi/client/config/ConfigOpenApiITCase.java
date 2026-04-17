@@ -216,7 +216,7 @@ public class ConfigOpenApiITCase {
         String url = BASE_URL + ADMIN_CONFIG_PATH;
         Map<String, String> form = buildPublishForm(dataId, groupName, namespaceId, content);
         HttpRestResult<String> httpResult = nacosRestTemplate.postForm(url, Header.EMPTY, form, String.class);
-        assertTrue(httpResult.ok(), "publish HTTP status should be 2xx, body=" + httpResult.getData());
+        assertTrue(httpResult.ok(), "publish HTTP status should be 2xx, code=" + httpResult.getCode() + ", body=" + httpResult.getData());
         JsonNode root = JacksonUtils.toObj(httpResult.getData());
         assertNotNull(root);
         assertEquals(ErrorCode.SUCCESS.getCode(), root.get("code").asInt(), httpResult.getData());

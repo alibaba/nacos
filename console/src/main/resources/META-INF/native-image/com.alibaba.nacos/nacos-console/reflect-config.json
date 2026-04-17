@@ -5947,7 +5947,7 @@
   "name":"io.micrometer.prometheus.PrometheusDistributionSummary"
 },
 {
-  "name":"io.micrometer.prometheus.PrometheusMeterRegistry",
+  "name":"io.micrometer.prometheusmetrics.PrometheusMeterRegistry",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,

@@ -25,7 +25,7 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: mvn clean install -Prelease-nacos -DskipTests=true
+        run: mvn -B clean install -Prelease-nacos -DskipTests=true
 
       - name: Start Server Without Auth
         run: |
@@ -51,4 +51,4 @@ jobs:
       - name: Run IT Tests
         run: |
           cd test
-          mvn clean verify -Pintegration-test
+          mvn -B clean verify -Pintegration-test

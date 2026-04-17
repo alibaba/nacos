@@ -241,7 +241,7 @@ public class A2aAdminApiOpenApiITCase {
         String url = BASE_URL + A2A_ADMIN_PATH;
         Map<String, String> form = buildAgentCardForm(agentName, version, registrationType, agentCard);
         HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY, form, String.class);
-        assertTrue(restResult.ok(), "register HTTP status should be 2xx, body=" + restResult.getData());
+        assertTrue(restResult.ok(), "register HTTP status should be 2xx, code=" + restResult.getCode() + ", body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData());
     }
     
@@ -251,7 +251,7 @@ public class A2aAdminApiOpenApiITCase {
         Map<String, String> form = buildAgentCardForm(agentName, version, registrationType, agentCard);
         form.put("setAsLatest", String.valueOf(setAsLatest));
         HttpRestResult<String> restResult = nacosRestTemplate.putForm(url, Header.EMPTY, form, String.class);
-        assertTrue(restResult.ok(), "update HTTP status should be 2xx, body=" + restResult.getData());
+        assertTrue(restResult.ok(), "update HTTP status should be 2xx, code=" + restResult.getCode() + ", body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData());
     }
     
@@ -263,7 +263,7 @@ public class A2aAdminApiOpenApiITCase {
             query.addParam("version", version);
         }
         HttpRestResult<String> restResult = nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-        assertTrue(restResult.ok(), "get HTTP status should be 2xx, body=" + restResult.getData());
+        assertTrue(restResult.ok(), "get HTTP status should be 2xx, code=" + restResult.getCode() + ", body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData());
     }
     
@@ -272,7 +272,7 @@ public class A2aAdminApiOpenApiITCase {
         Query query = Query.newInstance().addParam("agentName", agentName).addParam("namespaceId", DEFAULT_NAMESPACE)
                 .addParam("registrationType", registrationType);
         HttpRestResult<String> restResult = nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-        assertTrue(restResult.ok(), "version list HTTP status should be 2xx, body=" + restResult.getData());
+        assertTrue(restResult.ok(), "version list HTTP status should be 2xx, code=" + restResult.getCode() + ", body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData());
     }
     
@@ -282,7 +282,7 @@ public class A2aAdminApiOpenApiITCase {
                 .addParam("search", search).addParam("pageNo", String.valueOf(pageNo))
                 .addParam("pageSize", String.valueOf(pageSize));
         HttpRestResult<String> restResult = nacosRestTemplate.get(url, Header.EMPTY, query, String.class);
-        assertTrue(restResult.ok(), "list HTTP status should be 2xx, body=" + restResult.getData());
+        assertTrue(restResult.ok(), "list HTTP status should be 2xx, code=" + restResult.getCode() + ", body=" + restResult.getData());
         return JacksonUtils.toObj(restResult.getData());
     }
     
