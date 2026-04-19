@@ -294,9 +294,10 @@ public class ServerMemberManager implements NacosMemberManager {
             return true;
         }
         
-        // If only IP information is passed in, a fuzzy match is required
+        // If only IP information is passed in, extract IP from key for exact match
         for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-            if (StringUtils.contains(entry.getKey(), address)) {
+            String keyIp = entry.getKey().split(":")[0];
+            if (keyIp.equals(address)) {
                 result = true;
                 break;
             }
