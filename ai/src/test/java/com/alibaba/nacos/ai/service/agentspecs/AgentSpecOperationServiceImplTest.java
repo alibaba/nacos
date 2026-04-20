@@ -1012,6 +1012,163 @@ class AgentSpecOperationServiceImplTest {
                 argThat(resource -> "disable".equals(resource.getStatus())));
     }
     
+    // ===== Semver versioning and targetVersion tests =====
+    
+    @Test
+    void createDraftWithTargetVersionShouldUseSpecifiedVersion() throws NacosException {
+        String namespaceId = "public";
+        String agentSpecName = "new-agentspec";
+        
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(null);
+        
+        String version = service.createDraft(namespaceId, agentSpecName, null, "1.0.0");
+        
+        assertEquals("1.0.0", version);
+        verify(aiResourceVersionPersistService).insert(argThat(v -> "1.0.0".equals(v.getVersion())));
+    }
+    
+    @Test
+    void createDraftWithInvalidTargetVersionShouldReject() {
+        String namespaceId = "public";
+        String agentSpecName = "new-agentspec";
+        
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(null);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.createDraft(namespaceId, agentSpecName, null, "bad-version"));
+        
+        assertTrue(ex.getErrMsg().contains("Invalid targetVersion format"));
+    }
+    
+    @Test
+    void createDraftWithDuplicateTargetVersionShouldReject() {
+        String namespaceId = "public";
+        String agentSpecName = "existing-agentspec";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"0.0.1\"},\"onlineCnt\":1}");
+        meta.setMetaVersion(1L);
+        
+        Page<AiResourceVersion> versionPage = new Page<>();
+        AiResourceVersion existing = new AiResourceVersion();
+        existing.setVersion("0.0.1");
+        versionPage.setPageItems(List.of(existing));
+        
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versionPage);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.createDraft(namespaceId, agentSpecName, null, "0.0.1"));
+        
+        assertTrue(ex.getErrMsg().contains("targetVersion already exists"));
+    }
+    
+    @Test
+    void createDraftWithTargetVersionSmallerThanBaseShouldReject() {
+        String namespaceId = "public";
+        String agentSpecName = "existing-agentspec";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        meta.setVersionInfo("{\"labels\":{\"latest\":\"0.0.2\"},\"onlineCnt\":1}");
+        meta.setMetaVersion(1L);
+        
+        AiResourceVersion v2 = new AiResourceVersion();
+        v2.setVersion("0.0.2");
+        v2.setStatus("online");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        
+        Page<AiResourceVersion> versionPage = new Page<>();
+        versionPage.setPageItems(List.of(v2));
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versionPage);
+        
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.createDraft(namespaceId, agentSpecName, "0.0.2", "0.0.1"));
+        
+        assertTrue(ex.getErrMsg().contains("targetVersion must be greater than basedOnVersion"));
+    }
+    
+    @Test
+    void createDraftAutoIncrementShouldUseSemverWhenSemverExists() throws NacosException {
+        String namespaceId = "public";
+        String agentSpecName = "existing-agentspec";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        // No labels → resolveBaseVersion returns null → goes to "no base" path (empty draft)
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        
+        Page<AiResourceVersion> versionPage = new Page<>();
+        AiResourceVersion v1 = new AiResourceVersion();
+        v1.setVersion("0.0.1");
+        AiResourceVersion v2 = new AiResourceVersion();
+        v2.setVersion("0.0.2");
+        versionPage.setPageItems(List.of(v1, v2));
+        
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versionPage);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
+                .thenReturn(true);
+        
+        String version = service.createDraft(namespaceId, agentSpecName, null, null);
+        
+        assertEquals("0.0.3", version);
+    }
+    
+    @Test
+    void createDraftAutoIncrementShouldFallbackToVnWhenOnlyLegacyExists() throws NacosException {
+        String namespaceId = "public";
+        String agentSpecName = "legacy-agentspec";
+        AiResource meta = new AiResource();
+        meta.setNamespaceId(namespaceId);
+        meta.setName(agentSpecName);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        // No labels → resolveBaseVersion returns null → goes to "no base" path (empty draft)
+        meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
+        meta.setMetaVersion(1L);
+        
+        Page<AiResourceVersion> versionPage = new Page<>();
+        AiResourceVersion v1 = new AiResourceVersion();
+        v1.setVersion("v1");
+        AiResourceVersion v2 = new AiResourceVersion();
+        v2.setVersion("v2");
+        versionPage.setPageItems(List.of(v1, v2));
+        
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
+                anyInt(), anyInt())).thenReturn(versionPage);
+        when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
+                .thenReturn(true);
+        
+        String version = service.createDraft(namespaceId, agentSpecName, null, null);
+        
+        assertEquals("v3", version);
+    }
+    
+    @Test
+    void createDraftAutoIncrementShouldReturn001WhenNoVersionsExist() throws NacosException {
+        String namespaceId = "public";
+        String agentSpecName = "brand-new";
+        
+        when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(null);
+        
+        String version = service.createDraft(namespaceId, agentSpecName, null, null);
+        
+        assertEquals("0.0.1", version);
+    }
+    
     private byte[] createValidZipBytes() throws IOException {
         String manifest = "{\"version\":\"1.0\",\"description\":\"Test agentspec description\","
                 + "\"tags\":[\"design\",\"ux\"],"
