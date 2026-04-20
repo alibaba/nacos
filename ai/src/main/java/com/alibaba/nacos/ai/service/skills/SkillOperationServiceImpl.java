@@ -426,6 +426,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         detail.setNamespaceId(namespaceId);
         detail.setName(skillName);
         detail.setDescription(meta.getDesc());
+        detail.setOwner(meta.getOwner());
         detail.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
         detail.setBizTags(meta.getBizTags());
         detail.setFrom(meta.getFrom());
@@ -557,6 +558,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             item.setNamespaceId(namespaceId);
             item.setName(meta.getName());
             item.setDescription(meta.getDesc());
+            item.setOwner(meta.getOwner());
             item.setEnable(AiResourceConstants.META_STATUS_ENABLE.equalsIgnoreCase(meta.getStatus()));
             item.setBizTags(meta.getBizTags());
             item.setFrom(meta.getFrom());
