@@ -190,10 +190,12 @@ public interface AgentSpecOperationService {
      * @param namespaceId namespace ID
      * @param name agentspec name
      * @param basedOnVersion base version (optional, default latest)
+     * @param targetVersion target version (optional, auto-increment if blank)
      * @return created draft version
      * @throws NacosException if draft creation failed
      */
-    String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException;
+    String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion)
+            throws NacosException;
     
     /**
      * Update existing draft content.

@@ -735,6 +735,8 @@
     "editDraft": "Edit Draft",
     "createPromptDesc": "Create a new Prompt draft with template and variables.",
     "createDraftFromDesc": "Create a new draft based on version {{version}}",
+    "newVersion": "New Version",
+    "newVersionPlaceholder": "e.g. 0.0.2 or v3 (leave empty for auto)",
     "status": "Status"
   },
   "namespace": {

@@ -213,7 +213,23 @@ public interface AgentSpecMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
-    String createDraft(String namespaceId, String agentSpecName, String basedOnVersion) throws NacosException;
+    default String createDraft(String namespaceId, String agentSpecName, String basedOnVersion)
+            throws NacosException {
+        return createDraft(namespaceId, agentSpecName, basedOnVersion, null);
+    }
+    
+    /**
+     * Create draft version for an agentspec.
+     *
+     * @param namespaceId     namespace ID
+     * @param agentSpecName   agentspec name
+     * @param basedOnVersion  base version (optional)
+     * @param targetVersion   target version (optional, auto-increment if blank)
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
+    String createDraft(String namespaceId, String agentSpecName, String basedOnVersion, String targetVersion)
+            throws NacosException;
     
     /**
      * Update current draft content.

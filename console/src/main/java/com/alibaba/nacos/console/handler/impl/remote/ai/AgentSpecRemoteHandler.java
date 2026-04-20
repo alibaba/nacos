@@ -112,7 +112,8 @@ public class AgentSpecRemoteHandler implements AgentSpecHandler {
     @Override
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
         return clientHolder.getAiMaintainerService().agentSpec()
-            .createDraft(form.getNamespaceId(), form.getAgentSpecName(), form.getBasedOnVersion());
+            .createDraft(form.getNamespaceId(), form.getAgentSpecName(), form.getBasedOnVersion(),
+                    form.getTargetVersion());
     }
 
     @Override

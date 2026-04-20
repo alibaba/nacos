@@ -142,15 +142,15 @@ class AgentSpecOperationServiceImplTest {
 
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(null);
 
-        String version = service.createDraft(namespaceId, agentSpecName, null);
+        String version = service.createDraft(namespaceId, agentSpecName, null, null);
 
-        assertEquals("v1", version);
+        assertEquals("0.0.1", version);
 
         ArgumentCaptor<AiResourceVersion> versionCaptor = ArgumentCaptor.forClass(AiResourceVersion.class);
         verify(aiResourceVersionPersistService).insert(versionCaptor.capture());
         AiResourceVersion insertedVersion = versionCaptor.getValue();
         assertEquals(agentSpecName, insertedVersion.getName());
-        assertEquals("v1", insertedVersion.getVersion());
+        assertEquals("0.0.1", insertedVersion.getVersion());
         assertEquals("draft", insertedVersion.getStatus());
 
         ArgumentCaptor<AiResource> metaCaptor = ArgumentCaptor.forClass(AiResource.class);
@@ -159,7 +159,7 @@ class AgentSpecOperationServiceImplTest {
         assertEquals(agentSpecName, insertedMeta.getName());
         assertEquals("enable", insertedMeta.getStatus());
         Map<?, ?> versionInfo = JacksonUtils.toObj(insertedMeta.getVersionInfo(), Map.class);
-        assertEquals("v1", versionInfo.get("editingVersion"));
+        assertEquals("0.0.1", versionInfo.get("editingVersion"));
         assertEquals(0, ((Number) versionInfo.get("onlineCnt")).intValue());
 
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
@@ -177,7 +177,7 @@ class AgentSpecOperationServiceImplTest {
         verify(aiResourceVersionPersistService).insert(versionCaptor.capture());
         AiResourceVersion insertedVersion = versionCaptor.getValue();
         assertEquals("测试坐席", insertedVersion.getName());
-        assertEquals("v1", insertedVersion.getVersion());
+        assertEquals("0.0.1", insertedVersion.getVersion());
         assertEquals("online", insertedVersion.getStatus());
         assertEquals("Test agentspec description", insertedVersion.getDesc());
 
@@ -190,7 +190,7 @@ class AgentSpecOperationServiceImplTest {
         assertEquals("[\"design\",\"ux\"]", insertedMeta.getBizTags());
         Map<?, ?> versionInfo = JacksonUtils.toObj(insertedMeta.getVersionInfo(), Map.class);
         assertEquals(1, ((Number) versionInfo.get("onlineCnt")).intValue());
-        assertEquals("v1", ((Map<?, ?>) versionInfo.get("labels")).get("latest"));
+        assertEquals("0.0.1", ((Map<?, ?>) versionInfo.get("labels")).get("latest"));
 
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
     }
@@ -256,7 +256,7 @@ class AgentSpecOperationServiceImplTest {
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(null);
 
         NacosApiException exception = assertThrows(NacosApiException.class,
-                () -> service.createDraft(namespaceId, agentSpecName, "v7"));
+                () -> service.createDraft(namespaceId, agentSpecName, "v7", null));
 
         assertEquals(NacosException.NOT_FOUND, exception.getErrCode());
         assertTrue(exception.getErrMsg().contains("cannot use basedOnVersion for a brand-new agentspec"));
@@ -281,9 +281,9 @@ class AgentSpecOperationServiceImplTest {
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
                 .thenReturn(true);
 
-        String version = service.createDraft(namespaceId, agentSpecName, null);
+        String version = service.createDraft(namespaceId, agentSpecName, null, null);
 
-        assertEquals("v1", version);
+        assertEquals("0.0.1", version);
         verify(aiResourceVersionPersistService).insert(any(AiResourceVersion.class));
         verify(storage, times(1)).save(any(StorageKey.class), any(byte[].class));
     }

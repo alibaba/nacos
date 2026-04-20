@@ -52,6 +52,7 @@ export const agentSpecApi = {
     namespaceId?: string;
     agentSpecName: string;
     basedOnVersion?: string;
+    targetVersion?: string;
   }): ApiResult<string> =>
     client.post(`${BASE}/draft`, params) as ApiResult<string>,
 

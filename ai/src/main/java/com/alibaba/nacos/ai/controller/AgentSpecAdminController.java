@@ -176,7 +176,7 @@ public class AgentSpecAdminController {
     public Result<String> createDraft(AgentSpecDraftCreateForm form) throws NacosException {
         form.validate();
         String v = agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getBasedOnVersion());
+                form.getBasedOnVersion(), form.getTargetVersion());
         return Result.success(v);
     }
     

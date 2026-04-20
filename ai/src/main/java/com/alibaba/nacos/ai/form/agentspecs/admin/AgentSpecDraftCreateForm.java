@@ -35,6 +35,8 @@ public class AgentSpecDraftCreateForm extends AgentSpecForm {
     
     private String basedOnVersion;
     
+    private String targetVersion;
+    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
@@ -50,5 +52,13 @@ public class AgentSpecDraftCreateForm extends AgentSpecForm {
     
     public void setBasedOnVersion(String basedOnVersion) {
         this.basedOnVersion = basedOnVersion;
+    }
+    
+    public String getTargetVersion() {
+        return targetVersion;
+    }
+    
+    public void setTargetVersion(String targetVersion) {
+        this.targetVersion = targetVersion;
     }
 }

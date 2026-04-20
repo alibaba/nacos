@@ -735,6 +735,8 @@
     "editDraft": "编辑草稿",
     "createPromptDesc": "创建新的 Prompt 草稿，包含模板和变量定义。",
     "createDraftFromDesc": "基于版本 {{version}} 创建新草稿",
+    "newVersion": "新版本号",
+    "newVersionPlaceholder": "如 0.0.2 或 v3（留空自动递增）",
     "status": "状态"
   },
   "namespace": {
