@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -109,7 +110,7 @@ public class PromptDataMigrationTask implements ApplicationListener<ApplicationR
     
     public PromptDataMigrationTask(AiResourcePersistService aiResourcePersistService,
             AiResourceVersionPersistService aiResourceVersionPersistService,
-            PromptOperationService promptOperationService,
+            @Lazy PromptOperationService promptOperationService,
             ConfigQueryChainService configQueryChainService, ConfigOperationService configOperationService,
             List<PromptLegacyDataReader> legacyDataReaders) {
         this.aiResourcePersistService = aiResourcePersistService;
