@@ -412,7 +412,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 summary.setVersion(v.getVersion());
                 summary.setStatus(v.getStatus());
                 summary.setAuthor(v.getAuthor());
-                summary.setDescription(v.getDesc());
+                summary.setCommitMsg(v.getDesc());
                 summary.setCreateTime(v.getGmtCreate() == null ? null : v.getGmtCreate().getTime());
                 summary.setUpdateTime(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
                 summary.setPublishPipelineInfo(v.getPublishPipelineInfo());
@@ -587,7 +587,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     @Override
     public String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion,
-            Skill initialContent)
+            Skill initialContent, String commitMsg)
             throws NacosException {
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
 
@@ -606,7 +606,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             String version = StringUtils.isBlank(targetVersion)
                     ? resolveFinalUploadVersion(namespaceId, name, resolveUploadVersion(initialContent.getSkillMd(), null))
                     : resolveSpecifiedDraftVersion(namespaceId, name, targetVersion, null, null);
-            createDraftWithSkill(namespaceId, initialContent, version, null, true);
+            createDraftWithSkill(namespaceId, initialContent, version, null, true, commitMsg);
             AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, version, AiResourceTraceService.OP_CREATE_DRAFT,
                     VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
             return version;
@@ -628,7 +628,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "skillCard is required when no published version exists to fork from");
             }
-            createDraftWithSkill(namespaceId, initialContent, newVersion, meta, false);
+            createDraftWithSkill(namespaceId, initialContent, newVersion, meta, false, commitMsg);
         } else {
             // Forking from existing version -> initialContent must not be set (fork first, then use PUT /draft to edit)
             if (initialContent != null) {
@@ -644,9 +644,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
             // Step 2: Insert draft version row
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
+            String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : baseSkill.getDescription();
             resourceManager.insertVersionRow(namespaceId, name, RESOURCE_TYPE_SKILL,
                     StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
-                    AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, baseSkill.getDescription(),
+                    AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, versionDesc,
                     buildStorageJson(namespaceId, name, newVersion, files));
 
             // Step 3: Update meta's editingVersion pointer
@@ -663,7 +664,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * writes updated files to storage, and bumps the meta description.
      */
     @Override
-    public void updateDraft(String namespaceId, Skill draftSkill) throws NacosException {
+    public void updateDraft(String namespaceId, Skill draftSkill, String commitMsg) throws NacosException {
         // Step 1: Validate parameters
         if (draftSkill == null || StringUtils.isBlank(draftSkill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
@@ -690,8 +691,13 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
-        resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
-                buildStorageJson(namespaceId, name, editing, files));
+        String storageJson = buildStorageJson(namespaceId, name, editing, files);
+        if (StringUtils.isNotBlank(commitMsg)) {
+            resourceManager.updateVersionStorageAndDesc(namespaceId, name, RESOURCE_TYPE_SKILL, editing,
+                    storageJson, commitMsg);
+        } else {
+            resourceManager.updateVersionStorage(namespaceId, name, RESOURCE_TYPE_SKILL, editing, storageJson);
+        }
         resourceManager.bumpMetaDescription(namespaceId, meta, draftSkill.getDescription());
         AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, editing, AiResourceTraceService.OP_UPDATE_DRAFT,
                 VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
@@ -989,6 +995,11 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
             boolean isNewSkill) throws NacosException {
+        createDraftWithSkill(namespaceId, skill, version, existedMeta, isNewSkill, null);
+    }
+
+    private void createDraftWithSkill(String namespaceId, Skill skill, String version, AiResource existedMeta,
+            boolean isNewSkill, String commitMsg) throws NacosException {
         String skillName = skill.getName();
         String currentUser = VisibilityHelper.resolveCurrentIdentity();
 
@@ -996,9 +1007,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
 
         // 2) insert draft version row
+        String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : skill.getDescription();
         resourceManager.insertVersionRow(namespaceId, skillName, RESOURCE_TYPE_SKILL,
                 StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
-                AiResourceConstants.VERSION_STATUS_DRAFT, version, skill.getDescription(),
+                AiResourceConstants.VERSION_STATUS_DRAFT, version, versionDesc,
                 buildStorageJson(namespaceId, skillName, version, files));
 
         // 3) create or update meta for editingVersion

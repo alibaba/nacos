@@ -223,10 +223,11 @@ public interface SkillOperationService {
      * @param basedOnVersion base version to fork from (optional; defaults per server rules when resolving base)
      * @param targetVersion target draft version to create (optional; auto-generated when empty)
      * @param initialContent full skill from {@code skillCard}, or null when forking
+     * @param commitMsg version-level commit message describing what changed (optional)
      * @return created draft version
      */
     String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion,
-            Skill initialContent)
+            Skill initialContent, String commitMsg)
             throws NacosException;
 
     /**
@@ -234,8 +235,9 @@ public interface SkillOperationService {
      *
      * @param namespaceId namespace ID
      * @param draftSkill full skill content to write into draft
+     * @param commitMsg version-level commit message describing what changed (optional; updates version desc when not blank)
      */
-    void updateDraft(String namespaceId, Skill draftSkill) throws NacosException;
+    void updateDraft(String namespaceId, Skill draftSkill, String commitMsg) throws NacosException;
 
     /**
      * Delete current draft and release working pointer.

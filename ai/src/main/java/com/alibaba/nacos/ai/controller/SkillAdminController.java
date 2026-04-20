@@ -192,7 +192,8 @@ public class SkillAdminController {
     public Result<String> createDraft(SkillDraftCreateForm form) throws NacosException {
         form.prepareCreateDraftRequest();
         String v = skillOperationService.createDraft(form.getNamespaceId(), form.getSkillName(),
-                form.getBasedOnVersion(), form.getTargetVersion(), form.getResolvedInitialSkillOrNull());
+                form.getBasedOnVersion(), form.getTargetVersion(), form.getResolvedInitialSkillOrNull(),
+                form.getCommitMsg());
         return Result.success(v);
     }
     
@@ -204,7 +205,7 @@ public class SkillAdminController {
     public Result<String> updateDraft(SkillUpdateForm form) throws NacosException {
         form.validate();
         Skill skill = SkillRequestUtil.parseSkill(form);
-        skillOperationService.updateDraft(form.getNamespaceId(), skill);
+        skillOperationService.updateDraft(form.getNamespaceId(), skill, form.getCommitMsg());
         return Result.success("ok");
     }
     
