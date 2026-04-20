@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.prompt;
 
+import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
@@ -104,6 +105,9 @@ class PromptOperationServiceImplTest {
     @Mock
     private ConfigOperationService configOperationService;
     
+    @Mock
+    private PromptDataMigrationTask promptDataMigrationTask;
+    
     private PromptOperationServiceImpl service;
     
     private static final org.springframework.core.env.ConfigurableEnvironment CACHED_ENVIRONMENT =
@@ -127,7 +131,7 @@ class PromptOperationServiceImplTest {
         AiResourceManager resourceManager = new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                 pipelineExecutionRepository);
         service = new PromptOperationServiceImpl(publishPipelineExecutor, pipelineExecutionRepository,
-                configOperationService, resourceManager);
+                configOperationService, resourceManager, promptDataMigrationTask);
         mockVisibilityManager = mock(VisibilityPluginManager.class);
         lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
         visibilityManagerStatic = mockStatic(VisibilityPluginManager.class);
