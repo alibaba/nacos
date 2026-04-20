@@ -30,6 +30,7 @@ import {
   Lock,
   Loader2,
   ShieldAlert,
+  MessageSquare,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -793,30 +794,12 @@ export default function SkillDetailPage() {
               </div>
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
-                <>
-                  <Textarea
-                    value={editDescription}
-                    onChange={(e) => handleDescriptionChange(e.target.value)}
-                    placeholder={t('skill.descPlaceholder')}
-                    className="text-sm max-w-2xl min-h-8 resize-none"
-                  />
-                  <div className="space-y-2 max-w-2xl mt-3">
-                    <Label htmlFor="skill-draft-commit-msg" className="text-xs text-muted-foreground">
-                      {t('skill.commitMsg')}
-                    </Label>
-                    <Textarea
-                      id="skill-draft-commit-msg"
-                      value={draftCommitMsg}
-                      onChange={(e) => setDraftCommitMsg(e.target.value)}
-                      placeholder={t('skill.commitMsgPlaceholder')}
-                      className="text-sm min-h-[72px] resize-y"
-                      disabled={draftSaving}
-                    />
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {t('skill.commitMsgHint')}
-                    </p>
-                  </div>
-                </>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                  placeholder={t('skill.descPlaceholder')}
+                  className="text-sm max-w-2xl min-h-8 resize-none"
+                />
               ) : versionDoc?.description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
                   {versionDoc.description}
@@ -1110,7 +1093,12 @@ export default function SkillDetailPage() {
 
         {/* Overview tab: Instruction + Sidebar */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div
+            className={cn(
+              'grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]',
+              isEditingDraft && 'max-lg:[&>div:first-child]:order-2 max-lg:[&>div:last-child]:order-1',
+            )}
+          >
             {/* Left: Instruction card */}
             <Card className="overflow-hidden py-0 gap-0 min-h-[580px]">
               <div className="px-5 py-3.5 border-b bg-muted/30">
@@ -1129,6 +1117,9 @@ export default function SkillDetailPage() {
                 ) : isEditingDraft ? (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">{t('skill.skillMdHint')}</p>
+                    <p className="text-[11px] text-muted-foreground rounded-md border bg-muted/20 px-3 py-2">
+                      {t('skill.commitMsgEditHint')}
+                    </p>
                     <div data-color-mode="light" className="dark:hidden">
                       <MDEditor
                         value={editInstruction}
@@ -1191,7 +1182,37 @@ export default function SkillDetailPage() {
                     {currentVersionSummary && (
                       <InfoCell compact label={t('skill.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
                     )}
+                    {(currentVersionSummary || isEditingDraft) && (
+                      <InfoCell
+                        compact
+                        colSpan={2}
+                        label={t('skill.commitMsg')}
+                        value={
+                          isEditingDraft ? (
+                            <Textarea
+                              value={draftCommitMsg}
+                              onChange={(e) => setDraftCommitMsg(e.target.value)}
+                              placeholder={t('skill.commitMsgPlaceholder')}
+                              className="mt-0.5 min-h-[64px] max-w-full resize-y text-xs font-normal"
+                              disabled={draftSaving}
+                            />
+                          ) : (
+                            <span className="text-xs font-normal font-sans text-muted-foreground whitespace-pre-wrap">
+                              {currentVersionSummary?.commitMsg?.trim()
+                                ? currentVersionSummary.commitMsg
+                                : '-'}
+                            </span>
+                          )
+                        }
+                        icon={<MessageSquare className="h-3.5 w-3.5" />}
+                      />
+                    )}
                   </div>
+                  {isEditingDraft && (
+                    <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground leading-relaxed">
+                      {t('skill.commitMsgHint')}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1507,14 +1528,22 @@ function InfoCell({
   value,
   icon,
   compact = false,
+  colSpan,
 }: {
   label: string;
   value: React.ReactNode;
   icon?: React.ReactNode;
   compact?: boolean;
+  colSpan?: number;
 }) {
   return (
-    <div className={cn('flex items-center gap-3 px-5 py-3', compact && 'gap-2.5 px-4 py-2.5')}>
+    <div
+      className={cn(
+        'flex items-center gap-3 px-5 py-3',
+        compact && 'gap-2.5 px-4 py-2.5',
+        colSpan === 2 && 'col-span-2',
+      )}
+    >
       {icon && (
         <span className="text-muted-foreground/60 shrink-0">{icon}</span>
       )}

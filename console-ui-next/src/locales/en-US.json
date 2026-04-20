@@ -1151,6 +1151,7 @@
     "commitMsg": "Version commit message",
     "commitMsgPlaceholder": "Optional: describe what changed in this draft version",
     "commitMsgHint": "This is stored on the draft version only (shown in version history). It is not the skill description above.",
+    "commitMsgEditHint": "Set the version commit message in Basic info (right panel on large screens, above on small screens).",
     "toggleEnable": "Enable/Disable Skill",
     "pipelineStatus": "Review Pipeline",
     "pipelineInProgress": "In Progress",
