@@ -106,6 +106,7 @@ export function CreateSkillDialog({
   // Manual tab state
   const [skillName, setSkillName] = useState('');
   const [description, setDescription] = useState('');
+  const [createCommitMsg, setCreateCommitMsg] = useState('');
   const [instruction, setInstruction] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +132,7 @@ export function CreateSkillDialog({
   const reset = useCallback(() => {
     setSkillName('');
     setDescription('');
+    setCreateCommitMsg('');
     setInstruction('');
     setError(null);
     setLoading(false);
@@ -207,7 +209,11 @@ export function CreateSkillDialog({
         skillMd: instruction.trim(),
         resource: {},
       });
-      await skillApi.createDraft({ namespaceId, skillCard });
+      await skillApi.createDraft({
+        namespaceId,
+        skillCard,
+        commitMsg: createCommitMsg.trim() || undefined,
+      });
       toast.success(t('skill.createSuccess'));
       handleClose(false);
       onSuccess(trimmedName);
@@ -217,7 +223,7 @@ export function CreateSkillDialog({
     } finally {
       setLoading(false);
     }
-  }, [skillName, description, instruction, namespaceId, t, handleClose, onSuccess, validateSkillName]);
+  }, [skillName, description, createCommitMsg, instruction, namespaceId, t, handleClose, onSuccess, validateSkillName]);
 
   // ===== AI Generate =====
   const handleGenerate = useCallback(() => {
@@ -335,7 +341,11 @@ export function CreateSkillDialog({
         skillMd: generatedSkill.skillMd || '',
         resource: generatedSkill.resource || {},
       });
-      await skillApi.createDraft({ namespaceId, skillCard });
+      await skillApi.createDraft({
+        namespaceId,
+        skillCard,
+        commitMsg: createCommitMsg.trim() || undefined,
+      });
 
       toast.success(t('skill.generateSuccess'));
       handleClose(false);
@@ -346,7 +356,7 @@ export function CreateSkillDialog({
     } finally {
       setLoading(false);
     }
-  }, [generatedSkill, namespaceId, t, handleClose, onSuccess]);
+  }, [generatedSkill, namespaceId, createCommitMsg, t, handleClose, onSuccess]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -408,6 +418,22 @@ export function CreateSkillDialog({
                     setError(null);
                   }}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="skill-create-commit-msg">{t('skill.commitMsg')}</Label>
+                <Textarea
+                  id="skill-create-commit-msg"
+                  value={createCommitMsg}
+                  onChange={(e) => {
+                    setCreateCommitMsg(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={t('skill.commitMsgPlaceholder')}
+                  rows={2}
+                  className="text-sm resize-y"
+                />
+                <p className="text-xs text-muted-foreground">{t('skill.commitMsgHint')}</p>
               </div>
 
               <div className="space-y-2">
@@ -662,6 +688,19 @@ export function CreateSkillDialog({
                           </div>
                         </div>
                       )}
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <Label htmlFor="skill-ai-create-commit-msg">{t('skill.commitMsg')}</Label>
+                    <Textarea
+                      id="skill-ai-create-commit-msg"
+                      value={createCommitMsg}
+                      onChange={(e) => setCreateCommitMsg(e.target.value)}
+                      placeholder={t('skill.commitMsgPlaceholder')}
+                      rows={2}
+                      className="text-sm resize-y"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('skill.commitMsgHint')}</p>
                   </div>
 
                   <div className="flex gap-2 pt-2">

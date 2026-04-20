@@ -164,6 +164,8 @@ export default function SkillDetailPage() {
   const [createDraftDialogOpen, setCreateDraftDialogOpen] = useState(false);
   const [createDraftFromVersion, setCreateDraftFromVersion] = useState('');
   const [createDraftTargetVersion, setCreateDraftTargetVersion] = useState('');
+  const [draftCommitMsg, setDraftCommitMsg] = useState('');
+  const [createDraftCommitMsg, setCreateDraftCommitMsg] = useState('');
   const [forcePublishConfirmOpen, setForcePublishConfirmOpen] = useState(false);
 
   const loadDetail = useCallback(() => {
@@ -249,6 +251,8 @@ export default function SkillDetailPage() {
     setEditInstruction(versionDoc?.skillMd ?? '');
     setEditDescription(versionDoc?.description ?? '');
     setEditResources({ ...(versionDoc?.resource ?? {}) });
+    const versionRow = currentDetail?.versions?.find((v) => v.version === selectedVersion);
+    setDraftCommitMsg(versionRow?.commitMsg?.trim() ? versionRow.commitMsg : '');
     setIsEditingDraft(true);
   };
 
@@ -256,6 +260,7 @@ export default function SkillDetailPage() {
     setIsEditingDraft(false);
     setIsCreatingNewDraft(false);
     setEditResources({});
+    setDraftCommitMsg('');
   };
 
   const handleSaveDraft = async () => {
@@ -276,12 +281,14 @@ export default function SkillDetailPage() {
         resource: editResources,
       });
 
+      const commitOpt = draftCommitMsg.trim() || undefined;
       if (isCreatingNewDraft) {
         // Brand-new draft: single createDraft call with skillCard
-        await skillApi.createDraft({ namespaceId, skillName, skillCard });
+        await skillApi.createDraft({ namespaceId, skillName, skillCard, commitMsg: commitOpt });
         toast.success(t('skill.createDraftSuccess'));
         setIsCreatingNewDraft(false);
         setIsEditingDraft(false);
+        setDraftCommitMsg('');
         await fetchDetail(namespaceId, skillName);
         const updated = useSkillStore.getState().currentDetail;
         if (updated?.editingVersion) {
@@ -289,9 +296,10 @@ export default function SkillDetailPage() {
         }
       } else {
         // Editing existing draft: updateDraft
-        await skillApi.updateDraft({ namespaceId, skillCard });
+        await skillApi.updateDraft({ namespaceId, skillCard, commitMsg: commitOpt });
         toast.success(t('skill.draftSaveSuccess'));
         setIsEditingDraft(false);
+        setDraftCommitMsg('');
         await loadDetail();
         const response = await skillApi.getVersion({ namespaceId, skillName, version: selectedVersion });
         setVersionDoc(response.data);
@@ -411,6 +419,7 @@ export default function SkillDetailPage() {
       setEditDescription('');
       setEditInstruction('');
       setEditResources({});
+      setDraftCommitMsg('');
       setIsCreatingNewDraft(true);
       setIsEditingDraft(true);
       return;
@@ -418,6 +427,7 @@ export default function SkillDetailPage() {
     const suggestedVersion = suggestNextVersionFromBase(basedOnVersion);
     setCreateDraftFromVersion(basedOnVersion);
     setCreateDraftTargetVersion(suggestedVersion);
+    setCreateDraftCommitMsg('');
     setCreateDraftDialogOpen(true);
   };
   
@@ -435,9 +445,11 @@ export default function SkillDetailPage() {
         skillName,
         basedOnVersion: createDraftFromVersion,
         targetVersion,
+        commitMsg: createDraftCommitMsg.trim() || undefined,
       });
       toast.success(t('skill.createDraftSuccess'));
       setCreateDraftDialogOpen(false);
+      setCreateDraftCommitMsg('');
       await fetchDetail(namespaceId, skillName);
       const updated = useSkillStore.getState().currentDetail;
       if (updated?.editingVersion) {
@@ -781,12 +793,30 @@ export default function SkillDetailPage() {
               </div>
               {/* Description - editable in draft mode */}
               {isEditingDraft ? (
-                <Textarea
-                  value={editDescription}
-                  onChange={(e) => handleDescriptionChange(e.target.value)}
-                  placeholder={t('skill.descPlaceholder')}
-                  className="text-sm max-w-2xl min-h-8 resize-none"
-                />
+                <>
+                  <Textarea
+                    value={editDescription}
+                    onChange={(e) => handleDescriptionChange(e.target.value)}
+                    placeholder={t('skill.descPlaceholder')}
+                    className="text-sm max-w-2xl min-h-8 resize-none"
+                  />
+                  <div className="space-y-2 max-w-2xl mt-3">
+                    <Label htmlFor="skill-draft-commit-msg" className="text-xs text-muted-foreground">
+                      {t('skill.commitMsg')}
+                    </Label>
+                    <Textarea
+                      id="skill-draft-commit-msg"
+                      value={draftCommitMsg}
+                      onChange={(e) => setDraftCommitMsg(e.target.value)}
+                      placeholder={t('skill.commitMsgPlaceholder')}
+                      className="text-sm min-h-[72px] resize-y"
+                      disabled={draftSaving}
+                    />
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {t('skill.commitMsgHint')}
+                    </p>
+                  </div>
+                </>
               ) : versionDoc?.description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
                   {versionDoc.description}
@@ -1274,7 +1304,15 @@ export default function SkillDetailPage() {
         />
       )}
       
-      <Dialog open={createDraftDialogOpen} onOpenChange={setCreateDraftDialogOpen}>
+      <Dialog
+        open={createDraftDialogOpen}
+        onOpenChange={(open) => {
+          setCreateDraftDialogOpen(open);
+          if (!open) {
+            setCreateDraftCommitMsg('');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('skill.newVersionTitle')}</DialogTitle>
@@ -1292,10 +1330,29 @@ export default function SkillDetailPage() {
               disabled={actionLoading}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-draft-commit-msg" className="text-xs text-muted-foreground">
+              {t('skill.commitMsg')}
+            </Label>
+            <Textarea
+              id="create-draft-commit-msg"
+              value={createDraftCommitMsg}
+              onChange={(e) => setCreateDraftCommitMsg(e.target.value)}
+              placeholder={t('skill.commitMsgPlaceholder')}
+              className="text-sm min-h-[72px] resize-y"
+              disabled={actionLoading}
+            />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              {t('skill.commitMsgHint')}
+            </p>
+          </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setCreateDraftDialogOpen(false)}
+              onClick={() => {
+                setCreateDraftDialogOpen(false);
+                setCreateDraftCommitMsg('');
+              }}
               disabled={actionLoading}
             >
               {t('common.cancel')}

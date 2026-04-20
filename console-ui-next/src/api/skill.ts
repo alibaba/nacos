@@ -66,6 +66,8 @@ export const skillApi = {
     basedOnVersion?: string;
     targetVersion?: string;
     skillCard?: string;
+    /** Version-level commit message (optional; not the skill description in SKILL.md) */
+    commitMsg?: string;
   }): ApiResult<string> =>
     client.post(`${BASE}/draft`, data, { timeout: 60000 }) as ApiResult<string>,
 
@@ -74,6 +76,8 @@ export const skillApi = {
     namespaceId?: string;
     skillCard: string;
     setAsLatest?: boolean;
+    /** Version-level commit message (optional; not the skill description) */
+    commitMsg?: string;
   }): ApiResult<string> =>
     client.put(`${BASE}/draft`, data) as ApiResult<string>,
 
