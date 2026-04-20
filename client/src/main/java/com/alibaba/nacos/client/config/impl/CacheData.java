@@ -640,7 +640,7 @@ public class CacheData {
         
         @Override
         public int hashCode() {
-            return super.hashCode();
+            return listener.hashCode();
         }
         
     }
