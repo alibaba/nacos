@@ -419,7 +419,7 @@ public class CacheData {
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
-        if (listenerWrap.inNotifying) {
+        if (!listenerWrap.inNotifying.compareAndSet(false, true)) {
             LOGGER.warn(
                     "[{}] [notify-currentSkip] dataId={}, group={},tenant={}, md5={}, listener={}, listener is not finish yet,will try next time.",
                     envName, dataId, group, tenant, md5, listener);
@@ -457,7 +457,6 @@ public class CacheData {
                             new LongNotifyHandler(listener.getClass().getSimpleName(), dataId, group, tenant, md5,
                                     notifyWarnTimeout, Thread.currentThread()), notifyWarnTimeout,
                             TimeUnit.MILLISECONDS);
-                    listenerWrap.inNotifying = true;
                     listener.receiveConfigInfo(contentTmp);
                     // compare lastContent and content
                     if (listener instanceof AbstractConfigChangeListener) {
@@ -481,7 +480,7 @@ public class CacheData {
                     LOGGER.error("[{}] [notify-error] dataId={}, group={},tenant={}, md5={}, listener={} tx={}",
                             envName, dataId, group, tenant, md5, listener, getTrace(t.getStackTrace(), 3));
                 } finally {
-                    listenerWrap.inNotifying = false;
+                    listenerWrap.inNotifying.set(false);
                     Thread.currentThread().setContextClassLoader(myClassLoader);
                     if (timeSchedule != null) {
                         timeSchedule.cancel(true);
@@ -504,6 +503,7 @@ public class CacheData {
                 job.run();
             }
         } catch (Throwable t) {
+            listenerWrap.inNotifying.set(false);
             LOGGER.error("[{}] [notify-listener-error] dataId={}, group={},tenant={}, md5={}, listener={} throwable={}",
                     envName, dataId, group, tenant, md5, listener, t.getCause());
         }
@@ -601,7 +601,7 @@ public class CacheData {
     
     private static class ManagerListenerWrap {
         
-        boolean inNotifying = false;
+        final AtomicBoolean inNotifying = new AtomicBoolean(false);
         
         final Listener listener;
         
