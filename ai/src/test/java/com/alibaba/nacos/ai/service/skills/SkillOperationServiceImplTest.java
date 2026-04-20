@@ -836,6 +836,7 @@ class SkillOperationServiceImplTest {
                 org.mockito.ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.AiResourceVersion.class);
         verify(aiResourceVersionPersistService).insert(vCaptor.capture());
         assertEquals("myUser", vCaptor.getValue().getAuthor());
+        assertEquals("", vCaptor.getValue().getDesc());
     }
 
     @Test
@@ -853,7 +854,8 @@ class SkillOperationServiceImplTest {
         String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial, null);
 
         assertEquals("2.1.3", version);
-        verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())));
+        verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())
+                && "".equals(v.getDesc())));
     }
 
     @Test
@@ -894,7 +896,7 @@ class SkillOperationServiceImplTest {
 
         assertEquals("1.2.1", version);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "1.2.1".equals(inserted.getVersion())));
+                && "1.2.1".equals(inserted.getVersion()) && "".equals(inserted.getDesc())));
     }
     
     @Test
@@ -933,7 +935,7 @@ class SkillOperationServiceImplTest {
         
         assertEquals("1.1.4", version);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "1.1.4".equals(inserted.getVersion())));
+                && "1.1.4".equals(inserted.getVersion()) && "".equals(inserted.getDesc())));
     }
     
     @Test

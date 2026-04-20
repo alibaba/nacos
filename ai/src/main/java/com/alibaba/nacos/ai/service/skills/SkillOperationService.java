@@ -223,7 +223,8 @@ public interface SkillOperationService {
      * @param basedOnVersion base version to fork from (optional; defaults per server rules when resolving base)
      * @param targetVersion target draft version to create (optional; auto-generated when empty)
      * @param initialContent full skill from {@code skillCard}, or null when forking
-     * @param commitMsg version-level commit message describing what changed (optional)
+     * @param commitMsg version-level commit message describing what changed (optional; stored empty when not provided,
+     *                  not derived from skill description)
      * @return created draft version
      */
     String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion,

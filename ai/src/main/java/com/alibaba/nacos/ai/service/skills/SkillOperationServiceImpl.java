@@ -646,7 +646,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
             // Step 2: Insert draft version row
             String currentUser = VisibilityHelper.resolveCurrentIdentity();
-            String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : baseSkill.getDescription();
+            String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : "";
             resourceManager.insertVersionRow(namespaceId, name, RESOURCE_TYPE_SKILL,
                     StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
                     AiResourceConstants.VERSION_STATUS_DRAFT, newVersion, versionDesc,
@@ -1009,7 +1009,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
 
         // 2) insert draft version row
-        String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : skill.getDescription();
+        String versionDesc = StringUtils.isNotBlank(commitMsg) ? commitMsg : "";
         resourceManager.insertVersionRow(namespaceId, skillName, RESOURCE_TYPE_SKILL,
                 StringUtils.isBlank(currentUser) ? DEFAULT_AUTHOR : currentUser,
                 AiResourceConstants.VERSION_STATUS_DRAFT, version, versionDesc,
