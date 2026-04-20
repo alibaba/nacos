@@ -1104,10 +1104,10 @@ class AgentSpecOperationServiceImplTest {
         meta.setName(agentSpecName);
         meta.setType("agentspec");
         meta.setStatus("enable");
-        // No labels → resolveBaseVersion returns null → goes to "no base" path (empty draft)
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         meta.setMetaVersion(1L);
         
+        Page<AiResourceVersion> emptyPage = new Page<>();
         Page<AiResourceVersion> versionPage = new Page<>();
         AiResourceVersion v1 = new AiResourceVersion();
         v1.setVersion("0.0.1");
@@ -1116,8 +1116,10 @@ class AgentSpecOperationServiceImplTest {
         versionPage.setPageItems(List.of(v1, v2));
         
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        // 1st call: resolveBaseVersion → listExistingVersions → returns empty (no base found)
+        // 2nd call: nextVersion → listExistingVersions → returns versions for auto-increment
         when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
-                anyInt(), anyInt())).thenReturn(versionPage);
+                anyInt(), anyInt())).thenReturn(emptyPage).thenReturn(versionPage);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
                 .thenReturn(true);
         
@@ -1135,10 +1137,10 @@ class AgentSpecOperationServiceImplTest {
         meta.setName(agentSpecName);
         meta.setType("agentspec");
         meta.setStatus("enable");
-        // No labels → resolveBaseVersion returns null → goes to "no base" path (empty draft)
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         meta.setMetaVersion(1L);
         
+        Page<AiResourceVersion> emptyPage = new Page<>();
         Page<AiResourceVersion> versionPage = new Page<>();
         AiResourceVersion v1 = new AiResourceVersion();
         v1.setVersion("v1");
@@ -1147,8 +1149,10 @@ class AgentSpecOperationServiceImplTest {
         versionPage.setPageItems(List.of(v1, v2));
         
         when(aiResourcePersistService.find(eq(namespaceId), eq(agentSpecName), anyString())).thenReturn(meta);
+        // 1st call: resolveBaseVersion → listExistingVersions → returns empty (no base found)
+        // 2nd call: nextVersion → listExistingVersions → returns versions for auto-increment
         when(aiResourceVersionPersistService.list(eq(namespaceId), eq(agentSpecName), eq("agentspec"), isNull(),
-                anyInt(), anyInt())).thenReturn(versionPage);
+                anyInt(), anyInt())).thenReturn(emptyPage).thenReturn(versionPage);
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(agentSpecName), anyString(), eq(1L), any()))
                 .thenReturn(true);
         
