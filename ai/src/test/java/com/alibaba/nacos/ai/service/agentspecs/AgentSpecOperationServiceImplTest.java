@@ -702,6 +702,79 @@ class AgentSpecOperationServiceImplTest {
     }
     
     @Test
+    void testGetAgentSpecVersionMetaSuccess() throws NacosException {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        AiResourceVersion vRow = new AiResourceVersion();
+        vRow.setVersion("v1");
+        vRow.setStatus("online");
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v1")))
+                .thenReturn(vRow);
+        String mainJson = "{\"name\":\"my-agentspec\",\"description\":\"desc\","
+                + "\"resources\":[{\"name\":\"config/SOUL.md\",\"type\":\"config\"},{\"name\":\"run.sh\",\"type\":\"other\"}]}";
+        when(storage.get(any(StorageKey.class))).thenReturn(mainJson.getBytes(StandardCharsets.UTF_8));
+        AgentSpec result = service.getAgentSpecVersionMeta(namespaceId, name, "v1");
+        assertNotNull(result);
+        assertEquals("my-agentspec", result.getName());
+        assertEquals("desc", result.getDescription());
+        assertNotNull(result.getResource());
+        assertEquals(2, result.getResource().size());
+        for (Map.Entry<String, com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource> entry : result.getResource().entrySet()) {
+            assertNotNull(entry.getValue().getName());
+            assertNotNull(entry.getValue().getType());
+            assertEquals(null, entry.getValue().getContent());
+            assertEquals(null, entry.getValue().getMetadata());
+        }
+        // Only one storage read for main config, no resource file reads
+        verify(storage, times(1)).get(any(StorageKey.class));
+    }
+    
+    @Test
+    void testGetAgentSpecVersionMetaBlankVersion() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.getAgentSpecVersionMeta(namespaceId, name, ""));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+    
+    @Test
+    void testGetAgentSpecVersionMetaVersionNotFound() {
+        String namespaceId = "test-ns";
+        String name = "my-agentspec";
+        AiResource meta = new AiResource();
+        meta.setName(name);
+        meta.setType("agentspec");
+        meta.setStatus("enable");
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(eq(namespaceId), eq(name), anyString(), eq("v99")))
+                .thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.getAgentSpecVersionMeta(namespaceId, name, "v99"));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
+    void testGetAgentSpecVersionMetaNotFound() {
+        String namespaceId = "test-ns";
+        String name = "nonexistent";
+        when(aiResourcePersistService.find(eq(namespaceId), eq(name), anyString())).thenReturn(null);
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> service.getAgentSpecVersionMeta(namespaceId, name, "v1"));
+        assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
+    }
+    
+    @Test
     void testDeleteAgentSpecSuccess() throws NacosException {
         String namespaceId = "test-ns";
         String name = "my-agentspec";

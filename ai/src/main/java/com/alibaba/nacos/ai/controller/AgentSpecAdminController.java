@@ -109,6 +109,23 @@ public class AgentSpecAdminController {
     }
     
     /**
+     * Get specific version metadata of an agentspec without resource content. Returns the agentspec main content and
+     * resource list (name + type only), skipping resource file IO.
+     *
+     * @param form the agentspec form containing agentSpecName and version
+     * @return agentspec with resource list containing only name and type
+     * @throws NacosException if the agentspec or version not found
+     */
+    @GetMapping("/version/meta")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AgentSpec> getAgentSpecVersionMeta(AgentSpecForm form) throws NacosException {
+        form.validate();
+        return Result.success(
+                agentSpecOperationService.getAgentSpecVersionMeta(form.getNamespaceId(), form.getAgentSpecName(),
+                        form.getVersion()));
+    }
+    
+    /**
      * Delete agentspec.
      *
      * @param form the agentspec form to delete

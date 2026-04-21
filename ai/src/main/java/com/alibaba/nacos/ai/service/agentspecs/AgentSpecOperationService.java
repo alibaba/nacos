@@ -69,6 +69,18 @@ public interface AgentSpecOperationService {
             throws NacosException;
     
     /**
+     * Get agentspec version metadata without resource content. Returns the agentspec main content and resource list
+     * (name + type only), skipping resource file IO entirely.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version target version
+     * @return agentspec with resource list containing only name and type (no content or metadata)
+     * @throws NacosException if agentspec or version not found
+     */
+    AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version) throws NacosException;
+    
+    /**
      * Delete agentspec.
      *
      * @param namespaceId namespace ID

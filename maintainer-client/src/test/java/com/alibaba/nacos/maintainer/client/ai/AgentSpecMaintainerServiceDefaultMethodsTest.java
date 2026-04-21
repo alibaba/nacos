@@ -118,6 +118,23 @@ class AgentSpecMaintainerServiceDefaultMethodsTest {
         assertEquals("testAgentSpec", result.getName());
     }
 
+    // ========== getAgentSpecVersionMeta default method tests ==========
+
+    @Test
+    @DisplayName("getAgentSpecVersionMeta(agentSpecName, version) should use default namespace")
+    void testGetAgentSpecVersionMetaWithDefaultNamespace() throws NacosException {
+        AgentSpec agentSpec = new AgentSpec();
+        agentSpec.setName("testAgentSpec");
+
+        HttpRestResult<String> mockResult = new HttpRestResult<>();
+        mockResult.setData(JacksonUtils.toJson(Result.success(agentSpec)));
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockResult);
+
+        AgentSpec result = agentSpecService.getAgentSpecVersionMeta("testAgentSpec", "v1");
+        assertNotNull(result);
+        assertEquals("testAgentSpec", result.getName());
+    }
+
     // ========== deleteAgentSpec default method tests ==========
 
     @Test

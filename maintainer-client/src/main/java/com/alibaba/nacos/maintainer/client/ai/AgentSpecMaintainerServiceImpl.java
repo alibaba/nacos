@@ -99,6 +99,24 @@ public class AgentSpecMaintainerServiceImpl extends AbstractAiDelegateMaintainer
     }
     
     @Override
+    public AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version)
+            throws NacosException {
+        namespaceId = resolveNamespace(namespaceId);
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("agentSpecName", agentSpecName);
+        params.put("version", version);
+        HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, agentSpecName))
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.AI_AGENTSPEC_VERSION_META_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> restResult = executeSyncHttpRequest(httpRequest);
+        Result<AgentSpec> result = JacksonUtils.toObj(restResult.getData(),
+                new TypeReference<Result<AgentSpec>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
     public boolean deleteAgentSpec(String namespaceId, String agentSpecName) throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(4);

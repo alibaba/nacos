@@ -241,6 +241,32 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     }
     
     /**
+     * Get agentspec version metadata without resource content. Only reads the main config file (manifest.json) and
+     * builds resource list from the reference entries, skipping all resource file IO.
+     */
+    @Override
+    public AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version)
+            throws NacosException {
+        AiResource meta = resourceManager.findMeta(namespaceId, agentSpecName, RESOURCE_TYPE_AGENTSPEC);
+        if (meta == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "AgentSpec not found: " + agentSpecName);
+        }
+        resourceManager.ensureReadableOrNotFound(meta, "AgentSpec not found: " + agentSpecName);
+        if (StringUtils.isBlank(version)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Version is required for agentspec version meta");
+        }
+        AiResourceVersion versionRow = resourceManager.findVersion(namespaceId, agentSpecName,
+                RESOURCE_TYPE_AGENTSPEC, version);
+        if (versionRow == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "AgentSpec version not found: " + agentSpecName + "@" + version);
+        }
+        return loadAgentSpecMetaFromStorage(namespaceId, agentSpecName, version);
+    }
+    
+    /**
      * Delete an AgentSpec entirely. Removes all version storage files, version rows, and the meta row.
      */
     @Override
@@ -1101,6 +1127,42 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                             new String(resourceBytes, StandardCharsets.UTF_8), AgentSpecResource.class);
                     resourceMap.put(resourceId, resource);
                 }
+            }
+        }
+        agentSpec.setResource(resourceMap);
+        return agentSpec;
+    }
+    
+    /**
+     * Load agentspec metadata from storage without reading resource files. Only reads the main config (manifest.json)
+     * and builds resource entries with name and type from the reference list.
+     */
+    private AgentSpec loadAgentSpecMetaFromStorage(String namespaceId, String agentSpecName, String version)
+            throws NacosException {
+        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(), namespaceId,
+                NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
+                NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
+        byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
+        if (mainBytes == null) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "AgentSpec not found: " + agentSpecName);
+        }
+        AgentSpecMainConfig mainConfig = JacksonUtils.toObj(new String(mainBytes, StandardCharsets.UTF_8),
+                AgentSpecMainConfig.class);
+        AgentSpec agentSpec = new AgentSpec();
+        agentSpec.setNamespaceId(namespaceId);
+        agentSpec.setName(mainConfig.getName());
+        agentSpec.setDescription(mainConfig.getDescription());
+        agentSpec.setContent(mainConfig.getContent());
+        Map<String, AgentSpecResource> resourceMap = new HashMap<>(
+                mainConfig.getResources() != null ? mainConfig.getResources().size() : 16);
+        if (mainConfig.getResources() != null && !mainConfig.getResources().isEmpty()) {
+            for (AgentSpecResourceRef resourceRef : mainConfig.getResources()) {
+                String resourceId = AgentSpecUtils.generateResourceId(resourceRef.getType(), resourceRef.getName());
+                AgentSpecResource resource = new AgentSpecResource();
+                resource.setName(resourceRef.getName());
+                resource.setType(resourceRef.getType());
+                resourceMap.put(resourceId, resource);
             }
         }
         agentSpec.setResource(resourceMap);

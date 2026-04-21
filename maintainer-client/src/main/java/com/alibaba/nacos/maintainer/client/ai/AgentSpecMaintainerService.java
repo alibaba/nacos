@@ -86,6 +86,30 @@ public interface AgentSpecMaintainerService {
     }
     
     /**
+     * Get specific agentspec version metadata without resource content. Returns the agentspec main content and resource
+     * list (name + type only), skipping resource file IO.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec with resource list containing only name and type
+     * @throws NacosException if fail to get agentspec version meta
+     */
+    AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version) throws NacosException;
+    
+    /**
+     * Get specific agentspec version metadata with default namespace.
+     *
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec with resource list containing only name and type
+     * @throws NacosException if fail to get agentspec version meta
+     */
+    default AgentSpec getAgentSpecVersionMeta(String agentSpecName, String version) throws NacosException {
+        return getAgentSpecVersionMeta(Constants.DEFAULT_NAMESPACE_ID, agentSpecName, version);
+    }
+    
+    /**
      * Delete agentspec.
      *
      * @param namespaceId    namespace ID

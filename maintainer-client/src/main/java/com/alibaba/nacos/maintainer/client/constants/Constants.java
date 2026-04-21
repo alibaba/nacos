@@ -121,6 +121,8 @@ public class Constants {
 
         public static final String AI_AGENTSPEC_VERSION_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/version";
 
+        public static final String AI_AGENTSPEC_VERSION_META_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/version/meta";
+
         public static final String AI_AGENTSPEC_SCOPE_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/scope";
 
         public static final String AI_AGENTSPEC_BIZ_TAGS_ADMIN_PATH = AI_AGENTSPEC_ADMIN_PATH + "/biz-tags";
