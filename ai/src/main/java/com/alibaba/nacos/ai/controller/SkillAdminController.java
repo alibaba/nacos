@@ -162,6 +162,21 @@ public class SkillAdminController {
     }
     
     /**
+     * Count skills visible to the current user (own + public).
+     *
+     * @param namespaceId namespace ID
+     * @return total count of visible skills
+     * @throws NacosException if the count query fails
+     */
+    @GetMapping("/count")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API, tags = {ALLOW_ANONYMOUS})
+    public Result<Integer> countSkills(
+            @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.Skills.SKILL_DEFAULT_NAMESPACE) String namespaceId)
+            throws NacosException {
+        return Result.success(skillOperationService.countSkills(namespaceId));
+    }
+    
+    /**
      * Upload skill from zip file.
      *
      * @param request     HTTP servlet request

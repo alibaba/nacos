@@ -577,6 +577,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         return AiResourceManager.buildPageResult(items, metaPage, pageNo);
     }
     
+    @Override
+    public int countSkills(String namespaceId) throws NacosException {
+        QueryCondition queryCondition = resourceManager.buildQueryCondition(namespaceId, RESOURCE_TYPE_SKILL, null,
+                null, VisibilityConstants.ACTION_READ);
+        return resourceManager.countMeta(queryCondition);
+    }
 
     /**
      * Create a new draft version for an existing or brand-new skill.

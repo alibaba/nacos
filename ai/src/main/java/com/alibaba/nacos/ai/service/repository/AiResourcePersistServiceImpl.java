@@ -170,6 +170,23 @@ public class AiResourcePersistServiceImpl implements AiResourcePersistService {
         int rows = jt.update(sql, increment, normalizeNamespaceId(namespaceId), name, type);
         return rows == 1;
     }
+
+    @Override
+    public int count(QueryCondition queryCondition) {
+        if (queryCondition == null) {
+            queryCondition = new QueryCondition();
+        }
+        if (queryCondition.isAlwaysEmpty()) {
+            return 0;
+        }
+        AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
+        MapperContext context = buildListContext(queryCondition, 1, 1);
+        mergeQueryConditionToContext(context, queryCondition);
+        context.putWhereParameter(AiResourceMapper.QUERY_CONDITION_ALWAYS_EMPTY, false);
+        MapperResult countResult = mapper.findAiResourceCountRows(context);
+        Integer count = jt.queryForObject(countResult.getSql(), countResult.getParamList().toArray(), Integer.class);
+        return count == null ? 0 : count;
+    }
     
     private MapperContext buildListContext(QueryCondition queryCondition, int pageNo, int pageSize) {
         MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);

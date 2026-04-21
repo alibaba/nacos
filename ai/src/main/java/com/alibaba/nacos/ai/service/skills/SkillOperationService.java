@@ -299,6 +299,15 @@ public interface SkillOperationService {
      */
     void updateScope(String namespaceId, String name, String scope) throws NacosException;
 
+    /**
+     * Count skills visible to the current user (own + public).
+     *
+     * @param namespaceId namespace ID
+     * @return total count of visible skills
+     * @throws NacosException if query failed
+     */
+    int countSkills(String namespaceId) throws NacosException;
+
     // ========== Client APIs ==========
 
     /**

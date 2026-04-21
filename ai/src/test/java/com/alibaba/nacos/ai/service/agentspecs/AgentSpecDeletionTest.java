@@ -346,6 +346,11 @@ class AgentSpecDeletionTest {
         public boolean incrementDownloadCount(String namespaceId, String name, String type, long increment) {
             return false;
         }
+        
+        @Override
+        public int count(QueryCondition queryCondition) {
+            return 0;
+        }
     }
     
     private static class InMemoryAiResourceVersionPersistService implements AiResourceVersionPersistService {

@@ -227,6 +227,18 @@ class SkillAdminControllerTest {
     }
     
     @Test
+    void testCountSkillsSuccess() throws Exception {
+        when(skillOperationService.countSkills(eq("public"))).thenReturn(5);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_ADMIN_PATH + "/count");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        Result<Integer> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(5, result.getData());
+    }
+    
+    @Test
     void testCreateDraftSuccess() throws Exception {
         when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull(), isNull(),
                 any(Skill.class), isNull())).thenReturn("v1");

@@ -122,5 +122,12 @@ public interface AiResourcePersistService {
      */
     boolean incrementDownloadCount(String namespaceId, String name, String type, long increment);
     
+    /**
+     * Count resources matching the given query condition.
+     *
+     * @param queryCondition unified table-oriented query conditions
+     * @return total count of matching resources
+     */
+    int count(QueryCondition queryCondition);
 }
 

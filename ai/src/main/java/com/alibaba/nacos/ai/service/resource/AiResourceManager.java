@@ -362,6 +362,13 @@ public class AiResourceManager {
     }
     
     /**
+     * Count meta rows by query condition.
+     */
+    public int countMeta(QueryCondition queryCondition) {
+        return aiResourcePersistService.count(queryCondition);
+    }
+    
+    /**
      * List version rows.
      */
     public Page<AiResourceVersion> listVersions(String namespaceId, String name, String type, String status,

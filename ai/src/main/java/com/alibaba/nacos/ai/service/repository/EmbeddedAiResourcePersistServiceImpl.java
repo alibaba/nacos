@@ -177,6 +177,24 @@ public class EmbeddedAiResourcePersistServiceImpl implements AiResourcePersistSe
         Boolean success = databaseOperate.blockUpdate();
         return success != null && success;
     }
+
+    @Override
+    public int count(QueryCondition queryCondition) {
+        if (queryCondition == null) {
+            queryCondition = new QueryCondition();
+        }
+        if (queryCondition.isAlwaysEmpty()) {
+            return 0;
+        }
+        AiResourceMapper mapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.AI_RESOURCE);
+        MapperContext context = buildListContext(queryCondition, 1, 1);
+        mergeQueryConditionToContext(context, queryCondition);
+        context.putWhereParameter(AiResourceMapper.QUERY_CONDITION_ALWAYS_EMPTY, false);
+        MapperResult countResult = mapper.findAiResourceCountRows(context);
+        Integer count = databaseOperate.queryOne(countResult.getSql(), countResult.getParamList().toArray(),
+                Integer.class);
+        return count == null ? 0 : count;
+    }
     
     private MapperContext buildListContext(QueryCondition queryCondition, int pageNo, int pageSize) {
         MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
