@@ -51,7 +51,8 @@ export function updateFrontmatterField(md: string, field: string, value: string)
     return line;
   });
   if (!found) {
-    updated.push(`${field}: ${value}`);
+    // Insert at the beginning of frontmatter so name always appears first
+    updated.unshift(`${field}: ${value}`);
   }
   return md.replace(FRONTMATTER_RE, `---\n${updated.join('\n')}\n---`);
 }

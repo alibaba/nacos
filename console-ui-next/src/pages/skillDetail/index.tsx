@@ -118,8 +118,8 @@ export default function SkillDetailPage() {
   const handleInstructionChange = useCallback((val: string | undefined) => {
     let newVal = val || '';
     const fm = parseFrontmatter(newVal);
-    // Protect name: revert to original skillName if user changed it
-    if (fm.name !== undefined && fm.name !== skillName) {
+    // Protect name: revert to original skillName if user removed or changed it
+    if (fm.name === undefined || fm.name !== skillName) {
       newVal = updateFrontmatterField(newVal, 'name', skillName);
     }
     setEditInstruction(newVal);

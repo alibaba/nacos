@@ -32,6 +32,7 @@ import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
+import com.alibaba.nacos.ai.utils.SkillRequestUtil;
 import com.alibaba.nacos.ai.utils.SkillZipParser;
 import com.alibaba.nacos.api.ai.model.skills.Skill;
 import com.alibaba.nacos.api.ai.model.skills.SkillBasicInfo;
@@ -225,6 +226,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Step 3: Write to storage (unlike upload, bootstrap skips draft workflow and writes directly)
         String version = resolveFinalUploadVersion(namespaceId, skillName, resolveUploadVersion(skill.getSkillMd(), null));
+        // Normalize frontmatter before writing (bootstrap = first create)
+        SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, true);
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
 
         // Step 4: Insert meta + version rows with status directly set to online (published)
@@ -379,6 +382,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     private void overwriteEditingDraft(String namespaceId, Skill skill, AiResource meta, String editing)
             throws NacosException {
         resourceManager.requireDraftVersion(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing);
+        // Normalize frontmatter before writing (overwrite = existing skill, not first create)
+        SkillRequestUtil.normalizeSkillFrontmatter(skill, skill.getName(), editing, false);
         List<String> files = writeSkillToStorage(namespaceId, skill, editing);
         resourceManager.updateVersionStorage(namespaceId, skill.getName(), RESOURCE_TYPE_SKILL, editing,
                 buildStorageJson(namespaceId, skill.getName(), editing, files));
@@ -690,6 +695,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                     "No editing draft exists for skill: " + name);
         }
         resourceManager.requireDraftVersion(namespaceId, name, RESOURCE_TYPE_SKILL, editing);
+
+        // Normalize frontmatter before writing to storage (editing = existing skill, not first create)
+        SkillRequestUtil.normalizeSkillFrontmatter(draftSkill, name, editing, false);
 
         // Step 3: Overwrite storage files with new content, update version row's storage JSON and meta description
         List<String> files = writeSkillToStorage(namespaceId, draftSkill, editing);
@@ -1004,6 +1012,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             boolean isNewSkill, String commitMsg) throws NacosException {
         String skillName = skill.getName();
         String currentUser = VisibilityHelper.resolveCurrentIdentity();
+
+        // Normalize frontmatter before writing to storage
+        SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, existedMeta == null);
 
         // 1) write all resources (including SKILL.md) to storage
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
