@@ -129,9 +129,24 @@ class PromptDataMigrationTaskTest {
         AiResourceStorageRouter.reset();
         lenient().when(storage.type()).thenReturn("nacos_config");
         AiResourceStorageRouter.join(storage);
+        initTaskWithDefaultNamespace();
+    }
+    
+    /**
+     * Initialize nacosReader and task with default single-namespace setup.
+     * Tests that need a different namespace list should call {@link #initTaskWithNamespaces} instead.
+     */
+    private void initTaskWithDefaultNamespace() {
         Namespace defaultNs = new Namespace(NS, "public");
         lenient().when(namespaceOperationService.getNamespaceList())
                 .thenReturn(Collections.singletonList(defaultNs));
+        initTaskWithCurrentStubs();
+    }
+    
+    /**
+     * Re-initialize nacosReader and task using whatever stubs are currently set on namespaceOperationService.
+     */
+    private void initTaskWithCurrentStubs() {
         nacosReader = new NacosPromptLegacyDataReader(configInfoPersistService, configQueryChainService,
                 configOperationService, namespaceOperationService);
         List<PromptLegacyDataReader> readers = Collections.singletonList(nacosReader);
@@ -165,11 +180,7 @@ class PromptDataMigrationTaskTest {
     void testShouldSkipWhenDisabled() {
         System.setProperty("nacos.ai.prompt.migration.enabled", "false");
         EnvUtil.setEnvironment(new StandardEnvironment());
-        nacosReader = new NacosPromptLegacyDataReader(configInfoPersistService, configQueryChainService,
-                configOperationService, namespaceOperationService);
-        List<PromptLegacyDataReader> readers = Collections.singletonList(nacosReader);
-        task = new PromptDataMigrationTask(aiResourcePersistService, aiResourceVersionPersistService,
-                promptOperationService, configQueryChainService, configOperationService, readers);
+        initTaskWithCurrentStubs();
         
         task.onApplicationEvent(createRootContextEvent());
         
@@ -471,11 +482,7 @@ class PromptDataMigrationTaskTest {
         Namespace defaultNs = new Namespace(NS, "public");
         Namespace devNs = new Namespace(ns2, "dev");
         when(namespaceOperationService.getNamespaceList()).thenReturn(Arrays.asList(defaultNs, devNs));
-        nacosReader = new NacosPromptLegacyDataReader(configInfoPersistService, configQueryChainService,
-                configOperationService, namespaceOperationService);
-        task = new PromptDataMigrationTask(aiResourcePersistService, aiResourceVersionPersistService,
-                promptOperationService, configQueryChainService, configOperationService,
-                Collections.singletonList(nacosReader));
+        initTaskWithCurrentStubs();
         
         // Scan: one prompt in each namespace
         String prompt2 = "dev-prompt";
@@ -537,11 +544,7 @@ class PromptDataMigrationTaskTest {
     void testShouldFallbackToDefaultNamespaceWhenNamespaceListFails() throws Exception {
         // Namespace service throws exception
         when(namespaceOperationService.getNamespaceList()).thenThrow(new RuntimeException("connection refused"));
-        nacosReader = new NacosPromptLegacyDataReader(configInfoPersistService, configQueryChainService,
-                configOperationService, namespaceOperationService);
-        task = new PromptDataMigrationTask(aiResourcePersistService, aiResourceVersionPersistService,
-                promptOperationService, configQueryChainService, configOperationService,
-                Collections.singletonList(nacosReader));
+        initTaskWithCurrentStubs();
         
         // Default namespace has a prompt
         Page<ConfigInfo> scanPage = buildScanPage(PROMPT_KEY);
