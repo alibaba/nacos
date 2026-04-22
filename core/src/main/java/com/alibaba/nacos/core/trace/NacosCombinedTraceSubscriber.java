@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.event.TraceEvent;
 import com.alibaba.nacos.common.trace.publisher.TraceEventPublisherFactory;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.trace.NacosTracePluginManager;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
 
@@ -87,7 +88,9 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
     private void onEvent0(NacosTraceSubscriber subscriber, TraceEvent event) {
         try {
             subscriber.onEvent(event);
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            Loggers.CORE.warn("Trace subscriber callback failed, subscriberName={}, subscriberClass={}, eventType={}",
+                    subscriber.getName(), subscriber.getClass().getName(), event.getClass().getName(), ex);
         }
     }
     
