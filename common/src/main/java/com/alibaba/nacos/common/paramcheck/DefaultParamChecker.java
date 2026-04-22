@@ -466,7 +466,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         if (mcpName.length() > paramCheckRule.maxMcpNameLength) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage(
-                    String.format("Param 'mcpName' is illegal, the param length should not exceed %d.", paramCheckRule.maxClusterLength));
+                    String.format("Param 'mcpName' is illegal, the param length should not exceed %d.", paramCheckRule.maxMcpNameLength));
             return paramCheckResponse;
         }
         if (!mcpNamePattern.matcher(mcpName).matches()) {
