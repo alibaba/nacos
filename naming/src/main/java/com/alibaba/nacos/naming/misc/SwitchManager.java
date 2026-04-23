@@ -265,7 +265,7 @@ public class SwitchManager extends RequestProcessor4CP {
             
             if (entry.equals(SwitchEntry.ENABLE_STANDALONE)) {
                 
-                if (!StringUtils.isNotEmpty(value)) {
+                if (StringUtils.isNotEmpty(value)) {
                     tempSwitchDomain.setEnableStandalone(Boolean.parseBoolean(value));
                 }
             }

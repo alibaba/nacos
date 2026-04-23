@@ -25,7 +25,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -100,5 +102,26 @@ class SwitchManagerTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> switchManager.update(SwitchEntry.PUSH_VERSION, "ruby:1.0.0", true));
         assertEquals("unsupported client type: ruby", exception.getMessage());
+    }
+
+    @Test
+    void testUpdateEnableStandaloneToFalseAppliesValue() throws Exception {
+        assertTrue(switchDomain.isEnableStandalone());
+        switchManager.update(SwitchEntry.ENABLE_STANDALONE, "false", true);
+        assertFalse(switchDomain.isEnableStandalone());
+    }
+
+    @Test
+    void testUpdateEnableStandaloneToTrueAppliesValue() throws Exception {
+        switchDomain.setEnableStandalone(false);
+        switchManager.update(SwitchEntry.ENABLE_STANDALONE, "true", true);
+        assertTrue(switchDomain.isEnableStandalone());
+    }
+
+    @Test
+    void testUpdateEnableStandaloneWithEmptyValueIsNoOp() throws Exception {
+        assertTrue(switchDomain.isEnableStandalone());
+        switchManager.update(SwitchEntry.ENABLE_STANDALONE, "", true);
+        assertTrue(switchDomain.isEnableStandalone());
     }
 }
