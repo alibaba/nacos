@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.remote.handler;
 
 import com.alibaba.nacos.ai.service.prompt.PromptClientOperationService;
-import com.alibaba.nacos.api.ai.model.prompt.Prompt;
+import com.alibaba.nacos.ai.utils.PromptConvertUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryPromptRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryPromptResponse;
@@ -67,7 +67,7 @@ public class QueryPromptRequestHandler extends RequestHandler<QueryPromptRequest
         try {
             PromptVersionInfo result = promptOperationService.queryPrompt(
                     request.getNamespaceId(), request.getPromptKey(), request.getVersion(), request.getLabel(), request.getMd5());
-            response.setPromptInfo(convertToClientPrompt(result));
+            response.setPromptInfo(PromptConvertUtils.toClientPrompt(result));
         } catch (NacosException e) {
             if (e.getErrCode() == NacosException.NOT_MODIFIED) {
                 response.setErrorInfo(NacosException.NOT_MODIFIED, "prompt data is up to date");
@@ -77,15 +77,5 @@ public class QueryPromptRequestHandler extends RequestHandler<QueryPromptRequest
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
         }
         return response;
-    }
-    
-    private Prompt convertToClientPrompt(PromptVersionInfo versionInfo) {
-        Prompt prompt = new Prompt();
-        prompt.setPromptKey(versionInfo.getPromptKey());
-        prompt.setVersion(versionInfo.getVersion());
-        prompt.setTemplate(versionInfo.getTemplate());
-        prompt.setMd5(versionInfo.getMd5());
-        prompt.setVariables(versionInfo.getVariables());
-        return prompt;
     }
 }
