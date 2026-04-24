@@ -526,10 +526,7 @@ export default function ServiceDetailPage() {
                     <div className="text-xs font-medium text-muted-foreground mb-1">{t('service.metadata')}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {Object.entries(currentService.metadata).map(([k, v]) => (
-                        <span
-                          key={k}
-                          className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground ring-1 ring-inset ring-border/50"
-                        >
+                        <span key={k} className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground ring-1 ring-inset ring-border/50">
                           {k}: {v}
                         </span>
                       ))}
