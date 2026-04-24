@@ -2,19 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import {
-  ArrowLeft,
-  Braces,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Hash,
-  Pencil,
-  Server,
-  Shield,
-  ToggleLeft,
-  Trash2,
-} from 'lucide-react';
+import { ArrowLeft, Pencil, ChevronLeft, ChevronRight, Server, Hash, Shield, ToggleLeft, Filter, Braces, Trash2} from 'lucide-react';
 
 import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
