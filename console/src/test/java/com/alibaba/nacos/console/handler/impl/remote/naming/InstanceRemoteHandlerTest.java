@@ -69,10 +69,10 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         instanceForm.setServiceName("test");
         instanceForm.setIp("127.0.0.1");
         instanceForm.setPort(3306);
-        instanceForm.setEphemeral(true);
+        instanceForm.setEphemeral(false);
         instanceForm.validate();
         Instance instance = new Instance();
-        instance.setEphemeral(true);
+        instance.setEphemeral(false);
         instanceRemoteHandler.removeInstance(instanceForm, instance);
         verify(namingMaintainerService).deregisterInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
                 "test", instance);
