@@ -1413,6 +1413,17 @@ class SkillOperationServiceImplTest {
                 () -> skillOperationService.updateDraft("ns", null, null));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
+
+    @Test
+    void testUpdateDraftRejectsFrontmatterOnlyMarkdown() {
+        Skill draft = new Skill();
+        draft.setName("my-skill");
+        draft.setDescription("desc");
+        draft.setSkillMd("---\nname: my-skill\ndescription: desc\n---\n\n  ");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.updateDraft("ns", draft, null));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
     
     @Test
     void testUpdateDraftNoEditingThrows() {

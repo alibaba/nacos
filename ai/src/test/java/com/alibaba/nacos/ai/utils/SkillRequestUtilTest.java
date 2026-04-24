@@ -17,10 +17,12 @@
 package com.alibaba.nacos.ai.utils;
 
 import com.alibaba.nacos.api.ai.model.skills.Skill;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -62,6 +64,27 @@ class SkillRequestUtilTest {
     void testParseFrontmatterFieldReturnsNullForEmptyInput() {
         assertNull(SkillRequestUtil.parseFrontmatterField(null, "name"));
         assertNull(SkillRequestUtil.parseFrontmatterField("", "name"));
+    }
+
+    // ========== hasNonFrontmatterContent / validateSkill ==========
+
+    @Test
+    void testHasNonFrontmatterContentReturnsFalseWhenOnlyFrontmatter() {
+        String md = "---\nname: test-skill\ndescription: desc\n---\n\n   \n";
+        assertEquals(false, SkillRequestUtil.hasNonFrontmatterContent(md));
+    }
+
+    @Test
+    void testHasNonFrontmatterContentReturnsTrueWhenBodyExists() {
+        String md = "---\nname: test-skill\ndescription: desc\n---\n\n## steps";
+        assertTrue(SkillRequestUtil.hasNonFrontmatterContent(md));
+    }
+
+    @Test
+    void testValidateSkillThrowsWhenMarkdownBodyEmptyAfterFrontmatter() {
+        Skill skill = buildSkill("test-skill", "desc", "---\nname: test-skill\ndescription: desc\n---\n\n");
+        NacosApiException exception = assertThrows(NacosApiException.class, () -> SkillRequestUtil.validateSkill(skill));
+        assertTrue(exception.getErrMsg().contains("markdown body should not be empty"));
     }
 
     // ========== updateFrontmatterField ==========
