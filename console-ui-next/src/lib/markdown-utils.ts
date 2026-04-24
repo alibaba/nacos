@@ -5,6 +5,13 @@ export function stripFrontmatter(md: string): string {
   return md.replace(/^---[\s\S]*?---\s*/, '');
 }
 
+/**
+ * Returns true when markdown has non-empty body after removing frontmatter.
+ */
+export function hasNonFrontmatterMarkdownBody(md: string): boolean {
+  return stripFrontmatter(md || '').trim().length > 0;
+}
+
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 
 /**

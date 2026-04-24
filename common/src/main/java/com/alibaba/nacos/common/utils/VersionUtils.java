@@ -17,9 +17,7 @@
 package com.alibaba.nacos.common.utils;
 
 import java.io.InputStream;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,8 +57,6 @@ public class VersionUtils {
         }
     }
     
-    private static final Comparator<String> STRING_COMPARATOR = String::compareTo;
-    
     /**
      * compare two version who is latest.
      *
@@ -75,15 +71,25 @@ public class VersionUtils {
         if (sA.length != expectSize || sB.length != expectSize) {
             throw new IllegalArgumentException("version must be like x.y.z(-beta)");
         }
-        int first = Objects.compare(sA[0], sB[0], STRING_COMPARATOR);
-        if (first != 0) {
-            return first;
+        int major = Integer.compare(parseVersionPart(sA[0], versionA), parseVersionPart(sB[0], versionB));
+        if (major != 0) {
+            return major;
         }
-        int second = Objects.compare(sA[1], sB[1], STRING_COMPARATOR);
-        if (second != 0) {
-            return second;
+        int minor = Integer.compare(parseVersionPart(sA[1], versionA), parseVersionPart(sB[1], versionB));
+        if (minor != 0) {
+            return minor;
         }
-        return Objects.compare(sA[2].split("-")[0], sB[2].split("-")[0], STRING_COMPARATOR);
+        int patchA = parseVersionPart(sA[2].split("-")[0], versionA);
+        int patchB = parseVersionPart(sB[2].split("-")[0], versionB);
+        return Integer.compare(patchA, patchB);
+    }
+
+    private static int parseVersionPart(String part, String originalVersion) {
+        try {
+            return Integer.parseInt(part);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("version must be like x.y.z(-beta), got: " + originalVersion, e);
+        }
     }
     
     public static String getFullClientVersion() {
