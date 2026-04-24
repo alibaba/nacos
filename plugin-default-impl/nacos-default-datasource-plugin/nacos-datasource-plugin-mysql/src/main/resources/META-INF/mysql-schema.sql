@@ -36,7 +36,7 @@ CREATE TABLE `config_info` (
                                `c_schema` text COMMENT '配置的模式',
                                `encrypted_data_key` varchar(1024) NOT NULL DEFAULT '' COMMENT '密钥',
                                PRIMARY KEY (`id`),
-                               UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
+                               UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`(191),`group_id`(128),`tenant_id`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='config_info';
 
 /******************************************/
@@ -58,8 +58,8 @@ CREATE TABLE `config_info_gray` (
                                     `gray_rule` text NOT NULL COMMENT 'gray_rule',
                                     `encrypted_data_key` varchar(256) NOT NULL DEFAULT '' COMMENT 'encrypted_data_key',
                                     PRIMARY KEY (`id`),
-                                    UNIQUE KEY `uk_configinfogray_datagrouptenantgray` (`data_id`,`group_id`,`tenant_id`,`gray_name`),
-                                    KEY `idx_dataid_gmt_modified` (`data_id`,`gmt_modified`),
+                                    UNIQUE KEY `uk_configinfogray_datagrouptenantgray` (`data_id`(191),`group_id`(128),`tenant_id`(128),`gray_name`(128)),
+                                    KEY `idx_dataid_gmt_modified` (`data_id`(191),`gmt_modified`),
                                     KEY `idx_gmt_modified` (`gmt_modified`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='config_info_gray';
 
@@ -76,7 +76,7 @@ CREATE TABLE `config_tags_relation` (
                                         `nid` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'nid, 自增长标识',
                                         PRIMARY KEY (`nid`),
                                         UNIQUE KEY `uk_configtagrelation_configidtag` (`id`,`tag_name`,`tag_type`),
-                                        KEY `idx_tenant_id` (`tenant_id`)
+                                        KEY `idx_tenant_id` (`tenant_id`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='config_tag_relation';
 
 /******************************************/
@@ -94,7 +94,7 @@ CREATE TABLE `group_capacity` (
                                   `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                   `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
                                   PRIMARY KEY (`id`),
-                                  UNIQUE KEY `uk_group_id` (`group_id`)
+                                  UNIQUE KEY `uk_group_id` (`group_id`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='集群、各Group容量信息表';
 
 /******************************************/
@@ -121,7 +121,7 @@ CREATE TABLE `his_config_info` (
                                    PRIMARY KEY (`nid`),
                                    KEY `idx_gmt_create` (`gmt_create`),
                                    KEY `idx_gmt_modified` (`gmt_modified`),
-                                   KEY `idx_did` (`data_id`)
+                                   KEY `idx_did` (`data_id`(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='多租户改造';
 
 
@@ -140,7 +140,7 @@ CREATE TABLE `tenant_capacity` (
                                    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
                                    PRIMARY KEY (`id`),
-                                   UNIQUE KEY `uk_tenant_id` (`tenant_id`)
+                                   UNIQUE KEY `uk_tenant_id` (`tenant_id`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租户容量信息表';
 
 
@@ -154,8 +154,8 @@ CREATE TABLE `tenant_info` (
                                `gmt_create` bigint(20) NOT NULL COMMENT '创建时间',
                                `gmt_modified` bigint(20) NOT NULL COMMENT '修改时间',
                                PRIMARY KEY (`id`),
-                               UNIQUE KEY `uk_tenant_info_kptenantid` (`kp`,`tenant_id`),
-                               KEY `idx_tenant_id` (`tenant_id`)
+                               UNIQUE KEY `uk_tenant_info_kptenantid` (`kp`(128),`tenant_id`(128)),
+                               KEY `idx_tenant_id` (`tenant_id`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='tenant_info';
 
 CREATE TABLE `users` (
@@ -215,8 +215,8 @@ CREATE TABLE `ai_resource` (
     `owner` varchar(128) NOT NULL DEFAULT '' COMMENT '创建者用户名',
     `download_count` bigint(20) NOT NULL DEFAULT 0 COMMENT '下载次数',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ai_resource_ns_name_type` (`namespace_id`,`name`,`type`,`c_from`),
-    KEY `idx_ai_resource_name` (`name`),
+    UNIQUE KEY `uk_ai_resource_ns_name_type` (`namespace_id`(128),`name`(191),`type`(32),`c_from`(191)),
+    KEY `idx_ai_resource_name` (`name`(191)),
     KEY `idx_ai_resource_type` (`type`),
     KEY `idx_ai_resource_gmt_modified` (`gmt_modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源元数据表';
@@ -239,8 +239,8 @@ CREATE TABLE `ai_resource_version` (
     `publish_pipeline_info` longtext DEFAULT NULL COMMENT '发布流水线信息(JSON)',
     `download_count` bigint(20) NOT NULL DEFAULT 0 COMMENT '下载次数',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ai_resource_ver_ns_name_type_ver` (`namespace_id`,`name`,`type`,`version`),
-    KEY `idx_ai_resource_ver_name` (`name`),
+    UNIQUE KEY `uk_ai_resource_ver_ns_name_type_ver` (`namespace_id`(128),`name`(191),`type`(32),`version`(64)),
+    KEY `idx_ai_resource_ver_name` (`name`(191)),
     KEY `idx_ai_resource_ver_status` (`status`),
     KEY `idx_ai_resource_ver_gmt_modified` (`gmt_modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI资源版本表';
