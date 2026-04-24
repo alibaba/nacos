@@ -39,6 +39,7 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,9 +54,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v3/console/ns/instance")
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class ConsoleInstanceController {
-    
+
     private final InstanceProxy instanceProxy;
-    
+
     /**
      * Constructs a new ConsoleInstanceController with the provided InstanceProxy.
      *
@@ -64,7 +65,7 @@ public class ConsoleInstanceController {
     public ConsoleInstanceController(InstanceProxy instanceProxy) {
         this.instanceProxy = instanceProxy;
     }
-    
+
     /**
      * List instances of special service.
      *
@@ -83,7 +84,7 @@ public class ConsoleInstanceController {
                 pageForm.getPageNo(), pageForm.getPageSize());
         return Result.success(instancePage);
     }
-    
+
     /**
      * Update instance.
      */
@@ -100,7 +101,24 @@ public class ConsoleInstanceController {
         instanceProxy.updateInstance(instanceForm, instance);
         return Result.success("ok");
     }
-    
+
+    /**
+     * Remove instance.
+     */
+    @CanDistro
+    @DeleteMapping
+    @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
+    public Result<String> removeInstance(InstanceForm instanceForm) throws NacosException {
+        // check param
+        instanceForm.validate();
+        checkDeleteInstanceEphemeral(instanceForm.getEphemeral());
+        // build instance
+        Instance instance = buildInstance(instanceForm);
+        instanceProxy.removeInstance(instanceForm, instance);
+        return Result.success("ok");
+    }
+
     private void checkWeight(Double weight) throws NacosException {
         if (weight > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
                 || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
@@ -110,7 +128,14 @@ public class ConsoleInstanceController {
                             + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
     }
-    
+
+    private void checkDeleteInstanceEphemeral(Boolean ephemeral) throws NacosApiException {
+        if (Boolean.TRUE.equals(ephemeral)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Console only supports deregistering persistent instances");
+        }
+    }
+
     private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
         Instance instance = InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
                 .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
@@ -124,9 +149,9 @@ public class ConsoleInstanceController {
         }
         return instance;
     }
-    
+
     private String buildCompositeServiceName(InstanceForm instanceForm) {
         return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
     }
-    
+
 }

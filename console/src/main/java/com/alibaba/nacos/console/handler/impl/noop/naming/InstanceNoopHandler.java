@@ -35,18 +35,24 @@ import org.springframework.stereotype.Service;
 @Service
 @ConditionalOnMissingBean(value = InstanceHandler.class, ignored = InstanceNoopHandler.class)
 public class InstanceNoopHandler implements InstanceHandler {
-    
+
     private static final String MCP_NOT_ENABLED_MESSAGE = "Current functionMode is `config`, naming module is disabled.";
-    
+
     @Override
     public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
             String clusterName, int page, int pageSize) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 MCP_NOT_ENABLED_MESSAGE);
     }
-    
+
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
+    }
+
+    @Override
+    public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 MCP_NOT_ENABLED_MESSAGE);
     }

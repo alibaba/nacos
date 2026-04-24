@@ -32,15 +32,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
-    
+
     InstanceRemoteHandler instanceRemoteHandler;
-    
+
     @BeforeEach
     void setUp() {
         super.setUpWithNaming();
         instanceRemoteHandler = new InstanceRemoteHandler(clientHolder);
     }
-    
+
     @Test
     void listInstances() throws NacosException {
         when(namingMaintainerService.listInstances("namespaceId", "groupName", "serviceName", "clusterName",
@@ -49,7 +49,7 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
                 "clusterName", 1, 10);
         assertEquals(1, page.getPageItems().size());
     }
-    
+
     @Test
     void updateInstance() throws NacosException {
         InstanceForm instanceForm = new InstanceForm();
@@ -61,5 +61,20 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         instanceRemoteHandler.updateInstance(instanceForm, instance);
         verify(namingMaintainerService).updateInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "test",
                 instance);
+    }
+
+    @Test
+    void removeInstance() throws NacosException {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setServiceName("test");
+        instanceForm.setIp("127.0.0.1");
+        instanceForm.setPort(3306);
+        instanceForm.setEphemeral(true);
+        instanceForm.validate();
+        Instance instance = new Instance();
+        instance.setEphemeral(true);
+        instanceRemoteHandler.removeInstance(instanceForm, instance);
+        verify(namingMaintainerService).deregisterInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+                "test", instance);
     }
 }

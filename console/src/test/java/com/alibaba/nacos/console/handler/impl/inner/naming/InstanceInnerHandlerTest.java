@@ -38,30 +38,30 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class InstanceInnerHandlerTest {
-    
+
     private static final String TEST_NAMESPACE_ID = "testNamespaceId";
-    
+
     private static final String TEST_GROUP_NAME = "testGroupName";
-    
+
     private static final String TEST_SERVICE_NAME = "testServiceName";
-    
+
     @Mock
     private CatalogServiceV2Impl catalogService;
-    
+
     @Mock
     private InstanceOperatorClientImpl instanceServiceV2;
-    
+
     InstanceInnerHandler instanceInnerHandler;
-    
+
     @BeforeEach
     void setUp() {
         instanceInnerHandler = new InstanceInnerHandler(catalogService, instanceServiceV2);
     }
-    
+
     @AfterEach
     void tearDown() {
     }
-    
+
     @Test
     void listInstances() throws NacosException {
         List<Instance> mockInstances = List.of(new Instance());
@@ -75,7 +75,7 @@ class InstanceInnerHandlerTest {
         assertEquals(1, actual.getPagesAvailable());
         assertEquals(1, actual.getTotalCount());
     }
-    
+
     @Test
     void updateInstance() throws NacosException {
         InstanceForm instanceForm = new InstanceForm();
@@ -85,5 +85,18 @@ class InstanceInnerHandlerTest {
         Instance instance = new Instance();
         instanceInnerHandler.updateInstance(instanceForm, instance);
         verify(instanceServiceV2).updateInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, instance);
+    }
+
+    @Test
+    void removeInstance() throws NacosException {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setNamespaceId(TEST_NAMESPACE_ID);
+        instanceForm.setGroupName(TEST_GROUP_NAME);
+        instanceForm.setServiceName(TEST_SERVICE_NAME);
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8848);
+        instanceInnerHandler.removeInstance(instanceForm, instance);
+        verify(instanceServiceV2).removeInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, instance);
     }
 }

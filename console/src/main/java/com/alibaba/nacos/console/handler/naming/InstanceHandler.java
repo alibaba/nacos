@@ -28,7 +28,7 @@ import com.alibaba.nacos.naming.model.form.InstanceForm;
  * @author zhangyukun
  */
 public interface InstanceHandler {
-    
+
     /**
      * Retrieve a list of instances for a specific service and returns as an ObjectNode.
      *
@@ -43,7 +43,7 @@ public interface InstanceHandler {
      */
     Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, String clusterName,
             int page, int pageSize) throws NacosException;
-    
+
     /**
      * Update an instance.
      *
@@ -52,5 +52,14 @@ public interface InstanceHandler {
      * @throws NacosException if the update operation fails
      */
     void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException;
+
+    /**
+     * Remove an instance.
+     *
+     * @param instanceForm the form containing instance data
+     * @param instance     the instance to remove
+     * @throws NacosException if the remove operation fails
+     */
+    void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException;
 }
 
