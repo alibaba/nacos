@@ -64,7 +64,7 @@ export function Header() {
   const { theme, setTheme, language, setLanguage } = useAppStore();
   const { username, logout, isOidcUser } = useAuthStore();
   const { currentNamespace, namespaces, setNamespace } = useNamespaceStore();
-  const { authEnabled } = useServerStore();
+  const { authEnabled, consoleAdEnabled } = useServerStore();
 
   const baseUrl = getBaseUrl(language);
 
@@ -104,27 +104,29 @@ export function Header() {
       </div>
 
       {/* Center - Navigation links */}
-      <nav className="hidden md:flex items-center gap-0.5">
-        {NAV_LINKS.map((link) => {
-          const href = typeof link.href === 'function' ? link.href(baseUrl) : link.href;
-          return (
-            <a
-              key={link.key}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent"
-            >
-              {t(`header.${link.key}`)}
-              {link.hot && (
-                <Badge variant="destructive" className="h-4 px-1 text-[10px] leading-none font-medium">
-                  HOT
-                </Badge>
-              )}
-            </a>
-          );
-        })}
-      </nav>
+      {consoleAdEnabled && (
+        <nav className="hidden md:flex items-center gap-0.5">
+          {NAV_LINKS.map((link) => {
+            const href = typeof link.href === 'function' ? link.href(baseUrl) : link.href;
+            return (
+              <a
+                key={link.key}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-foreground/70 hover:text-primary font-medium transition-colors rounded-md hover:bg-accent"
+              >
+                {t(`header.${link.key}`)}
+                {link.hot && (
+                  <Badge variant="destructive" className="h-4 px-1 text-[10px] leading-none font-medium">
+                    HOT
+                  </Badge>
+                )}
+              </a>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Right actions */}
       <div className="flex items-center gap-1 shrink-0">

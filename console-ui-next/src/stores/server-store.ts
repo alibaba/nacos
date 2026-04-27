@@ -13,6 +13,7 @@ interface ServerState {
   authSystemType: string;
   authAdminRequest: boolean;
   copilotEnabled: boolean;
+  consoleAdEnabled: boolean;
   notice: string;
   guideMsg: string;
   loading: boolean;
@@ -40,6 +41,7 @@ const initialState: ServerState = {
   authSystemType: '',
   authAdminRequest: false,
   copilotEnabled: false,
+  consoleAdEnabled: true,
   notice: '',
   guideMsg: '',
   loading: false,
@@ -68,6 +70,7 @@ export const useServerStore = create<ServerStore>((set) => ({
         auth_admin_request?: string | boolean;
         auth_system_type?: string;
         copilot_enabled?: string | boolean;
+        console_ad_enabled?: string | boolean;
       };
       
       set({
@@ -82,6 +85,7 @@ export const useServerStore = create<ServerStore>((set) => ({
         authSystemType: data.auth_system_type || '',
         authAdminRequest: String(data.auth_admin_request) === 'true',
         copilotEnabled: String(data.copilot_enabled) === 'true',
+        consoleAdEnabled: data.console_ad_enabled === undefined ? true : String(data.console_ad_enabled) === 'true',
         loading: false,
         stateLoaded: true,
       });
