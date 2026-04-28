@@ -7,12 +7,16 @@ import {
   ChevronDown,
   ChevronUp,
   Bot,
+  Plus,
+  Star,
+  Trash2,
   Zap,
   Radio,
   History,
   Globe,
   Server,
   Shield,
+  ShieldCheck,
   Link2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,18 +36,21 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { agentApi } from '@/api/agent';
 import type { AgentDetailInfo } from '@/types/agent';
 import { cn } from '@/lib/utils';
+
+interface AgentInterfaceForm {
+  id: string;
+  url: string;
+  protocolVersion: string;
+  protocolBinding: string;
+  tenant: string;
+}
+
+const DEFAULT_INTERFACE_TRANSPORT = 'JSONRPC';
 
 export default function NewAgentPage() {
   const { t } = useTranslation();
@@ -67,9 +74,8 @@ export default function NewAgentPage() {
   // Form state
   const [name, setName] = useState('');
   const [version, setVersion] = useState('');
-  const [protocolVersion, setProtocolVersion] = useState('');
-  const [url, setUrl] = useState('');
-  const [preferredTransport, setPreferredTransport] = useState('');
+  const [interfaceList, setInterfaceList] = useState<AgentInterfaceForm[]>([]);
+  const [preferredInterfaceId, setPreferredInterfaceId] = useState<string>('');
   const [description, setDescription] = useState('');
   const [defaultInputModes, setDefaultInputModes] = useState('');
   const [defaultOutputModes, setDefaultOutputModes] = useState('');
@@ -89,7 +95,6 @@ export default function NewAgentPage() {
   const [providerUrl, setProviderUrl] = useState('');
   const [securityJson, setSecurityJson] = useState('');
   const [securitySchemesJson, setSecuritySchemesJson] = useState('');
-  const [additionalInterfacesJson, setAdditionalInterfacesJson] = useState('');
   const [supportsAuthenticatedExtendedCard, setSupportsAuthenticatedExtendedCard] = useState(false);
 
   // Publish strategy (edit mode)
@@ -97,12 +102,71 @@ export default function NewAgentPage() {
   const [publishStrategy, setPublishStrategy] = useState<PublishStrategy>('edit-current');
   const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
 
+  const createInterface = (partial?: Partial<AgentInterfaceForm>): AgentInterfaceForm => ({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    url: partial?.url || '',
+    protocolVersion: partial?.protocolVersion || '',
+    protocolBinding: partial?.protocolBinding || DEFAULT_INTERFACE_TRANSPORT,
+    tenant: partial?.tenant || '',
+  });
+
+  const updateInterface = (id: string, patch: Partial<AgentInterfaceForm>) => {
+    setInterfaceList((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
+
+  const addInterface = () => {
+    const next = createInterface();
+    setInterfaceList((prev) => [...prev, next]);
+    if (!preferredInterfaceId) {
+      setPreferredInterfaceId(next.id);
+    }
+  };
+
+  const removeInterface = (id: string) => {
+    setInterfaceList((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      if (preferredInterfaceId === id) {
+        setPreferredInterfaceId(next[0]?.id || '');
+      }
+      return next;
+    });
+  };
+
+  const normalizeInterface = (item: Record<string, unknown>): Record<string, unknown> => {
+    const protocolBinding = String(item.protocolBinding || item.transport || '');
+    return {
+      ...item,
+      protocolBinding,
+      transport: String(item.transport || protocolBinding),
+      protocolVersion: String(item.protocolVersion || ''),
+      url: String(item.url || ''),
+      tenant: String(item.tenant || ''),
+    };
+  };
+
   const populateForm = (data: AgentDetailInfo) => {
+    const supportedInterfaces = Array.isArray(data.supportedInterfaces) ? data.supportedInterfaces : [];
+    const fallbackInterfaces = Array.isArray(data.additionalInterfaces) ? data.additionalInterfaces : [];
+    const mergedInterfaces = supportedInterfaces.length > 0
+      ? supportedInterfaces
+      : (data.url ? [{
+        url: data.url,
+        protocolVersion: data.protocolVersion,
+        protocolBinding: data.preferredTransport,
+      }, ...fallbackInterfaces] : fallbackInterfaces);
+    const normalizedInterfaces = mergedInterfaces
+      .map((item) => normalizeInterface(item as Record<string, unknown>))
+      .filter((item) => item.url || item.protocolVersion || item.protocolBinding || item.tenant)
+      .map((item) => createInterface({
+        url: item.url as string,
+        protocolVersion: item.protocolVersion as string,
+        protocolBinding: item.protocolBinding as string,
+        tenant: item.tenant as string,
+      }));
     setName(data.name || '');
     setVersion(data.version || '');
-    setProtocolVersion(data.protocolVersion || '');
-    setUrl(data.url || '');
-    setPreferredTransport(data.preferredTransport || '');
+    setInterfaceList(normalizedInterfaces);
+    setPreferredInterfaceId(normalizedInterfaces[0]?.id || '');
     setDescription(data.description || '');
     setDefaultInputModes(data.defaultInputModes?.join(', ') || '');
     setDefaultOutputModes(data.defaultOutputModes?.join(', ') || '');
@@ -119,8 +183,7 @@ export default function NewAgentPage() {
     setProviderUrl(data.provider?.url || '');
     setSecurityJson(data.security ? JSON.stringify(data.security, null, 2) : '');
     setSecuritySchemesJson(data.securitySchemes ? JSON.stringify(data.securitySchemes, null, 2) : '');
-    setAdditionalInterfacesJson(data.additionalInterfaces ? JSON.stringify(data.additionalInterfaces, null, 2) : '');
-    setSupportsAuthenticatedExtendedCard(!!data.supportsAuthenticatedExtendedCard);
+    setSupportsAuthenticatedExtendedCard(!!(data.capabilities?.extendedAgentCard ?? data.supportsAuthenticatedExtendedCard));
   };
 
   useEffect(() => {
@@ -204,9 +267,10 @@ export default function NewAgentPage() {
   const validate = (): Record<string, unknown> | null => {
     if (!name.trim()) { toast.error(t('agent.nameRequired')); return null; }
     if (!version.trim()) { toast.error(t('agent.versionRequired')); return null; }
-    if (!url.trim()) { toast.error(t('agent.urlRequired')); return null; }
-    if (!protocolVersion.trim()) { toast.error(t('agent.protocolVersionRequired')); return null; }
-    if (!preferredTransport) { toast.error(t('agent.transportRequired')); return null; }
+    if (interfaceList.length === 0) {
+      toast.error(t('agent.interfaceRequired', { defaultValue: 'At least one interface is required.' }));
+      return null;
+    }
 
     const skills = validateJson(skillsJson, t('agent.skills'));
     if (skills === null) return null;
@@ -214,17 +278,44 @@ export default function NewAgentPage() {
     if (security === null) return null;
     const securitySchemes = validateJson(securitySchemesJson, t('agent.securitySchemes'));
     if (securitySchemes === null) return null;
-    const additionalInterfaces = validateJson(additionalInterfacesJson, t('agent.additionalInterfaces'));
-    if (additionalInterfaces === null) return null;
+    const preferredExists = interfaceList.some((item) => item.id === preferredInterfaceId);
+    const orderedInterfaces = preferredExists
+      ? [
+        ...interfaceList.filter((item) => item.id === preferredInterfaceId),
+        ...interfaceList.filter((item) => item.id !== preferredInterfaceId),
+      ]
+      : interfaceList;
+    const supportedInterfaces: Record<string, unknown>[] = [];
+    for (let index = 0; index < orderedInterfaces.length; index += 1) {
+      const item = orderedInterfaces[index];
+      const normalized = normalizeInterface({
+        url: item.url.trim(),
+        protocolVersion: item.protocolVersion.trim(),
+        protocolBinding: item.protocolBinding.trim() || DEFAULT_INTERFACE_TRANSPORT,
+        tenant: item.tenant.trim(),
+      });
+      if (!normalized.url) {
+        toast.error(t('agent.urlRequired') + ` (#${index + 1})`);
+        return null;
+      }
+      if (!normalized.protocolVersion) {
+        toast.error(t('agent.protocolVersionRequired') + ` (#${index + 1})`);
+        return null;
+      }
+      supportedInterfaces.push(normalized);
+    }
 
     const agentCard: Record<string, unknown> = {
       name: name.trim(),
       description: description.trim() || undefined,
       version: version.trim(),
-      protocolVersion: protocolVersion.trim(),
-      url: url.trim(),
-      preferredTransport,
-      capabilities: { streaming, pushNotifications, stateTransitionHistory },
+      supportedInterfaces,
+      capabilities: {
+        streaming,
+        pushNotifications,
+        stateTransitionHistory,
+        extendedAgentCard: supportsAuthenticatedExtendedCard,
+      },
     };
 
     if (iconUrl.trim()) agentCard.iconUrl = iconUrl.trim();
@@ -235,13 +326,10 @@ export default function NewAgentPage() {
     if (skills !== undefined) agentCard.skills = skills;
     if (security !== undefined) agentCard.security = security;
     if (securitySchemes !== undefined) agentCard.securitySchemes = securitySchemes;
-    if (additionalInterfaces !== undefined) agentCard.additionalInterfaces = additionalInterfaces;
-
     const inputModes = defaultInputModes.split(',').map(s => s.trim()).filter(Boolean);
     const outputModes = defaultOutputModes.split(',').map(s => s.trim()).filter(Boolean);
     if (inputModes.length > 0) agentCard.defaultInputModes = inputModes;
     if (outputModes.length > 0) agentCard.defaultOutputModes = outputModes;
-    if (supportsAuthenticatedExtendedCard) agentCard.supportsAuthenticatedExtendedCard = true;
 
     return agentCard;
   };
@@ -377,43 +465,6 @@ export default function NewAgentPage() {
                 </div>
               </div>
 
-              {/* URL */}
-              <div className="space-y-2.5">
-                <Label>{t('agent.serviceUrl')} <span className="text-destructive">*</span></Label>
-                <Input
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://api.example.com/agent"
-                  className="bg-transparent"
-                />
-              </div>
-
-              {/* Protocol Version + Transport */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2.5">
-                  <Label>{t('agent.protocolVersion')} <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={protocolVersion}
-                    onChange={(e) => setProtocolVersion(e.target.value)}
-                    placeholder="0.3.0"
-                    className="bg-transparent"
-                  />
-                </div>
-                <div className="space-y-2.5">
-                  <Label>{t('agent.transport')} <span className="text-destructive">*</span></Label>
-                  <Select value={preferredTransport} onValueChange={setPreferredTransport}>
-                    <SelectTrigger className="bg-transparent">
-                      <SelectValue placeholder={t('agent.selectTransport')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="JSONRPC">JSONRPC</SelectItem>
-                      <SelectItem value="GRPC">GRPC</SelectItem>
-                      <SelectItem value="HTTP+JSON">HTTP+JSON</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               {/* Description */}
               <div className="space-y-2.5">
                 <Label>{t('agent.description')}</Label>
@@ -424,6 +475,117 @@ export default function NewAgentPage() {
                   rows={3}
                   className="bg-transparent"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Supported Interfaces */}
+          <Card className="overflow-hidden py-0 gap-0">
+            <div className="px-5 py-3.5 border-b bg-muted/30">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-muted-foreground" />
+                {t('agent.supportedInterfaces', { defaultValue: 'Supported Interfaces' })}
+              </h2>
+            </div>
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {t('agent.interfaceRequired', { defaultValue: 'At least one interface is required.' })}
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={addInterface}>
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  {t('common.add', { defaultValue: 'Add' })}
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {interfaceList.map((item, index) => (
+                  <div key={item.id} className="rounded-lg border p-3 space-y-3 bg-muted/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {t('agent.interfaceItem', { index: index + 1 })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant={preferredInterfaceId === item.id ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setPreferredInterfaceId(item.id)}
+                        >
+                          <Star className="mr-1 h-3.5 w-3.5" />
+                          {t('agent.preferredInterface', { defaultValue: 'Preferred' })}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeInterface(item.id)}
+                          disabled={interfaceList.length <= 1}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>{t('agent.serviceUrl')} <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={item.url}
+                          onChange={(e) => updateInterface(item.id, { url: e.target.value })}
+                          placeholder="https://api.example.com/agent"
+                          className="bg-transparent"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t('agent.protocolVersion')} <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={item.protocolVersion}
+                          onChange={(e) => updateInterface(item.id, { protocolVersion: e.target.value })}
+                          placeholder="1.0"
+                          className="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>{t('agent.transport')} <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={item.protocolBinding}
+                          onChange={(e) => updateInterface(item.id, { protocolBinding: e.target.value })}
+                          placeholder={DEFAULT_INTERFACE_TRANSPORT}
+                          className="bg-transparent"
+                        />
+                        <div className="flex gap-1.5">
+                          {['JSONRPC', 'GRPC', 'HTTP+JSON'].map((preset) => (
+                            <Button
+                              key={preset}
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="h-6 px-2 text-[11px] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-primary/15"
+                              onClick={() => updateInterface(item.id, { protocolBinding: preset })}
+                            >
+                              {preset}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          {t('agent.tenant', { defaultValue: 'Tenant' })}
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({t('common.optional', { defaultValue: 'optional' })})
+                          </span>
+                        </Label>
+                        <Input
+                          value={item.tenant}
+                          onChange={(e) => updateInterface(item.id, { tenant: e.target.value })}
+                          placeholder={t('agent.tenant', { defaultValue: 'Tenant' })}
+                          className="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -480,6 +642,13 @@ export default function NewAgentPage() {
                 description={t('agent.stateHistoryDesc')}
                 checked={stateTransitionHistory}
                 onCheckedChange={setStateTransitionHistory}
+              />
+              <CapabilitySwitch
+                icon={<ShieldCheck className="h-4 w-4 text-indigo-500" />}
+                label={t('agent.extendedCardSupport')}
+                description={t('agent.extendedCardSupportDesc')}
+                checked={supportsAuthenticatedExtendedCard}
+                onCheckedChange={setSupportsAuthenticatedExtendedCard}
               />
             </CardContent>
           </Card>
@@ -592,27 +761,6 @@ export default function NewAgentPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  <Label>{t('agent.additionalInterfaces')}</Label>
-                  <Textarea
-                    value={additionalInterfacesJson}
-                    onChange={(e) => setAdditionalInterfacesJson(e.target.value)}
-                    placeholder='[{"transport": "sse", "uri": "/sse"}]'
-                    rows={3}
-                    className="bg-transparent font-mono text-xs"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium">{t('agent.extendedCardSupport')}</p>
-                    <p className="text-xs text-muted-foreground">{t('agent.extendedCardSupportDesc')}</p>
-                  </div>
-                  <Switch
-                    checked={supportsAuthenticatedExtendedCard}
-                    onCheckedChange={setSupportsAuthenticatedExtendedCard}
-                  />
-                </div>
               </CardContent>
             </Card>
           </div>

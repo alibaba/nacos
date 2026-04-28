@@ -229,7 +229,7 @@ class SkillAdminControllerTest {
     @Test
     void testCreateDraftSuccess() throws Exception {
         when(skillOperationService.createDraft(eq("public"), eq("test-skill"), isNull(), isNull(),
-                any(Skill.class))).thenReturn("v1");
+                any(Skill.class), isNull())).thenReturn("v1");
         String skillCard = "{\"name\":\"test-skill\",\"description\":\"d\",\"skillMd\":\"---\\nname: test-skill\\ndescription: d\\n---\\n\\ni\"}";
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
                 .param("skillCard", skillCard);
@@ -243,7 +243,7 @@ class SkillAdminControllerTest {
     @Test
     void testCreateDraftForkSuccess() throws Exception {
         when(skillOperationService.createDraft(eq("public"), eq("test-skill"), eq("v1"), isNull(),
-                isNull())).thenReturn("v2");
+                isNull(), isNull())).thenReturn("v2");
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
                 .param("skillName", "test-skill").param("basedOnVersion", "v1");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -251,6 +251,26 @@ class SkillAdminControllerTest {
         Result<String> result = JacksonUtils.toObj(response.getContentAsString(), new TypeReference<>() {
         });
         assertEquals("v2", result.getData());
+    }
+
+    @Test
+    void testCreateDraftRejectsSkillCardWithOnlyFrontmatter() throws Throwable {
+        String skillCard = "{\"name\":\"test-skill\",\"description\":\"d\","
+                + "\"skillMd\":\"---\\nname: test-skill\\ndescription: d\\n---\\n\\n  \"}";
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(SKILL_ADMIN_PATH + "/draft")
+                .param("skillCard", skillCard);
+        assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
+                "markdown body should not be empty");
+    }
+
+    @Test
+    void testUpdateDraftRejectsSkillCardWithOnlyFrontmatter() throws Throwable {
+        String skillCard = "{\"name\":\"test-skill\",\"description\":\"d\","
+                + "\"skillMd\":\"---\\nname: test-skill\\ndescription: d\\n---\\n\\n\\n\"}";
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(SKILL_ADMIN_PATH + "/draft")
+                .param("skillCard", skillCard);
+        assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
+                "markdown body should not be empty");
     }
     
     @Test

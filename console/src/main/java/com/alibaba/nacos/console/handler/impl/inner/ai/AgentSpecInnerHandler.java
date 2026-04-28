@@ -97,7 +97,7 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     @Override
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
         return agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
-                form.getBasedOnVersion());
+                form.getBasedOnVersion(), form.getTargetVersion());
     }
 
     @Override

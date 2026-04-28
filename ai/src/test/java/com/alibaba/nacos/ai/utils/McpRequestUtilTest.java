@@ -19,6 +19,7 @@ package com.alibaba.nacos.ai.utils;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -55,6 +56,9 @@ class McpRequestUtilTest {
     
     private static final String MCP_ENDPOINT_SPEC = "{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\",\"port\":8848}}";
     
+    private static final String MCP_RESOURCE_SPEC =
+            "{\"resources\":[{\"name\":\"readme\",\"uri\":\"file:///README.md\",\"description\":\"test resource\"}]}";
+
     @Test
     void parseMcpServerBasicInfoWithOldData() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -140,6 +144,22 @@ class McpRequestUtilTest {
         assertNotNull(actual.getToolsMeta().get("list_namespace").getTemplates());
     }
     
+    @Test
+    void parseMcpResourcesWithoutResourceSpec() throws NacosApiException {
+        McpDetailForm mcpForm = new McpDetailForm();
+        assertNull(McpRequestUtil.parseMcpResources(mcpForm));
+    }
+
+    @Test
+    void parseMcpResourcesSuccess() throws NacosApiException {
+        McpDetailForm mcpForm = new McpDetailForm();
+        mcpForm.setResourceSpecification(MCP_RESOURCE_SPEC);
+        McpResourceSpecification actual = McpRequestUtil.parseMcpResources(mcpForm);
+        assertEquals(1, actual.getResources().size());
+        assertEquals("readme", actual.getResources().get(0).get("name"));
+        assertEquals("file:///README.md", actual.getResources().get(0).get("uri"));
+    }
+
     @Test
     void parseMcpEndpointSpecForStdioType() throws NacosApiException {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();

@@ -30,6 +30,7 @@ import {
   Lock,
   Loader2,
   ShieldAlert,
+  MessageSquare,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,7 +72,11 @@ import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
 import { cn } from '@/lib/utils';
-import { parseFrontmatter, updateFrontmatterField } from '@/lib/markdown-utils';
+import {
+  hasNonFrontmatterMarkdownBody,
+  parseFrontmatter,
+  updateFrontmatterField,
+} from '@/lib/markdown-utils';
 import dayjs from 'dayjs';
 
 import { SkillVersionTimeline } from '../skillManagement/components/SkillVersionTimeline';
@@ -117,8 +122,8 @@ export default function SkillDetailPage() {
   const handleInstructionChange = useCallback((val: string | undefined) => {
     let newVal = val || '';
     const fm = parseFrontmatter(newVal);
-    // Protect name: revert to original skillName if user changed it
-    if (fm.name !== undefined && fm.name !== skillName) {
+    // Protect name: revert to original skillName if user removed or changed it
+    if (fm.name === undefined || fm.name !== skillName) {
       newVal = updateFrontmatterField(newVal, 'name', skillName);
     }
     setEditInstruction(newVal);
@@ -164,6 +169,8 @@ export default function SkillDetailPage() {
   const [createDraftDialogOpen, setCreateDraftDialogOpen] = useState(false);
   const [createDraftFromVersion, setCreateDraftFromVersion] = useState('');
   const [createDraftTargetVersion, setCreateDraftTargetVersion] = useState('');
+  const [draftCommitMsg, setDraftCommitMsg] = useState('');
+  const [createDraftCommitMsg, setCreateDraftCommitMsg] = useState('');
   const [forcePublishConfirmOpen, setForcePublishConfirmOpen] = useState(false);
 
   const loadDetail = useCallback(() => {
@@ -249,6 +256,8 @@ export default function SkillDetailPage() {
     setEditInstruction(versionDoc?.skillMd ?? '');
     setEditDescription(versionDoc?.description ?? '');
     setEditResources({ ...(versionDoc?.resource ?? {}) });
+    const versionRow = currentDetail?.versions?.find((v) => v.version === selectedVersion);
+    setDraftCommitMsg(versionRow?.commitMsg?.trim() ? versionRow.commitMsg : '');
     setIsEditingDraft(true);
   };
 
@@ -256,6 +265,7 @@ export default function SkillDetailPage() {
     setIsEditingDraft(false);
     setIsCreatingNewDraft(false);
     setEditResources({});
+    setDraftCommitMsg('');
   };
 
   const handleSaveDraft = async () => {
@@ -263,7 +273,7 @@ export default function SkillDetailPage() {
       toast.error(t('skill.descriptionRequired'));
       return;
     }
-    if (!editInstruction.trim()) {
+    if (!hasNonFrontmatterMarkdownBody(editInstruction)) {
       toast.error(t('skill.skillMdRequired'));
       return;
     }
@@ -276,12 +286,14 @@ export default function SkillDetailPage() {
         resource: editResources,
       });
 
+      const commitOpt = draftCommitMsg.trim() || undefined;
       if (isCreatingNewDraft) {
         // Brand-new draft: single createDraft call with skillCard
-        await skillApi.createDraft({ namespaceId, skillName, skillCard });
+        await skillApi.createDraft({ namespaceId, skillName, skillCard, commitMsg: commitOpt });
         toast.success(t('skill.createDraftSuccess'));
         setIsCreatingNewDraft(false);
         setIsEditingDraft(false);
+        setDraftCommitMsg('');
         await fetchDetail(namespaceId, skillName);
         const updated = useSkillStore.getState().currentDetail;
         if (updated?.editingVersion) {
@@ -289,9 +301,10 @@ export default function SkillDetailPage() {
         }
       } else {
         // Editing existing draft: updateDraft
-        await skillApi.updateDraft({ namespaceId, skillCard });
+        await skillApi.updateDraft({ namespaceId, skillCard, commitMsg: commitOpt });
         toast.success(t('skill.draftSaveSuccess'));
         setIsEditingDraft(false);
+        setDraftCommitMsg('');
         await loadDetail();
         const response = await skillApi.getVersion({ namespaceId, skillName, version: selectedVersion });
         setVersionDoc(response.data);
@@ -306,6 +319,10 @@ export default function SkillDetailPage() {
   // ===== AI Optimize handler =====
 
   const handleOptimizationApply = async (optimizedSkill: SkillDocument) => {
+    if (!hasNonFrontmatterMarkdownBody(optimizedSkill.skillMd || '')) {
+      toast.error(t('skill.skillMdRequired'));
+      return;
+    }
     try {
       const skillCard = JSON.stringify({
         name: skillName,
@@ -411,6 +428,7 @@ export default function SkillDetailPage() {
       setEditDescription('');
       setEditInstruction('');
       setEditResources({});
+      setDraftCommitMsg('');
       setIsCreatingNewDraft(true);
       setIsEditingDraft(true);
       return;
@@ -418,6 +436,7 @@ export default function SkillDetailPage() {
     const suggestedVersion = suggestNextVersionFromBase(basedOnVersion);
     setCreateDraftFromVersion(basedOnVersion);
     setCreateDraftTargetVersion(suggestedVersion);
+    setCreateDraftCommitMsg('');
     setCreateDraftDialogOpen(true);
   };
   
@@ -435,9 +454,11 @@ export default function SkillDetailPage() {
         skillName,
         basedOnVersion: createDraftFromVersion,
         targetVersion,
+        commitMsg: createDraftCommitMsg.trim() || undefined,
       });
       toast.success(t('skill.createDraftSuccess'));
       setCreateDraftDialogOpen(false);
+      setCreateDraftCommitMsg('');
       await fetchDetail(namespaceId, skillName);
       const updated = useSkillStore.getState().currentDetail;
       if (updated?.editingVersion) {
@@ -452,7 +473,8 @@ export default function SkillDetailPage() {
 
   const handleSubmit = async (version: string) => {
     // Validate required fields before submit
-    if (versionDoc && (!versionDoc.description?.trim() || !versionDoc.skillMd?.trim())) {
+    if (versionDoc && (!versionDoc.description?.trim()
+      || !hasNonFrontmatterMarkdownBody(versionDoc.skillMd || ''))) {
       toast.error(t('skill.submitRequiresFields'));
       return;
     }
@@ -1080,7 +1102,12 @@ export default function SkillDetailPage() {
 
         {/* Overview tab: Instruction + Sidebar */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div
+            className={cn(
+              'grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]',
+              isEditingDraft && 'max-lg:[&>div:first-child]:order-2 max-lg:[&>div:last-child]:order-1',
+            )}
+          >
             {/* Left: Instruction card */}
             <Card className="overflow-hidden py-0 gap-0 min-h-[580px]">
               <div className="px-5 py-3.5 border-b bg-muted/30">
@@ -1099,6 +1126,9 @@ export default function SkillDetailPage() {
                 ) : isEditingDraft ? (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">{t('skill.skillMdHint')}</p>
+                    <p className="text-[11px] text-muted-foreground rounded-md border bg-muted/20 px-3 py-2">
+                      {t('skill.commitMsgEditHint')}
+                    </p>
                     <div data-color-mode="light" className="dark:hidden">
                       <MDEditor
                         value={editInstruction}
@@ -1161,7 +1191,37 @@ export default function SkillDetailPage() {
                     {currentVersionSummary && (
                       <InfoCell compact label={t('skill.versionDownloads')} value={String(currentVersionSummary.downloadCount ?? 0)} icon={<Download className="h-3.5 w-3.5" />} />
                     )}
+                    {(currentVersionSummary || isEditingDraft) && (
+                      <InfoCell
+                        compact
+                        colSpan={2}
+                        label={t('skill.commitMsg')}
+                        value={
+                          isEditingDraft ? (
+                            <Textarea
+                              value={draftCommitMsg}
+                              onChange={(e) => setDraftCommitMsg(e.target.value)}
+                              placeholder={t('skill.commitMsgPlaceholder')}
+                              className="mt-0.5 min-h-[64px] max-w-full resize-y text-xs font-normal"
+                              disabled={draftSaving}
+                            />
+                          ) : (
+                            <span className="text-xs font-normal font-sans text-muted-foreground whitespace-pre-wrap">
+                              {currentVersionSummary?.commitMsg?.trim()
+                                ? currentVersionSummary.commitMsg
+                                : '-'}
+                            </span>
+                          )
+                        }
+                        icon={<MessageSquare className="h-3.5 w-3.5" />}
+                      />
+                    )}
                   </div>
+                  {isEditingDraft && (
+                    <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground leading-relaxed">
+                      {t('skill.commitMsgHint')}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1274,7 +1334,15 @@ export default function SkillDetailPage() {
         />
       )}
       
-      <Dialog open={createDraftDialogOpen} onOpenChange={setCreateDraftDialogOpen}>
+      <Dialog
+        open={createDraftDialogOpen}
+        onOpenChange={(open) => {
+          setCreateDraftDialogOpen(open);
+          if (!open) {
+            setCreateDraftCommitMsg('');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('skill.newVersionTitle')}</DialogTitle>
@@ -1292,10 +1360,29 @@ export default function SkillDetailPage() {
               disabled={actionLoading}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-draft-commit-msg" className="text-xs text-muted-foreground">
+              {t('skill.commitMsg')}
+            </Label>
+            <Textarea
+              id="create-draft-commit-msg"
+              value={createDraftCommitMsg}
+              onChange={(e) => setCreateDraftCommitMsg(e.target.value)}
+              placeholder={t('skill.commitMsgPlaceholder')}
+              className="text-sm min-h-[72px] resize-y"
+              disabled={actionLoading}
+            />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              {t('skill.commitMsgHint')}
+            </p>
+          </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setCreateDraftDialogOpen(false)}
+              onClick={() => {
+                setCreateDraftDialogOpen(false);
+                setCreateDraftCommitMsg('');
+              }}
               disabled={actionLoading}
             >
               {t('common.cancel')}
@@ -1450,14 +1537,22 @@ function InfoCell({
   value,
   icon,
   compact = false,
+  colSpan,
 }: {
   label: string;
   value: React.ReactNode;
   icon?: React.ReactNode;
   compact?: boolean;
+  colSpan?: number;
 }) {
   return (
-    <div className={cn('flex items-center gap-3 px-5 py-3', compact && 'gap-2.5 px-4 py-2.5')}>
+    <div
+      className={cn(
+        'flex items-center gap-3 px-5 py-3',
+        compact && 'gap-2.5 px-4 py-2.5',
+        colSpan === 2 && 'col-span-2',
+      )}
+    >
       {icon && (
         <span className="text-muted-foreground/60 shrink-0">{icon}</span>
       )}

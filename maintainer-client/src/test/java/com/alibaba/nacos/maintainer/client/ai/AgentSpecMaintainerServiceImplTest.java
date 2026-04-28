@@ -200,7 +200,7 @@ class AgentSpecMaintainerServiceImplTest {
         mockRestResult.setData(JacksonUtils.toJson(Result.success("v1")));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
 
-        String actual = agentSpecService.createDraft("public", "testAgentSpec", "v0");
+        String actual = agentSpecService.createDraft("public", "testAgentSpec", "v0", null);
         assertEquals("v1", actual);
     }
 

@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.a2a.AgentInterface;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -229,6 +230,22 @@ public class AiGrpcClient implements AiClientProxy {
      */
     public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
             McpEndpointSpec endpointSpecification) throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, null, endpointSpecification);
+    }
+
+    /**
+     * Release mcp server with explicit resource specification.
+     *
+     * @param serverSpecification mcp server specification
+     * @param toolSpecification mcp server tool specification, optional
+     * @param resourceSpecification mcp server resource specification, optional
+     * @param endpointSpecification mcp server endpoint specification, optional
+     * @return mcp id
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
+            throws NacosException {
         LOGGER.info("[{}] RELEASE Mcp server {}, version {}", uuid, serverSpecification.getName(),
                 serverSpecification.getVersionDetail().getVersion());
         checkServerAbilityOrThrow(AbilityKey.SERVER_MCP_REGISTRY, "mcp registry");
@@ -237,6 +254,7 @@ public class AiGrpcClient implements AiClientProxy {
         request.setMcpName(serverSpecification.getName());
         request.setServerSpecification(serverSpecification);
         request.setToolSpecification(toolSpecification);
+        request.setResourceSpecification(resourceSpecification);
         request.setEndpointSpecification(endpointSpecification);
         ReleaseMcpServerResponse response = requestToServer(request, ReleaseMcpServerResponse.class);
         return response.getMcpId();

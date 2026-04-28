@@ -149,7 +149,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
 
     @Override
     public String createDraft(String namespaceId, String skillName, String basedOnVersion, String targetVersion,
-            String skillCard)
+            String skillCard, String commitMsg)
             throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(8);
@@ -158,6 +158,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         putIfNotBlank(params, "basedOnVersion", basedOnVersion);
         putIfNotBlank(params, "targetVersion", targetVersion);
         putIfNotBlank(params, "skillCard", skillCard);
+        putIfNotBlank(params, "commitMsg", commitMsg);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, skillName))
                 .setHttpMethod(HttpMethod.POST).setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/draft")
                 .setParamValue(params).build();
@@ -168,7 +169,8 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
     }
 
     @Override
-    public boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException {
+    public boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest, String commitMsg)
+            throws NacosException {
         namespaceId = resolveNamespace(namespaceId);
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
@@ -176,6 +178,7 @@ public class SkillMaintainerServiceImpl extends AbstractAiDelegateMaintainerServ
         if (null != setAsLatest) {
             params.put("setAsLatest", String.valueOf(setAsLatest));
         }
+        putIfNotBlank(params, "commitMsg", commitMsg);
         HttpRequest httpRequest = buildHttpRequestBuilder(buildRequestResource(namespaceId, null))
                 .setHttpMethod(HttpMethod.PUT).setPath(Constants.AdminApiPath.AI_SKILL_ADMIN_PATH + "/draft")
                 .setParamValue(params).build();

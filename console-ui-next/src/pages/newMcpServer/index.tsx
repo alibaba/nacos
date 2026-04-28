@@ -364,7 +364,7 @@ export default function NewMcpServerPage() {
     const serverSpec: Record<string, unknown> = {
       name: serverName.trim(),
       frontProtocol,
-      protocol: isStdio ? 'stdio' : transportProtocol,
+      protocol: isStdio ? 'stdio' : restToMcpSwitch ? transportProtocol : frontProtocol,
       description: description.trim() || undefined,
       enabled,
       versionDetail: { version: version.trim() },

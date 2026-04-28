@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Agent and AgentCard request util.
@@ -119,7 +121,12 @@ public class AgentRequestUtil {
         }
     }
     
-    private static void normalizeAgentCard(AgentCard agentCard) {
+    /**
+     * Normalize new/legacy AgentCard fields in place.
+     *
+     * @param agentCard target card
+     */
+    public static void normalizeAgentCard(AgentCard agentCard) {
         if (null == agentCard) {
             return;
         }
@@ -138,6 +145,31 @@ public class AgentRequestUtil {
             }
         }
         normalizeExtendedAgentCard(agentCard);
+    }
+    
+    /**
+     * Determine whether AgentCard is already normalized for read path.
+     *
+     * @param agentCard target card
+     * @return {@code true} when new/legacy fields are internally consistent
+     */
+    public static boolean isAgentCardNormalized(AgentCard agentCard) {
+        if (null == agentCard || !isV1AgentCard(agentCard)) {
+            return false;
+        }
+        AgentInterface preferred = agentCard.getSupportedInterfaces().get(0);
+        if (!Objects.equals(agentCard.getUrl(), preferred.getUrl()) || !Objects.equals(
+                agentCard.getPreferredTransport(), preferred.getProtocolBinding()) || !Objects.equals(
+                agentCard.getProtocolVersion(), preferred.getProtocolVersion())) {
+            return false;
+        }
+        List<AgentInterface> additionalInterfaces = agentCard.getAdditionalInterfaces();
+        List<AgentInterface> expectedAdditional = agentCard.getSupportedInterfaces().size() > 1
+                ? agentCard.getSupportedInterfaces().subList(1, agentCard.getSupportedInterfaces().size()) : List.of();
+        if (CollectionUtils.isEmpty(additionalInterfaces)) {
+            return CollectionUtils.isEmpty(expectedAdditional);
+        }
+        return CollectionUtils.isEqualCollection(additionalInterfaces, expectedAdditional);
     }
     
     private static List<AgentInterface> normalizeSupportedInterfaces(AgentCard agentCard) {

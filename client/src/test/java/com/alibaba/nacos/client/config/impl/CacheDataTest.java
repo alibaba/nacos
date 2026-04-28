@@ -263,5 +263,37 @@ class CacheDataTest {
         assertEquals(PropertyChangeType.MODIFIED, changeItemReceived.get().getChangeItem("c").getType());
         assertEquals(PropertyChangeType.ADDED, changeItemReceived.get().getChangeItem("d").getType());
     }
-    
+
+    @Test
+    void testNotifyTaskExecutorExceptionResetsInNotifying() throws NacosException {
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        final CacheData data = new CacheData(filter, "name1", "key_executor_fail", "group", "tenant");
+        
+        Listener listener = new Listener() {
+            @Override
+            public Executor getExecutor() {
+                return command -> {
+                    throw new java.util.concurrent.RejectedExecutionException("Mock ThreadPool Full");
+                };
+            }
+            
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+            }
+        };
+        data.addListener(listener);
+        data.setContent("new_content_trigger");
+        
+        // When checking listener MD5, the RejectedExecutionException will be thrown.
+        // It shouldn't block the caller, and the inNotifying flag must be correctly reset.
+        data.checkListenerMd5();
+        
+        // Assert that the flag inNotifying is false (which allows further checkListenerMd5 invocations).
+        // Since we cannot directly access the private inNotifying field of ManagerListenerWrap,
+        // we can trigger another content change and see if the exception is thrown again.
+        data.setContent("another_content_trigger");
+        // If it was deadlocked (inNotifying=true), the checkListenerMd5() would just warn and return.
+        // If the reset works, it will try to submit again and throw the exception again.
+        data.checkListenerMd5();
+    }
 }

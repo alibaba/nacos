@@ -235,7 +235,7 @@ class A2aMaintainerServiceImplTest {
         iface.setUrl("http://localhost:8080");
         iface.setProtocolBinding("JSONRPC");
         iface.setProtocolVersion("1.0.0");
-        card.setSupportedInterfaces(List.of(iface));
+        card.setSupportedInterfaces(Collections.singletonList(iface));
         return card;
     }
     

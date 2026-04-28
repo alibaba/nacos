@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.ai.remote.request;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.remote.request.BasicRequestTest;
@@ -47,6 +48,9 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
         request.setServerSpecification(serverSpecification);
         McpToolSpecification toolSpecification = new McpToolSpecification();
         request.setToolSpecification(toolSpecification);
+        McpResourceSpecification resourceSpecification = new McpResourceSpecification();
+        resourceSpecification.getResources().add(new HashMap<>());
+        request.setResourceSpecification(resourceSpecification);
         request.setEndpointSpecification(new McpEndpointSpec());
         request.getEndpointSpecification().setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         request.getEndpointSpecification().setData(new HashMap<>());
@@ -61,6 +65,8 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"toolSpecification\":{"));
         assertTrue(json.contains("\"tools\":[]"));
         assertTrue(json.contains("\"toolsMeta\":{}"));
+        assertTrue(json.contains("\"resourceSpecification\":{"));
+        assertTrue(json.contains("\"resources\":[{}]"));
         assertTrue(json.contains("\"endpointSpecification\":{"));
         assertTrue(json.contains("\"type\":\"DIRECT\""));
         assertTrue(json.contains(String.format("\"mcpId\":\"%s\"", id)));
@@ -74,7 +80,8 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
                 "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"mcpId\":\"bbd8036e-4f17-4ed8-befc-a08b6fd5978d\","
                         + "\"mcpName\":\"testMcpName\",\"serverSpecification\":{\"name\":\"testServerName\",\"protocol\":\"stdio\","
                         + "\"frontProtocol\":\"stdio\",\"enabled\":true},\"toolSpecification\":{\"tools\":[],\"toolsMeta\":{},"
-                        + "\"securitySchemes\":[]},\"endpointSpecification\":{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\","
+                        + "\"securitySchemes\":[]},\"resourceSpecification\":{\"resources\":[{}],\"resourceTemplates\":[],\"extensions\":{}},"
+                        + "\"endpointSpecification\":{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\","
                         + "\"port\":\"8848\"}},\"module\":\"ai\"}";
         ReleaseMcpServerRequest result = mapper.readValue(json, ReleaseMcpServerRequest.class);
         assertNotNull(result);
@@ -88,6 +95,9 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, serverSpecification.getFrontProtocol());
         McpToolSpecification toolSpec = result.getToolSpecification();
         assertNotNull(toolSpec);
+        McpResourceSpecification resourceSpec = result.getResourceSpecification();
+        assertNotNull(resourceSpec);
+        assertEquals(1, resourceSpec.getResources().size());
         McpEndpointSpec endpointSpec = result.getEndpointSpecification();
         assertNotNull(endpointSpec);
         assertEquals(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT, endpointSpec.getType());

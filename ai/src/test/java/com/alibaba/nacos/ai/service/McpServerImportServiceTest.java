@@ -46,6 +46,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -471,8 +472,9 @@ class McpServerImportServiceTest {
         assertEquals(1, response.getSuccessCount());
         assertEquals(0, response.getFailedCount());
         assertEquals(0, response.getSkippedCount());
-        verify(operationService).updateMcpServer(eq("test-namespace"), eq(true), any(), any(), any(), anyBoolean());
-        verify(operationService, never()).createMcpServer(anyString(), any(), any(), any());
+        verify(operationService).updateMcpServer(eq("test-namespace"), eq(true), any(), any(), isNull(), any(),
+                anyBoolean());
+        verify(operationService, never()).createMcpServer(anyString(), any(), any(), any(), any());
     }
 
     @Test
@@ -517,8 +519,9 @@ class McpServerImportServiceTest {
         assertEquals(1, response.getSuccessCount());
         assertEquals(0, response.getFailedCount());
         assertEquals(0, response.getSkippedCount());
-        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), any());
-        verify(operationService, never()).updateMcpServer(anyString(), anyBoolean(), any(), any(), any(), anyBoolean());
+        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), isNull(), any());
+        verify(operationService, never()).updateMcpServer(anyString(), anyBoolean(), any(), any(), any(), any(),
+                anyBoolean());
     }
 
     @Test
@@ -571,7 +574,7 @@ class McpServerImportServiceTest {
         assertTrue(response.isSuccess());
         assertEquals(1, response.getTotalCount());
         assertEquals(1, response.getSuccessCount());
-        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), any());
+        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), isNull(), any());
     }
 
     @Test
@@ -617,7 +620,7 @@ class McpServerImportServiceTest {
         assertTrue(response.isSuccess());
         assertEquals(1, response.getTotalCount());
         assertEquals(1, response.getSuccessCount());
-        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), any());
+        verify(operationService).createMcpServer(eq("test-namespace"), any(), any(), isNull(), any());
     }
 
     @Test
@@ -655,7 +658,7 @@ class McpServerImportServiceTest {
 
         // Mock operation service to throw exception
         doThrow(new NacosException(500, "Failed to create server")).when(operationService)
-                .createMcpServer(anyString(), any(), any(), any());
+                .createMcpServer(anyString(), any(), any(), any(), any());
 
         // When
         McpServerImportResponse response = importService.executeImport("test-namespace", request);
@@ -729,6 +732,6 @@ class McpServerImportServiceTest {
         assertEquals(1, response.getTotalCount());
         assertEquals(0, response.getSuccessCount());
         assertEquals(1, response.getFailedCount());
-        verify(operationService, never()).createMcpServer(eq("test-namespace"), any(), any(), any());
+        verify(operationService, never()).createMcpServer(eq("test-namespace"), any(), any(), any(), any());
     }
 }

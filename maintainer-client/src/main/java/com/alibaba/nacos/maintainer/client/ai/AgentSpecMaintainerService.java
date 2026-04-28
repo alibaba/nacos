@@ -86,6 +86,30 @@ public interface AgentSpecMaintainerService {
     }
     
     /**
+     * Get specific agentspec version metadata without resource content. Returns the agentspec main content and resource
+     * list (name + type only), skipping resource file IO.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec with resource list containing only name and type
+     * @throws NacosException if fail to get agentspec version meta
+     */
+    AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version) throws NacosException;
+    
+    /**
+     * Get specific agentspec version metadata with default namespace.
+     *
+     * @param agentSpecName agentspec name
+     * @param version agentspec version
+     * @return agentspec with resource list containing only name and type
+     * @throws NacosException if fail to get agentspec version meta
+     */
+    default AgentSpec getAgentSpecVersionMeta(String agentSpecName, String version) throws NacosException {
+        return getAgentSpecVersionMeta(Constants.DEFAULT_NAMESPACE_ID, agentSpecName, version);
+    }
+    
+    /**
      * Delete agentspec.
      *
      * @param namespaceId    namespace ID
@@ -213,7 +237,23 @@ public interface AgentSpecMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
-    String createDraft(String namespaceId, String agentSpecName, String basedOnVersion) throws NacosException;
+    default String createDraft(String namespaceId, String agentSpecName, String basedOnVersion)
+            throws NacosException {
+        return createDraft(namespaceId, agentSpecName, basedOnVersion, null);
+    }
+    
+    /**
+     * Create draft version for an agentspec.
+     *
+     * @param namespaceId     namespace ID
+     * @param agentSpecName   agentspec name
+     * @param basedOnVersion  base version (optional)
+     * @param targetVersion   target version (optional, auto-increment if blank)
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
+    String createDraft(String namespaceId, String agentSpecName, String basedOnVersion, String targetVersion)
+            throws NacosException;
     
     /**
      * Update current draft content.

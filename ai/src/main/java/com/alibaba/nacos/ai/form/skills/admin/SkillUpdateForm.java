@@ -33,11 +33,21 @@ public class SkillUpdateForm extends SkillDetailForm {
      */
     private Boolean setAsLatest;
     
+    private String commitMsg;
+    
     public Boolean getSetAsLatest() {
         return setAsLatest;
     }
     
     public void setSetAsLatest(Boolean setAsLatest) {
         this.setAsLatest = setAsLatest;
+    }
+    
+    public String getCommitMsg() {
+        return commitMsg;
+    }
+    
+    public void setCommitMsg(String commitMsg) {
+        this.commitMsg = commitMsg;
     }
 }

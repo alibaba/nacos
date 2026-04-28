@@ -27,7 +27,7 @@ export interface SkillVersionSummary {
   version: string;
   status: SkillVersionStatus;
   author: string;
-  description: string;
+  commitMsg: string;
   createTime: number;
   updateTime: number;
   publishPipelineInfo: string | null;

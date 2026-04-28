@@ -118,6 +118,9 @@ public class A2aServerOperationServiceTest {
         
         when(agentIdCodecHolder.encode(anyString())).thenReturn(ENCODED_AGENT_NAME);
         when(agentIdCodecHolder.encodeForSearch(anyString())).thenReturn(ENCODED_AGENT_NAME);
+        ServiceInfo defaultServiceInfo = new ServiceInfo();
+        defaultServiceInfo.setHosts(Collections.emptyList());
+        when(serviceStorage.getData(any(Service.class))).thenReturn(defaultServiceInfo);
     }
     
     @Test
@@ -536,12 +539,6 @@ public class A2aServerOperationServiceTest {
         when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
         
         // Mock service storage for endpoint injection
-        Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
-                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
-        ServiceInfo serviceInfo = new ServiceInfo();
-        serviceInfo.setHosts(Collections.emptyList());
-        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
-        
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionResponse)
                 .thenReturn(detailResponse);
         
@@ -704,6 +701,46 @@ public class A2aServerOperationServiceTest {
         assertNotNull(result.getSupportedInterfaces());
         assertEquals(1, result.getSupportedInterfaces().size());
         assertEquals("http://127.0.0.1:8080", result.getSupportedInterfaces().get(0).getUrl());
+    }
+    
+    @Test
+    void testGetAgentCardWithServiceRegistrationAndNormalizedCardShouldInjectEndpoint() throws NacosApiException {
+        AgentCardVersionInfo versionInfo = buildTestAgentCardVersionInfo();
+        AgentCardDetailInfo detailInfo = buildTestAgentCardDetailInfo();
+        detailInfo.setRegistrationType("service");
+        detailInfo.setUrl("https://example.com/" + TEST_AGENT_NAME + "/jsonrpc");
+        detailInfo.setPreferredTransport("JSONRPC");
+        detailInfo.setProtocolVersion("1.0");
+        AgentInterface preferred = new AgentInterface();
+        preferred.setUrl("https://example.com/" + TEST_AGENT_NAME + "/jsonrpc");
+        preferred.setProtocolBinding("JSONRPC");
+        preferred.setProtocolVersion("1.0");
+        detailInfo.setSupportedInterfaces(Collections.singletonList(preferred));
+        detailInfo.setAdditionalInterfaces(Collections.emptyList());
+        
+        ConfigQueryChainResponse versionResponse = mock(ConfigQueryChainResponse.class);
+        when(versionResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(versionResponse.getContent()).thenReturn(JacksonUtils.toJson(versionInfo));
+        
+        ConfigQueryChainResponse detailResponse = mock(ConfigQueryChainResponse.class);
+        when(detailResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(detailResponse.getContent()).thenReturn(JacksonUtils.toJson(detailInfo));
+        
+        Service service = Service.newService(TEST_NAMESPACE_ID, Constants.A2A.AGENT_ENDPOINT_GROUP,
+                ENCODED_AGENT_NAME + "::" + TEST_AGENT_VERSION);
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(Collections.emptyList());
+        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
+        
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionResponse)
+                .thenReturn(detailResponse);
+        
+        AgentCardDetailInfo result = a2aServerOperationService.getAgentCard(TEST_NAMESPACE_ID, TEST_AGENT_NAME,
+                TEST_AGENT_VERSION, "service");
+        
+        assertNotNull(result);
+        assertEquals(1, result.getSupportedInterfaces().size());
+        verify(serviceStorage, times(1)).getData(any(Service.class));
     }
     
     @Test

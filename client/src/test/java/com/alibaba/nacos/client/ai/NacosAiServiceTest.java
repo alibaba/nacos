@@ -130,7 +130,7 @@ class NacosAiServiceTest {
         serverSpecification.setVersionDetail(new ServerVersionDetail());
         serverSpecification.getVersionDetail().setVersion("1.0.0");
         String id = UUID.randomUUID().toString();
-        when(grpcClient.releaseMcpServer(serverSpecification, null, null)).thenReturn(id);
+        when(grpcClient.releaseMcpServer(serverSpecification, null, null, null)).thenReturn(id);
         assertEquals(id, nacosAiService.releaseMcpServer(serverSpecification, null));
     }
     

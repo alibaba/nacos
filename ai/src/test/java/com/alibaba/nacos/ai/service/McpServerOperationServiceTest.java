@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.EncryptObject;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
@@ -88,6 +89,9 @@ class McpServerOperationServiceTest {
     private McpToolOperationService toolOperationService;
     
     @Mock
+    private McpResourceOperationService resourceOperationService;
+
+    @Mock
     private McpEndpointOperationService endpointOperationService;
     
     @Mock
@@ -101,7 +105,8 @@ class McpServerOperationServiceTest {
     @BeforeEach
     void setUp() {
         serverOperationService = new McpServerOperationService(configQueryChainService, configOperationService,
-                toolOperationService, endpointOperationService, mcpServerIndex, syncEffectService);
+                toolOperationService, resourceOperationService, endpointOperationService, mcpServerIndex,
+                syncEffectService);
     }
     
     @AfterEach
@@ -163,6 +168,24 @@ class McpServerOperationServiceTest {
         assertEquals("9.9.9", actual.getVersionDetail().getVersion());
         assertTrue(actual.getVersionDetail().getIs_latest());
         assertNotNull(actual.getToolSpec());
+        assertEquals(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, actual.getNamespaceId());
+    }
+
+    @Test
+    void getMcpServerDetailByIdFoundStdioTypeWithResourcesWithNamespace() throws NacosException {
+        String id = mockId();
+        ConfigQueryChainResponse versionDataResponse = mockConfigQueryChainResponse(mockServerVersionInfo(id));
+        McpServerStorageInfo storageInfo = mockStorageInfo(id, true, false, AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+        storageInfo.setResourceDescriptionRef(McpConfigUtils.formatServerResourceSpecDataId(id, "9.9.9"));
+        ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(storageInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
+                storageDataResponse);
+        when(resourceOperationService.getMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                McpConfigUtils.formatServerResourceSpecDataId(id, "9.9.9"))).thenReturn(mockResourceSpecification());
+        McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        assertNotNull(actual.getResourceSpec());
+        assertEquals(1, actual.getResourceSpec().getResources().size());
     }
     
     @Test
@@ -609,6 +632,20 @@ class McpServerOperationServiceTest {
     }
 
     @Test
+    void createMcpServerWithResourceSpec() throws NacosException {
+        McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
+        mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));
+        McpResourceSpecification resourceSpecification = mockResourceSpecification();
+        String id = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mockServerBasicInfo,
+                null, resourceSpecification, null);
+        assertNotNull(id);
+        verify(resourceOperationService).refreshMcpResource(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerStorageInfo.class), eq(resourceSpecification));
+        verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
+                isNull());
+    }
+
+    @Test
     void createMcpServerWithEndpointSpec() throws NacosException {
         McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
         mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));
@@ -846,6 +883,8 @@ class McpServerOperationServiceTest {
         verify(mcpServerIndex, times(1)).removeMcpServerById(id);
         for (ServerVersionDetail each : mockServerVersionInfo(id).getVersionDetails()) {
             verify(toolOperationService).deleteMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, each.getVersion());
+            verify(resourceOperationService).deleteMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+                    each.getVersion());
             String serverSpecDataId = McpConfigUtils.formatServerSpecInfoDataId(id, each.getVersion());
             verify(configOperationService).deleteConfig(serverSpecDataId, Constants.MCP_SERVER_GROUP,
                     AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
@@ -877,6 +916,8 @@ class McpServerOperationServiceTest {
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
         for (ServerVersionDetail each : mockServerVersionInfo(id).getVersionDetails()) {
             verify(toolOperationService).deleteMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, each.getVersion());
+            verify(resourceOperationService).deleteMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id,
+                    each.getVersion());
             String serverSpecDataId = McpConfigUtils.formatServerSpecInfoDataId(id, each.getVersion());
             verify(configOperationService).deleteConfig(serverSpecDataId, Constants.MCP_SERVER_GROUP,
                     AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
@@ -897,6 +938,7 @@ class McpServerOperationServiceTest {
         verify(configOperationService).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
         verify(toolOperationService).deleteMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, "1.0.0");
+        verify(resourceOperationService).deleteMcpResource(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, "1.0.0");
         String serverSpecDataId = McpConfigUtils.formatServerSpecInfoDataId(id, "1.0.0");
         verify(configOperationService).deleteConfig(serverSpecDataId, Constants.MCP_SERVER_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
@@ -1131,5 +1173,14 @@ class McpServerOperationServiceTest {
     
     private String mockId() {
         return UUID.randomUUID().toString();
+    }
+
+    private McpResourceSpecification mockResourceSpecification() {
+        McpResourceSpecification result = new McpResourceSpecification();
+        HashMap<String, Object> resource = new HashMap<>();
+        resource.put("name", "readme");
+        resource.put("uri", "file:///README.md");
+        result.getResources().add(resource);
+        return result;
     }
 }

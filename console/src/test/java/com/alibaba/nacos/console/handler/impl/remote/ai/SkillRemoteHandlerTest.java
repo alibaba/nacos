@@ -205,7 +205,7 @@ class SkillRemoteHandlerTest {
         form.setSkillName(SKILL_NAME);
         form.setBasedOnVersion("v1");
         form.prepareCreateDraftRequest();
-        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull(), isNull())).thenReturn("v2");
+        when(skillMaintainerService.createDraft(eq(NAMESPACE_ID), eq(SKILL_NAME), eq("v1"), isNull(), isNull(), isNull())).thenReturn("v2");
         
         String result = skillRemoteHandler.createDraft(form);
         
@@ -218,12 +218,12 @@ class SkillRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setSkillCard("{\"name\":\"test\"}");
         form.setSetAsLatest(true);
-        when(skillMaintainerService.updateDraft(eq(NAMESPACE_ID), eq("{\"name\":\"test\"}"), eq(true))).thenReturn(
-                true);
+        when(skillMaintainerService.updateDraft(eq(NAMESPACE_ID), eq("{\"name\":\"test\"}"), eq(true),
+                (String) isNull())).thenReturn(true);
         
         skillRemoteHandler.updateDraft(form);
         
-        verify(skillMaintainerService).updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true);
+        verify(skillMaintainerService).updateDraft(NAMESPACE_ID, "{\"name\":\"test\"}", true, (String) null);
     }
     
     @Test

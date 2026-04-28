@@ -67,6 +67,9 @@ class McpAdminControllerTest {
                     + "\"id\":\"\",\"description\":\"nacos local mcp server(test version)\",\"versionDetail\":{\"version\":\"1.0.0\"},"
                     + "\"enabled\":true,\"localServerConfig\":{}}'";
     
+    private static final String MCP_RESOURCE_SPEC =
+            "{\"resources\":[{\"name\":\"readme\",\"uri\":\"file:///README.md\",\"description\":\"test resource\"}]}";
+
     private McpAdminController mcpAdminController;
     
     private MockMvc mockMvc;
@@ -187,7 +190,7 @@ class McpAdminControllerTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.MCP_ADMIN_PATH)
                 .param("serverSpecification", MCP_SERVER_SPEC);
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                any(McpServerBasicInfo.class), any(), any())).thenReturn(mcpId);
+                any(McpServerBasicInfo.class), any(), any(), any())).thenReturn(mcpId);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
 
@@ -197,7 +200,20 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(mcpId, result.getData());
         verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                any(McpServerBasicInfo.class), isNull(), isNull());
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull());
+    }
+
+    @Test
+    void createMcpServerWithResourceSpec() throws Exception {
+        String mcpId = UUID.randomUUID().toString();
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.MCP_ADMIN_PATH)
+                .param("serverSpecification", MCP_SERVER_SPEC).param("resourceSpecification", MCP_RESOURCE_SPEC);
+        when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerBasicInfo.class), any(), any(), any())).thenReturn(mcpId);
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerBasicInfo.class), isNull(), any(), isNull());
     }
     
     @Test
@@ -218,7 +234,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), isNull(), isNull(), eq(false));
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull(), eq(false));
     }
 
     @Test
@@ -232,7 +248,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
-                any(McpServerBasicInfo.class), isNull(), isNull(), eq(true));
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull(), eq(true));
     }
     
     @Test
@@ -246,7 +262,7 @@ class McpAdminControllerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
-                any(McpServerBasicInfo.class), isNull(), isNull(), eq(false));
+                any(McpServerBasicInfo.class), isNull(), isNull(), isNull(), eq(false));
     }
     
     @Test

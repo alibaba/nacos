@@ -55,9 +55,23 @@ public interface PromptLegacyDataReader {
     /**
      * Read the content of a specific prompt version from legacy storage.
      *
-     * @param promptKey prompt key
-     * @param version   version string
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param version     version string
      * @return version info with template/variables/srcUser/commitMsg, or null if not found
      */
-    PromptVersionInfo readVersionContent(String promptKey, String version);
+    PromptVersionInfo readVersionContent(String namespaceId, String promptKey, String version);
+    
+    /**
+     * Clean up legacy storage entries for a prompt after it has been deleted in the new system.
+     * This prevents the migration task from re-importing deleted prompts on next restart.
+     *
+     * <p>Default implementation is no-op for backward compatibility with existing implementations.</p>
+     *
+     * @param namespaceId namespace ID
+     * @param promptKey   prompt key
+     * @param versions    version strings to clean up
+     */
+    default void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions) {
+    }
 }

@@ -40,6 +40,8 @@ public class SkillDraftCreateForm extends SkillDetailForm {
     
     private String targetVersion;
     
+    private String commitMsg;
+    
     /**
      * Parsed skill for create-draft after {@link #prepareCreateDraftRequest()}; not part of the serialized form.
      */
@@ -102,6 +104,14 @@ public class SkillDraftCreateForm extends SkillDetailForm {
     
     public void setTargetVersion(String targetVersion) {
         this.targetVersion = targetVersion;
+    }
+    
+    public String getCommitMsg() {
+        return commitMsg;
+    }
+    
+    public void setCommitMsg(String commitMsg) {
+        this.commitMsg = commitMsg;
     }
     
     private Skill parseInitialSkillOrNull() throws NacosApiException {

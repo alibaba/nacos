@@ -31,7 +31,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,13 +82,13 @@ class NacosAgentCardCacheHolderTest {
         NotifyCenter.registerSubscriber(countingSubscriber);
         try {
             AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
-            first.setSupportedInterfaces(List.of(buildInterface("http://a", "jsonrpc", "1.0")));
+            first.setSupportedInterfaces(Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(first);
             assertTrue(countingSubscriber.firstLatch.await(3, TimeUnit.SECONDS));
             assertEquals(1, countingSubscriber.eventCount.get());
             
             AgentCardDetailInfo second = buildDetailInfo("test-agent", "1.0", true);
-            second.setSupportedInterfaces(List.of(buildInterface("http://a", "jsonrpc", "1.0")));
+            second.setSupportedInterfaces(Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(second);
             Thread.sleep(500);
             assertEquals(1, countingSubscriber.eventCount.get(),
@@ -118,7 +119,7 @@ class NacosAgentCardCacheHolderTest {
     @Test
     void testSupportedInterfacesChangeShouldPublishEvent() throws InterruptedException {
         AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
-        first.setSupportedInterfaces(List.of(buildInterface("http://a", "jsonrpc", "1.0")));
+        first.setSupportedInterfaces(Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
         cacheHolder.processAgentCardDetailInfo(first);
         assertTrue(subscriber.latch.await(3, TimeUnit.SECONDS));
         
@@ -126,7 +127,7 @@ class NacosAgentCardCacheHolderTest {
         NotifyCenter.registerSubscriber(secondSubscriber);
         try {
             AgentCardDetailInfo second = buildDetailInfo("test-agent", "1.0", true);
-            second.setSupportedInterfaces(List.of(buildInterface("http://b", "jsonrpc", "1.0")));
+            second.setSupportedInterfaces(Collections.singletonList(buildInterface("http://b", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(second);
             assertTrue(secondSubscriber.latch.await(3, TimeUnit.SECONDS));
             assertNotNull(secondSubscriber.lastEvent.get());
@@ -146,7 +147,7 @@ class NacosAgentCardCacheHolderTest {
         NotifyCenter.registerSubscriber(secondSubscriber);
         try {
             AgentCardDetailInfo second = buildDetailInfo("test-agent", "1.0", true);
-            second.setSupportedInterfaces(List.of(buildInterface("http://a", "jsonrpc", "1.0")));
+            second.setSupportedInterfaces(Collections.singletonList(buildInterface("http://a", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(second);
             assertTrue(secondSubscriber.latch.await(3, TimeUnit.SECONDS));
             assertNotNull(secondSubscriber.lastEvent.get());
@@ -179,7 +180,7 @@ class NacosAgentCardCacheHolderTest {
     void testLegacyAdditionalInterfacesChangeShouldPublishEvent() throws InterruptedException {
         AgentCardDetailInfo first = buildDetailInfo("test-agent", "1.0", true);
         first.setUrl("http://a");
-        first.setAdditionalInterfaces(List.of(buildInterface("http://b", "jsonrpc", "1.0")));
+        first.setAdditionalInterfaces(Collections.singletonList(buildInterface("http://b", "jsonrpc", "1.0")));
         cacheHolder.processAgentCardDetailInfo(first);
         assertTrue(subscriber.latch.await(3, TimeUnit.SECONDS));
         
@@ -188,8 +189,8 @@ class NacosAgentCardCacheHolderTest {
         try {
             AgentCardDetailInfo second = buildDetailInfo("test-agent", "1.0", true);
             second.setUrl("http://a");
-            second.setAdditionalInterfaces(
-                    List.of(buildInterface("http://b", "jsonrpc", "1.0"), buildInterface("http://c", "jsonrpc", "1.0")));
+            second.setAdditionalInterfaces(Arrays.asList(buildInterface("http://b", "jsonrpc", "1.0"),
+                    buildInterface("http://c", "jsonrpc", "1.0")));
             cacheHolder.processAgentCardDetailInfo(second);
             assertTrue(secondSubscriber.latch.await(3, TimeUnit.SECONDS));
             assertNotNull(secondSubscriber.lastEvent.get());

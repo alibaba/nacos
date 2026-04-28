@@ -25,6 +25,7 @@ import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -109,9 +110,10 @@ public class McpAdminController {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
+        McpResourceSpecification mcpResources = McpRequestUtil.parseMcpResources(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
         String mcpId = mcpServerOperationService.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools,
-                endpointSpec);
+                mcpResources, endpointSpec);
         return Result.success(mcpId);
     }
     
@@ -131,9 +133,10 @@ public class McpAdminController {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
+        McpResourceSpecification mcpResources = McpRequestUtil.parseMcpResources(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
         mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getLatest(), basicInfo, mcpTools,
-                endpointSpec, mcpForm.isOverrideExisting());
+                mcpResources, endpointSpec, mcpForm.isOverrideExisting());
         return Result.success("ok");
     }
     

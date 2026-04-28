@@ -37,6 +37,8 @@ public class McpDetailForm extends McpForm {
     
     private String toolSpecification;
     
+    private String resourceSpecification;
+
     private String endpointSpecification;
     
     @Override
@@ -64,6 +66,14 @@ public class McpDetailForm extends McpForm {
         this.toolSpecification = toolSpecification;
     }
     
+    public String getResourceSpecification() {
+        return resourceSpecification;
+    }
+
+    public void setResourceSpecification(String resourceSpecification) {
+        this.resourceSpecification = resourceSpecification;
+    }
+
     public String getEndpointSpecification() {
         return endpointSpecification;
     }

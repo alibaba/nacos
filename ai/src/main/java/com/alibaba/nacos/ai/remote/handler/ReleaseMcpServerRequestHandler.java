@@ -23,6 +23,7 @@ import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
@@ -145,23 +146,25 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
     private String createNewMcpServer(String namespaceId, ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = request.getServerSpecification();
         McpToolSpecification toolSpecification = request.getToolSpecification();
+        McpResourceSpecification resourceSpecification = request.getResourceSpecification();
         McpEndpointSpec endpointSpecification =
                 null == request.getEndpointSpecification() ? autoBuildMcpEndpointSpecification(namespaceId,
                         mcpServerBasicInfo) : request.getEndpointSpecification();
         return mcpServerOperationService.createMcpServer(namespaceId, mcpServerBasicInfo, toolSpecification,
-                endpointSpecification);
+                resourceSpecification, endpointSpecification);
     }
     
     private void createNewVersionMcpServer(String namespaceId, ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = request.getServerSpecification();
         McpToolSpecification toolSpecification = request.getToolSpecification();
+        McpResourceSpecification resourceSpecification = request.getResourceSpecification();
         McpEndpointSpec endpointSpecification =
                 null == request.getEndpointSpecification() ? autoBuildMcpEndpointSpecification(namespaceId,
                         mcpServerBasicInfo) : request.getEndpointSpecification();
         Boolean isLatest = mcpServerBasicInfo.getVersionDetail().getIs_latest();
         boolean isPublish = isLatest != null && isLatest;
         mcpServerOperationService.updateMcpServer(namespaceId, isPublish, mcpServerBasicInfo, toolSpecification,
-                endpointSpecification, Boolean.FALSE);
+                resourceSpecification, endpointSpecification, Boolean.FALSE);
         
     }
     

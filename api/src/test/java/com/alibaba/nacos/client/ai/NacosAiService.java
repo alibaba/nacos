@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.ai.model.a2a.AgentCardDetailInfo;
 import com.alibaba.nacos.api.ai.model.a2a.AgentEndpoint;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -62,6 +63,13 @@ public class NacosAiService implements AiService {
         return "";
     }
     
+    @Override
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
+            throws NacosException {
+        return "";
+    }
+
     @Override
     public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
             throws NacosException {

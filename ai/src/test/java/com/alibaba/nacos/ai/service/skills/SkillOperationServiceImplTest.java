@@ -826,7 +826,7 @@ class SkillOperationServiceImplTest {
 
         setupRequestContext("attackerUser");
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.createDraft(namespaceId, skillName, null, null, null));
+                () -> skillOperationService.createDraft(namespaceId, skillName, null, null, null, null));
         assertEquals(NacosException.NO_RIGHT, ex.getErrCode());
     }
 
@@ -842,13 +842,14 @@ class SkillOperationServiceImplTest {
         initial.setDescription("desc");
         initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\n---\n\ninst");
         initial.setNamespaceId(namespaceId);
-        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial, null);
         assertEquals("0.0.1", version);
 
         org.mockito.ArgumentCaptor<com.alibaba.nacos.ai.model.AiResourceVersion> vCaptor =
                 org.mockito.ArgumentCaptor.forClass(com.alibaba.nacos.ai.model.AiResourceVersion.class);
         verify(aiResourceVersionPersistService).insert(vCaptor.capture());
         assertEquals("myUser", vCaptor.getValue().getAuthor());
+        assertEquals("", vCaptor.getValue().getDesc());
     }
 
     @Test
@@ -863,10 +864,11 @@ class SkillOperationServiceImplTest {
         initial.setSkillMd("---\nname: " + skillName + "\ndescription: desc\nversion: 2.1.3\n---\n\ninst");
         initial.setNamespaceId(namespaceId);
 
-        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, initial, null);
 
         assertEquals("2.1.3", version);
-        verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())));
+        verify(aiResourceVersionPersistService).insert(argThat(v -> v != null && "2.1.3".equals(v.getVersion())
+                && "".equals(v.getDesc())));
     }
 
     @Test
@@ -903,11 +905,11 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(2L), any()))
                 .thenReturn(true);
 
-        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, null);
+        String version = skillOperationService.createDraft(namespaceId, skillName, null, null, null, null);
 
         assertEquals("1.2.1", version);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "1.2.1".equals(inserted.getVersion())));
+                && "1.2.1".equals(inserted.getVersion()) && "".equals(inserted.getDesc())));
     }
     
     @Test
@@ -942,11 +944,11 @@ class SkillOperationServiceImplTest {
         when(aiResourcePersistService.updateMetaCas(eq(namespaceId), eq(skillName), eq("skill"), eq(2L), any()))
                 .thenReturn(true);
         
-        String version = skillOperationService.createDraft(namespaceId, skillName, "1.1.3", "1.1.4", null);
+        String version = skillOperationService.createDraft(namespaceId, skillName, "1.1.3", "1.1.4", null, null);
         
         assertEquals("1.1.4", version);
         verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
-                && "1.1.4".equals(inserted.getVersion())));
+                && "1.1.4".equals(inserted.getVersion()) && "".equals(inserted.getDesc())));
     }
     
     @Test
@@ -973,7 +975,7 @@ class SkillOperationServiceImplTest {
                 .thenReturn(versions);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.createDraft(namespaceId, skillName, null, "1.1.4", null));
+                () -> skillOperationService.createDraft(namespaceId, skillName, null, "1.1.4", null, null));
         assertEquals(NacosException.CONFLICT, ex.getErrCode());
     }
     
@@ -999,7 +1001,7 @@ class SkillOperationServiceImplTest {
                 .thenReturn(versions);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.createDraft(namespaceId, skillName, "1.1.3", "1.1.2", null));
+                () -> skillOperationService.createDraft(namespaceId, skillName, "1.1.3", "1.1.2", null, null));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
 
@@ -1413,7 +1415,7 @@ class SkillOperationServiceImplTest {
         draft.setName(skillName);
         draft.setDescription("updated desc");
         draft.setSkillMd("---\nname: my-skill\ndescription: updated desc\n---\n\nbody");
-        skillOperationService.updateDraft(namespaceId, draft);
+        skillOperationService.updateDraft(namespaceId, draft, null);
         verify(aiResourceVersionPersistService).updateStorage(eq(namespaceId), eq(skillName), anyString(),
                 eq("v1"), anyString());
     }
@@ -1421,7 +1423,18 @@ class SkillOperationServiceImplTest {
     @Test
     void testUpdateDraftNullSkillThrows() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.updateDraft("ns", null));
+                () -> skillOperationService.updateDraft("ns", null, null));
+        assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
+    }
+
+    @Test
+    void testUpdateDraftRejectsFrontmatterOnlyMarkdown() {
+        Skill draft = new Skill();
+        draft.setName("my-skill");
+        draft.setDescription("desc");
+        draft.setSkillMd("---\nname: my-skill\ndescription: desc\n---\n\n  ");
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillOperationService.updateDraft("ns", draft, null));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
     
@@ -1442,7 +1455,7 @@ class SkillOperationServiceImplTest {
         draft.setDescription("desc");
         draft.setSkillMd("---\nname: my-skill\n---\n\nbody");
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillOperationService.updateDraft(namespaceId, draft));
+                () -> skillOperationService.updateDraft(namespaceId, draft, null));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
     }
     

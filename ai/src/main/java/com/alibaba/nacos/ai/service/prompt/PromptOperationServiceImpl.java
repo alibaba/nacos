@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.ai.service.prompt;
 
+import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
@@ -110,15 +111,19 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private final AiResourceManager resourceManager;
     
+    private final PromptDataMigrationTask promptDataMigrationTask;
+    
     public PromptOperationServiceImpl(PublishPipelineExecutor publishPipelineExecutor,
             PipelineExecutionRepository pipelineExecutionRepository,
             ConfigOperationService configOperationService,
-            AiResourceManager resourceManager) {
+            AiResourceManager resourceManager,
+            PromptDataMigrationTask promptDataMigrationTask) {
         this.storageRouter = AiResourceStorageRouter.getInstance();
         this.publishPipelineExecutor = publishPipelineExecutor;
         this.pipelineExecutionRepository = pipelineExecutionRepository;
         this.configOperationService = configOperationService;
         this.resourceManager = resourceManager;
+        this.promptDataMigrationTask = promptDataMigrationTask;
     }
     
     // ========== Admin APIs ==========
@@ -583,6 +588,15 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         
         // Delete legacy latest mirror in nacos-ai-prompt group
         deleteLegacyLatestMirror(namespaceId, promptKey);
+        
+        // Clean up legacy Config entries (descriptor, mapping, version configs) to prevent re-migration
+        List<String> versionStrings = new ArrayList<>();
+        for (AiResourceVersion v : allVersions) {
+            if (v != null) {
+                versionStrings.add(v.getVersion());
+            }
+        }
+        promptDataMigrationTask.cleanupLegacyConfig(namespaceId, promptKey, versionStrings);
         
         // Delete DB rows
         resourceManager.deleteVersionsByNameAndType(namespaceId, promptKey, RESOURCE_TYPE_PROMPT);

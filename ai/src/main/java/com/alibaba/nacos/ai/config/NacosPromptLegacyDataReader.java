@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.utils.PromptDataIdUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVersionInfo;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
@@ -27,7 +28,9 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -55,16 +58,22 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
     
     private static final String PROMPT_GROUP = Constants.Prompt.PROMPT_GROUP;
     
-    private static final String DEFAULT_NAMESPACE = com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
-    
     private final ConfigInfoPersistService configInfoPersistService;
     
     private final ConfigQueryChainService configQueryChainService;
     
+    private final ConfigOperationService configOperationService;
+    
+    private final NamespaceOperationService namespaceOperationService;
+    
     public NacosPromptLegacyDataReader(ConfigInfoPersistService configInfoPersistService,
-            ConfigQueryChainService configQueryChainService) {
+            ConfigQueryChainService configQueryChainService,
+            ConfigOperationService configOperationService,
+            NamespaceOperationService namespaceOperationService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configQueryChainService = configQueryChainService;
+        this.configOperationService = configOperationService;
+        this.namespaceOperationService = namespaceOperationService;
     }
     
     @Override
@@ -74,22 +83,25 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
     
     @Override
     public List<LegacyPromptData> scanLegacyPrompts() {
-        List<String> promptKeys = scanPromptKeys();
+        List<String> namespaceIds = getAllNamespaceIds();
         List<LegacyPromptData> result = new ArrayList<>();
-        for (String promptKey : promptKeys) {
-            LegacyPromptData data = buildLegacyPromptData(promptKey);
-            if (data != null) {
-                result.add(data);
+        for (String namespaceId : namespaceIds) {
+            List<String> promptKeys = scanPromptKeys(namespaceId);
+            for (String promptKey : promptKeys) {
+                LegacyPromptData data = buildLegacyPromptData(namespaceId, promptKey);
+                if (data != null) {
+                    result.add(data);
+                }
             }
         }
         return result;
     }
     
     @Override
-    public PromptVersionInfo readVersionContent(String promptKey, String version) {
+    public PromptVersionInfo readVersionContent(String namespaceId, String promptKey, String version) {
         String versionDataId = PromptDataIdUtils.buildVersionDataId(promptKey, version);
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(versionDataId, PROMPT_GROUP,
-                DEFAULT_NAMESPACE);
+                namespaceId);
         if (configAllInfo == null || StringUtils.isBlank(configAllInfo.getContent())) {
             return null;
         }
@@ -113,12 +125,26 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         return info;
     }
     
-    private List<String> scanPromptKeys() {
+    private List<String> getAllNamespaceIds() {
+        List<String> ids = new ArrayList<>();
+        try {
+            List<Namespace> namespaces = namespaceOperationService.getNamespaceList();
+            for (Namespace ns : namespaces) {
+                ids.add(ns.getNamespace());
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to list namespaces, fallback to default only: {}", e.getMessage());
+            ids.add(com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID);
+        }
+        return ids;
+    }
+    
+    private List<String> scanPromptKeys(String namespaceId) {
         List<String> promptKeys = new ArrayList<>();
         int pageNo = 1;
         while (true) {
             Page<ConfigInfo> page = configInfoPersistService.findConfigInfo4Page(pageNo, SCAN_PAGE_SIZE, null,
-                    PROMPT_GROUP, DEFAULT_NAMESPACE, null);
+                    PROMPT_GROUP, namespaceId, null);
             if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
                 break;
             }
@@ -138,18 +164,19 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         return promptKeys;
     }
     
-    private LegacyPromptData buildLegacyPromptData(String promptKey) {
-        LegacyDescriptor descriptor = readConfigJson(
+    private LegacyPromptData buildLegacyPromptData(String namespaceId, String promptKey) {
+        LegacyDescriptor descriptor = readConfigJson(namespaceId,
                 PromptDataIdUtils.buildDescriptorDataId(promptKey), LegacyDescriptor.class);
-        LegacyLabelVersionMapping mapping = readConfigJson(
+        LegacyLabelVersionMapping mapping = readConfigJson(namespaceId,
                 PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey), LegacyLabelVersionMapping.class);
         
         if (mapping == null || mapping.versions == null || mapping.versions.isEmpty()) {
-            LOGGER.warn("Prompt '{}' has no versions in mapping, skip", promptKey);
+            LOGGER.warn("Prompt '{}' in namespace '{}' has no versions in mapping, skip", promptKey, namespaceId);
             return null;
         }
         
         LegacyPromptData data = new LegacyPromptData();
+        data.setNamespaceId(namespaceId);
         data.setPromptKey(promptKey);
         data.setDescription(descriptor != null ? descriptor.description : null);
         data.setBizTags(descriptor != null ? descriptor.bizTags : null);
@@ -159,8 +186,8 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         return data;
     }
     
-    private <T> T readConfigJson(String dataId, Class<T> clazz) {
-        String content = readConfigContent(dataId);
+    private <T> T readConfigJson(String namespaceId, String dataId, Class<T> clazz) {
+        String content = readConfigContent(namespaceId, dataId);
         if (StringUtils.isBlank(content)) {
             return null;
         }
@@ -172,10 +199,10 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         }
     }
     
-    private String readConfigContent(String dataId) {
+    private String readConfigContent(String namespaceId, String dataId) {
         try {
             ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId,
-                    PROMPT_GROUP, DEFAULT_NAMESPACE);
+                    PROMPT_GROUP, namespaceId);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
                 return null;
@@ -184,6 +211,26 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         } catch (Exception e) {
             LOGGER.warn("Failed to read config '{}': {}", dataId, e.getMessage());
             return null;
+        }
+    }
+    
+    @Override
+    public void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions) {
+        deleteConfigSilently(namespaceId, PromptDataIdUtils.buildDescriptorDataId(promptKey));
+        deleteConfigSilently(namespaceId, PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey));
+        if (versions != null) {
+            for (String version : versions) {
+                deleteConfigSilently(namespaceId, PromptDataIdUtils.buildVersionDataId(promptKey, version));
+            }
+        }
+        LOGGER.info("Cleaned up legacy config for prompt '{}' in namespace '{}'", promptKey, namespaceId);
+    }
+    
+    private void deleteConfigSilently(String namespaceId, String dataId) {
+        try {
+            configOperationService.deleteConfig(dataId, PROMPT_GROUP, namespaceId, null, null, "nacos", null);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to cleanup legacy config '{}': {}", dataId, e.getMessage());
         }
     }
     

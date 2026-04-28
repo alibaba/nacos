@@ -1,0 +1,54 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Integration Test
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+permissions:
+  contents: read
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn clean install -Prelease-nacos -DskipTests=true
+
+      - name: Start Server Without Auth
+        run: |
+          echo "Configuring application.properties..."
+          PROP_FILE=$(ls distribution/target/nacos-server-*/nacos/conf/application.properties)
+          echo "Updating file: $PROP_FILE"
+          sed 's|nacos.core.auth.plugin.nacos.token.secret.key=.*|nacos.core.auth.plugin.nacos.token.secret.key=VGhpc0lzTXlDdXN0b21TZWNyZXRLZXkwMTIzNDU2Nzg=|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.server.identity.key=.*|nacos.core.auth.server.identity.key=testKey|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.server.identity.value=.*|nacos.core.auth.server.identity.value=testValue|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.enabled=.*|nacos.core.auth.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.admin.enabled=.*|nacos.core.auth.admin.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+          sed 's|nacos.core.auth.console.enabled=.*|nacos.core.auth.console.enabled=false|' "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+
+          echo "Starting server..."
+          bash distribution/target/nacos-server-*/nacos/bin/startup.sh -m standalone
+
+      - name: Wait for Server Startup
+        run: |
+          echo "Waiting for server to launch on port 8080..."
+          timeout 60s bash -c 'until curl -s localhost:8080 > /dev/null; do sleep 2; done' || (echo "Server failed to start" && exit 1)
+          echo "Server is up"
+
+      - name: Run IT Tests
+        run: |
+          cd test
+          mvn clean verify -Pintegration-test

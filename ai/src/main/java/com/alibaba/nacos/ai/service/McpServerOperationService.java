@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -92,6 +93,8 @@ public class McpServerOperationService {
     
     private final McpToolOperationService toolOperationService;
     
+    private final McpResourceOperationService resourceOperationService;
+
     private final McpEndpointOperationService endpointOperationService;
     
     private final McpServerIndex mcpServerIndex;
@@ -100,11 +103,12 @@ public class McpServerOperationService {
     
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
-            McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex,
-            SyncEffectService syncEffectService) {
+            McpResourceOperationService resourceOperationService, McpEndpointOperationService endpointOperationService,
+            McpServerIndex mcpServerIndex, SyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.toolOperationService = toolOperationService;
+        this.resourceOperationService = resourceOperationService;
         this.endpointOperationService = endpointOperationService;
         this.mcpServerIndex = mcpServerIndex;
         this.syncEffectService = syncEffectService;
@@ -184,8 +188,8 @@ public class McpServerOperationService {
         
         McpServerDetailInfo result = new McpServerDetailInfo();
         result.setId(mcpServerId);
-        result.setNamespaceId(namespaceId);
         BeanUtils.copyProperties(serverSpecification, result);
+        result.setNamespaceId(namespaceId);
         
         List<ServerVersionDetail> versionDetails = mcpServerVersionInfo.getVersionDetails();
         String latestVersion = mcpServerVersionInfo.getLatestPublishedVersion();
@@ -202,6 +206,11 @@ public class McpServerOperationService {
             McpToolSpecification toolSpec = toolOperationService.getMcpTool(namespaceId,
                     serverSpecification.getToolsDescriptionRef());
             result.setToolSpec(toolSpec);
+        }
+        if (Objects.nonNull(serverSpecification.getResourceDescriptionRef())) {
+            McpResourceSpecification resourceSpec = resourceOperationService.getMcpResource(namespaceId,
+                    serverSpecification.getResourceDescriptionRef());
+            result.setResourceSpec(resourceSpec);
         }
         
         if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpecification.getProtocol())) {
@@ -323,6 +332,23 @@ public class McpServerOperationService {
      */
     public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+        return createMcpServer(namespaceId, serverSpecification, toolSpecification, null, endpointSpecification);
+    }
+
+    /**
+     * Create new mcp server with resource specification.
+     *
+     * @param namespaceId namespace id of mcp server
+     * @param serverSpecification mcp server specification
+     * @param toolSpecification mcp server tool specification
+     * @param resourceSpecification mcp server resource specification
+     * @param endpointSpecification mcp server endpoint specification
+     * @return mcp server id
+     * @throws NacosException any exception during handling
+     */
+    public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
+            McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification,
+            McpEndpointSpec endpointSpecification) throws NacosException {
         
         String existId = resolveMcpServerId(namespaceId, serverSpecification.getName(), StringUtils.EMPTY);
         if (StringUtils.isNotEmpty(existId)) {
@@ -367,8 +393,8 @@ public class McpServerOperationService {
         
         McpServerStorageInfo newSpecification = new McpServerStorageInfo();
         BeanUtils.copyProperties(serverSpecification, newSpecification);
-        injectToolAndEndpoint(namespaceId, serverSpecification.getId(), newSpecification, toolSpecification,
-                endpointSpecification, Boolean.FALSE);
+        injectMcpDescriptionsAndEndpoint(namespaceId, serverSpecification.getId(), newSpecification,
+                toolSpecification, resourceSpecification, endpointSpecification, false, null);
         
         McpServerVersionInfo versionInfo = buildServerVersionInfo(newSpecification, id, versionDetail);
         
@@ -422,7 +448,27 @@ public class McpServerOperationService {
      * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting)
+            throws NacosException {
+        updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification, null, endpointSpecification,
+                overrideExisting);
+    }
+
+    /**
+     * Update current mcp server specification, tools, resources and endpoint information.
+     *
+     * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
+     * @param isPublish             whether publish latest version after update
+     * @param serverSpecification   mcp server basic specification
+     * @param toolSpecification     mcp server included tools, optional
+     * @param resourceSpecification mcp server included resources, optional
+     * @param endpointSpecification mcp server endpoint specification, optional
+     * @param overrideExisting      if replace all the instances when update the mcp server
+     * @throws NacosException any exception during handling
+     */
+    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
+            McpToolSpecification toolSpecification, McpResourceSpecification resourceSpecification,
+            McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
         
         String mcpServerId = serverSpecification.getId();
         mcpServerId = resolveMcpServerId(namespaceId, serverSpecification.getName(), mcpServerId);
@@ -443,9 +489,11 @@ public class McpServerOperationService {
         final McpServerVersionInfo mcpServerVersionInfo = getMcpServerVersionInfo(namespaceId, mcpServerId);
         
         String updateVersion = versionDetail.getVersion();
+        McpServerStorageInfo oldSpecification = getMcpServerStorageInfoIfPresent(namespaceId, mcpServerId, updateVersion);
         McpServerStorageInfo newSpecification = new McpServerStorageInfo();
         BeanUtils.copyProperties(serverSpecification, newSpecification);
-        injectToolAndEndpoint(namespaceId, mcpServerId, newSpecification, toolSpecification, endpointSpecification, overrideExisting);
+        injectMcpDescriptionsAndEndpoint(namespaceId, mcpServerId, newSpecification, toolSpecification,
+                resourceSpecification, endpointSpecification, overrideExisting, oldSpecification);
         
         ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpServerId, updateVersion, newSpecification);
         configOperationService.publishConfig(configForm, new ConfigRequestInfo(), null);
@@ -519,6 +567,7 @@ public class McpServerOperationService {
         
         for (String versionNeedDelete : versionsNeedDelete) {
             toolOperationService.deleteMcpTool(namespaceId, mcpServerId, versionNeedDelete);
+            resourceOperationService.deleteMcpResource(namespaceId, mcpServerId, versionNeedDelete);
             endpointOperationService.deleteMcpServerEndpointService(namespaceId, mcpServerVersionInfo.getName() + "::" + versionNeedDelete);
             String serverSpecDataId = McpConfigUtils.formatServerSpecInfoDataId(mcpServerId, versionNeedDelete);
             configOperationService.deleteConfig(serverSpecDataId, Constants.MCP_SERVER_GROUP, namespaceId, null, null,
@@ -536,8 +585,10 @@ public class McpServerOperationService {
                 VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
     }
     
-    private void injectToolAndEndpoint(String namespaceId, String mcpServerId, McpServerStorageInfo serverSpecification,
-            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification, boolean overrideExisting) throws NacosException {
+    private void injectMcpDescriptionsAndEndpoint(String namespaceId, String mcpServerId,
+            McpServerStorageInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification,
+            boolean overrideExisting, McpServerStorageInfo oldSpecification) throws NacosException {
         serverSpecification.setCapabilities(new LinkedList<>());
         boolean hasToolSpec = toolSpecification != null;
         boolean hasTools = hasToolSpec && toolSpecification.getTools() != null;
@@ -550,6 +601,18 @@ public class McpServerOperationService {
             String version = serverSpecification.getVersionDetail().getVersion();
             String toolSpecDataId = McpConfigUtils.formatServerToolSpecDataId(mcpServerId, version);
             serverSpecification.setToolsDescriptionRef(toolSpecDataId);
+        }
+        boolean hasResourceSpec = hasResourceSpecification(resourceSpecification);
+        if (hasResourceSpec) {
+            resourceOperationService.refreshMcpResource(namespaceId, serverSpecification, resourceSpecification);
+            serverSpecification.getCapabilities().add(McpCapability.RESOURCE);
+            String version = serverSpecification.getVersionDetail().getVersion();
+            String resourceSpecDataId = McpConfigUtils.formatServerResourceSpecDataId(mcpServerId, version);
+            serverSpecification.setResourceDescriptionRef(resourceSpecDataId);
+        } else if (Objects.nonNull(oldSpecification) && StringUtils.isNotBlank(oldSpecification.getResourceDescriptionRef())) {
+            resourceOperationService.deleteMcpResource(namespaceId, mcpServerId,
+                    serverSpecification.getVersionDetail().getVersion());
+            serverSpecification.setResourceDescriptionRef(null);
         }
         if (null != endpointSpecification) {
             Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId,
@@ -564,6 +627,24 @@ public class McpServerOperationService {
         }
     }
     
+    private boolean hasResourceSpecification(McpResourceSpecification resourceSpecification) {
+        if (null == resourceSpecification) {
+            return false;
+        }
+        return CollectionUtils.isNotEmpty(resourceSpecification.getResources())
+                || CollectionUtils.isNotEmpty(resourceSpecification.getResourceTemplates())
+                || Objects.nonNull(resourceSpecification.getEncryptData());
+    }
+
+    private McpServerStorageInfo getMcpServerStorageInfoIfPresent(String namespaceId, String mcpServerId, String version) {
+        ConfigQueryChainRequest request = buildQueryMcpServerRequest(namespaceId, mcpServerId, version);
+        ConfigQueryChainResponse response = configQueryChainService.handle(request);
+        if (McpConfigUtils.isConfigNotFound(response.getStatus())) {
+            return null;
+        }
+        return JacksonUtils.toObj(response.getContent(), McpServerStorageInfo.class);
+    }
+
     private ConfigFormV3 buildMcpServerVersionForm(String namespaceId, McpServerVersionInfo mcpServerVersionInfo) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_VERSIONS_GROUP);

@@ -254,8 +254,25 @@ public interface SkillMaintainerService {
      * @return created draft version
      * @throws NacosException if fail to create draft
      */
+    default String createDraft(String namespaceId, String skillName, String basedOnVersion, String targetVersion,
+            String skillCard) throws NacosException {
+        return createDraft(namespaceId, skillName, basedOnVersion, targetVersion, skillCard, null);
+    }
+
+    /**
+     * Create draft version for a skill with optional commit message.
+     *
+     * @param namespaceId    namespace ID
+     * @param skillName      skill name (required when forking)
+     * @param basedOnVersion base version to fork from (optional)
+     * @param targetVersion  target draft version to create (optional)
+     * @param skillCard      full skill JSON, or null when forking
+     * @param commitMsg      version-level commit message (optional)
+     * @return created draft version
+     * @throws NacosException if fail to create draft
+     */
     String createDraft(String namespaceId, String skillName, String basedOnVersion, String targetVersion,
-            String skillCard)
+            String skillCard, String commitMsg)
             throws NacosException;
     
     /**
@@ -267,7 +284,22 @@ public interface SkillMaintainerService {
      * @return true if update success
      * @throws NacosException if fail to update draft
      */
-    boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException;
+    default boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest) throws NacosException {
+        return updateDraft(namespaceId, skillCard, setAsLatest, null);
+    }
+
+    /**
+     * Update current draft content with optional commit message.
+     *
+     * @param namespaceId namespace ID
+     * @param skillCard   skill card JSON string
+     * @param setAsLatest whether set as latest (optional)
+     * @param commitMsg   version-level commit message (optional)
+     * @return true if update success
+     * @throws NacosException if fail to update draft
+     */
+    boolean updateDraft(String namespaceId, String skillCard, Boolean setAsLatest, String commitMsg)
+            throws NacosException;
     
     /**
      * Delete current draft version.

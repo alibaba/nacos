@@ -69,6 +69,18 @@ public interface AgentSpecOperationService {
             throws NacosException;
     
     /**
+     * Get agentspec version metadata without resource content. Returns the agentspec main content and resource list
+     * (name + type only), skipping resource file IO entirely.
+     *
+     * @param namespaceId namespace ID
+     * @param agentSpecName agentspec name
+     * @param version target version
+     * @return agentspec with resource list containing only name and type (no content or metadata)
+     * @throws NacosException if agentspec or version not found
+     */
+    AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version) throws NacosException;
+    
+    /**
      * Delete agentspec.
      *
      * @param namespaceId namespace ID
@@ -190,10 +202,12 @@ public interface AgentSpecOperationService {
      * @param namespaceId namespace ID
      * @param name agentspec name
      * @param basedOnVersion base version (optional, default latest)
+     * @param targetVersion target version (optional, auto-increment if blank)
      * @return created draft version
      * @throws NacosException if draft creation failed
      */
-    String createDraft(String namespaceId, String name, String basedOnVersion) throws NacosException;
+    String createDraft(String namespaceId, String name, String basedOnVersion, String targetVersion)
+            throws NacosException;
     
     /**
      * Update existing draft content.

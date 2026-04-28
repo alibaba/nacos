@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosPromptListener;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpResourceSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -71,7 +72,21 @@ public interface AiService extends A2aService {
      */
     default String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
             throws NacosException {
-        return releaseMcpServer(serverSpecification, toolSpecification, null);
+        return releaseMcpServer(serverSpecification, toolSpecification, (McpEndpointSpec) null);
+    }
+
+    /**
+     * Release new mcp server or release new version of exist mcp server request.
+     *
+     * @param serverSpecification mcp server specification
+     * @param toolSpecification mcp server tool specification
+     * @param resourceSpecification mcp server resource specification
+     * @return mcp id
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpResourceSpecification resourceSpecification) throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification, null);
     }
     
     /**
@@ -92,6 +107,20 @@ public interface AiService extends A2aService {
     String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
             McpEndpointSpec endpointSpecification) throws NacosException;
     
+    /**
+     * Release new mcp server or release new version of exist mcp server request.
+     *
+     * @param serverSpecification mcp server specification
+     * @param toolSpecification mcp server tool specification
+     * @param resourceSpecification mcp server resource specification
+     * @param endpointSpecification mcp server endpoint specification, optional, if null, will create ref service auto.
+     * @return mcp id
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
+            throws NacosException;
+
     /**
      * Register an endpoint into target mcp server for all version.
      *

@@ -58,6 +58,10 @@ public class McpConfigUtils {
         return String.format(Constants.SERVER_TOOLS_SPEC_CONFIG_DATA_ID_TEMPLATE, id, version);
     }
     
+    public static String formatServerResourceSpecDataId(String id, String version) {
+        return String.format(Constants.SERVER_RESOURCE_SPEC_CONFIG_DATA_ID_TEMPLATE, id, version);
+    }
+
     public static String formatServerNameTagBlurSearchValue(String serverName) {
         return Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + Constants.ALL_PATTERN + serverName + Constants.ALL_PATTERN;
     }

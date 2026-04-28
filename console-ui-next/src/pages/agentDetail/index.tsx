@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Pencil,
   Bot,
-  Globe,
   ExternalLink,
   Zap,
   Radio,
@@ -44,13 +43,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { useNamespaceStore } from '@/stores/namespace-store';
 import { cn } from '@/lib/utils';
 import type { AgentSkill } from '@/types/agent';
-
-const TRANSPORT_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  JSONRPC: { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
-  GRPC: { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-500' },
-  'HTTP+JSON': { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500' },
-  HTTP_JSON: { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500' },
-};
+import { mapAgentCardForDisplay } from './agent-card-display';
 
 export default function AgentDetailPage() {
   const { t } = useTranslation();
@@ -145,8 +138,7 @@ export default function AgentDetailPage() {
   if (!currentAgent) return null;
 
   const agent = currentAgent;
-  const transport = agent.preferredTransport || '';
-  const transportStyle = TRANSPORT_STYLES[transport];
+  const displayModel = mapAgentCardForDisplay(agent);
   const capabilities = agent.capabilities || {};
   const skills = agent.skills || [];
 
@@ -230,16 +222,6 @@ export default function AgentDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2.5 mb-1">
                 <h1 className="text-xl font-bold tracking-tight">{agent.name}</h1>
-                {transport && (
-                  <span className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    transportStyle?.bg || 'bg-gray-100 dark:bg-gray-800',
-                    transportStyle?.text || 'text-gray-600 dark:text-gray-400'
-                  )}>
-                    <span className={cn('h-1.5 w-1.5 rounded-full', transportStyle?.dot || 'bg-gray-400')} />
-                    {transport}
-                  </span>
-                )}
                 {agent.version && (
                   <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
                     v{agent.version}
@@ -269,33 +251,9 @@ export default function AgentDetailPage() {
               </h2>
             </div>
             <CardContent className="p-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
-                <div className="divide-y divide-border">
-                  <InfoCell label={t('agent.agentName')} value={agent.name} icon={<Bot className="h-3.5 w-3.5" />} />
-                  <InfoCell label={t('agent.version')} value={agent.version || '-'} icon={<Hash className="h-3.5 w-3.5" />} />
-                  <InfoCell label={t('agent.protocolVersion')} value={agent.protocolVersion || '-'} icon={<Hash className="h-3.5 w-3.5" />} />
-                </div>
-                <div className="divide-y divide-border">
-                  <InfoCell label={t('agent.transport')} value={
-                    transport ? (
-                      <span className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                        transportStyle?.bg, transportStyle?.text
-                      )}>
-                        {transport}
-                      </span>
-                    ) : '-'
-                  } icon={<Network className="h-3.5 w-3.5" />} />
-                  <InfoCell label={t('agent.serviceUrl')} value={
-                    agent.url ? (
-                      <a href={agent.url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline text-xs break-all">
-                        {agent.url}
-                        <ExternalLink className="h-3 w-3 shrink-0" />
-                      </a>
-                    ) : '-'
-                  } icon={<Globe className="h-3.5 w-3.5" />} />
-                </div>
+              <div className="divide-y divide-border">
+                <InfoCell label={t('agent.agentName')} value={agent.name} icon={<Bot className="h-3.5 w-3.5" />} />
+                <InfoCell label={t('agent.version')} value={agent.version || '-'} icon={<Hash className="h-3.5 w-3.5" />} />
               </div>
               {/* Links row */}
               {(agent.documentationUrl || agent.iconUrl) && (
@@ -394,24 +352,37 @@ export default function AgentDetailPage() {
           )}
 
           {/* Additional Interfaces */}
-          {agent.additionalInterfaces && agent.additionalInterfaces.length > 0 && (
+          {displayModel.interfaceList.length > 0 && (
             <Card className="overflow-hidden py-0 gap-0">
               <div className="px-5 py-3.5 border-b bg-muted/30">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-muted-foreground" />
-                  {t('agent.additionalInterfaces')}
+                  {t('agent.supportedInterfaces')}
                 </h2>
               </div>
               <CardContent className="p-4">
                 <div className="space-y-2">
-                  {agent.additionalInterfaces.map((iface, i) => (
+                  {displayModel.interfaceList.map((iface, i) => (
                     <div key={i} className="rounded-lg border bg-muted/20 p-3 space-y-1">
-                      <p className="text-sm font-medium">{iface.name || `Interface ${i + 1}`}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{t('agent.interfaceItem', { index: i + 1 })}</p>
+                        {i === 0 && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            {t('agent.preferredInterface')}
+                          </Badge>
+                        )}
+                      </div>
                       {iface.url && (
-                        <p className="text-xs text-muted-foreground">URL: {iface.url}</p>
+                        <p className="text-xs text-muted-foreground">{t('agent.serviceUrl')}: {iface.url}</p>
                       )}
-                      {iface.description && (
-                        <p className="text-xs text-muted-foreground">{iface.description}</p>
+                      {!!iface.protocolBinding && (
+                        <p className="text-xs text-muted-foreground">{t('agent.transport')}: {iface.protocolBinding}</p>
+                      )}
+                      {!!iface.protocolVersion && (
+                        <p className="text-xs text-muted-foreground">{t('agent.protocolVersion')}: {iface.protocolVersion}</p>
+                      )}
+                      {!!iface.tenant && (
+                        <p className="text-xs text-muted-foreground">{t('agent.tenant')}: {iface.tenant}</p>
                       )}
                     </div>
                   ))}
@@ -524,7 +495,7 @@ export default function AgentDetailPage() {
           )}
 
           {/* Extended Card Support */}
-          {agent.supportsAuthenticatedExtendedCard !== undefined && (
+          {agent.capabilities?.extendedAgentCard !== undefined && (
             <Card className="overflow-hidden py-0 gap-0">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5 bg-muted/30 border-border/60">
@@ -535,7 +506,7 @@ export default function AgentDetailPage() {
                     <p className="text-sm font-medium">{t('agent.extendedCardSupport')}</p>
                     <p className="text-[11px] text-muted-foreground">{t('agent.extendedCardSupportDesc')}</p>
                   </div>
-                  <Switch checked={!!agent.supportsAuthenticatedExtendedCard} disabled className="scale-[0.75]" />
+                  <Switch checked={displayModel.extendedCardSupported} disabled className="scale-[0.75]" />
                 </div>
               </CardContent>
             </Card>
