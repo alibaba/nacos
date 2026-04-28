@@ -28,7 +28,7 @@ class DeploymentTypeTest {
         assertEquals("merged", DeploymentType.MERGED.getTypeName());
         assertEquals("server", DeploymentType.SERVER.getTypeName());
         assertEquals("console", DeploymentType.CONSOLE.getTypeName());
-        assertEquals("server_with_mcp", DeploymentType.SERVER_WITH_MCP.getTypeName());
+        assertEquals("serverWithMcp", DeploymentType.SERVER_WITH_MCP.getTypeName());
         assertEquals("unknown", DeploymentType.ILLEGAL.getTypeName());
     }
     

@@ -78,10 +78,9 @@ class AbstractModuleStateBuilderTest {
         
         @Override
         public ModuleState build() {
-            return new ModuleState();
+            return new ModuleState("test-console");
         }
         
-        @Override
         public String getModuleName() {
             return "test-console";
         }
@@ -91,10 +90,9 @@ class AbstractModuleStateBuilderTest {
         
         @Override
         public ModuleState build() {
-            return new ModuleState();
+            return new ModuleState("test-server");
         }
         
-        @Override
         public String getModuleName() {
             return "test-server";
         }
