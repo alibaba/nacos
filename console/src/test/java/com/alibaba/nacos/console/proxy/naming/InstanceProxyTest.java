@@ -37,38 +37,38 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class InstanceProxyTest {
-
+    
     @Mock
     private InstanceHandler instanceHandler;
-
+    
     private InstanceProxy instanceProxy;
-
+    
     @BeforeEach
     public void setUp() {
         instanceProxy = new InstanceProxy(instanceHandler);
     }
-
+    
     @Test
     public void updateInstance() throws NacosException {
         InstanceForm instanceForm = new InstanceForm();
         Instance instance = new Instance();
-
+        
         doNothing().when(instanceHandler).updateInstance(instanceForm, instance);
-
+        
         assertDoesNotThrow(() -> instanceProxy.updateInstance(instanceForm, instance));
     }
-
+    
     @Test
     public void removeInstance() throws NacosException {
         InstanceForm instanceForm = new InstanceForm();
         Instance instance = new Instance();
-
+        
         doNothing().when(instanceHandler).removeInstance(instanceForm, instance);
-
+        
         assertDoesNotThrow(() -> instanceProxy.removeInstance(instanceForm, instance));
         verify(instanceHandler).removeInstance(instanceForm, instance);
     }
-
+    
     @Test
     public void listInstances() throws NacosException {
         String namespaceId = "testNamespace";
@@ -77,18 +77,18 @@ public class InstanceProxyTest {
         String clusterName = "testCluster";
         int page = 1;
         int pageSize = 10;
-
+        
         Page<Instance> expectedPage = new Page<>();
         doReturn(expectedPage).when(instanceHandler)
                 .listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page, pageSize);
-
+        
         Page<? extends Instance> result = instanceProxy.listInstances(namespaceId, serviceNameWithoutGroup, groupName,
                 clusterName, page, pageSize);
-
+        
         assertNotNull(result);
         assertEquals(expectedPage, result);
         verify(instanceHandler, times(1)).listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName,
                 page, pageSize);
     }
-
+    
 }

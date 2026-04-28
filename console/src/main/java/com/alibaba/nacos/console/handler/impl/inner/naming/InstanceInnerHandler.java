@@ -45,11 +45,11 @@ import java.util.List;
 @EnabledInnerHandler
 @Conditional(ConditionFunctionEnabled.ConditionNamingEnabled.class)
 public class InstanceInnerHandler implements InstanceHandler {
-
+    
     private final CatalogService catalogService;
-
+    
     private final InstanceOperatorClientImpl instanceServiceV2;
-
+    
     /**
      * Constructs a new InstanceInnerHandler with the provided dependencies.
      *
@@ -59,7 +59,7 @@ public class InstanceInnerHandler implements InstanceHandler {
         this.catalogService = catalogServiceV2;
         this.instanceServiceV2 = instanceServiceV2;
     }
-
+    
     @Override
     public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
             String clusterName, int page, int pageSize) throws NacosException {
@@ -67,7 +67,7 @@ public class InstanceInnerHandler implements InstanceHandler {
                 serviceNameWithoutGroup, clusterName);
         return PageUtil.subPage(instances, page, pageSize);
     }
-
+    
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
@@ -77,7 +77,7 @@ public class InstanceInnerHandler implements InstanceHandler {
                         instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
                         instance.getPort(), instance.getMetadata()));
     }
-
+    
     @Override
     public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),

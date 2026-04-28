@@ -32,15 +32,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
-
+    
     InstanceRemoteHandler instanceRemoteHandler;
-
+    
     @BeforeEach
     void setUp() {
         super.setUpWithNaming();
         instanceRemoteHandler = new InstanceRemoteHandler(clientHolder);
     }
-
+    
     @Test
     void listInstances() throws NacosException {
         when(namingMaintainerService.listInstances("namespaceId", "groupName", "serviceName", "clusterName",
@@ -49,7 +49,7 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
                 "clusterName", 1, 10);
         assertEquals(1, page.getPageItems().size());
     }
-
+    
     @Test
     void updateInstance() throws NacosException {
         InstanceForm instanceForm = new InstanceForm();
@@ -62,7 +62,7 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         verify(namingMaintainerService).updateInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "test",
                 instance);
     }
-
+    
     @Test
     void removeInstance() throws NacosException {
         InstanceForm instanceForm = new InstanceForm();

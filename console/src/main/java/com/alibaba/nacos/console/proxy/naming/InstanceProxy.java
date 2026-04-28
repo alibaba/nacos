@@ -31,9 +31,9 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class InstanceProxy {
-
+    
     private final InstanceHandler instanceHandler;
-
+    
     /**
      * Constructs a new InstanceProxy with the given InstanceInnerHandler and ConsoleConfig.
      *
@@ -42,7 +42,7 @@ public class InstanceProxy {
     public InstanceProxy(InstanceHandler instanceHandler) {
         this.instanceHandler = instanceHandler;
     }
-
+    
     /**
      * Retrieve a list of instances for a specific service and returns as an ObjectNode.
      *
@@ -61,7 +61,7 @@ public class InstanceProxy {
         return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page,
                 pageSize);
     }
-
+    
     /**
      * Updates an instance.
      *
@@ -73,7 +73,7 @@ public class InstanceProxy {
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         instanceHandler.updateInstance(instanceForm, instance);
     }
-
+    
     /**
      * Removes an instance.
      *

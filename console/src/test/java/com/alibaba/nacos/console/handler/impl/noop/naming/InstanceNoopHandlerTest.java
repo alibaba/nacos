@@ -47,7 +47,7 @@ class InstanceNoopHandlerTest {
         assertThrows(NacosApiException.class, () -> instanceNoopHandler.updateInstance(null, null),
                 "Current functionMode is `config`, naming module is disabled.");
     }
-
+    
     @Test
     void removeInstance() {
         assertThrows(NacosApiException.class, () -> instanceNoopHandler.removeInstance(null, null),
