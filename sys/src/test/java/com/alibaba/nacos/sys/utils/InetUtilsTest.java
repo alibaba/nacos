@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,6 +169,43 @@ class InetUtilsTest {
                 System.clearProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
             }
         }
+    }
+    
+    // ========== Missing lines coverage tests ==========
+    
+    @Test
+    void testGetNacosIpWithInvalidValue() {
+        String originalValue = System.getProperty(NACOS_SERVER_IP);
+        try {
+            // 测试无效 IP 地址 - 不是有效的 IP 或域名
+            System.setProperty(NACOS_SERVER_IP, "invalid-ip-address!");
+            assertThrows(RuntimeException.class, InetUtils::getNacosIp);
+            
+            // 测试不是 IP 也不是域名的值
+            System.setProperty(NACOS_SERVER_IP, "not-ip-or-domain-!!!");
+            assertThrows(RuntimeException.class, InetUtils::getNacosIp);
+        } finally {
+            if (originalValue != null) {
+                System.setProperty(NACOS_SERVER_IP, originalValue);
+            } else {
+                System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
+            }
+        }
+    }
+    
+    @Test
+    void testIpChangeEventGetterMethods() {
+        InetUtils.IPChangeEvent event = new InetUtils.IPChangeEvent();
+        event.setOldIP("192.168.1.1");
+        event.setNewIP("192.168.1.2");
+        
+        // 测试 getter 方法 (lines 292, 300)
+        assertEquals("192.168.1.1", event.getOldIP());
+        assertEquals("192.168.1.2", event.getNewIP());
+        
+        // 测试 toString 方法 (line 309)
+        String expected = "IPChangeEvent{oldIP='192.168.1.1', newIP='192.168.1.2'}";
+        assertEquals(expected, event.toString());
     }
 
 }
