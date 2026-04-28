@@ -92,8 +92,9 @@ public class SkillInnerHandler implements SkillHandler {
     }
     
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
-        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite, String targetVersion)
+            throws NacosException {
+        return skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
     }
 
     @Override

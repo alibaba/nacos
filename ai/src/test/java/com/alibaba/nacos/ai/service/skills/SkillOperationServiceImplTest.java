@@ -400,6 +400,19 @@ class SkillOperationServiceImplTest {
     }
 
     @Test
+    void testUploadSkillFromZipUsesTargetVersionWhenCannotInfer() throws NacosException, IOException {
+        String namespaceId = "test-namespace";
+        byte[] zipBytes = createZipBytesWithoutVersion();
+        when(aiResourcePersistService.find(eq(namespaceId), anyString(), anyString())).thenReturn(null);
+
+        String result = skillOperationService.uploadSkillFromZip(namespaceId, zipBytes, false, "2.0.0");
+
+        assertEquals("test-skill", result);
+        verify(aiResourceVersionPersistService).insert(argThat(inserted -> inserted != null
+                && "2.0.0".equals(inserted.getVersion())));
+    }
+
+    @Test
     void testUploadSkillFromZipBumpsPatchWhenCandidateVersionAlreadyExists() throws NacosException, IOException {
         String namespaceId = "test-namespace";
         final byte[] zipBytes = createValidZipBytes(); // metadata version = 3.0.6
