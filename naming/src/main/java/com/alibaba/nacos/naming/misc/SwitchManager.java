@@ -186,7 +186,7 @@ public class SwitchManager extends RequestProcessor4CP {
                 tempSwitchDomain.setDistroEnabled(enabled);
             }
             
-            if (entry.equals(SwitchEntry.CHECK)) {
+            if (entry.equals(SwitchEntry.CHECK) || entry.equals(SwitchEntry.HEALTH_CHECK_ENABLED)) {
                 boolean enabled = Boolean.parseBoolean(value);
                 tempSwitchDomain.setHealthCheckEnabled(enabled);
             }
