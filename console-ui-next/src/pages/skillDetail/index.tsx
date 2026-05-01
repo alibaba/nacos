@@ -72,7 +72,11 @@ import { skillApi } from '@/api/skill';
 import type { SkillDocument, SkillResource, SkillVersionSummary } from '@/types/skill';
 import { parseBizTags, parsePipelineInfo } from '@/types/skill';
 import { cn } from '@/lib/utils';
-import { parseFrontmatter, updateFrontmatterField } from '@/lib/markdown-utils';
+import {
+  hasNonFrontmatterMarkdownBody,
+  parseFrontmatter,
+  updateFrontmatterField,
+} from '@/lib/markdown-utils';
 import dayjs from 'dayjs';
 
 import { SkillVersionTimeline } from '../skillManagement/components/SkillVersionTimeline';
@@ -269,7 +273,7 @@ export default function SkillDetailPage() {
       toast.error(t('skill.descriptionRequired'));
       return;
     }
-    if (!editInstruction.trim()) {
+    if (!hasNonFrontmatterMarkdownBody(editInstruction)) {
       toast.error(t('skill.skillMdRequired'));
       return;
     }
@@ -315,6 +319,10 @@ export default function SkillDetailPage() {
   // ===== AI Optimize handler =====
 
   const handleOptimizationApply = async (optimizedSkill: SkillDocument) => {
+    if (!hasNonFrontmatterMarkdownBody(optimizedSkill.skillMd || '')) {
+      toast.error(t('skill.skillMdRequired'));
+      return;
+    }
     try {
       const skillCard = JSON.stringify({
         name: skillName,
@@ -465,7 +473,8 @@ export default function SkillDetailPage() {
 
   const handleSubmit = async (version: string) => {
     // Validate required fields before submit
-    if (versionDoc && (!versionDoc.description?.trim() || !versionDoc.skillMd?.trim())) {
+    if (versionDoc && (!versionDoc.description?.trim()
+      || !hasNonFrontmatterMarkdownBody(versionDoc.skillMd || ''))) {
       toast.error(t('skill.submitRequiresFields'));
       return;
     }

@@ -680,10 +680,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Skill description is required");
         }
-        if (StringUtils.isBlank(draftSkill.getSkillMd())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Skill markdown is required");
-        }
+        SkillRequestUtil.validateSkillMarkdownBody("skillMd", draftSkill.getSkillMd());
         // Step 2: Confirm meta exists, has write permission, and has an editing draft
         String name = draftSkill.getName();
         AiResource meta = resourceManager.requireMeta(namespaceId, name, RESOURCE_TYPE_SKILL);

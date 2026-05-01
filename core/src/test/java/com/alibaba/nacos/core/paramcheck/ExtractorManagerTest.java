@@ -23,9 +23,18 @@ import org.junit.jupiter.api.Test;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -80,5 +89,65 @@ class ExtractorManagerTest {
         AbstractRpcParamExtractor rpc = ExtractorManager.getRpcExtractor(extractor);
         assertNotNull(rpc);
         assertEquals(ConfigRequestParamExtractor.class.getSimpleName(), rpc.getClass().getSimpleName());
+    }
+
+    @Test
+    void getRpcExtractorCachesDefaultInstanceAcrossCalls() {
+        ExtractorManager.Extractor extractor = DefaultExtractorController.class.getAnnotation(ExtractorManager.Extractor.class);
+        assertNotNull(extractor);
+        AbstractRpcParamExtractor first = ExtractorManager.getRpcExtractor(extractor);
+        AbstractRpcParamExtractor second = ExtractorManager.getRpcExtractor(extractor);
+        assertSame(first, second);
+    }
+
+    @Test
+    void getHttpExtractorCachesDefaultInstanceAcrossCalls() {
+        ExtractorManager.Extractor extractor = DefaultExtractorController.class.getAnnotation(ExtractorManager.Extractor.class);
+        assertNotNull(extractor);
+        AbstractHttpParamExtractor first = ExtractorManager.getHttpExtractor(extractor);
+        AbstractHttpParamExtractor second = ExtractorManager.getHttpExtractor(extractor);
+        assertSame(first, second);
+    }
+
+    @Test
+    void concurrentGetRpcExtractorReturnsSameInstanceAndDoesNotCorrupt() throws Exception {
+        ExtractorManager.Extractor extractor = DefaultExtractorController.class.getAnnotation(ExtractorManager.Extractor.class);
+        assertNotNull(extractor);
+
+        int threadCount = 32;
+        int iterationsPerThread = 200;
+        ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startGate = new CountDownLatch(1);
+        CountDownLatch doneGate = new CountDownLatch(threadCount);
+        Set<AbstractRpcParamExtractor> observed = ConcurrentHashMap.newKeySet();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        try {
+            for (int i = 0; i < threadCount; i++) {
+                pool.submit(() -> {
+                    try {
+                        startGate.await();
+                        for (int j = 0; j < iterationsPerThread; j++) {
+                            AbstractRpcParamExtractor rpc = ExtractorManager.getRpcExtractor(extractor);
+                            assertNotNull(rpc);
+                            observed.add(rpc);
+                            AbstractHttpParamExtractor http = ExtractorManager.getHttpExtractor(extractor);
+                            assertNotNull(http);
+                        }
+                    } catch (Throwable t) {
+                        failure.compareAndSet(null, t);
+                    } finally {
+                        doneGate.countDown();
+                    }
+                });
+            }
+            startGate.countDown();
+            assertTrue(doneGate.await(30, TimeUnit.SECONDS), "concurrent workers did not finish in time");
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertNull(failure.get(), "concurrent access should not throw");
+        assertEquals(1, observed.size(), "all callers must observe the same cached extractor instance");
     }
 }

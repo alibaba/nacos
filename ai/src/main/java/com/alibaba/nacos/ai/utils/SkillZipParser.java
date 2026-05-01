@@ -428,7 +428,6 @@ public class SkillZipParser {
         }
         
         String yamlContent = matcher.group(1);
-        String instructionContent = matcher.group(2);
         
         Map<String, String> yamlMap = parseYamlFrontMatter(yamlContent);
         
@@ -445,7 +444,7 @@ public class SkillZipParser {
                     "Skill description is required in YAML front matter");
         }
         
-        if (StringUtils.isBlank(instructionContent)) {
+        if (!SkillRequestUtil.hasNonFrontmatterContent(markdownContent)) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Skill markdown body is required");
         }

@@ -43,7 +43,7 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     private static final String PREFIX = ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX;
     
-    private Map<String, Properties> configPluginProperties = new HashMap<>();
+    private volatile Map<String, Properties> configPluginProperties = new HashMap<>();
     
     public ConfigChangeConfigs() {
         NotifyCenter.registerSubscriber(this);
@@ -70,13 +70,14 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     public Properties getPluginProperties(String configPluginType) {
-        if (!configPluginProperties.containsKey(configPluginType)) {
+        Properties properties = configPluginProperties.get(configPluginType);
+        if (properties == null) {
             LOGGER.warn(
                     "[ConfigChangeConfigs]Can't find config plugin properties for type {}, will use empty properties",
                     configPluginType);
             return new Properties();
         }
-        return configPluginProperties.get(configPluginType);
+        return properties;
     }
     
     @Override

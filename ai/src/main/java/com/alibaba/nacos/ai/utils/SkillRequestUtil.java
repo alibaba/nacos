@@ -99,7 +99,7 @@ public class SkillRequestUtil {
     public static void validateSkill(Skill skill) throws NacosApiException {
         validateSkillField("name", skill.getName());
         validateSkillField("description", skill.getDescription());
-        validateSkillField("skillMd", skill.getSkillMd());
+        validateSkillMarkdownBody("skillCard.skillMd", skill.getSkillMd());
     }
     
     /**
@@ -234,6 +234,39 @@ public class SkillRequestUtil {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillCard." + fieldName + "` not present");
         }
+    }
+
+    /**
+     * Validate markdown content is present and has non-empty body after removing frontmatter.
+     *
+     * @param fieldPath field path used in error message
+     * @param markdown markdown content to validate
+     * @throws NacosApiException if markdown is missing or body is empty
+     */
+    public static void validateSkillMarkdownBody(String fieldPath, String markdown) throws NacosApiException {
+        if (StringUtils.isEmpty(markdown)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `" + fieldPath + "` not present");
+        }
+        if (!hasNonFrontmatterContent(markdown)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Required parameter `" + fieldPath + "` markdown body should not be empty");
+        }
+    }
+
+    /**
+     * Check if markdown has non-empty body after removing YAML frontmatter.
+     *
+     * @param markdown markdown content
+     * @return true if body has non-blank content
+     */
+    public static boolean hasNonFrontmatterContent(String markdown) {
+        if (StringUtils.isEmpty(markdown)) {
+            return false;
+        }
+        java.util.regex.Matcher matcher = FRONTMATTER_PATTERN.matcher(markdown);
+        String body = matcher.find() ? markdown.substring(matcher.end()) : markdown;
+        return StringUtils.isNotBlank(body);
     }
 
     /**
