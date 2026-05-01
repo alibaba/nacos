@@ -120,9 +120,10 @@ class ConfigChangeAspectTest {
         when(pjp.proceed(any())).thenReturn("Success");
         
         Object o = configChangeAspect.publishOrUpdateConfigAround(pjp);
-        
+        Thread.sleep(20L);
+
         // expect service executed.
-        verify(configChangePluginService, Mockito.timeout(1000).times(1))
+        verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
         assertEquals("Success", o);
@@ -143,9 +144,10 @@ class ConfigChangeAspectTest {
         when(pjp.getArgs()).thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         Mockito.when(pjp.proceed(any())).thenReturn("mock success return");
         Object o = configChangeAspect.removeConfigByIdAround(pjp);
-        
+        Thread.sleep(20L);
+
         // expect service executed.
-        verify(configChangePluginService, Mockito.timeout(1000).times(1))
+        verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
         assertEquals("mock success return", o);
