@@ -20,6 +20,7 @@ package com.alibaba.nacos.core.auth;
 import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.auth.config.AuthErrorCode;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -30,6 +31,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -146,5 +150,67 @@ class NacosServerAuthConfigTest {
         assertNotNull(str);
         assertTrue(str.contains("NacosServerAuthConfig"));
         assertTrue(str.contains("authEnabled"));
+    }
+
+    @Test
+    void testGetAuthPluginPropertiesNeverReturnsNullDuringConcurrentRefresh() throws InterruptedException {
+        // Reproduces the check-then-act race: previously `getAuthPluginProperties` read
+        // the field twice (`containsKey` then `get`), so if a refresh swapped in a map
+        // missing the key in between, `get` returned null and the method propagated null
+        // to callers instead of falling back to the empty-properties branch.
+        NacosServerAuthConfig config = new NacosServerAuthConfig();
+        int readerThreads = 8;
+        int durationMillis = 300;
+        String pluginType = "raceProbePlugin";
+        String pluginEnabledKey = "nacos.core.auth.plugin." + pluginType + ".enabled";
+        MockEnvironment withKey = new MockEnvironment();
+        withKey.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "false");
+        withKey.setProperty(pluginEnabledKey, "true");
+        MockEnvironment withoutKey = new MockEnvironment();
+        withoutKey.setProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, "false");
+        withoutKey.setProperty("nacos.core.auth.plugin.otherPlugin.enabled", "true");
+        CountDownLatch start = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread[] readers = new Thread[readerThreads];
+        for (int i = 0; i < readerThreads; i++) {
+            readers[i] = new Thread(() -> {
+                try {
+                    start.await();
+                    long deadline = System.currentTimeMillis() + durationMillis;
+                    while (System.currentTimeMillis() < deadline) {
+                        Properties properties = config.getAuthPluginProperties(pluginType);
+                        if (properties == null) {
+                            throw new AssertionError("getAuthPluginProperties returned null mid-refresh");
+                        }
+                    }
+                } catch (Throwable t) {
+                    failure.compareAndSet(null, t);
+                }
+            }, "auth-config-reader-" + i);
+            readers[i].start();
+        }
+        Thread refresher = new Thread(() -> {
+            try {
+                start.await();
+                long deadline = System.currentTimeMillis() + durationMillis;
+                int counter = 0;
+                while (System.currentTimeMillis() < deadline) {
+                    EnvUtil.setEnvironment((counter++ % 2 == 0) ? withKey : withoutKey);
+                    config.onEvent(ServerConfigChangeEvent.newEvent());
+                }
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
+            }
+        }, "auth-config-refresher");
+        refresher.start();
+        start.countDown();
+        refresher.join(TimeUnit.SECONDS.toMillis(5));
+        for (Thread reader : readers) {
+            reader.join(TimeUnit.SECONDS.toMillis(5));
+        }
+        Throwable observed = failure.get();
+        if (observed != null) {
+            throw new AssertionError(observed);
+        }
     }
 }
