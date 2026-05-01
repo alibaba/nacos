@@ -22,12 +22,12 @@ import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.common.utils.StringUtils;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Properties;
 
 /**

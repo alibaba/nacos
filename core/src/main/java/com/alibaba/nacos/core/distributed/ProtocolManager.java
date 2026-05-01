@@ -28,10 +28,10 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;

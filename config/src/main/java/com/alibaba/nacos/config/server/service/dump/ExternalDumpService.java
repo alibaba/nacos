@@ -23,11 +23,10 @@ import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersi
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 /**
  * External dump service.

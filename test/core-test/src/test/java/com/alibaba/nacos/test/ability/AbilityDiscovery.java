@@ -43,6 +43,7 @@ import com.alibaba.nacos.core.remote.RequestFilters;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.test.ability.component.TestServerAbilityControlManager;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;

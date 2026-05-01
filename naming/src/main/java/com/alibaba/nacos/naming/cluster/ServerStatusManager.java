@@ -22,9 +22,9 @@ import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.Optional;
 
 /**

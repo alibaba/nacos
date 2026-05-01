@@ -22,10 +22,10 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientData
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
+import jakarta.annotation.PostConstruct;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 

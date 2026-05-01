@@ -23,10 +23,10 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import java.util.UUID;
 
 /**

@@ -18,11 +18,10 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.web.NacosWebBean;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.annotation.PostConstruct;
 
 /**
  * Naming spring configuration.
