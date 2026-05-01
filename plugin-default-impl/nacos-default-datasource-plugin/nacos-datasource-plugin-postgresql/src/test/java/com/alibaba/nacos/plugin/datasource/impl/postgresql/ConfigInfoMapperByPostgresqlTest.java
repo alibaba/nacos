@@ -106,6 +106,14 @@ class ConfigInfoMapperByPostgresqlTest {
         assertArrayEquals(new Object[] {tenantId, dataId, groupId, appName}, mapperResult.getParamList().toArray());
     }
     
+    @Test
+    void testFindConfigInfoBaseLikeFetchRows() {
+        MapperResult mapperResult = configInfoMapperByPostgresql.findConfigInfoBaseLikeFetchRows(context);
+        assertEquals("SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE "
+                + " 1=1 AND tenant_id=''  AND data_id LIKE ?  AND group_id LIKE ?   "
+                + "OFFSET " + startRow + " LIMIT " + pageSize, mapperResult.getSql());
+        assertArrayEquals(new Object[] {dataId, groupId}, mapperResult.getParamList().toArray());
+    }
     
     @Test
     void testGetTableName() {
