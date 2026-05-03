@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.AiResourceConstants;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.model.PipelineCallback;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
@@ -687,8 +688,17 @@ public class AiResourceManager {
      */
     public AiResourceVersion doPublish(String namespaceId, String name, String type, String version,
             boolean updateLatestLabel) throws NacosException {
+        return doPublish(namespaceId, name, type, version, updateLatestLabel, true,
+                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+    }
+
+    private AiResourceVersion doPublish(String namespaceId, String name, String type, String version,
+            boolean updateLatestLabel, boolean checkVisibility, String operator, String clientIp)
+            throws NacosException {
         AiResource meta = requireMeta(namespaceId, name, type);
-        VisibilityHelper.checkWritableResource(meta);
+        if (checkVisibility) {
+            VisibilityHelper.checkWritableResource(meta);
+        }
         ResourceVersionInfo info = requireVersionInfo(meta);
         
         AiResourceVersion v = aiResourceVersionPersistService.find(namespaceId, name, type, version);
@@ -734,9 +744,18 @@ public class AiResourceManager {
             info.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
         }
         updateVersionInfoCas(namespaceId, meta, info);
-        AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_PUBLISH,
-                VisibilityHelper.resolveCurrentIdentity(), VisibilityHelper.resolveClientIp());
+        AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_PUBLISH, operator, clientIp);
         return v;
+    }
+
+    /**
+     * Core publish logic for system-triggered pipeline callbacks.
+     *
+     * @return the version row (caller may need it for post-processing, e.g. manifest sync)
+     */
+    public AiResourceVersion doSystemPublish(String namespaceId, String name, String type, String version,
+            boolean updateLatestLabel) throws NacosException {
+        return doPublish(namespaceId, name, type, version, updateLatestLabel, false, "system", "");
     }
     
     /**
@@ -980,10 +999,21 @@ public class AiResourceManager {
      */
     public boolean runPipelineExecution(String namespaceId, String name, String type, String version,
             ResourceFilesPipelineContext ctx, PublishPipelineExecutor executor) {
+        return runPipelineExecution(namespaceId, name, type, version, ctx, executor,
+                r -> onPipelineComplete(namespaceId, name, type, version, r));
+    }
+
+    /**
+     * Execute the publish pipeline for a resource version with a caller-provided completion callback.
+     *
+     * <p>The initial IN_PROGRESS record is still written here so the version can expose a stable executionId
+     * before async execution starts.</p>
+     */
+    public boolean runPipelineExecution(String namespaceId, String name, String type, String version,
+            ResourceFilesPipelineContext ctx, PublishPipelineExecutor executor, PipelineCallback callback) {
         String executionId = UUID.randomUUID().toString();
         writePipelineInfoInProgress(namespaceId, name, type, version, executionId);
-        String result = executor.execute(ctx,
-                r -> onPipelineComplete(namespaceId, name, type, version, r), executionId);
+        String result = executor.execute(ctx, callback, executionId);
         if (StringUtils.isBlank(result)) {
             clearPipelineInfo(namespaceId, name, type, version);
             return false;

@@ -23,6 +23,8 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -105,6 +107,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * different storage providers via service-level configuration.</p>
      */
     private static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.skill.storage.provider";
+
+    private static final String AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY =
+            "nacos.ai.skill.auto-publish-after-review.enabled";
 
     private static final String RESOURCE_TYPE_SKILL = "skill";
 
@@ -785,11 +790,40 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Step 6: Run pipeline asynchronously; fall back to direct publish if startup fails
         if (!resourceManager.runPipelineExecution(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget,
-                ctx, publishPipelineExecutor)) {
+                ctx, publishPipelineExecutor,
+                r -> onSkillPipelineComplete(namespaceId, name, finalTarget, r))) {
             publish(namespaceId, name, finalTarget, true);
         }
 
         return finalTarget;
+    }
+
+    private void onSkillPipelineComplete(String namespaceId, String name, String version,
+            PipelineExecutionResult result) {
+        resourceManager.onPipelineComplete(namespaceId, name, RESOURCE_TYPE_SKILL, version, result);
+        if (result == null || result.getStatus() != PipelineExecutionStatus.APPROVED) {
+            return;
+        }
+        if (!EnvUtil.getProperty(AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY, Boolean.class, false)) {
+            return;
+        }
+        try {
+            publishApprovedBySystem(namespaceId, name, version, true);
+        } catch (Throwable ex) {
+            LOGGER.error("Failed to auto publish approved skill {}@{}", name, version, ex);
+        }
+    }
+
+    private void publishApprovedBySystem(String namespaceId, String name, String version, boolean updateLatestLabel)
+            throws NacosException {
+        AiResourceVersion v = resourceManager.doSystemPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version,
+                updateLatestLabel);
+        SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
+        manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
+        if (updateLatestLabel) {
+            manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
+        }
+        manifestService.write(namespaceId, name, manifest);
     }
 
     /**
