@@ -123,6 +123,32 @@ public final class WhereBuilder {
         parameters.add(parameter);
         return this;
     }
+    
+    /**
+     * Build NOT LIKE.
+     *
+     * @param filed Filed name
+     * @param parameter Parameters
+     * @return Return {@link WhereBuilder}
+     */
+    public WhereBuilder notLike(String filed, Object parameter) {
+        where.append(filed).append(" NOT LIKE ? ");
+        parameters.add(parameter);
+        return this;
+    }
+    
+    /**
+     * Build NOT LIKE with escape.
+     *
+     * @param filed Filed name
+     * @param parameter Parameters
+     * @return Return {@link WhereBuilder}
+     */
+    public WhereBuilder notLikeWithEscape(String filed, Object parameter) {
+        where.append(filed).append(" NOT LIKE ? ESCAPE '\\' ");
+        parameters.add(parameter);
+        return this;
+    }
     /**
      * Build IN.
      *

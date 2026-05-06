@@ -127,4 +127,6 @@ public class FieldConstant {
     public static final String SCOPE = "scope";
     
     public static final String OWNER = "owner";
+    
+    public static final String EXCLUDE_INTERNAL_GROUPS = "excludeInternalGroups";
 }
