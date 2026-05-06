@@ -23,8 +23,13 @@ const initialState = {
 
 const getConfigs = params => dispatch =>
   request
-    .get('v1/cs/configs', { params })
-    .then(data => dispatch({ type: GET_CONFIGURATION, data }));
+    .get('v3/console/cs/config/list', { params })
+    .then(data => dispatch({ type: GET_CONFIGURATION, data: data.data }));
+
+const getConfigsV2 = params => dispatch =>
+  request
+    .get('v3/console/cs/config/searchDetail', { params })
+    .then(data => dispatch({ type: GET_CONFIGURATION, data: data.data }));
 
 export default (state = initialState, action) => {
   switch (action.type) {
@@ -35,4 +40,4 @@ export default (state = initialState, action) => {
   }
 };
 
-export { getConfigs };
+export { getConfigs, getConfigsV2 };

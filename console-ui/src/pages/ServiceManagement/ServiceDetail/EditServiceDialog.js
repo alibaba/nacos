@@ -45,11 +45,11 @@ class EditServiceDialog extends React.Component {
 
   show(_editService = {}) {
     let editService = _editService;
-    const { metadata = {}, name } = editService;
+    const { metadata = {}, serviceName } = editService;
     if (Object.keys(metadata).length) {
       editService.metadataText = JSON.stringify(metadata, null, '\t');
     }
-    this.setState({ editService, editServiceDialogVisible: true, isCreate: !name });
+    this.setState({ editService, editServiceDialogVisible: true, isCreate: !serviceName });
 
     // query selector types
     this.getSelectorTypes();
@@ -82,32 +82,34 @@ class EditServiceDialog extends React.Component {
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, groupName, metadataText = '', selector } = editService;
-    if (!this.validator({ name, protectThreshold })) return;
+    const { serviceName, protectThreshold, groupName, metadataText = '', selector } = editService;
+    if (!this.validator({ serviceName, protectThreshold })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
-      url: 'v1/ns/service',
+      url: 'v3/console/ns/service',
       data: {
-        serviceName: name,
+        serviceName,
         groupName: groupName || 'DEFAULT_GROUP',
         protectThreshold,
         metadata: metadataText,
         selector: JSON.stringify(selector),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => this.setState({ loading: true }),
       success: res => {
-        if (res !== 'ok') {
-          Message.error(res);
+        if (res.code !== 0 || res.data !== 'ok') {
+          Message.error(res.message);
           return;
         }
         if (isCreate) {
-          this.props.queryServiceList();
+          setTimeout(() => {
+            this.props.queryServiceList();
+          }, 500);
         } else {
           this.props.getServiceDetail();
         }
       },
-      error: res => Message.error(res.responseText || res.statusText),
+      error: res => Message.error(res.data.responseText || res.data.statusText),
       complete: () => this.setState({ loading: false }),
     });
     this.hide();
@@ -136,9 +138,9 @@ class EditServiceDialog extends React.Component {
   getSelectorTypes() {
     request({
       method: 'GET',
-      url: 'v1/ns/service/selector/types',
+      url: 'v3/console/ns/service/selector/types',
       success: response => {
-        if (response.code !== 200) {
+        if (response.code !== 0) {
           Message.error(response.message);
           return;
         }
@@ -153,7 +155,7 @@ class EditServiceDialog extends React.Component {
     const { locale = {} } = this.props;
     const { isCreate, editService, editServiceDialogVisible, errors, selectorTypes } = this.state;
     const {
-      name,
+      serviceName,
       protectThreshold,
       groupName,
       metadataText,
@@ -177,9 +179,12 @@ class EditServiceDialog extends React.Component {
             {...errors.name}
           >
             {!isCreate ? (
-              <p>{name}</p>
+              <p>{serviceName}</p>
             ) : (
-              <Input value={name} onChange={name => this.onChangeCluster({ name })} />
+              <Input
+                value={serviceName}
+                onChange={name => this.onChangeCluster({ serviceName: name })}
+              />
             )}
           </Form.Item>
           <Form.Item

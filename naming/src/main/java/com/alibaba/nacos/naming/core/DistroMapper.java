@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
-import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -67,11 +67,6 @@ public class DistroMapper extends MemberChangeListener {
     public void init() {
         NotifyCenter.registerSubscriber(this);
         this.healthyList = MemberUtil.simpleMembers(memberManager.allMembers());
-    }
-    
-    public boolean responsible(Cluster cluster, Instance instance) {
-        return switchDomain.isHealthCheckEnabled(cluster.getServiceName()) && !cluster.getHealthCheckTask()
-                .isCancelled() && responsible(cluster.getServiceName()) && cluster.contains(instance);
     }
     
     /**

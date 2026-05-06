@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.listener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import static org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
@@ -37,11 +36,6 @@ public class LoggingApplicationListener implements NacosApplicationListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingApplicationListener.class);
     
     @Override
-    public void starting() {
-    
-    }
-    
-    @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         if (!environment.containsProperty(CONFIG_PROPERTY)) {
             System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
@@ -51,30 +45,5 @@ public class LoggingApplicationListener implements NacosApplicationListener {
                         DEFAULT_NACOS_LOGBACK_LOCATION);
             }
         }
-    }
-    
-    @Override
-    public void contextPrepared(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void contextLoaded(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void started(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void running(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void failed(ConfigurableApplicationContext context, Throwable exception) {
-    
     }
 }

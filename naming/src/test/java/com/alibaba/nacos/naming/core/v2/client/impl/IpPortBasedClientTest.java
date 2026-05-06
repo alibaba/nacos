@@ -20,22 +20,22 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class IpPortBasedClientTest {
+@ExtendWith(MockitoExtension.class)
+class IpPortBasedClientTest {
     
     private final String clientId = "127.0.0.1:80#true";
     
@@ -46,58 +46,57 @@ public class IpPortBasedClientTest {
     
     private InstancePublishInfo instancePublishInfo;
     
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+    static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         ipPortBasedClient = new IpPortBasedClient(clientId, true, 123L);
         ipPortBasedClient.init();
         instancePublishInfo = new InstancePublishInfo();
     }
     
     @Test
-    public void testGetClientId() {
+    void testGetClientId() {
         assertEquals(clientId, ipPortBasedClient.getClientId());
     }
     
     @Test
-    public void testGetResponsibleId() {
+    void testGetResponsibleId() {
         String responsibleId = "127.0.0.1:80";
         assertEquals(responsibleId, ipPortBasedClient.getResponsibleId());
     }
     
     @Test
-    public void testIsExpire() {
-        long mustExpireTime =
-                ipPortBasedClient.getLastUpdatedTime() + ClientConfig.getInstance().getClientExpiredTime() * 2;
+    void testIsExpire() {
+        long mustExpireTime = ipPortBasedClient.getLastUpdatedTime() + ClientConfig.getInstance().getClientExpiredTime() * 2;
         assertTrue(ipPortBasedClient.isExpire(mustExpireTime));
     }
     
     @Test
-    public void testGetAllInstancePublishInfo() {
+    void testGetAllInstancePublishInfo() {
         ipPortBasedClient.addServiceInstance(service, instancePublishInfo);
         Collection<InstancePublishInfo> allInstancePublishInfo = ipPortBasedClient.getAllInstancePublishInfo();
-        assertEquals(allInstancePublishInfo.size(), 1);
+        assertEquals(1, allInstancePublishInfo.size());
         assertEquals(allInstancePublishInfo.iterator().next(), instancePublishInfo);
     }
     
     @Test
-    public void testRecalculateRevision() {
+    void testRecalculateRevision() {
         assertEquals(123L, ipPortBasedClient.getRevision());
         assertEquals(-1531701243L, ipPortBasedClient.recalculateRevision());
     }
     
     @Test
-    public void testConstructor0() {
+    void testConstructor0() {
         IpPortBasedClient client = new IpPortBasedClient(clientId, true);
         assertEquals(0, client.getRevision());
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         ipPortBasedClient.release();
     }
 }

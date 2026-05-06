@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
@@ -27,26 +26,31 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
-public class PushExecuteTaskTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockitoExtension.class)
+class PushExecuteTaskTest {
     
     private final Service service = Service.newService("N", "G", "S");
     
@@ -67,9 +71,6 @@ public class PushExecuteTaskTest {
     private ServiceStorage serviceStorage;
     
     @Mock
-    private TpsMonitorManager tpsMonitorManager;
-    
-    @Mock
     private NamingMetadataManager metadataManager;
     
     @Mock
@@ -81,8 +82,9 @@ public class PushExecuteTaskTest {
     @Mock
     private Subscriber subscriber;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         MetricsMonitor.resetAll();
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
@@ -95,11 +97,10 @@ public class PushExecuteTaskTest {
         when(delayTaskExecuteEngine.getMetadataManager()).thenReturn(metadataManager);
         when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.empty());
         ApplicationUtils.injectContext(context);
-        when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
     }
     
     @Test
-    public void testRunSuccessForPushAll() {
+    void testRunSuccessForPushAll() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
@@ -107,7 +108,7 @@ public class PushExecuteTaskTest {
     }
     
     @Test
-    public void testRunSuccessForPushSingle() {
+    void testRunSuccessForPushSingle() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
@@ -115,7 +116,7 @@ public class PushExecuteTaskTest {
     }
     
     @Test
-    public void testRunFailedWithHandleException() {
+    void testRunFailedWithHandleException() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         when(delayTaskExecuteEngine.getServiceStorage()).thenThrow(new RuntimeException());
@@ -125,7 +126,7 @@ public class PushExecuteTaskTest {
     }
     
     @Test
-    public void testRunFailedWithNoRetry() {
+    void testRunFailedWithNoRetry() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         pushExecutor.setShouldSuccess(false);
@@ -136,7 +137,7 @@ public class PushExecuteTaskTest {
     }
     
     @Test
-    public void testRunFailedWithRetry() {
+    void testRunFailedWithRetry() {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         pushExecutor.setShouldSuccess(false);

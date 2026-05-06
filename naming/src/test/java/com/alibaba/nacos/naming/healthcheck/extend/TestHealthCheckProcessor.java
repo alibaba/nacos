@@ -27,14 +27,14 @@ import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
  * @author sunmengying
  */
 public class TestHealthCheckProcessor implements HealthCheckProcessorV2 {
-
+    
     public static final String TYPE = TestChecker.TYPE;
-
+    
     @Override
     public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
-
+    
     }
-
+    
     @Override
     public String getType() {
         return TYPE;

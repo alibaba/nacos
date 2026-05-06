@@ -51,12 +51,11 @@ public class NamingEventPublisherFactory implements EventPublisherFactory {
         // Like ClientEvent$ClientChangeEvent cache by ClientEvent
         Class<? extends Event> cachedEventType =
                 eventType.isMemberClass() ? (Class<? extends Event>) eventType.getEnclosingClass() : eventType;
-        publisher.computeIfAbsent(cachedEventType, eventClass -> {
+        return publisher.computeIfAbsent(cachedEventType, eventClass -> {
             NamingEventPublisher result = new NamingEventPublisher();
             result.init(eventClass, maxQueueSize);
             return result;
         });
-        return publisher.get(cachedEventType);
     }
     
     public String getAllPublisherStatues() {

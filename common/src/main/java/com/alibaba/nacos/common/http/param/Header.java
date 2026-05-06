@@ -42,24 +42,21 @@ public class Header {
     
     private static final String DEFAULT_CHARSET = "UTF-8";
     
-    private static final String DEFAULT_ENCODING = "gzip";
-    
     private Header() {
         header = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         originalResponseHeader = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, DEFAULT_CHARSET);
-        //addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
     }
     
     public static Header newInstance() {
         return new Header();
     }
-
+    
     /**
      * Add the key and value to the header.
      *
-     * @param key the key
+     * @param key   the key
      * @param value the value
      * @return header
      */
@@ -75,10 +72,6 @@ public class Header {
             contentType = MediaType.APPLICATION_JSON;
         }
         return addParam(HttpHeaderConsts.CONTENT_TYPE, contentType);
-    }
-    
-    public Header build() {
-        return this;
     }
     
     public String getValue(String key) {
@@ -146,7 +139,7 @@ public class Header {
      *
      * <p>Currently only corresponds to the response header of JDK.
      *
-     * @param key original response header key
+     * @param key    original response header key
      * @param values original response header values
      */
     public void addOriginalResponseHeader(String key, List<String> values) {
@@ -179,7 +172,7 @@ public class Header {
     private String analysisCharset(String contentType) {
         String[] values = contentType.split(";");
         String charset = Constants.ENCODE;
-        if (values.length == 0) {
+        if (values.length == 1) {
             return charset;
         }
         for (String value : values) {

@@ -19,6 +19,8 @@ package com.alibaba.nacos.api;
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.lock.LockService;
+import com.alibaba.nacos.api.lock.NacosLockFactory;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingMaintainFactory;
 import com.alibaba.nacos.api.naming.NamingMaintainService;
@@ -83,7 +85,9 @@ public class NacosFactory {
      * @param serverAddr server address
      * @return NamingMaintainService
      * @throws NacosException Exception
+     * @deprecated use {@link com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory} in nacos-maintainer-client artifact tp replaced.
      */
+    @Deprecated
     public static NamingMaintainService createMaintainService(String serverAddr) throws NacosException {
         return NamingMaintainFactory.createMaintainService(serverAddr);
     }
@@ -94,8 +98,21 @@ public class NacosFactory {
      * @param properties server address
      * @return NamingMaintainService
      * @throws NacosException Exception
+     * @deprecated use {@link com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory} in nacos-maintainer-client artifact tp replaced.
      */
+    @Deprecated
     public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
         return NamingMaintainFactory.createMaintainService(properties);
+    }
+    
+    /**
+     * Create lock service.
+     *
+     * @param properties init param
+     * @return lock service
+     * @throws NacosException Exception
+     */
+    public static LockService createLockService(Properties properties) throws NacosException {
+        return NacosLockFactory.createLockService(properties);
     }
 }

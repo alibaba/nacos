@@ -24,28 +24,32 @@ import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConnectionBasedClientManagerTest {
-    
-    ConnectionBasedClientManager connectionBasedClientManager;
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ConnectionBasedClientManagerTest {
     
     private final String connectionId = System.currentTimeMillis() + "_127.0.0.1_80";
+    
+    ConnectionBasedClientManager connectionBasedClientManager;
     
     @Mock
     private ConnectionBasedClient client;
@@ -59,13 +63,13 @@ public class ConnectionBasedClientManagerTest {
     @Mock
     private ClientAttributes clientAttributes;
     
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+    static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         connectionBasedClientManager = new ConnectionBasedClientManager();
         when(client.isNative()).thenReturn(true);
         when(connectionMeta.getConnectionId()).thenReturn(connectionId);
@@ -80,7 +84,7 @@ public class ConnectionBasedClientManagerTest {
     }
     
     @Test
-    public void testAllClientId() {
+    void testAllClientId() {
         Collection<String> allClientIds = connectionBasedClientManager.allClientId();
         assertEquals(1, allClientIds.size());
         assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
@@ -88,7 +92,7 @@ public class ConnectionBasedClientManagerTest {
     }
     
     @Test
-    public void testContainsConnectionId() {
+    void testContainsConnectionId() {
         assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(connectionBasedClientManager.contains(connectionId));
         String unUsedClientId = "127.0.0.1:8888#true";
@@ -97,12 +101,12 @@ public class ConnectionBasedClientManagerTest {
     }
     
     @Test
-    public void testIsResponsibleClient() {
+    void testIsResponsibleClient() {
         assertTrue(connectionBasedClientManager.isResponsibleClient(client));
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         connectionBasedClientManager.clientDisConnected(connection);
     }
 }

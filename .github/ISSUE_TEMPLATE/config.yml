@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions
+    url: https://github.com/alibaba/nacos/discussions
+    about: For questions and discussions. Bug reports and feature requests should use the templates above.
+  - name: Security Vulnerabilities
+    url: https://security.alibaba.com
+    about: Report security vulnerabilities to ASRC (Alibaba Security Response Center).

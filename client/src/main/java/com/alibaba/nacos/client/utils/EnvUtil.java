@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * env util.
@@ -47,7 +48,7 @@ public class EnvUtil {
                 }
             } else {
                 String amoryTagTmpStr = listToString(amoryTagTmp);
-                if (!amoryTagTmpStr.equals(selfAmoryTag)) {
+                if (!Objects.equals(amoryTagTmpStr, selfAmoryTag)) {
                     selfAmoryTag = amoryTagTmpStr;
                     LOGGER.warn("selfAmoryTag:{}", selfAmoryTag);
                 }
@@ -61,7 +62,7 @@ public class EnvUtil {
                 }
             } else {
                 String vipserverTagTmpStr = listToString(vipserverTagTmp);
-                if (!vipserverTagTmpStr.equals(selfVipserverTag)) {
+                if (!Objects.equals(vipserverTagTmpStr, selfVipserverTag)) {
                     selfVipserverTag = vipserverTagTmpStr;
                     LOGGER.warn("selfVipserverTag:{}", selfVipserverTag);
                 }
@@ -74,7 +75,7 @@ public class EnvUtil {
                 }
             } else {
                 String locationTagTmpStr = listToString(locationTagTmp);
-                if (!locationTagTmpStr.equals(selfLocationTag)) {
+                if (!Objects.equals(locationTagTmpStr, selfLocationTag)) {
                     selfLocationTag = locationTagTmpStr;
                     LOGGER.warn("selfLocationTag:{}", selfLocationTag);
                 }

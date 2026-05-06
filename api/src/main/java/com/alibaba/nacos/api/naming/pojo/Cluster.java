@@ -64,7 +64,7 @@ public class Cluster implements Serializable {
     /**
      * Whether or not use instance port to do health check.
      */
-    private boolean useIPPort4Check = true;
+    private boolean useIpPort4Check = true;
     
     private Map<String, String> metadata = new HashMap<>();
     
@@ -116,12 +116,12 @@ public class Cluster implements Serializable {
         this.defaultCheckPort = defaultCheckPort;
     }
     
-    public boolean isUseIPPort4Check() {
-        return useIPPort4Check;
+    public boolean isUseIpPort4Check() {
+        return useIpPort4Check;
     }
     
-    public void setUseIPPort4Check(boolean useIPPort4Check) {
-        this.useIPPort4Check = useIPPort4Check;
+    public void setUseIpPort4Check(boolean useIpPort4Check) {
+        this.useIpPort4Check = useIpPort4Check;
     }
     
     public Map<String, String> getMetadata() {

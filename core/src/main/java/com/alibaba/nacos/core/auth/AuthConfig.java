@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.web.NacosWebBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,21 +29,39 @@ import org.springframework.context.annotation.Configuration;
  * @author mai.jh
  */
 @Configuration
+@NacosWebBean
 public class AuthConfig {
     
     @Bean
-    public FilterRegistrationBean authFilterRegistration(AuthFilter authFilter) {
+    public FilterRegistrationBean<AuthFilter> authFilterRegistration(AuthFilter authFilter) {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(authFilter);
         registration.addUrlPatterns("/*");
         registration.setName("authFilter");
         registration.setOrder(6);
-        
         return registration;
     }
     
     @Bean
-    public AuthFilter authFilter(AuthConfigs authConfigs, ControllerMethodsCache methodsCache) {
-        return new AuthFilter(authConfigs, methodsCache);
+    public FilterRegistrationBean<AuthAdminFilter> authAdminFilterRegistration(AuthAdminFilter authAdminFilter) {
+        FilterRegistrationBean<AuthAdminFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(authAdminFilter);
+        registration.addUrlPatterns("/*");
+        registration.setName("authAdminFilter");
+        registration.setOrder(6);
+        return registration;
+    }
+    
+    @Bean
+    public AuthFilter authFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled) {
+        return new AuthFilter(NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache,
+                innerApiAuthEnabled);
+    }
+    
+    @Bean
+    public AuthAdminFilter authAdminFilter(ControllerMethodsCache methodsCache) {
+        return new AuthAdminFilter(NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE), methodsCache);
     }
 }

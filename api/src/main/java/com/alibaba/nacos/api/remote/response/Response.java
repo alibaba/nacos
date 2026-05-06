@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.Payload;
  * @author liuzunfei
  * @version $Id: Response.java, v 0.1 2020年07月13日 6:03 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Response implements Payload {
     
     int resultCode = ResponseCode.SUCCESS.getCode();

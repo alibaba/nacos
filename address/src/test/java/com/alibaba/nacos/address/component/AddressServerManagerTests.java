@@ -17,38 +17,38 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AddressServerManagerTests {
+class AddressServerManagerTests {
     
     private static final AddressServerManager ADDRESS_SERVER_MANAGER = new AddressServerManager();
-    
+
     @Test
-    public void getRawProductName() {
+    void getRawProductName() {
         assertEquals(AddressServerConstants.DEFAULT_PRODUCT, ADDRESS_SERVER_MANAGER.getRawProductName(""));
         assertEquals(AddressServerConstants.DEFAULT_PRODUCT,
                 ADDRESS_SERVER_MANAGER.getRawProductName(AddressServerConstants.DEFAULT_PRODUCT));
         assertEquals("otherProduct", ADDRESS_SERVER_MANAGER.getRawProductName("otherProduct"));
     }
-    
+
     @Test
-    public void getDefaultClusterNameIfEmpty() {
+    void getDefaultClusterNameIfEmpty() {
         assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER, ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty(""));
         assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER,
                 ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty(AddressServerConstants.DEFAULT_GET_CLUSTER));
         assertEquals("otherServerList", ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty("otherServerList"));
     }
-    
+
     @Test
-    public void testGetRawClusterName() {
+    void testGetRawClusterName() {
         assertEquals("serverList", ADDRESS_SERVER_MANAGER.getRawClusterName("serverList"));
         assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER, ADDRESS_SERVER_MANAGER.getRawClusterName(""));
     }
-    
+
     @Test
-    public void testSplitIps() {
+    void testSplitIps() {
         final String[] emptyArr = ADDRESS_SERVER_MANAGER.splitIps("");
         assertEquals(0, emptyArr.length);
         final String[] one = ADDRESS_SERVER_MANAGER.splitIps("192.168.1.12:8848");

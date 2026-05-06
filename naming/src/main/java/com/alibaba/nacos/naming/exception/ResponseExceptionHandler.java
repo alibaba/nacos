@@ -17,8 +17,11 @@
 package com.alibaba.nacos.naming.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -30,7 +33,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  *
  * @author nkorange
  */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "com.alibaba.nacos.naming")
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class ResponseExceptionHandler {
     
     /**
@@ -41,7 +45,19 @@ public class ResponseExceptionHandler {
      */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException e) {
-        Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), ExceptionUtil.getAllExceptionMsg(e));
+        Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
+    }
+    
+    /**
+     * Handle {@link com.alibaba.nacos.api.exception.runtime.NacosRuntimeException}.
+     *
+     * @param e NacosException
+     * @return ResponseEntity
+     */
+    @ExceptionHandler(NacosRuntimeException.class)
+    public ResponseEntity<String> handleNacosRuntimeException(NacosRuntimeException e) {
+        Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(e));
         return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
     }
     
@@ -53,7 +69,7 @@ public class ResponseExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleParameterError(IllegalArgumentException ex) {
-        Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ExceptionUtil.getAllExceptionMsg(ex));
+        Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(ex));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
     
@@ -65,7 +81,7 @@ public class ResponseExceptionHandler {
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<String> handleMissingParams(MissingServletRequestParameterException ex) {
-        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(ex));
+        Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(ex));
         String name = ex.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
     }
@@ -78,7 +94,7 @@ public class ResponseExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
-        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(e));
+        Loggers.SRV_LOG.error("got exception. {}", ExceptionUtil.getAllExceptionMsg(e));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getAllExceptionMsg(e));
     }
 }

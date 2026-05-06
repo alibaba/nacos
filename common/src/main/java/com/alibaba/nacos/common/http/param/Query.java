@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.MapUtil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,20 +80,6 @@ public class Query {
     }
     
     /**
-     * Add query parameters from KV list. KV list: odd index is key, even index is value.
-     *
-     * @param list KV list
-     */
-    public void initParams(List<String> list) {
-        if ((list.size() & 1) != 0) {
-            throw new IllegalArgumentException("list size must be a multiple of 2");
-        }
-        for (int i = 0; i < list.size(); ) {
-            addParam(list.get(i++), list.get(i++));
-        }
-    }
-    
-    /**
      * Print query as a http url param string. Like K=V&K=V.
      *
      * @return http url param string
@@ -122,8 +107,8 @@ public class Query {
     }
     
     public void clear() {
-        isEmpty = false;
         params.clear();
+        isEmpty = true;
     }
     
     public boolean isEmpty() {

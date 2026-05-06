@@ -35,18 +35,20 @@ import java.util.ServiceLoader;
 public class ConfigFilterChainManager implements IConfigFilterChain {
     
     private final List<IConfigFilter> filters = new ArrayList<>();
-    
+
+    private final Properties initProperty;
+
     private IConfigFilterChain filterChain;
-    
+
     public ConfigFilterChainManager(Properties properties) {
+        this.initProperty = properties;
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
         for (IConfigFilter configFilter : configFilters) {
-            configFilter.init(properties);
             addFilter(configFilter);
         }
         buildConfigFilterChain();
     }
-    
+
     /**
      * Build ConfigFilterChain.
      */
@@ -66,6 +68,8 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
      * @return this
      */
     public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
+        // init
+        filter.init(this.initProperty);
         // ordered by order value
         int i = 0;
         while (i < this.filters.size()) {
@@ -93,28 +97,28 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     }
     
     private static class FilterChainNode implements IConfigFilterChain {
-        
+
         private final IConfigFilter filter;
-        
+
         private final IConfigFilterChain next;
-        
+
         public FilterChainNode(IConfigFilter filter, IConfigFilterChain next) {
             this.filter = filter;
             this.next = next;
         }
-        
+
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
             filter.doFilter(request, response, next);
         }
     }
-    
+
     private static class EmptyFilterChainNode implements IConfigFilterChain {
-        
+
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
-        
+
         }
     }
-    
+
 }

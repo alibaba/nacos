@@ -148,11 +148,14 @@ public class HttpClientConfig {
     
     public static final class HttpClientConfigBuilder {
         
-        private int conTimeOutMillis = -1;
+        // not allow negative number in httpclient5
+        private int conTimeOutMillis = 180_000;
         
-        private int readTimeOutMillis = -1;
+        // not allow negative number in httpclient5
+        private int readTimeOutMillis = 180_000;
         
-        private long connTimeToLive = -1;
+        // not allow negative number in httpclient5
+        private long connTimeToLive = 180_000;
         
         private TimeUnit connTimeToLiveTimeUnit = TimeUnit.MILLISECONDS;
         

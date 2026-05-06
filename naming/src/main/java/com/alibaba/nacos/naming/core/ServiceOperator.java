@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -70,7 +72,7 @@ public interface ServiceOperator {
     ObjectNode queryService(String namespaceId, String serviceName) throws NacosException;
     
     /**
-     * Page list service name.
+     * List service detail information.
      *
      * @param namespaceId namespace id of services
      * @param groupName   group name of services
@@ -90,11 +92,25 @@ public interface ServiceOperator {
     /**
      * Search service name in namespace according to expr.
      *
-     * @param namespaceId     namespace id
-     * @param expr            search expr
-     * @param responsibleOnly only search responsible service, will deprecated after v2.0.
+     * @param namespaceId namespace id
+     * @param expr        search expr
      * @return service name collection of match expr
      * @throws NacosException nacos exception during query
      */
-    Collection<String> searchServiceName(String namespaceId, String expr, @Deprecated boolean responsibleOnly) throws NacosException;
+    Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException;
+    
+    /**
+     * Get the list of subscribers for a service.
+     *
+     * @param namespaceId the namespace ID
+     * @param serviceName the service name
+     * @param groupName   the group name
+     * @param aggregation whether to aggregate the results
+     * @param pageNo      the page number
+     * @param pageSize    the size of the page
+     * @return a page of subscriber information
+     * @throws NacosException if an error occurs during fetching subscribers
+     */
+    Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName, boolean aggregation,
+            int pageNo, int pageSize) throws NacosException;
 }

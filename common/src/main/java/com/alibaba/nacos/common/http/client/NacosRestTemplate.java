@@ -32,6 +32,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.ArrayList;
@@ -404,6 +405,12 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
             Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config,
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues);
+        return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
+    }
+    
+    public <T> HttpRestResult<T> postFile(String url, HttpClientConfig config, Header header,
+            File file, Type responseType) throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, file);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     

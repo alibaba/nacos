@@ -18,17 +18,18 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -62,6 +63,14 @@ public class ServiceNameFilter implements Filter {
             String groupedServiceName = serviceName;
             if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+            }
+            if (StringUtils.isNotBlank(groupedServiceName)) {
+                try {
+                    NamingUtils.checkServiceNameFormat(groupedServiceName);
+                } catch (IllegalArgumentException e) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                            "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
+                }
             }
             OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);

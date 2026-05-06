@@ -51,8 +51,8 @@ public class EncryptionHandler {
             return Pair.with("", content);
         }
         Optional<String> algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = algorithmName
-                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
+        Optional<EncryptionPluginService> optional = algorithmName.flatMap(
+                EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
             LOGGER.warn("[EncryptionHandler] [encryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
@@ -73,14 +73,14 @@ public class EncryptionHandler {
      */
     public static Pair<String, String> decryptHandler(String dataId, String secretKey, String content) {
         if (!checkCipher(dataId)) {
-            return Pair.with("", content);
+            return Pair.with(secretKey, content);
         }
         Optional<String> algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = algorithmName
-                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
+        Optional<EncryptionPluginService> optional = algorithmName.flatMap(
+                EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
             LOGGER.warn("[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
-            return Pair.with("", content);
+            return Pair.with(secretKey, content);
         }
         EncryptionPluginService encryptionPluginService = optional.get();
         String decryptSecretKey = encryptionPluginService.decryptSecretKey(secretKey);

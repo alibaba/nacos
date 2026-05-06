@@ -19,8 +19,8 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.Chooser;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.Pair;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +44,9 @@ public class Balancer {
          */
         public static List<Instance> selectAll(ServiceInfo serviceInfo) {
             List<Instance> hosts = serviceInfo.getHosts();
-            
             if (CollectionUtils.isEmpty(hosts)) {
                 throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
             }
-            
             return hosts;
         }
     
@@ -59,14 +57,7 @@ public class Balancer {
          * @return random instance
          */
         public static Instance selectHost(ServiceInfo dom) {
-            
-            List<Instance> hosts = selectAll(dom);
-            
-            if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for service: " + dom.getName());
-            }
-            
-            return getHostByRandomWeight(hosts);
+            return getHostByRandomWeight(selectAll(dom));
         }
     }
     

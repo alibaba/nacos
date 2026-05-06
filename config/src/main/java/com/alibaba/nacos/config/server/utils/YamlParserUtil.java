@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.introspector.Property;
@@ -69,16 +71,20 @@ public class YamlParserUtil {
     
     public static class YamlParserConstructor extends SafeConstructor {
         
-        public static Tag configMetadataTag = new Tag(ConfigMetadata.class);
+        public static final Tag CONFIG_METADATA_TAG = new Tag(ConfigMetadata.class);
         
         public YamlParserConstructor() {
-            super();
-            yamlConstructors.put(configMetadataTag, new ConstructYamlConfigMetadata());
+            super(new LoaderOptions());
+            yamlConstructors.put(CONFIG_METADATA_TAG, new ConstructYamlConfigMetadata());
         }
     }
     
     public static class CustomRepresenter extends Representer {
-        
+    
+        public CustomRepresenter() {
+            super(new DumperOptions());
+        }
+    
         @Override
         protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue,
                 Tag customTag) {
@@ -94,7 +100,7 @@ public class YamlParserUtil {
         
         @Override
         public Object construct(Node node) {
-            if (!YamlParserConstructor.configMetadataTag.getValue().equals(node.getTag().getValue())) {
+            if (!YamlParserConstructor.CONFIG_METADATA_TAG.getValue().equals(node.getTag().getValue())) {
                 throw new NacosRuntimeException(NacosException.INVALID_PARAM,
                         "could not determine a constructor for the tag " + node.getTag() + node.getStartMark());
             }
@@ -126,6 +132,7 @@ public class YamlParserUtil {
                 configExportItem.setType(metadataMap.get("type"));
                 configExportItem.setDesc(metadataMap.get("desc"));
                 configExportItem.setAppName(metadataMap.get("appName"));
+                configExportItem.setConfigTags(metadataMap.get("configTags"));
                 return configExportItem;
             }).collect(Collectors.toList());
             

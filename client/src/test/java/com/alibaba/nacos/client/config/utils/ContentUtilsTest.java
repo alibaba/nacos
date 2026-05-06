@@ -18,103 +18,108 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ContentUtilsTest {
-    
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
+class ContentUtilsTest {
     
     @Test
-    public void testVerifyIncrementPubContent() {
+    void testVerifyIncrementPubContent() {
         String content = "aabbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
     
     @Test
-    public void testVerifyIncrementPubContentFail1() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("publish/delete content can not be null");
-        String content = null;
-        ContentUtils.verifyIncrementPubContent(content);
+    void testVerifyIncrementPubContentFail1() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            String content = null;
+            ContentUtils.verifyIncrementPubContent(content);
+        });
+        assertTrue(exception.getMessage().contains("publish/delete content can not be null"));
     }
     
     @Test
-    public void testVerifyIncrementPubContentFail2() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("publish/delete content can not contain return and linefeed");
-        String content = "aa\rbbb";
-        ContentUtils.verifyIncrementPubContent(content);
+    void testVerifyIncrementPubContentFail2() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            String content = "aa\rbbb";
+            ContentUtils.verifyIncrementPubContent(content);
+        });
+        assertTrue(exception.getMessage().contains("publish/delete content can not contain return and linefeed"));
     }
     
     @Test
-    public void testVerifyIncrementPubContentFail3() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("publish/delete content can not be null");
-        String content = "";
-        ContentUtils.verifyIncrementPubContent(content);
+    void testVerifyIncrementPubContentFail3() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            String content = "";
+            ContentUtils.verifyIncrementPubContent(content);
+        });
+        assertTrue(exception.getMessage().contains("publish/delete content can not be null"));
     }
     
     @Test
-    public void testVerifyIncrementPubContentFail4() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("publish/delete content can not contain(char)2");
-        String content = "aa" + WORD_SEPARATOR + "bbb";
-        ContentUtils.verifyIncrementPubContent(content);
+    void testVerifyIncrementPubContentFail4() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            String content = "aa" + WORD_SEPARATOR + "bbb";
+            ContentUtils.verifyIncrementPubContent(content);
+        });
+        assertTrue(exception.getMessage().contains("publish/delete content can not contain(char)2"));
     }
     
     @Test
-    public void testGetContentIdentity() {
+    void testGetContentIdentity() {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         String content1 = ContentUtils.getContentIdentity(content);
-        Assert.assertEquals("aa", content1);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetContentIdentityFail() {
-        String content = "aabbb";
-        ContentUtils.getContentIdentity(content);
+        assertEquals("aa", content1);
     }
     
     @Test
-    public void testGetContent() {
+    void testGetContentIdentityFail() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String content = "aabbb";
+            ContentUtils.getContentIdentity(content);
+        });
+    }
+    
+    @Test
+    void testGetContent() {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         String content1 = ContentUtils.getContent(content);
-        Assert.assertEquals("bbb", content1);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetContentFail() {
-        String content = "aabbb";
-        ContentUtils.getContent(content);
+        assertEquals("bbb", content1);
     }
     
     @Test
-    public void testTruncateContent() {
+    void testGetContentFail() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String content = "aabbb";
+            ContentUtils.getContent(content);
+        });
+    }
+    
+    @Test
+    void testTruncateContent() {
         String content = "aa";
         String actual = ContentUtils.truncateContent(content);
-        Assert.assertEquals(content, actual);
+        assertEquals(content, actual);
     }
     
     @Test
-    public void testTruncateLongContent() {
+    void testTruncateLongContent() {
         char[] arr = new char[101];
         Arrays.fill(arr, 'a');
         String content = new String(arr);
         String actual = ContentUtils.truncateContent(content);
-        Assert.assertEquals(content.substring(0, 100) + "...", actual);
+        assertEquals(content.substring(0, 100) + "...", actual);
     }
     
     @Test
-    public void testTruncateContentNull() {
+    void testTruncateContentNull() {
         String actual = ContentUtils.truncateContent(null);
-        Assert.assertEquals("", actual);
+        assertEquals("", actual);
     }
 }

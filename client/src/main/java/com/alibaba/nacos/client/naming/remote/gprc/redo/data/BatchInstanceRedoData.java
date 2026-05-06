@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * batch instance redo service.
@@ -53,5 +54,25 @@ public class BatchInstanceRedoData extends InstanceRedoData {
         BatchInstanceRedoData result = new BatchInstanceRedoData(serviceName, groupName);
         result.setInstances(instances);
         return result;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BatchInstanceRedoData)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        BatchInstanceRedoData redoData = (BatchInstanceRedoData) o;
+        return Objects.equals(instances, redoData.instances);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), instances);
     }
 }

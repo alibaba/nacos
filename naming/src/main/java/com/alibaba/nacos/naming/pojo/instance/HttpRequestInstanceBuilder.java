@@ -27,7 +27,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 
 /**
@@ -138,12 +138,7 @@ public class HttpRequestInstanceBuilder {
         }
     }
     
-    /**
-     * TODO use spi and metadata info to generate instanceId.
-     */
     private void setInstanceId(Instance instance) {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
-                instance.getClusterName(), instance.getIp(), instance.getPort());
-        instance.setInstanceId(idGenerator.generateInstanceId());
+        instance.setInstanceId(InstanceIdGeneratorManager.generateInstanceId(instance));
     }
 }

@@ -21,29 +21,31 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -52,17 +54,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DistroClientTransportAgentTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class DistroClientTransportAgentTest {
     
     @Mock
     ClusterRpcClientProxy clusterRpcClientProxy;
     
     @Mock
     ServerMemberManager memberManager;
-    
-    @Mock
-    TpsMonitorManager tpsMonitorManager;
     
     @Mock
     ConfigurableApplicationContext context;
@@ -77,9 +78,8 @@ public class DistroClientTransportAgentTest {
     
     Response response;
     
-    @Before
-    public void setUp() throws Exception {
-        when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
+    @BeforeEach
+    void setUp() throws Exception {
         ApplicationUtils.injectContext(context);
         EnvUtil.setEnvironment(new MockEnvironment());
         member = new Member();
@@ -95,27 +95,26 @@ public class DistroClientTransportAgentTest {
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
         // When run all project, the TpsNamingMonitor will be init by other unit test, will throw UnnecessaryStubbingException.
-        ApplicationUtils.getBean(TpsMonitorManager.class);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testSupportCallbackTransport() {
+    void testSupportCallbackTransport() {
         assertTrue(transportAgent.supportCallbackTransport());
     }
     
     @Test
-    public void testSyncDataForMemberNonExist() throws NacosException {
+    void testSyncDataForMemberNonExist() throws NacosException {
         assertTrue(transportAgent.syncData(new DistroData(), member.getAddress()));
         verify(memberManager, never()).find(member.getAddress());
         verify(clusterRpcClientProxy, never()).sendRequest(any(Member.class), any());
     }
     
     @Test
-    public void testSyncDataForMemberUnhealthy() throws NacosException {
+    void testSyncDataForMemberUnhealthy() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         assertFalse(transportAgent.syncData(new DistroData(), member.getAddress()));
@@ -123,7 +122,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataForMemberDisconnect() throws NacosException {
+    void testSyncDataForMemberDisconnect() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -132,7 +131,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataFailure() throws NacosException {
+    void testSyncDataFailure() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -142,7 +141,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataException() throws NacosException {
+    void testSyncDataException() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -152,7 +151,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataSuccess() throws NacosException {
+    void testSyncDataSuccess() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -161,7 +160,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackForMemberNonExist() throws NacosException {
+    void testSyncDataWithCallbackForMemberNonExist() throws NacosException {
         transportAgent.syncData(new DistroData(), member.getAddress(), distroCallback);
         verify(distroCallback).onSuccess();
         verify(memberManager, never()).find(member.getAddress());
@@ -169,7 +168,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackForMemberUnhealthy() throws NacosException {
+    void testSyncDataWithCallbackForMemberUnhealthy() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         transportAgent.syncData(new DistroData(), member.getAddress(), distroCallback);
@@ -178,7 +177,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackForMemberDisconnect() throws NacosException {
+    void testSyncDataWithCallbackForMemberDisconnect() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -188,7 +187,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackFailure() throws NacosException {
+    void testSyncDataWithCallbackFailure() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -199,7 +198,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackException() throws NacosException {
+    void testSyncDataWithCallbackException() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -210,7 +209,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackException2() throws NacosException {
+    void testSyncDataWithCallbackException2() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -225,7 +224,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncDataWithCallbackSuccess() throws NacosException {
+    void testSyncDataWithCallbackSuccess() throws NacosException {
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
@@ -235,7 +234,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataForMemberNonExist() throws NacosException {
+    void testSyncVerifyDataForMemberNonExist() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         assertTrue(transportAgent.syncVerifyData(verifyData, member.getAddress()));
@@ -244,7 +243,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataForMemberUnhealthy() throws NacosException {
+    void testSyncVerifyDataForMemberUnhealthy() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -254,7 +253,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataForMemberDisconnect() throws NacosException {
+    void testSyncVerifyDataForMemberDisconnect() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -265,7 +264,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataFailure() throws NacosException {
+    void testSyncVerifyDataFailure() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -277,7 +276,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataException() throws NacosException {
+    void testSyncVerifyDataException() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -289,7 +288,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataSuccess() throws NacosException {
+    void testSyncVerifyDataSuccess() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -300,7 +299,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackForMemberNonExist() throws NacosException {
+    void testSyncVerifyDataWithCallbackForMemberNonExist() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         transportAgent.syncVerifyData(verifyData, member.getAddress(), distroCallback);
@@ -310,7 +309,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackForMemberUnhealthy() throws NacosException {
+    void testSyncVerifyDataWithCallbackForMemberUnhealthy() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -321,7 +320,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackForMemberDisconnect() throws NacosException {
+    void testSyncVerifyDataWithCallbackForMemberDisconnect() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -333,7 +332,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackFailure() throws NacosException {
+    void testSyncVerifyDataWithCallbackFailure() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -346,7 +345,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackException() throws NacosException {
+    void testSyncVerifyDataWithCallbackException() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -359,7 +358,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackException2() throws NacosException {
+    void testSyncVerifyDataWithCallbackException2() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -376,7 +375,7 @@ public class DistroClientTransportAgentTest {
     }
     
     @Test
-    public void testSyncVerifyDataWithCallbackSuccess() throws NacosException {
+    void testSyncVerifyDataWithCallbackSuccess() throws NacosException {
         DistroData verifyData = new DistroData();
         verifyData.setDistroKey(new DistroKey());
         when(memberManager.hasMember(member.getAddress())).thenReturn(true);
@@ -387,89 +386,109 @@ public class DistroClientTransportAgentTest {
         verify(distroCallback).onSuccess();
     }
     
-    @Test(expected = DistroException.class)
-    public void testGetDataForMemberNonExist() {
-        transportAgent.getData(new DistroKey(), member.getAddress());
+    @Test
+    void testGetDataForMemberNonExist() {
+        assertThrows(DistroException.class, () -> {
+            transportAgent.getData(new DistroKey(), member.getAddress());
+        });
     }
     
-    @Test(expected = DistroException.class)
-    public void testGetDataForMemberUnhealthy() {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        transportAgent.getData(new DistroKey(), member.getAddress());
+    @Test
+    void testGetDataForMemberUnhealthy() {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            transportAgent.getData(new DistroKey(), member.getAddress());
+        });
     }
     
-    @Test(expected = DistroException.class)
-    public void testGetDataForMemberDisconnect() {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        member.setState(NodeState.UP);
-        transportAgent.getData(new DistroKey(), member.getAddress());
+    @Test
+    void testGetDataForMemberDisconnect() {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            member.setState(NodeState.UP);
+            transportAgent.getData(new DistroKey(), member.getAddress());
+        });
     }
     
-    @Test(expected = DistroException.class)
-    public void testGetDataException() throws NacosException {
+    @Test
+    void testGetDataException() throws NacosException {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            member.setState(NodeState.UP);
+            when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
+            when(clusterRpcClientProxy.sendRequest(eq(member), any())).thenThrow(new NacosException());
+            transportAgent.getData(new DistroKey(), member.getAddress());
+        });
+    }
+    
+    @Test
+    void testGetDataFailure() {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            member.setState(NodeState.UP);
+            when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
+            response.setErrorInfo(ResponseCode.FAIL.getCode(), "TEST");
+            transportAgent.getData(new DistroKey(), member.getAddress());
+        });
+    }
+    
+    @Test
+    void testGetDataSuccess() {
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
         when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        when(clusterRpcClientProxy.sendRequest(eq(member), any())).thenThrow(new NacosException());
-        transportAgent.getData(new DistroKey(), member.getAddress());
-    }
-    
-    @Test(expected = DistroException.class)
-    public void testGetDataFailure() {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        member.setState(NodeState.UP);
-        when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        response.setErrorInfo(ResponseCode.FAIL.getCode(), "TEST");
         transportAgent.getData(new DistroKey(), member.getAddress());
     }
     
     @Test
-    public void testGetDataSuccess() {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        member.setState(NodeState.UP);
-        when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        transportAgent.getData(new DistroKey(), member.getAddress());
-    }
-    
-    @Test(expected = DistroException.class)
-    public void testGetDatumSnapshotForMemberNonExist() {
-        transportAgent.getDatumSnapshot(member.getAddress());
-    }
-    
-    @Test(expected = DistroException.class)
-    public void testGetDatumSnapshotForMemberUnhealthy() {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        transportAgent.getDatumSnapshot(member.getAddress());
-    }
-    
-    @Test(expected = DistroException.class)
-    public void testGetDatumSnapshotForMemberDisconnect() {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        member.setState(NodeState.UP);
-        transportAgent.getDatumSnapshot(member.getAddress());
-    }
-    
-    @Test(expected = DistroException.class)
-    public void testGetDatumSnapshotException() throws NacosException {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        member.setState(NodeState.UP);
-        when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenThrow(new NacosException());
-        transportAgent.getDatumSnapshot(member.getAddress());
-    }
-    
-    @Test(expected = DistroException.class)
-    public void testGetDatumSnapshotFailure() throws NacosException {
-        when(memberManager.find(member.getAddress())).thenReturn(member);
-        member.setState(NodeState.UP);
-        when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
-        when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenReturn(response);
-        response.setErrorInfo(ResponseCode.FAIL.getCode(), "TEST");
-        transportAgent.getDatumSnapshot(member.getAddress());
+    void testGetDatumSnapshotForMemberNonExist() {
+        assertThrows(DistroException.class, () -> {
+            transportAgent.getDatumSnapshot(member.getAddress());
+        });
     }
     
     @Test
-    public void testGetDatumSnapshotSuccess() throws NacosException {
+    void testGetDatumSnapshotForMemberUnhealthy() {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            transportAgent.getDatumSnapshot(member.getAddress());
+        });
+    }
+    
+    @Test
+    void testGetDatumSnapshotForMemberDisconnect() {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            member.setState(NodeState.UP);
+            transportAgent.getDatumSnapshot(member.getAddress());
+        });
+    }
+    
+    @Test
+    void testGetDatumSnapshotException() throws NacosException {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            member.setState(NodeState.UP);
+            when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
+            when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenThrow(new NacosException());
+            transportAgent.getDatumSnapshot(member.getAddress());
+        });
+    }
+    
+    @Test
+    void testGetDatumSnapshotFailure() throws NacosException {
+        assertThrows(DistroException.class, () -> {
+            when(memberManager.find(member.getAddress())).thenReturn(member);
+            member.setState(NodeState.UP);
+            when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);
+            when(clusterRpcClientProxy.sendRequest(eq(member), any(), any(Long.class))).thenReturn(response);
+            response.setErrorInfo(ResponseCode.FAIL.getCode(), "TEST");
+            transportAgent.getDatumSnapshot(member.getAddress());
+        });
+    }
+    
+    @Test
+    void testGetDatumSnapshotSuccess() throws NacosException {
         when(memberManager.find(member.getAddress())).thenReturn(member);
         member.setState(NodeState.UP);
         when(clusterRpcClientProxy.isRunning(member)).thenReturn(true);

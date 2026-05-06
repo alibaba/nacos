@@ -22,13 +22,15 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link ServerReloaderRequestHandler} unit test.
@@ -36,8 +38,8 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author chenglu
  * @date 2021-07-01 13:04
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ServerReloaderRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class ServerReloaderRequestHandlerTest {
     
     @InjectMocks
     private ServerReloaderRequestHandler handler;
@@ -46,9 +48,9 @@ public class ServerReloaderRequestHandlerTest {
     private ConnectionManager connectionManager;
     
     @Test
-    public void testHandle() {
+    void testHandle() {
         Mockito.when(connectionManager.currentClientsCount(Mockito.any())).thenReturn(2);
-    
+        
         ServerReloadRequest reloadRequest = new ServerReloadRequest();
         reloadRequest.setReloadCount(2);
         reloadRequest.setReloadServer("test");
@@ -57,19 +59,19 @@ public class ServerReloaderRequestHandlerTest {
         
         try {
             ServerReloadResponse reloadResponse = handler.handle(reloadRequest, meta);
-            Assert.assertEquals("ignore", reloadResponse.getMessage());
+            assertEquals("ignore", reloadResponse.getMessage());
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         
         reloadRequest.setReloadCount(1);
         try {
             ServerReloadResponse reloadResponse = handler.handle(reloadRequest, meta);
-            Assert.assertEquals("ok", reloadResponse.getMessage());
+            assertEquals("ok", reloadResponse.getMessage());
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     

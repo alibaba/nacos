@@ -1,0 +1,317 @@
+/* Loading Component Container */
+.new-mcp-server-container {
+  width: 100%;
+  position: relative;
+}
+
+/* Header Styles */
+.new-mcp-server-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.new-mcp-server-title {
+  flex: 1;
+}
+
+.new-mcp-server-actions {
+  text-align: right;
+}
+
+.new-mcp-server-actions button {
+  margin-right: 10px;
+  white-space: nowrap;
+  max-width: 180px;
+  padding: 0 16px !important;
+  text-align: center;
+}
+
+/* Form Styles */
+.new-config-form {
+  margin-top: 20px;
+}
+
+.form-addon-before {
+  min-width: 100px;
+  color: #373d41;
+}
+
+.help-icon {
+  margin-left: 2px;
+  cursor: pointer;
+}
+
+.help-tooltip-tips {
+  margin: 10px 0;
+}
+
+/* Namespace Display */
+.namespace-display {
+  color: inherit;
+}
+
+/* Version Display */
+.version-error-text {
+  color: red;
+  margin-top: 8px;
+}
+
+/* Switch Label */
+.switch-label {
+  margin-left: 8px;
+}
+
+/* Service Reference Styles */
+.service-ref-container {
+  display: flex;
+  gap: 8px;
+}
+
+.service-ref-col {
+  flex: 1;
+}
+
+.service-ref-namespace {
+  flex-basis: calc(16.666% * 4 - 8px);
+}
+
+.service-ref-service {
+  flex-basis: calc(16.666% * 8 - 8px);
+}
+
+.service-ref-protocol {
+  flex-basis: calc(16.666% * 6 - 8px);
+}
+
+.service-ref-export-path {
+  flex-basis: calc(16.666% * 6 - 8px);
+}
+
+/* Service Selection Styles */
+.service-select {
+  width: 100%;
+}
+
+.transport-protocol-select {
+  width: 100%;
+}
+
+/* New Service Input Styles */
+.new-service-address {
+  width: 100%;
+}
+
+.new-service-port {
+  width: 100%;
+}
+
+.new-service-transport-protocol {
+  width: 100%;
+}
+
+/* Pre Block Styles (for Preview Mode) */
+.config-preview-pre {
+  background-color: #f6f7f9;
+  border: 1px solid #dcdee3;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 400px;
+  overflow: auto;
+  margin: 0;
+}
+
+/* Description Textarea Preview */
+.description-preview {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Advanced Config Styles */
+.advanced-config-container {
+  margin-bottom: 16px;
+}
+
+.advanced-config-toggle-btn {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.advanced-config-toggle-icon {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+.advanced-config-content {
+  padding-left: 16px;
+  border-left: 2px solid #f0f0f0;
+}
+
+.add-security-scheme-btn {
+  margin-bottom: 10px;
+}
+
+.default-security-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.default-security-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fafbfd;
+  flex: 1 1 calc(50% - 8px);
+  min-width: 280px;
+}
+
+.default-security-card-header {
+  margin-bottom: 12px;
+}
+
+.default-security-card-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1c1f23;
+}
+
+.default-security-card-desc {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .default-security-sections {
+    flex-direction: column;
+  }
+
+  .default-security-card {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+}
+
+/* Security Scheme Item Styles */
+.security-scheme-item {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+.security-scheme-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Security Scheme Column Styles */
+.security-scheme-id-col {
+  flex-basis: calc(16.666% * 6);
+}
+
+.security-scheme-type-col {
+  flex-basis: calc(16.666% * 6);
+}
+
+.security-scheme-scheme-col {
+  flex-basis: calc(16.666% * 6);
+}
+
+.security-scheme-delete-col {
+  flex-basis: calc(16.666% * 4);
+}
+
+.security-scheme-key-name-col {
+  flex-basis: calc(16.666% * 12);
+}
+
+.security-scheme-credential-col {
+  flex-basis: calc(16.666% * 12);
+}
+
+.delete-scheme-btn {
+  width: 100%;
+}
+
+/* MCP Server Endpoint Input */
+.mcp-endpoint-input {
+  width: 100%;
+}
+
+/* Port Number Picker */
+.port-number-picker {
+  width: 100%;
+}
+
+/* Tools Section */
+.tools-section-label {
+  font-weight: 500;
+  margin-top: 20px;
+  margin-bottom: 12px;
+}
+
+/* Common Utilities */
+.text-right {
+  text-align: right;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+/* MCP Endpoint Help Text */
+.mcp-endpoint-help-text {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Form Item Custom Spacing */
+.form-item-full-width {
+  width: 100%;
+}
+
+/* Security Scheme Item Hover State */
+.security-scheme-item.hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Service Transport Protocol Select */
+.service-ref-transport-select {
+  width: 100%;
+}
+
+/* Header Buttons */
+.new-mcp-server-actions.button {
+  margin-right: 10px;
+}

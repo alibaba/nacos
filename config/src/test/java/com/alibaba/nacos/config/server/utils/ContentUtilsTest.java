@@ -17,91 +17,94 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ContentUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
+class ContentUtilsTest {
     
     @Test
-    public void testVerifyIncrementPubContent() {
+    void testVerifyIncrementPubContent() {
         
         String content = "";
         try {
             ContentUtils.verifyIncrementPubContent(content);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertNotNull(e.toString());
+            assertNotNull(e.toString());
         }
         
         content = "\r";
         try {
             ContentUtils.verifyIncrementPubContent(content);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertNotNull(e.toString());
+            assertNotNull(e.toString());
         }
         
         content = "\n";
         try {
             ContentUtils.verifyIncrementPubContent(content);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertNotNull(e.toString());
+            assertNotNull(e.toString());
         }
         
         content = Constants.WORD_SEPARATOR + "test";
         try {
             ContentUtils.verifyIncrementPubContent(content);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertNotNull(e.toString());
+            assertNotNull(e.toString());
         }
         
     }
     
     @Test
-    public void testGetContentIdentity() {
+    void testGetContentIdentity() {
         String content = "abc" + Constants.WORD_SEPARATOR + "edf";
         String result = ContentUtils.getContentIdentity(content);
-        Assert.assertEquals("abc", result);
+        assertEquals("abc", result);
         
         content = "test";
         try {
             ContentUtils.getContentIdentity(content);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertNotNull(e.toString());
+            assertNotNull(e.toString());
         }
         
     }
     
     @Test
-    public void testGetContent() {
+    void testGetContent() {
         String content = "abc" + Constants.WORD_SEPARATOR + "edf";
         String result = ContentUtils.getContent(content);
-        Assert.assertEquals("edf", result);
+        assertEquals("edf", result);
         
         content = "test";
         try {
             ContentUtils.getContent(content);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertNotNull(e.toString());
+            assertNotNull(e.toString());
         }
         
     }
     
     @Test
-    public void testTruncateContent() {
+    void testTruncateContent() {
         String content = "test";
         String result = ContentUtils.truncateContent(content);
-        Assert.assertEquals(content, result);
+        assertEquals(content, result);
         
         String content2 = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         String result2 = ContentUtils.truncateContent(content2);
         String expected = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv...";
-        Assert.assertEquals(expected, result2);
+        assertEquals(expected, result2);
         
-        Assert.assertEquals("", ContentUtils.truncateContent(null));
+        assertEquals("", ContentUtils.truncateContent(null));
     }
 }

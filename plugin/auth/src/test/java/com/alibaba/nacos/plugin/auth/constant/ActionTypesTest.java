@@ -16,20 +16,20 @@
 
 package com.alibaba.nacos.plugin.auth.constant;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ActionTypesTest {
+class ActionTypesTest {
     
     @Test
-    public void testToStringForRead() {
+    void testToStringForRead() {
         ActionTypes actual = ActionTypes.valueOf("READ");
         assertEquals("r", actual.toString());
     }
     
     @Test
-    public void testToStringForWrite() {
+    void testToStringForWrite() {
         ActionTypes actual = ActionTypes.valueOf("WRITE");
         assertEquals("w", actual.toString());
     }

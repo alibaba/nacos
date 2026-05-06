@@ -39,6 +39,7 @@ class ConfigRollback extends React.Component {
       envName: '',
       visible: false,
       showmore: false,
+      extInfo: {},
     };
     // this.params = window.location.hash.split('?')[1]||'';
   }
@@ -73,14 +74,14 @@ class ConfigRollback extends React.Component {
 
   getDataDetail() {
     const self = this;
-    this.tenant = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+    const url = `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`;
     request({
       url,
       success(result) {
         if (result != null) {
-          const data = result;
+          const { data } = result;
           const envName = self.serverId;
           self.id = data.id; // 详情的id
           self.field.setValue('dataId', data.dataId);
@@ -88,11 +89,12 @@ class ConfigRollback extends React.Component {
           self.field.setValue('appName', data.appName);
           self.field.setValue('opType', data.opType.trim());
           self.opType = data.opType; // 当前回滚类型I:插入,D:删除,U:'更新'
-          self.field.setValue('group', data.group);
+          self.field.setValue('group', data.groupName);
           self.field.setValue('md5', data.md5);
           self.field.setValue('envName', envName);
           self.setState({
             envName,
+            extInfo: data.extInfo ? JSON.parse(data.extInfo) : {},
           });
         }
       },
@@ -134,21 +136,28 @@ class ConfigRollback extends React.Component {
         </div>
       ),
       onOk() {
-        self.tenant = getParams('namespace') || '';
+        self.tenant = getParams('namespace') || 'public';
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');
+        const { extInfo } = self.state;
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
-          group: self.group,
+          groupName: self.group,
           content: self.field.getValue('content'),
-          tenant: self.tenant,
+          namespaceId: self.tenant,
+          ...(extInfo.type ? { type: extInfo.type } : {}),
+          ...(extInfo.config_tags ? { config_tags: extInfo.config_tags } : {}),
+          ...(extInfo.effect ? { effect: extInfo.effect } : {}),
+          ...(extInfo.c_desc ? { desc: extInfo.c_desc } : {}),
+          ...(extInfo.c_use ? { use: extInfo.c_use } : {}),
+          ...(extInfo.c_schema ? { schema: extInfo.c_schema } : {}),
         };
 
-        let url = 'v1/cs/configs';
+        let url = 'v3/console/cs/config';
         if (self.opType.trim() === 'I') {
-          url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+          url = `v3/console/cs/config?dataId=${self.dataId}&groupName=${self.group}`;
           postData = {};
         }
 
@@ -158,8 +167,8 @@ class ConfigRollback extends React.Component {
           contentType: 'application/x-www-form-urlencoded',
           url,
           data: postData,
-          success(data) {
-            if (data === true) {
+          success(res) {
+            if (res.data === true) {
               Dialog.alert({ content: locale.rollbackSuccessful });
             }
           },
@@ -173,7 +182,7 @@ class ConfigRollback extends React.Component {
       const typeMap = {
         U: locale.update,
         I: locale.insert,
-        D: locale.deleteAction,
+        D: locale.rollbackDelete,
       };
       return typeMap[type];
     }
@@ -196,6 +205,9 @@ class ConfigRollback extends React.Component {
       <div>
         <h1>{locale.configurationRollback}</h1>
         <Form field={this.field}>
+          <FormItem label={locale.namespace} required {...formItemLayout}>
+            <p>{this.tenant}</p>
+          </FormItem>
           <FormItem label="Data ID" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
@@ -45,4 +47,14 @@ public interface PushExecutor {
      * @param callBack   callback
      */
     void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, NamingPushCallback callBack);
+    
+    /**
+     * Do push to notify fuzzy watcher with call back.
+     *
+     * @param clientId client id
+     * @param fuzzyWatchNotifyRequest request for fuzzy watch notification
+     * @param callBack   callback
+     */
+    void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest fuzzyWatchNotifyRequest, PushCallBack callBack);
+    
 }

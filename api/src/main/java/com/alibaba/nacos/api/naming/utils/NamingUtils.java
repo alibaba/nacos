@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
@@ -27,6 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
 
 /**
@@ -65,6 +68,23 @@ public class NamingUtils {
         return resultGroupedName.intern();
     }
     
+    public static String getServiceKey(String namespace, String group, String serviceName) {
+        if (StringUtils.isBlank(namespace)) {
+            namespace = DEFAULT_NAMESPACE_ID;
+        }
+        return namespace + Constants.SERVICE_INFO_SPLITER + group + Constants.SERVICE_INFO_SPLITER + serviceName;
+    }
+    
+    /**
+     * parse service key items for serviceKey. item[0] for namespace item[1] for group item[2] for service name
+     *
+     * @param serviceKey serviceKey.
+     * @return
+     */
+    public static String[] parseServiceKey(String serviceKey) {
+        return serviceKey.split(Constants.SERVICE_INFO_SPLITER);
+    }
+    
     public static String getServiceName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
@@ -83,6 +103,16 @@ public class NamingUtils {
             return Constants.DEFAULT_GROUP;
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[0];
+    }
+    
+    /**
+     * Check serviceName is compatibility mode or not.
+     *
+     * @param serviceName serviceName
+     * @return if serviceName is compatibility mode, return true
+     */
+    public static boolean isServiceNameCompatibilityMode(final String serviceName) {
+        return !StringUtils.isBlank(serviceName) && serviceName.contains(Constants.SERVICE_INFO_SPLITER);
     }
     
     /**
@@ -136,13 +166,18 @@ public class NamingUtils {
      * @throws NacosException if check failed, throw exception
      */
     public static void checkInstanceIsLegal(Instance instance) throws NacosException {
+        if (null == instance) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
+                    "Instance can not be null.");
+        }
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
                 || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
         }
-        if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+        if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName())
+                .matches()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
                             instance.getClusterName()));
         }
@@ -150,18 +185,21 @@ public class NamingUtils {
     
     /**
      * check batch register is Ephemeral.
+     *
      * @param instance instance
      * @throws NacosException NacosException
      */
     public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
         if (!instance.isEphemeral()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("Batch registration does not allow persistent instance registration , Instance：%s", instance));
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
+                    String.format("Batch registration does not allow persistent instance registration , Instance：%s",
+                            instance));
         }
     }
     
     /**
      * Batch verify the validity of instances.
+     *
      * @param instances List of instances to be registered
      * @throws NacosException Nacos
      */

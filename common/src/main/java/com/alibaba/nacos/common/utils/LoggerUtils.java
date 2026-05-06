@@ -24,6 +24,9 @@ import org.slf4j.Logger;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class LoggerUtils {
+
+    private LoggerUtils() {
+    }
     
     public static final String TRACE = "TRACE";
     

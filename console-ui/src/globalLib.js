@@ -17,6 +17,8 @@
 import projectConfig from './config';
 import $ from 'jquery';
 import { Message } from '@alifd/next';
+import { toastError } from './utils/message';
+import { LOGINPAGE_ENABLED } from './constants';
 
 function goLogin() {
   const url = window.location.href;
@@ -24,6 +26,23 @@ function goLogin() {
   const base_url = url.split('#')[0];
   console.log('base_url', base_url);
   window.location = `${base_url}#/login`;
+}
+
+function goRegister() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  window.location = `${base_url}#/register`;
+}
+
+function generateRandomPassword(length) {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
 }
 
 const global = window;
@@ -471,7 +490,7 @@ const request = (function(_global) {
     return config;
   }
 
-  function Request(...allArgs) {
+  async function Request(...allArgs) {
     // 除了config外的传参
     let [config, ...args] = allArgs;
     // 处理前置中间件
@@ -493,43 +512,66 @@ const request = (function(_global) {
 
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
-    let token = {};
-    try {
-      token = JSON.parse(localStorage.token);
-    } catch (e) {
-      console.log('Token Error', localStorage.token, e);
-      goLogin();
+
+    // Resolve relative URLs against the correct base path,
+    // stripping /legacy/ or /next/ prefix that the browser would otherwise prepend.
+    let resolvedUrl = config.url;
+    if (resolvedUrl && !resolvedUrl.startsWith('/') && !resolvedUrl.startsWith('http')) {
+      const basePath = window.location.pathname.replace(/\/(next|legacy)(\/.*)?$/, '/') || '/';
+      resolvedUrl = basePath + resolvedUrl;
     }
-    const { accessToken = '' } = token;
-    const [url, paramsStr] = config.url.split('?');
+
+    const [url, paramsStr] = resolvedUrl.split('?');
     const params = paramsStr ? paramsStr.split('&') : [];
-    params.push(`accessToken=${accessToken}`);
+
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
+
+    let accessTokenInHeader = '';
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      let token = {};
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log('Token Error', localStorage.token, e);
+        goLogin();
+      }
+      const { accessToken = '' } = token;
+      accessTokenInHeader = accessToken;
+    }
+
+    // Build final URL - only add ? if there are parameters
+    const finalUrl = params.length > 0 ? [url, params.join('&')].join('?') : url;
 
     return $.ajax(
       Object.assign({}, config, {
         type: config.type,
-        url: [url, params.join('&')].join('?'),
+        url: finalUrl,
         data: config.data || '',
         dataType: config.dataType || 'json',
         beforeSend(xhr) {
           config.beforeSend && config.beforeSend(xhr);
         },
         headers: {
-          Authorization: localStorage.getItem('token'),
+          Authorization: accessTokenInHeader ? `Bearer ${accessTokenInHeader}` : undefined,
+          AccessToken: accessTokenInHeader,
         },
       })
     ).then(
-      success => {},
+      success => {
+        return success;
+      },
       error => {
         // 处理403 forbidden
         const { status, responseJSON = {} } = error || {};
         if (responseJSON.message) {
-          Message.error(responseJSON.message);
+          const _errorcontent = responseJSON?.data ? ` : ${responseJSON.data}` : '';
+          toastError(responseJSON.message + _errorcontent);
         }
-        if (
+        const shouldRedirectToLogin =
           [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid!', 'token expired!'].includes(responseJSON.message)
-        ) {
+          typeof responseJSON.message === 'string' &&
+          /(token\s*(invalid|expired)|unknown\s*user)/i.test(responseJSON.message);
+        if (shouldRedirectToLogin) {
           goLogin();
         }
         return error;
@@ -556,5 +598,8 @@ export {
   getParams,
   setParam,
   setParams,
+  goLogin,
+  goRegister,
+  generateRandomPassword,
   request,
 };

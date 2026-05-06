@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationContextInitializer=\
+  com.alibaba.nacos.persistence.configuration.DatasourceConfiguration

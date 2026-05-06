@@ -16,33 +16,34 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SimpleIpFlowDataTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class SimpleIpFlowDataTest {
     
     @Test
-    public void testIncrementAndGet() {
+    void testIncrementAndGet() {
         
         SimpleIpFlowData simpleIpFlowData = new SimpleIpFlowData(5, 10000);
-        Assert.assertEquals(1, simpleIpFlowData.incrementAndGet("127.0.0.1"));
-        Assert.assertEquals(2, simpleIpFlowData.incrementAndGet("127.0.0.1"));
-        Assert.assertEquals(3, simpleIpFlowData.incrementAndGet("127.0.0.1"));
-        Assert.assertEquals(1, simpleIpFlowData.incrementAndGet("127.0.0.2"));
-        Assert.assertEquals(2, simpleIpFlowData.incrementAndGet("127.0.0.2"));
+        assertEquals(1, simpleIpFlowData.incrementAndGet("127.0.0.1"));
+        assertEquals(2, simpleIpFlowData.incrementAndGet("127.0.0.1"));
+        assertEquals(3, simpleIpFlowData.incrementAndGet("127.0.0.1"));
+        assertEquals(1, simpleIpFlowData.incrementAndGet("127.0.0.2"));
+        assertEquals(2, simpleIpFlowData.incrementAndGet("127.0.0.2"));
         
     }
     
     @Test
-    public void testGetCurrentCount() {
+    void testGetCurrentCount() {
         SimpleIpFlowData simpleIpFlowData = new SimpleIpFlowData(3, 10000);
         simpleIpFlowData.incrementAndGet("127.0.0.1");
         simpleIpFlowData.incrementAndGet("127.0.0.1");
         simpleIpFlowData.incrementAndGet("127.0.0.1");
-        Assert.assertEquals(3, simpleIpFlowData.getCurrentCount("127.0.0.1"));
+        assertEquals(3, simpleIpFlowData.getCurrentCount("127.0.0.1"));
         simpleIpFlowData.rotateSlot();
-        Assert.assertEquals(0, simpleIpFlowData.getCurrentCount("127.0.0.1"));
-        Assert.assertEquals(1, simpleIpFlowData.getAverageCount());
+        assertEquals(0, simpleIpFlowData.getCurrentCount("127.0.0.1"));
+        assertEquals(1, simpleIpFlowData.getAverageCount());
     }
     
 }

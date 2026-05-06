@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Naming Client Proxy.
@@ -35,7 +34,7 @@ import java.util.Set;
 public interface NamingClientProxy extends Closeable {
     
     /**
-     * Register a instance to service with specified instance properties.
+     * Register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -54,6 +53,17 @@ public interface NamingClientProxy extends Closeable {
      * @since 2.1.1
      */
     void batchRegisterService(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    
+    /**
+     * Batch deRegister instance to service with specified instance properties.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instances   deRegister instance
+     * @throws NacosException nacos exception
+     * @since 2.2.0
+     */
+    void batchDeregisterService(String serviceName, String groupName, List<Instance> instances) throws NacosException;
     
     /**
      * Deregister instance from a service.
@@ -81,12 +91,11 @@ public interface NamingClientProxy extends Closeable {
      * @param serviceName service name
      * @param groupName   group name
      * @param clusters    clusters
-     * @param udpPort     udp port
      * @param healthyOnly healthy only
      * @return service info
      * @throws NacosException nacos exception
      */
-    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort, boolean healthyOnly)
+    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, boolean healthyOnly)
             throws NacosException;
     
     /**
@@ -171,13 +180,6 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException;
-    
-    /**
-     * Update beat info.
-     *
-     * @param modifiedInstances modified instances
-     */
-    void updateBeatInfo(Set<Instance> modifiedInstances);
     
     /**
      * Check Server healthy.

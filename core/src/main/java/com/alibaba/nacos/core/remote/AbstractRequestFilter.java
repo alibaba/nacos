@@ -46,17 +46,6 @@ public abstract class AbstractRequestFilter {
         requestFilters.registerFilter(this);
     }
     
-    protected Class getResponseClazz(Class handlerClazz) throws NacosException {
-        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
-        try {
-            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-            return Class.forName(actualTypeArguments[1].getTypeName());
-            
-        } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e);
-        }
-    }
-    
     protected Method getHandleMethod(Class handlerClazz) throws NacosException {
         try {
             Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);

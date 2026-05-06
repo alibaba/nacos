@@ -35,9 +35,19 @@ public class ConfigDumpEvent extends Event {
     
     private String group;
     
+    private String encryptedDataKey;
+    
     private boolean isBeta;
     
+    private boolean isBatch;
+    
+    private int delimiter;
+    
     private String tag;
+    
+    private String grayName;
+    
+    private String grayRule;
     
     private String content;
     
@@ -49,7 +59,13 @@ public class ConfigDumpEvent extends Event {
     
     private long lastModifiedTs;
     
-    private String encryptedDataKey;
+    public int getDelimiter() {
+        return delimiter;
+    }
+    
+    public void setDelimiter(int delimiter) {
+        this.delimiter = delimiter;
+    }
     
     public boolean isRemove() {
         return remove;
@@ -97,6 +113,14 @@ public class ConfigDumpEvent extends Event {
     
     public void setTag(String tag) {
         this.tag = tag;
+    }
+    
+    public boolean isBatch() {
+        return isBatch;
+    }
+    
+    public void setBatch(boolean batch) {
+        isBatch = batch;
     }
     
     public String getContent() {
@@ -147,6 +171,22 @@ public class ConfigDumpEvent extends Event {
         this.encryptedDataKey = encryptedDataKey;
     }
     
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
+    }
+    
+    public String getGrayRule() {
+        return grayRule;
+    }
+    
+    public void setGrayRule(String grayRule) {
+        this.grayRule = grayRule;
+    }
+    
     public static ConfigDumpEventBuilder builder() {
         return new ConfigDumpEventBuilder();
     }
@@ -163,7 +203,17 @@ public class ConfigDumpEvent extends Event {
         
         private boolean isBeta;
         
+        private boolean isBatch;
+        
+        private int delimiter;
+        
         private String tag;
+        
+        private String grayName;
+        
+        private String grayRule;
+        
+        private String encryptedDataKey;
         
         private String content;
         
@@ -175,9 +225,12 @@ public class ConfigDumpEvent extends Event {
         
         private long lastModifiedTs;
         
-        private String encryptedDataKey;
-        
         private ConfigDumpEventBuilder() {
+        }
+        
+        public ConfigDumpEventBuilder delimiter(int delimiter) {
+            this.delimiter = delimiter;
+            return this;
         }
         
         public ConfigDumpEventBuilder remove(boolean remove) {
@@ -210,6 +263,16 @@ public class ConfigDumpEvent extends Event {
             return this;
         }
         
+        public ConfigDumpEventBuilder grayName(String grayName) {
+            this.grayName = grayName;
+            return this;
+        }
+        
+        public ConfigDumpEventBuilder grayRule(String grayRule) {
+            this.grayRule = grayRule;
+            return this;
+        }
+        
         public ConfigDumpEventBuilder content(String content) {
             this.content = content;
             return this;
@@ -225,6 +288,11 @@ public class ConfigDumpEvent extends Event {
             return this;
         }
         
+        public ConfigDumpEventBuilder encryptedDataKey(String encryptedDataKey) {
+            this.encryptedDataKey = encryptedDataKey;
+            return this;
+        }
+        
         public ConfigDumpEventBuilder type(String type) {
             this.type = type;
             return this;
@@ -235,8 +303,8 @@ public class ConfigDumpEvent extends Event {
             return this;
         }
         
-        public ConfigDumpEventBuilder encryptedDataKey(String encryptedDataKey) {
-            this.encryptedDataKey = encryptedDataKey;
+        public ConfigDumpEventBuilder isBatch(boolean isBatch) {
+            this.isBatch = isBatch;
             return this;
         }
         
@@ -255,11 +323,16 @@ public class ConfigDumpEvent extends Event {
             configDumpEvent.setContent(content);
             configDumpEvent.setBetaIps(betaIps);
             configDumpEvent.setHandleIp(handleIp);
-            configDumpEvent.setType(type);
-            configDumpEvent.setLastModifiedTs(lastModifiedTs);
-            configDumpEvent.isBeta = this.isBeta;
             configDumpEvent.setEncryptedDataKey(encryptedDataKey);
+            configDumpEvent.setType(type);
+            configDumpEvent.setBatch(isBatch);
+            configDumpEvent.setDelimiter(delimiter);
+            configDumpEvent.setLastModifiedTs(lastModifiedTs);
+            configDumpEvent.setGrayName(grayName);
+            configDumpEvent.setGrayRule(grayRule);
+            configDumpEvent.isBeta = this.isBeta;
             return configDumpEvent;
         }
     }
+    
 }

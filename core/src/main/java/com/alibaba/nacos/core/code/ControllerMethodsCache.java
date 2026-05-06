@@ -36,11 +36,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,6 +64,8 @@ public class ControllerMethodsCache {
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
     
     private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
+    
+    private final Set<Class> scannedClass = new HashSet<>();
     
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
@@ -143,6 +146,9 @@ public class ControllerMethodsCache {
      * @param clazz {@link Class}
      */
     private void initClassMethod(Class<?> clazz) {
+        if (scannedClass.contains(clazz)) {
+            return;
+        }
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
         for (String classPath : requestMapping.value()) {
             for (Method method : clazz.getMethods()) {
@@ -156,12 +162,22 @@ public class ControllerMethodsCache {
                     requestMethods = new RequestMethod[1];
                     requestMethods[0] = RequestMethod.GET;
                 }
-                for (String methodPath : requestMapping.value()) {
-                    String urlKey = requestMethods[0].name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
-                    addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                // FIXME: vipserver needs multiple http methods mapping
+                for (RequestMethod requestMethod : requestMethods) {
+                    String[] value = requestMapping.value();
+                    if (value.length > 0) {
+                        for (String methodPath : requestMapping.value()) {
+                            String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
+                            addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                        }
+                    } else {
+                        String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath;
+                        addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                    }
                 }
             }
         }
+        scannedClass.add(clazz);
     }
     
     private void parseSubAnnotations(Method method, String classPath) {
@@ -211,14 +227,9 @@ public class ControllerMethodsCache {
         RequestMappingInfo requestMappingInfo = new RequestMappingInfo();
         requestMappingInfo.setPathRequestCondition(new PathRequestCondition(urlKey));
         requestMappingInfo.setParamRequestCondition(new ParamRequestCondition(requestParam));
-        List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
-        if (requestMappingInfos == null) {
-            urlLookup.putIfAbsent(urlKey, new ArrayList<>());
-            requestMappingInfos = urlLookup.get(urlKey);
-            // For issue #4701.
-            String urlKeyBackup = urlKey + "/";
-            urlLookup.putIfAbsent(urlKeyBackup, requestMappingInfos);
-        }
+        List<RequestMappingInfo> requestMappingInfos = urlLookup.computeIfAbsent(urlKey, k -> new ArrayList<>());
+        // For issue #4701.
+        urlLookup.computeIfAbsent(urlKey + "/", k -> requestMappingInfos);
         requestMappingInfos.add(requestMappingInfo);
         methods.put(requestMappingInfo, method);
     }

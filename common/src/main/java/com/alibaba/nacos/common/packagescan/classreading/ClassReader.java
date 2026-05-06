@@ -166,7 +166,7 @@ public class ClassReader {
     public ClassReader(
             final byte[] classFileBuffer,
             final int classFileOffset,
-            final int classFileLength) { // NOPMD(UnusedFormalParameter) used for backward compatibility.
+            final int classFileLength) {
         this(classFileBuffer, classFileOffset, /* checkClassVersion = */ true);
     }
 

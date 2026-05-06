@@ -16,33 +16,36 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * PropertyUtils Test.
+ *
  * @ClassName: PropertyUtilsTest
  * @Author: ChenHao26
  * @Date: 2022/8/22 13:28
  */
-public class PropertyUtilsTest {
+class PropertyUtilsTest {
     
     @Test
-    public void getProperty() {
+    void getProperty() {
         System.setProperty("nacos.test", "google");
         String property = PropertyUtils.getProperty("nacos.test", "xx");
-        Assert.assertEquals(property, "google");
+        assertEquals("google", property);
     }
     
     @Test
-    public void getPropertyWithDefaultValue() {
+    void getPropertyWithDefaultValue() {
         String property = PropertyUtils.getProperty("nacos.test", "xx", "test001");
-        Assert.assertEquals(property, "test001");
+        assertEquals("test001", property);
     }
     
     @Test
-    public void getProcessorsCount() {
+    void getProcessorsCount() {
         int processorsCount = PropertyUtils.getProcessorsCount();
-        Assert.assertNotNull(processorsCount);
+        assertNotNull(processorsCount);
     }
 }

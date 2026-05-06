@@ -22,15 +22,15 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class PersistentHealthStatusSynchronizerTest {
+@ExtendWith(MockitoExtension.class)
+class PersistentHealthStatusSynchronizerTest {
     
     @Mock
     private PersistentClientOperationServiceImpl persistentClientOperationService;
@@ -39,7 +39,7 @@ public class PersistentHealthStatusSynchronizerTest {
     private Client client;
     
     @Test
-    public void testInstanceHealthStatusChange() {
+    void testInstanceHealthStatusChange() {
         Service service = Service.newService("public", "DEFAULT", "nacos", true);
         InstancePublishInfo instancePublishInfo = new InstancePublishInfo("127.0.0.1", 8080);
         PersistentHealthStatusSynchronizer persistentHealthStatusSynchronizer = new PersistentHealthStatusSynchronizer(

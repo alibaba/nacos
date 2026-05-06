@@ -17,13 +17,16 @@
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Naming Service.
@@ -33,7 +36,7 @@ import java.util.List;
 public interface NamingService {
     
     /**
-     * register a instance to service.
+     * register an instance to service.
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -43,7 +46,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port) throws NacosException;
     
     /**
-     * register a instance to service.
+     * register an instance to service.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -54,7 +57,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String groupName, String ip, int port) throws NacosException;
     
     /**
-     * register a instance to service with specified cluster name.
+     * register an instance to service with specified cluster name.
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -65,7 +68,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
     
     /**
-     * register a instance to service with specified cluster name.
+     * register an instance to service with specified cluster name.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -78,7 +81,7 @@ public interface NamingService {
             throws NacosException;
     
     /**
-     * register a instance to service with specified instance properties.
+     * register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param instance    instance to register
@@ -87,7 +90,7 @@ public interface NamingService {
     void registerInstance(String serviceName, Instance instance) throws NacosException;
     
     /**
-     * register a instance to service with specified instance properties.
+     * register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -106,6 +109,17 @@ public interface NamingService {
      * @since 2.1.1
      */
     void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    
+    /**
+     * batch deRegister instance to service with specified instance properties.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instances   instances to deRegister
+     * @throws NacosException nacos exception
+     * @since 2.2.0
+     */
+    void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
     
     /**
      * deregister instance from a service.
@@ -481,6 +495,28 @@ public interface NamingService {
             throws NacosException;
     
     /**
+     * Subscribe service to receive events of instances alteration.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
+    /**
+     * Subscribe service to receive events of instances alteration.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException;
+    
+    /**
      * Unsubscribe event listener of service.
      *
      * @param serviceName name of service
@@ -520,6 +556,100 @@ public interface NamingService {
      */
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
+
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException;
+    
+    
+    /**
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When given a fixed group name, watch changes in all services under this group.
+     *
+     * @param groupNamePattern  group name pattern for fuzzy watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When provided with a fixed group name and pattern of service name, watch changes in services under
+     * this group that match the specified pattern.
+     *
+     * @param serviceNamePattern service name pattern for fuzzy watch
+     * @param groupNamePattern  group name pattern for fuzzy watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void fuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When given a fixed group name, watch changes in all services under this group.
+     *
+     * @param groupNamePattern  group name pattern for fuzzy watch
+     * @param listener event listener
+     * @return matched service keys.
+     * @throws NacosException nacos exception
+     */
+    Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When provided with a fixed group name and pattern of service name, watch changes in services under
+     * this group that match the specified pattern.
+     *
+     * @param serviceNamePattern service name pattern for fuzzy watch
+     * @param groupNamePattern  group name pattern for fuzzy watch
+     * @param listener event listener
+     * @return matched service keys.
+     * @throws NacosException nacos exception
+     */
+    Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * Cancel fuzzy watch, and remove event listener of a pattern.
+     *
+     * @param groupNamePattern  group name for fuzzy watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * Cancel fuzzy watch, and remove event listener of a pattern.
+     *
+     * @param serviceNamePattern service name pattern for fuzzy watch
+     * @param groupNamePattern fixed group name for fuzzy watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
      * Get all service names from server.
@@ -551,7 +681,9 @@ public interface NamingService {
      * @return list of service names
      * @throws NacosException nacos exception
      * @since 0.7.0
+     * @deprecated after 3.3.0.
      */
+    @Deprecated
     ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
     
     /**
@@ -563,7 +695,9 @@ public interface NamingService {
      * @param selector  selector to filter the resource
      * @return list of service names
      * @throws NacosException nacos exception
+     * @deprecated after 3.3.0.
      */
+    @Deprecated
     ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException;
     

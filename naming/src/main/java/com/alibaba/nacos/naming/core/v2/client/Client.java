@@ -138,7 +138,7 @@ public interface Client {
     boolean isExpire(long currentTime);
     
     /**
-     * Release current client and release resources if neccessary.
+     * Release current client and release resources if necessary.
      */
     void release();
     

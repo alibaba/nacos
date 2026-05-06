@@ -362,7 +362,108 @@ public class NacosConsumerApplication {
   }
 
   getPythonCode(data) {
-    return 'TODO';
+    return `/*
+* Demo for Nacos
+*/
+import json
+import socket
+
+import nacos
+
+
+def get_host_ip():
+    res = socket.gethostbyname(socket.gethostname())
+    return res
+
+
+def load_config(content):
+    _config = json.loads(content)
+    return _config
+
+
+def nacos_config_callback(args):
+    content = args['raw_content']
+    load_config(content)
+
+
+class NacosClient:
+    service_name = None
+    service_port = None
+    service_group = None
+
+    def __init__(self, server_endpoint, namespace_id, username=None, password=None):
+        self.client = nacos.NacosClient(server_endpoint,
+                                        namespace=namespace_id,
+                                        username=username,
+                                        password=password)
+        self.endpoint = server_endpoint
+        self.service_ip = get_host_ip()
+
+    def register(self):
+        self.client.add_naming_instance(self.service_name,
+                                        self.service_ip,
+                                        self.service_port,
+                                        group_name=self.service_group)
+
+    def modify(self, service_name, service_ip=None, service_port=None):
+        self.client.modify_naming_instance(service_name,
+                                           service_ip if service_ip else self.service_ip,
+                                           service_port if service_port else self.service_port)
+
+    def unregister(self):
+        self.client.remove_naming_instance(self.service_name,
+                                           self.service_ip,
+                                           self.service_port)
+
+    def set_service(self, service_name, service_ip, service_port, service_group):
+        self.service_name = service_name
+        self.service_ip = service_ip
+        self.service_port = service_port
+        self.service_group = service_group
+
+    async def beat_callback(self):
+        self.client.send_heartbeat(self.service_name,
+                                   self.service_ip,
+                                   self.service_port)
+
+    def load_conf(self, data_id, group):
+        return self.client.get_config(data_id=data_id, group=group, no_snapshot=True)
+
+    def add_conf_watcher(self, data_id, group, callback):
+        self.client.add_config_watcher(data_id=data_id, group=group, cb=callback)
+
+
+if __name__ == '__main__':
+    nacos_config = {
+        "nacos_data_id":"test",
+        "nacos_server_ip":"127.0.0.1",
+        "nacos_namespace":"public",
+        "nacos_groupName":"DEFAULT_GROUP",
+        "nacos_user":"nacos",
+        "nacos_password":"1234567"
+    }
+    nacos_data_id = nacos_config["nacos_data_id"]
+    SERVER_ADDRESSES = nacos_config["nacos_server_ip"]
+    NAMESPACE = nacos_config["nacos_namespace"]
+    groupName = nacos_config["nacos_groupName"]
+    user = nacos_config["nacos_user"]
+    password = nacos_config["nacos_password"]
+    # todo 将另一个路由对象（通常定义在其他模块或文件中）合并到主应用（app）中。
+    # app.include_router(custom_api.router, tags=['test'])
+    service_ip = get_host_ip()
+    client = NacosClient(SERVER_ADDRESSES, NAMESPACE, user, password)
+    client.add_conf_watcher(nacos_data_id, groupName, nacos_config_callback)
+
+    # 启动时，强制同步一次配置
+    data_stream = client.load_conf(nacos_data_id, groupName)
+    json_config = load_config(data_stream)
+    #设定服务
+    client.set_service(json_config["service_name"], json_config.get("service_ip", service_ip), service_port, groupName)
+    #注册服务
+    client.register()
+    #下线服务
+    client.unregister()
+`;
   }
 
   getCSharpCode(data) {

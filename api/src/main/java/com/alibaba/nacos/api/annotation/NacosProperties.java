@@ -138,7 +138,7 @@ public @interface NacosProperties {
     String SERVER_ADDR_PLACEHOLDER = "${" + PREFIX + SERVER_ADDR + ":}";
     
     /**
-     * The placeholder of endpoint, the value is ${nacos.context-path:}".
+     * The placeholder of endpoint, the value is ${nacos.context-path:}.
      */
     String CONTEXT_PATH_PLACEHOLDER = "${" + PREFIX + CONTEXT_PATH + ":}";
     

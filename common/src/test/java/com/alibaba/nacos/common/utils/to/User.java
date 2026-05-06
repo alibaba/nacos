@@ -17,8 +17,9 @@
 package com.alibaba.nacos.common.utils.to;
 
 public class User {
+    
     private Integer id;
-
+    
     private String name;
     
     public User(Integer id, String name) {

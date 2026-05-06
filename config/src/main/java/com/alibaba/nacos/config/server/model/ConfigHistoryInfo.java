@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.Objects;
 
 /**
  * ConfigHistoryInfo.
@@ -56,6 +57,12 @@ public class ConfigHistoryInfo implements Serializable {
      * Operation type, include inserting, updating and deleting.
      */
     private String opType;
+    
+    private String publishType;
+    
+    private String grayName;
+    
+    private String extInfo;
     
     private Timestamp createdTime;
     
@@ -135,6 +142,22 @@ public class ConfigHistoryInfo implements Serializable {
         this.opType = opType;
     }
     
+    public String getPublishType() {
+        return publishType;
+    }
+    
+    public void setPublishType(String publishType) {
+        this.publishType = publishType;
+    }
+    
+    public String getExtInfo() {
+        return extInfo;
+    }
+    
+    public void setExtInfo(String extInfo) {
+        this.extInfo = extInfo;
+    }
+    
     public Timestamp getCreatedTime() {
         return new Timestamp(createdTime.getTime());
     }
@@ -149,6 +172,14 @@ public class ConfigHistoryInfo implements Serializable {
     
     public void setLastModifiedTime(Timestamp lastModifiedTime) {
         this.lastModifiedTime = new Timestamp(lastModifiedTime.getTime());
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
     }
     
     public String getAppName() {
@@ -173,5 +204,28 @@ public class ConfigHistoryInfo implements Serializable {
     
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ConfigHistoryInfo that = (ConfigHistoryInfo) o;
+        return id == that.id && lastId == that.lastId && Objects.equals(dataId, that.dataId) && Objects.equals(group,
+                that.group) && Objects.equals(tenant, that.tenant) && Objects.equals(appName, that.appName)
+                && Objects.equals(md5, that.md5) && Objects.equals(content, that.content) && Objects.equals(srcIp,
+                that.srcIp) && Objects.equals(srcUser, that.srcUser) && Objects.equals(opType, that.opType)
+                && Objects.equals(createdTime, that.createdTime) && Objects.equals(lastModifiedTime,
+                that.lastModifiedTime) && Objects.equals(encryptedDataKey, that.encryptedDataKey);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, lastId, dataId, group, tenant, appName, md5, content, srcIp, srcUser, opType,
+                createdTime, lastModifiedTime, encryptedDataKey);
     }
 }

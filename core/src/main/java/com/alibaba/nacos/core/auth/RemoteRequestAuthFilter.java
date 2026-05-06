@@ -16,16 +16,22 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.api.common.ApiType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -44,13 +50,17 @@ import java.lang.reflect.Method;
 @Component
 public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthConfig authConfig;
     
     private final GrpcProtocolAuthService protocolAuthService;
     
-    public RemoteRequestAuthFilter(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
-        this.protocolAuthService = new GrpcProtocolAuthService(authConfigs);
+    private final InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    public RemoteRequestAuthFilter(InnerApiAuthEnabled innerApiAuthEnabled) {
+        this.innerApiAuthEnabled = innerApiAuthEnabled;
+        this.authConfig = NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
+        this.protocolAuthService = new GrpcProtocolAuthService(authConfig);
         this.protocolAuthService.initialize();
     }
     
@@ -60,13 +70,32 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
         try {
             
             Method method = getHandleMethod(handlerClazz);
-            if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
-                
+            if (method.isAnnotationPresent(Secured.class)) {
+                Secured secured = method.getAnnotation(Secured.class);
+                RequestContext requestContext = RequestContextHolder.getContext();
+                requestContext.getAuthContext().setApiType(secured.apiType().name());
+                // During Upgrading, Old Nacos server might not with server identity for some Inner API, follow old version logic.
+                if (ApiType.INNER_API.equals(secured.apiType()) && !innerApiAuthEnabled.isEnabled()) {
+                    return null;
+                }
+                // Inner API must do check server identity. So judge api type not inner api and whether auth is enabled.
+                if (ApiType.INNER_API != secured.apiType() && !authConfig.isAuthEnabled()) {
+                    return null;
+                }
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {}", request.getClass().getSimpleName());
                 }
-                
-                Secured secured = method.getAnnotation(Secured.class);
+                ServerIdentityResult identityResult = protocolAuthService.checkServerIdentity(request, secured);
+                switch (identityResult.getStatus()) {
+                    case FAIL:
+                        Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
+                        defaultResponseInstance.setErrorInfo(NacosException.NO_RIGHT, identityResult.getMessage());
+                        return defaultResponseInstance;
+                    case MATCHED:
+                        return null;
+                    default:
+                        break;
+                }
                 if (!protocolAuthService.enableAuth(secured)) {
                     return null;
                 }
@@ -74,16 +103,17 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 request.putHeader(Constants.Identity.X_REAL_IP, clientIp);
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
-                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
-                if (!result) {
-                    // TODO Get reason of failure
-                    throw new AccessException("Validate Identity failed.");
+                AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
+                requestContext.getAuthContext().setIdentityContext(identityContext);
+                requestContext.getAuthContext().setResource(resource);
+                requestContext.getAuthContext().setAuthResult(result);
+                if (!result.isSuccess()) {
+                    throw new AccessException(result.format());
                 }
                 String action = secured.action().toString();
                 result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
-                if (!result) {
-                    // TODO Get reason of failure
-                    throw new AccessException("Validate Authority failed.");
+                if (!result.isSuccess()) {
+                    throw new AccessException(result.format());
                 }
             }
         } catch (AccessException e) {
@@ -96,7 +126,6 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             return defaultResponseInstance;
         } catch (Exception e) {
             Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
-            
             defaultResponseInstance.setErrorInfo(NacosException.SERVER_ERROR, ExceptionUtil.getAllExceptionMsg(e));
             return defaultResponseInstance;
         }

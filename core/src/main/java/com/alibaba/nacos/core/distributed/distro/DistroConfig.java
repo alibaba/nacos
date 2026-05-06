@@ -131,7 +131,7 @@ public class DistroConfig extends AbstractDynamicConfig {
     protected String printConfig() {
         return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis=" + syncTimeoutMillis
                 + ", syncRetryDelayMillis=" + syncRetryDelayMillis + ", verifyIntervalMillis=" + verifyIntervalMillis
-                + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis="
-                + loadDataRetryDelayMillis + '}';
+                + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis
+                + ", loadDataTimeoutMillis=" + loadDataTimeoutMillis + '}';
     }
 }

@@ -30,12 +30,13 @@ import {
   ConfigProvider,
   Switch,
 } from '@alifd/next';
-import { request } from '../../../globalLib';
+import { getParams, setParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
 import PageTitle from '../../../components/PageTitle';
+import TotalRender from '../../../components/Page/TotalRender';
 
 import './ServiceList.scss';
 import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
@@ -64,10 +65,10 @@ class ServiceList extends React.Component {
       currentPage: 1,
       dataSource: [],
       search: {
-        serviceName: '',
-        groupName: '',
+        serviceName: getParams('serviceNameParam') || '',
+        groupName: getParams('groupNameParam') || '',
       },
-      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
+      ignoreEmptyService: !(localStorage.getItem('ignoreEmptyService') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -87,22 +88,26 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, search, withInstances = false, hasIpCount } = this.state;
+    const { currentPage, pageSize, search, withInstances = false, ignoreEmptyService } = this.state;
     const parameter = [
-      `hasIpCount=${hasIpCount}`,
+      `ignoreEmptyService=${ignoreEmptyService}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
       `serviceNameParam=${search.serviceName}`,
       `groupNameParam=${search.groupName}`,
     ];
+    setParams({
+      serviceNameParam: search.serviceName,
+      groupNameParam: search.groupName,
+    });
     this.openLoading();
     request({
-      url: `v1/ns/catalog/services?${parameter.join('&')}`,
-      success: ({ count = 0, serviceList = [] } = {}) => {
+      url: `v3/console/ns/service/list?${parameter.join('&')}`,
+      success: ({ data: { totalCount = 0, pageItems = [] } = {} }) => {
         this.setState({
-          dataSource: serviceList,
-          total: count,
+          dataSource: pageItems,
+          total: totalCount,
           loading: false,
         });
       },
@@ -110,7 +115,7 @@ class ServiceList extends React.Component {
         this.setState({
           dataSource: [],
           total: 0,
-          currentPage: 0,
+          currentPage: 1,
           loading: false,
         }),
     });
@@ -151,29 +156,35 @@ class ServiceList extends React.Component {
       title: prompt,
       content: promptDelete,
       onOk: () => {
+        // # issue-13267 编码名称使其符合RFC规范
+        const encodedServiceName = encodeURIComponent(service.name);
         request({
           method: 'DELETE',
-          url: `v1/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
-          dataType: 'text',
+          url: `v3/console/ns/service?serviceName=${encodedServiceName}&groupName=${service.groupName}`,
+          dataType: 'json',
           beforeSend: () => this.openLoading(),
           success: res => {
-            if (res !== 'ok') {
-              Message.error(res);
-              return;
+            if (res.code !== 0) {
+              Message.error(res.message || '删除服务失败');
+            } else {
+              Message.success('服务删除成功');
+              this.queryServiceList();
             }
-            this.queryServiceList();
           },
-          error: res => Message.error(res.responseText || res.statusText),
+          error: res => {
+            Message.error(res.data?.responseText || res.statusText || '请求失败');
+          },
           complete: () => this.closeLoading(),
         });
       },
     });
   }
 
-  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
     this.setState({
       nowNamespaceName,
       nowNamespaceId,
+      nowNamespaceDesc,
     });
 
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
@@ -196,14 +207,26 @@ class ServiceList extends React.Component {
       deleteAction,
       subscriber,
     } = locale;
-    const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
+    const {
+      search,
+      nowNamespaceName,
+      nowNamespaceId,
+      nowNamespaceDesc,
+      ignoreEmptyService,
+    } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
 
     return (
       <div className="main-container service-management">
-        <PageTitle title={serviceList} desc={nowNamespaceId} nameSpace />
+        <PageTitle
+          title={serviceList}
+          desc={nowNamespaceDesc}
+          namespaceId={nowNamespaceId}
+          namespaceName={nowNamespaceName}
+          nameSpace
+        />
         <RegionGroup
           setNowNameSpace={this.setNowNameSpace}
           namespaceCallBack={this.getQueryLater}
@@ -217,6 +240,11 @@ class ServiceList extends React.Component {
         >
           <Col span="24">
             <Form inline field={this.field}>
+              <FormItem label="">
+                <Button type="primary" onClick={() => this.openEditServiceDialog()}>
+                  {create}
+                </Button>
+              </FormItem>
               <FormItem label={serviceName}>
                 <Input
                   placeholder={serviceNamePlaceholder}
@@ -241,10 +269,10 @@ class ServiceList extends React.Component {
               </FormItem>
               <Form.Item label={`${hiddenEmptyService}`}>
                 <Switch
-                  checked={hasIpCount}
-                  onChange={hasIpCount =>
-                    this.setState({ hasIpCount, currentPage: 1 }, () => {
-                      localStorage.setItem('hasIpCount', hasIpCount);
+                  checked={ignoreEmptyService}
+                  onChange={ignoreEmptyService =>
+                    this.setState({ ignoreEmptyService, currentPage: 1 }, () => {
+                      localStorage.setItem('ignoreEmptyService', ignoreEmptyService);
                       this.queryServiceList();
                     })
                   }
@@ -257,11 +285,6 @@ class ServiceList extends React.Component {
                   style={{ marginRight: 10 }}
                 >
                   {query}
-                </Button>
-              </FormItem>
-              <FormItem label="" style={{ float: 'right' }}>
-                <Button type="primary" onClick={() => this.openEditServiceDialog()}>
-                  {create}
                 </Button>
               </FormItem>
             </Form>
@@ -332,6 +355,7 @@ class ServiceList extends React.Component {
             popupProps={{ align: 'bl tl' }}
             total={this.state.total}
             pageSize={this.state.pageSize}
+            totalRender={total => <TotalRender locale={locale} total={total} />}
             onPageSizeChange={pageSize => this.handlePageSizeChange(pageSize)}
             onChange={currentPage => this.setState({ currentPage }, () => this.queryServiceList())}
           />

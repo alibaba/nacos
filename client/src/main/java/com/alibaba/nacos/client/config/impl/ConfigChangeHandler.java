@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,11 +43,8 @@ public class ConfigChangeHandler {
         this.parserList = new LinkedList<>();
         
         Collection<ConfigChangeParser> loader = NacosServiceLoader.load(ConfigChangeParser.class);
-        Iterator<ConfigChangeParser> itr = loader.iterator();
-        while (itr.hasNext()) {
-            this.parserList.add(itr.next());
-        }
-        
+        this.parserList.addAll(loader);
+
         this.parserList.add(new PropertiesChangeParser());
         this.parserList.add(new YmlChangeParser());
     }

@@ -1,0 +1,14 @@
+         ,--.                                           
+       ,--.'|                                           
+   ,--,:  : |                                           Nacos AI Registry ${application.version}
+,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode, ${nacos.function.mode} function modules
+|   :  :  | |                      '   ,'\   .--.--.    Port: ${nacos.ai.registry.port:${nacos.ai.mcp.registry.port:9080}}
+:   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: ${pid}
+|   : '  '; | /       \   /     \.   ; ,. :|  :  /`./   
+'   ' ;.    ;.--.  .-. | /    / ''   | |: :|  :  ;_     
+|   | | \   | \__\/: . ..    ' / '   | .; : \  \    `.        https://nacos.io
+'   : |  ; .' ," .--.; |'   ; :__|   :    |  `----.   \ 
+|   | '`--'  /  /  ,.  |'   | '.'|\   \  /  /  /`--'  / 
+'   : |     ;  :   .'   \   :    : `----'  '--'.     /  
+;   |.'     |  ,     .-./\   \  /            `--'---'   
+'---'        `--`---'     `----'                        

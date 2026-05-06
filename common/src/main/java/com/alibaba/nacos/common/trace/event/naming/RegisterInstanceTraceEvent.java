@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.trace.event.naming;
 
 /**
  * Naming register instance trace event.
+ *
  * @author yanda
  */
 public class RegisterInstanceTraceEvent extends NamingTraceEvent {
@@ -28,9 +29,9 @@ public class RegisterInstanceTraceEvent extends NamingTraceEvent {
     
     private final boolean rpc;
     
-    private String instanceIp;
+    private final String instanceIp;
     
-    private int instancePort;
+    private final int instancePort;
     
     public String getClientIp() {
         return clientIp;
@@ -54,7 +55,13 @@ public class RegisterInstanceTraceEvent extends NamingTraceEvent {
     
     public RegisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, String serviceNamespace,
             String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("REGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+        this("REGISTER_INSTANCE_TRACE_EVENT", eventTime, clientIp, rpc, serviceNamespace, serviceGroup, serviceName,
+                instanceIp, instancePort);
+    }
+    
+    public RegisterInstanceTraceEvent(String eventType, long eventTime, String clientIp, boolean rpc,
+            String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
+        super(eventType, eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;
         this.rpc = rpc;
         this.instanceIp = instanceIp;

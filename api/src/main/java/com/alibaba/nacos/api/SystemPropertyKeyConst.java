@@ -27,8 +27,6 @@ public interface SystemPropertyKeyConst {
     
     String NAMING_SERVER_PORT = "nacos.naming.exposed.port";
     
-    String NAMING_WEB_CONTEXT = "nacos.naming.web.context";
-    
     /**
      * In the cloud (Alibaba Cloud or other cloud vendors) environment, whether to enable namespace resolution in the
      * cloud environment.
@@ -48,4 +46,9 @@ public interface SystemPropertyKeyConst {
      * It is also supported by the -D parameter.
      */
     String IS_USE_ENDPOINT_PARSING_RULE = "nacos.use.endpoint.parsing.rule";
+    
+    /**
+     * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    String IS_USE_RAM_INFO_PARSING = "nacos.use.ram.info.parsing";
 }

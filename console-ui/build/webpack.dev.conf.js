@@ -24,7 +24,8 @@ cssLoader.use.push({
   options: {
     modifyVars: {
       '$icon-font-path': '"/icons/icon-font"',
-      '$font-custom-path': '"/fonts/"'
+      '$font-custom-path': '"/fonts/"',
+      '$adv-icon-font-path': '"/fonts/font_1533967_slipq25tezj"'
     }
   }
 })
@@ -39,8 +40,8 @@ module.exports = Object.assign({}, base, {
       context: ['/'],
       changeOrigin: true,
       secure: false,
-      target: 'http://localhost:8848',
-      pathRewrite: {'^/v1' : '/nacos/v1'}
+      target: 'http://localhost:8080',
+      pathRewrite: {'^/v1' : '/nacos/v1', '^/v2' : '/nacos/v2'}
     }],
     disableHostCheck: true,
     open: true,

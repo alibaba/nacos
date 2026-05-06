@@ -39,7 +39,7 @@ public final class RaftSysConstants {
     /**
      * {@link RaftSysConstants#RAFT_CLI_SERVICE_THREAD_NUM}
      */
-    public static final int DEFAULT_RAFT_CLI_SERVICE_THREAD_NUM = 8;
+    public static final int DEFAULT_RAFT_CLI_SERVICE_THREAD_NUM = 4;
     
     /**
      * {@link RaftSysConstants#RAFT_READ_INDEX_TYPE}
@@ -127,6 +127,10 @@ public final class RaftSysConstants {
     public static final boolean DEFAULT_ENABLE_LOG_ENTRY_CHECKSUM = false;
     
     // ========= setting key ========= //
+    
+    public static final String RAFT_STATE = "raft";
+    
+    public static final String RAFT_CONFIG_PREFIX = "nacos.core.protocol.raft";
     
     /**
      * Election timeout in milliseconds

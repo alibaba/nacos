@@ -17,42 +17,45 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class PropertiesChangeParserTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PropertiesChangeParserTest {
     
     private final PropertiesChangeParser parser = new PropertiesChangeParser();
     
     private final String type = "properties";
     
     @Test
-    public void testType() {
-        Assert.assertTrue(parser.isResponsibleFor(type));
+    void testType() {
+        assertTrue(parser.isResponsibleFor(type));
     }
     
     @Test
-    public void testAddKey() throws IOException {
+    void testAddKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("", "app.name = nacos", type);
-        Assert.assertNull(map.get("app.name").getOldValue());
-        Assert.assertEquals("nacos", map.get("app.name").getNewValue());
+        assertNull(map.get("app.name").getOldValue());
+        assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
     @Test
-    public void testRemoveKey() throws IOException {
+    void testRemoveKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app.name = nacos", "", type);
-        Assert.assertEquals("nacos", map.get("app.name").getOldValue());
-        Assert.assertNull(map.get("app.name").getNewValue());
+        assertEquals("nacos", map.get("app.name").getOldValue());
+        assertNull(map.get("app.name").getNewValue());
     }
     
     @Test
-    public void testModifyKey() throws IOException {
+    void testModifyKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app.name = rocketMQ", "app.name = nacos", type);
-        Assert.assertEquals("rocketMQ", map.get("app.name").getOldValue());
-        Assert.assertEquals("nacos", map.get("app.name").getNewValue());
+        assertEquals("rocketMQ", map.get("app.name").getOldValue());
+        assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
 }

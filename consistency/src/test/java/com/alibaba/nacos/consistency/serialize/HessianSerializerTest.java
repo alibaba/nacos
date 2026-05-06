@@ -17,9 +17,17 @@
 
 package com.alibaba.nacos.consistency.serialize;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import org.apache.hc.core5.http.HttpException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.Serializable;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link HessianSerializer} unit test.
@@ -27,35 +35,94 @@ import org.junit.Test;
  * @author Chenhao26
  * @date 2022-08-13
  */
-public class HessianSerializerTest {
+class HessianSerializerTest {
     
     private HessianSerializer hessianSerializer;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         hessianSerializer = new HessianSerializer();
     }
     
     @Test
-    public void testSerializerAndDeserialize() {
+    void testSerializerAndDeserialize() {
         String data = "xxx";
         byte[] bytes = hessianSerializer.serialize(data);
         
         try {
             hessianSerializer.deserialize(bytes);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof RuntimeException);
+            assertTrue(e instanceof RuntimeException);
         }
         
         String res1 = hessianSerializer.deserialize(bytes, String.class);
-        Assert.assertEquals(data, res1);
+        assertEquals(data, res1);
         
         String res2 = hessianSerializer.deserialize(bytes, "java.lang.String");
-        Assert.assertEquals(data, res2);
+        assertEquals(data, res2);
     }
     
     @Test
-    public void testName() {
-        Assert.assertEquals("Hessian", hessianSerializer.name());
+    void testSerializerAndDeserializeForNotAllowClass() {
+        Serializable data = new HttpException();
+        byte[] bytes = hessianSerializer.serialize(data);
+        
+        try {
+            HttpException res = hessianSerializer.deserialize(bytes);
+            fail("deserialize success which is not expected");
+        } catch (Exception e) {
+            assertTrue(e instanceof ClassCastException);
+        }
+        
+        try {
+            HttpException res1 = hessianSerializer.deserialize(bytes, HttpException.class);
+        } catch (Exception e) {
+            assertTrue(e instanceof NacosDeserializationException);
+        }
     }
+    
+    @Test
+    void testName() {
+        assertEquals("Hessian", hessianSerializer.name());
+    }
+    
+    @Test
+    void testDeserializeWithEmptyData() {
+        assertNull(hessianSerializer.deserialize(new byte[0], String.class));
+    }
+    
+    @Test
+    void testDeserializeWithType() {
+        String data = "testType";
+        byte[] bytes = hessianSerializer.serialize(data);
+        String result = hessianSerializer.deserialize(bytes, (java.lang.reflect.Type) String.class);
+        assertEquals(data, result);
+    }
+    
+    @Test
+    void testDeserializeWithNullData() {
+        assertNull(hessianSerializer.deserialize(null, String.class));
+    }
+    
+    @Test
+    void testDeserializeWithInvalidData() {
+        byte[] validBytes = hessianSerializer.serialize("test");
+        byte[] invalidBytes = new byte[validBytes.length];
+        System.arraycopy(validBytes, 0, invalidBytes, 0, validBytes.length);
+        invalidBytes[validBytes.length / 2] = (byte) 0xff;
+        try {
+            hessianSerializer.deserialize(invalidBytes);
+            fail("Should throw RuntimeException");
+        } catch (RuntimeException e) {
+            assertTrue(e.getMessage().contains("IOException"));
+        }
+    }
+    
+    @Test
+    void testDeserializeWithInvalidClassName() {
+        byte[] bytes = hessianSerializer.serialize("test");
+        Object result = hessianSerializer.deserialize(bytes, "com.nonexistent.ClassName");
+        assertNull(result);
+    }
+    
 }

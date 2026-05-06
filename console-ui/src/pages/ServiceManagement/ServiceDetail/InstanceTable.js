@@ -16,11 +16,12 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { request } from '../../../globalLib';
+import { getParams, request } from '../../../globalLib';
 import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
 import { isDiff } from './util';
+import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
 @ConfigProvider.config
 class InstanceTable extends React.Component {
@@ -67,8 +68,13 @@ class InstanceTable extends React.Component {
 
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
+    const namespaceId = getParams('namespaceId');
+    const url =
+      namespaceId === null
+        ? 'v3/console/ns/instance/list'
+        : `v3/console/ns/instance/list?namespaceId=${namespaceId}`;
     request({
-      url: 'v1/ns/catalog/instances',
+      url,
       data: {
         serviceName,
         clusterName,
@@ -77,7 +83,14 @@ class InstanceTable extends React.Component {
         pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
-      success: instance => this.setState({ instance }),
+      success: ({ data }) => {
+        const instance = {
+          list: data.pageItems || [],
+          count: data.totalCount || 0,
+        };
+        this.setState({ instance });
+      },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -92,7 +105,7 @@ class InstanceTable extends React.Component {
     const { clusterName, serviceName, groupName } = this.props;
     request({
       method: 'PUT',
-      url: 'v1/ns/instance',
+      url: 'v3/console/ns/instance',
       data: {
         serviceName,
         clusterName,
@@ -104,9 +117,9 @@ class InstanceTable extends React.Component {
         enabled: !enabled,
         metadata: JSON.stringify(metadata),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => this.openLoading(),
-      success: () => {
+      success: ({ data }) => {
         const newVal = Object.assign({}, instance);
         newVal.list[index].enabled = !enabled;
         this.setState({ instance: newVal });
@@ -114,6 +127,10 @@ class InstanceTable extends React.Component {
       error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
+  }
+
+  handlePageSizeChange(pageSize) {
+    this.setState({ pageSize }, () => this.getInstanceList());
   }
 
   onChangePage(pageNum) {
@@ -157,7 +174,7 @@ class InstanceTable extends React.Component {
             cell={(metadata = {}) => {
               if (!metadata) return null;
               return Object.keys(metadata).map(k => (
-                <p>
+                <p key={k}>
                   {k}={metadata[k]}
                 </p>
               ));
@@ -185,11 +202,17 @@ class InstanceTable extends React.Component {
             )}
           />
         </Table>
-        {instance.count > pageSize ? (
+        {instance.count > 10 ? (
           <Pagination
             className="pagination"
             total={instance.count}
-            pageSize={pageSize}
+            pageSize={this.state.pageSize}
+            current={this.state.pageNum}
+            pageSizeList={GLOBAL_PAGE_SIZE_LIST}
+            pageSizePosition="start"
+            pageSizeSelector="dropdown"
+            popupProps={{ align: 'bl tl' }}
+            onPageSizeChange={pageSize => this.handlePageSizeChange(pageSize)}
             onChange={currentPage => this.onChangePage(currentPage)}
           />
         ) : null}

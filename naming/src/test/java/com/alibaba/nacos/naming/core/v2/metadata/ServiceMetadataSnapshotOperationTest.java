@@ -19,13 +19,14 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -34,32 +35,36 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServiceMetadataSnapshotOperationTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ServiceMetadataSnapshotOperationTest {
     
     @Mock
     private NamingMetadataManager namingMetadataManager;
     
     private ServiceMetadataSnapshotOperation serviceMetadataSnapshotOperation;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         Map<Service, ServiceMetadata> map = new HashMap<>();
         map.put(Service.newService("namespace", "group", "name"), new ServiceMetadata());
         Mockito.when(namingMetadataManager.getServiceMetadataSnapshot()).thenReturn(map);
-        serviceMetadataSnapshotOperation = new ServiceMetadataSnapshotOperation(namingMetadataManager,
-                new ReentrantReadWriteLock());
+        serviceMetadataSnapshotOperation = new ServiceMetadataSnapshotOperation(namingMetadataManager, new ReentrantReadWriteLock());
     }
     
     @Test
-    public void testDumpSnapshot() {
+    void testDumpSnapshot() {
         InputStream inputStream = serviceMetadataSnapshotOperation.dumpSnapshot();
         
-        Assert.assertNotNull(inputStream);
+        assertNotNull(inputStream);
     }
     
     @Test
-    public void testLoadSnapshot() {
+    void testLoadSnapshot() {
         ConcurrentMap<Service, ServiceMetadata> map = new ConcurrentHashMap<>();
         Service service = Service.newService("namespace", "group", "name");
         map.put(service, new ServiceMetadata());
@@ -68,28 +73,28 @@ public class ServiceMetadataSnapshotOperationTest {
         serviceMetadataSnapshotOperation.loadSnapshot(aDefault.serialize(map));
         
         Map<Service, ServiceMetadata> serviceMetadataSnapshot = namingMetadataManager.getServiceMetadataSnapshot();
-        Assert.assertNotNull(serviceMetadataSnapshot);
-        Assert.assertEquals(serviceMetadataSnapshot.size(), 1);
+        assertNotNull(serviceMetadataSnapshot);
+        assertEquals(1, serviceMetadataSnapshot.size());
     }
     
     @Test
-    public void testGetSnapshotArchive() {
+    void testGetSnapshotArchive() {
         String snapshotArchive = serviceMetadataSnapshotOperation.getSnapshotArchive();
         
-        Assert.assertEquals(snapshotArchive, "service_metadata.zip");
+        assertEquals("service_metadata.zip", snapshotArchive);
     }
     
     @Test
-    public void testGetSnapshotSaveTag() {
+    void testGetSnapshotSaveTag() {
         String snapshotSaveTag = serviceMetadataSnapshotOperation.getSnapshotSaveTag();
         
-        Assert.assertEquals(snapshotSaveTag, ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE");
+        assertEquals(snapshotSaveTag, ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE");
     }
     
     @Test
-    public void testGetSnapshotLoadTag() {
+    void testGetSnapshotLoadTag() {
         String snapshotLoadTag = serviceMetadataSnapshotOperation.getSnapshotLoadTag();
         
-        Assert.assertEquals(snapshotLoadTag, ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD");
+        assertEquals(snapshotLoadTag, ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD");
     }
 }

@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
@@ -34,7 +34,7 @@ public class ConfigChangePublisher {
      * @param event ConfigDataChangeEvent instance.
      */
     public static void notifyConfigChange(ConfigDataChangeEvent event) {
-        if (PropertyUtil.isEmbeddedStorage() && !EnvUtil.getStandaloneMode()) {
+        if (DatasourceConfiguration.isEmbeddedStorage() && !EnvUtil.getStandaloneMode()) {
             return;
         }
         NotifyCenter.publishEvent(event);

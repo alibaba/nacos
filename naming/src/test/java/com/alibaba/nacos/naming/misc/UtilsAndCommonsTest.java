@@ -16,32 +16,35 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NACOS_NAMING_CONTEXT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class UtilsAndCommonsTest {
+class UtilsAndCommonsTest {
     
     @Test
-    public void testControllerPathsDefaultValues() {
+    void testControllerPathsDefaultValues() {
         
         MockEnvironment environment = new MockEnvironment();
         
-        Assert.assertEquals(DEFAULT_NACOS_NAMING_CONTEXT, environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testShakeUpException() {
-        UtilsAndCommons.shakeUp(null, 0);
+        assertEquals(DEFAULT_NACOS_NAMING_CONTEXT, environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
     }
     
     @Test
-    public void testShakeUp() {
-        Assert.assertEquals(0, UtilsAndCommons.shakeUp(null, 1));
+    void testShakeUpException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            UtilsAndCommons.shakeUp(null, 0);
+        });
+    }
+    
+    @Test
+    void testShakeUp() {
+        assertEquals(0, UtilsAndCommons.shakeUp(null, 1));
         char[] chars = new char[] {2325, 9, 30, 12, 2};
-        Assert.assertEquals(0, UtilsAndCommons.shakeUp(new String(chars), 1));
+        assertEquals(0, UtilsAndCommons.shakeUp(new String(chars), 1));
     }
 }

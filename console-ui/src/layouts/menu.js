@@ -16,6 +16,19 @@
 
 import { isJsonString } from '../utils/nacosutil';
 
+const serviceDiscoveryMenu = {
+  key: 'serviceManagementVirtual',
+  children: [
+    {
+      key: 'serviceManagement',
+      url: '/serviceManagement',
+    },
+    {
+      key: 'subscriberList',
+      url: '/subscriberList',
+    },
+  ],
+};
 const configurationMenu = {
   key: 'configurationManagementVirtual',
   children: [
@@ -33,6 +46,33 @@ const configurationMenu = {
     },
   ],
 };
+
+export const McpServerManagementRoute = '/mcpServerManagement';
+
+// AI Registry 菜单，包含 MCP Registry、Agent Registry、Skill Registry、Prompt Registry
+const aiRegistryMenu = {
+  key: 'aiRegistry',
+  badge: 'new',
+  children: [
+    {
+      key: 'mcpRegistry',
+      url: McpServerManagementRoute,
+    },
+    {
+      key: 'agentRegistry',
+      url: '/agentManagement',
+    },
+    {
+      key: 'skillRegistry',
+      url: '/skillManagement',
+    },
+    {
+      key: 'promptRegistry',
+      url: '/promptManagement',
+    },
+  ],
+};
+
 /**
  * 权限控制相关
  */
@@ -53,39 +93,60 @@ const authorityControlMenu = {
     },
   ],
 };
+const namespaceMenu = {
+  key: 'namespace',
+  url: '/namespace',
+};
+const clusterMenu = {
+  key: 'clusterManagementVirtual',
+  children: [
+    {
+      key: 'clusterManagement',
+      url: '/clusterManagement',
+    },
+  ],
+};
+const settingMenu = {
+  key: 'settingCenter',
+  url: '/settingCenter',
+};
+
+const pluginMenu = {
+  key: 'pluginManagement',
+  badge: 'new',
+  url: '/pluginManagement',
+};
+
+const agentManagementMenu = {
+  key: 'agentManagement',
+  badge: 'new',
+  url: '/agentManagement',
+  children: [
+    {
+      key: 'agentList',
+      url: '/agentManagement',
+    },
+  ],
+};
 
 export default function(model) {
   const { token = '{}' } = localStorage;
   const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
-
-  return [
-    model === 'naming' ? undefined : configurationMenu,
-    {
-      key: 'serviceManagementVirtual',
-      children: [
-        {
-          key: 'serviceManagement',
-          url: '/serviceManagement',
-        },
-        {
-          key: 'subscriberList',
-          url: '/subscriberList',
-        },
-      ],
-    },
-    globalAdmin ? authorityControlMenu : undefined,
-    {
-      key: 'namespace',
-      url: '/namespace',
-    },
-    {
-      key: 'clusterManagementVirtual',
-      children: [
-        {
-          key: 'clusterManagement',
-          url: '/clusterManagement',
-        },
-      ],
-    },
-  ].filter(item => item);
+  const result = [];
+  if (model === 'naming') {
+    result.push(serviceDiscoveryMenu);
+  } else if (model === 'config') {
+    result.push(configurationMenu);
+  } else {
+    result.push(configurationMenu, serviceDiscoveryMenu);
+    result.push(aiRegistryMenu);
+    result.push(pluginMenu);
+  }
+  if (globalAdmin) {
+    result.push(authorityControlMenu);
+  }
+  result.push(namespaceMenu);
+  result.push(clusterMenu);
+  result.push(settingMenu);
+  return result;
 }

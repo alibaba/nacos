@@ -19,9 +19,11 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.Selector;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link LabelSelector} unit test.
@@ -29,24 +31,24 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-07-16 17:41
  */
-public class LabelSelectorTest {
+class LabelSelectorTest {
     
     private SelectorManager selectorManager;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         selectorManager = new SelectorManager();
         selectorManager.init();
     }
     
     @Test
-    public void testParseSelector() throws NacosException {
+    void testParseSelector() throws NacosException {
         Selector selector = selectorManager.parseSelector("label", "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-        Assert.assertTrue(selector instanceof LabelSelector);
-    
+        assertTrue(selector instanceof LabelSelector);
+        
         LabelSelector labelSelector = (LabelSelector) selector;
-        Assert.assertEquals(2, labelSelector.getLabels().size());
-        Assert.assertTrue(labelSelector.getLabels().contains("A"));
-        Assert.assertTrue(labelSelector.getLabels().contains("B"));
+        assertEquals(2, labelSelector.getLabels().size());
+        assertTrue(labelSelector.getLabels().contains("A"));
+        assertTrue(labelSelector.getLabels().contains("B"));
     }
 }

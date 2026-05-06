@@ -25,16 +25,32 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <name>nacos-core-test ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     
     <artifactId>core-test</artifactId>
     
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-auth-plugin</artifactId>
+            <version>${revision}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+
                 <configuration>
+                    <reuseForks>false</reuseForks>
+                    <forkCount>1</forkCount>
                     <argLine>-Dnacos.standalone=true -Dnacos.server.ip=127.0.0.1</argLine>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
                 </configuration>

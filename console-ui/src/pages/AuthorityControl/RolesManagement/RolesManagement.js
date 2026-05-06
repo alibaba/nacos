@@ -63,16 +63,15 @@ class RolesManagement extends React.Component {
   getRoles() {
     this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
-    let username = this.state.username;
-    let role = this.state.role;
+    let { username, role } = this.state;
     let search = 'accurate';
 
     if (this.state.defaultFuzzySearch) {
       if (username && username !== '') {
-        username = '*' + username + '*';
+        username = `*${username}*`;
       }
       if (role && role !== '') {
-        role = '*' + role + '*';
+        role = `*${role}*`;
       }
     }
     if (role && role.indexOf('*') !== -1) {
@@ -110,7 +109,7 @@ class RolesManagement extends React.Component {
         <RegionGroup left={locale.roleManagement} />
 
         <Form inline>
-          <Form.Item label="用户名">
+          <Form.Item label={locale.username}>
             <Input
               value={this.state.username}
               htmlType="text"
@@ -121,7 +120,7 @@ class RolesManagement extends React.Component {
               }}
             />
           </Form.Item>
-          <Form.Item label="角色名">
+          <Form.Item label={locale.role}>
             <Input
               value={this.state.role}
               htmlType="text"
@@ -132,20 +131,24 @@ class RolesManagement extends React.Component {
               }}
             />
           </Form.Item>
-          <Form.Item label="默认模糊匹配">
+          <Form.Item label={locale.fuzzydMode}>
             <Switch
               checkedChildren=""
               unCheckedChildren=""
               defaultChecked={this.state.defaultFuzzySearch}
               onChange={this.handleDefaultFuzzySwitchChange}
-              title={'自动在搜索参数前后加上*'}
+              title={locale.fuzzyd}
             />
           </Form.Item>
           <Form.Item label={''}>
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getRoles()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getRoles();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}

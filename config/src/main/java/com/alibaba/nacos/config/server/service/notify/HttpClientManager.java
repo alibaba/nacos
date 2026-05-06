@@ -64,16 +64,16 @@ public final class HttpClientManager {
     }
     
     private static void shutdown() {
-        LOGGER.warn("[ConfigServer-HttpClientManager] Start destroying NacosRestTemplate");
+        LOGGER.info("[ConfigServer-HttpClientManager] Start destroying NacosRestTemplate");
         try {
             final String httpClientFactoryBeanName = ConfigHttpClientFactory.class.getName();
-            HttpClientBeanHolder.shutdownNacostSyncRest(httpClientFactoryBeanName);
+            HttpClientBeanHolder.shutdownNacosSyncRest(httpClientFactoryBeanName);
             HttpClientBeanHolder.shutdownNacosAsyncRest(httpClientFactoryBeanName);
         } catch (Exception ex) {
             LOGGER.error("[ConfigServer-HttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        LOGGER.warn("[ConfigServer-HttpClientManager] Destruction of the end");
+        LOGGER.info("[ConfigServer-HttpClientManager] Completed destruction of NacosRestTemplate");
     }
     
     /**

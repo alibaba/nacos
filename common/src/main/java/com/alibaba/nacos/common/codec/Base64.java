@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.common.codec;
 
-import java.nio.charset.StandardCharsets;
-
 /**
- * Provides Base64 encoding and decoding as defined by <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
+ * From apache common codec, and remove some useless method. Provides Base64 encoding and decoding as defined by <a
+ * href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
  *
  * <p>This class implements section <cite>6.8. Base64 Content-Transfer-Encoding</cite> from RFC 2045
  *
@@ -168,28 +167,16 @@ public class Base64 {
      *                                  work!
      * @since 1.4
      */
-    public Base64(int lineLength, byte[] lineSeparator, boolean urlSafe) {
-        chunkSeparatorLength = lineSeparator == null ? 0 : lineSeparator.length;
+    private Base64(int lineLength, byte[] lineSeparator, boolean urlSafe) {
+        chunkSeparatorLength = lineSeparator.length;
         unencodedBlockSize = BYTES_PER_UNENCODED_BLOCK;
         encodedBlockSize = BYTES_PER_ENCODED_BLOCK;
         this.lineLength =
                 (lineLength > 0 && chunkSeparatorLength > 0) ? (lineLength / encodedBlockSize) * encodedBlockSize : 0;
-        // TODO could be simplified if there is no requirement to reject invalid line sep when length <=0
-        // @see test case Base64Test.testConstructors()
-        if (lineSeparator != null) {
-            if (containsAlphabetOrPad(lineSeparator)) {
-                String sep = null;
-                sep = new String(lineSeparator, StandardCharsets.UTF_8);
-                throw new IllegalArgumentException("lineSeparator must not contain base64 characters: [" + sep + "]");
-            }
-            if (lineLength > 0) {
-                this.encodeSize = BYTES_PER_ENCODED_BLOCK + lineSeparator.length;
-                this.lineSeparator = new byte[lineSeparator.length];
-                System.arraycopy(lineSeparator, 0, this.lineSeparator, 0, lineSeparator.length);
-            } else {
-                this.encodeSize = BYTES_PER_ENCODED_BLOCK;
-                this.lineSeparator = null;
-            }
+        if (lineLength > 0) {
+            this.encodeSize = BYTES_PER_ENCODED_BLOCK + lineSeparator.length;
+            this.lineSeparator = new byte[lineSeparator.length];
+            System.arraycopy(lineSeparator, 0, this.lineSeparator, 0, lineSeparator.length);
         } else {
             this.encodeSize = BYTES_PER_ENCODED_BLOCK;
             this.lineSeparator = null;
@@ -206,9 +193,6 @@ public class Base64 {
      */
     private byte[] encode(byte[] pArray) {
         reset();
-        if (pArray == null || pArray.length == 0) {
-            return pArray;
-        }
         encode(pArray, 0, pArray.length);
         encode(pArray, 0, -1);
         byte[] buf = new byte[pos - readPos];
@@ -432,16 +416,6 @@ public class Base64 {
     }
     
     /**
-     * Returns whether or not the <code>octet</code> is in the Base32 alphabet.
-     *
-     * @param octet The value to test
-     * @return <code>true</code> if the value is defined in the the Base32 alphabet <code>false</code> otherwise.
-     */
-    protected boolean isInAlphabet(byte octet) {
-        return octet >= 0 && octet < decodeTable.length && decodeTable[octet] != -1;
-    }
-    
-    /**
      * MIME chunk size per RFC 2045 section 6.8.
      *
      * <p> The {@value} character limit does not count the trailing CRLF, but counts all other characters, including
@@ -576,26 +550,6 @@ public class Base64 {
         currentLinePos = 0;
         modulus = 0;
         eof = false;
-    }
-    
-    /**
-     * Tests a given byte array to see if it contains any characters within the alphabet or PAD.
-     *
-     * <p>Intended for use in checking line-ending arrays
-     *
-     * @param arrayOctet byte array to test
-     * @return <code>true</code> if any byte is a valid character in the alphabet or PAD; <code>false</code> otherwise
-     */
-    private boolean containsAlphabetOrPad(byte[] arrayOctet) {
-        if (arrayOctet == null) {
-            return false;
-        }
-        for (int i = 0; i < arrayOctet.length; i++) {
-            if (PAD == arrayOctet[i] || isInAlphabet(arrayOctet[i])) {
-                return true;
-            }
-        }
-        return false;
     }
     
     /**

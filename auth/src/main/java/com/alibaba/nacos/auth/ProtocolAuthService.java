@@ -17,6 +17,9 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -37,7 +40,7 @@ public interface ProtocolAuthService<R> {
     /**
      * Judgement whether enable auth feature according to secured information.
      * <p>
-     *     configuration authEnabled in {@link com.alibaba.nacos.auth.config.AuthConfigs} is the main switch.
+     *     configuration authEnabled in {@link NacosAuthConfig} is the main switch.
      *     If authEnabled is {@code false}, this method and other follow methods should not be called.
      *
      *     This method is only for plugin to judge whether auth this {@link Secured}.
@@ -71,18 +74,27 @@ public interface ProtocolAuthService<R> {
      *
      * @param identityContext identity context
      * @param resource        resource
-     * @return {@code true} if legal, otherwise {@code false}
+     * @return {@link AuthResult} of validate result
      * @throws AccessException exception during validating
      */
-    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
+    AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
     
     /**
      * Validate identity whether had permission for the resource and action.
      *
      * @param identityContext identity context
      * @param permission      permission include resource and action
-     * @return {@code true} if legal, otherwise {@code false}
+     * @return {@link AuthResult} of validate result
      * @throws AccessException exception during validating
      */
-    boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    
+    /**
+     * check server identity.
+     *
+     * @param request protocol request
+     * @param secured secured api secured annotation
+     * @return server identity result
+     */
+    ServerIdentityResult checkServerIdentity(R request, Secured secured);
 }

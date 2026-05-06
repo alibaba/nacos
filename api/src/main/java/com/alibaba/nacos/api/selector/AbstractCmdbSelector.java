@@ -34,6 +34,8 @@ import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
  */
 public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext<T>, String> {
     
+    private static final long serialVersionUID = 56587385358330901L;
+    
     /**
      * the labels expression.
      */

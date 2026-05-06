@@ -16,17 +16,18 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class PairTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class PairTest {
     
     @Test
-    public void testItem() {
+    void testItem() {
         String item = "aa";
         double weight = 1.0;
         Pair<String> pair = new Pair<>(item, weight);
-        Assert.assertEquals(weight, pair.weight(), 0.01);
-        Assert.assertEquals(item, pair.item());
+        assertEquals(weight, pair.weight(), 0.01);
+        assertEquals(item, pair.item());
     }
 }
