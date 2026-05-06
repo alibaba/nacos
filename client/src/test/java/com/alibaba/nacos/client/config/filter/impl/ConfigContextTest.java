@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.client.config.filter.impl;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ConfigContextTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigContextTest {
     
     @Test
-    public void testParameter() {
+    void testParameter() {
         ConfigContext context = new ConfigContext();
         String key = "key";
         String v = "v";
@@ -30,7 +31,7 @@ public class ConfigContextTest {
         
         String actual = (String) context.getParameter(key);
         
-        Assert.assertEquals(v, actual);
+        assertEquals(v, actual);
     }
     
 }

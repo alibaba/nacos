@@ -24,12 +24,11 @@ import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckProcessorExtendV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Field;
@@ -37,15 +36,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HealthCheckProcessorV2DelegateTest {
+@ExtendWith(MockitoExtension.class)
+class HealthCheckProcessorV2DelegateTest {
     
     @Mock
     private HealthCheckExtendProvider healthCheckExtendProvider;
-
+    
     @Mock
     private HealthCheckProcessorExtendV2 healthCheckProcessorExtendV2;
     
@@ -60,15 +61,15 @@ public class HealthCheckProcessorV2DelegateTest {
     
     private HealthCheckProcessorV2Delegate healthCheckProcessorV2Delegate;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         healthCheckProcessorV2Delegate = new HealthCheckProcessorV2Delegate(healthCheckExtendProvider, healthCheckProcessorExtendV2);
         verify(healthCheckExtendProvider).init();
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test
-    public void testAddProcessor() throws NoSuchFieldException, IllegalAccessException {
+    void testAddProcessor() throws NoSuchFieldException, IllegalAccessException {
         List<HealthCheckProcessorV2> list = new ArrayList<>();
         list.add(new TcpHealthCheckProcessor(null, null));
         healthCheckProcessorV2Delegate.addProcessor(list);
@@ -76,14 +77,13 @@ public class HealthCheckProcessorV2DelegateTest {
         Class<HealthCheckProcessorV2Delegate> healthCheckProcessorV2DelegateClass = HealthCheckProcessorV2Delegate.class;
         Field field = healthCheckProcessorV2DelegateClass.getDeclaredField("healthCheckProcessorMap");
         field.setAccessible(true);
-        Map<String, HealthCheckProcessorV2> map = (Map<String, HealthCheckProcessorV2>) field
-                .get(healthCheckProcessorV2Delegate);
+        Map<String, HealthCheckProcessorV2> map = (Map<String, HealthCheckProcessorV2>) field.get(healthCheckProcessorV2Delegate);
         HealthCheckProcessorV2 healthCheckProcessorV2 = map.get(HealthCheckType.TCP.name());
-        Assert.assertNotNull(healthCheckProcessorV2);
+        assertNotNull(healthCheckProcessorV2);
     }
     
     @Test
-    public void testProcess() throws NoSuchFieldException, IllegalAccessException {
+    void testProcess() throws NoSuchFieldException, IllegalAccessException {
         testAddProcessor();
         when(clusterMetadata.getHealthyCheckType()).thenReturn(HealthCheckType.TCP.name());
         when(healthCheckTaskV2.getClient()).thenReturn(new IpPortBasedClient("127.0.0.1:80#true", true));
@@ -95,7 +95,7 @@ public class HealthCheckProcessorV2DelegateTest {
     }
     
     @Test
-    public void testGetType() {
-        Assert.assertNull(healthCheckProcessorV2Delegate.getType());
+    void testGetType() {
+        assertNull(healthCheckProcessorV2Delegate.getType());
     }
 }

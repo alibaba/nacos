@@ -19,7 +19,7 @@ package com.alibaba.nacos.api.cmdb.pojo;
 import java.util.Set;
 
 /**
- * CMDB lable.
+ * CMDB label.
  *
  * @author nkorange
  * @since 0.7.0

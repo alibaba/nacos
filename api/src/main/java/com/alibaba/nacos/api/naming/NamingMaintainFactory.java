@@ -26,7 +26,9 @@ import java.util.Properties;
  *
  * @author liaochuntao
  * @since 1.0.1
+ * @deprecated use {@link com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory} in nacos-maintainer-client artifact tp replaced.
  */
+@Deprecated
 public class NamingMaintainFactory {
     
     /**

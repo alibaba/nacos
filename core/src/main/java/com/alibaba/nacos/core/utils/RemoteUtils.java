@@ -39,7 +39,7 @@ public class RemoteUtils {
     private static final int REMOTE_EXECUTOR_QUEUE_SIZE = 1 << 14;
     
     /**
-     * get remote executors thread times of processors,default is 64. see the usage of this method for detail.
+     * get remote executors thread times of processors,default is 16. see the usage of this method for detail.
      *
      * @return times of processors.
      */

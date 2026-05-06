@@ -20,33 +20,33 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ServerNamingAbilityTest {
+class ServerNamingAbilityTest {
     
     private static ObjectMapper jacksonMapper;
     
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    @BeforeAll
+    static void setUpClass() throws Exception {
         jacksonMapper = new ObjectMapper();
         jacksonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jacksonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     
     @Test
-    public void testDeserializeServerNamingAbilityForNonExistItem() throws JsonProcessingException {
+    void testDeserializeServerNamingAbilityForNonExistItem() throws JsonProcessingException {
         String nonExistItemJson = "{\"exampleAbility\":false}";
         ServerNamingAbility actual = jacksonMapper.readValue(nonExistItemJson, ServerNamingAbility.class);
         assertFalse(actual.isSupportJraft());
     }
     
     @Test
-    public void testEquals() throws JsonProcessingException {
+    void testEquals() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();
         expected.setSupportJraft(true);
         String serializeJson = jacksonMapper.writeValueAsString(expected);
@@ -56,5 +56,30 @@ public class ServerNamingAbilityTest {
         assertNotEquals(expected, actual);
         actual.setSupportJraft(true);
         assertEquals(expected, actual);
+    }
+    
+    @Test
+    void testEqualsForOneObject() {
+        ServerNamingAbility ability = new ServerNamingAbility();
+        assertEquals(ability, ability);
+    }
+    
+    @Test
+    void testEqualsForOtherAbility() {
+        ServerNamingAbility ability = new ServerNamingAbility();
+        assertNotEquals(ability, new ClientNamingAbility());
+    }
+    
+    @Test
+    void testHashCode() throws JsonProcessingException {
+        ServerNamingAbility expected = new ServerNamingAbility();
+        expected.setSupportJraft(true);
+        String serializeJson = jacksonMapper.writeValueAsString(expected);
+        ServerNamingAbility actual = jacksonMapper.readValue(serializeJson, ServerNamingAbility.class);
+        assertEquals(expected, actual);
+        actual = new ServerNamingAbility();
+        assertNotEquals(expected, actual);
+        actual.setSupportJraft(true);
+        assertEquals(expected.hashCode(), actual.hashCode());
     }
 }

@@ -39,7 +39,7 @@ public class ConfigExample {
         properties.put("serverAddr", serverAddr);
         ConfigService configService = NacosFactory.createConfigService(properties);
         String content = configService.getConfig(dataId, group, 5000);
-        System.out.println(content);
+        System.out.println("[config content] " + content);
         configService.addListener(dataId, group, new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
@@ -53,18 +53,18 @@ public class ConfigExample {
         });
 
         boolean isPublishOk = configService.publishConfig(dataId, group, "content");
-        System.out.println(isPublishOk);
+        System.out.println("[publish result] " + isPublishOk);
 
         Thread.sleep(3000);
         content = configService.getConfig(dataId, group, 5000);
-        System.out.println(content);
+        System.out.println("[config content]: " + content);
 
         boolean isRemoveOk = configService.removeConfig(dataId, group);
-        System.out.println(isRemoveOk);
+        System.out.println("[delete result]: " + isRemoveOk);
         Thread.sleep(3000);
 
         content = configService.getConfig(dataId, group, 5000);
-        System.out.println(content);
+        System.out.println("[config content]: " + content);
         Thread.sleep(300000);
 
     }

@@ -43,6 +43,17 @@ public class LoginIdentityContext {
     }
     
     /**
+     * get key from context; if blank return default value.
+     *
+     * @param key key of request
+     * @return value of param key
+     */
+    public String getParameter(String key, String defaultValue) {
+        String val = param.get(key);
+        return val == null ? defaultValue : val;
+    }
+    
+    /**
      * put key and value to param.
      *
      * @param key   key of request

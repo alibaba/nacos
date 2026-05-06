@@ -16,20 +16,21 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class ProtocolTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@ExtendWith(SpringExtension.class)
+class ProtocolTest {
     
     @Test
-    public void testGetVersionNumber() {
+    void testGetVersionNumber() {
         
-        Assert.assertEquals(-1, Protocol.getVersionNumber(null));
-        Assert.assertEquals(0, Protocol.getVersionNumber(""));
-        Assert.assertEquals(120, Protocol.getVersionNumber("1.2.0"));
-        Assert.assertEquals(10, Protocol.getVersionNumber("1.A.0"));
+        assertEquals(-1, Protocol.getVersionNumber(null));
+        assertEquals(0, Protocol.getVersionNumber(""));
+        assertEquals(120, Protocol.getVersionNumber("1.2.0"));
+        assertEquals(10, Protocol.getVersionNumber("1.A.0"));
     }
 }

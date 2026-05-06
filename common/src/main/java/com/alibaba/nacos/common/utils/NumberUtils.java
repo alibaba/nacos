@@ -21,6 +21,9 @@ package com.alibaba.nacos.common.utils;
  * @author zzq
  */
 public class NumberUtils {
+
+    private NumberUtils() {
+    }
     
     /**
      * Convert a <code>String</code> to an <code>int</code>, returning

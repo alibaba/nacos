@@ -260,7 +260,7 @@ private static final long serialVersionUID = 0L;
     if (key == null) { throw new NullPointerException(); }
     java.util.Map<String, String> map =
         internalGetHeaders().getMap();
-    return map.containsKey(key) ? map.get(key) : defaultValue;
+    return map.getOrDefault(key, defaultValue);
   }
   /**
    * <code>map&lt;string, string&gt; headers = 7;</code>
@@ -797,7 +797,7 @@ private static final long serialVersionUID = 0L;
     }
     private com.google.protobuf.MapField<String, String>
     internalGetMutableHeaders() {
-      onChanged();;
+      onChanged();
       if (headers_ == null) {
         headers_ = com.google.protobuf.MapField.newMapField(
             HeadersDefaultEntryHolder.defaultEntry);

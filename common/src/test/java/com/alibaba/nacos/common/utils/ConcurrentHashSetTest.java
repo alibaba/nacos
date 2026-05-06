@@ -16,55 +16,60 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * ConcurrentHashSet Test.
+ *
  * @ClassName: ConcurrentHashSetTest
  * @Author: ChenHao26
  * @Date: 2022/8/22 11:21
  */
-public class ConcurrentHashSetTest {
+class ConcurrentHashSetTest {
     
     @Test
-    public void testBasicOps() {
+    void testBasicOps() {
         Set<Integer> set = new ConcurrentHashSet<>();
         
         // addition
-        Assert.assertTrue(set.add(0));
-        Assert.assertTrue(set.add(1));
-        Assert.assertTrue(set.contains(0));
-        Assert.assertTrue(set.contains(1));
-        Assert.assertFalse(set.contains(-1));
-        Assert.assertEquals(2, set.size());
+        assertTrue(set.add(0));
+        assertTrue(set.add(1));
+        assertTrue(set.contains(0));
+        assertTrue(set.contains(1));
+        assertFalse(set.contains(-1));
+        assertEquals(2, set.size());
         
         // iter
         for (int i : set) {
-            Assert.assertTrue(i == 0 || i == 1);
+            assertTrue(i == 0 || i == 1);
         }
         
         // removal
-        Assert.assertTrue(set.remove(0));
-        Assert.assertFalse(set.remove(0));
-        Assert.assertFalse(set.contains(0));
-        Assert.assertTrue(set.contains(1));
-        Assert.assertEquals(1, set.size());
-    
+        assertTrue(set.remove(0));
+        assertFalse(set.remove(0));
+        assertFalse(set.contains(0));
+        assertTrue(set.contains(1));
+        assertEquals(1, set.size());
+        
         // clear
-        Assert.assertFalse(set.isEmpty());
+        assertFalse(set.isEmpty());
         set.clear();
-        Assert.assertEquals(0, set.size());
-        Assert.assertTrue(set.isEmpty());
+        assertEquals(0, set.size());
+        assertTrue(set.isEmpty());
     }
     
     @Test
-    public void testMultiThread() throws Exception {
+    void testMultiThread() throws Exception {
         int count = 5;
         SetMultiThreadChecker hashSetChecker = new SetMultiThreadChecker(new HashSet<>());
         hashSetChecker.start();
@@ -75,8 +80,8 @@ public class ConcurrentHashSetTest {
             }
             count--;
         }
-        Assert.assertTrue(hashSetChecker.hasConcurrentError());
-    
+        assertTrue(hashSetChecker.hasConcurrentError());
+        
         count = 5;
         SetMultiThreadChecker concurrentSetChecker = new SetMultiThreadChecker(new ConcurrentHashSet<>());
         concurrentSetChecker.start();
@@ -87,17 +92,17 @@ public class ConcurrentHashSetTest {
             }
             count--;
         }
-        Assert.assertFalse(concurrentSetChecker.hasConcurrentError());
+        assertFalse(concurrentSetChecker.hasConcurrentError());
     }
     
     static class SetMultiThreadChecker {
-    
+        
         private final AddDataThread addThread;
         
         private final DeleteDataThread deleteThread;
-    
+        
         private final IteratorThread iteratorThread;
-    
+        
         public SetMultiThreadChecker(Set<Integer> setToCheck) {
             for (int i = 0; i < 1000; i++) {
                 setToCheck.add(i);
@@ -120,7 +125,7 @@ public class ConcurrentHashSetTest {
         public boolean isRunning() {
             return addThread.isRunning() || deleteThread.isRunning() || iteratorThread.isRunning();
         }
-    
+        
         public void stop() {
             addThread.stop();
             deleteThread.stop();
@@ -130,17 +135,17 @@ public class ConcurrentHashSetTest {
     }
     
     abstract static class ConcurrentCheckThread implements Runnable {
-    
+        
         protected final Set<Integer> hashSet;
-    
+        
         protected boolean concurrentError = false;
         
         protected boolean finish = false;
-    
+        
         public ConcurrentCheckThread(Set<Integer> hashSet) {
             this.hashSet = hashSet;
         }
-    
+        
         public boolean hasConcurrentError() {
             return concurrentError;
         }
@@ -148,11 +153,11 @@ public class ConcurrentHashSetTest {
         public void stop() {
             finish = true;
         }
-    
+        
         public boolean isRunning() {
             return !finish;
         }
-    
+        
         @Override
         public void run() {
             try {
@@ -165,17 +170,17 @@ public class ConcurrentHashSetTest {
                 finish = true;
             }
         }
-    
+        
         protected abstract void process();
     }
     
     //add data thread
     static class AddDataThread extends ConcurrentCheckThread implements Runnable {
-    
+        
         public AddDataThread(Set<Integer> hashSet) {
             super(hashSet);
         }
-    
+        
         @Override
         protected void process() {
             int random = new Random().nextInt(1000);
@@ -186,11 +191,11 @@ public class ConcurrentHashSetTest {
     
     // delete data thread
     static class DeleteDataThread extends ConcurrentCheckThread implements Runnable {
-    
+        
         public DeleteDataThread(Set<Integer> hashSet) {
             super(hashSet);
         }
-    
+        
         @Override
         protected void process() {
             int random = new Random().nextInt(1000);
@@ -200,11 +205,11 @@ public class ConcurrentHashSetTest {
     }
     
     static class IteratorThread extends ConcurrentCheckThread implements Runnable {
-    
+        
         public IteratorThread(Set<Integer> hashSet) {
             super(hashSet);
         }
-    
+        
         @Override
         public void run() {
             System.out.println("start -- hashSet.size() : " + hashSet.size());
@@ -223,7 +228,7 @@ public class ConcurrentHashSetTest {
             System.out.println("finished at " + f);
             System.out.println("end -- hashSet.size() : " + hashSet.size());
         }
-    
+        
         @Override
         protected void process() {
         }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Config advance info.
@@ -25,7 +26,7 @@ import java.io.Serializable;
  */
 public class ConfigAdvanceInfo implements Serializable {
     
-    static final long serialVersionUID = -1L;
+    static final long serialVersionUID = 3148031484920416869L;
     
     private long createTime;
     
@@ -126,4 +127,26 @@ public class ConfigAdvanceInfo implements Serializable {
     public void setConfigTags(String configTags) {
         this.configTags = configTags;
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ConfigAdvanceInfo that = (ConfigAdvanceInfo) o;
+        return createTime == that.createTime && modifyTime == that.modifyTime && Objects.equals(createUser,
+                that.createUser) && Objects.equals(createIp, that.createIp) && Objects.equals(desc, that.desc)
+                && Objects.equals(use, that.use) && Objects.equals(effect, that.effect) && Objects.equals(type,
+                that.type) && Objects.equals(schema, that.schema) && Objects.equals(configTags, that.configTags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(createTime, modifyTime, createUser, createIp, desc, use, effect, type, schema,
+                configTags);
+    }
+
 }

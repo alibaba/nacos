@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -43,7 +44,7 @@ public class MemberUtil {
     
     protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
     
-    private static final String SERVER_PORT_PROPERTY = "server.port";
+    private static final String SERVER_PORT_PROPERTY = "nacos.server.main.port";
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
@@ -66,6 +67,7 @@ public class MemberUtil {
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
         oldMember.setAbilities(newMember.getAbilities());
+        oldMember.setGrpcReportEnabled(newMember.isGrpcReportEnabled());
     }
     
     /**
@@ -74,7 +76,6 @@ public class MemberUtil {
      * @param member ip:port
      * @return {@link Member}
      */
-    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
         int defaultPort = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
@@ -82,7 +83,7 @@ public class MemberUtil {
         
         String address = member;
         int port = defaultPort;
-        String[] info = InternetAddressUtil.splitIPPortStr(address);
+        String[] info = InternetAddressUtil.splitIpPortStr(address);
         if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
@@ -94,6 +95,8 @@ public class MemberUtil {
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
         extendInfo.put(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         target.setExtendInfo(extendInfo);
+        // use grpc to report default
+        target.setGrpcReportEnabled(true);
         return target;
     }
     
@@ -107,7 +110,10 @@ public class MemberUtil {
         if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
             return false;
         }
-        return member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+        
+        boolean oldVerJudge = member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+        
+        return member.isGrpcReportEnabled() || oldVerJudge;
     }
     
     public static int calculateRaftPort(Member member) {
@@ -257,7 +263,7 @@ public class MemberUtil {
      *
      * @param actual   actual member
      * @param expected expected member
-     * @return true if all content is same, otherwise false
+     * @return true if one content is different, otherwise false
      */
     public static boolean isBasicInfoChanged(Member actual, Member expected) {
         if (null == expected) {
@@ -275,8 +281,9 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
-        
-        if (!expected.getAbilities().equals(actual.getAbilities())) {
+    
+        // if change
+        if (expected.isGrpcReportEnabled() != actual.isGrpcReportEnabled()) {
             return true;
         }
         

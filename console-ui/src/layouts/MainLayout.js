@@ -18,17 +18,25 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Icon, Menu } from '@alifd/next';
+import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
-import { getState } from '../reducers/base';
+import { getState, getNotice, getGuide } from '../reducers/base';
 import getMenuData from './menu';
+import './index.scss';
 
 const { SubMenu, Item } = Menu;
 
 @withRouter
-@connect(state => ({ ...state.locale, ...state.base }), { getState })
+@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice, getGuide })
 @ConfigProvider.config
 class MainLayout extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      visible: true,
+    };
+  }
+
   static displayName = 'MainLayout';
 
   static propTypes = {
@@ -36,13 +44,26 @@ class MainLayout extends React.Component {
     location: PropTypes.object,
     history: PropTypes.object,
     version: PropTypes.any,
+    startupMode: PropTypes.any,
     getState: PropTypes.func,
     functionMode: PropTypes.string,
-    children: PropTypes.object,
+    authEnabled: PropTypes.string,
+    children: PropTypes.oneOfType([PropTypes.array, PropTypes.node]),
+    consoleUiEnable: PropTypes.string,
+    getNotice: PropTypes.func,
+    getGuide: PropTypes.func,
+    guideMsg: PropTypes.string,
   };
 
   componentDidMount() {
     this.props.getState();
+    this.props.getGuide();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.language !== this.props.language) {
+      this.props.getNotice();
+    }
   }
 
   goBack() {
@@ -50,10 +71,34 @@ class MainLayout extends React.Component {
   }
 
   navTo(url) {
-    const { search } = this.props.location;
-    let urlSearchParams = new URLSearchParams(search);
-    urlSearchParams.set('namespace', window.nownamespace);
-    urlSearchParams.set('namespaceShowName', window.namespaceShowName);
+    // 为不同页面定义需要保留的参数
+    const pageParamMap = {
+      '/configurationManagement': ['namespace', 'namespaceShowName', 'dataId', 'group', 'appName'],
+      '/agentManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/skillManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/promptManagement': ['namespace', 'namespaceShowName', 'searchName'],
+      '/mcpServerManagement': ['namespace', 'namespaceShowName'],
+      '/serviceManagement': ['namespace', 'namespaceShowName'],
+    };
+
+    // 获取当前页面需要保留的参数
+    const allowedParams = pageParamMap[url] || ['namespace', 'namespaceShowName'];
+
+    // 创建新的URL参数
+    let urlSearchParams = new URLSearchParams();
+
+    // 只保留允许的参数
+    const currentParams = new URLSearchParams(this.props.location.search);
+    allowedParams.forEach(param => {
+      if (param === 'namespace') {
+        urlSearchParams.set('namespace', window.nownamespace || '');
+      } else if (param === 'namespaceShowName') {
+        urlSearchParams.set('namespaceShowName', window.namespaceShowName || '');
+      } else if (currentParams.has(param)) {
+        urlSearchParams.set(param, currentParams.get(param));
+      }
+    });
+
     this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
   }
 
@@ -83,7 +128,15 @@ class MainLayout extends React.Component {
   }
 
   render() {
-    const { locale = {}, version, functionMode } = this.props;
+    const {
+      locale = {},
+      version,
+      functionMode,
+      authEnabled,
+      consoleUiEnable,
+      startupMode,
+    } = this.props;
+    const { visible } = this.state;
     const MenuData = getMenuData(functionMode);
     return (
       <section
@@ -108,45 +161,104 @@ class MainLayout extends React.Component {
                       {locale.nacosName}
                       <span>{version}</span>
                     </h1>
+                    <h1 className="nav-mode">
+                      {locale.nacosMode}
+                      <span>{startupMode}</span>
+                    </h1>
                     <Menu
                       defaultOpenKeys={this.defaultOpenKeys()}
                       className="next-nav next-normal next-active next-right next-no-arrow next-nav-embeddable"
                       openMode="single"
                     >
-                      {MenuData.map((subMenu, idx) => {
-                        if (subMenu.children) {
-                          return (
-                            <SubMenu key={String(idx)} label={locale[subMenu.key]}>
-                              {subMenu.children.map((item, i) => (
-                                <Item
-                                  key={[idx, i].join('-')}
-                                  onClick={() => this.navTo(item.url)}
-                                  className={this.isCurrentPath(item.url)}
+                      {consoleUiEnable &&
+                        consoleUiEnable === 'true' &&
+                        MenuData.map((subMenu, idx) => {
+                          if (subMenu.children) {
+                            const sublabel = subMenu.badge ? (
+                              <span>
+                                <Badge
+                                  content={subMenu.badge}
+                                  style={{
+                                    backgroundColor: '#FC0E3D',
+                                    color: '#FFFFFF',
+                                    right: '-45px',
+                                    top: '-10px',
+                                  }}
                                 >
-                                  {locale[item.key]}
-                                </Item>
-                              ))}
-                            </SubMenu>
+                                  {locale[subMenu.key]}
+                                </Badge>
+                              </span>
+                            ) : (
+                              `${locale[subMenu.key]}`
+                            );
+                            return (
+                              <SubMenu key={String(idx)} label={sublabel}>
+                                {subMenu.children.map((item, i) => (
+                                  <Item
+                                    key={[idx, i].join('-')}
+                                    onClick={() => this.navTo(item.url)}
+                                    className={this.isCurrentPath(item.url)}
+                                  >
+                                    {locale[item.key]}
+                                  </Item>
+                                ))}
+                              </SubMenu>
+                            );
+                          }
+                          const itemLabel = subMenu.badge ? (
+                            <span>
+                              <Badge
+                                content={subMenu.badge}
+                                style={{
+                                  backgroundColor: '#FC0E3D',
+                                  color: '#FFFFFF',
+                                  right: '-45px',
+                                  top: '-10px',
+                                }}
+                              >
+                                {locale[subMenu.key]}
+                              </Badge>
+                            </span>
+                          ) : (
+                            locale[subMenu.key]
                           );
-                        }
-                        return (
-                          <Item
-                            key={String(idx)}
-                            className={['first-menu', this.isCurrentPath(subMenu.url)]
-                              .filter(c => c)
-                              .join(' ')}
-                            onClick={() => this.navTo(subMenu.url)}
-                          >
-                            {locale[subMenu.key]}
-                          </Item>
-                        );
-                      })}
+                          return (
+                            <Item
+                              key={String(idx)}
+                              className={['first-menu', this.isCurrentPath(subMenu.url)]
+                                .filter(c => c)
+                                .join(' ')}
+                              onClick={() => this.navTo(subMenu.url)}
+                            >
+                              {itemLabel}
+                            </Item>
+                          );
+                        })}
                     </Menu>
                   </>
                 )}
               </div>
             </div>
-            <div className="right-panel next-shell-sub-main">{this.props.children}</div>
+            <div className="right-panel next-shell-sub-main">
+              {consoleUiEnable === 'false' && (
+                <Dialog
+                  visible={visible}
+                  title={locale.consoleClosed}
+                  style={{ width: 600 }}
+                  hasMask={false}
+                  footer={false}
+                  className="enable-dialog"
+                >
+                  <Message type="notice">
+                    <div
+                      style={{ lineHeight: '24px' }}
+                      dangerouslySetInnerHTML={{ __html: this.props.guideMsg }}
+                    />
+                  </Message>
+                </Dialog>
+              )}
+              {this.props.children}
+            </div>
           </div>
         </section>
       </section>

@@ -28,24 +28,28 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ClientBeatCheckTaskV2Test {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ClientBeatCheckTaskV2Test {
     
     private static final String IP = "1.1.1.1";
     
@@ -75,8 +79,8 @@ public class ClientBeatCheckTaskV2Test {
     
     private IpPortBasedClient client;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
@@ -87,19 +91,19 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testTaskKey() {
+    void testTaskKey() {
         assertEquals(KeyBuilder.buildServiceMetaKey(CLIENT_ID, "true"), beatCheckTask.taskKey());
     }
     
     @Test
-    public void testRunUnhealthyInstanceWithoutExpire() {
+    void testRunUnhealthyInstanceWithoutExpire() {
         injectInstance(false, 0);
         beatCheckTask.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
     }
     
     @Test
-    public void testRunHealthyInstanceWithoutExpire() {
+    void testRunHealthyInstanceWithoutExpire() {
         injectInstance(true, 0);
         beatCheckTask.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
@@ -107,7 +111,7 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testRunUnHealthyInstanceWithExpire() {
+    void testRunUnHealthyInstanceWithExpire() {
         injectInstance(false, 0);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         beatCheckTask.run();
@@ -115,7 +119,7 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testRunHealthyInstanceWithExpire() {
+    void testRunHealthyInstanceWithExpire() {
         injectInstance(true, 0);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         beatCheckTask.run();
@@ -123,7 +127,7 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testRunHealthyInstanceWithHeartBeat() {
+    void testRunHealthyInstanceWithHeartBeat() {
         injectInstance(true, System.currentTimeMillis());
         when(globalConfig.isExpireInstance()).thenReturn(true);
         beatCheckTask.run();
@@ -132,9 +136,8 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis()).getExtendDatum()
-                .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 800);
+    void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
+        injectInstance(true, System.currentTimeMillis()).getExtendDatum().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 800);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();
@@ -143,13 +146,13 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testRunHealthyInstanceWithTimeoutFromMetadata() throws InterruptedException {
+    void testRunHealthyInstanceWithTimeoutFromMetadata() throws InterruptedException {
         injectInstance(true, System.currentTimeMillis());
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 500L);
-        String address =
-                IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + InternetAddressUtil.IP_PORT_SPLITER + UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+        String address = IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + InternetAddressUtil.IP_PORT_SPLITER
+                + UtilsAndCommons.DEFAULT_CLUSTER_NAME;
         when(namingMetadataManager.getInstanceMetadata(service, address)).thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);

@@ -16,9 +16,13 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -32,24 +36,29 @@ import javax.annotation.PostConstruct;
  */
 @Conditional(ConditionOnExternalStorage.class)
 @Component
-@DependsOn({"rpcConfigChangeNotifier"})
+@DependsOn({"rpcConfigChangeNotifier", "configMigrateService"})
 public class ExternalDumpService extends DumpService {
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param persistService {@link PersistService}
-     * @param memberManager  {@link ServerMemberManager}
+     * @param memberManager {@link ServerMemberManager}
      */
-    public ExternalDumpService(PersistService persistService, ServerMemberManager memberManager) {
-        super(persistService, memberManager);
+    public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
+            NamespacePersistService namespacePersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ServerMemberManager memberManager,
+            ConfigMigrateService configMigrateService) {
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
+                configInfoGrayPersistService, memberManager, configMigrateService);
     }
     
     @PostConstruct
     @Override
     protected void init() throws Throwable {
-        dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+        dumpOperate();
     }
     
     @Override

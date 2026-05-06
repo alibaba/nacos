@@ -31,30 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 public class ClientTrackService {
     
     /**
-     * Track client's md5 value.
-     */
-    public static void trackClientMd5(String ip, Map<String, String> clientMd5Map) {
-        ClientRecord record = getClientRecord(ip);
-        record.setLastTime(System.currentTimeMillis());
-        record.getGroupKey2md5Map().putAll(clientMd5Map);
-    }
-    
-    /**
-     * TrackClientMd5.
-     *
-     * @param ip                     ip string value.
-     * @param clientMd5Map           clientMd5Map.
-     * @param clientLastPollingTsMap clientLastPollingTsMap.
-     */
-    public static void trackClientMd5(String ip, Map<String, String> clientMd5Map,
-            Map<String, Long> clientLastPollingTsMap) {
-        ClientRecord record = getClientRecord(ip);
-        record.setLastTime(System.currentTimeMillis());
-        record.getGroupKey2md5Map().putAll(clientMd5Map);
-        record.getGroupKey2pollingTsMap().putAll(clientLastPollingTsMap);
-    }
-    
-    /**
      * Put the specified value(ip/groupKey/clientMd5) into clientRecords Map.
      *
      * @param ip        ip string value.
@@ -109,26 +85,7 @@ public class ClientTrackService {
         
         return status;
     }
-    
-    /**
-     * Ip ->  SubscriberStatus.
-     */
-    public static Map<String, SubscriberStatus> listSubsByGroup(String groupKey) {
-        Map<String, SubscriberStatus> subs = new HashMap<>(100);
-        
-        for (ClientRecord clientRec : clientRecords.values()) {
-            String clientMd5 = clientRec.getGroupKey2md5Map().get(groupKey);
-            Long lastPollingTs = clientRec.getGroupKey2pollingTsMap().get(groupKey);
-            
-            if (null != clientMd5 && null != lastPollingTs) {
-                Boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
-                subs.put(clientRec.getIp(), new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
-            }
-            
-        }
-        return subs;
-    }
-    
+  
     /**
      * Specify subscriber's ip and look up whether data is latest.
      * groupKey -> isUptodate.
@@ -145,23 +102,6 @@ public class ClientTrackService {
     }
     
     /**
-     * Specify groupKey and look up whether subscriber and data is latest.
-     * IP -> isUptodate.
-     */
-    public static Map<String, Boolean> listSubscriberByGroup(String groupKey) {
-        Map<String, Boolean> subs = new HashMap<>(100);
-        
-        for (ClientRecord clientRec : clientRecords.values()) {
-            String clientMd5 = clientRec.getGroupKey2md5Map().get(groupKey);
-            if (null != clientMd5) {
-                Boolean isuptodate = ConfigCacheService.isUptodate(groupKey, clientMd5);
-                subs.put(clientRec.getIp(), isuptodate);
-            }
-        }
-        return subs;
-    }
-    
-    /**
      * Get and return the record of specified client ip.
      *
      * @param clientIp clientIp string value.
@@ -173,8 +113,8 @@ public class ClientTrackService {
             return record;
         }
         ClientRecord clientRecord = new ClientRecord(clientIp);
-        clientRecords.putIfAbsent(clientIp, clientRecord);
-        return clientRecord;
+        record = clientRecords.putIfAbsent(clientIp, clientRecord);
+        return null == record ? clientRecord : record;
     }
     
     public static void refreshClientRecord() {

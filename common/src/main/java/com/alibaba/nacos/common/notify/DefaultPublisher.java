@@ -65,7 +65,10 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         setName("nacos.publisher-" + type.getName());
         this.eventType = type;
         this.queueMaxSize = bufferSize;
-        this.queue = new ArrayBlockingQueue<>(bufferSize);
+        if (this.queueMaxSize == -1) {
+            this.queueMaxSize = ringBufferSize;
+        }
+        this.queue = new ArrayBlockingQueue<>(this.queueMaxSize);
         start();
     }
     
@@ -78,9 +81,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         if (!initialized) {
             // start just called once
             super.start();
-            if (queueMaxSize == -1) {
-                queueMaxSize = ringBufferSize;
-            }
             initialized = true;
         }
     }
@@ -102,22 +102,18 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
-            for (; ; ) {
-                if (shutdown || hasSubscriber() || waitTimes <= 0) {
-                    break;
-                }
+            while (!shutdown && !hasSubscriber() && waitTimes > 0) {
                 ThreadUtils.sleep(1000L);
                 waitTimes--;
             }
-            
-            for (; ; ) {
-                if (shutdown) {
-                    break;
-                }
+
+            while (!shutdown) {
                 final Event event = queue.take();
                 receiveEvent(event);
                 UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
             }
+        } catch (InterruptedException e) {
+            // [issue #13752] ignore stack log
         } catch (Throwable ex) {
             LOGGER.error("Event listener exception : ", ex);
         }
@@ -159,6 +155,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     public void shutdown() {
         this.shutdown = true;
         this.queue.clear();
+        // Interrupt the thread to stop processing events: queue.take().
+        this.interrupt();
     }
     
     public boolean isInitialized() {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.Callback;
@@ -28,12 +29,14 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +110,8 @@ public class HttpClient {
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
                 .setReadTimeOutMillis(readTimeout).build();
@@ -183,7 +187,8 @@ public class HttpClient {
             header.addAll(headers);
         }
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         switch (method) {
             case HttpMethod.GET:
                 ASYNC_REST_TEMPLATE.get(url, header, query, String.class, callback);
@@ -212,7 +217,7 @@ public class HttpClient {
      */
     public static void asyncHttpPostLarge(String url, List<String> headers, String content, Callback<String> callback)
             throws Exception {
-        asyncHttpPostLarge(url, headers, content.getBytes(), callback);
+        asyncHttpPostLarge(url, headers, content.getBytes(StandardCharsets.UTF_8), callback);
     }
     
     /**
@@ -229,7 +234,8 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         ASYNC_REST_TEMPLATE.post(url, header, Query.EMPTY, content, String.class, callback);
     }
     
@@ -247,7 +253,8 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         ASYNC_REST_TEMPLATE.delete(url, header, content, String.class, callback);
     }
     
@@ -272,7 +279,8 @@ public class HttpClient {
                 header.addAll(headers);
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-            AuthHeaderUtil.addIdentityToHeader(header);
+            AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                    NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
             HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
                     .setReadTimeOutMillis(5000).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
@@ -295,7 +303,8 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         ASYNC_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class, callback);
     }
     
@@ -312,7 +321,8 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class);
         } catch (Exception e) {
@@ -333,7 +343,8 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.getLarge(url, header, Query.EMPTY, content, String.class);
         } catch (Exception e) {
@@ -354,7 +365,8 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
+        AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(
+                NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postJson(url, header, content, String.class);
         } catch (Exception e) {

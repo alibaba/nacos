@@ -18,8 +18,8 @@ package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -76,9 +76,9 @@ public class AddressServerGeneratorManager {
             instance.setPort(Integer.parseInt(ipAndPort[1]));
             instance.setClusterName(clusterName);
             instance.setServiceName(serviceName);
-            instance.setTenant(Constants.DEFAULT_NAMESPACE_ID);
-            instance.setApp(rawProductName);
             instance.setEphemeral(false);
+            instance.getMetadata().put("app", rawProductName);
+            instance.getMetadata().put("tenant", Constants.DEFAULT_NAMESPACE_ID);
             instanceList.add(instance);
         }
         
@@ -86,7 +86,7 @@ public class AddressServerGeneratorManager {
     }
     
     private String[] generateIpAndPort(String ip) {
-        String[] result = InternetAddressUtil.splitIPPortStr(ip);
+        String[] result = InternetAddressUtil.splitIpPortStr(ip);
         if (result.length != InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
             return new String[] {result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
         }
@@ -96,10 +96,10 @@ public class AddressServerGeneratorManager {
     /**
      * Generate response ips.
      *
-     * @param instanceList a instance set will generate string response to client.
+     * @param instanceList an instance set will generate string response to client.
      * @return the result of response to client
      */
-    public String generateResponseIps(List<Instance> instanceList) {
+    public String generateResponseIps(List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
@@ -113,7 +113,7 @@ public class AddressServerGeneratorManager {
     /**
      * Generate nacos service name.
      *
-     * @param rawServiceName the raw service name will not contains the {@link Constants#DEFAULT_GROUP}.
+     * @param rawServiceName the raw service name will not contain the {@link Constants#DEFAULT_GROUP}.
      * @return the nacos service name
      */
     public String generateNacosServiceName(String rawServiceName) {

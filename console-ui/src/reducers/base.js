@@ -15,39 +15,121 @@
  */
 
 import request from '../utils/request';
-import { GET_STATE } from '../constants';
+import {
+  GET_STATE,
+  LOGINPAGE_ENABLED,
+  GET_NOTICE,
+  SERVER_GUIDE,
+  LANGUAGE_KEY,
+  COPILOT_ENABLED,
+} from '../constants';
 
 const initialState = {
   version: null,
   standaloneMode: '',
   functionMode: '',
+  loginPageEnabled: '',
+  authEnabled: '',
+  notice: '',
+  consoleUiEnable: '',
+  authAdminRequest: '',
+  authSystemType: '',
+  copilotEnabled: false,
+  guideMsg: '',
+  configRetentionDays: 30, // config default retention days is 30
 };
 
 /**
  * 用户登录
  * @param {*} param0
  */
-const login = user => request.post('v1/auth/users/login', user);
+const login = user => request.post('v3/auth/user/login', user);
+const admin = user => request.post('v3/auth/user/admin', user);
+
+/**
+ * 单独在login处调用 获取提示信息
+ */
+const guide = () => request.get('v3/console/server/guide');
+
+/**
+ * 单独在login调用 判断是否可以登陆
+ */
+const state = () => request.get('v3/console/server/state');
 
 const getState = () => dispatch =>
   request
-    .get('v1/console/server/state')
+    .get('v3/console/server/state')
     .then(res => {
+      localStorage.setItem(LOGINPAGE_ENABLED, res.login_page_enabled);
+      localStorage.setItem(COPILOT_ENABLED, res.copilot_enabled === 'true');
       dispatch({
         type: GET_STATE,
         data: {
           version: res.version,
           standaloneMode: res.standalone_mode,
           functionMode: res.function_mode,
+          loginPageEnabled: res.login_page_enabled,
+          authEnabled: res.auth_enabled,
+          authSystemType: res.auth_system_type,
+          authAdminRequest: res.auth_admin_request,
+          consoleUiEnable: res.console_ui_enabled,
+          startupMode: res.startup_mode,
+          configRetentionDays: res.config_retention_days,
+          copilotEnabled: res.copilot_enabled === 'true',
         },
       });
     })
     .catch(() => {
+      localStorage.setItem(LOGINPAGE_ENABLED, null);
       dispatch({
         type: GET_STATE,
         data: {
           version: null,
           functionMode: null,
+          loginPageEnabled: null,
+          authEnabled: null,
+          consoleUiEnable: null,
+          authAdminRequest: null,
+        },
+      });
+    });
+
+const getNotice = () => dispatch =>
+  request
+    .get(`v3/console/server/announcement?language=${localStorage.getItem(LANGUAGE_KEY) || 'zh-CN'}`)
+    .then(res => {
+      dispatch({
+        type: GET_NOTICE,
+        data: {
+          notice: res.data,
+        },
+      });
+    })
+    .catch(() => {
+      dispatch({
+        type: GET_NOTICE,
+        data: {
+          notice: '',
+        },
+      });
+    });
+
+const getGuide = () => dispatch =>
+  request
+    .get('v3/console/server/guide')
+    .then(res => {
+      dispatch({
+        type: SERVER_GUIDE,
+        data: {
+          guideMsg: res.data,
+        },
+      });
+    })
+    .catch(() => {
+      dispatch({
+        type: SERVER_GUIDE,
+        data: {
+          guideMsg: '',
         },
       });
     });
@@ -56,9 +138,13 @@ export default (state = initialState, action) => {
   switch (action.type) {
     case GET_STATE:
       return { ...state, ...action.data };
+    case GET_NOTICE:
+      return { ...state, ...action.data };
+    case SERVER_GUIDE:
+      return { ...state, ...action.data };
     default:
       return state;
   }
 };
 
-export { getState, login };
+export { getState, login, getNotice, getGuide, guide, state, admin };

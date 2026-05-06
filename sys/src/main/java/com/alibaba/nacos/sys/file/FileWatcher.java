@@ -24,7 +24,6 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class FileWatcher {
     
     /**

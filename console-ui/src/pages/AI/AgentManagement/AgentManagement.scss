@@ -1,0 +1,102 @@
+.agent-management {
+  .search-form {
+    padding: 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .agent-table {
+    .operation-column {
+      a {
+        color: #0070f3;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+        
+        &.delete-link {
+          color: #ff4d4f;
+        }
+      }
+      
+      span {
+        color: #d9d9d9;
+        margin: 0 4px;
+      }
+    }
+  }
+
+  .batch-operations {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 0;
+    color: #999;
+    
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      color: #e1e1e1;
+    }
+    
+    .empty-text {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.agent-form {
+  .form-item-required {
+    .next-form-item-label::before {
+      content: '*';
+      color: #ff4d4f;
+      margin-right: 4px;
+    }
+  }
+  
+  .form-help-text {
+    color: #666;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+}
+
+.agent-detail {
+  .detail-item {
+    margin-bottom: 16px;
+    display: flex;
+    
+    .label {
+      width: 120px;
+      font-weight: bold;
+      color: #333;
+      flex-shrink: 0;
+    }
+    
+    .value {
+      flex: 1;
+      word-break: break-all;
+    }
+  }
+  
+  .version-table {
+    .version-tag {
+      border-radius: 12px;
+    }
+  }
+  
+  .action-buttons {
+    margin-bottom: 16px;
+    
+    .next-btn {
+      margin-right: 8px;
+    }
+  }
+} 

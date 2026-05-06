@@ -80,8 +80,6 @@ public class SwitchDomain implements Record, Cloneable {
     
     private boolean lightBeatEnabled = true;
     
-    private boolean doubleWriteEnabled = true;
-    
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
     
     /**
@@ -92,15 +90,15 @@ public class SwitchDomain implements Record, Cloneable {
     /**
      * since which version, push can be enabled.
      */
-    private String pushGoVersion = "0.1.0";
+    private String pushVersionOfGo = "0.1.0";
     
-    private String pushJavaVersion = "0.1.0";
+    private String pushVersionOfJava = "0.1.0";
     
-    private String pushPythonVersion = "0.4.3";
+    private String pushVersionOfPython = "0.4.3";
     
-    private String pushCVersion = "1.0.12";
+    private String pushVersionOfC = "1.0.12";
     
-    private String pushCSharpVersion = "0.9.0";
+    private String pushVersionOfCsharp = "0.9.0";
     
     private boolean enableAuthentication = false;
     
@@ -327,44 +325,44 @@ public class SwitchDomain implements Record, Cloneable {
         this.distroServerExpiredMillis = distroServerExpiredMillis;
     }
     
-    public String getPushGoVersion() {
-        return pushGoVersion;
+    public String getPushVersionOfGo() {
+        return pushVersionOfGo;
     }
     
     public void setPushGoVersion(String pushGoVersion) {
-        this.pushGoVersion = pushGoVersion;
+        this.pushVersionOfGo = pushGoVersion;
     }
     
-    public String getPushCSharpVersion() {
-        return pushCSharpVersion;
+    public String getPushVersionOfCsharp() {
+        return pushVersionOfCsharp;
     }
     
     public void setPushCSharpVersion(String pushCSharpVersion) {
-        this.pushCSharpVersion = pushCSharpVersion;
+        this.pushVersionOfCsharp = pushCSharpVersion;
     }
     
-    public String getPushJavaVersion() {
-        return pushJavaVersion;
+    public String getPushVersionOfJava() {
+        return pushVersionOfJava;
     }
     
     public void setPushJavaVersion(String pushJavaVersion) {
-        this.pushJavaVersion = pushJavaVersion;
+        this.pushVersionOfJava = pushJavaVersion;
     }
     
-    public String getPushPythonVersion() {
-        return pushPythonVersion;
+    public String getPushVersionOfPython() {
+        return pushVersionOfPython;
     }
     
     public void setPushPythonVersion(String pushPythonVersion) {
-        this.pushPythonVersion = pushPythonVersion;
+        this.pushVersionOfPython = pushPythonVersion;
     }
     
-    public String getPushCVersion() {
-        return pushCVersion;
+    public String getPushVersionOfC() {
+        return pushVersionOfC;
     }
     
     public void setPushCVersion(String pushCVersion) {
-        this.pushCVersion = pushCVersion;
+        this.pushVersionOfC = pushCVersion;
     }
     
     public String getOverriddenServerStatus() {
@@ -389,14 +387,6 @@ public class SwitchDomain implements Record, Cloneable {
     
     public void setLightBeatEnabled(boolean lightBeatEnabled) {
         this.lightBeatEnabled = lightBeatEnabled;
-    }
-    
-    public boolean isDoubleWriteEnabled() {
-        return doubleWriteEnabled;
-    }
-    
-    public void setDoubleWriteEnabled(boolean doubleWriteEnabled) {
-        this.doubleWriteEnabled = doubleWriteEnabled;
     }
     
     @Override

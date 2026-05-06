@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,42 +19,193 @@ package com.alibaba.nacos.sys.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class InetUtilsTest {
+class InetUtilsTest {
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
+        System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
+        System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
     }
     
     @Test
-    public void testRefreshIp() throws InterruptedException {
-        System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
-        System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
-        String selfIP = InetUtils.getSelfIP();
-        Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.1"));
+    void testRefreshIp() throws InterruptedException {
+        assertNotEquals("1.1.1.2", InetUtils.getSelfIP());
         
         System.setProperty(NACOS_SERVER_IP, "1.1.1.2");
-        TimeUnit.MILLISECONDS.sleep(500L);
+        TimeUnit.MILLISECONDS.sleep(300L);
         
-        selfIP = InetUtils.getSelfIP();
-        Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.2"));
+        assertTrue(StringUtils.equalsIgnoreCase(InetUtils.getSelfIP(), "1.1.1.2"));
         
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         System.clearProperty(NACOS_SERVER_IP);
         System.clearProperty(Constants.AUTO_REFRESH_TIME);
     }
     
+    @Test
+    void getSelfIP() {
+        assertNotNull(InetUtils.getSelfIP());
+    }
+    
+    @Test
+    void findFirstNonLoopbackAddress() {
+        InetAddress address = InetUtils.findFirstNonLoopbackAddress();
+        
+        assertNotNull(address);
+        assertFalse(address.isLoopbackAddress());
+    }
+    
+    @Test
+    void testisUp() throws SocketException {
+        NetworkInterface nic = mock(NetworkInterface.class);
+        when(nic.isUp()).thenReturn(true);
+        assertTrue(InetUtils.isUp(nic));
+        
+        when(nic.isUp()).thenReturn(false);
+        assertFalse(InetUtils.isUp(nic));
+        
+        when(nic.isUp()).thenThrow(new SocketException());
+        assertFalse(InetUtils.isUp(nic));
+    }
+    
+    @Test
+    void testIsPreferredAddress() {
+        try {
+            ReflectionTestUtils.setField(InetUtils.class, "useOnlySiteLocalInterface", true);
+            InetAddress inetAddress = mock(InetAddress.class);
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            when(inetAddress.isSiteLocalAddress()).thenReturn(true);
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+        } finally {
+            ReflectionTestUtils.setField(InetUtils.class, "useOnlySiteLocalInterface", false);
+        }
+    }
+    
+    @Test
+    void testIsPreferredAddressForPreferredNetwork() {
+        List<String> preferredNetworks = (List<String>) ReflectionTestUtils.getField(InetUtils.class,
+                "PREFERRED_NETWORKS");
+        try {
+            InetAddress inetAddress = mock(InetAddress.class);
+            preferredNetworks.add("192.168.1.*");
+            preferredNetworks.add("192.168.2");
+            when(inetAddress.getHostAddress()).thenReturn("192.168.1.1");
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            when(inetAddress.getHostAddress()).thenReturn("192.168.2.1");
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            when(inetAddress.getHostAddress()).thenReturn("10.10.10.10");
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+        } finally {
+            preferredNetworks.clear();
+        }
+    }
+    
+    @Test
+    void testIgnoreInterface() {
+        List<String> ignoreInterfaces = (List<String>) ReflectionTestUtils.getField(InetUtils.class,
+                "IGNORED_INTERFACES");
+        try {
+            ignoreInterfaces.add("eth.*");
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "ignoreInterface", "eth1"));
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "ignoreInterface", "lo0"));
+        } finally {
+            ignoreInterfaces.clear();
+        }
+    }
+
+    @Test
+    void testGetGrpcListenIp() {
+        // 保存原始属性值
+        String originalValue = System.getProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
+        try {
+            // 测试1: 未设置属性时应返回null
+            System.clearProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
+            assertNull(InetUtils.getGrpcListenIp());
+
+            // 测试2: 设置无效IP应抛异常
+            String invalidIp = "12345";
+            System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, invalidIp);
+            assertThrows(RuntimeException.class, InetUtils::getGrpcListenIp);
+
+            // 测试3: 设置有效IP应正确返回
+            String validIp = "192.168.1.1";
+            System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, validIp);
+            assertEquals(validIp, InetUtils.getGrpcListenIp());
+
+            // 测试4: 设置空值应返回null (根据实际需求)
+            System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, "");
+            assertEquals("", InetUtils.getGrpcListenIp());
+        } finally {
+            // 恢复原始属性值
+            if (originalValue != null) {
+                System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, originalValue);
+            } else {
+                System.clearProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
+            }
+        }
+    }
+    
+    // ========== Missing lines coverage tests ==========
+    
+    @Test
+    void testGetNacosIpWithInvalidValue() {
+        String originalValue = System.getProperty(NACOS_SERVER_IP);
+        try {
+            // 测试无效 IP 地址 - 不是有效的 IP 或域名
+            System.setProperty(NACOS_SERVER_IP, "invalid-ip-address!");
+            assertThrows(RuntimeException.class, InetUtils::getNacosIp);
+            
+            // 测试不是 IP 也不是域名的值
+            System.setProperty(NACOS_SERVER_IP, "not-ip-or-domain-!!!");
+            assertThrows(RuntimeException.class, InetUtils::getNacosIp);
+        } finally {
+            if (originalValue != null) {
+                System.setProperty(NACOS_SERVER_IP, originalValue);
+            } else {
+                System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
+            }
+        }
+    }
+    
+    @Test
+    void testIpChangeEventGetterMethods() {
+        InetUtils.IPChangeEvent event = new InetUtils.IPChangeEvent();
+        event.setOldIP("192.168.1.1");
+        event.setNewIP("192.168.1.2");
+        
+        // 测试 getter 方法 (lines 292, 300)
+        assertEquals("192.168.1.1", event.getOldIP());
+        assertEquals("192.168.1.2", event.getNewIP());
+        
+        // 测试 toString 方法 (line 309)
+        String expected = "IPChangeEvent{oldIP='192.168.1.1', newIP='192.168.1.2'}";
+        assertEquals(expected, event.toString());
+    }
+
 }

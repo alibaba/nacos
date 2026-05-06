@@ -1,0 +1,1 @@
+{"ip":"1.1.1.1","port":1234,"weight":1.0,"healthy":true,"enabled":true,"ephemeral":true,"clusterName":"file","serviceName":"no_name","metadata":{"chinese":"中文"},"instanceHeartBeatInterval":5000,"instanceHeartBeatTimeOut":15000,"ipDeleteTimeout":30000}

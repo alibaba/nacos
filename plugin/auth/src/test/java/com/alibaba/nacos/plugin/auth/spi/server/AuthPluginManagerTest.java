@@ -16,16 +16,18 @@
 
 package com.alibaba.nacos.plugin.auth.spi.server;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link AuthPluginManager} unit test.
@@ -34,38 +36,37 @@ import java.util.Optional;
  * @date 2021-08-12 12:56
  */
 
-@RunWith(MockitoJUnitRunner.class)
-public class AuthPluginManagerTest {
+@ExtendWith(MockitoExtension.class)
+class AuthPluginManagerTest {
+    
+    private static final String TYPE = "test";
     
     private AuthPluginManager authPluginManager;
     
     @Mock
     private AuthPluginService authPluginService;
     
-    private static final String TYPE = "test";
-    
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         authPluginManager = AuthPluginManager.getInstance();
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins
-                .get(authPluginManager);
+        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
         authServiceMap.put(TYPE, authPluginService);
     }
     
     @Test
-    public void testGetInstance() {
+    void testGetInstance() {
         AuthPluginManager instance = AuthPluginManager.getInstance();
         
-        Assert.assertNotNull(instance);
+        assertNotNull(instance);
     }
     
     @Test
-    public void testFindAuthServiceSpiImpl() {
+    void testFindAuthServiceSpiImpl() {
         Optional<AuthPluginService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
-        Assert.assertTrue(authServiceImpl.isPresent());
+        assertTrue(authServiceImpl.isPresent());
     }
     
 }

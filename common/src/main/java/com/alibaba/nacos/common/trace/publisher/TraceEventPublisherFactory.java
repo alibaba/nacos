@@ -50,7 +50,6 @@ public class TraceEventPublisherFactory implements EventPublisherFactory {
 
     @Override
     public EventPublisher apply(final Class<? extends Event> eventType, final Integer maxQueueSize) {
-        // Like ClientEvent$ClientChangeEvent cache by ClientEvent
         Class<? extends Event> cachedEventType = TraceEvent.class;
         
         for (Class<? extends Event> publisherEvent : publisherEvents) {
@@ -60,12 +59,11 @@ public class TraceEventPublisherFactory implements EventPublisherFactory {
             }
         }
         
-        publisher.computeIfAbsent(cachedEventType, eventClass -> {
+        return publisher.computeIfAbsent(cachedEventType, eventClass -> {
             TraceEventPublisher result = new TraceEventPublisher();
             result.init(eventClass, maxQueueSize);
             return result;
         });
-        return publisher.get(cachedEventType);
     }
 
     public String getAllPublisherStatues() {

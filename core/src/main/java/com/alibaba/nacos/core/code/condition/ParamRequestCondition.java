@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.code.condition;
 
 import org.springframework.util.ObjectUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;

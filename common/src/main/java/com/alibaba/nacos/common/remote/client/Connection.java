@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.remote.Requester;
+
+import java.util.Map;
 
 /**
  * connection on client side.
@@ -24,7 +28,6 @@ import com.alibaba.nacos.api.remote.Requester;
  * @author liuzunfei
  * @version $Id: Connection.java, v 0.1 2020年08月09日 1:32 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
     private String connectionId;
@@ -32,6 +35,8 @@ public abstract class Connection implements Requester {
     private boolean abandon = false;
     
     protected RpcClient.ServerInfo serverInfo;
+    
+    protected Map<String, Boolean> abilityTable;
     
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
@@ -43,6 +48,21 @@ public abstract class Connection implements Requester {
     
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
+    }
+    
+    public AbilityStatus getConnectionAbility(AbilityKey abilityKey) {
+        if (abilityTable == null || !abilityTable.containsKey(abilityKey.getName())) {
+            return AbilityStatus.UNKNOWN;
+        }
+        return  abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+    }
+
+    public boolean isAbilitiesSet() {
+        return abilityTable != null;
+    }
+    
+    public void setAbilityTable(Map<String, Boolean> abilityTable) {
+        this.abilityTable = abilityTable;
     }
     
     /**

@@ -18,18 +18,27 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.PageUtil;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.ClusterInfo;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
@@ -38,8 +47,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of service operator for v2.x.
@@ -55,11 +66,14 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     private final ServiceStorage serviceStorage;
     
+    private final SubscribeManager subscribeManager;
+    
     public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService,
-            NamingMetadataManager metadataManager, ServiceStorage serviceStorage) {
+            NamingMetadataManager metadataManager, ServiceStorage serviceStorage, SubscribeManager subscribeManager) {
         this.metadataOperateService = metadataOperateService;
         this.metadataManager = metadataManager;
         this.serviceStorage = serviceStorage;
+        this.subscribeManager = subscribeManager;
     }
     
     @Override
@@ -77,7 +91,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public void create(Service service, ServiceMetadata metadata) throws NacosException {
         if (ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_ALREADY_EXIST,
                     String.format("specified service %s already exists!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
@@ -86,10 +100,11 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     @Override
     public void update(Service service, ServiceMetadata metadata) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
+        NotifyCenter.publishEvent(new InfoChangeEvent.ServiceInfoChangeEvent(service));
     }
     
     @Override
@@ -106,13 +121,14 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public void delete(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         
         if (!serviceStorage.getPushData(service).getHosts().isEmpty()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Service " + service.getGroupedServiceName()
-                    + " is not empty, can't be delete. Please unregister instance first");
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_DELETE_FAILURE,
+                    "Service " + service.getGroupedServiceName()
+                            + " is not empty, can't be delete. Please unregister instance first");
         }
         metadataOperateService.deleteServiceMetadata(service);
     }
@@ -121,7 +137,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     public ObjectNode queryService(String namespaceId, String serviceName) throws NacosException {
         Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     "service not found, namespace: " + namespaceId + ", serviceName: " + serviceName);
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -147,9 +163,9 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public ServiceDetailInfo queryService(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    "service not found, namespace: " + service.getNamespace() + ", serviceName: " + service
-                            .getGroupedServiceName());
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
+                    "service not found, namespace: " + service.getNamespace() + ", serviceName: "
+                            + service.getGroupedServiceName());
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         ServiceDetailInfo result = new ServiceDetailInfo();
@@ -172,13 +188,13 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         serviceDetail.put(FieldsConstants.GROUP_NAME, service.getGroup());
         serviceDetail.put(FieldsConstants.NAME, service.getName());
         serviceDetail.put(FieldsConstants.PROTECT_THRESHOLD, serviceMetadata.getProtectThreshold());
-        serviceDetail
-                .replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
+        serviceDetail.replace(FieldsConstants.METADATA,
+                JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
         serviceDetail.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(serviceMetadata.getSelector()));
     }
     
     private void setServiceMetadata(ServiceDetailInfo serviceDetail, ServiceMetadata serviceMetadata, Service service) {
-        serviceDetail.setNamespace(service.getNamespace());
+        serviceDetail.setNamespaceId(service.getNamespace());
         serviceDetail.setGroupName(service.getGroup());
         serviceDetail.setServiceName(service.getName());
         serviceDetail.setProtectThreshold(serviceMetadata.getProtectThreshold());
@@ -200,6 +216,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         result.setClusterName(clusterName);
         result.setHealthChecker(clusterMetadata.getHealthChecker());
         result.setMetadata(clusterMetadata.getExtendData());
+        result.setUseInstancePortForCheck(clusterMetadata.isUseInstancePortForCheck());
+        result.setHealthyCheckPort(clusterMetadata.getHealthyCheckPort());
         return result;
     }
     
@@ -236,8 +254,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public Collection<String> searchServiceName(String namespaceId, String expr, boolean responsibleOnly)
-            throws NacosException {
+    public Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException {
         String regex = Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN;
         Collection<String> result = new HashSet<>();
         for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
@@ -246,6 +263,40 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
                 result.add(groupedServiceName);
             }
         }
+        return result;
+    }
+    
+    @Override
+    public Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName,
+            boolean aggregation, int pageNo, int pageSize) throws NacosException {
+        Service service = Service.newService(namespaceId, groupName, serviceName);
+        Page<SubscriberInfo> result = new Page<>();
+        try {
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(service, aggregation);
+            result = convertToSubscriberInfoPage(PageUtil.subPage(subscribers, pageNo, pageSize));
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("query subscribers failed!", e);
+        }
+        return result;
+    }
+    
+    private Page<SubscriberInfo> convertToSubscriberInfoPage(Page<Subscriber> page) {
+        Page<SubscriberInfo> result = new Page<>();
+        result.setPageItems(page.getPageItems().stream().map(subscriber -> {
+            SubscriberInfo subscriberInfo = new SubscriberInfo();
+            subscriberInfo.setNamespaceId(subscriber.getNamespaceId());
+            String groupedServiceName = subscriber.getServiceName();
+            subscriberInfo.setServiceName(NamingUtils.getServiceName(groupedServiceName));
+            subscriberInfo.setGroupName(NamingUtils.getGroupName(groupedServiceName));
+            subscriberInfo.setAppName(subscriber.getApp());
+            subscriberInfo.setIp(subscriber.getIp());
+            subscriberInfo.setPort(subscriber.getPort());
+            subscriberInfo.setAgent(subscriber.getAgent());
+            return subscriberInfo;
+        }).collect(Collectors.toList()));
+        result.setTotalCount(page.getTotalCount());
+        result.setPagesAvailable(page.getPagesAvailable());
+        result.setPageNumber(page.getPageNumber());
         return result;
     }
 }

@@ -32,6 +32,9 @@ import java.util.Properties;
  * @author boyan
  */
 public class ResourceUtils {
+
+    private ResourceUtils() {
+    }
     
     private static final String CLASSPATH_PREFIX = "classpath:";
     

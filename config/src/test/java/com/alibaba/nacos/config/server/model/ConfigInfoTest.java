@@ -20,14 +20,15 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.StandardEnvironment;
 
-public class ConfigInfoTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigInfoTest {
     
     @Test
-    public void testPrecisionIssue() throws Exception {
+    void testPrecisionIssue() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         IdGenerator generator = new SnowFlowerIdGenerator();
         long expected = generator.nextId();
@@ -35,8 +36,59 @@ public class ConfigInfoTest {
         configInfo.setId(expected);
         String json = JacksonUtils.toJson(configInfo);
         ConfigInfo actual = JacksonUtils.toObj(json, ConfigInfo.class);
-        Assert.assertEquals(expected, actual.getId());
+        assertEquals(expected, actual.getId());
         
+    }
+    
+    @Test
+    void testConfigInfoWithDescAndTags() {
+        ConfigInfo configInfo = new ConfigInfo();
+        configInfo.setDataId("test.properties");
+        configInfo.setGroup("DEFAULT_GROUP");
+        configInfo.setTenant("public");
+        configInfo.setContent("key=value");
+        configInfo.setDesc("测试配置描述");
+        configInfo.setConfigTags("tag1,tag2,tag3");
+        
+        assertEquals("test.properties", configInfo.getDataId());
+        assertEquals("DEFAULT_GROUP", configInfo.getGroup());
+        assertEquals("public", configInfo.getTenant());
+        assertEquals("key=value", configInfo.getContent());
+        assertEquals("测试配置描述", configInfo.getDesc());
+        assertEquals("tag1,tag2,tag3", configInfo.getConfigTags());
+    }
+    
+    @Test
+    void testConfigInfoWithNullDescAndTags() {
+        ConfigInfo configInfo = new ConfigInfo();
+        configInfo.setDataId("test.properties");
+        configInfo.setGroup("DEFAULT_GROUP");
+        configInfo.setTenant("public");
+        configInfo.setContent("key=value");
+        configInfo.setDesc(null);
+        configInfo.setConfigTags(null);
+        
+        assertEquals("test.properties", configInfo.getDataId());
+        assertEquals("DEFAULT_GROUP", configInfo.getGroup());
+        assertEquals("public", configInfo.getTenant());
+        assertEquals("key=value", configInfo.getContent());
+        assertEquals(null, configInfo.getDesc());
+        assertEquals(null, configInfo.getConfigTags());
+    }
+    
+    @Test
+    void testConfigInfoInheritance() {
+        // 测试 ConfigAllInfo 继承 ConfigInfo 后的字段访问
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setDataId("test.properties");
+        configAllInfo.setGroup("DEFAULT_GROUP");
+        configAllInfo.setDesc("继承的描述字段");
+        configAllInfo.setConfigTags("inherited,tags");
+        
+        assertEquals("test.properties", configAllInfo.getDataId());
+        assertEquals("DEFAULT_GROUP", configAllInfo.getGroup());
+        assertEquals("继承的描述字段", configAllInfo.getDesc());
+        assertEquals("inherited,tags", configAllInfo.getConfigTags());
     }
     
 }

@@ -38,16 +38,13 @@ public class InstanceOperationInfo {
     }
     
     /**
-     * serverName.
+     * serverName with groupName.
+     * TODO split serviceName to serverName and serviceName. After disabled v1 client api.
      */
     private String serviceName;
     
     /**
      * consistencyType. it helps to operate all instances from consistencyService, value = ephemeral or persist.
-     * <p>
-     * ephemeral = all ephemeral instances in {@link com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl}
-     * persist = all persist instances in {@link com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl}
-     * </p>
      */
     private String consistencyType;
     

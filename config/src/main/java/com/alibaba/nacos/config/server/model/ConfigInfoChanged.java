@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * ConfigInfoChanged.
@@ -60,15 +61,6 @@ public class ConfigInfoChanged implements Serializable {
     }
     
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
-        result = prime * result + ((group == null) ? 0 : group.hashCode());
-        return result;
-    }
-    
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -96,7 +88,12 @@ public class ConfigInfoChanged implements Serializable {
         }
         return true;
     }
-    
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dataId, group);
+    }
+
     @Override
     public String toString() {
         return "ConfigInfoChanged [dataId=" + dataId + ", group=" + group + "]";

@@ -32,6 +32,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -45,6 +46,7 @@ import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
 import static com.alibaba.nacos.sys.env.Constants.PREFER_HOSTNAME_OVER_IP;
 import static com.alibaba.nacos.sys.env.Constants.SYSTEM_PREFER_HOSTNAME_OVER_IP;
 import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
+import static com.alibaba.nacos.sys.env.Constants.NACOS_REMOTE_GRPC_LISTEN_IP;
 
 /**
  * Network card operation tool class.
@@ -131,13 +133,13 @@ public class InetUtils {
      *
      * @return ip address
      */
-    private static String getNacosIp() {
+    public static String getNacosIp() {
         String nacosIp = System.getProperty(NACOS_SERVER_IP);
         if (StringUtils.isBlank(nacosIp)) {
             nacosIp = EnvUtil.getProperty(IP_ADDRESS);
         }
         if (!StringUtils.isBlank(nacosIp)) {
-            if (!(InternetAddressUtil.isIP(nacosIp) || InternetAddressUtil.isDomain(nacosIp))) {
+            if (!(InternetAddressUtil.isIp(nacosIp) || InternetAddressUtil.isDomain(nacosIp))) {
                 throw new RuntimeException("nacos address " + nacosIp + " is not ip");
             }
         }
@@ -192,12 +194,12 @@ public class InetUtils {
             for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
                     nics.hasMoreElements(); ) {
                 NetworkInterface ifc = nics.nextElement();
-                if (ifc.isUp()) {
+                if (isUp(ifc)) {
                     LOG.debug("Testing interface: " + ifc.getDisplayName());
-                    if (ifc.getIndex() < lowest || result == null) {
-                        lowest = ifc.getIndex();
-                    } else {
+                    if (ifc.getIndex() >= lowest && result != null) {
                         continue;
+                    } else {
+                        lowest = ifc.getIndex();
                     }
                     
                     if (!ignoreInterface(ifc.getDisplayName())) {
@@ -229,6 +231,20 @@ public class InetUtils {
         }
         
         return null;
+    }
+    
+    /**
+     * check network intreface isUp, not throw SocketException.
+     * @param ifc network interface
+     * @return true or false;
+     */
+    public static boolean isUp(NetworkInterface ifc)  {
+        try {
+            return ifc.isUp();
+        } catch (SocketException e) {
+            LOG.debug("Network interface can not get isUp, exception: ", e);
+        }
+        return false;
     }
     
     private static boolean isPreferredAddress(InetAddress address) {
@@ -265,7 +281,7 @@ public class InetUtils {
     /**
      * {@link com.alibaba.nacos.core.cluster.ServerMemberManager} is listener.
      */
-    @SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static class IPChangeEvent extends SlowEvent {
         
         private String oldIP;
@@ -292,6 +308,14 @@ public class InetUtils {
         public String toString() {
             return "IPChangeEvent{" + "oldIP='" + oldIP + '\'' + ", newIP='" + newIP + '\'' + '}';
         }
+    }
+
+    public static String getGrpcListenIp() {
+        String grpcListenIp = System.getProperty(NACOS_REMOTE_GRPC_LISTEN_IP);
+        if (StringUtils.isNotBlank(grpcListenIp) && !InternetAddressUtil.isIp(grpcListenIp)) {
+            throw new RuntimeException("nacos address " + grpcListenIp + " is not ip");
+        }
+        return grpcListenIp;
     }
     
 }

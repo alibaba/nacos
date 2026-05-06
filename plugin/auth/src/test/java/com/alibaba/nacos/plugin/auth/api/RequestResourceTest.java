@@ -17,21 +17,20 @@
 package com.alibaba.nacos.plugin.auth.api;
 
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RequestResourceTest {
+class RequestResourceTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
     }
     
     @Test
-    public void testBuildNamingRequestResource() {
-        RequestResource actual = RequestResource.namingBuilder().setNamespace("NS").setGroup("G").setResource("Service")
-                .build();
+    void testBuildNamingRequestResource() {
+        RequestResource actual = RequestResource.namingBuilder().setNamespace("NS").setGroup("G").setResource("Service").build();
         assertEquals(SignType.NAMING, actual.getType());
         assertEquals("NS", actual.getNamespace());
         assertEquals("G", actual.getGroup());
@@ -39,9 +38,8 @@ public class RequestResourceTest {
     }
     
     @Test
-    public void testBuildConfigRequestResource() {
-        RequestResource actual = RequestResource.configBuilder().setNamespace("NS").setGroup("G").setResource("dataId")
-                .build();
+    void testBuildConfigRequestResource() {
+        RequestResource actual = RequestResource.configBuilder().setNamespace("NS").setGroup("G").setResource("dataId").build();
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("NS", actual.getNamespace());
         assertEquals("G", actual.getGroup());

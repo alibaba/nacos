@@ -224,4 +224,9 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
         }
         return node.isLeader();
     }
+    
+    @Override
+    public boolean isReady() {
+        return raftServer.isReady();
+    }
 }

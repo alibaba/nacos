@@ -44,6 +44,9 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  */
 public final class ClassUtils {
     
+    private ClassUtils() {
+    }
+    
     public static final String ARRAY_SUFFIX = "[]";
     
     private static final String INTERNAL_ARRAY_PREFIX = "[";
@@ -238,7 +241,7 @@ public final class ClassUtils {
      */
     public static Class<?> forName(String name, ClassLoader classLoader) throws ClassNotFoundException, LinkageError {
         
-        AbstractAssert.notNull(name, "Name must not be null");
+        Objects.requireNonNull(name, "Name must not be null");
         
         Class<?> clazz = resolvePrimitiveClassName(name);
         if (clazz == null) {
@@ -383,7 +386,7 @@ public final class ClassUtils {
      * @return the corresponding resource path, pointing to the class
      */
     public static String convertClassNameToResourcePath(String className) {
-        AbstractAssert.notNull(className, "Class name must not be null");
+        Objects.requireNonNull(className, "Class name must not be null");
         return className.replace(PACKAGE_SEPARATOR, PATH_SEPARATOR);
     }
     
@@ -394,7 +397,7 @@ public final class ClassUtils {
      * @return the corresponding resource path, pointing to the class
      */
     public static String resourcePathToConvertClassName(String className) {
-        AbstractAssert.notNull(className, "Class name must not be null");
+        Objects.requireNonNull(className, "Class name must not be null");
         return className.replace(PATH_SEPARATOR, PACKAGE_SEPARATOR);
     }
 }

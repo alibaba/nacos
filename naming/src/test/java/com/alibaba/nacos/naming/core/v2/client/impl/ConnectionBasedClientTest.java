@@ -17,15 +17,15 @@
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.naming.misc.ClientConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConnectionBasedClientTest {
+class ConnectionBasedClientTest {
     
     private final String connectionId = System.currentTimeMillis() + "_127.0.0.1_80";
     
@@ -33,33 +33,32 @@ public class ConnectionBasedClientTest {
     
     private ConnectionBasedClient connectionBasedClient;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         connectionBasedClient = new ConnectionBasedClient(connectionId, isNative, null);
     }
     
     @Test
-    public void testIsEphemeral() {
+    void testIsEphemeral() {
         assertTrue(connectionBasedClient.isEphemeral());
     }
     
     @Test
-    public void testIsExpire() {
+    void testIsExpire() {
         connectionBasedClient.setLastRenewTime();
-        long mustExpireTime =
-                connectionBasedClient.getLastRenewTime() + 2 * ClientConfig.getInstance().getClientExpiredTime();
+        long mustExpireTime = connectionBasedClient.getLastRenewTime() + 2 * ClientConfig.getInstance().getClientExpiredTime();
         assertTrue(connectionBasedClient.isExpire(mustExpireTime));
     }
     
     @Test
-    public void testRecalculateRevision() {
+    void testRecalculateRevision() {
         assertEquals(0, connectionBasedClient.getRevision());
         connectionBasedClient.recalculateRevision();
         assertEquals(1, connectionBasedClient.getRevision());
     }
     
     @Test
-    public void testRecalculateRevisionAsync() throws InterruptedException {
+    void testRecalculateRevisionAsync() throws InterruptedException {
         assertEquals(0, connectionBasedClient.getRevision());
         for (int i = 0; i < 10; i++) {
             Thread thread = new Thread(() -> {

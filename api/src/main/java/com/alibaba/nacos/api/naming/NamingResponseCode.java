@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.common.ResponseCode;
 /**
  * Business response code of naming module
  *
- * <p>Every code stays between 20001 to 29999.
+ * <p>Every code stays between 20001 and 29999.
  *
  * @author nkorange
  * @author 1.2.0

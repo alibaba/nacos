@@ -24,19 +24,20 @@ import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.alibaba.nacos.consistency.DataOperation.ADD;
 import static com.alibaba.nacos.consistency.DataOperation.DELETE;
 import static com.alibaba.nacos.consistency.DataOperation.QUERY;
 import static com.alibaba.nacos.consistency.DataOperation.SNAPSHOT;
 import static com.alibaba.nacos.consistency.DataOperation.VERIFY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * {@link DistroDataRequestHandler} unit tests.
@@ -44,8 +45,8 @@ import static com.alibaba.nacos.consistency.DataOperation.VERIFY;
  * @author chenglu
  * @date 2021-09-17 20:50
  */
-@RunWith(MockitoJUnitRunner.class)
-public class DistroDataRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class DistroDataRequestHandlerTest {
     
     @InjectMocks
     private DistroDataRequestHandler distroDataRequestHandler;
@@ -54,33 +55,33 @@ public class DistroDataRequestHandlerTest {
     private DistroProtocol distroProtocol;
     
     @Test
-    public void testHandle() throws NacosException {
+    void testHandle() throws NacosException {
         Mockito.when(distroProtocol.onVerify(Mockito.any(), Mockito.anyString())).thenReturn(false);
         DistroDataRequest distroDataRequest = new DistroDataRequest();
         distroDataRequest.setDataOperation(VERIFY);
         RequestMeta requestMeta = new RequestMeta();
         DistroDataResponse response = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
-        Assert.assertEquals(response.getErrorCode(), ResponseCode.FAIL.getCode());
-    
+        assertEquals(response.getErrorCode(), ResponseCode.FAIL.getCode());
+        
         DistroData distroData = new DistroData();
         Mockito.when(distroProtocol.onSnapshot(Mockito.any())).thenReturn(distroData);
         distroDataRequest.setDataOperation(SNAPSHOT);
         DistroDataResponse response1 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
-        Assert.assertEquals(response1.getDistroData(), distroData);
+        assertEquals(response1.getDistroData(), distroData);
         
         distroDataRequest.setDataOperation(DELETE);
         Mockito.when(distroProtocol.onReceive(Mockito.any())).thenReturn(false);
         DistroDataResponse response2 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
-        Assert.assertEquals(response2.getErrorCode(), ResponseCode.FAIL.getCode());
+        assertEquals(response2.getErrorCode(), ResponseCode.FAIL.getCode());
         
         distroDataRequest.setDataOperation(QUERY);
         Mockito.when(distroProtocol.onQuery(Mockito.any())).thenReturn(distroData);
         distroDataRequest.setDistroData(new DistroData());
         DistroDataResponse response3 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
-        Assert.assertEquals(response3.getDistroData(), distroData);
+        assertEquals(response3.getDistroData(), distroData);
         
         distroDataRequest.setDataOperation(ADD);
         DistroDataResponse response4 = distroDataRequestHandler.handle(distroDataRequest, requestMeta);
-        Assert.assertNull(response4.getDistroData());
+        assertNull(response4.getDistroData());
     }
 }

@@ -80,8 +80,7 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
 
     @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
-        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>());
-        subscribes.get(subscribeType).add(subscriber);
+        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>()).add(subscriber);
     }
 
     @Override
@@ -103,7 +102,6 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
         boolean success = this.queue.offer(event);
         if (!success) {
             LOGGER.warn("Trace Event Publish failed, event : {}, publish queue size : {}", event, currentEventSize());
-            return true;
         }
         return true;
     }

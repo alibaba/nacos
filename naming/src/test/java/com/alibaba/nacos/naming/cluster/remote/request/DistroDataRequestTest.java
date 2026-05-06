@@ -20,28 +20,28 @@ package com.alibaba.nacos.naming.cluster.remote.request;
 
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
-public class DistroDataRequestTest {
+class DistroDataRequestTest {
     
     @Test
-    public void testConstructor1() {
+    void testConstructor1() {
         DistroDataRequest req = new DistroDataRequest();
         assertNotNull(req);
     }
     
     @Test
-    public void testConstructor2() {
+    void testConstructor2() {
         DistroDataRequest req = new DistroDataRequest(mock(DistroData.class), mock(DataOperation.class));
         assertNotNull(req);
     }
     
     @Test
-    public void testGetterAndSetter() {
+    void testGetterAndSetter() {
         DistroData distroData = mock(DistroData.class);
         DataOperation dataOperation = mock(DataOperation.class);
         DistroDataRequest req = new DistroDataRequest();

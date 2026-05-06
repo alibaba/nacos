@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class SimpleReadWriteLockTest {
+@ExtendWith(SpringExtension.class)
+class SimpleReadWriteLockTest {
     
     @Test
-    public void testDoubleReadLockByAllReleaseAndWriteLock() {
+    void testDoubleReadLockByAllReleaseAndWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());
@@ -39,14 +39,14 @@ public class SimpleReadWriteLockTest {
     }
     
     @Test
-    public void testAddWriteLock() {
+    void testAddWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryWriteLock());
         lock.releaseWriteLock();
     }
     
     @Test
-    public void testDoubleWriteLock() {
+    void testDoubleWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         
         assertTrue(lock.tryWriteLock());
@@ -54,7 +54,7 @@ public class SimpleReadWriteLockTest {
     }
     
     @Test
-    public void testFirstReadLockThenWriteLock() {
+    void testFirstReadLockThenWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         
         assertTrue(lock.tryReadLock());
@@ -62,7 +62,7 @@ public class SimpleReadWriteLockTest {
     }
     
     @Test
-    public void testFirstWriteLockThenReadLock() {
+    void testFirstWriteLockThenReadLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         
         assertTrue(lock.tryWriteLock());
@@ -70,7 +70,7 @@ public class SimpleReadWriteLockTest {
     }
     
     @Test
-    public void testDoubleReadLockAndOneReleaseOneFailed() {
+    void testDoubleReadLockAndOneReleaseOneFailed() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());

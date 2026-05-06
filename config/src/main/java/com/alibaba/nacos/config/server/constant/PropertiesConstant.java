@@ -53,10 +53,20 @@ public class PropertiesConstant {
     
     public static final String INITIAL_EXPANSION_PERCENT = "initialExpansionPercent";
     
-    public static final String SPRING_DATASOURCE_PLATFORM = "spring.datasource.platform";
+    public static final String SEARCH_MAX_CAPACITY = "nacos.config.search.max_capacity";
     
-    public static final String MYSQL = "mysql";
+    public static final String SEARCH_MAX_THREAD = "nacos.config.search.max_thread";
     
-    public static final String EMBEDDED_STORAGE = "embeddedStorage";
+    public static final String SEARCH_WAIT_TIMEOUT = "nacos.config.search.wait_timeout";
+    
+    public static final String DUMP_CHANGE_ON = "dumpChangeOn";
+    
+    public static final String DUMP_CHANGE_WORKER_INTERVAL = "dumpChangeWorkerInterval";
+
+    public static final String CONFIG_RENTENTION_DAYS = "nacos.config.retention.days";
+    
+    public static final String GRAY_CAPATIBEL_MODEL = "nacos.config.gray.compatible.model";
+    
+    public static final String NAMESPACE_COMPATIBLE_MODE = "nacos.config.namespace.compatible.mode";
     
 }

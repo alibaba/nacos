@@ -16,61 +16,68 @@
 
 package com.alibaba.nacos.common.executor;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutorService;
 
-public class ThreadPoolManagerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ThreadPoolManagerTest {
     
     @Test
-    public void test() {
+    void test() {
         ThreadPoolManager manager = ThreadPoolManager.getInstance();
         ExecutorService executor = ExecutorFactory.newSingleExecutorService();
         String namespace = "test";
         String group = "test";
         
         manager.register(namespace, group, executor);
-        Assert.assertTrue(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertEquals(1, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertTrue(manager.getResourcesManager().containsKey(namespace));
+        assertEquals(1, manager.getResourcesManager().get(namespace).get(group).size());
         
         manager.register(namespace, group, ExecutorFactory.newSingleExecutorService());
-        Assert.assertEquals(2, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertEquals(2, manager.getResourcesManager().get(namespace).get(group).size());
         
         manager.destroy(namespace, group);
-        Assert.assertFalse(manager.getResourcesManager().get(namespace).containsKey(group));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertFalse(manager.getResourcesManager().get(namespace).containsKey(group));
         
         manager.register(namespace, group, executor);
         manager.destroy(namespace);
-        Assert.assertFalse(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertFalse(manager.getResourcesManager().containsKey(namespace));
         
         manager.register(namespace, group, executor);
         manager.deregister(namespace, group, ExecutorFactory.newSingleExecutorService());
-        Assert.assertEquals(1, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertEquals(1, manager.getResourcesManager().get(namespace).get(group).size());
         
         manager.deregister(namespace, group, executor);
-        Assert.assertEquals(0, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertEquals(0, manager.getResourcesManager().get(namespace).get(group).size());
         
         manager.register(namespace, group, executor);
         manager.deregister(namespace, group);
-        Assert.assertFalse(manager.getResourcesManager().get(namespace).containsKey(group));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertFalse(manager.getResourcesManager().get(namespace).containsKey(group));
         
         manager.register(namespace, group, executor);
         manager.register(namespace, group, ExecutorFactory.newSingleExecutorService());
         ThreadPoolManager.shutdown();
-        Assert.assertFalse(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertFalse(manager.getResourcesManager().containsKey(namespace));
         
         manager.destroy(namespace);
         manager.destroy(namespace, group);
-        Assert.assertFalse(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
+        assertFalse(manager.getResourcesManager().containsKey(namespace));
+    }
+    
+    @Test
+    void testDestroyWithNull() {
+        ThreadPoolManager.getInstance().register("t", "g", ExecutorFactory.newFixedExecutorService(1));
+        try {
+            ThreadPoolManager.getInstance().destroy("null");
+            assertTrue(ThreadPoolManager.getInstance().getResourcesManager().containsKey("t"));
+            ThreadPoolManager.getInstance().destroy("null", "g");
+            assertTrue(ThreadPoolManager.getInstance().getResourcesManager().containsKey("t"));
+        } finally {
+            ThreadPoolManager.getInstance().destroy("t", "g");
+        }
     }
 }

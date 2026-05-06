@@ -16,17 +16,19 @@
 
 package com.alibaba.nacos.client.config.listener.impl;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Properties;
 
-public class PropertiesListenerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class PropertiesListenerTest {
     
     @Test
-    public void testReceiveConfigInfo() {
+    void testReceiveConfigInfo() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
         PropertiesListener a = new PropertiesListener() {
             @Override
@@ -36,13 +38,13 @@ public class PropertiesListenerTest {
         };
         a.receiveConfigInfo("foo=bar");
         final Properties actual = q2.poll();
-        Assert.assertEquals(1, actual.size());
-        Assert.assertEquals("bar", actual.getProperty("foo"));
+        assertEquals(1, actual.size());
+        assertEquals("bar", actual.getProperty("foo"));
         
     }
     
     @Test
-    public void testReceiveConfigInfoEmpty() {
+    void testReceiveConfigInfoEmpty() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
         PropertiesListener a = new PropertiesListener() {
             @Override
@@ -52,11 +54,11 @@ public class PropertiesListenerTest {
         };
         a.receiveConfigInfo("");
         final Properties actual = q2.poll();
-        Assert.assertNull(actual);
+        assertNull(actual);
     }
     
     @Test
-    public void testReceiveConfigInfoIsNotProperties() {
+    void testReceiveConfigInfoIsNotProperties() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
         PropertiesListener a = new PropertiesListener() {
             @Override
@@ -66,11 +68,11 @@ public class PropertiesListenerTest {
         };
         a.receiveConfigInfo(null);
         final Properties actual = q2.poll();
-        Assert.assertNull(actual);
+        assertNull(actual);
     }
     
     @Test
-    public void testInnerReceive() {
+    void testInnerReceive() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
         PropertiesListener a = new PropertiesListener() {
             @Override
@@ -82,8 +84,8 @@ public class PropertiesListenerTest {
         input.put("foo", "bar");
         a.innerReceive(input);
         final Properties actual = q2.poll();
-        Assert.assertEquals(1, actual.size());
-        Assert.assertEquals("bar", actual.getProperty("foo"));
+        assertEquals(1, actual.size());
+        assertEquals("bar", actual.getProperty("foo"));
     }
     
 }

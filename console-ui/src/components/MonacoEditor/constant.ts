@@ -20,7 +20,7 @@ export const MONACO_OPTIONS: Object = {
   roundedSelection: false,
   readOnly: false,
   lineNumbersMinChars: true,
-  theme: 'vs-dark',
+  theme: 'vs-dark-enhanced',
   wordWrapColumn: 120,
   folding: true,
   showFoldingControls: 'always',

@@ -25,9 +25,15 @@ import {
   Form,
   Input,
   Switch,
+  Message,
 } from '@alifd/next';
 import { connect } from 'react-redux';
-import { getPermissions, createPermission, deletePermission } from '../../../reducers/authority';
+import {
+  getPermissions,
+  checkPermission,
+  createPermission,
+  deletePermission,
+} from '../../../reducers/authority';
 import { getNamespaces } from '../../../reducers/namespace';
 import RegionGroup from '../../../components/RegionGroup';
 import NewPermissions from './NewPermissions';
@@ -48,7 +54,7 @@ class PermissionsManagement extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     permissions: PropTypes.object,
-    namespaces: PropTypes.object,
+    namespaces: PropTypes.array,
     getPermissions: PropTypes.func,
     getNamespaces: PropTypes.func,
   };
@@ -74,11 +80,11 @@ class PermissionsManagement extends React.Component {
   getPermissions() {
     this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
-    let role = this.state.role;
+    let { role } = this.state;
     let search = 'accurate';
     if (this.state.defaultFuzzySearch) {
       if (role && role !== '') {
-        role = '*' + role + '*';
+        role = `*${role}*`;
       }
     }
     if (role && role.indexOf('*') !== -1) {
@@ -118,7 +124,7 @@ class PermissionsManagement extends React.Component {
       <>
         <RegionGroup left={locale.privilegeManagement} />
         <Form inline>
-          <Form.Item label="角色名">
+          <Form.Item label={locale.role}>
             <Input
               value={this.state.role}
               htmlType="text"
@@ -129,20 +135,24 @@ class PermissionsManagement extends React.Component {
               }}
             />
           </Form.Item>
-          <Form.Item label="默认模糊匹配">
+          <Form.Item label={locale.fuzzydMode}>
             <Switch
               checkedChildren=""
               unCheckedChildren=""
               defaultChecked={this.state.defaultFuzzySearch}
               onChange={this.handleDefaultFuzzySwitchChange}
-              title={'自动在搜索参数前后加上*'}
+              title={locale.fuzzyd}
             />
           </Form.Item>
           <Form.Item label={''}>
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getPermissions()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getPermissions();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}
@@ -213,9 +223,17 @@ class PermissionsManagement extends React.Component {
         <NewPermissions
           visible={createPermissionVisible}
           onOk={permission =>
-            createPermission(permission).then(res => {
-              this.setState({ pageNo: 1 }, () => this.getPermissions());
-              return res;
+            checkPermission(permission).then(res => {
+              if (res) {
+                Message.error({
+                  content: locale.checkPermission,
+                });
+              } else {
+                createPermission(permission).then(res => {
+                  this.setState({ pageNo: 1 }, () => this.getPermissions());
+                  return res;
+                });
+              }
             })
           }
           onCancel={() => this.colseCreatePermission()}

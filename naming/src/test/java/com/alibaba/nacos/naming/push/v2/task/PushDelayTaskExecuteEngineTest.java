@@ -27,12 +27,12 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -42,8 +42,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class PushDelayTaskExecuteEngineTest {
+@ExtendWith(MockitoExtension.class)
+class PushDelayTaskExecuteEngineTest {
+    
+    private final Service service = Service.newService("N", "G", "S");
+    
+    private final String clientId = "testClient";
     
     @Mock
     private ClientManager clientManager;
@@ -69,30 +73,26 @@ public class PushDelayTaskExecuteEngineTest {
     @Mock
     private SwitchDomain switchDomain;
     
-    private final Service service = Service.newService("N", "G", "S");
-    
-    private final String clientId = "testClient";
-    
     private PushDelayTaskExecuteEngine executeEngine;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         when(serviceStorage.getPushData(service)).thenReturn(new ServiceInfo("G@@S"));
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
         when(switchDomain.isPushEnabled()).thenReturn(true);
-        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, metadataManager,
-                pushExecutor, switchDomain);
+        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, metadataManager, pushExecutor,
+                switchDomain);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         executeEngine.shutdown();
     }
     
     @Test
-    public void testAddTask() throws InterruptedException {
+    void testAddTask() throws InterruptedException {
         PushDelayTask pushDelayTask = new PushDelayTask(service, 0L);
         executeEngine.addTask(service, pushDelayTask);
         TimeUnit.MILLISECONDS.sleep(200L);

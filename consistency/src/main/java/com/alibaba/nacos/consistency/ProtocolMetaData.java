@@ -18,8 +18,8 @@ package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.javatuples.Pair;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -32,18 +32,21 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
     
     private final Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
     
+    /**
+     * used for jackson serialization.
+     *
+     * @return metaMap
+     */
     public Map<String, Map<Object, Object>> getMetaDataMap() {
         return metaDataMap.entrySet().stream().map(entry -> Pair.with(entry.getKey(),
-                entry.getValue().getItemMap().entrySet().stream()
-                        .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), TreeMap::putAll)))
-                .collect(TreeMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), TreeMap::putAll);
+                        entry.getValue().getItemMap().entrySet().stream()
+                                .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), TreeMap::putAll)))
+                .collect(TreeMap::new, (m, e) -> m.put(e.getFirst(), e.getSecond()), TreeMap::putAll);
     }
-    
     // Does not guarantee thread safety, there may be two updates of
     // time-1 and time-2 (time-1 <time-2), but time-1 data overwrites time-2
     
@@ -82,16 +85,13 @@ public final class ProtocolMetaData {
      * If MetaData does not exist, actively create a MetaData.
      */
     public void subscribe(final String group, final String key, final Observer observer) {
-        metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
-        metaDataMap.get(group).subscribe(key, observer);
+        metaDataMap.computeIfAbsent(group, s -> new MetaData(group)).subscribe(key, observer);
     }
     
     public void unSubscribe(final String group, final String key, final Observer observer) {
-        metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
-        metaDataMap.get(group).unSubscribe(key, observer);
+        metaDataMap.computeIfAbsent(group, s -> new MetaData(group)).unSubscribe(key, observer);
     }
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public static final class MetaData {
         
         private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>(8);
@@ -107,8 +107,7 @@ public final class ProtocolMetaData {
         }
         
         void put(String key, Object value) {
-            itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
-            ValueItem item = itemMap.get(key);
+            ValueItem item = itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
             item.setData(value);
         }
         
@@ -119,8 +118,7 @@ public final class ProtocolMetaData {
         // If ValueItem does not exist, actively create a ValueItem
         
         void subscribe(final String key, final Observer observer) {
-            itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
-            final ValueItem item = itemMap.get(key);
+            final ValueItem item = itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
             item.addObserver(observer);
         }
         

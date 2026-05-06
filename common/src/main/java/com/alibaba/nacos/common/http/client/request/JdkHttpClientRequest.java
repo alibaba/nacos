@@ -30,10 +30,13 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +48,10 @@ import java.util.Map;
 public class JdkHttpClientRequest implements HttpClientRequest {
     
     private static final String CONTENT_LENGTH = "Content-Length";
+    
+    private static final String BOUNDARY_PREFIX = "----WebKitFormBoundary";
+    
+    private static final String LINE_FEED = "\r\n";
     
     private HttpClientConfig httpClientConfig;
     
@@ -58,7 +65,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
      * @param sslContext ssl context
      */
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
-    public void setSSLContext(SSLContext sslContext) {
+    public void setSslContext(SSLContext sslContext) {
         if (sslContext != null) {
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         }
@@ -70,7 +77,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
      * @param hostnameVerifier custom hostnameVerifier
      */
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
-    public void replaceSSLHostnameVerifier(HostnameVerifier hostnameVerifier) {
+    public void replaceSslHostnameVerifier(HostnameVerifier hostnameVerifier) {
         if (hostnameVerifier != null) {
             HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
         }
@@ -84,35 +91,65 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         replaceDefaultConfig(requestHttpEntity.getHttpClientConfig());
         
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
-        Map<String, String> headerMap = headers.getHeader();
-        if (headerMap != null && headerMap.size() > 0) {
-            for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-                conn.setRequestProperty(entry.getKey(), entry.getValue());
+        try {
+            Map<String, String> headerMap = headers.getHeader();
+            if (headerMap != null && headerMap.size() > 0) {
+                for (Map.Entry<String, String> entry : headerMap.entrySet()) {
+                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                }
             }
+
+            conn.setConnectTimeout(this.httpClientConfig.getConTimeOutMillis());
+            conn.setReadTimeout(this.httpClientConfig.getReadTimeOutMillis());
+            conn.setRequestMethod(httpMethod);
+            if (body != null && !"".equals(body)) {
+                if (body instanceof File) {
+                    handleFileUpload(conn, (File) body);
+                }
+                String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
+                String bodyStr = body instanceof String ? (String) body : JacksonUtils.toJson(body);
+                if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
+                    Map<String, String> map = JacksonUtils.toObj(bodyStr, HashMap.class);
+                    bodyStr = HttpUtils.encodingParams(map, headers.getCharset());
+                }
+                if (bodyStr != null) {
+                    conn.setDoOutput(true);
+                    byte[] b = bodyStr.getBytes(StandardCharsets.UTF_8);
+                    conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
+                    OutputStream outputStream = conn.getOutputStream();
+                    outputStream.write(b, 0, b.length);
+                    outputStream.flush();
+                    IoUtils.closeQuietly(outputStream);
+                }
+            }
+            conn.connect();
+            return new JdkHttpClientResponse(conn);
+        } catch (Exception e) {
+            conn.disconnect();
+            throw e;
         }
+    }
+    
+    private void handleFileUpload(HttpURLConnection conn, File file) throws IOException {
+        String boundary = BOUNDARY_PREFIX + System.currentTimeMillis();
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         
-        conn.setConnectTimeout(this.httpClientConfig.getConTimeOutMillis());
-        conn.setReadTimeout(this.httpClientConfig.getReadTimeOutMillis());
-        conn.setRequestMethod(httpMethod);
-        if (body != null && !"".equals(body)) {
-            String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
-            String bodyStr = JacksonUtils.toJson(body);
-            if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
-                Map<String, String> map = JacksonUtils.toObj(bodyStr, HashMap.class);
-                bodyStr = HttpUtils.encodingParams(map, headers.getCharset());
-            }
-            if (bodyStr != null) {
-                conn.setDoOutput(true);
-                byte[] b = bodyStr.getBytes();
-                conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
-                OutputStream outputStream = conn.getOutputStream();
-                outputStream.write(b, 0, b.length);
-                outputStream.flush();
-                IoUtils.closeQuietly(outputStream);
-            }
+        StringBuilder sb = new StringBuilder();
+        sb.append("--").append(boundary).append(LINE_FEED);
+        sb.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(file.getName()).append("\"")
+                .append(LINE_FEED);
+        sb.append("Content-Type: ").append(Files.probeContentType(file.toPath())).append(LINE_FEED).append(LINE_FEED);
+        
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
+        byte[] boundaryBytes = (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
+        
+        conn.setDoOutput(true);
+        try (OutputStream outputStream = conn.getOutputStream()) {
+            outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            outputStream.write(fileBytes);
+            outputStream.write(boundaryBytes);
+            outputStream.flush();
         }
-        conn.connect();
-        return new JdkHttpClientResponse(conn);
     }
     
     /**

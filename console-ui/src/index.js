@@ -29,9 +29,10 @@ import { ConfigProvider, Loading } from '@alifd/next';
 import './lib';
 
 import Layout from './layouts/MainLayout';
-import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
+import { LANGUAGE_KEY, NAME_SHOW, REDUX_DEVTOOLS, THEME } from './constants';
 
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Namespace from './pages/NameSpace';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
@@ -50,14 +51,29 @@ import UserManagement from './pages/AuthorityControl/UserManagement';
 import PermissionsManagement from './pages/AuthorityControl/PermissionsManagement';
 import RolesManagement from './pages/AuthorityControl/RolesManagement';
 import Welcome from './pages/Welcome/Welcome';
+import SettingCenter from './pages/SettingCenter';
+import McpManagement from './pages/AI/McpManagement/McpManagement';
+import McpDetail from './pages/AI/McpDetail';
+import AgentManagement from './pages/AI/AgentManagement';
+import NewAgent from './pages/AI/NewAgent';
+import AgentDetail from './pages/AI/AgentDetail';
+import PluginList from './pages/PluginManagement/PluginList';
+import SkillManagement from './pages/AI/SkillManagement';
+import NewSkill from './pages/AI/NewSkill';
+import SkillDetail from './pages/AI/SkillDetail';
+import PromptManagement from './pages/AI/PromptManagement';
+import NewPrompt from './pages/AI/NewPrompt';
+import PromptDetail from './pages/AI/PromptDetail';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
+import { getState } from './reducers/base';
+import changeTheme from './theme';
+import changeNameShow from './components/NameSpaceList/show';
 
 import './index.scss';
-import '@alifd/theme-design-pro/variables.css';
-import '@alifd/theme-design-pro/dist/next.var.css';
 import PropTypes from 'prop-types';
+import NewMcpServer from './pages/AI/NewMcpServer';
 
 module.hot && module.hot.accept();
 
@@ -95,13 +111,37 @@ const MENU = [
   { path: '/userManagement', component: UserManagement },
   { path: '/rolesManagement', component: RolesManagement },
   { path: '/permissionsManagement', component: PermissionsManagement },
+  { path: '/settingCenter', component: SettingCenter },
+  { path: '/mcpServerManagement', component: McpManagement },
+  { path: '/mcpServerDetail', component: McpDetail },
+  { path: '/newMcpServer', component: NewMcpServer },
+  { path: '/agentManagement', component: AgentManagement },
+  { path: '/newAgent', component: NewAgent },
+  { path: '/agentDetail', component: AgentDetail },
+  { path: '/skillManagement', component: SkillManagement },
+  { path: '/newSkill', component: NewSkill },
+  { path: '/skillDetail', component: SkillDetail },
+  { path: '/promptManagement', component: PromptManagement },
+  { path: '/newPrompt', component: NewPrompt },
+  { path: '/promptDetail', component: PromptDetail },
+  { path: '/pluginManagement', component: PluginList },
 ];
 
-@connect(state => ({ ...state.locale }), { changeLanguage })
+@connect(state => ({ ...state.locale, ...state.base }), {
+  changeLanguage,
+  getState,
+  changeTheme,
+  changeNameShow,
+})
 class App extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     changeLanguage: PropTypes.func,
+    getState: PropTypes.func,
+    loginPageEnabled: PropTypes.string,
+    consoleUiEnable: PropTypes.string,
+    changeTheme: PropTypes.func,
+    changeNameShow: PropTypes.func,
   };
 
   constructor(props) {
@@ -114,19 +154,30 @@ class App extends React.Component {
   }
 
   componentDidMount() {
+    this.props.getState();
     const language = localStorage.getItem(LANGUAGE_KEY);
+    const theme = localStorage.getItem(THEME);
+    const nameShow = localStorage.getItem(NAME_SHOW);
     this.props.changeLanguage(language);
+    this.props.changeTheme(theme);
+    this.props.changeNameShow(nameShow);
   }
 
   get router() {
+    const { loginPageEnabled, consoleUiEnable } = this.props;
+
     return (
       <HashRouter>
         <Switch>
-          <Route path="/login" component={Login} />
+          {loginPageEnabled && loginPageEnabled === 'false' ? null : (
+            <Route path="/login" component={Login} />
+          )}
+          <Route path="/register" component={Register} />
+          {/* <Route path="/login" component={Login} /> */}
           <Layout>
-            {MENU.map(item => (
-              <Route key={item.path} {...item} />
-            ))}
+            {consoleUiEnable &&
+              consoleUiEnable === 'true' &&
+              MENU.map(item => <Route key={item.path} {...item} />)}
           </Layout>
         </Switch>
       </HashRouter>
@@ -134,13 +185,13 @@ class App extends React.Component {
   }
 
   render() {
-    const { locale } = this.props;
+    const { locale, loginPageEnabled } = this.props;
     return (
       <Loading
         className="nacos-loading"
         shape="flower"
         tip="loading..."
-        visible={false}
+        visible={!loginPageEnabled}
         fullScreen
         {...this.state.nacosLoading}
       >
@@ -149,6 +200,64 @@ class App extends React.Component {
     );
   }
 }
+
+// Handle OIDC Cookie-based authentication (cluster-friendly, no server-side storage)
+(function() {
+  const hash = window.location.hash;
+
+  // Handle error response from OIDC
+  if (hash && hash.includes('error=')) {
+    try {
+      const queryString = hash.split('?')[1];
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        const error = params.get('error');
+        if (error) {
+          console.error('[OIDC] Authentication failed:', decodeURIComponent(error));
+          sessionStorage.setItem('oidcError', decodeURIComponent(error));
+          const newUrl = window.location.href.split('#')[0] + '#/login';
+          window.history.replaceState(null, '', newUrl);
+        }
+      }
+    } catch (e) {
+      console.error('[OIDC] Failed to parse error from URL', e);
+    }
+    return;
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts
+        .pop()
+        .split(';')
+        .shift();
+    }
+    return null;
+  }
+
+  function deleteCookie(name) {
+    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  }
+
+  const accessToken = getCookie('accessToken');
+  const username = getCookie('username');
+
+  if (accessToken && username) {
+    localStorage.setItem(
+      'token',
+      JSON.stringify({
+        accessToken,
+        username: decodeURIComponent(username),
+        globalAdmin: false,
+        oidc: true,
+      })
+    );
+    deleteCookie('accessToken');
+    deleteCookie('username');
+  }
+})();
 
 ReactDOM.render(
   <Provider store={store}>

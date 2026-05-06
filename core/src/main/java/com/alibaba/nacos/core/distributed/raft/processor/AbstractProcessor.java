@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
@@ -34,10 +33,7 @@ import java.util.Objects;
  */
 public abstract class AbstractProcessor {
     
-    private final Serializer serializer;
-    
-    public AbstractProcessor(Serializer serializer) {
-        this.serializer = serializer;
+    public AbstractProcessor() {
     }
     
     protected void handleRequest(final JRaftServer server, final String group, final RpcContext rpcCtx, Message message) {

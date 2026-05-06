@@ -18,24 +18,24 @@ package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * For Understand this test case, Please Read {@link com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine#addTask(Object,
- * AbstractDelayTask)}.
+ * For Understand this test case, Please Read
+ * {@link com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine#addTask(Object, AbstractDelayTask)}.
  *
  * @author xiweng.yy
  */
-public class PushDelayTaskTest {
+class PushDelayTaskTest {
     
     private final Service service = Service.newService("N", "G", "S");
     
@@ -45,14 +45,14 @@ public class PushDelayTaskTest {
     
     private PushDelayTask singlePushTask;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         pushToAllTask = new PushDelayTask(service, 0L);
         singlePushTask = new PushDelayTask(service, 0L, singleTargetClientId);
     }
     
     @Test
-    public void testMergeAllToSingle() {
+    void testMergeAllToSingle() {
         PushDelayTask newTask = singlePushTask;
         PushDelayTask oldTask = pushToAllTask;
         newTask.merge(oldTask);
@@ -61,7 +61,7 @@ public class PushDelayTaskTest {
     }
     
     @Test
-    public void testMergeSingleToAll() {
+    void testMergeSingleToAll() {
         PushDelayTask newTask = pushToAllTask;
         PushDelayTask oldTask = singlePushTask;
         newTask.merge(oldTask);
@@ -70,7 +70,7 @@ public class PushDelayTaskTest {
     }
     
     @Test
-    public void testMergeSingleToSingle() {
+    void testMergeSingleToSingle() {
         PushDelayTask oldTask = singlePushTask;
         PushDelayTask newTask = new PushDelayTask(service, 0L, "newClient");
         newTask.merge(oldTask);
@@ -83,7 +83,7 @@ public class PushDelayTaskTest {
     }
     
     @Test
-    public void testMergeAllToAll() throws InterruptedException {
+    void testMergeAllToAll() throws InterruptedException {
         PushDelayTask oldTask = pushToAllTask;
         TimeUnit.MILLISECONDS.sleep(10);
         PushDelayTask newTask = new PushDelayTask(service, 0L);

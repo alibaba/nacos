@@ -77,8 +77,7 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     
     @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
-        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>());
-        subscribes.get(subscribeType).add(subscriber);
+        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>()).add(subscriber);
     }
     
     @Override
@@ -101,7 +100,6 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
         if (!success) {
             Loggers.EVT_LOG.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
             handleEvent(event);
-            return true;
         }
         return true;
     }

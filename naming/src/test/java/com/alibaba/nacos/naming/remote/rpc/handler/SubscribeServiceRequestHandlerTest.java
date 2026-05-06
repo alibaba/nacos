@@ -23,25 +23,31 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link SubscribeServiceRequestHandler} unit tests.
@@ -49,8 +55,9 @@ import java.util.Optional;
  * @author chenglu
  * @date 2021-09-18 18:25
  */
-@RunWith(MockitoJUnitRunner.class)
-public class SubscribeServiceRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class SubscribeServiceRequestHandlerTest {
     
     @InjectMocks
     private SubscribeServiceRequestHandler subscribeServiceRequestHandler;
@@ -70,15 +77,19 @@ public class SubscribeServiceRequestHandlerTest {
     @Mock
     private SelectorManager selectorManager;
     
-    @Before
-    public void setUp() {
-        ApplicationUtils applicationUtils = new ApplicationUtils();
-        applicationUtils.initialize(applicationContext);
+    @BeforeEach
+    void setUp() {
+        ApplicationUtils.injectContext(applicationContext);
         Mockito.when(applicationContext.getBean(SelectorManager.class)).thenReturn(selectorManager);
     }
     
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.removeContext();
+    }
+    
     @Test
-    public void testHandle() throws NacosException {
+    void testHandle() throws NacosException {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         List<Instance> instances = Arrays.asList(instance);
@@ -88,7 +99,7 @@ public class SubscribeServiceRequestHandlerTest {
         serviceInfo.setName("C");
         serviceInfo.setHosts(instances);
         Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
-    
+        
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
         
@@ -97,13 +108,42 @@ public class SubscribeServiceRequestHandlerTest {
         subscribeServiceRequest.setGroupName("B");
         subscribeServiceRequest.setServiceName("C");
         subscribeServiceRequest.setSubscribe(true);
-        SubscribeServiceResponse subscribeServiceResponse = subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta());
-        Assert.assertEquals(subscribeServiceResponse.getServiceInfo().getName(), "C");
+        SubscribeServiceResponse subscribeServiceResponse = subscribeServiceRequestHandler.handle(subscribeServiceRequest,
+                new RequestMeta());
+        assertEquals("C", subscribeServiceResponse.getServiceInfo().getName());
         Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
-    
+        
         subscribeServiceRequest.setSubscribe(false);
         subscribeServiceResponse = subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta());
-        Assert.assertEquals(subscribeServiceResponse.getServiceInfo().getName(), "C");
+        assertEquals("C", subscribeServiceResponse.getServiceInfo().getName());
         Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
+    }
+    
+    @Test
+    void testHandleWithBlankServiceName() {
+        SubscribeServiceRequest subscribeServiceRequest = new SubscribeServiceRequest();
+        subscribeServiceRequest.setNamespace("A");
+        subscribeServiceRequest.setGroupName("B");
+        subscribeServiceRequest.setServiceName("");
+        subscribeServiceRequest.setSubscribe(true);
+        
+        NacosException exception = assertThrows(NacosException.class,
+                () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta()));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("Param 'serviceName' is illegal, serviceName is blank", exception.getErrMsg());
+    }
+    
+    @Test
+    void testHandleWithBlankGroupName() {
+        SubscribeServiceRequest subscribeServiceRequest = new SubscribeServiceRequest();
+        subscribeServiceRequest.setNamespace("A");
+        subscribeServiceRequest.setGroupName("");
+        subscribeServiceRequest.setServiceName("C");
+        subscribeServiceRequest.setSubscribe(true);
+        
+        NacosException exception = assertThrows(NacosException.class,
+                () -> subscribeServiceRequestHandler.handle(subscribeServiceRequest, new RequestMeta()));
+        assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
+        assertEquals("Param 'groupName' is illegal, groupName is blank", exception.getErrMsg());
     }
 }

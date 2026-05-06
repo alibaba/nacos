@@ -52,9 +52,13 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     
     private final ServerMemberManager memberManager;
     
-    private boolean apInit = false;
+    private volatile boolean apInit = false;
     
-    private boolean cpInit = false;
+    private volatile boolean cpInit = false;
+    
+    private final Object cpLock = new Object();
+    
+    private final Object apLock = new Object();
     
     private Set<Member> oldMembers;
     
@@ -80,23 +84,35 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     }
     
     public CPProtocol getCpProtocol() {
-        synchronized (this) {
-            if (!cpInit) {
-                initCPProtocol();
-                cpInit = true;
+        if (!cpInit){
+            synchronized (cpLock) {
+                if (!cpInit) {
+                    initCPProtocol();
+                    cpInit = true;
+                }
             }
         }
         return cpProtocol;
     }
     
     public APProtocol getApProtocol() {
-        synchronized (this) {
-            if (!apInit) {
-                initAPProtocol();
-                apInit = true;
+        if (!apInit) {
+            synchronized (apLock) {
+                if (!apInit) {
+                    initAPProtocol();
+                    apInit = true;
+                }
             }
         }
         return apProtocol;
+    }
+    
+    public boolean isCpInit() {
+        return cpInit;
+    }
+    
+    public boolean isApInit() {
+        return apInit;
     }
     
     @PreDestroy

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.model.PushRequest;
 import istio.mcp.v1alpha1.ResourceOuterClass.Resource;
 
 import java.util.ArrayList;
@@ -42,7 +42,12 @@ public class EmptyMcpGenerator implements ApiGenerator<Resource> {
     }
 
     @Override
-    public List<Resource> generate(ResourceSnapshot resourceSnapshot) {
+    public List<Resource> generate(PushRequest pushRequest) {
+        return new ArrayList<>();
+    }
+    
+    @Override
+    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

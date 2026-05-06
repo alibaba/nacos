@@ -24,26 +24,34 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * ServiceInfo.
+ * Service Information with instances and without cluster information, used in data pushing and cached for nacos-client.
  *
  * @author nkorange
  * @author shizhengxing
  */
 @JsonInclude(Include.NON_NULL)
-public class ServiceInfo {
+public class ServiceInfo implements Cloneable {
+    
+    /**
+     * file name pattern: groupName@@name@@clusters.
+     */
+    private static final int GROUP_POSITION = 0;
+    
+    private static final int SERVICE_POSITION = 1;
+    
+    private static final int CLUSTER_POSITION = 2;
+    
+    private static final int FILE_NAME_PARTS = 3;
     
     @JsonIgnore
     private String jsonFromServer = EMPTY;
     
     private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
-    
-    public static final String SPLITER = "@@";
     
     private static final String DEFAULT_CHARSET = "UTF-8";
     
@@ -61,39 +69,34 @@ public class ServiceInfo {
     
     private String checksum = "";
     
-    private volatile boolean allIPs = false;
+    private volatile boolean allIps = false;
     
     private volatile boolean reachProtectionThreshold = false;
     
     public ServiceInfo() {
     }
     
-    public boolean isAllIPs() {
-        return allIPs;
+    public boolean isAllIps() {
+        return allIps;
     }
     
-    public void setAllIPs(boolean allIPs) {
-        this.allIPs = allIPs;
+    public void setAllIps(boolean allIps) {
+        this.allIps = allIps;
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
+     * There is only one form of the key:groupName@@name@@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
-    public ServiceInfo(String key) {
-        int maxIndex = 2;
-        int clusterIndex = 2;
-        int serviceNameIndex = 1;
-        int groupIndex = 0;
-        
+    public ServiceInfo(final String key) {
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (keys.length >= maxIndex + 1) {
-            this.groupName = keys[groupIndex];
-            this.name = keys[serviceNameIndex];
-            this.clusters = keys[clusterIndex];
-        } else if (keys.length == maxIndex) {
-            this.groupName = keys[groupIndex];
-            this.name = keys[serviceNameIndex];
+        if (keys.length >= FILE_NAME_PARTS) {
+            this.groupName = keys[GROUP_POSITION];
+            this.name = keys[SERVICE_POSITION];
+            this.clusters = keys[CLUSTER_POSITION];
+        } else if (keys.length == CLUSTER_POSITION) {
+            this.groupName = keys[GROUP_POSITION];
+            this.name = keys[SERVICE_POSITION];
         } else {
             //defensive programming
             throw new IllegalArgumentException("Can't parse out 'groupName',but it must not be null!");
@@ -179,7 +182,7 @@ public class ServiceInfo {
      * @return true if validate, otherwise false
      */
     public boolean validate() {
-        if (isAllIPs()) {
+        if (isAllIps()) {
             return true;
         }
         
@@ -187,18 +190,14 @@ public class ServiceInfo {
             return false;
         }
         
-        List<Instance> validHosts = new ArrayList<>();
+        boolean existValidHosts = false;
         for (Instance host : hosts) {
-            if (!host.isHealthy()) {
-                continue;
-            }
-            
-            for (int i = 0; i < host.getWeight(); i++) {
-                validHosts.add(host);
+            if (host.isHealthy() && host.getWeight() > 0) {
+                existValidHosts = true;
+                break;
             }
         }
-        //No valid hosts, return false.
-        return !validHosts.isEmpty();
+        return existValidHosts;
     }
     
     @JsonIgnore
@@ -218,21 +217,23 @@ public class ServiceInfo {
     
     @JsonIgnore
     public static String getKey(String name, String clusters) {
-        
         if (!isEmpty(clusters)) {
             return name + Constants.SERVICE_INFO_SPLITER + clusters;
         }
-        
         return name;
     }
-    
+
+    @JsonIgnore
+    public String getKeyWithoutClusters() {
+        return getGroupedServiceName();
+    }
+
     @JsonIgnore
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();
         try {
             serviceName = URLEncoder.encode(serviceName, DEFAULT_CHARSET);
-        } catch (UnsupportedEncodingException e) {
-            //do nothing
+        } catch (UnsupportedEncodingException ignored) {
         }
         return getKey(serviceName, clusters);
     }
@@ -251,19 +252,8 @@ public class ServiceInfo {
      * @param key key of service info
      * @return new service info
      */
-    public static ServiceInfo fromKey(String key) {
-        ServiceInfo serviceInfo = new ServiceInfo();
-        int maxSegCount = 3;
-        String[] segs = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (segs.length == maxSegCount - 1) {
-            serviceInfo.setGroupName(segs[0]);
-            serviceInfo.setName(segs[1]);
-        } else if (segs.length == maxSegCount) {
-            serviceInfo.setGroupName(segs[0]);
-            serviceInfo.setName(segs[1]);
-            serviceInfo.setClusters(segs[2]);
-        }
-        return serviceInfo;
+    public static ServiceInfo fromKey(final String key) {
+        return new ServiceInfo(key);
     }
     
     @Override
@@ -283,19 +273,50 @@ public class ServiceInfo {
         return str == null || str.length() == 0;
     }
     
-    private static boolean isEmpty(Collection coll) {
-        return (coll == null || coll.isEmpty());
-    }
-    
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
-    }
-    
     public boolean isReachProtectionThreshold() {
         return reachProtectionThreshold;
     }
-
+    
     public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
         this.reachProtectionThreshold = reachProtectionThreshold;
+    }
+    
+    @Override
+    public ServiceInfo clone() {
+        ServiceInfo cloned = new ServiceInfo();
+        cloned.jsonFromServer = this.jsonFromServer;
+        cloned.name = this.name;
+        cloned.groupName = this.groupName;
+        cloned.clusters = this.clusters;
+        cloned.cacheMillis = this.cacheMillis;
+        cloned.lastRefTime = this.lastRefTime;
+        cloned.checksum = this.checksum;
+        cloned.allIps = this.allIps;
+        cloned.reachProtectionThreshold = this.reachProtectionThreshold;
+        cloned.hosts = new ArrayList<>();
+        
+        if (this.hosts != null) {
+            for (Instance host : this.hosts) {
+                Instance clonedHost = new Instance();
+                clonedHost.setInstanceId(host.getInstanceId());
+                clonedHost.setIp(host.getIp());
+                clonedHost.setPort(host.getPort());
+                clonedHost.setWeight(host.getWeight());
+                clonedHost.setHealthy(host.isHealthy());
+                clonedHost.setEnabled(host.isEnabled());
+                clonedHost.setEphemeral(host.isEphemeral());
+                clonedHost.setClusterName(host.getClusterName());
+                clonedHost.setServiceName(host.getServiceName());
+                
+                if (host.getMetadata() != null) {
+                    Map<String, String> clonedMetadata = new HashMap<>(host.getMetadata());
+                    clonedHost.setMetadata(clonedMetadata);
+                }
+                
+                cloned.hosts.add(clonedHost);
+            }
+        }
+        
+        return cloned;
     }
 }

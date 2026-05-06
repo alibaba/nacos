@@ -16,35 +16,37 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ZipUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ZipUtilsTest {
     
     @Test
-    public void testZip() {
+    void testZip() {
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         zipItemList.add(new ZipUtils.ZipItem("test", "content"));
         byte[] zip = ZipUtils.zip(zipItemList);
-        Assert.assertTrue(zip != null && zip.length > 0);
+        assertTrue(zip != null && zip.length > 0);
     }
     
     @Test
-    public void testUnzip() {
+    void testUnzip() {
         
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         zipItemList.add(new ZipUtils.ZipItem("test", "content"));
         byte[] zip = ZipUtils.zip(zipItemList);
-        Assert.assertTrue(zip != null && zip.length > 0);
+        assertTrue(zip != null && zip.length > 0);
         
         ZipUtils.UnZipResult unZipResult = ZipUtils.unzip(zip);
         List<ZipUtils.ZipItem> result = unZipResult.getZipItemList();
-        Assert.assertEquals(zipItemList.size(), result.size());
-        Assert.assertEquals(zipItemList.get(0).getItemName(), result.get(0).getItemName());
-        Assert.assertEquals(zipItemList.get(0).getItemData(), result.get(0).getItemData());
+        assertEquals(zipItemList.size(), result.size());
+        assertEquals(zipItemList.get(0).getItemName(), result.get(0).getItemName());
+        assertEquals(zipItemList.get(0).getItemData(), result.get(0).getItemData());
         
     }
 }

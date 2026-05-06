@@ -85,7 +85,7 @@ class ImportDialog extends React.Component {
   };
 
   formatter = res => {
-    if (res.code === 200) {
+    if (res.code === 0) {
       return {
         code: '0',
         retData: res,
@@ -124,7 +124,7 @@ class ImportDialog extends React.Component {
         style={{ marginRight: 5 }}
         triggerType="hover"
       >
-        <a href={window._getLink && window._getLink('knowDataid')} target="_blank">
+        <a href={window._getLink && window._getLink('knowDataid')} target="_blank" rel="noreferrer">
           {locale.zipFileFormat}
         </a>
       </Balloon>

@@ -26,12 +26,15 @@ public class ServerCheckResponse extends Response {
     
     private String connectionId;
     
+    private boolean supportAbilityNegotiation;
+    
     public ServerCheckResponse() {
     
     }
     
-    public ServerCheckResponse(String connectionId) {
+    public ServerCheckResponse(String connectionId, boolean supportAbilityNegotiation) {
         this.connectionId = connectionId;
+        this.supportAbilityNegotiation = supportAbilityNegotiation;
     }
     
     public String getConnectionId() {
@@ -40,5 +43,13 @@ public class ServerCheckResponse extends Response {
     
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
+    }
+    
+    public boolean isSupportAbilityNegotiation() {
+        return supportAbilityNegotiation;
+    }
+    
+    public void setSupportAbilityNegotiation(boolean supportAbilityNegotiation) {
+        this.supportAbilityNegotiation = supportAbilityNegotiation;
     }
 }

@@ -59,10 +59,7 @@ public class NamingHttpClientManager implements Closeable {
     }
     
     public String getPrefix() {
-        if (ENABLE_HTTPS) {
-            return HTTPS_PREFIX;
-        }
-        return HTTP_PREFIX;
+        return ENABLE_HTTPS ? HTTPS_PREFIX : HTTP_PREFIX;
     }
     
     public NacosRestTemplate getNacosRestTemplate() {
@@ -71,14 +68,14 @@ public class NamingHttpClientManager implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
-        NAMING_LOGGER.warn("[NamingHttpClientManager] Start destroying NacosRestTemplate");
+        NAMING_LOGGER.info("[NamingHttpClientManager] Start destroying NacosRestTemplate");
         try {
-            HttpClientBeanHolder.shutdownNacostSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             NAMING_LOGGER.error("[NamingHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        NAMING_LOGGER.warn("[NamingHttpClientManager] Destruction of the end");
+        NAMING_LOGGER.info("[NamingHttpClientManager] Completed destruction of NacosRestTemplate");
     }
     
     private static class NamingHttpClientFactory extends AbstractHttpClientFactory {

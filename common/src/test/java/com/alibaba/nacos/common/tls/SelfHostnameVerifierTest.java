@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.common.tls;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,8 +34,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SelfHostnameVerifierTest {
+@ExtendWith(MockitoExtension.class)
+class SelfHostnameVerifierTest {
+    
     @Mock
     HostnameVerifier hostnameVerifier;
     
@@ -43,22 +45,22 @@ public class SelfHostnameVerifierTest {
     
     SelfHostnameVerifier selfHostnameVerifier;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         selfHostnameVerifier = new SelfHostnameVerifier(hostnameVerifier);
         doReturn(false).when(hostnameVerifier).verify(anyString(), eq(sslSession));
     }
     
     @Test
-    public void testVerify() {
-        Assert.assertTrue(selfHostnameVerifier.verify("localhost", sslSession));
-        Assert.assertTrue(selfHostnameVerifier.verify("127.0.0.1", sslSession));
-        Assert.assertTrue(selfHostnameVerifier.verify("10.10.10.10", sslSession));
+    void testVerify() {
+        assertTrue(selfHostnameVerifier.verify("localhost", sslSession));
+        assertTrue(selfHostnameVerifier.verify("127.0.0.1", sslSession));
+        assertTrue(selfHostnameVerifier.verify("10.10.10.10", sslSession));
         // hit cache
-        Assert.assertTrue(selfHostnameVerifier.verify("10.10.10.10", sslSession));
+        assertTrue(selfHostnameVerifier.verify("10.10.10.10", sslSession));
         
-        Assert.assertFalse(selfHostnameVerifier.verify("", sslSession));
-        Assert.assertFalse(selfHostnameVerifier.verify(null, sslSession));
+        assertFalse(selfHostnameVerifier.verify("", sslSession));
+        assertFalse(selfHostnameVerifier.verify(null, sslSession));
         verify(hostnameVerifier, times(2)).verify(any(), eq(sslSession));
     }
 }

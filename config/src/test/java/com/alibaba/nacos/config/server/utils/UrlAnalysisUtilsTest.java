@@ -16,21 +16,23 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class UrlAnalysisUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class UrlAnalysisUtilsTest {
     
     @Test
-    public void testGetContentIdentity() {
+    void testGetContentIdentity() {
         
         String url = "http://127.0.0.1:8080/test?paramA=A&paramB=B";
-        Assert.assertEquals("http://127.0.0.1:8080", UrlAnalysisUtils.getContentIdentity(url));
+        assertEquals("http://127.0.0.1:8080", UrlAnalysisUtils.getContentIdentity(url));
         
         String url2 = "127.0.0.1:8080/test?paramA=A&paramB=B";
-        Assert.assertEquals("127.0.0.1:8080", UrlAnalysisUtils.getContentIdentity(url2));
-    
+        assertEquals("127.0.0.1:8080", UrlAnalysisUtils.getContentIdentity(url2));
+        
         String url3 = "";
-        Assert.assertNull(UrlAnalysisUtils.getContentIdentity(url3));
+        assertNull(UrlAnalysisUtils.getContentIdentity(url3));
     }
 }

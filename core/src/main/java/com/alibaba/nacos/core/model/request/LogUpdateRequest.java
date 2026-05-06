@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.core.model.request;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.StringUtils;
+
 /**
  * Request entity for log operator interface.
  *
  * @author wuzhiguo
  */
-public class LogUpdateRequest {
+public class LogUpdateRequest implements NacosForm {
     
     private String logName;
     
@@ -41,5 +46,17 @@ public class LogUpdateRequest {
     
     public void setLogLevel(String logLevel) {
         this.logLevel = logLevel;
+    }
+    
+    @Override
+    public void validate() throws NacosApiException {
+        if (StringUtils.isBlank(logName)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Log name is required.");
+        }
+        if (StringUtils.isBlank(logLevel)) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Log level is required.");
+        }
     }
 }

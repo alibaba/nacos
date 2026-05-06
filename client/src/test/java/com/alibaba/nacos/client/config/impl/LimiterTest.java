@@ -16,22 +16,24 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class LimiterTest {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class LimiterTest {
     
     @Test
-    public void testIsLimit() {
+    void testIsLimit() {
         String keyId = "a";
         //For initiating.
-        Assert.assertFalse(Limiter.isLimit(keyId));
+        assertFalse(Limiter.isLimit(keyId));
         long start = System.currentTimeMillis();
         for (int j = 0; j < 5; j++) {
-            Assert.assertFalse(Limiter.isLimit(keyId));
+            assertFalse(Limiter.isLimit(keyId));
         }
         long elapse = System.currentTimeMillis() - start;
         // assert  < limit 5qps
-        Assert.assertTrue(elapse > 980);
+        assertTrue(elapse > 980);
     }
 }

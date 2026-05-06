@@ -16,37 +16,40 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test ArrayUtils.
+ *
  * @author zzq
  */
-public class ArrayUtilsTest {
+class ArrayUtilsTest {
     
     Integer[] nullArr = null;
     
-    Integer[] nothingArr = new Integer[]{};
+    Integer[] nothingArr = new Integer[] {};
     
     @Test
-    public void testisEmpty() {
-        Integer[] arr = new Integer[]{1, 2};
-        Assert.assertTrue(ArrayUtils.isEmpty(nullArr));
-        Assert.assertTrue(ArrayUtils.isEmpty(nothingArr));
-        Assert.assertFalse(ArrayUtils.isEmpty(arr));
+    void testisEmpty() {
+        Integer[] arr = new Integer[] {1, 2};
+        assertTrue(ArrayUtils.isEmpty(nullArr));
+        assertTrue(ArrayUtils.isEmpty(nothingArr));
+        assertFalse(ArrayUtils.isEmpty(arr));
     }
     
     @Test
-    public void contains() {
-        Integer[] arr = new Integer[]{1, 2, 3};
-        Integer[] arr1 = new Integer[]{1, 2, 3, null};
-        Assert.assertFalse(ArrayUtils.contains(nullArr, "a"));
-        Assert.assertFalse(ArrayUtils.contains(nullArr, null));
-        Assert.assertFalse(ArrayUtils.contains(nothingArr, "b"));
-        Assert.assertFalse(ArrayUtils.contains(arr, null));
-        Assert.assertTrue(ArrayUtils.contains(arr1, null));
-        Assert.assertTrue(ArrayUtils.contains(arr, 1));
-        Assert.assertFalse(ArrayUtils.contains(arr, "1"));
+    void contains() {
+        assertFalse(ArrayUtils.contains(nullArr, "a"));
+        assertFalse(ArrayUtils.contains(nullArr, null));
+        assertFalse(ArrayUtils.contains(nothingArr, "b"));
+        Integer[] arr = new Integer[] {1, 2, 3};
+        assertFalse(ArrayUtils.contains(arr, null));
+        Integer[] arr1 = new Integer[] {1, 2, 3, null};
+        assertTrue(ArrayUtils.contains(arr1, null));
+        assertTrue(ArrayUtils.contains(arr, 1));
+        assertFalse(ArrayUtils.contains(arr, "1"));
     }
 }

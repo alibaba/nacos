@@ -108,6 +108,13 @@ public interface ConsistencyProtocol<T extends Config, P extends RequestProcesso
     void memberChange(Set<String> addresses);
     
     /**
+     * Whether protocol is ready to work, such as contain leader, finish load snapshot and so on.
+     *
+     * @return {@code true} when protocol ready to work, otherwise {@code false}
+     */
+    boolean isReady();
+    
+    /**
      * Consistency agreement service shut down .
      * 一致性协议服务关闭
      */

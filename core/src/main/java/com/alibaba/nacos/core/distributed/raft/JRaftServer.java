@@ -78,7 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -157,7 +157,7 @@ public class JRaftServer {
         RaftExecutor.init(config);
         
         final String self = config.getSelfMember();
-        String[] info = InternetAddressUtil.splitIPPortStr(self);
+        String[] info = InternetAddressUtil.splitIpPortStr(self);
         selfIp = info[0];
         selfPort = Integer.parseInt(info[1]);
         localPeerId = PeerId.parsePeer(self);
@@ -264,8 +264,7 @@ public class JRaftServer {
             RaftExecutor.executeByCommon(() -> registerSelfToCluster(groupName, localPeerId, configuration));
             
             // Turn on the leader auto refresh for this group
-            Random random = new Random();
-            long period = nodeOptions.getElectionTimeoutMs() + random.nextInt(5 * 1000);
+            long period = nodeOptions.getElectionTimeoutMs() + ThreadLocalRandom.current().nextInt(5 * 1000);
             RaftExecutor.scheduleRaftMemberRefreshJob(() -> refreshRouteTable(groupName),
                     nodeOptions.getElectionTimeoutMs(), period, TimeUnit.MILLISECONDS);
             multiRaftGroup.put(groupName, new RaftGroupTuple(node, processor, raftGroupService, machine));
@@ -518,6 +517,17 @@ public class JRaftServer {
             return tuple.node;
         }
         return null;
+    }
+    
+    public boolean isReady() {
+        if (raftConfig.isStrictMode()) {
+            for (RequestProcessor4CP each : processors) {
+                if (null == getLeader(each.group())) {
+                    return false;
+                }
+            }
+        }
+        return isStarted;
     }
     
     Map<String, RaftGroupTuple> getMultiRaftGroup() {

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import * as yamljs from 'yamljs';
+import * as yaml from 'js-yaml';
+import * as toml from '@iarna/toml';
 
 /**
  * 校验一个配置项
@@ -141,7 +142,7 @@ export default {
    */
   validateYaml(str) {
     try {
-      return yamljs.parse(str);
+      return yaml.load(str);
     } catch (e) {
       return false;
     }
@@ -239,6 +240,19 @@ export default {
   },
 
   /**
+   * 检测toml是否合法
+   */
+  validateToml(str) {
+    try {
+      // 如果不加这里的 replace 的话在 toml 的注释换行可能会出现以下错误：
+      // TomlError: Control characters (codes < 0x1f and 0x7f) are not allowed in comments
+      return toml.parse(str.replace(/\r\n/g, '\n'));
+    } catch (e) {
+      return false;
+    }
+  },
+
+  /**
    * 根据类型验证类型
    */
   validate({ content, type }) {
@@ -249,6 +263,7 @@ export default {
       html: this.validateXml,
       properties: this.validateProperties,
       yaml: this.validateYaml,
+      toml: this.validateToml,
     };
 
     if (!validateObj[type]) {
