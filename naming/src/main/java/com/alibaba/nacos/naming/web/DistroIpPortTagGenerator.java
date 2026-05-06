@@ -23,6 +23,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Distro IP and port tag generator.
  *
@@ -40,9 +45,18 @@ public class DistroIpPortTagGenerator implements DistroTagGenerator {
     public String getResponsibleTag(ReuseHttpServletRequest request) {
         String ip = request.getParameter(PARAMETER_IP);
         String port = request.getParameter(PARAMETER_PORT);
+        Map<String, String> bodyParameters = null;
+        if (StringUtils.isBlank(ip) || StringUtils.isBlank(port)) {
+            bodyParameters = parseBodyParameters(request);
+            ip = StringUtils.isBlank(ip) ? bodyParameters.get(PARAMETER_IP) : ip;
+            port = StringUtils.isBlank(port) ? bodyParameters.get(PARAMETER_PORT) : port;
+        }
         if (StringUtils.isBlank(ip)) {
             // some old version clients using beat parameter
             String beatStr = request.getParameter(PARAMETER_BEAT);
+            if (StringUtils.isBlank(beatStr) && null != bodyParameters) {
+                beatStr = bodyParameters.get(PARAMETER_BEAT);
+            }
             if (StringUtils.isNotBlank(beatStr)) {
                 try {
                     RsInfo rsInfo = JacksonUtils.toObj(beatStr, RsInfo.class);
@@ -57,5 +71,30 @@ public class DistroIpPortTagGenerator implements DistroTagGenerator {
         }
         port = StringUtils.isBlank(port) ? "0" : port.trim();
         return ip + InternetAddressUtil.IP_PORT_SPLITER + port;
+    }
+    
+    private Map<String, String> parseBodyParameters(ReuseHttpServletRequest request) {
+        Map<String, String> result = new HashMap<>(4);
+        try {
+            Object body = request.getBody();
+            if (!(body instanceof String)) {
+                return result;
+            }
+            String bodyString = (String) body;
+            if (StringUtils.isBlank(bodyString)) {
+                return result;
+            }
+            for (String each : bodyString.split("&")) {
+                int index = each.indexOf('=');
+                if (index <= 0) {
+                    continue;
+                }
+                String key = URLDecoder.decode(each.substring(0, index), StandardCharsets.UTF_8);
+                String value = URLDecoder.decode(each.substring(index + 1), StandardCharsets.UTF_8);
+                result.put(key, value);
+            }
+        } catch (Exception ignored) {
+        }
+        return result;
     }
 }
