@@ -33,6 +33,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
@@ -208,6 +209,7 @@ public class ConsoleConfigController {
         if (StringUtils.isNotBlank(configForm.getType())) {
             configAdvanceInfo.put(ParametersField.TYPES, configForm.getType());
         }
+        configAdvanceInfo.put(FieldConstant.EXCLUDE_INTERNAL_GROUPS, Boolean.TRUE);
         int pageNo = pageForm.getPageNo();
         int pageSize = pageForm.getPageSize();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
@@ -248,6 +250,7 @@ public class ConsoleConfigController {
         if (StringUtils.isNotBlank(configDetail)) {
             configAdvanceInfo.put("content", configDetail);
         }
+        configAdvanceInfo.put(FieldConstant.EXCLUDE_INTERNAL_GROUPS, Boolean.TRUE);
         int pageNo = pageForm.getPageNo();
         int pageSize = pageForm.getPageSize();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());

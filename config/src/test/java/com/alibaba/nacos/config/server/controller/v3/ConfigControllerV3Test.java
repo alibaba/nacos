@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -226,6 +227,7 @@ class ConfigControllerV3Test {
         page.setPagesAvailable(2);
         page.setPageItems(configInfoList);
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
+        configAdvanceInfo.put(FieldConstant.EXCLUDE_INTERNAL_GROUPS, Boolean.TRUE);
         
         when(configDetailService.findConfigInfoPage("accurate", 1, 10, "test", "test", "public",
                 configAdvanceInfo)).thenReturn(page);
@@ -258,6 +260,7 @@ class ConfigControllerV3Test {
         page.setPagesAvailable(2);
         page.setPageItems(configInfoList);
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
+        configAdvanceInfo.put(FieldConstant.EXCLUDE_INTERNAL_GROUPS, Boolean.TRUE);
         
         when(configDetailService.findConfigInfoPage("blur", 1, 10, "test", "test", "public",
                 configAdvanceInfo)).thenReturn(page);

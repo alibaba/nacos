@@ -37,6 +37,7 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -349,6 +350,7 @@ public class ConfigControllerV3 {
         if (StringUtils.isNotBlank(configDetail)) {
             configAdvanceInfo.put("content", configDetail);
         }
+        configAdvanceInfo.put(FieldConstant.EXCLUDE_INTERNAL_GROUPS, Boolean.TRUE);
         int pageNo = pageForm.getPageNo();
         int pageSize = pageForm.getPageSize();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
