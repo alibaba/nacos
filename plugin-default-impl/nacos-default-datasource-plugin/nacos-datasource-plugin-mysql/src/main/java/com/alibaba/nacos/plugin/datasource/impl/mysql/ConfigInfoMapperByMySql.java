@@ -24,6 +24,7 @@ import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.InternalGroupExclusionHelper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -212,6 +213,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
             innerSql.append(" AND content LIKE ?");
             paramList.add(content);
         }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(innerSql, paramList);
+        }
         
         // 先分页，减少后续 JOIN 的数据量
         innerSql.append(" ORDER BY id LIMIT ").append(context.getStartRow()).append(",").append(context.getPageSize());
@@ -275,6 +279,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
                 paramList.add(types[i]);
             }
             innerSql.append(")");
+        }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(innerSql, paramList);
         }
         
         // 先分页，减少后续 JOIN 的数据量

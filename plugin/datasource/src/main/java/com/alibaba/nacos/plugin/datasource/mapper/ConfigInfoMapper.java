@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.InternalGroupExclusionHelper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -353,6 +354,9 @@ public interface ConfigInfoMapper extends Mapper {
             where.append(" AND content LIKE ? ");
             paramList.add(content);
         }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(where, paramList);
+        }
         return new MapperResult(sqlCount + where, paramList);
     }
     
@@ -405,6 +409,9 @@ public interface ConfigInfoMapper extends Mapper {
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("type", types);
+        }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(where);
         }
         return where.build();
     }

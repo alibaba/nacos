@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.InternalGroupExclusionHelper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -218,6 +219,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
             where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             paramList.add(content);
         }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(where, paramList);
+        }
         
         // Derby 分页语法
         return new MapperResult(
@@ -261,6 +265,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("type", types);
         }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusionWithEscape(where);
+        }
         return where.build();
     }
     
@@ -292,6 +299,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("type", types);
+        }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusionWithEscape(where);
         }
         
         where.orderBy("id").offset(context.getStartRow(), context.getPageSize());

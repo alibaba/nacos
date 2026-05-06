@@ -24,6 +24,7 @@ import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.InternalGroupExclusionHelper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -215,6 +216,9 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
             idSql.append(" AND content LIKE ?");
             paramList.add(content);
         }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(idSql, paramList);
+        }
 
         // 先分页，减少后续 JOIN 的数据量
         idSql.append(" ORDER BY id OFFSET ")
@@ -290,6 +294,9 @@ public class ConfigInfoMapperByOracle  extends AbstractMapperByOracle implements
                 paramList.add(types[i]);
             }
             idSql.append(")");
+        }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(idSql, paramList);
         }
 
         // 先分页，减少后续 JOIN 的数据量

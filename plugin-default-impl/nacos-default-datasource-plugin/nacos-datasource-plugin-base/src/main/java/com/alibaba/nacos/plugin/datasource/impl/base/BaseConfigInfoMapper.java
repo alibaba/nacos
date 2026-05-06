@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.datasource.dialect.DatabaseDialect;
 import com.alibaba.nacos.plugin.datasource.manager.DatabaseDialectManager;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.InternalGroupExclusionHelper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -226,6 +227,9 @@ public abstract class BaseConfigInfoMapper extends AbstractMapper implements Con
             where.append(" AND content LIKE ? ");
             paramList.add(content);
         }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(where, paramList);
+        }
         int startRow = context.getStartRow();
         int pageSize = context.getPageSize();
         String resultSql = getLimitPageSqlWithOffset(sql + where, startRow, pageSize);
@@ -269,6 +273,9 @@ public abstract class BaseConfigInfoMapper extends AbstractMapper implements Con
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
             paramList.add(content);
+        }
+        if (Boolean.TRUE.equals(context.getWhereParameter(FieldConstant.EXCLUDE_INTERNAL_GROUPS))) {
+            InternalGroupExclusionHelper.appendExclusion(where, paramList);
         }
         int startRow = context.getStartRow();
         int pageSize = context.getPageSize();
