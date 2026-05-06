@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.config;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
@@ -128,6 +129,22 @@ public class ConsoleConfigControllerTest {
         assertEquals("testDataId", resultConfigAllInfo.getDataId());
         assertEquals("testGroup", resultConfigAllInfo.getGroupName());
         assertEquals("testContent", resultConfigAllInfo.getContent());
+    }
+    
+    @Test
+    void testGetConfigDetailBlockedForAiResource() throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config")
+                .param("dataId", "content.json").param("groupName", "prompt__myPrompt")
+                .param("namespaceId", "testNamespace");
+        try {
+            mockmvc.perform(builder);
+        } catch (Exception e) {
+            Throwable cause = e.getCause();
+            assertTrue(cause instanceof NacosException);
+            assertEquals(NacosException.NOT_FOUND, ((NacosException) cause).getErrCode());
+            return;
+        }
+        throw new AssertionError("Expected NacosApiException to be thrown");
     }
     
     @Test

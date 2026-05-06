@@ -103,6 +103,44 @@ public enum AiResourceGroupType {
     }
     
     /**
+     * Check if a given group and dataId match any AI resource pattern.
+     *
+     * @param group  the group_id value
+     * @param dataId the data_id value
+     * @return true if the pair matches an internal AI resource config
+     */
+    public static boolean matches(String group, String dataId) {
+        if (group == null) {
+            return false;
+        }
+        for (AiResourceGroupType type : values()) {
+            if (!group.startsWith(type.groupPrefix)) {
+                continue;
+            }
+            DataIdMatcher[] matchers = type.dataIdMatchers;
+            if (matchers == null) {
+                return true;
+            }
+            if (dataId == null) {
+                continue;
+            }
+            for (DataIdMatcher m : matchers) {
+                if (m.like) {
+                    String prefix = m.pattern.endsWith("%") ? m.pattern.substring(0, m.pattern.length() - 1) : m.pattern;
+                    if (dataId.startsWith(prefix)) {
+                        return true;
+                    }
+                } else {
+                    if (dataId.equals(m.pattern)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
      * Describes a dataId matching rule — either a LIKE pattern or an exact value.
      */
     public static class DataIdMatcher {

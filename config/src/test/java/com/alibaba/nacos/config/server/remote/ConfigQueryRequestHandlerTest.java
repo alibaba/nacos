@@ -365,4 +365,17 @@ class ConfigQueryRequestHandlerTest {
         
     }
     
+    @Test
+    void testHandleBlockedForAiResource() throws Exception {
+        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
+        configQueryRequest.setDataId("SKILL.md");
+        configQueryRequest.setGroup("skill_enc.abc__enc.def");
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        
+        ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
+        assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
+        assertNull(response.getContent());
+    }
+    
 }

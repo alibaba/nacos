@@ -41,6 +41,7 @@ import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.datasource.constants.AiResourceGroupType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -84,6 +85,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             
             String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
             String clientIp = meta.getClientIp();
+            
+            if (AiResourceGroupType.matches(group, dataId)) {
+                return handlerConfigNotFound(dataId, group, tenant, requestIpApp, clientIp, notify);
+            }
             
             ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor()
                     .extract(request, meta);
