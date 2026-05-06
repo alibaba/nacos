@@ -697,6 +697,7 @@ public class AiResourceManager {
                     type + " version not found: " + name + "@" + version);
         }
         if (!AiResourceConstants.VERSION_STATUS_REVIEWING.equalsIgnoreCase(v.getStatus())
+                && !AiResourceConstants.VERSION_STATUS_REVIEWED.equalsIgnoreCase(v.getStatus())
                 && !AiResourceConstants.VERSION_STATUS_ONLINE.equalsIgnoreCase(v.getStatus())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Only reviewing version can be published: " + version);
@@ -1024,6 +1025,8 @@ public class AiResourceManager {
                 AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_REVIEW_REJECTED,
                         "system", "", result == null ? null : result.getExecutionId());
             } else {
+                aiResourceVersionPersistService.updateStatus(namespaceId, name, type, version,
+                        AiResourceConstants.VERSION_STATUS_REVIEWED);
                 AiResourceTraceService.logSuccess(type, name, version, AiResourceTraceService.OP_REVIEW_APPROVED,
                         "system", "", result.getExecutionId());
             }

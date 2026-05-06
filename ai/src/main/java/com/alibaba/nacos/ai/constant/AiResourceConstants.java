@@ -55,6 +55,11 @@ public final class AiResourceConstants {
     public static final String VERSION_STATUS_REVIEWING = "reviewing";
     
     /**
+     * Version status: version has been reviewed (pipeline approved, awaiting publish).
+     */
+    public static final String VERSION_STATUS_REVIEWED = "reviewed";
+    
+    /**
      * Version status: version has been taken offline.
      */
     public static final String VERSION_STATUS_OFFLINE = "offline";

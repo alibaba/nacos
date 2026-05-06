@@ -84,7 +84,8 @@ import static com.alibaba.nacos.ai.constant.Constants.Skills;
  * {@link AiResourcePersistService} (meta row) and {@link AiResourceVersionPersistService} (version rows).
  * A {@link SkillIndexManifest} stored in Nacos config serves as a lightweight index for client-side discovery.</p>
  *
- * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> (Pipeline / direct) -> Published/Online.</p>
+ * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> (Pipeline approved) -> Reviewed -> (Publish) -> Online.
+ * Pipeline rejected returns to Draft. When no pipeline is configured, submit publishes directly to Online.</p>
  *
  * @author nacos
  */
