@@ -16,18 +16,20 @@
 
 package com.alibaba.nacos.plugin.datasource.constants;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * AI Resource types stored via AiResourceStorage, whose configs should be hidden from the config list.
  *
- * <p>Each enum value declares its group prefix used in config_info.group_id. SQL filtering dynamically iterates all
- * enum values, so no SQL change is needed when adding a new AI Resource type.
+ * <p>Each enum value declares its group prefix and optionally known dataId patterns. Two filtering modes:
+ * <ul>
+ *   <li><b>Group-only</b> ({@code dataIdMatchers == null}): excludes ALL configs matching the group prefix.
+ *       Use when dataId formats are too diverse to enumerate.</li>
+ *   <li><b>Compound</b> ({@code dataIdMatchers} populated): excludes only configs matching BOTH group prefix
+ *       AND one of the dataId patterns. Reduces false positives for user configs sharing group prefixes.</li>
+ * </ul>
  *
  * <p>To add a new AI Resource type:
  * <ol>
- *   <li>Add an enum value with its group prefix</li>
+ *   <li>Add an enum value with its group prefix and dataId matchers (or null for group-only)</li>
  *   <li>Done. SQL filtering will automatically pick it up.</li>
  * </ol>
  *
@@ -35,16 +37,47 @@ import java.util.List;
  */
 public enum AiResourceGroupType {
     
-    SKILL("skill_"),
+    /**
+     * Skill manifest (index) config.
+     *
+     * <p>Group format: {@code skill_{name}} (no version suffix), e.g. {@code skill_mySkill}.
+     * Built by {@code SkillUtils.buildSkillGroup()}, which uses {@code encodeManifestGroupNameSegment}
+     * (conditionally encodes to {@code enc.{hex}} only when the name contains invalid characters or {@code __}).
+     * DataId is always the fixed value {@code skill_index.json}.</p>
+     */
+    SKILL_MANIFEST("skill_", new DataIdMatcher[]{
+            DataIdMatcher.exact("skill_index.json"),
+            DataIdMatcher.exact("skill.json")
+    }),
     
-    AGENTSPEC("agentspec__"),
+    /**
+     * Skill version file configs (SKILL.md, resource files, etc.).
+     *
+     * <p>Group format: {@code skill_enc.{hex}__enc.{hex}}, e.g. {@code skill_enc.6d79...__enc.312e...}.
+     * Built by {@code SkillUtils.buildSkillVersionGroup()}, which uses {@code encodeVersionedGroupSegment}
+     * (unconditionally encodes both name and version segments), so the group always starts with {@code skill_enc.}.
+     * DataIds can be arbitrary file paths ({@code SKILL.md}, {@code README.md}, {@code enc.{hex}}), so group-only
+     * filtering is used.</p>
+     */
+    SKILL_VERSION("skill_enc.", null),
     
-    PROMPT("prompt__");
+    AGENTSPEC("agentspec__", new DataIdMatcher[]{
+            DataIdMatcher.like("resource_%"),
+            DataIdMatcher.exact("manifest.json"),
+            DataIdMatcher.exact("agentspec_index.json")
+    }),
+    
+    PROMPT("prompt__", new DataIdMatcher[]{
+            DataIdMatcher.exact("content.json")
+    });
     
     private final String groupPrefix;
     
-    AiResourceGroupType(String groupPrefix) {
+    private final DataIdMatcher[] dataIdMatchers;
+    
+    AiResourceGroupType(String groupPrefix, DataIdMatcher[] dataIdMatchers) {
         this.groupPrefix = groupPrefix;
+        this.dataIdMatchers = dataIdMatchers;
     }
     
     public String getGroupPrefix() {
@@ -52,7 +85,7 @@ public enum AiResourceGroupType {
     }
     
     /**
-     * Get LIKE pattern for SQL: prefix + '%'.
+     * Get LIKE pattern for group_id SQL: prefix + '%'.
      *
      * @return the LIKE pattern string
      */
@@ -61,15 +94,48 @@ public enum AiResourceGroupType {
     }
     
     /**
-     * Collect all LIKE patterns from all enum values.
+     * Get the dataId matchers for this AI resource type.
      *
-     * @return list of LIKE patterns
+     * @return array of DataIdMatcher
      */
-    public static List<String> allLikePatterns() {
-        List<String> result = new ArrayList<>();
-        for (AiResourceGroupType type : values()) {
-            result.add(type.getLikePattern());
+    public DataIdMatcher[] getDataIdMatchers() {
+        return dataIdMatchers;
+    }
+    
+    /**
+     * Describes a dataId matching rule — either a LIKE pattern or an exact value.
+     */
+    public static class DataIdMatcher {
+        
+        private final String pattern;
+        
+        private final boolean like;
+        
+        private DataIdMatcher(String pattern, boolean like) {
+            this.pattern = pattern;
+            this.like = like;
         }
-        return result;
+        
+        /**
+         * Create a LIKE matcher (e.g. 'resource_%').
+         */
+        public static DataIdMatcher like(String pattern) {
+            return new DataIdMatcher(pattern, true);
+        }
+        
+        /**
+         * Create an exact-match matcher (e.g. 'skill_index.json').
+         */
+        public static DataIdMatcher exact(String value) {
+            return new DataIdMatcher(value, false);
+        }
+        
+        public String getPattern() {
+            return pattern;
+        }
+        
+        public boolean isLike() {
+            return like;
+        }
     }
 }

@@ -76,6 +76,16 @@ public final class WhereBuilder {
     }
     
     /**
+     * Build NOT.
+     *
+     * @return Return {@link WhereBuilder}
+     */
+    public WhereBuilder not() {
+        where.append(" NOT");
+        return this;
+    }
+    
+    /**
      * Build OR.
      *
      * @return Return {@link WhereBuilder}
