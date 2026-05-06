@@ -88,6 +88,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         if (i == this.filters.size()) {
             this.filters.add(i, filter);
         }
+        buildConfigFilterChain();
         return this;
     }
     
