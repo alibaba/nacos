@@ -3,7 +3,7 @@
 export type SkillSearchMode = 'accurate' | 'blur';
 
 /** Skill version status */
-export type SkillVersionStatus = 'draft' | 'reviewing' | 'online' | 'offline';
+export type SkillVersionStatus = 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
 
 /** Skill list item for admin API */
 export interface SkillListItem {

@@ -823,7 +823,7 @@ export default function AgentSpecDetailPage() {
                   <SelectContent>
                     {versionOptions.map((version) => {
                       const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
-                      const isVersionPendingPublish = version.status === 'reviewing' && vPipeline?.status === 'APPROVED';
+                      const isVersionPendingPublish = version.status === 'reviewed' || (version.status === 'reviewing' && vPipeline?.status === 'APPROVED');
                       return (
                       <SelectItem key={version.version} value={version.version}>
                         <span className="flex items-center gap-2">
@@ -838,7 +838,7 @@ export default function AgentSpecDetailPage() {
                               {t('agentSpec.versionStatus.draft')}
                             </Badge>
                           )}
-                          {version.status === 'reviewing' && (
+                          {(version.status === 'reviewing' || version.status === 'reviewed') && (
                             <Badge className={isVersionPendingPublish
                               ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
                               : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
@@ -1030,8 +1030,8 @@ export default function AgentSpecDetailPage() {
                     </>
                   )}
 
-                  {/* Reviewing actions */}
-                  {currentVersionStatus === 'reviewing' && (
+                  {/* Reviewing / Reviewed actions */}
+                  {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                     <>
                       <Button
                         size="sm"
@@ -1577,12 +1577,13 @@ function StatusBadge({
   status,
   label,
 }: {
-  status?: 'draft' | 'reviewing' | 'online' | 'offline';
+  status?: 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
   label: string;
 }) {
   const statusStyles: Record<string, string> = {
     draft: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
     reviewing: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    reviewed: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
     online: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
     offline: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
   };

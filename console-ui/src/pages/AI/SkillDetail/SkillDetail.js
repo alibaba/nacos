@@ -40,10 +40,7 @@ import JSZip from 'jszip';
 import { getLanguageFromFileName } from '../../../utils/languageDetector';
 import { getParams, request } from '@/globalLib';
 import { COPILOT_ENABLED } from '@/constants';
-import {
-  fetchPipelineExecutionDetail,
-  mapExecutionToPipelineInfo,
-} from '@/utils/pipelineApi';
+import { fetchPipelineExecutionDetail, mapExecutionToPipelineInfo } from '@/utils/pipelineApi';
 
 const { Row, Col } = Grid;
 const { Panel } = Collapse;
@@ -447,6 +444,8 @@ class SkillDetail extends React.Component {
         return '#1890ff';
       case 'reviewing':
         return '#fa8c16';
+      case 'reviewed':
+        return '#13c2c2';
       case 'online':
         return '#52c41a';
       case 'offline':
@@ -463,6 +462,8 @@ class SkillDetail extends React.Component {
         return locale.versionStatusDraft || 'Draft';
       case 'reviewing':
         return locale.versionStatusReviewing || 'Reviewing';
+      case 'reviewed':
+        return locale.versionStatusReviewed || 'Pending Publish';
       case 'online':
         return locale.versionStatusOnline || 'Online';
       case 'offline':

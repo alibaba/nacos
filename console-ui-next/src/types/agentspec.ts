@@ -1,6 +1,6 @@
 // ===== AgentSpec Types =====
 
-export type AgentSpecVersionStatus = 'draft' | 'reviewing' | 'online' | 'offline';
+export type AgentSpecVersionStatus = 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
 
 /** 列表项 */
 export interface AgentSpecListItem {
