@@ -136,7 +136,7 @@
         <log4j.version>2.25.4</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
-        <postgresql.version>42.7.2</postgresql.version>
+        <postgresql.version>42.7.11</postgresql.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.78.0</grpc-java.version>
