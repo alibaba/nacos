@@ -43,6 +43,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.ai.event.PromptDownloadEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -630,6 +632,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         detail.setGmtModified(meta.getGmtModified() == null ? null : meta.getGmtModified().getTime());
         detail.setBizTags(parseBizTagsList(meta.getBizTags()));
         detail.setBizTagsStr(meta.getBizTags());
+        detail.setDownloadCount(meta.getDownloadCount());
         
         // Load version list
         List<AiResourceVersion> allVersions = loadAllVersionRows(namespaceId, promptKey);
@@ -646,6 +649,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 vs.setCommitMsg(v.getDesc());
                 vs.setGmtModified(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
                 vs.setPublishPipelineInfo(v.getPublishPipelineInfo());
+                vs.setDownloadCount(v.getDownloadCount());
                 versionDetails.add(vs);
             }
         }
@@ -673,6 +677,14 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         result.setCommitMsg(versionRow.getDesc());
         result.setStatus(versionRow.getStatus());
         return result;
+    }
+    
+    @Override
+    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
+            throws NacosException {
+        PromptVersionInfo info = getPromptVersionDetail(namespaceId, promptKey, version);
+        NotifyCenter.publishEvent(new PromptDownloadEvent(namespaceId, promptKey, version));
+        return info;
     }
     
     @Override
@@ -714,6 +726,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                         resource.getGmtModified() == null ? null : resource.getGmtModified().getTime());
                 summary.setBizTags(parseBizTagsList(resource.getBizTags()));
                 summary.setBizTagsStr(resource.getBizTags());
+                summary.setDownloadCount(resource.getDownloadCount());
                 items.add(summary);
             }
         }
@@ -747,6 +760,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
                 summary.setSrcUser(v.getAuthor());
                 summary.setCommitMsg(v.getDesc());
                 summary.setGmtModified(v.getGmtModified() == null ? null : v.getGmtModified().getTime());
+                summary.setDownloadCount(v.getDownloadCount());
                 items.add(summary);
             }
         }

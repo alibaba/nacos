@@ -71,6 +71,11 @@ public class PromptProxy {
         return promptHandler.getVersionDetail(namespaceId, promptKey, version);
     }
     
+    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
+            throws NacosException {
+        return promptHandler.downloadPromptVersion(namespaceId, promptKey, version);
+    }
+    
     public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
             String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
             throws NacosException {

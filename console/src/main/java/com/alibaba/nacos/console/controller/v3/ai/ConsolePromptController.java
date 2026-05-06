@@ -30,6 +30,7 @@ import com.alibaba.nacos.ai.form.prompt.PromptQueryForm;
 import com.alibaba.nacos.ai.form.prompt.PromptSubmitForm;
 import com.alibaba.nacos.ai.form.prompt.PromptVersionPublishForm;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
+import com.alibaba.nacos.ai.utils.PromptMarkdownBuilder;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
@@ -49,6 +50,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -137,6 +139,22 @@ public class ConsolePromptController {
         form.validate();
         return Result.success(
                 promptProxy.getVersionDetail(form.getNamespaceId(), form.getPromptKey(), form.getVersion()));
+    }
+    
+    /**
+     * Download a specific prompt version as a Markdown document.
+     *
+     * @param form the prompt query form containing promptKey and version
+     * @return Markdown file as ResponseEntity
+     * @throws NacosException if the prompt or version is not found
+     */
+    @GetMapping("/version/download")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public ResponseEntity<byte[]> downloadPromptVersion(PromptQueryForm form) throws NacosException {
+        form.validate();
+        PromptVersionInfo info = promptProxy.downloadPromptVersion(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion());
+        return PromptMarkdownBuilder.buildMarkdownResponse(info);
     }
     
     /**

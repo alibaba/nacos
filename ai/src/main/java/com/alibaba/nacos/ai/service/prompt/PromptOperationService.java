@@ -189,6 +189,19 @@ public interface PromptOperationService {
      */
     PromptVersionInfo getPromptVersionDetail(String namespaceId, String promptKey, String version)
             throws NacosException;
+    
+    /**
+     * Download a specific prompt version (same as getPromptVersionDetail but also publishes a download event for
+     * metrics).
+     *
+     * @param namespaceId namespace
+     * @param promptKey   prompt key
+     * @param version     version string
+     * @return prompt version content
+     * @throws NacosException if prompt or version not found
+     */
+    PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
+            throws NacosException;
 
     /**
      * List prompts with pagination for admin usage.

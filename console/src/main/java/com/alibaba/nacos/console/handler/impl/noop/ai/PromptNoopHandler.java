@@ -83,6 +83,12 @@ public class PromptNoopHandler implements PromptHandler {
     }
     
     @Override
+    public PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version)
+            throws NacosException {
+        throw notImplemented();
+    }
+    
+    @Override
     public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
             String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
             throws NacosException {

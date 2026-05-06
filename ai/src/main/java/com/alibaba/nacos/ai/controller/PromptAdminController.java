@@ -35,6 +35,7 @@ import com.alibaba.nacos.ai.form.prompt.PromptSubmitForm;
 import com.alibaba.nacos.ai.form.prompt.PromptVersionPublishForm;
 import com.alibaba.nacos.ai.param.PromptHttpParamExtractor;
 import com.alibaba.nacos.ai.service.prompt.PromptOperationService;
+import com.alibaba.nacos.ai.utils.PromptMarkdownBuilder;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaSummary;
 import com.alibaba.nacos.api.ai.model.prompt.PromptVariable;
@@ -53,6 +54,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -141,6 +143,24 @@ public class PromptAdminController {
         form.validate();
         return Result.success(promptOperationService.getPromptVersionDetail(form.getNamespaceId(),
                 form.getPromptKey(), form.getVersion()));
+    }
+    
+    /**
+     * Download a specific prompt version as a Markdown document.
+     *
+     * <p>This endpoint publishes a download event so the download count is incremented.</p>
+     *
+     * @param form the prompt query form containing promptKey and version
+     * @return Markdown file as ResponseEntity
+     * @throws NacosException if the prompt or version is not found
+     */
+    @GetMapping("/version/download")
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public ResponseEntity<byte[]> downloadPromptVersion(PromptQueryForm form) throws NacosException {
+        form.validate();
+        PromptVersionInfo info = promptOperationService.downloadPromptVersion(form.getNamespaceId(),
+                form.getPromptKey(), form.getVersion());
+        return PromptMarkdownBuilder.buildMarkdownResponse(info);
     }
     
     /**

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.ai.service.prompt;
 
 import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
+import com.alibaba.nacos.ai.event.PromptDownloadEvent;
 import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.api.ai.model.prompt.PromptVersionSummary;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
@@ -722,6 +724,36 @@ class PromptOperationServiceImplTest {
         
         assertNotNull(result);
         assertEquals("0.0.1", result.getVersion());
+    }
+    
+    // ========== downloadPromptVersion ==========
+    
+    @Test
+    void testDownloadPromptVersionReturnsDetailAndPublishesEvent() throws NacosException {
+        AiResource meta = createMeta(PROMPT_KEY, 1L, "{\"labels\":{}}");
+        when(aiResourcePersistService.find(NS, PROMPT_KEY, PROMPT_TYPE)).thenReturn(meta);
+        when(aiResourceVersionPersistService.find(NS, PROMPT_KEY, PROMPT_TYPE, "0.0.1"))
+                .thenReturn(createVersionRow("0.0.1", "online"));
+        
+        PromptVersionInfo content = new PromptVersionInfo();
+        content.setTemplate("hello");
+        mockStorageGet(JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8));
+        
+        try (MockedStatic<NotifyCenter> notifyCenterStatic = mockStatic(NotifyCenter.class)) {
+            PromptVersionInfo result = service.downloadPromptVersion(NS, PROMPT_KEY, "0.0.1");
+            
+            assertNotNull(result);
+            assertEquals(PROMPT_KEY, result.getPromptKey());
+            assertEquals("0.0.1", result.getVersion());
+            
+            ArgumentCaptor<PromptDownloadEvent> captor = ArgumentCaptor.forClass(PromptDownloadEvent.class);
+            notifyCenterStatic.verify(() -> NotifyCenter.publishEvent(captor.capture()));
+            
+            PromptDownloadEvent published = captor.getValue();
+            assertEquals(NS, published.getNamespaceId());
+            assertEquals(PROMPT_KEY, published.getName());
+            assertEquals("0.0.1", published.getVersion());
+        }
     }
     
     // ========== refreshLatestMirror ==========

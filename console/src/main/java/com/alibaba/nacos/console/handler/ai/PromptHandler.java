@@ -67,6 +67,11 @@ public interface PromptHandler {
     PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version) throws NacosException;
     
     /**
+     * Download a specific prompt version (triggers download count increment).
+     */
+    PromptVersionInfo downloadPromptVersion(String namespaceId, String promptKey, String version) throws NacosException;
+    
+    /**
      * Create draft version.
      */
     String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
