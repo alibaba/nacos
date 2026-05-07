@@ -222,7 +222,14 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             ConfigInfoStateWrapper configInfoState = findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                try {
+                    return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                } catch (DataIntegrityViolationException raceWithConcurrentInsert) {
+                    // Another thread inserted the same dataId/group/tenant in the gap between the
+                    // findConfigInfoState above and our insert. Treat this as the update path and
+                    // keep publishConfig idempotent instead of surfacing a 500 to the caller.
+                    return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
+                }
             } else {
                 return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
             }
@@ -241,7 +248,14 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             ConfigInfoStateWrapper configInfoState = findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             if (configInfoState == null) {
-                return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                try {
+                    return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
+                } catch (DataIntegrityViolationException raceWithConcurrentInsert) {
+                    // Lost the insert race against another thread. Switch to the CAS update path so
+                    // the caller gets the same result it would have gotten if the row had already
+                    // been visible at the findConfigInfoState check.
+                    return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
+                }
             } else {
                 return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
             }

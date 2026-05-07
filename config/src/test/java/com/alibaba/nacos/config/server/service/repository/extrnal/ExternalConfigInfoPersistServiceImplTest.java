@@ -46,6 +46,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -280,7 +281,112 @@ class ExternalConfigInfoPersistServiceImplTest {
         } catch (Exception e) {
             assertEquals("mock fail", e.getMessage());
         }
-        
+
+    }
+
+    @Test
+    void testInsertOrUpdateRecoversFromConcurrentInsertRace() {
+        // Reproduces the race in #14981: two threads call publishConfig for the same
+        // dataId/group/tenant; both see findConfigInfoState() == null and both attempt INSERT.
+        // The losing thread used to surface a 500 (DataIntegrityViolationException). After the
+        // fix, it should recover by switching to the UPDATE path so publishConfig stays idempotent.
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        String content = "content-race";
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, content);
+        configInfo.setEncryptedDataKey("key-race");
+
+        // findConfigInfoState returns null on the first probe (no row visible yet to this thread).
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
+
+        // The INSERT loses the race against another concurrent insert: PostgreSQL/MySQL surface
+        // a unique constraint violation, which Spring wraps as DataIntegrityViolationException.
+        long insertConfigInfoId = 12345678765L;
+        GeneratedKeyHolder generatedKeyHolder = TestCaseUtils.createGeneratedKeyHolder(insertConfigInfoId);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder).thenReturn(generatedKeyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), any(KeyHolder.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint"));
+
+        // After the recovery falls through to updateConfigInfo, the row inserted by the winning
+        // thread is now visible. Mock the ConfigAllInfo lookup that updateConfigInfo performs.
+        ConfigAllInfo configAllInfoFromOtherThread = new ConfigAllInfo();
+        configAllInfoFromOtherThread.setDataId(dataId);
+        configAllInfoFromOtherThread.setGroup(group);
+        configAllInfoFromOtherThread.setTenant(tenant);
+        configAllInfoFromOtherThread.setAppName("winner-app");
+        configAllInfoFromOtherThread.setMd5("winner-md5");
+        configAllInfoFromOtherThread.setId(insertConfigInfoId);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(configAllInfoFromOtherThread);
+
+        // The UPDATE is allowed to succeed (returns affected rows).
+        Mockito.when(jdbcTemplate.update(anyString(), any(Object[].class))).thenReturn(1);
+        Mockito.when(jdbcTemplate.update(anyString(), any(Object.class), any(Object.class), any(Object.class),
+                any(Object.class), any(Object.class), any(Object.class), any(Object.class), any(Object.class),
+                any(Object.class), any(Object.class), any(Object.class), any(Object.class), any(Object.class),
+                any(Object.class))).thenReturn(1);
+
+        Map<String, Object> configAdvanceInfo = new HashMap<>();
+        configAdvanceInfo.put("config_tags", "tag1");
+
+        // The race must be absorbed by the persistence layer: no exception escapes to the caller.
+        ConfigOperateResult result =
+                externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo, configAdvanceInfo);
+        assertTrue(result != null);
+
+        // Verify both that the insert was attempted AND that the update was performed against the
+        // row the winner had committed.
+        Mockito.verify(jdbcTemplate, times(1))
+                .update(any(PreparedStatementCreator.class), any(KeyHolder.class));
+        Mockito.verify(historyConfigInfoPersistService, times(1))
+                .insertConfigHistoryAtomic(eq(configAllInfoFromOtherThread.getId()), any(ConfigInfo.class), eq("srcIp"),
+                        eq("srcUser"), any(Timestamp.class), eq("U"), eq("formal"), eq(null), any());
+    }
+
+    @Test
+    void testInsertOrUpdateCasRecoversFromConcurrentInsertRace() {
+        // Same race as above, but on the CAS publish path. The recovery must hand off to
+        // updateConfigInfoCas so a stale CAS md5 surfaces as a "Cas publish fail" / success=false
+        // result instead of a 500.
+        String dataId = "dataId";
+        String group = "group";
+        String tenant = "tenant";
+        String content = "content-cas-race";
+        String casMd5 = "cas-md5";
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, content);
+        configInfo.setMd5(casMd5);
+        configInfo.setEncryptedDataKey("key-cas-race");
+
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
+
+        long insertConfigInfoId = 99999999999L;
+        GeneratedKeyHolder generatedKeyHolder = TestCaseUtils.createGeneratedKeyHolder(insertConfigInfoId);
+        externalStorageUtilsMockedStatic.when(ExternalStorageUtils::createKeyHolder).thenReturn(generatedKeyHolder);
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), any(KeyHolder.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint"));
+
+        // After recovery, the CAS UPDATE finds the row written by the other thread but its md5
+        // differs from our casMd5, so it returns 0 affected rows (CAS check fails). That maps to
+        // ConfigOperateResult(success=false), which the caller turns into a controlled error
+        // ("Cas publish fail, server md5 may have changed.") rather than a 500.
+        Mockito.when(jdbcTemplate.update(anyString(), any(Object.class), any(Object.class), any(Object.class),
+                any(Object.class), any(Object.class), any(Object.class), any(Object.class), any(Object.class),
+                any(Object.class), any(Object.class), any(Object.class), any(Object.class), any(Object.class),
+                any(Object.class), any(Object.class))).thenReturn(0);
+
+        Map<String, Object> configAdvanceInfo = new HashMap<>();
+
+        ConfigOperateResult result =
+                externalConfigInfoPersistService.insertOrUpdateCas("srcIp", "srcUser", configInfo, configAdvanceInfo);
+        assertFalse(result.isSuccess(),
+                "race-recovered CAS publish should report success=false when the existing row's md5 no longer matches");
+
+        // Insert was attempted exactly once and was the trigger for falling through to CAS update.
+        Mockito.verify(jdbcTemplate, times(1))
+                .update(any(PreparedStatementCreator.class), any(KeyHolder.class));
     }
     
     @Test
