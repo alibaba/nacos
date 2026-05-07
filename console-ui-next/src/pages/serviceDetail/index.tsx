@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ArrowLeft, Pencil, ChevronLeft, ChevronRight, Server, Hash, Shield, ToggleLeft, Filter, Braces } from 'lucide-react';
+import { ArrowLeft, Pencil, ChevronLeft, ChevronRight, Server, Hash, Shield, ToggleLeft, Filter, Braces, Trash2} from 'lucide-react';
 
 import { serviceApi } from '@/api/service';
 import { useServiceStore } from '@/stores/service-store';
@@ -35,6 +35,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -94,6 +95,8 @@ export default function ServiceDetailPage() {
     metadata: '',
   });
   const [editInstanceSubmitting, setEditInstanceSubmitting] = useState(false);
+  const [deleteInstanceTarget, setDeleteInstanceTarget] = useState<{ clusterName: string; instance: Instance } | null>(null);
+  const [deleteInstanceSubmitting, setDeleteInstanceSubmitting] = useState(false);
 
   // Per-cluster pagination state
   const [clusterPages, setClusterPages] = useState<Record<string, { pageNo: number; pageSize: number }>>({});
@@ -332,6 +335,40 @@ export default function ServiceDetailPage() {
     }
   };
 
+  const handleDeleteInstance = async () => {
+    if (!deleteInstanceTarget) return;
+    const { clusterName, instance } = deleteInstanceTarget;
+    setDeleteInstanceSubmitting(true);
+    try {
+      await serviceApi.deleteInstance({
+        namespaceId: currentNamespace,
+        serviceName,
+        groupName,
+        clusterName,
+        ip: instance.ip,
+        port: instance.port,
+        ephemeral: instance.ephemeral,
+      });
+      toast.success(t('service.instanceDeleteSuccess'));
+      setDeleteInstanceTarget(null);
+      const currentPage = getClusterPage(clusterName);
+      const currentInstances = instancesByCluster[clusterName]?.list || [];
+      if (currentInstances.length === 1 && currentPage.pageNo > 1) {
+        const previousPage = { ...currentPage, pageNo: currentPage.pageNo - 1 };
+        setClusterPages((prev) => ({
+          ...prev,
+          [clusterName]: previousPage,
+        }));
+        fetchClusterInstances(clusterName, previousPage);
+      } else {
+        refreshClusterInstances(clusterName);
+      }
+      refreshDetail();
+    } catch { /* interceptor */ } finally {
+      setDeleteInstanceSubmitting(false);
+    }
+  };
+
   // ===== Cluster pagination helpers =====
   const getClusterPage = (clusterName: string) =>
     clusterPages[clusterName] || { pageNo: 1, pageSize: 10 };
@@ -505,6 +542,7 @@ export default function ServiceDetailPage() {
             onEditCluster={() => openEditCluster(clusterName, cluster)}
             onEditInstance={(inst) => openEditInstance(clusterName, inst)}
             onToggleInstance={(inst) => toggleInstance(clusterName, inst)}
+            onDeleteInstance={(inst) => setDeleteInstanceTarget({ clusterName, instance: inst })}
             togglingInstances={togglingInstances}
             t={t}
           />
@@ -729,6 +767,31 @@ export default function ServiceDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Instance Dialog */}
+      <Dialog open={!!deleteInstanceTarget} onOpenChange={(open) => !open && setDeleteInstanceTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('service.deleteInstance')}</DialogTitle>
+            <DialogDescription>
+              {deleteInstanceTarget
+                ? t('service.instanceDeleteConfirm', {
+                    ip: deleteInstanceTarget.instance.ip,
+                    port: deleteInstanceTarget.instance.port,
+                  })
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteInstanceTarget(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteInstance} disabled={deleteInstanceSubmitting}>
+              {t('common.delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -745,6 +808,7 @@ function ClusterCard({
   onEditCluster,
   onEditInstance,
   onToggleInstance,
+  onDeleteInstance,
   togglingInstances,
   t,
 }: {
@@ -757,6 +821,7 @@ function ClusterCard({
   onEditCluster: () => void;
   onEditInstance: (inst: Instance) => void;
   onToggleInstance: (inst: Instance) => void;
+  onDeleteInstance: (inst: Instance) => void;
   togglingInstances: Set<string>;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
@@ -850,6 +915,17 @@ function ClusterCard({
                           >
                             {inst.enabled ? t('service.offline') : t('service.online')}
                           </Button>
+                          {!inst.ephemeral && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDeleteInstance(inst)}
+                              className="text-destructive hover:text-destructive"
+                              aria-label={t('service.deleteInstance')}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

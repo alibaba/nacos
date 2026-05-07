@@ -86,4 +86,17 @@ class InstanceInnerHandlerTest {
         instanceInnerHandler.updateInstance(instanceForm, instance);
         verify(instanceServiceV2).updateInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, instance);
     }
+    
+    @Test
+    void removeInstance() throws NacosException {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setNamespaceId(TEST_NAMESPACE_ID);
+        instanceForm.setGroupName(TEST_GROUP_NAME);
+        instanceForm.setServiceName(TEST_SERVICE_NAME);
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8848);
+        instanceInnerHandler.removeInstance(instanceForm, instance);
+        verify(instanceServiceV2).removeInstance(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, instance);
+    }
 }

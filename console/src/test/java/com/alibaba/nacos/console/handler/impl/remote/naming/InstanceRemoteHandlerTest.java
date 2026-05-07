@@ -62,4 +62,19 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         verify(namingMaintainerService).updateInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "test",
                 instance);
     }
+    
+    @Test
+    void removeInstance() throws NacosException {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setServiceName("test");
+        instanceForm.setIp("127.0.0.1");
+        instanceForm.setPort(3306);
+        instanceForm.setEphemeral(false);
+        instanceForm.validate();
+        Instance instance = new Instance();
+        instance.setEphemeral(false);
+        instanceRemoteHandler.removeInstance(instanceForm, instance);
+        verify(namingMaintainerService).deregisterInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+                "test", instance);
+    }
 }

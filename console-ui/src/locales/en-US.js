@@ -984,6 +984,7 @@ const I18N_CONF = {
     // Lifecycle status
     statusDraft: 'Draft',
     statusReviewing: 'Reviewing',
+    statusReviewed: 'Pending Publish',
     statusOnline: 'Online',
     statusOffline: 'Offline',
     // Lifecycle actions
@@ -1172,6 +1173,7 @@ const I18N_CONF = {
     versionStatus: 'Status',
     versionStatusDraft: 'Draft',
     versionStatusReviewing: 'Reviewing',
+    versionStatusReviewed: 'Pending Publish',
     versionStatusOnline: 'Online',
     versionStatusOffline: 'Offline',
     author: 'Author',

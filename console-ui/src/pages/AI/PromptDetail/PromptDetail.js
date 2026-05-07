@@ -296,6 +296,8 @@ class PromptDetail extends React.Component {
         return '#1890ff';
       case 'reviewing':
         return '#fa8c16';
+      case 'reviewed':
+        return '#13c2c2';
       case 'online':
         return '#52c41a';
       case 'offline':
@@ -312,6 +314,8 @@ class PromptDetail extends React.Component {
         return locale.statusDraft || 'Draft';
       case 'reviewing':
         return locale.statusReviewing || 'Reviewing';
+      case 'reviewed':
+        return locale.statusReviewed || 'Pending Publish';
       case 'online':
         return locale.statusOnline || 'Online';
       case 'offline':

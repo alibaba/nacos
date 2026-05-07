@@ -39,6 +39,7 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -101,6 +102,23 @@ public class ConsoleInstanceController {
         return Result.success("ok");
     }
     
+    /**
+     * Remove instance.
+     */
+    @CanDistro
+    @DeleteMapping
+    @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
+    public Result<String> removeInstance(InstanceForm instanceForm) throws NacosException {
+        // check param
+        instanceForm.validate();
+        checkDeleteInstanceEphemeral(instanceForm.getEphemeral());
+        // build instance
+        Instance instance = buildInstance(instanceForm);
+        instanceProxy.removeInstance(instanceForm, instance);
+        return Result.success("ok");
+    }
+    
     private void checkWeight(Double weight) throws NacosException {
         if (weight > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
                 || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
@@ -108,6 +126,13 @@ public class ConsoleInstanceController {
                     "instance format invalid: The weights range from "
                             + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
                             + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
+        }
+    }
+    
+    private void checkDeleteInstanceEphemeral(Boolean ephemeral) throws NacosApiException {
+        if (Boolean.TRUE.equals(ephemeral)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "Console only supports deregistering persistent instances");
         }
     }
     

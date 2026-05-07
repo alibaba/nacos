@@ -52,5 +52,14 @@ public interface InstanceHandler {
      * @throws NacosException if the update operation fails
      */
     void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException;
+    
+    /**
+     * Remove an instance.
+     *
+     * @param instanceForm the form containing instance data
+     * @param instance     the instance to remove
+     * @throws NacosException if the remove operation fails
+     */
+    void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException;
 }
 

@@ -51,6 +51,8 @@ public class SwitchEntry {
     
     public static final String CHECK = "check";
     
+    public static final String HEALTH_CHECK_ENABLED = "healthCheckEnabled";
+    
     public static final String PUSH_ENABLED = "pushEnabled";
     
     public static final String SERVICE_STATUS_SYNC_PERIOD = "serviceStatusSynchronizationPeriodMillis";

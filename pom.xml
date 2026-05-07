@@ -136,7 +136,7 @@
         <log4j.version>2.25.4</log4j.version>
         
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
-        <postgresql.version>42.7.2</postgresql.version>
+        <postgresql.version>42.7.11</postgresql.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.78.0</grpc-java.version>
@@ -302,6 +302,27 @@
                         <version>11.0.0</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.44.4</version>
+                <configuration>
+                    <java>
+                        <excludes>
+                            <exclude>**/api/grpc/auto/**</exclude>
+                            <exclude>**/consistency/entity/**</exclude>
+                            <exclude>**/istio/model/**</exclude>
+                            <exclude>**/common/packagescan/**</exclude>
+                            <exclude>**/nacos/test/**</exclude>
+                            <exclude>**/protobuf/**</exclude>
+                        </excludes>
+                        <eclipse>
+                            <file>${maven.multiModuleProjectDirectory}/style/nacos-eclipse-formatter.xml</file>
+                        </eclipse>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.rat</groupId>

@@ -637,6 +637,11 @@ export default function PromptDetailPage() {
                               {t('prompt.versionStatus.reviewing')}
                             </Badge>
                           )}
+                          {v.status === 'reviewed' && (
+                            <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0">
+                              {t('prompt.versionStatus.pendingPublish')}
+                            </Badge>
+                          )}
                         </span>
                       </SelectItem>
                     ))}
@@ -744,8 +749,8 @@ export default function PromptDetailPage() {
                       </>
                     )}
 
-                    {/* Reviewing actions */}
-                    {currentVersionStatus === 'reviewing' && (
+                    {/* Reviewing / Reviewed actions */}
+                    {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                       <>
                         <Button
                           size="sm"

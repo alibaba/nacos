@@ -73,5 +73,17 @@ public class InstanceProxy {
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
         instanceHandler.updateInstance(instanceForm, instance);
     }
+    
+    /**
+     * Removes an instance.
+     *
+     * @param instanceForm the form containing instance data
+     * @param instance     the instance to remove
+     * @throws NacosException           if the remove operation fails
+     * @throws IllegalArgumentException if the deployment type is invalid
+     */
+    public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
+        instanceHandler.removeInstance(instanceForm, instance);
+    }
 }
 

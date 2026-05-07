@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
@@ -74,6 +76,16 @@ public class InstanceInnerHandler implements InstanceHandler {
                 new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", instanceForm.getNamespaceId(),
                         instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
                         instance.getPort(), instance.getMetadata()));
+    }
+    
+    @Override
+    public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
+        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
+        NotifyCenter.publishEvent(
+                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "", false,
+                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                        instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
     }
 }
 

@@ -185,7 +185,7 @@ public abstract class BaseConfigInfoMapper extends AbstractMapper implements Con
             paramList.add(dataId);
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ";
+            where += " AND group_id LIKE ? ";
             paramList.add(group);
         }
         if (!StringUtils.isBlank(content)) {

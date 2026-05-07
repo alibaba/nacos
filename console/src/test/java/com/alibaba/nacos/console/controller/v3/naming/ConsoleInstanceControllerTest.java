@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,6 +40,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -126,5 +128,60 @@ public class ConsoleInstanceControllerTest {
         
         assertThrows(NacosApiException.class, () -> consoleInstanceController.updateInstance(instanceForm));
         verify(instanceProxy, never()).updateInstance(any(InstanceForm.class), any(Instance.class));
+    }
+    
+    @Test
+    void testRemoveInstance() throws Exception {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setServiceName("testService");
+        instanceForm.setIp("127.0.0.1");
+        instanceForm.setPort(8080);
+        instanceForm.setClusterName("cluster");
+        instanceForm.setEphemeral(false);
+        
+        doNothing().when(instanceProxy).removeInstance(any(InstanceForm.class), any(Instance.class));
+        
+        Result<String> result = consoleInstanceController.removeInstance(instanceForm);
+        
+        ArgumentCaptor<Instance> instanceCaptor = ArgumentCaptor.forClass(Instance.class);
+        verify(instanceProxy).removeInstance(any(InstanceForm.class), instanceCaptor.capture());
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
+        assertEquals("127.0.0.1", instanceCaptor.getValue().getIp());
+        assertEquals(8080, instanceCaptor.getValue().getPort());
+        assertEquals("cluster", instanceCaptor.getValue().getClusterName());
+        assertFalse(instanceCaptor.getValue().isEphemeral());
+    }
+    
+    @Test
+    void testRemoveInstanceWithDefaultPersistentInstance() throws Exception {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setServiceName("testService");
+        instanceForm.setIp("127.0.0.1");
+        instanceForm.setPort(8080);
+        
+        doNothing().when(instanceProxy).removeInstance(any(InstanceForm.class), any(Instance.class));
+        
+        consoleInstanceController.removeInstance(instanceForm);
+        
+        ArgumentCaptor<Instance> instanceCaptor = ArgumentCaptor.forClass(Instance.class);
+        verify(instanceProxy).removeInstance(any(InstanceForm.class), instanceCaptor.capture());
+        assertFalse(instanceCaptor.getValue().isEphemeral());
+    }
+    
+    @Test
+    void testRemoveEphemeralInstanceRejected() throws Exception {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setServiceName("testService");
+        instanceForm.setIp("127.0.0.1");
+        instanceForm.setPort(8080);
+        instanceForm.setEphemeral(true);
+        
+        NacosApiException exception = assertThrows(NacosApiException.class,
+                () -> consoleInstanceController.removeInstance(instanceForm));
+        
+        assertEquals(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(), exception.getDetailErrCode());
+        verify(instanceProxy, never()).removeInstance(any(InstanceForm.class), any(Instance.class));
     }
 }

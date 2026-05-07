@@ -274,7 +274,10 @@
     "enabled": "启用",
     "instanceEphemeral": "临时",
     "editInstance": "编辑实例",
+    "deleteInstance": "删除实例",
     "instanceUpdateSuccess": "实例更新成功",
+    "instanceDeleteSuccess": "实例删除成功",
+    "instanceDeleteConfirm": "确定要删除实例 {{ip}}:{{port}} 吗？",
     "online": "上线",
     "offline": "下线",
     "noInstances": "该集群暂无实例",
@@ -698,6 +701,7 @@
     "retry": "重试",
     "versionStatus.draft": "草稿",
     "versionStatus.reviewing": "审核中",
+    "versionStatus.reviewed": "待发布",
     "versionStatus.online": "已上线",
     "versionStatus.offline": "已下线",
     "versionStatus.pendingPublish": "待发布",
@@ -959,6 +963,7 @@
     "versionStatus": {
       "draft": "草稿",
       "reviewing": "审核中",
+      "reviewed": "待发布",
       "pendingPublish": "待发布",
       "online": "已上线",
       "offline": "已下线"
@@ -1058,6 +1063,7 @@
     "versionStatus": {
       "draft": "草稿",
       "reviewing": "审核中",
+      "reviewed": "待发布",
       "pendingPublish": "待发布",
       "online": "已上线",
       "offline": "已下线"

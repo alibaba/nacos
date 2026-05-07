@@ -4,7 +4,7 @@ export type PromptSearchMode = 'accurate' | 'blur';
 
 // ===== Prompt Version Status =====
 
-export type PromptVersionStatus = 'draft' | 'reviewing' | 'online' | 'offline';
+export type PromptVersionStatus = 'draft' | 'reviewing' | 'reviewed' | 'online' | 'offline';
 
 // ===== Prompt Variable =====
 

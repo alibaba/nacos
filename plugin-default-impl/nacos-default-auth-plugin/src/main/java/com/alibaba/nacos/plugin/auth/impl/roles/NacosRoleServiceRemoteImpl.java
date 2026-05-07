@@ -91,8 +91,9 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService imple
     
     @Override
     public List<PermissionInfo> getPermissions(String role) {
-        if (getCachedPermissionInfoMap().containsKey(role)) {
-            return getCachedPermissionInfoMap().get(role);
+        List<PermissionInfo> cached = getCachedPermissionInfoMap().get(role);
+        if (cached != null) {
+            return cached;
         }
         reload();
         return getCachedPermissionInfoMap().get(role);
@@ -114,8 +115,9 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService imple
     
     @Override
     public List<RoleInfo> getRoles(String username) {
-        if (getCachedRoleInfoMap().containsKey(username)) {
-            return getCachedRoleInfoMap().get(username);
+        List<RoleInfo> cached = getCachedRoleInfoMap().get(username);
+        if (cached != null) {
+            return cached;
         }
         reload();
         return getCachedRoleInfoMap().get(username);

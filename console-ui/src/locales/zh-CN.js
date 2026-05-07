@@ -973,6 +973,7 @@ const I18N_CONF = {
     // Lifecycle status
     statusDraft: '草稿',
     statusReviewing: '审核中',
+    statusReviewed: '待发布',
     statusOnline: '已上线',
     statusOffline: '已下线',
     // Lifecycle actions
@@ -1158,6 +1159,7 @@ const I18N_CONF = {
     versionStatus: '状态',
     versionStatusDraft: '草稿',
     versionStatusReviewing: '审核中',
+    versionStatusReviewed: '待发布',
     versionStatusOnline: '已上线',
     versionStatusOffline: '已下线',
     author: '作者',

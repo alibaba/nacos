@@ -23,6 +23,8 @@ import com.alibaba.nacos.ai.model.AiResource;
 import com.alibaba.nacos.ai.model.AiResourceVersion;
 import com.alibaba.nacos.ai.model.skills.SkillIndexManifest;
 import com.alibaba.nacos.ai.pipeline.PublishPipelineExecutor;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
+import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionStatus;
 import com.alibaba.nacos.ai.service.VisibilityHelper;
 import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
@@ -84,7 +86,8 @@ import static com.alibaba.nacos.ai.constant.Constants.Skills;
  * {@link AiResourcePersistService} (meta row) and {@link AiResourceVersionPersistService} (version rows).
  * A {@link SkillIndexManifest} stored in Nacos config serves as a lightweight index for client-side discovery.</p>
  *
- * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> (Pipeline / direct) -> Published/Online.</p>
+ * <p>Version lifecycle: Draft -> (Submit) -> Reviewing -> (Pipeline approved) -> Reviewed -> (Publish) -> Online.
+ * Pipeline rejected returns to Draft. When no pipeline is configured, submit publishes directly to Online.</p>
  *
  * @author nacos
  */
@@ -105,6 +108,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * different storage providers via service-level configuration.</p>
      */
     private static final String SKILL_STORAGE_PROVIDER_CONFIG_KEY = "nacos.ai.skill.storage.provider";
+
+    private static final String AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY =
+            "nacos.ai.skill.auto-publish-after-review.enabled";
 
     private static final String RESOURCE_TYPE_SKILL = "skill";
 
@@ -141,12 +147,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         this.resourceManager = resourceManager;
     }
 
-    /**
-     * Upload a skill from a ZIP archive (delegates to the overload with null zipFileName).
-     */
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, null, overwrite);
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite, String targetVersion)
+            throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, null, overwrite, targetVersion);
     }
 
     /**
@@ -157,16 +161,16 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      * If overwrite=false, fails when a working version (editing/reviewing) already exists.</p>
      */
     @Override
-    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName, boolean overwrite)
-            throws NacosException {
+    public String uploadSkillFromZip(String namespaceId, byte[] zipBytes, String zipFileName, boolean overwrite,
+            String targetVersion) throws NacosException {
         // Step 1: Parse ZIP and validate skill name
         Skill skill = SkillZipParser.parseSkillFromZip(zipBytes, namespaceId);
         if (skill == null || StringUtils.isBlank(skill.getName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING, "Skill name is required");
         }
         validateSkillNameByParamChecker(skill.getName());
-        // Step 2: Resolve version from SKILL.md front-matter or meta.json
-        String uploadVersion = resolveUploadVersion(skill.getSkillMd(), zipBytes);
+        // Step 2: Resolve version from SKILL.md front-matter, meta.json, or user-specified targetVersion
+        String uploadVersion = resolveUploadVersion(skill.getSkillMd(), zipBytes, targetVersion);
         String name = skill.getName();
         // Step 3: Check if a meta record already exists for this skill name
         AiResource meta = resourceManager.findMeta(namespaceId, name, RESOURCE_TYPE_SKILL);
@@ -225,7 +229,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
 
         // Step 3: Write to storage (unlike upload, bootstrap skips draft workflow and writes directly)
-        String version = resolveFinalUploadVersion(namespaceId, skillName, resolveUploadVersion(skill.getSkillMd(), null));
+        String version = resolveFinalUploadVersion(namespaceId, skillName, resolveUploadVersion(skill.getSkillMd(), null, null));
         // Normalize frontmatter before writing (bootstrap = first create)
         SkillRequestUtil.normalizeSkillFrontmatter(skill, skillName, version, true);
         List<String> files = writeSkillToStorage(namespaceId, skill, version);
@@ -275,9 +279,10 @@ public class SkillOperationServiceImpl implements SkillOperationService {
     }
 
     /**
-     * Resolve the upload version. Priority: SKILL.md YAML front-matter -> meta.json in ZIP -> default "0.0.1".
+     * Resolve the upload version.
+     * Priority: SKILL.md YAML front-matter (version / metadata.version) -> meta.json in ZIP -> user-specified targetVersion -> default "0.0.1".
      */
-    private String resolveUploadVersion(String skillMd, byte[] zipBytes) {
+    private String resolveUploadVersion(String skillMd, byte[] zipBytes, String targetVersion) {
         String versionFromSkillMd = resolveVersionFromSkillMd(skillMd);
         if (StringUtils.isNotBlank(versionFromSkillMd)) {
             return versionFromSkillMd;
@@ -285,6 +290,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         String versionFromMetaJson = SkillZipParser.resolveVersionFromZip(zipBytes);
         if (StringUtils.isNotBlank(versionFromMetaJson)) {
             return versionFromMetaJson;
+        }
+        if (StringUtils.isNotBlank(targetVersion)) {
+            return targetVersion.trim();
         }
         return DEFAULT_INITIAL_UPLOAD_VERSION;
     }
@@ -611,7 +619,7 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                         "skillCard is required when creating a brand-new skill draft");
             }
             String version = StringUtils.isBlank(targetVersion)
-                    ? resolveFinalUploadVersion(namespaceId, name, resolveUploadVersion(initialContent.getSkillMd(), null))
+                    ? resolveFinalUploadVersion(namespaceId, name, resolveUploadVersion(initialContent.getSkillMd(), null, null))
                     : resolveSpecifiedDraftVersion(namespaceId, name, targetVersion, null, null);
             createDraftWithSkill(namespaceId, initialContent, version, null, true, commitMsg);
             AiResourceTraceService.logSuccess(RESOURCE_TYPE_SKILL, name, version, AiResourceTraceService.OP_CREATE_DRAFT,
@@ -785,11 +793,40 @@ public class SkillOperationServiceImpl implements SkillOperationService {
 
         // Step 6: Run pipeline asynchronously; fall back to direct publish if startup fails
         if (!resourceManager.runPipelineExecution(namespaceId, name, RESOURCE_TYPE_SKILL, finalTarget,
-                ctx, publishPipelineExecutor)) {
+                ctx, publishPipelineExecutor,
+                r -> onSkillPipelineComplete(namespaceId, name, finalTarget, r))) {
             publish(namespaceId, name, finalTarget, true);
         }
 
         return finalTarget;
+    }
+
+    private void onSkillPipelineComplete(String namespaceId, String name, String version,
+            PipelineExecutionResult result) {
+        resourceManager.onPipelineComplete(namespaceId, name, RESOURCE_TYPE_SKILL, version, result);
+        if (result == null || result.getStatus() != PipelineExecutionStatus.APPROVED) {
+            return;
+        }
+        if (!EnvUtil.getProperty(AUTO_PUBLISH_AFTER_REVIEW_ENABLED_KEY, Boolean.class, false)) {
+            return;
+        }
+        try {
+            publishApprovedBySystem(namespaceId, name, version, true);
+        } catch (Throwable ex) {
+            LOGGER.error("Failed to auto publish approved skill {}@{}", name, version, ex);
+        }
+    }
+
+    private void publishApprovedBySystem(String namespaceId, String name, String version, boolean updateLatestLabel)
+            throws NacosException {
+        AiResourceVersion v = resourceManager.doSystemPublish(namespaceId, name, RESOURCE_TYPE_SKILL, version,
+                updateLatestLabel);
+        SkillIndexManifest manifest = manifestService.loadForUpdate(namespaceId, name);
+        manifest.getVersions().put(version, parseStorageFiles(v.getStorage()));
+        if (updateLatestLabel) {
+            manifest.getLabels().put(AiResourceConstants.LABEL_LATEST, version);
+        }
+        manifestService.write(namespaceId, name, manifest);
     }
 
     /**

@@ -123,7 +123,7 @@ export function VersionTimeline({
           const isActive = v.version === currentVersion;
           const actions = getValidActions(v.status);
           const pipelineInfo = parsePipelineInfo(v.publishPipelineInfo);
-          const isPendingPublish = v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED';
+          const isPendingPublish = v.status === 'reviewed' || (v.status === 'reviewing' && pipelineInfo?.status === 'APPROVED');
           const displayStatus = isPendingPublish ? 'pendingPublish' : v.status;
 
           return (

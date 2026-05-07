@@ -41,7 +41,6 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -94,7 +93,7 @@ public class CircuitFilter implements Filter {
             }
             
             chain.doFilter(req, response);
-        } catch (AccessControlException e) {
+        } catch (SecurityException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
         } catch (Throwable e) {
             DEFAULT_LOG.warn("[CURCUIT-FILTER] Server failed: ", e);

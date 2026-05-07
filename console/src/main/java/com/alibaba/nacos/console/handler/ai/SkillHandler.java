@@ -97,7 +97,7 @@ public interface SkillHandler {
      * @throws NacosException if upload failed
      */
     default String uploadSkillFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
-        return uploadSkillFromZip(namespaceId, zipBytes, false);
+        return uploadSkillFromZip(namespaceId, zipBytes, false, null);
     }
     
     /**
@@ -109,7 +109,22 @@ public interface SkillHandler {
      * @return skill name
      * @throws NacosException if upload failed
      */
-    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
+    default String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException {
+        return uploadSkillFromZip(namespaceId, zipBytes, overwrite, null);
+    }
+    
+    /**
+     * Upload skill from zip file with optional target version.
+     *
+     * @param namespaceId   namespace ID
+     * @param zipBytes      zip file bytes
+     * @param overwrite     whether to overwrite the current editable draft when the skill already exists
+     * @param targetVersion user-specified version (optional, used as fallback when ZIP content has no version)
+     * @return skill name
+     * @throws NacosException if upload failed
+     */
+    String uploadSkillFromZip(String namespaceId, byte[] zipBytes, boolean overwrite, String targetVersion)
+            throws NacosException;
     
     /**
      * Create draft version based on latest or a specified version.

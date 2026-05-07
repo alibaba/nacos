@@ -274,7 +274,10 @@
     "enabled": "Enabled",
     "instanceEphemeral": "Ephemeral",
     "editInstance": "Edit Instance",
+    "deleteInstance": "Delete Instance",
     "instanceUpdateSuccess": "Instance updated",
+    "instanceDeleteSuccess": "Instance deleted",
+    "instanceDeleteConfirm": "Delete instance {{ip}}:{{port}}?",
     "online": "Online",
     "offline": "Offline",
     "noInstances": "No instances in this cluster",
@@ -698,6 +701,7 @@
     "retry": "Retry",
     "versionStatus.draft": "Draft",
     "versionStatus.reviewing": "Reviewing",
+    "versionStatus.reviewed": "Pending Publish",
     "versionStatus.online": "Online",
     "versionStatus.offline": "Offline",
     "versionStatus.pendingPublish": "Pending Publish",
@@ -959,6 +963,7 @@
     "versionStatus": {
       "draft": "Draft",
       "reviewing": "Reviewing",
+      "reviewed": "Pending Publish",
       "pendingPublish": "Pending Publish",
       "online": "Online",
       "offline": "Offline"
@@ -1058,6 +1063,7 @@
     "versionStatus": {
       "draft": "Draft",
       "reviewing": "Reviewing",
+      "reviewed": "Pending Publish",
       "pendingPublish": "Pending Publish",
       "online": "Online",
       "offline": "Offline"

@@ -166,10 +166,11 @@ public class ConsoleSkillController {
     public Result<String> uploadSkill(HttpServletRequest request,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
+            @RequestParam(value = "targetVersion", required = false) String targetVersion,
             @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite);
+        String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
         return Result.success(skillName);
     }
     

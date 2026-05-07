@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractCachedUserService implements NacosUserService {
     
-    private Map<String, User> userMap = new ConcurrentHashMap<>();
+    private volatile Map<String, User> userMap = new ConcurrentHashMap<>();
     
     protected AbstractCachedUserService() {
     }

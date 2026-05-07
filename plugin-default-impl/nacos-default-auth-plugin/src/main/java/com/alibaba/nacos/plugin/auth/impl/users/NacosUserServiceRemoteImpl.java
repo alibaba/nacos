@@ -98,8 +98,9 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService implem
     
     @Override
     public User getUser(String username) {
-        if (getCachedUserMap().containsKey(username)) {
-            return getCachedUserMap().get(username);
+        User cached = getCachedUserMap().get(username);
+        if (cached != null) {
+            return cached;
         }
         reload();
         return getCachedUserMap().get(username);

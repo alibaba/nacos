@@ -124,4 +124,27 @@ class SwitchManagerTest {
         switchManager.update(SwitchEntry.ENABLE_STANDALONE, "", true);
         assertTrue(switchDomain.isEnableStandalone());
     }
+
+    @Test
+    void testUpdateHealthCheckEnabledWithLegacyCheckEntry() throws Exception {
+        assertTrue(switchDomain.isHealthCheckEnabled());
+        switchManager.update(SwitchEntry.CHECK, "false", true);
+        assertFalse(switchDomain.isHealthCheckEnabled());
+        switchManager.update(SwitchEntry.CHECK, "true", true);
+        assertTrue(switchDomain.isHealthCheckEnabled());
+    }
+
+    @Test
+    void testUpdateHealthCheckEnabledWithExposedFieldName() throws Exception {
+        assertTrue(switchDomain.isHealthCheckEnabled());
+        switchManager.update(SwitchEntry.HEALTH_CHECK_ENABLED, "false", true);
+        assertFalse(switchDomain.isHealthCheckEnabled());
+        switchManager.update(SwitchEntry.HEALTH_CHECK_ENABLED, "true", true);
+        assertTrue(switchDomain.isHealthCheckEnabled());
+    }
+
+    @Test
+    void testHealthCheckEnabledEntryConstantValue() {
+        assertEquals("healthCheckEnabled", SwitchEntry.HEALTH_CHECK_ENABLED);
+    }
 }

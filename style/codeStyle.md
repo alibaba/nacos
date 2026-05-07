@@ -73,3 +73,35 @@ Volunteer wanted.
 Volunteer wanted.
 
 待补充。
+
+## Automated Code Formatting (Spotless)
+
+Nacos uses [Spotless Maven Plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven) with Eclipse JDT Formatter for automated Java code formatting. The formatter configuration is at [`nacos-eclipse-formatter.xml`](nacos-eclipse-formatter.xml).
+
+### Usage
+
+```bash
+# Auto-format all Java files
+mvn spotless:apply
+
+# Check formatting (same as CI, does not modify files)
+mvn spotless:check
+```
+
+### Key Formatting Rules
+
+| Rule | Value |
+|------|-------|
+| Indent | 4 spaces |
+| Continuation indent | 8 spaces |
+| Max line width | 100 characters |
+| Keep indents on empty lines | Yes |
+| Unused imports | Automatically removed |
+
+### Excluded Paths
+
+Generated and third-party code is excluded from formatting:
+- `**/api/grpc/auto/**` — gRPC/Protobuf generated code
+- `**/consistency/entity/**` — Generated entity code
+- `**/istio/model/**` — Istio module
+- `**/common/packagescan/**` — Spring Framework ported code

@@ -60,5 +60,12 @@ public class InstanceRemoteHandler implements InstanceHandler {
                 .updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
                         instanceForm.getServiceName(), instance);
     }
+    
+    @Override
+    public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
+        clientHolder.getNamingMaintainerService()
+                .deregisterInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                        instanceForm.getServiceName(), instance);
+    }
 }
 

@@ -59,6 +59,17 @@ public class InstanceProxyTest {
     }
     
     @Test
+    public void removeInstance() throws NacosException {
+        InstanceForm instanceForm = new InstanceForm();
+        Instance instance = new Instance();
+        
+        doNothing().when(instanceHandler).removeInstance(instanceForm, instance);
+        
+        assertDoesNotThrow(() -> instanceProxy.removeInstance(instanceForm, instance));
+        verify(instanceHandler).removeInstance(instanceForm, instance);
+    }
+    
+    @Test
     public void listInstances() throws NacosException {
         String namespaceId = "testNamespace";
         String serviceNameWithoutGroup = "testService";

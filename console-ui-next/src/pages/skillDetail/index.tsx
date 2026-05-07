@@ -709,7 +709,7 @@ export default function SkillDetailPage() {
                   <SelectContent>
                     {versionOptions.map((version) => {
                       const vPipeline = parsePipelineInfo(version.publishPipelineInfo);
-                      const isVersionPendingPublish = version.status === 'reviewing' && vPipeline?.status === 'APPROVED';
+                      const isVersionPendingPublish = version.status === 'reviewed' || (version.status === 'reviewing' && vPipeline?.status === 'APPROVED');
                       return (
                       <SelectItem key={version.version} value={version.version}>
                         <span className="flex items-center gap-2">
@@ -724,7 +724,7 @@ export default function SkillDetailPage() {
                               {t('skill.versionStatus.draft')}
                             </Badge>
                           )}
-                          {version.status === 'reviewing' && (
+                          {(version.status === 'reviewing' || version.status === 'reviewed') && (
                             <Badge className={isVersionPendingPublish
                               ? 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 text-[10px] px-1 py-0 border-0'
                               : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[10px] px-1 py-0 border-0'
@@ -941,8 +941,8 @@ export default function SkillDetailPage() {
                     </>
                   )}
 
-                  {/* Reviewing actions */}
-                  {currentVersionStatus === 'reviewing' && (
+                  {/* Reviewing / Reviewed actions */}
+                  {(currentVersionStatus === 'reviewing' || currentVersionStatus === 'reviewed') && (
                     <>
                       <Button
                         size="sm"

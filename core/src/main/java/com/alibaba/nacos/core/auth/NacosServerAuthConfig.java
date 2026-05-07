@@ -59,7 +59,7 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     
     private String serverIdentityValue;
     
-    private Map<String, Properties> authPluginProperties = new HashMap<>();
+    private volatile Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public NacosServerAuthConfig() {
         super("NacosServerAuth");
@@ -138,11 +138,12 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     }
     
     public Properties getAuthPluginProperties(String authType) {
-        if (!authPluginProperties.containsKey(authType)) {
+        Properties properties = authPluginProperties.get(authType);
+        if (properties == null) {
             LOGGER.warn("Can't find properties for type {}, will use empty properties", authType);
             return new Properties();
         }
-        return authPluginProperties.get(authType);
+        return properties;
     }
     
     @Override

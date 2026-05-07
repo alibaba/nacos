@@ -893,6 +893,9 @@ class AiResourceManagerTest {
         // Approved -> should NOT rollback to draft
         verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(), anyString(),
                 eq(AiResourceConstants.VERSION_STATUS_DRAFT));
+        // Approved -> should transition to reviewed
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+                AiResourceConstants.VERSION_STATUS_REVIEWED);
     }
     
     @Test
@@ -1410,6 +1413,23 @@ class AiResourceManagerTest {
         manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", false);
         verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
                 anyString(), anyString());
+    }
+    
+    @Test
+    void doPublishShouldAcceptReviewedStatus() throws NacosException {
+        AiResource meta = buildMeta("res");
+        meta.setVersionInfo("{\"reviewingVersion\":\"v1\",\"labels\":{},\"onlineCnt\":0}");
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
+        AiResourceVersion v = new AiResourceVersion();
+        v.setVersion("v1");
+        v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+                .thenReturn(true);
+        AiResourceVersion result = manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
+        assertNotNull(result);
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+                AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
     // ---- doForcePublish ----

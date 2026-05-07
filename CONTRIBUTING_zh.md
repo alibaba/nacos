@@ -22,6 +22,8 @@ Nacos 采用宽松的 Apache 2.0 许可证发布，遵循标准的 Github 开发
 - IDEA 代码风格：[`style/nacos-code-style-for-idea.xml`](style/nacos-code-style-for-idea.xml)
 - 代码规范指南：[`style/codeStyle.md`](style/codeStyle.md)
 
+Nacos 使用 [Spotless](https://github.com/diffplug/spotless) 配合 Eclipse JDT Formatter 进行自动代码格式化。格式化配置文件位于 [`style/nacos-eclipse-formatter.xml`](style/nacos-eclipse-formatter.xml)。提交代码前请运行 `mvn spotless:apply` 自动格式化代码。
+
 ## 联系我们
 
 - **Nacos Gitter**：[https://gitter.im/alibaba/nacos](https://gitter.im/alibaba/nacos)
@@ -163,7 +165,7 @@ git checkout -b develop-issue#${issue编号}
 在推送代码之前，请在本地运行以下命令以尽早发现问题：
 
 ```bash
-mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTests
+mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests
 ```
 
 | 检查项 | 说明 |
@@ -172,6 +174,7 @@ mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTest
 | `apache-rat:check` | 所有源文件是否包含 Apache License 头 |
 | `checkstyle:check` | 代码风格是否符合[阿里巴巴 Java 开发规约](style/NacosCheckStyle.xml) |
 | `spotbugs:check` | 是否存在 [SpotBugs](https://spotbugs.github.io/) 检测到的高优先级 bug |
+| `spotless:check` | 代码格式是否符合 Nacos Eclipse JDT 风格（[配置文件](style/nacos-eclipse-formatter.xml)）。运行 `mvn spotless:apply` 自动修复 |
 
 运行单元测试：
 
@@ -221,7 +224,7 @@ git push origin develop-issue#${issue编号}
 - [ ] PR 标题格式如 `[ISSUE #123] Fix UnknownException when host config not exist`。PR 中的每个提交都应有有意义的主题和正文。
 - [ ] 编写详细的 PR 描述，足以说明 PR 做了什么、如何做的以及为什么这样做。
 - [ ] 编写必要的单元测试来验证您的逻辑正确性。当存在跨模块依赖时，尽量使用 mock。如果提交了新功能或重大更改，请记得添加集成测试。
-- [ ] 运行 `mvn -B clean apache-rat:check checkstyle:check spotbugs:check -DskipTests` 确保基本检查通过。
+- [ ] 运行 `mvn -B clean apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests` 确保基本检查通过。
 - [ ] 运行 `mvn clean install -DskipITs` 确保单元测试通过。
 - [ ] 运行 `mvn clean test-compile failsafe:integration-test` 确保集成测试通过。
 - [ ] 如果此贡献较大，请签署 [Apache 个人贡献者许可协议](http://www.apache.org/licenses/#clas)。

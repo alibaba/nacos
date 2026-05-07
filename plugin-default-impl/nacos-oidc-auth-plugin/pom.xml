@@ -91,7 +91,7 @@
 
     <build>
         <plugins>
-            <!-- Create fat JAR with Nimbus dependencies included -->
+            <!-- Create fat JAR with runtime dependencies bundled and relocated -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -107,6 +107,7 @@
                                 <includes>
                                     <include>com.nimbusds:*</include>
                                     <include>net.minidev:*</include>
+                                    <include>com.github.ben-manes.caffeine:caffeine</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -117,6 +118,10 @@
                                 <relocation>
                                     <pattern>net.minidev</pattern>
                                     <shadedPattern>com.alibaba.nacos.shaded.minidev</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.github.benmanes.caffeine</pattern>
+                                    <shadedPattern>com.alibaba.nacos.shaded.caffeine</shadedPattern>
                                 </relocation>
                             </relocations>
                             <filters>

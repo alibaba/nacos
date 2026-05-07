@@ -53,8 +53,11 @@ mvn test
 mvn test -Pcit-test
 mvn test -Pnit-test
 
+# Format code (run before commit)
+mvn spotless:apply
+
 # Pre-submission checks (MUST pass before PR)
-mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check -DskipTests
+mvn -B clean compile apache-rat:check checkstyle:check spotbugs:check spotless:check -DskipTests
 ```
 
 ## Code Style
@@ -69,7 +72,7 @@ Follows **Alibaba Java Coding Guidelines**.
 | Rule | Value |
 |------|-------|
 | Indentation | **4 spaces** (basic offset), 4 spaces (case indent) |
-| Line length | **150 characters** max |
+| Line length | **100 characters** max (enforced by Spotless + Checkstyle) |
 | Star imports | **Forbidden** — always use explicit imports |
 | Unused imports | **Forbidden** |
 | Javadoc | Required for API methods (exemptions: `@Override`, `@Test`, `@Before`, `@After`, `@BeforeClass`, `@AfterClass`, `@Parameterized`, `@Parameters`, `@Bean`) |

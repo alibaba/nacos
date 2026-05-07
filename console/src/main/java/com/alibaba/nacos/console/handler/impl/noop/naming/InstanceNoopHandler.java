@@ -50,5 +50,11 @@ public class InstanceNoopHandler implements InstanceHandler {
         throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
                 MCP_NOT_ENABLED_MESSAGE);
     }
+    
+    @Override
+    public void removeInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
+    }
 }
 

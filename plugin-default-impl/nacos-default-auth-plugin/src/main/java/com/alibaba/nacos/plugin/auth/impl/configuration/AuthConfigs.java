@@ -89,7 +89,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     private boolean hasGlobalAdminRole;
     
-    private Map<String, Properties> authPluginProperties = new HashMap<>();
+    private volatile Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public AuthConfigs() {
         NotifyCenter.registerSubscriber(this);
@@ -196,11 +196,12 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     public Properties getAuthPluginProperties(String authType) {
-        if (!authPluginProperties.containsKey(authType)) {
+        Properties properties = authPluginProperties.get(authType);
+        if (properties == null) {
             LOGGER.warn("Can't find properties for type {}, will use empty properties", authType);
             return new Properties();
         }
-        return authPluginProperties.get(authType);
+        return properties;
     }
     
     @JustForTest
