@@ -72,8 +72,20 @@ public final class DiskUtils {
                 while (charBuffer.hasRemaining()) {
                     text.append(charBuffer.get());
                 }
-                buffer.clear();
+                // compact() preserves any bytes the decoder did not consume - typically the leading
+                // bytes of a multi-byte UTF-8 character that straddles the 4096-byte chunk boundary.
+                // The previous clear() silently discarded those bytes, corrupting any non-ASCII
+                // content longer than one chunk.
+                buffer.compact();
                 charBuffer.clear();
+            }
+            // Flush the trailing partial input and any decoder state once the stream is exhausted.
+            buffer.flip();
+            decoder.decode(buffer, charBuffer, true);
+            decoder.flush(charBuffer);
+            charBuffer.flip();
+            while (charBuffer.hasRemaining()) {
+                text.append(charBuffer.get());
             }
             return text.toString();
         } catch (IOException e) {
