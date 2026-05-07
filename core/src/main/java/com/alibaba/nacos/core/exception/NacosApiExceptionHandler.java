@@ -55,22 +55,43 @@ public class NacosApiExceptionHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosApiExceptionHandler.class);
     
+    /**
+     * Handle {@link NacosApiException}.
+     *
+     * @param e NacosApiException
+     * @return response entity with error details
+     */
     @ExceptionHandler(NacosApiException.class)
     public ResponseEntity<Result<String>> handleNacosApiException(NacosApiException e) {
         LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return ResponseEntity.status(e.getErrCode()).body(new Result<>(e.getDetailErrCode(), e.getErrAbstract(), e.getErrMsg()));
+        return ResponseEntity.status(e.getErrCode())
+                .body(new Result<>(e.getDetailErrCode(), e.getErrAbstract(), e.getErrMsg()));
     }
     
+    /**
+     * Handle {@link NacosException}.
+     *
+     * @param e NacosException
+     * @return response entity with error details
+     */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<Result<String>> handleNacosException(NacosException e) {
         LOGGER.error("got exception. {}", e.getErrMsg());
-        return ResponseEntity.status(e.getErrCode()).body(Result.failure(ErrorCode.SERVER_ERROR, e.getErrMsg()));
+        return ResponseEntity.status(e.getErrCode())
+                .body(Result.failure(ErrorCode.SERVER_ERROR, e.getErrMsg()));
     }
-
+    
+    /**
+     * Handle {@link NacosRuntimeException}.
+     *
+     * @param e NacosRuntimeException
+     * @return response entity with error details
+     */
     @ExceptionHandler(NacosRuntimeException.class)
     public ResponseEntity<Result<String>> handleNacosRuntimeException(NacosRuntimeException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return ResponseEntity.status(e.getErrCode()).body(Result.failure(ErrorCode.SERVER_ERROR, e.getMessage()));
+        return ResponseEntity.status(e.getErrCode())
+                .body(Result.failure(ErrorCode.SERVER_ERROR, e.getMessage()));
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -103,7 +124,8 @@ public class NacosApiExceptionHandler {
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public Result<String> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+    public Result<String> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
         return Result.failure(ErrorCode.PARAMETER_MISSING, e.getMessage());
     }
@@ -123,7 +145,8 @@ public class NacosApiExceptionHandler {
     }
     
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(value = {DataAccessException.class, ServletException.class, IOException.class})
+    @ExceptionHandler(
+            value = {DataAccessException.class, ServletException.class, IOException.class})
     public Result<String> handleDataAccessException(Exception e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
         return Result.failure(ErrorCode.DATA_ACCESS_ERROR, e.getMessage());

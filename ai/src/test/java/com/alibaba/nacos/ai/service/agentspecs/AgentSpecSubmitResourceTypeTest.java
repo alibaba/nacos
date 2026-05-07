@@ -50,59 +50,68 @@ import static org.mockito.Mockito.when;
  * @since 3.2.0
  */
 class AgentSpecSubmitResourceTypeTest {
-
+    
     private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
-
+    
     private static List<SubmitInput> sampleSubmitInputs() {
         return Arrays.asList(
                 new SubmitInput("public", "agent", "v1"),
                 new SubmitInput("ns", "myname", "2.0"),
                 new SubmitInput("testns", "abc", "draft"));
     }
-
+    
     @Test
     void submitAlwaysSetsResourceTypeToAgentSpec() throws Exception {
         for (SubmitInput input : sampleSubmitInputs()) {
             EnvUtil.setEnvironment(new StandardEnvironment());
-
-            final AiResourcePersistService aiResourcePersistService = mock(AiResourcePersistService.class);
+            
+            final AiResourcePersistService aiResourcePersistService =
+                    mock(AiResourcePersistService.class);
             final AiResourceVersionPersistService aiResourceVersionPersistService =
                     mock(AiResourceVersionPersistService.class);
-            final PublishPipelineExecutor publishPipelineExecutor = mock(PublishPipelineExecutor.class);
-            final PipelineExecutionRepository pipelineExecutionRepository = mock(PipelineExecutionRepository.class);
-
+            final PublishPipelineExecutor publishPipelineExecutor =
+                    mock(PublishPipelineExecutor.class);
+            final PipelineExecutionRepository pipelineExecutionRepository =
+                    mock(PipelineExecutionRepository.class);
+            
             AiResource meta = buildMeta(input);
-            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC)))
+            when(aiResourcePersistService.find(eq(input.namespaceId), eq(input.name),
+                    eq(RESOURCE_TYPE_AGENTSPEC)))
                     .thenReturn(meta);
-
+            
             AiResourceVersion versionRow = buildVersionRow(input);
             when(aiResourceVersionPersistService.find(
-                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), eq(input.version)))
+                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
+                    eq(input.version)))
                     .thenReturn(versionRow);
-
+            
             // isPipelineAvailable returns true to enter the pipeline path
-            when(publishPipelineExecutor.isPipelineAvailable(any(PublishPipelineResourceType.class)))
+            when(publishPipelineExecutor
+                    .isPipelineAvailable(any(PublishPipelineResourceType.class)))
                     .thenReturn(true);
-
+            
             // Pipeline executor returns the caller's pre-generated executionId
-            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any(), any(String.class)))
+            when(publishPipelineExecutor.execute(any(PublishPipelineContext.class), any(),
+                    any(String.class)))
                     .thenAnswer(invocation -> invocation.getArgument(2));
-
+            
             // Mock updateMetaCas to return true
             when(aiResourcePersistService.updateMetaCas(
-                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC), any(Long.class), any()))
+                    eq(input.namespaceId), eq(input.name), eq(RESOURCE_TYPE_AGENTSPEC),
+                    any(Long.class), any()))
                     .thenReturn(true);
-
+            
             AgentSpecOperationServiceImpl service = new AgentSpecOperationServiceImpl(
                     aiResourcePersistService, aiResourceVersionPersistService,
                     publishPipelineExecutor,
                     new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                             pipelineExecutionRepository));
             service.submit(input.namespaceId, input.name, input.version);
-
-            ArgumentCaptor<PublishPipelineContext> captor = ArgumentCaptor.forClass(PublishPipelineContext.class);
+            
+            ArgumentCaptor<PublishPipelineContext> captor =
+                    ArgumentCaptor.forClass(PublishPipelineContext.class);
             verify(publishPipelineExecutor).execute(captor.capture(), any(), any(String.class));
-
+            
             PublishPipelineContext capturedCtx = captor.getValue();
             assertNotNull(capturedCtx, "PublishPipelineContext should not be null");
             assertEquals(PublishPipelineResourceType.AGENTSPEC, capturedCtx.getResourceType(),
@@ -110,7 +119,7 @@ class AgentSpecSubmitResourceTypeTest {
                             + capturedCtx.getResourceType());
         }
     }
-
+    
     private static AiResource buildMeta(SubmitInput input) {
         AiResource meta = new AiResource();
         meta.setNamespaceId(input.namespaceId);
@@ -122,7 +131,7 @@ class AgentSpecSubmitResourceTypeTest {
                 + "\",\"onlineCnt\":0,\"labels\":{}}");
         return meta;
     }
-
+    
     private static AiResourceVersion buildVersionRow(SubmitInput input) {
         AiResourceVersion versionRow = new AiResourceVersion();
         versionRow.setNamespaceId(input.namespaceId);
@@ -132,12 +141,13 @@ class AgentSpecSubmitResourceTypeTest {
         versionRow.setStatus("draft");
         return versionRow;
     }
-
+    
     static class SubmitInput {
+        
         final String namespaceId;
         final String name;
         final String version;
-
+        
         SubmitInput(String namespaceId, String name, String version) {
             this.namespaceId = namespaceId;
             this.name = name;

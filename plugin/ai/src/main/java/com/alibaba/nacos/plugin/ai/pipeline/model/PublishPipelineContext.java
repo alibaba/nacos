@@ -27,60 +27,59 @@ package com.alibaba.nacos.plugin.ai.pipeline.model;
  * @since 3.2.0
  */
 public class PublishPipelineContext {
-
+    
     /**
      * Resource type (SKILL / PROMPT / OTHERS).
      */
     private PublishPipelineResourceType resourceType;
-
+    
     /**
      * Resource name, e.g. "nacos-skill-registry".
      */
     private String resourceName;
-
+    
     /**
      * Namespace ID.
      */
     private String namespaceId;
-
+    
     /**
      * Current version under review, e.g. "v4".
      */
     private String version;
-
+    
     public PublishPipelineContext() {
     }
-
+    
     public PublishPipelineResourceType getResourceType() {
         return resourceType;
     }
-
+    
     public void setResourceType(PublishPipelineResourceType resourceType) {
         this.resourceType = resourceType;
     }
-
+    
     public String getResourceName() {
         return resourceName;
     }
-
+    
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
 }
-

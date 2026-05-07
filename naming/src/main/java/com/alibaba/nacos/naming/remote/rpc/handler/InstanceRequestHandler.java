@@ -54,11 +54,14 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     
     @Override
     @NamespaceValidation
-    @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister", name = "RemoteNamingInstanceRegisterDeregister")
+    @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister",
+            name = "RemoteNamingInstanceRegisterDeregister")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
-    public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
-        Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
+    public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+            throws NacosException {
+        Service service = Service.newService(request.getNamespace(), request.getGroupName(),
+                request.getServiceName(),
                 true);
         InstanceUtil.setInstanceIdIfEmpty(request.getInstance(), service.getGroupedServiceName());
         switch (request.getType()) {
@@ -72,20 +75,27 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
         }
     }
     
-    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
+    private InstanceResponse registerInstance(Service service, InstanceRequest request,
+            RequestMeta meta)
             throws NacosException {
-        clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
+        clientOperationService.registerInstance(service, request.getInstance(),
+                meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
+                service.getGroup(),
                 service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
-    private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
-        clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
+    private InstanceResponse deregisterInstance(Service service, InstanceRequest request,
+            RequestMeta meta) {
+        clientOperationService.deregisterInstance(service, request.getInstance(),
+                meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
-                service.getNamespace(), service.getGroup(), service.getName(), request.getInstance().getIp(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true,
+                DeregisterInstanceReason.REQUEST,
+                service.getNamespace(), service.getGroup(), service.getName(),
+                request.getInstance().getIp(),
                 request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }

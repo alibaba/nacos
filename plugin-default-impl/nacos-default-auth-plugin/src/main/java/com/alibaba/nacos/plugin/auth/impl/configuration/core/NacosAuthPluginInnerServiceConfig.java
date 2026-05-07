@@ -40,14 +40,17 @@ import org.springframework.context.annotation.Import;
 public class NacosAuthPluginInnerServiceConfig {
     
     @Bean
-    public NacosRoleService nacosRoleService(AuthConfigs authConfigs, RolePersistService rolePersistService,
-            NacosUserService userDetailsService, PermissionPersistService permissionPersistService) {
+    public NacosRoleService nacosRoleService(AuthConfigs authConfigs,
+            RolePersistService rolePersistService,
+            NacosUserService userDetailsService,
+            PermissionPersistService permissionPersistService) {
         return new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService,
                 permissionPersistService);
     }
     
     @Bean
-    public NacosUserService nacosUserService(AuthConfigs authConfigs, UserPersistService userPersistService) {
+    public NacosUserService nacosUserService(AuthConfigs authConfigs,
+            UserPersistService userPersistService) {
         return new NacosUserServiceDirectImpl(authConfigs, userPersistService);
     }
     

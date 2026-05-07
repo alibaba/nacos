@@ -80,7 +80,8 @@ class AiConnectionBasedClientManagerTest {
     @Test
     void clientConnected() {
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
-        connectionMeta.getLabels().put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_AI);
+        connectionMeta.getLabels().put(RemoteConstants.LABEL_MODULE,
+                RemoteConstants.LABEL_MODULE_AI);
         connectionBasedClientManager.clientConnected(connection);
         verify(delegate).clientConnected(eq(CONNECTION_ID), any(ClientAttributes.class));
     }
@@ -109,7 +110,8 @@ class AiConnectionBasedClientManagerTest {
     @Test
     void clientDisconnected() {
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
-        connectionMeta.getLabels().put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_AI);
+        connectionMeta.getLabels().put(RemoteConstants.LABEL_MODULE,
+                RemoteConstants.LABEL_MODULE_AI);
         connectionBasedClientManager.clientDisConnected(connection);
         verify(delegate).clientDisconnected(CONNECTION_ID);
     }

@@ -64,13 +64,15 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
     
     @Override
     public AgentSpecMeta getAgentSpec(AgentSpecForm form) throws NacosException {
-        return agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(), form.getAgentSpecName(),
+        return agentSpecOperationService.getAgentSpecDetail(form.getNamespaceId(),
+                form.getAgentSpecName(),
                 form.getVersion());
     }
     
     @Override
     public AgentSpec getAgentSpecVersion(AgentSpecForm form) throws NacosException {
-        return agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(), form.getAgentSpecName(),
+        return agentSpecOperationService.getAgentSpecVersionDetail(form.getNamespaceId(),
+                form.getAgentSpecName(),
                 form.getVersion());
     }
     
@@ -84,7 +86,8 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
             AiResourceFilterableForm filterableForm, PageForm pageForm) throws NacosException {
         return agentSpecOperationService.listAgentSpecs(agentSpecListForm.getNamespaceId(),
                 agentSpecListForm.getAgentSpecName(), agentSpecListForm.getSearch(),
-                agentSpecListForm.getOrderBy(), filterableForm.getOwner(), filterableForm.getScope(),
+                agentSpecListForm.getOrderBy(), filterableForm.getOwner(),
+                filterableForm.getScope(),
                 pageForm.getPageNo(), pageForm.getPageSize());
     }
     
@@ -93,62 +96,69 @@ public class AgentSpecInnerHandler implements AgentSpecHandler {
             throws NacosException {
         return agentSpecOperationService.uploadAgentSpecFromZip(namespaceId, zipBytes, overwrite);
     }
-
+    
     @Override
     public String createDraft(AgentSpecDraftCreateForm form) throws NacosException {
         return agentSpecOperationService.createDraft(form.getNamespaceId(), form.getAgentSpecName(),
                 form.getBasedOnVersion(), form.getTargetVersion());
     }
-
+    
     @Override
     public void updateDraft(AgentSpecUpdateForm form) throws NacosException {
         AgentSpec agentSpec = AgentSpecRequestUtil.parseAgentSpec(form);
         agentSpecOperationService.updateDraft(form.getNamespaceId(), agentSpec);
     }
-
+    
     @Override
     public void deleteDraft(AgentSpecForm form) throws NacosException {
         agentSpecOperationService.deleteDraft(form.getNamespaceId(), form.getAgentSpecName());
     }
-
+    
     @Override
     public String submit(AgentSpecSubmitForm form) throws NacosException {
-        return agentSpecOperationService.submit(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion());
+        return agentSpecOperationService.submit(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion());
     }
-
+    
     @Override
     public void publish(AgentSpecPublishForm form) throws NacosException {
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
+        agentSpecOperationService.publish(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion(),
                 updateLatest);
     }
-
+    
     @Override
     public void forcePublish(AgentSpecPublishForm form) throws NacosException {
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(), form.getVersion(),
+        agentSpecOperationService.forcePublish(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getVersion(),
                 updateLatest);
     }
-
+    
     @Override
     public void updateLabels(AgentSpecLabelsUpdateForm form) throws NacosException {
         Map<String, String> labels = JacksonUtils.toObj(form.getLabels(), Map.class);
-        agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(), labels);
+        agentSpecOperationService.updateLabels(form.getNamespaceId(), form.getAgentSpecName(),
+                labels);
     }
-
+    
     @Override
     public void updateBizTags(AgentSpecBizTagsUpdateForm form) throws NacosException {
-        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(), form.getBizTags());
+        agentSpecOperationService.updateBizTags(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getBizTags());
     }
-
+    
     @Override
     public void changeOnlineStatus(AgentSpecOnlineForm form, boolean online) throws NacosException {
-        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(), form.getScope(),
+        agentSpecOperationService.changeOnlineStatus(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getScope(),
                 form.getVersion(), online);
     }
-
+    
     @Override
     public void updateScope(AgentSpecScopeForm form) throws NacosException {
-        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(), form.getScope());
+        agentSpecOperationService.updateScope(form.getNamespaceId(), form.getAgentSpecName(),
+                form.getScope());
     }
 }

@@ -32,18 +32,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author stone-98
  * @date 2024/2/21
  */
-public abstract class AbstractProtocolNegotiatorBuilderSingleton implements ProtocolNegotiatorBuilder {
+public abstract class AbstractProtocolNegotiatorBuilderSingleton
+        implements ProtocolNegotiatorBuilder {
     
     /**
      * Map to store ProtocolNegotiatorBuilders based on their types.
      */
-    protected static final Map<String, ProtocolNegotiatorBuilder> BUILDER_MAP = new ConcurrentHashMap<>();
+    protected static final Map<String, ProtocolNegotiatorBuilder> BUILDER_MAP =
+            new ConcurrentHashMap<>();
     
     static {
         try {
-            for (ProtocolNegotiatorBuilder each : NacosServiceLoader.load(ProtocolNegotiatorBuilder.class)) {
+            for (ProtocolNegotiatorBuilder each : NacosServiceLoader
+                    .load(ProtocolNegotiatorBuilder.class)) {
                 BUILDER_MAP.put(each.type(), each);
-                Loggers.REMOTE.info("Load ProtocolNegotiatorBuilder {} for type {}", each.getClass().getCanonicalName(),
+                Loggers.REMOTE.info("Load ProtocolNegotiatorBuilder {} for type {}",
+                        each.getClass().getCanonicalName(),
                         each.type());
             }
         } catch (Exception e) {
@@ -80,7 +84,9 @@ public abstract class AbstractProtocolNegotiatorBuilderSingleton implements Prot
     public NacosGrpcProtocolNegotiator build() {
         ProtocolNegotiatorBuilder actualBuilder = BUILDER_MAP.get(actualType);
         if (null == actualBuilder) {
-            Loggers.REMOTE.warn("Not found ProtocolNegotiatorBuilder for type {}, will use default type {}", actualType,
+            Loggers.REMOTE.warn(
+                    "Not found ProtocolNegotiatorBuilder for type {}, will use default type {}",
+                    actualType,
                     defaultBuilderPair().getFirst());
             return defaultBuilderPair().getSecond().build();
         }

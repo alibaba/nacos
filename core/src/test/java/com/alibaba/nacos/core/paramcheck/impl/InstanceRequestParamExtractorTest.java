@@ -33,14 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * {@link InstanceRequestParamExtractor} unit test.
  */
 class InstanceRequestParamExtractorTest {
-
+    
     private InstanceRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new InstanceRequestParamExtractor();
     }
-
+    
     @Test
     void extractParamWithNullInstance() {
         InstanceRequest request = new InstanceRequest();
@@ -56,7 +56,7 @@ class InstanceRequestParamExtractorTest {
         assertEquals("g1", list.get(0).getGroup());
         assertNull(list.get(0).getIp());
     }
-
+    
     @Test
     void extractParamWithInstance() {
         InstanceRequest request = new InstanceRequest();

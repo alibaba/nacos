@@ -44,7 +44,7 @@ public class ConfigChangeHandler {
         
         Collection<ConfigChangeParser> loader = NacosServiceLoader.load(ConfigChangeParser.class);
         this.parserList.addAll(loader);
-
+        
         this.parserList.add(new PropertiesChangeParser());
         this.parserList.add(new YmlChangeParser());
     }
@@ -62,7 +62,8 @@ public class ConfigChangeHandler {
      * @return change data map
      * @throws IOException io exception
      */
-    public Map<String, ConfigChangeItem> parseChangeData(String oldContent, String newContent, String type) throws IOException {
+    public Map<String, ConfigChangeItem> parseChangeData(String oldContent, String newContent,
+            String type) throws IOException {
         for (ConfigChangeParser changeParser : this.parserList) {
             if (changeParser.isResponsibleFor(type)) {
                 return changeParser.doParse(oldContent, newContent, type);

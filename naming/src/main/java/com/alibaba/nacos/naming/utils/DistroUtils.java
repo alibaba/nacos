@@ -80,7 +80,8 @@ public class DistroUtils {
                             InstancePublishInfo ip = client.getInstancePublishInfo(s);
                             double weight = getWeight(ip);
                             Boolean enabled = getEnabled(ip);
-                            String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
+                            String cluster = StringUtils.defaultIfBlank(ip.getCluster(),
+                                    DEFAULT_CLUSTER_NAME);
                             return Objects.hash(
                                     s.getNamespace(),
                                     s.getGroup(),
@@ -92,8 +93,7 @@ public class DistroUtils {
                                     ip.isHealthy(),
                                     enabled,
                                     cluster,
-                                    ip.getExtendDatum()
-                            );
+                                    ip.getExtendDatum());
                         })
                         .collect(Collectors.toSet()));
     }
@@ -124,7 +124,8 @@ public class DistroUtils {
                     InstancePublishInfo ip = client.getInstancePublishInfo(s);
                     double weight = getWeight(ip);
                     Boolean enabled = getEnabled(ip);
-                    String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
+                    String cluster =
+                            StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
                     sb.append(serviceKey(s)).append('_')
                             .append(ip.getIp()).append(':').append(ip.getPort()).append('_')
                             .append(weight).append('_')

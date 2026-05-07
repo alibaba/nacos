@@ -45,16 +45,19 @@ public class PushConfig extends AbstractDynamicConfig {
     @Override
     protected void getConfigFromEnv() {
         pushTaskDelay = EnvUtil
-                .getProperty(PushConstants.PUSH_TASK_DELAY, Long.class, PushConstants.DEFAULT_PUSH_TASK_DELAY);
+                .getProperty(PushConstants.PUSH_TASK_DELAY, Long.class,
+                        PushConstants.DEFAULT_PUSH_TASK_DELAY);
         pushTaskTimeout = EnvUtil
-                .getProperty(PushConstants.PUSH_TASK_TIMEOUT, Long.class, PushConstants.DEFAULT_PUSH_TASK_TIMEOUT);
+                .getProperty(PushConstants.PUSH_TASK_TIMEOUT, Long.class,
+                        PushConstants.DEFAULT_PUSH_TASK_TIMEOUT);
         pushTaskRetryDelay = EnvUtil.getProperty(PushConstants.PUSH_TASK_RETRY_DELAY, Long.class,
                 PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY);
     }
     
     @Override
     protected String printConfig() {
-        return "PushConfig{" + "pushTaskDelay=" + pushTaskDelay + ", pushTaskTimeout=" + pushTaskTimeout
+        return "PushConfig{" + "pushTaskDelay=" + pushTaskDelay + ", pushTaskTimeout="
+                + pushTaskTimeout
                 + ", pushTaskRetryDelay=" + pushTaskRetryDelay + '}';
     }
     

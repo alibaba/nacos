@@ -64,7 +64,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      * new entry pattern when a client register a new pattern. destroyed a new entry pattern by task when no clients
      * watch pattern in max 30s delay.
      */
-    private final ConcurrentMap<String, Set<String>> matchedServiceKeysMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<String>> matchedServiceKeysMap =
+            new ConcurrentHashMap<>();
     
     public NamingFuzzyWatchContextService() {
     }
@@ -82,7 +83,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      */
     void trimFuzzyWatchContext() {
         try {
-            Iterator<Map.Entry<String, Set<String>>> iterator = matchedServiceKeysMap.entrySet().iterator();
+            Iterator<Map.Entry<String, Set<String>>> iterator =
+                    matchedServiceKeysMap.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<String, Set<String>> next = iterator.next();
                 Set<String> watchedClients = this.watchedClientsMap.get(next.getKey());
@@ -94,7 +96,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
                             next.getKey());
                     iterator.remove();
                 } else if (watchedClients.isEmpty()) {
-                    Loggers.SRV_LOG.info("[fuzzy-watch] no client watched pattern {},remove watchedClients context",
+                    Loggers.SRV_LOG.info(
+                            "[fuzzy-watch] no client watched pattern {},remove watchedClients context",
                             next.getKey());
                     this.watchedClientsMap.remove(next.getKey());
                 } else if (reachToUpLimit(serviceKeysCount)) {
@@ -104,7 +107,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
                 } else if (reachToUpLimit((int) (serviceKeysCount * 1.25))) {
                     Loggers.SRV_LOG.warn(
                             "[fuzzy-watch] pattern {} matched serviceKey count has reached to 80% of the upper limit {} ,"
-                                    + "it may has a risk of notify suppressed in the near further", next.getKey(),
+                                    + "it may has a risk of notify suppressed in the near further",
+                            next.getKey(),
                             serviceKeysCount);
                 }
             }
@@ -123,7 +127,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
     @Override
     public void onEvent(Event event) {
         if (event instanceof ClientOperationEvent.ClientReleaseEvent) {
-            removeFuzzyWatchContext(((ClientOperationEvent.ClientReleaseEvent) event).getClientId());
+            removeFuzzyWatchContext(
+                    ((ClientOperationEvent.ClientReleaseEvent) event).getClientId());
         }
     }
     
@@ -138,7 +143,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         Iterator<Map.Entry<String, Set<String>>> iterator = watchedClientsMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, Set<String>> entry = iterator.next();
-            if (FuzzyGroupKeyPattern.matchPattern(entry.getKey(), service.getName(), service.getGroup(),
+            if (FuzzyGroupKeyPattern.matchPattern(entry.getKey(), service.getName(),
+                    service.getGroup(),
                     service.getNamespace())) {
                 matchedClients.addAll(entry.getValue());
             }
@@ -160,37 +166,45 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
             return false;
         }
         
-        String serviceKey = NamingUtils.getServiceKey(changedService.getNamespace(), changedService.getGroup(),
-                changedService.getName());
-        Loggers.SRV_LOG.warn("[fuzzy-watch] service change matched,service key {},changed type {} ", serviceKey,
+        String serviceKey =
+                NamingUtils.getServiceKey(changedService.getNamespace(), changedService.getGroup(),
+                        changedService.getName());
+        Loggers.SRV_LOG.warn("[fuzzy-watch] service change matched,service key {},changed type {} ",
+                serviceKey,
                 changedType);
         
-        Iterator<Map.Entry<String, Set<String>>> iterator = matchedServiceKeysMap.entrySet().iterator();
+        Iterator<Map.Entry<String, Set<String>>> iterator =
+                matchedServiceKeysMap.entrySet().iterator();
         boolean tryAdd = changedType.equals(ADD_SERVICE);
         boolean tryRemove = changedType.equals(DELETE_SERVICE);
         while (iterator.hasNext()) {
             Map.Entry<String, Set<String>> next = iterator.next();
-            if (FuzzyGroupKeyPattern.matchPattern(next.getKey(), changedService.getName(), changedService.getGroup(),
+            if (FuzzyGroupKeyPattern.matchPattern(next.getKey(), changedService.getName(),
+                    changedService.getGroup(),
                     changedService.getNamespace())) {
                 Set<String> matchedServiceKeys = next.getValue();
                 boolean reachToUpLimit = reachToUpLimit(matchedServiceKeys.size());
                 boolean containsAlready = matchedServiceKeys.contains(serviceKey);
                 
                 if (tryAdd && !containsAlready && reachToUpLimit) {
-                    Loggers.SRV_LOG.warn("[fuzzy-watch] pattern matched service count is over limit , "
-                                    + "current service will be ignore for pattern {} ,current count is {}", next.getKey(),
+                    Loggers.SRV_LOG.warn(
+                            "[fuzzy-watch] pattern matched service count is over limit , "
+                                    + "current service will be ignore for pattern {} ,current count is {}",
+                            next.getKey(),
                             matchedServiceKeys.size());
                     continue;
                 }
                 
                 if (tryAdd && !containsAlready && matchedServiceKeys.add(serviceKey)) {
-                    Loggers.SRV_LOG.info("[fuzzy-watch] pattern {} matched service keys count changed to {}",
+                    Loggers.SRV_LOG.info(
+                            "[fuzzy-watch] pattern {} matched service keys count changed to {}",
                             next.getKey(), matchedServiceKeys.size());
                     needNotify = true;
                     
                 }
                 if (tryRemove && containsAlready && matchedServiceKeys.remove(serviceKey)) {
-                    Loggers.SRV_LOG.info("[fuzzy-watch]  pattern {} matched service keys count changed to {}",
+                    Loggers.SRV_LOG.info(
+                            "[fuzzy-watch]  pattern {} matched service keys count changed to {}",
                             next.getKey(), matchedServiceKeys.size());
                     needNotify = true;
                     if (reachToUpLimit) {
@@ -225,12 +239,15 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         Set<Service> namespaceServices = ServiceManager.getInstance()
                 .getSingletons(getNamespaceFromPattern(groupKeyPattern));
         for (Service service : namespaceServices) {
-            String serviceKey = NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(),
-                    service.getName());
-            if (FuzzyGroupKeyPattern.matchPattern(groupKeyPattern, service.getName(), service.getGroup(),
+            String serviceKey =
+                    NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(),
+                            service.getName());
+            if (FuzzyGroupKeyPattern.matchPattern(groupKeyPattern, service.getName(),
+                    service.getGroup(),
                     service.getNamespace()) && !matchedGroupKeys.contains(serviceKey)) {
                 if (matchedGroupKeys.add(serviceKey)) {
-                    Loggers.SRV_LOG.info("[fuzzy-watch] pattern {} makeup service key {}", groupKeyPattern, serviceKey);
+                    Loggers.SRV_LOG.info("[fuzzy-watch] pattern {} makeup service key {}",
+                            groupKeyPattern, serviceKey);
                     if (reachToUpLimit(matchedGroupKeys.size())) {
                         Loggers.SRV_LOG.warn(
                                 "[fuzzy-watch] pattern {} matched service count reach to up limit ,makeup group keys skip.",
@@ -250,7 +267,8 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      * @param clientId        client id.
      * @return
      */
-    public void syncFuzzyWatcherContext(String groupKeyPattern, String clientId) throws NacosException {
+    public void syncFuzzyWatcherContext(String groupKeyPattern, String clientId)
+            throws NacosException {
         //init empty watchedClients first,when pattern is not over limit,then add clientId.
         watchedClientsMap.computeIfAbsent(groupKeyPattern, key -> new ConcurrentHashSet<>());
         initWatchMatchService(groupKeyPattern);
@@ -309,24 +327,29 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
             long matchBeginTime = System.currentTimeMillis();
             Set<Service> namespaceServices = ServiceManager.getInstance()
                     .getSingletons(getNamespaceFromPattern(completedPattern));
-            Set<String> matchedServices = matchedServiceKeysMap.computeIfAbsent(completedPattern, k -> new HashSet<>());
+            Set<String> matchedServices =
+                    matchedServiceKeysMap.computeIfAbsent(completedPattern, k -> new HashSet<>());
             boolean overMatchCount = false;
             for (Service service : namespaceServices) {
-                if (FuzzyGroupKeyPattern.matchPattern(completedPattern, service.getName(), service.getGroup(),
+                if (FuzzyGroupKeyPattern.matchPattern(completedPattern, service.getName(),
+                        service.getGroup(),
                         service.getNamespace())) {
                     if (matchedServices.size() >= GlobalConfig.getMaxMatchedServiceCount()) {
                         
-                        Loggers.SRV_LOG.warn("[fuzzy-watch] pattern matched service count is over limit , "
+                        Loggers.SRV_LOG.warn(
+                                "[fuzzy-watch] pattern matched service count is over limit , "
                                         + "other services will stop notify for pattern {} ,current count is {}",
                                 completedPattern, matchedServices.size());
                         overMatchCount = true;
                         break;
                     }
                     matchedServices.add(
-                            NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(), service.getName()));
+                            NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(),
+                                    service.getName()));
                 }
             }
-            Loggers.SRV_LOG.info("FUZZY_WATCH: pattern {} match {} services, overMatchCount={},cost {}ms",
+            Loggers.SRV_LOG.info(
+                    "FUZZY_WATCH: pattern {} match {} services, overMatchCount={},cost {}ms",
                     completedPattern, matchedServices.size(), overMatchCount,
                     System.currentTimeMillis() - matchBeginTime);
             

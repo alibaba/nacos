@@ -97,7 +97,8 @@ class PushExecutorRpcImplTest {
     @Test
     void testDoPushWithCallback() {
         doAnswer(new CallbackAnswer()).when(pushService)
-                .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
+                .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class),
+                        eq(pushCallBack),
                         eq(GlobalExecutor.getCallbackExecutor()));
         pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
@@ -108,7 +109,8 @@ class PushExecutorRpcImplTest {
         @Override
         public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
             NotifySubscriberRequest pushRequest = invocationOnMock.getArgument(1);
-            assertEquals(pushData.getOriginalData().toString(), pushRequest.getServiceInfo().toString());
+            assertEquals(pushData.getOriginalData().toString(),
+                    pushRequest.getServiceInfo().toString());
             PushCallBack callBack = invocationOnMock.getArgument(2);
             callBack.onSuccess();
             return null;

@@ -71,10 +71,13 @@ class ClientAttributesFilterTest {
     
     @BeforeEach
     void setUp() {
-        RequestContextHolder.getContext().getBasicContext().setUserAgent("Nacos-Java-Client:v2.4.0");
+        RequestContextHolder.getContext().getBasicContext()
+                .setUserAgent("Nacos-Java-Client:v2.4.0");
         RequestContextHolder.getContext().getBasicContext().setApp("testApp");
-        RequestContextHolder.getContext().getBasicContext().getAddressContext().setRemoteIp("1.1.1.1");
-        RequestContextHolder.getContext().getBasicContext().getAddressContext().setSourceIp("2.2.2.2");
+        RequestContextHolder.getContext().getBasicContext().getAddressContext()
+                .setRemoteIp("1.1.1.1");
+        RequestContextHolder.getContext().getBasicContext().getAddressContext()
+                .setSourceIp("2.2.2.2");
     }
     
     @AfterEach
@@ -108,14 +111,19 @@ class ClientAttributesFilterTest {
     private static class MockRegisterFilter implements Filter {
         
         @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+                FilterChain filterChain)
                 throws IOException, ServletException {
-            Optional<ClientAttributes> clientAttributes = ClientAttributesFilter.getCurrentClientAttributes();
+            Optional<ClientAttributes> clientAttributes =
+                    ClientAttributesFilter.getCurrentClientAttributes();
             assertTrue(clientAttributes.isPresent());
             assertEquals("Nacos-Java-Client:v2.4.0",
-                    clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER));
-            assertEquals("testApp", clientAttributes.get().getClientAttribute(HttpHeaderConsts.APP_FILED));
-            assertEquals("2.2.2.2", clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_IP));
+                    clientAttributes.get()
+                            .getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER));
+            assertEquals("testApp",
+                    clientAttributes.get().getClientAttribute(HttpHeaderConsts.APP_FILED));
+            assertEquals("2.2.2.2",
+                    clientAttributes.get().getClientAttribute(HttpHeaderConsts.CLIENT_IP));
         }
     }
 }

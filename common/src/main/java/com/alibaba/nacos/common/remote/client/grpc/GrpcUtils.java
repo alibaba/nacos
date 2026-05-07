@@ -55,14 +55,17 @@ public class GrpcUtils {
         Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getSimpleName());
+            metaBuilder.putAllHeaders(request.getHeaders())
+                    .setType(request.getClass().getSimpleName());
         }
         metaBuilder.setClientIp(NetUtils.localIp());
         payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
         byte[] jsonBytes = convertRequestToByte(request);
-        return payloadBuilder.setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes))).build();
+        return payloadBuilder
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+                .build();
         
     }
     
@@ -81,7 +84,8 @@ public class GrpcUtils {
         
         Payload.Builder builder = Payload.newBuilder();
         
-        return builder.setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+        return builder
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(newMeta).build();
         
     }
@@ -95,8 +99,10 @@ public class GrpcUtils {
     public static Payload convert(Response response) {
         byte[] jsonBytes = JacksonUtils.toJsonBytes(response);
         
-        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
-        return Payload.newBuilder().setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+        Metadata.Builder metaBuilder =
+                Metadata.newBuilder().setType(response.getClass().getSimpleName());
+        return Payload.newBuilder()
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(metaBuilder.build()).build();
     }
     

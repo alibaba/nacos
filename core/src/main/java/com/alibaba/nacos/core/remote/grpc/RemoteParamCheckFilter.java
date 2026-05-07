@@ -42,15 +42,18 @@ import java.util.List;
 public class RemoteParamCheckFilter extends AbstractRequestFilter {
     
     @Override
-    protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
+    protected Response filter(Request request, RequestMeta meta, Class handlerClazz)
+            throws NacosException {
         boolean paramCheckEnabled = ServerParamCheckConfig.getInstance().isParamCheckEnabled();
         if (!paramCheckEnabled) {
             return null;
         }
         try {
-            ExtractorManager.Extractor extractor = getHandleMethod(handlerClazz).getAnnotation(ExtractorManager.Extractor.class);
+            ExtractorManager.Extractor extractor =
+                    getHandleMethod(handlerClazz).getAnnotation(ExtractorManager.Extractor.class);
             if (extractor == null) {
-                extractor = (ExtractorManager.Extractor) handlerClazz.getAnnotation(ExtractorManager.Extractor.class);
+                extractor = (ExtractorManager.Extractor) handlerClazz
+                        .getAnnotation(ExtractorManager.Extractor.class);
                 if (extractor == null) {
                     return null;
                 }
@@ -76,10 +79,12 @@ public class RemoteParamCheckFilter extends AbstractRequestFilter {
             response = super.getDefaultResponseInstance(handlerClazz);
             response.setErrorInfo(NacosException.INVALID_PARAM,
                     "Param check invalid:" + message);
-            Loggers.CONTROL.info("Param check invalid,{},request:{}:", message, request.getClass().getSimpleName());
+            Loggers.CONTROL.info("Param check invalid,{},request:{}:", message,
+                    request.getClass().getSimpleName());
             return response;
         } catch (Exception e) {
-            Loggers.CONTROL.error("Param check fail ,request:{}", request.getClass().getSimpleName(), e);
+            Loggers.CONTROL.error("Param check fail ,request:{}",
+                    request.getClass().getSimpleName(), e);
             return null;
         }
     }

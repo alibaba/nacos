@@ -74,6 +74,7 @@ public class PipelineConfiguration {
     public PublishPipelineExecutor publishPipelineExecutor(PublishPipelineManager pipelineManager,
             PipelineConfigProvider configProvider, PipelineExecutionRepository executionRepository,
             ExecutorService pipelineExecutor) {
-        return new PublishPipelineExecutor(pipelineManager, configProvider, executionRepository, pipelineExecutor);
+        return new PublishPipelineExecutor(pipelineManager, configProvider, executionRepository,
+                pipelineExecutor);
     }
 }

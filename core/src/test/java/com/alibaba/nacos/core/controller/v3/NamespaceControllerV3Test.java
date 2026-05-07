@@ -110,7 +110,8 @@ class NamespaceControllerV3Test {
         Assertions.assertNotNull(result);
         Assertions.assertEquals(ErrorCode.SUCCESS.getCode(), (int) result.getCode());
         Assertions.assertTrue(result.getData());
-        verify(namespaceOperationService, times(1)).createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME,
+        verify(namespaceOperationService, times(1)).createNamespace(TEST_NAMESPACE_ID,
+                TEST_NAMESPACE_NAME,
                 TEST_NAMESPACE_DESC);
     }
     
@@ -125,7 +126,8 @@ class NamespaceControllerV3Test {
                 () -> namespaceControllerV3.createNamespace(form));
         
         Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getErrCode());
-        Assertions.assertEquals("namespaceId [invalid@namespace] mismatch the pattern", exception.getErrMsg());
+        Assertions.assertEquals("namespaceId [invalid@namespace] mismatch the pattern",
+                exception.getErrMsg());
     }
     
     @Test
@@ -136,7 +138,8 @@ class NamespaceControllerV3Test {
         form.setNamespaceDesc(TEST_NAMESPACE_DESC);
         
         when(namespaceOperationService.createNamespace(org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_NAME), org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_DESC))).thenReturn(true);
+                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_NAME),
+                org.mockito.ArgumentMatchers.eq(TEST_NAMESPACE_DESC))).thenReturn(true);
         
         Result<Boolean> result = namespaceControllerV3.createNamespace(form);
         
@@ -194,15 +197,17 @@ class NamespaceControllerV3Test {
         form.setNamespaceName("updated-name");
         form.setNamespaceDesc("updated-desc");
         
-        when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, "updated-name", "updated-desc")).thenReturn(
-                true);
+        when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, "updated-name",
+                "updated-desc")).thenReturn(
+                        true);
         
         Result<Boolean> result = namespaceControllerV3.updateNamespace(form);
         
         Assertions.assertNotNull(result);
         Assertions.assertEquals(ErrorCode.SUCCESS.getCode(), (int) result.getCode());
         Assertions.assertTrue(result.getData());
-        verify(namespaceOperationService, times(1)).editNamespace(TEST_NAMESPACE_ID, "updated-name", "updated-desc");
+        verify(namespaceOperationService, times(1)).editNamespace(TEST_NAMESPACE_ID, "updated-name",
+                "updated-desc");
     }
     
     @Test

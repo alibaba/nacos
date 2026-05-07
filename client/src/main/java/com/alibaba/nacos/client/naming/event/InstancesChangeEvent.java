@@ -40,10 +40,11 @@ public class InstancesChangeEvent extends Event {
     private final String clusters;
     
     private final List<Instance> hosts;
-
+    
     private InstancesDiff instancesDiff;
     
-    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters, List<Instance> hosts, InstancesDiff diff) {
+    public InstancesChangeEvent(String eventScope, String serviceName, String groupName,
+            String clusters, List<Instance> hosts, InstancesDiff diff) {
         this.eventScope = eventScope;
         this.serviceName = serviceName;
         this.groupName = groupName;
@@ -67,11 +68,11 @@ public class InstancesChangeEvent extends Event {
     public List<Instance> getHosts() {
         return hosts;
     }
-
+    
     public InstancesDiff getInstancesDiff() {
         return instancesDiff;
     }
-
+    
     @Override
     public String scope() {
         return this.eventScope;

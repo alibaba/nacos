@@ -68,13 +68,16 @@ class HistoryConfigInfoMapperByDerbyTest {
         assertEquals(mapperResult.getSql(),
                 "DELETE FROM his_config_info WHERE nid IN( SELECT nid FROM his_config_info WHERE gmt_modified < ? "
                         + "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)");
-        assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {startTime, limitSize},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigHistoryCountByTime() {
-        MapperResult mapperResult = historyConfigInfoMapperByDerby.findConfigHistoryCountByTime(context);
-        assertEquals("SELECT count(*) FROM his_config_info WHERE gmt_modified < ?", mapperResult.getSql());
+        MapperResult mapperResult =
+                historyConfigInfoMapperByDerby.findConfigHistoryCountByTime(context);
+        assertEquals("SELECT count(*) FROM his_config_info WHERE gmt_modified < ?",
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {startTime}, mapperResult.getParamList().toArray());
     }
     
@@ -100,19 +103,22 @@ class HistoryConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
-        MapperResult mapperResult = historyConfigInfoMapperByDerby.findConfigHistoryFetchRows(context);
+        MapperResult mapperResult =
+                historyConfigInfoMapperByDerby.findConfigHistoryFetchRows(context);
         assertEquals(mapperResult.getSql(),
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,publish_type,gray_name,"
                         + "op_type,gmt_create,gmt_modified FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC");
-        assertArrayEquals(new Object[] {dataId, groupId, tenantId}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {dataId, groupId, tenantId},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
     void testDetailPreviousConfigHistory() {
         Object id = "1";
         context.putWhereParameter(FieldConstant.ID, id);
-        MapperResult mapperResult = historyConfigInfoMapperByDerby.detailPreviousConfigHistory(context);
+        MapperResult mapperResult =
+                historyConfigInfoMapperByDerby.detailPreviousConfigHistory(context);
         assertEquals(mapperResult.getSql(),
                 "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type"
                         + ",gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key "

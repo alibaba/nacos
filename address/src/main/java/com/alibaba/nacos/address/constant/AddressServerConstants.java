@@ -27,7 +27,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  */
 public interface AddressServerConstants {
     
-    
     /**
      * the default server port when create the Instance object.
      */

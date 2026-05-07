@@ -75,8 +75,10 @@ public class ConfigForm implements NacosForm, Cloneable {
     public ConfigForm() {
     }
     
-    public ConfigForm(String dataId, String group, String namespaceId, String content, String tag, String appName,
-            String srcUser, String configTags, String desc, String use, String effect, String type, String schema) {
+    public ConfigForm(String dataId, String group, String namespaceId, String content, String tag,
+            String appName,
+            String srcUser, String configTags, String desc, String use, String effect, String type,
+            String schema) {
         this.dataId = dataId;
         this.group = group;
         this.namespaceId = namespaceId;

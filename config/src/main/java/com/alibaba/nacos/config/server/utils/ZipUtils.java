@@ -101,8 +101,9 @@ public class ZipUtils {
      */
     public static byte[] zip(List<ZipItem> source) {
         byte[] result = null;
-        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream(); ZipOutputStream zipOut = new ZipOutputStream(
-                byteOut)) {
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+                ZipOutputStream zipOut = new ZipOutputStream(
+                        byteOut)) {
             for (ZipItem item : source) {
                 zipOut.putNextEntry(new ZipEntry(item.getItemName()));
                 zipOut.write(item.getItemData().getBytes(StandardCharsets.UTF_8));
@@ -135,11 +136,13 @@ public class ZipUtils {
                         out.write(buffer, 0, offset);
                     }
                     String entryName = entry.getName();
-                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA.equals(entryName)) {
+                    if (metaDataItem == null
+                            && Constants.CONFIG_EXPORT_METADATA.equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                         continue;
                     }
-                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(entryName)) {
+                    if (metaDataItem == null
+                            && Constants.CONFIG_EXPORT_METADATA_NEW.equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                         continue;
                     }

@@ -58,7 +58,8 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_H
  * @version $Id: ConfigQueryRequestHandler.java, v 0.1 2020年07月14日 9:54 AM liuzunfei Exp $
  */
 @Component
-public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest, ConfigQueryResponse> {
+public class ConfigQueryRequestHandler
+        extends RequestHandler<ConfigQueryRequest, ConfigQueryResponse> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigQueryRequestHandler.class);
     
@@ -73,7 +74,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
-    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
+    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta)
+            throws NacosException {
         try {
             request.setTenant(NamespaceUtil.processNamespaceParameter(request.getTenant()));
             String dataId = request.getDataId();
@@ -90,31 +92,40 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
             
             if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
-                return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(), chainResponse.getMessage());
+                return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                        chainResponse.getMessage());
             }
             
-            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-                return handlerConfigNotFound(request.getDataId(), request.getGroup(), request.getTenant(), requestIpApp,
+            if (chainResponse
+                    .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+                return handlerConfigNotFound(request.getDataId(), request.getGroup(),
+                        request.getTenant(), requestIpApp,
                         clientIp, notify);
             }
             
-            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT) {
+            if (chainResponse
+                    .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT) {
                 return handlerConfigConflict(clientIp, groupKey);
             }
             
             ConfigQueryResponse response = new ConfigQueryResponse();
             
             // Check if there is a matched gray rule
-            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY) {
-                if (BetaGrayRule.TYPE_BETA.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
+            if (chainResponse
+                    .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY) {
+                if (BetaGrayRule.TYPE_BETA
+                        .equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
                     response.setBeta(true);
-                } else if (TagGrayRule.TYPE_TAG.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
-                    response.setTag(URLEncoder.encode(chainResponse.getMatchedGray().getRawGrayRule(), ENCODE_UTF8));
+                } else if (TagGrayRule.TYPE_TAG
+                        .equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
+                    response.setTag(URLEncoder
+                            .encode(chainResponse.getMatchedGray().getRawGrayRule(), ENCODE_UTF8));
                 }
             }
             
             // Check if there is a special tag
-            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND) {
+            if (chainResponse
+                    .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND) {
                 response.setTag(request.getTag());
             }
             
@@ -127,7 +138,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             String pullType = ConfigTraceService.PULL_TYPE_OK;
             if (chainResponse.getContent() == null) {
                 pullType = ConfigTraceService.PULL_TYPE_NOTFOUND;
-                response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
+                response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND,
+                        "config data not exist");
             } else {
                 response.setResultCode(ResponseCode.SUCCESS.getCode());
             }
@@ -136,14 +148,16 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, response.getMd5(),
                     TimeUtils.getCurrentTimeStr());
             final long delayed = System.currentTimeMillis() - response.getLastModified();
-            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, response.getLastModified(), pullEvent,
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp,
+                    response.getLastModified(), pullEvent,
                     pullType, delayed, clientIp, notify, "grpc");
             
             return response;
             
         } catch (Exception e) {
             LOGGER.error("Failed to handle grpc configuration query", e);
-            return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
+            return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                    e.getMessage());
         }
         
     }
@@ -158,11 +172,13 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         return response;
     }
     
-    private ConfigQueryResponse handlerConfigNotFound(String dataId, String group, String tenant, String requestIpApp,
+    private ConfigQueryResponse handlerConfigNotFound(String dataId, String group, String tenant,
+            String requestIpApp,
             String clientIp, boolean notify) {
         //CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
         ConfigQueryResponse response = new ConfigQueryResponse();
-        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT,
+        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
+                ConfigTraceService.PULL_EVENT,
                 ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "grpc");
         response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
         

@@ -48,7 +48,8 @@ public class IstioEnabledFilter implements NacosPackageExcludeFilter {
         String functionMode = EnvUtil.getFunctionMode();
         // When not specified naming mode or specified all mode, the naming module not start and load.
         if (isNamingDisabled(functionMode)) {
-            LOGGER.warn("Istio module disabled because function mode is {}, and Istio depend naming module",
+            LOGGER.warn(
+                    "Istio module disabled because function mode is {}, and Istio depend naming module",
                     functionMode);
             return true;
         }

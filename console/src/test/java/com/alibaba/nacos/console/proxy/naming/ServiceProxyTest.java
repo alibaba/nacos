@@ -99,33 +99,40 @@ public class ServiceProxyTest {
     @Test
     public void getServiceList() throws NacosException {
         Object expectedServiceList = new Object();
-        when(serviceHandler.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
+        when(serviceHandler.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(),
+                anyString(), anyString(),
                 anyBoolean())).thenReturn(expectedServiceList);
-        Object actualServiceList = serviceProxy.getServiceList(true, "namespaceId", 1, 10, "serviceName", "groupName",
-                true);
+        Object actualServiceList =
+                serviceProxy.getServiceList(true, "namespaceId", 1, 10, "serviceName", "groupName",
+                        true);
         assertEquals(expectedServiceList, actualServiceList);
     }
     
     @Test
     public void getSubscribers() throws Exception {
         Page<SubscriberInfo> expectedPage = new Page<>();
-        when(serviceHandler.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(),
+        when(serviceHandler.getSubscribers(anyInt(), anyInt(), anyString(), anyString(),
+                anyString(),
                 anyBoolean())).thenReturn(expectedPage);
         
-        Page<SubscriberInfo> result = serviceProxy.getSubscribers(1, 10, "namespaceId", "serviceName", "groupName",
-                true);
+        Page<SubscriberInfo> result =
+                serviceProxy.getSubscribers(1, 10, "namespaceId", "serviceName", "groupName",
+                        true);
         
         assertNotNull(result);
         assertEquals(expectedPage, result);
-        verify(serviceHandler, times(1)).getSubscribers(1, 10, "namespaceId", "serviceName", "groupName", true);
+        verify(serviceHandler, times(1)).getSubscribers(1, 10, "namespaceId", "serviceName",
+                "groupName", true);
     }
     
     @Test
     public void getServiceDetail() throws NacosException {
         ServiceDetailInfo expectedInfo = new ServiceDetailInfo();
-        when(serviceHandler.getServiceDetail(NAMESPACE_ID, SERVICE_NAME, GROUP_NAME)).thenReturn(expectedInfo);
+        when(serviceHandler.getServiceDetail(NAMESPACE_ID, SERVICE_NAME, GROUP_NAME))
+                .thenReturn(expectedInfo);
         
-        ServiceDetailInfo actualInfo = serviceProxy.getServiceDetail(NAMESPACE_ID, SERVICE_NAME, GROUP_NAME);
+        ServiceDetailInfo actualInfo =
+                serviceProxy.getServiceDetail(NAMESPACE_ID, SERVICE_NAME, GROUP_NAME);
         
         assertEquals(expectedInfo, actualInfo);
         verify(serviceHandler, times(1)).getServiceDetail(NAMESPACE_ID, SERVICE_NAME, GROUP_NAME);
@@ -139,8 +146,10 @@ public class ServiceProxyTest {
         String clusterName = "testCluster";
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         doNothing().when(serviceHandler)
-                .updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
-        serviceProxy.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
+                .updateClusterMetadata(namespaceId, groupName, serviceName, clusterName,
+                        clusterMetadata);
+        serviceProxy.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName,
+                clusterMetadata);
     }
     
 }

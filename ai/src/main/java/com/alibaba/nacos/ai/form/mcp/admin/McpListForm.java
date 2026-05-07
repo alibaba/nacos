@@ -43,7 +43,8 @@ public class McpListForm extends McpForm {
         fillDefaultValue();
         if (!Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)
                 && !Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(search)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Request parameter `search` should be `accurate` or `blur`.");
         }
     }

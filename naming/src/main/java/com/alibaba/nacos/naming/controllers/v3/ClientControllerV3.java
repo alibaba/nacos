@@ -88,7 +88,8 @@ public class ClientControllerV3 {
      */
     @GetMapping("/publish/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ClientServiceInfo>> getPublishedServiceList(@RequestParam("clientId") String clientId)
+    public Result<List<ClientServiceInfo>> getPublishedServiceList(
+            @RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
         return Result.success(clientServiceV2Impl.getPublishedServiceList(clientId));
@@ -99,7 +100,8 @@ public class ClientControllerV3 {
      */
     @GetMapping("/subscribe/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ClientServiceInfo>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
+    public Result<List<ClientServiceInfo>> getSubscribeServiceList(
+            @RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
         return Result.success(clientServiceV2Impl.getSubscribeServiceList(clientId));
@@ -110,12 +112,15 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/publisher/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ClientPublisherInfo>> getPublishedClientList(ClientServiceForm clientServiceForm)
+    public Result<List<ClientPublisherInfo>> getPublishedClientList(
+            ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
-        return Result.success(clientServiceV2Impl.getPublishedClientList(clientServiceForm.getNamespaceId(),
-                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getIp(),
-                clientServiceForm.getPort()));
+        return Result.success(
+                clientServiceV2Impl.getPublishedClientList(clientServiceForm.getNamespaceId(),
+                        clientServiceForm.getGroupName(), clientServiceForm.getServiceName(),
+                        clientServiceForm.getIp(),
+                        clientServiceForm.getPort()));
     }
     
     /**
@@ -123,20 +128,25 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/subscriber/list")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ClientSubscriberInfo>> getSubscribeClientList(ClientServiceForm clientServiceForm)
+    public Result<List<ClientSubscriberInfo>> getSubscribeClientList(
+            ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
-        return Result.success(clientServiceV2Impl.getSubscribeClientList(clientServiceForm.getNamespaceId(),
-                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getIp(),
-                clientServiceForm.getPort()));
+        return Result.success(
+                clientServiceV2Impl.getSubscribeClientList(clientServiceForm.getNamespaceId(),
+                        clientServiceForm.getGroupName(), clientServiceForm.getServiceName(),
+                        clientServiceForm.getIp(),
+                        clientServiceForm.getPort()));
     }
     
     /**
      * Query the responsible server for a given client based on its IP and port.
      */
     @GetMapping("/distro")
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ObjectNode> getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
+    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            apiType = ApiType.ADMIN_API)
+    public Result<ObjectNode> getResponsibleServer4Client(@RequestParam String ip,
+            @RequestParam String port) {
         return Result.success(clientServiceV2Impl.getResponsibleServer4Client(ip, port));
     }
     

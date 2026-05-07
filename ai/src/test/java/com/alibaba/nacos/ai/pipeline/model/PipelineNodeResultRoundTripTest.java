@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 3.2.0
  */
 class PipelineNodeResultRoundTripTest {
-
+    
     private static PipelineNodeResult node(String nodeId, boolean passed, String messageType,
             List<Checkpoint> checkpoints) {
         PipelineNodeResult result = new PipelineNodeResult();
@@ -50,7 +50,7 @@ class PipelineNodeResultRoundTripTest {
         result.setCheckpoints(checkpoints);
         return result;
     }
-
+    
     private static List<List<PipelineNodeResult>> sampleLists() {
         List<List<PipelineNodeResult>> lists = new ArrayList<>();
         lists.add(Collections.emptyList());
@@ -60,10 +60,11 @@ class PipelineNodeResultRoundTripTest {
                 node("b", false, null, Collections.emptyList())));
         lists.add(Arrays.asList(
                 node("x", false, "markdown", null),
-                node("y", true, "html", Arrays.asList(new Checkpoint("c1", false), new Checkpoint("c2", true)))));
+                node("y", true, "html",
+                        Arrays.asList(new Checkpoint("c1", false), new Checkpoint("c2", true)))));
         return lists;
     }
-
+    
     /**
      * PipelineNodeResult JSON serialization round-trip.
      *
@@ -73,7 +74,9 @@ class PipelineNodeResultRoundTripTest {
     void jsonSerializationRoundTrip() {
         for (List<PipelineNodeResult> original : sampleLists()) {
             String json = JacksonUtils.toJson(original);
-            List<PipelineNodeResult> deserialized = JacksonUtils.toObj(json, new TypeReference<List<PipelineNodeResult>>() { });
+            List<PipelineNodeResult> deserialized =
+                    JacksonUtils.toObj(json, new TypeReference<List<PipelineNodeResult>>() {
+                    });
             assertEquals(original, deserialized);
         }
     }

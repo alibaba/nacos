@@ -58,7 +58,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     private final ReentrantReadWriteLock.ReadLock readLock;
     
     @SuppressWarnings("unchecked")
-    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager,
+            ProtocolManager protocolManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
@@ -69,7 +70,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
+        return Collections
+                .singletonList(new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
     }
     
     @Override
@@ -81,7 +83,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     public Response onApply(WriteRequest request) {
         readLock.lock();
         try {
-            MetadataOperation<InstanceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
+            MetadataOperation<InstanceMetadata> op =
+                    serializer.deserialize(request.getData().toByteArray(), processType);
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
                 case CHANGE:
@@ -96,7 +99,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
             }
             return Response.newBuilder().setSuccess(true).build();
         } catch (Exception e) {
-            Loggers.RAFT.error("onApply {} instance metadata operation failed. ", request.getOperation(), e);
+            Loggers.RAFT.error("onApply {} instance metadata operation failed. ",
+                    request.getOperation(), e);
             String errorMessage = null == e.getMessage() ? e.getClass().getName() : e.getMessage();
             return Response.newBuilder().setSuccess(false).setErrMsg(errorMessage).build();
         } finally {

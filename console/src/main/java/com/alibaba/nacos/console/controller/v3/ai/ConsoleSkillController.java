@@ -165,12 +165,14 @@ public class ConsoleSkillController {
     @ExtractorManager.Extractor(httpExtractor = ExtractorManager.DefaultHttpExtractor.class)
     public Result<String> uploadSkill(HttpServletRequest request,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "overwrite", required = false, defaultValue = "false") boolean overwrite,
+            @RequestParam(value = "overwrite", required = false,
+                    defaultValue = "false") boolean overwrite,
             @RequestParam(value = "targetVersion", required = false) String targetVersion,
             @RequestParam("file") MultipartFile file) throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         byte[] zipBytes = SkillRequestUtil.validateAndExtractZipBytes(file);
-        String skillName = skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
+        String skillName =
+                skillProxy.uploadSkillFromZip(namespaceId, zipBytes, overwrite, targetVersion);
         return Result.success(skillName);
     }
     
@@ -234,7 +236,8 @@ public class ConsoleSkillController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = CONSOLE_RESOURCE_NAME_PREFIX
-            + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+            + "skills", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+            apiType = ApiType.CONSOLE_API)
     public Result<String> forcePublish(SkillPublishForm form) throws NacosException {
         form.validate();
         skillProxy.forcePublish(form);

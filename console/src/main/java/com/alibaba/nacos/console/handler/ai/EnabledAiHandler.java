@@ -33,7 +33,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProperty(value = AiEnabledFilter.AI_ENABLED_KEY, havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = AiEnabledFilter.AI_ENABLED_KEY, havingValue = "true",
+        matchIfMissing = true)
 public @interface EnabledAiHandler {
-
+    
 }

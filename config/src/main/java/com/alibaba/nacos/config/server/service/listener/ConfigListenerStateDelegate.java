@@ -42,7 +42,8 @@ public class ConfigListenerStateDelegate {
         ConfigListenerInfo result = localService.getListenerState(dataId, groupName, namespaceId);
         if (aggregation) {
             result.getListenersStatus()
-                    .putAll(remoteService.getListenerState(dataId, groupName, namespaceId).getListenersStatus());
+                    .putAll(remoteService.getListenerState(dataId, groupName, namespaceId)
+                            .getListenersStatus());
         }
         return result;
     }
@@ -50,7 +51,8 @@ public class ConfigListenerStateDelegate {
     public ConfigListenerInfo getListenerStateByIp(String ip, boolean aggregation) {
         ConfigListenerInfo result = localService.getListenerStateByIp(ip);
         if (aggregation) {
-            result.getListenersStatus().putAll(remoteService.getListenerStateByIp(ip).getListenersStatus());
+            result.getListenersStatus()
+                    .putAll(remoteService.getListenerStateByIp(ip).getListenersStatus());
         }
         return result;
     }

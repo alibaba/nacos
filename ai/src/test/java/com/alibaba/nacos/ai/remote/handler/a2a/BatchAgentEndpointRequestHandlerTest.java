@@ -66,7 +66,8 @@ class BatchAgentEndpointRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        requestHandler = new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
+        requestHandler =
+                new BatchAgentEndpointRequestHandler(clientOperationService, agentIdCodecHolder);
         capturedInstances = null;
     }
     
@@ -134,7 +135,8 @@ class BatchAgentEndpointRequestHandlerTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
         assertTrue(response.getMessage()
-                .startsWith("Required parameter `endpoint.version` can't be different, current includes:"));
+                .startsWith(
+                        "Required parameter `endpoint.version` can't be different, current includes:"));
         assertTrue(response.getMessage().contains("1.0.0"));
         assertTrue(response.getMessage().contains("2.0.0"));
     }
@@ -179,7 +181,8 @@ class BatchAgentEndpointRequestHandlerTest {
             }
             return null;
         }).when(clientOperationService)
-                .batchRegisterInstance(any(Service.class), any(List.class), eq("TEST_CONNECTION_ID"));
+                .batchRegisterInstance(any(Service.class), any(List.class),
+                        eq("TEST_CONNECTION_ID"));
         
         AgentEndpointResponse response = requestHandler.handle(request, meta);
         

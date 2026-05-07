@@ -36,6 +36,7 @@ class MapperProxyTest {
     @Test
     void testCreateProxy() {
         Mapper mapper = new Mapper() {
+            
             @Override
             public String select(List<String> columns, List<String> where) {
                 return "select-test";

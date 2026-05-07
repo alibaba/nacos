@@ -45,7 +45,8 @@ public class ClientConnectionEventListenerRegistry {
                 clientConnectionEventListener.clientConnected(connection);
             } catch (Throwable throwable) {
                 Loggers.REMOTE
-                        .info("[NotifyClientConnected] failed for listener {}", clientConnectionEventListener.getName(),
+                        .info("[NotifyClientConnected] failed for listener {}",
+                                clientConnectionEventListener.getName(),
                                 throwable);
                 
             }
@@ -77,8 +78,9 @@ public class ClientConnectionEventListenerRegistry {
      * @param listener listener.
      */
     public void registerClientConnectionEventListener(ClientConnectionEventListener listener) {
-        Loggers.REMOTE.info("[ClientConnectionEventListenerRegistry] registry listener - " + listener.getClass()
-                .getSimpleName());
+        Loggers.REMOTE.info(
+                "[ClientConnectionEventListenerRegistry] registry listener - " + listener.getClass()
+                        .getSimpleName());
         this.clientConnectionEventListeners.add(listener);
     }
     

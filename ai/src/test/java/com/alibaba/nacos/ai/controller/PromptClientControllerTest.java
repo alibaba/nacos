@@ -73,7 +73,8 @@ class PromptClientControllerTest {
         versionInfo.setVersion("1.0.0");
         versionInfo.setTemplate("template");
         versionInfo.setMd5("md5");
-        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null)).thenReturn(versionInfo);
+        when(promptClientOperationService.queryPrompt("public", "p1", null, null, null))
+                .thenReturn(versionInfo);
         
         Result<Prompt> result = controller.queryPrompt(form, response);
         

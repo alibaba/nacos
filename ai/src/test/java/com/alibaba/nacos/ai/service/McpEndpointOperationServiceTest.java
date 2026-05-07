@@ -68,12 +68,14 @@ class McpEndpointOperationServiceTest {
     
     @BeforeEach
     void setUp() {
-        endpointOperationService = new McpEndpointOperationService(serviceOperator, instanceOperator, metadataManager);
+        endpointOperationService =
+                new McpEndpointOperationService(serviceOperator, instanceOperator, metadataManager);
     }
     
     @AfterEach
     void tearDown() {
-        Service service = Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+        Service service = Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                Constants.MCP_SERVER_ENDPOINT_GROUP,
                 "mcpName::1.0.0");
         ServiceManager.getInstance().removeSingleton(service);
     }
@@ -82,16 +84,22 @@ class McpEndpointOperationServiceTest {
     void createMcpServerEndpointServiceIfNecessaryTypeRefWithoutMsg() {
         McpEndpointSpec mcpEndpointSpec = new McpEndpointSpec();
         mcpEndpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
-        assertThrows(NacosApiException.class, () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false),
+        assertThrows(NacosApiException.class,
+                () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
+                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec,
+                        false),
                 "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
         mcpEndpointSpec.getData().put("namespaceId", AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        assertThrows(NacosApiException.class, () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false),
+        assertThrows(NacosApiException.class,
+                () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
+                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec,
+                        false),
                 "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
         mcpEndpointSpec.getData().put("groupName", "groupName");
-        assertThrows(NacosApiException.class, () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
-                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec, false),
+        assertThrows(NacosApiException.class,
+                () -> endpointOperationService.createMcpServerEndpointServiceIfNecessary(
+                        AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", "1.0.0", mcpEndpointSpec,
+                        false),
                 "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
     }
     
@@ -110,7 +118,8 @@ class McpEndpointOperationServiceTest {
     }
     
     @Test
-    void createMcpServerEndpointServiceIfNecessaryTypeDirectWithoutExistService() throws NacosException {
+    void createMcpServerEndpointServiceIfNecessaryTypeDirectWithoutExistService()
+            throws NacosException {
         McpEndpointSpec mcpEndpointSpec = new McpEndpointSpec();
         mcpEndpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         mcpEndpointSpec.getData().put("address", "127.0.0.1");
@@ -121,16 +130,19 @@ class McpEndpointOperationServiceTest {
         assertEquals(Constants.MCP_SERVER_ENDPOINT_GROUP, service.getGroup());
         assertEquals("mcpName::1.0.0", service.getName());
         verify(serviceOperator).create(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(NamingUtils.getGroupedName("mcpName::1.0.0", Constants.MCP_SERVER_ENDPOINT_GROUP)),
+                eq(NamingUtils.getGroupedName("mcpName::1.0.0",
+                        Constants.MCP_SERVER_ENDPOINT_GROUP)),
                 any(ServiceMetadata.class));
         verify(instanceOperator).registerInstance(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 eq(Constants.MCP_SERVER_ENDPOINT_GROUP), eq("mcpName::1.0.0"), any(Instance.class));
     }
     
     @Test
-    void createMcpServerEndpointServiceIfNecessaryTypeDirectWithExistService() throws NacosException {
+    void createMcpServerEndpointServiceIfNecessaryTypeDirectWithExistService()
+            throws NacosException {
         ServiceManager.getInstance().getSingleton(
-                Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+                Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                        Constants.MCP_SERVER_ENDPOINT_GROUP,
                         "mcpName::1.0.0"));
         McpEndpointSpec mcpEndpointSpec = new McpEndpointSpec();
         mcpEndpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
@@ -142,7 +154,8 @@ class McpEndpointOperationServiceTest {
         assertEquals(Constants.MCP_SERVER_ENDPOINT_GROUP, service.getGroup());
         assertEquals("mcpName::1.0.0", service.getName());
         verify(serviceOperator, never()).create(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(NamingUtils.getGroupedName("mcpName::1.0.0", Constants.MCP_SERVER_ENDPOINT_GROUP)),
+                eq(NamingUtils.getGroupedName("mcpName::1.0.0",
+                        Constants.MCP_SERVER_ENDPOINT_GROUP)),
                 any(ServiceMetadata.class));
         verify(instanceOperator).registerInstance(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 eq(Constants.MCP_SERVER_ENDPOINT_GROUP), eq("mcpName::1.0.0"), any(Instance.class));
@@ -155,7 +168,8 @@ class McpEndpointOperationServiceTest {
         instance.setPort(8848);
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(Collections.singletonList(instance));
-        when(instanceOperator.listInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+        when(instanceOperator.listInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                Constants.MCP_SERVER_ENDPOINT_GROUP,
                 "mcpName", null, "", true)).thenReturn(serviceInfo);
         McpServiceRef serviceRef = new McpServiceRef();
         serviceRef.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
@@ -169,30 +183,37 @@ class McpEndpointOperationServiceTest {
     
     @Test
     void deleteMcpServerEndpointServiceForNonExistService() throws NacosException {
-        endpointOperationService.deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
-        verify(instanceOperator, never()).removeInstance(anyString(), anyString(), anyString(), any(Instance.class));
+        endpointOperationService
+                .deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(instanceOperator, never()).removeInstance(anyString(), anyString(), anyString(),
+                any(Instance.class));
         verify(serviceOperator, never()).delete(anyString(), anyString());
     }
     
     @Test
     void deleteMcpServerEndpointServiceForRefService() throws NacosException {
-        Service service = Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+        Service service = Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                Constants.MCP_SERVER_ENDPOINT_GROUP,
                 "mcpName");
         ServiceManager.getInstance().getSingleton(service);
         when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.empty());
-        endpointOperationService.deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
-        verify(instanceOperator, never()).removeInstance(anyString(), anyString(), anyString(), any(Instance.class));
+        endpointOperationService
+                .deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(instanceOperator, never()).removeInstance(anyString(), anyString(), anyString(),
+                any(Instance.class));
         verify(serviceOperator, never()).delete(anyString(), anyString());
     }
     
     @Test
     void deleteMcpServerEndpointService() throws NacosException {
-        Service service = Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+        Service service = Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                Constants.MCP_SERVER_ENDPOINT_GROUP,
                 "mcpName");
         ServiceManager.getInstance().getSingleton(service);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.getExtendData()
-                .put(Constants.MCP_SERVER_ENDPOINT_METADATA_MARK, Constants.MCP_SERVER_ENDPOINT_METADATA_MARK);
+                .put(Constants.MCP_SERVER_ENDPOINT_METADATA_MARK,
+                        Constants.MCP_SERVER_ENDPOINT_METADATA_MARK);
         when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.of(serviceMetadata));
         List<Instance> instances = new LinkedList<>();
         Instance instance = new Instance();
@@ -205,9 +226,11 @@ class McpEndpointOperationServiceTest {
         instances.add(instance);
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(instances);
-        when(instanceOperator.listInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+        when(instanceOperator.listInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                Constants.MCP_SERVER_ENDPOINT_GROUP,
                 "mcpName", null, "", false)).thenReturn(serviceInfo);
-        endpointOperationService.deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        endpointOperationService
+                .deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
         for (Instance each : instances) {
             verify(instanceOperator).removeInstance(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                     Constants.MCP_SERVER_ENDPOINT_GROUP, "mcpName", each);

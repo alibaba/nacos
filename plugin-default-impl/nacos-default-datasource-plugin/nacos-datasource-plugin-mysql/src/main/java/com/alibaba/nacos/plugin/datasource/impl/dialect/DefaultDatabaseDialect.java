@@ -24,15 +24,15 @@ import com.alibaba.nacos.plugin.datasource.impl.enums.mysql.TrustedMysqlFunction
  * @author Long Yu
  */
 public class DefaultDatabaseDialect extends AbstractDatabaseDialect {
-
+    
     @Override
     public String getType() {
         return DatabaseTypeConstant.MYSQL;
     }
-
+    
     @Override
     public String getFunction(String functionName) {
         return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
     }
-
+    
 }

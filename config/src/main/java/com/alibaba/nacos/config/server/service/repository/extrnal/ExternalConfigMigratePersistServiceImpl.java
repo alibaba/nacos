@@ -95,8 +95,9 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
-                false);
+        Boolean isDataSourceLogEnable =
+                EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+                        false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
@@ -109,12 +110,14 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     
     @Override
     public Integer configInfoConflictCount(String srcUser) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.SRC_USER, srcUser);
         MapperResult mapperResult = configMigrateMapper.getConfigConflictCount(context);
-        Integer result = jt.queryForObject(mapperResult.getSql(), mapperResult.getParamList().toArray(), Integer.class);
+        Integer result = jt.queryForObject(mapperResult.getSql(),
+                mapperResult.getParamList().toArray(), Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoConflictCount error");
         }
@@ -123,12 +126,14 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     
     @Override
     public Integer configInfoGrayConflictCount(String srcUser) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.SRC_USER, srcUser);
         MapperResult mapperResult = configMigrateMapper.getConfigGrayConflictCount(context);
-        Integer result = jt.queryForObject(mapperResult.getSql(), mapperResult.getParamList().toArray(), Integer.class);
+        Integer result = jt.queryForObject(mapperResult.getSql(),
+                mapperResult.getParamList().toArray(), Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoGrayConflictCount error");
         }
@@ -137,31 +142,36 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     
     @Override
     public List<Long> getMigrateConfigInsertIdList(long startId, int pageSize) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.ID, startId);
         context.setPageSize(pageSize);
         MapperResult mapperResult = configMigrateMapper.findConfigIdNeedInsertMigrate(context);
-        return jt.queryForList(mapperResult.getSql(), mapperResult.getParamList().toArray(), Long.class);
+        return jt.queryForList(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+                Long.class);
     }
     
     @Override
     public List<Long> getMigrateConfigGrayInsertIdList(long startId, int pageSize) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.ID, startId);
         context.setPageSize(pageSize);
         MapperResult mapperResult = configMigrateMapper.findConfigGrayIdNeedInsertMigrate(context);
-        return jt.queryForList(mapperResult.getSql(), mapperResult.getParamList().toArray(), Long.class);
+        return jt.queryForList(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+                Long.class);
     }
     
     @Override
     public List<ConfigInfo> getMigrateConfigUpdateList(long startId, int pageSize, String srcTenant,
             String targetTenant, String srcUser) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.SRC_USER, srcUser);
         context.putWhereParameter(FieldConstant.ID, startId);
@@ -174,10 +184,12 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     }
     
     @Override
-    public List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize, String srcTenant,
+    public List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize,
+            String srcTenant,
             String targetTenant, String srcUser) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.SRC_USER, srcUser);
         context.putWhereParameter(FieldConstant.ID, startId);
@@ -191,8 +203,9 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     
     @Override
     public void migrateConfigInsertByIds(List<Long> ids, String srcUser) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, ids);
         context.putWhereParameter(FieldConstant.SRC_USER, srcUser);
@@ -207,8 +220,9 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     
     @Override
     public void migrateConfigGrayInsertByIds(List<Long> ids, String srcUser) {
-        ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.MIGRATE_CONFIG);
+        ConfigMigrateMapper configMigrateMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, ids);
         context.putWhereParameter(FieldConstant.SRC_USER, srcUser);
@@ -222,50 +236,66 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     }
     
     @Override
-    public void syncConfigGray(String dataId, String group, String tenant, String grayName, String targetTenant,
+    public void syncConfigGray(String dataId, String group, String tenant, String grayName,
+            String targetTenant,
             String srcUser) {
         tjt.execute(status -> {
             try {
-                ConfigInfoGrayWrapper sourceConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                        dataId, group, tenant, grayName);
-                ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                        dataId, group, targetTenant, grayName);
+                ConfigInfoGrayWrapper sourceConfigInfoGrayWrapper =
+                        configInfoGrayPersistService.findConfigInfo4Gray(
+                                dataId, group, tenant, grayName);
+                ConfigInfoGrayWrapper targetConfigInfoGrayWrapper =
+                        configInfoGrayPersistService.findConfigInfo4Gray(
+                                dataId, group, targetTenant, grayName);
                 if (sourceConfigInfoGrayWrapper == null) {
-                    removeConfigInfoGrayWithoutHistory(dataId, group, targetTenant, grayName, null, srcUser);
-                    ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                            dataId, group, tenant, grayName);
+                    removeConfigInfoGrayWithoutHistory(dataId, group, targetTenant, grayName, null,
+                            srcUser);
+                    ConfigInfoGrayWrapper configInfoGrayWrapper =
+                            configInfoGrayPersistService.findConfigInfo4Gray(
+                                    dataId, group, tenant, grayName);
                     if (configInfoGrayWrapper != null) {
-                        throw new Exception("sourceConfigInfoGray has been updated,dataId=" + dataId + ",group=" + group
+                        throw new Exception("sourceConfigInfoGray has been updated,dataId=" + dataId
+                                + ",group=" + group
                                 + ",tenant=" + tenant + ",grayName=" + grayName);
                     }
                 } else {
                     if (targetConfigInfoGrayWrapper == null) {
                         sourceConfigInfoGrayWrapper.setTenant(targetTenant);
-                        configInfoGrayPersistService.addConfigInfoGrayAtomic(-1, sourceConfigInfoGrayWrapper,
-                                sourceConfigInfoGrayWrapper.getGrayName(), sourceConfigInfoGrayWrapper.getGrayRule(),
+                        configInfoGrayPersistService.addConfigInfoGrayAtomic(-1,
+                                sourceConfigInfoGrayWrapper,
+                                sourceConfigInfoGrayWrapper.getGrayName(),
+                                sourceConfigInfoGrayWrapper.getGrayRule(),
                                 null, srcUser);
-                        ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                                dataId, group, tenant, grayName);
-                        if (!StringUtils.equals(configInfoGrayWrapper.getMd5(), sourceConfigInfoGrayWrapper.getMd5())
+                        ConfigInfoGrayWrapper configInfoGrayWrapper =
+                                configInfoGrayPersistService.findConfigInfo4Gray(
+                                        dataId, group, tenant, grayName);
+                        if (!StringUtils.equals(configInfoGrayWrapper.getMd5(),
+                                sourceConfigInfoGrayWrapper.getMd5())
                                 || !StringUtils.equals(configInfoGrayWrapper.getGrayRule(),
-                                sourceConfigInfoGrayWrapper.getGrayRule())) {
+                                        sourceConfigInfoGrayWrapper.getGrayRule())) {
                             throw new Exception(
-                                    "sourceConfigInfoGray has been updated,dataId=" + dataId + ",group=" + group
+                                    "sourceConfigInfoGray has been updated,dataId=" + dataId
+                                            + ",group=" + group
                                             + ",tenant=" + tenant + ",grayName=" + grayName);
                         }
-                    } else if (sourceConfigInfoGrayWrapper.getLastModified()
-                            >= targetConfigInfoGrayWrapper.getLastModified()) {
+                    } else if (sourceConfigInfoGrayWrapper
+                            .getLastModified() >= targetConfigInfoGrayWrapper.getLastModified()) {
                         sourceConfigInfoGrayWrapper.setTenant(targetTenant);
                         updateConfigInfo4GrayWithoutHistory(sourceConfigInfoGrayWrapper,
-                                sourceConfigInfoGrayWrapper.getGrayName(), sourceConfigInfoGrayWrapper.getGrayRule(),
-                                null, srcUser, targetConfigInfoGrayWrapper.getLastModified(), targetConfigInfoGrayWrapper.getMd5());
-                        ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                                dataId, group, tenant, grayName);
-                        if (!StringUtils.equals(configInfoGrayWrapper.getMd5(), sourceConfigInfoGrayWrapper.getMd5())
+                                sourceConfigInfoGrayWrapper.getGrayName(),
+                                sourceConfigInfoGrayWrapper.getGrayRule(),
+                                null, srcUser, targetConfigInfoGrayWrapper.getLastModified(),
+                                targetConfigInfoGrayWrapper.getMd5());
+                        ConfigInfoGrayWrapper configInfoGrayWrapper =
+                                configInfoGrayPersistService.findConfigInfo4Gray(
+                                        dataId, group, tenant, grayName);
+                        if (!StringUtils.equals(configInfoGrayWrapper.getMd5(),
+                                sourceConfigInfoGrayWrapper.getMd5())
                                 || !StringUtils.equals(configInfoGrayWrapper.getGrayRule(),
-                                sourceConfigInfoGrayWrapper.getGrayRule())) {
+                                        sourceConfigInfoGrayWrapper.getGrayRule())) {
                             throw new Exception(
-                                    "sourceConfigInfoGray has been updated,dataId=" + dataId + ",group=" + group
+                                    "sourceConfigInfoGray has been updated,dataId=" + dataId
+                                            + ",group=" + group
                                             + ",tenant=" + tenant + ",grayName=" + grayName);
                         }
                     }
@@ -288,14 +318,18 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
      * @param srcIp    the src ip
      * @param srcUser  the src user
      */
-    public void removeConfigInfoGrayWithoutHistory(final String dataId, final String group, final String tenant,
+    public void removeConfigInfoGrayWithoutHistory(final String dataId, final String group,
+            final String tenant,
             final String grayName, final String srcIp, final String srcUser) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName;
         try {
-            ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_GRAY);
-            jt.update(configInfoGrayMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "gray_name")),
+            ConfigInfoGrayMapper configInfoGrayMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_GRAY);
+            jt.update(
+                    configInfoGrayMapper
+                            .delete(Arrays.asList("data_id", "group_id", "tenant_id", "gray_name")),
                     dataId, group, tenantTmp, grayNameTmp);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
@@ -312,7 +346,8 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
      * @param srcIp      the src ip
      * @param srcUser    the src user
      */
-    public void updateConfigInfo4GrayWithoutHistory(ConfigInfo configInfo, String grayName, String grayRule,
+    public void updateConfigInfo4GrayWithoutHistory(ConfigInfo configInfo, String grayName,
+            String grayRule,
             String srcIp, String srcUser, long lastModified, final String targetMd5) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
@@ -321,13 +356,19 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
         Timestamp modifiedTime = new Timestamp(lastModified);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_GRAY);
+            ConfigInfoGrayMapper configInfoGrayMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_GRAY);
             jt.update(configInfoGrayMapper.update(
-                            Arrays.asList("content", "encrypted_data_key", "md5", "src_ip", "src_user", "gmt_modified@NOW()",
-                                    "app_name", "gray_rule"), Arrays.asList("data_id", "group_id", "tenant_id", "gray_name", "gmt_modified", "md5")),
-                    configInfo.getContent(), configInfo.getEncryptedDataKey(), md5, srcIp, srcUser, appNameTmp,
-                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp, modifiedTime, targetMd5);
+                    Arrays.asList("content", "encrypted_data_key", "md5", "src_ip", "src_user",
+                            "gmt_modified@NOW()",
+                            "app_name", "gray_rule"),
+                    Arrays.asList("data_id", "group_id", "tenant_id", "gray_name", "gmt_modified",
+                            "md5")),
+                    configInfo.getContent(), configInfo.getEncryptedDataKey(), md5, srcIp, srcUser,
+                    appNameTmp,
+                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    grayNameTmp, modifiedTime, targetMd5);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -335,51 +376,69 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
     }
     
     @Override
-    public void syncConfig(String dataId, String group, String tenant, String targetTenant, String srcUser) {
+    public void syncConfig(String dataId, String group, String tenant, String targetTenant,
+            String srcUser) {
         tjt.execute(status -> {
             try {
-                ConfigInfoWrapper sourceConfigInfoWrapper = configInfoPersistService.findConfigInfo(dataId, group,
-                        tenant);
-                ConfigInfoWrapper targetConfigInfoWrapper = configInfoPersistService.findConfigInfo(dataId, group,
-                        targetTenant);
+                ConfigInfoWrapper sourceConfigInfoWrapper =
+                        configInfoPersistService.findConfigInfo(dataId, group,
+                                tenant);
+                ConfigInfoWrapper targetConfigInfoWrapper =
+                        configInfoPersistService.findConfigInfo(dataId, group,
+                                targetTenant);
                 if (sourceConfigInfoWrapper == null) {
-                    configInfoPersistService.removeConfigInfoAtomic(dataId, group, targetTenant, null, srcUser);
-                    ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(dataId, group,
-                            tenant);
+                    configInfoPersistService.removeConfigInfoAtomic(dataId, group, targetTenant,
+                            null, srcUser);
+                    ConfigInfoWrapper configInfoWrapper =
+                            configInfoPersistService.findConfigInfo(dataId, group,
+                                    tenant);
                     if (configInfoWrapper != null) {
                         LogUtil.FATAL_LOG.error(
-                                "syncConfig failed, sourceConfigInfo has been updated,dataId=" + dataId + ",group="
+                                "syncConfig failed, sourceConfigInfo has been updated,dataId="
+                                        + dataId + ",group="
                                         + group + ",tenant=" + tenant);
                         throw new Exception(
-                                "syncConfig failed,sourceConfigInfo has been updated,dataId=" + dataId + ",group="
+                                "syncConfig failed,sourceConfigInfo has been updated,dataId="
+                                        + dataId + ",group="
                                         + group + ",tenant=" + tenant);
                     }
                 } else {
                     if (targetConfigInfoWrapper == null) {
                         sourceConfigInfoWrapper.setTenant(targetTenant);
-                        configInfoPersistService.addConfigInfoAtomic(-1, null, srcUser, sourceConfigInfoWrapper, null);
-                        ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(dataId, group,
-                                tenant);
-                        if (!StringUtils.equals(configInfoWrapper.getMd5(), sourceConfigInfoWrapper.getMd5())) {
+                        configInfoPersistService.addConfigInfoAtomic(-1, null, srcUser,
+                                sourceConfigInfoWrapper, null);
+                        ConfigInfoWrapper configInfoWrapper =
+                                configInfoPersistService.findConfigInfo(dataId, group,
+                                        tenant);
+                        if (!StringUtils.equals(configInfoWrapper.getMd5(),
+                                sourceConfigInfoWrapper.getMd5())) {
                             LogUtil.FATAL_LOG.error(
-                                    "syncConfig failed, sourceConfigInfo has been updated,dataId=" + dataId + ",group="
+                                    "syncConfig failed, sourceConfigInfo has been updated,dataId="
+                                            + dataId + ",group="
                                             + group + ",tenant=" + tenant);
                             throw new Exception(
-                                    "syncConfig failed, sourceConfigInfo has been updated,dataId=" + dataId + ",group="
+                                    "syncConfig failed, sourceConfigInfo has been updated,dataId="
+                                            + dataId + ",group="
                                             + group + ",tenant=" + tenant);
                         }
-                    } else if (sourceConfigInfoWrapper.getLastModified() >= targetConfigInfoWrapper.getLastModified()) {
+                    } else if (sourceConfigInfoWrapper.getLastModified() >= targetConfigInfoWrapper
+                            .getLastModified()) {
                         sourceConfigInfoWrapper.setTenant(targetTenant);
-                        updateConfigInfoAtomic(sourceConfigInfoWrapper, null, srcUser, null, targetConfigInfoWrapper.getLastModified(),
-                                 targetConfigInfoWrapper.getMd5());
-                        ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(dataId, group,
-                                tenant);
-                        if (!StringUtils.equals(configInfoWrapper.getMd5(), sourceConfigInfoWrapper.getMd5())) {
+                        updateConfigInfoAtomic(sourceConfigInfoWrapper, null, srcUser, null,
+                                targetConfigInfoWrapper.getLastModified(),
+                                targetConfigInfoWrapper.getMd5());
+                        ConfigInfoWrapper configInfoWrapper =
+                                configInfoPersistService.findConfigInfo(dataId, group,
+                                        tenant);
+                        if (!StringUtils.equals(configInfoWrapper.getMd5(),
+                                sourceConfigInfoWrapper.getMd5())) {
                             LogUtil.FATAL_LOG.error(
-                                    "syncConfig failed, sourceConfigInfo has been updated,dataId=" + dataId + ",group="
+                                    "syncConfig failed, sourceConfigInfo has been updated,dataId="
+                                            + dataId + ",group="
                                             + group + ",tenant=" + tenant);
                             throw new Exception(
-                                    "syncConfig failed, sourceConfigInfo has been updated,dataId=" + dataId + ",group="
+                                    "syncConfig failed, sourceConfigInfo has been updated,dataId="
+                                            + dataId + ",group="
                                             + group + ",tenant=" + tenant);
                         }
                     }
@@ -401,7 +460,8 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
      * @param configAdvanceInfo the config advance info
      * @param lastModified      the last modified
      */
-    public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+    public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp,
+            final String srcUser,
             Map<String, Object> configAdvanceInfo, long lastModified, final String targetMd5) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
@@ -413,15 +473,20 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
         String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         Timestamp modifiedTime = new Timestamp(lastModified);
         final String encryptedDataKey =
-                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY
+                        : configInfo.getEncryptedDataKey();
         try {
-            ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO);
+            ConfigInfoMapper configInfoMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO);
             jt.update(configInfoMapper.update(
-                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
-                                    "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
-                            Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified", "md5")), configInfo.getContent(), md5Tmp, srcIp,
-                    srcUser, appNameTmp, desc, use, effect, type, schema, encryptedDataKey, configInfo.getDataId(),
+                    Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()",
+                            "app_name", "c_desc",
+                            "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
+                    Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified", "md5")),
+                    configInfo.getContent(), md5Tmp, srcIp,
+                    srcUser, appNameTmp, desc, use, effect, type, schema, encryptedDataKey,
+                    configInfo.getDataId(),
                     configInfo.getGroup(), tenantTmp, modifiedTime, targetMd5);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);

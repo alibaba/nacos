@@ -57,8 +57,9 @@ class AnonymousAccessInitializerTest {
     
     @BeforeEach
     void setUp() {
-        initializer = new AnonymousAccessInitializer(authConfigs, userPersistService, rolePersistService,
-                permissionPersistService);
+        initializer =
+                new AnonymousAccessInitializer(authConfigs, userPersistService, rolePersistService,
+                        permissionPersistService);
     }
     
     @Test
@@ -79,20 +80,25 @@ class AnonymousAccessInitializerTest {
         
         verify(userPersistService).findUserByUsername(AuthConstants.ANONYMOUS_USER);
         verify(userPersistService, times(1)).createUser(eq("__nacos_anonymous__"), anyString());
-        verify(rolePersistService, times(1)).addRole("__nacos_anonymous_role__", "__nacos_anonymous__");
-        verify(permissionPersistService, times(1)).addPermission("__nacos_anonymous_role__", "public:*:ai/*", "r");
+        verify(rolePersistService, times(1)).addRole("__nacos_anonymous_role__",
+                "__nacos_anonymous__");
+        verify(permissionPersistService, times(1)).addPermission("__nacos_anonymous_role__",
+                "public:*:ai/*", "r");
     }
     
     @Test
     void testInitSkipsExistingUser() {
         when(authConfigs.isAiAnonymousEnabled()).thenReturn(true);
-        when(userPersistService.findUserByUsername(AuthConstants.ANONYMOUS_USER)).thenReturn(new User());
+        when(userPersistService.findUserByUsername(AuthConstants.ANONYMOUS_USER))
+                .thenReturn(new User());
         
         initializer.init();
         
         verify(userPersistService, never()).createUser(anyString(), anyString());
-        verify(rolePersistService, times(1)).addRole(AuthConstants.ANONYMOUS_ROLE, AuthConstants.ANONYMOUS_USER);
-        verify(permissionPersistService, times(1)).addPermission(AuthConstants.ANONYMOUS_ROLE, "public:*:ai/*", "r");
+        verify(rolePersistService, times(1)).addRole(AuthConstants.ANONYMOUS_ROLE,
+                AuthConstants.ANONYMOUS_USER);
+        verify(permissionPersistService, times(1)).addPermission(AuthConstants.ANONYMOUS_ROLE,
+                "public:*:ai/*", "r");
     }
     
     @Test
@@ -104,8 +110,10 @@ class AnonymousAccessInitializerTest {
         
         assertDoesNotThrow(() -> initializer.init());
         
-        verify(userPersistService, times(1)).createUser(eq(AuthConstants.ANONYMOUS_USER), anyString());
-        verify(permissionPersistService, times(1)).addPermission(AuthConstants.ANONYMOUS_ROLE, "public:*:ai/*", "r");
+        verify(userPersistService, times(1)).createUser(eq(AuthConstants.ANONYMOUS_USER),
+                anyString());
+        verify(permissionPersistService, times(1)).addPermission(AuthConstants.ANONYMOUS_ROLE,
+                "public:*:ai/*", "r");
     }
     
     @Test
@@ -117,7 +125,9 @@ class AnonymousAccessInitializerTest {
         
         assertDoesNotThrow(() -> initializer.init());
         
-        verify(userPersistService, times(1)).createUser(eq(AuthConstants.ANONYMOUS_USER), anyString());
-        verify(rolePersistService, times(1)).addRole(AuthConstants.ANONYMOUS_ROLE, AuthConstants.ANONYMOUS_USER);
+        verify(userPersistService, times(1)).createUser(eq(AuthConstants.ANONYMOUS_USER),
+                anyString());
+        verify(rolePersistService, times(1)).addRole(AuthConstants.ANONYMOUS_ROLE,
+                AuthConstants.ANONYMOUS_USER);
     }
 }

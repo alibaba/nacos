@@ -52,10 +52,12 @@ public class Md5ComparatorDelegate {
                         each.getClass().getName());
                 continue;
             }
-            LOGGER.info("[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName({}) successfully.",
+            LOGGER.info(
+                    "[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName({}) successfully.",
                     each.getClass().getName(), each.getName());
             if (StringUtils.equals(md5ComparatorType, each.getName())) {
-                LOGGER.info("[Md5ComparatorDelegate] Matched Md5Comparator found,set md5Comparator={}",
+                LOGGER.info(
+                        "[Md5ComparatorDelegate] Matched Md5Comparator found,set md5Comparator={}",
                         each.getClass().getName());
                 md5Comparator = each;
             }
@@ -71,7 +73,8 @@ public class Md5ComparatorDelegate {
         return INSTANCE;
     }
     
-    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
+    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request,
+            HttpServletResponse response,
             Map<String, ConfigListenState> clientMd5Map) {
         return md5Comparator.compareMd5(request, response, clientMd5Map);
     }

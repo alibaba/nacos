@@ -37,7 +37,7 @@ public class RuleDetail {
     String monitorType = "";
     
     public RuleDetail() {
-    
+        
     }
     
     public String getRuleName() {

@@ -52,7 +52,8 @@ public class RemoteServerConnector {
     
     private final ClusterHandler remoteClusterHandler;
     
-    public RemoteServerConnector(NacosMemberManager memberManager, ClusterHandler remoteClusterHandler) {
+    public RemoteServerConnector(NacosMemberManager memberManager,
+            ClusterHandler remoteClusterHandler) {
         this.memberManager = memberManager;
         this.remoteClusterHandler = remoteClusterHandler;
     }
@@ -66,7 +67,8 @@ public class RemoteServerConnector {
         NacosAuthConfig authConfig = NacosAuthConfigHolder.getInstance()
                 .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
         if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
-            request.setHeader(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
+            request.setHeader(authConfig.getServerIdentityKey(),
+                    authConfig.getServerIdentityValue());
         }
     }
     
@@ -92,7 +94,8 @@ public class RemoteServerConnector {
                 .collect(Collectors.toMap(NacosMember::getAddress, NacosMember::getState));
         allMembers.removeIf(node -> !NodeState.UP.equals(nodeStateMap.get(node.getAddress())));
         if (CollectionUtils.isEmpty(allMembers)) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "No healthy server node found.");
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                    "No healthy server node found.");
         }
         return allMembers.parallelStream().findAny().orElseThrow();
     }

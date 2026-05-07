@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 3.2.0
  */
 class PublishPipelineResourceTypeInvariantTest {
-
+    
     /**
      * Enum serialization/deserialization roundtrip consistency.
      *
@@ -43,7 +43,8 @@ class PublishPipelineResourceTypeInvariantTest {
     void enumSerializationRoundtrip() {
         for (PublishPipelineResourceType original : PublishPipelineResourceType.values()) {
             String serialized = original.name();
-            PublishPipelineResourceType deserialized = PublishPipelineResourceType.valueOf(serialized);
+            PublishPipelineResourceType deserialized =
+                    PublishPipelineResourceType.valueOf(serialized);
             assertEquals(original, deserialized,
                     "valueOf(name()) should return the original enum value for " + original);
         }

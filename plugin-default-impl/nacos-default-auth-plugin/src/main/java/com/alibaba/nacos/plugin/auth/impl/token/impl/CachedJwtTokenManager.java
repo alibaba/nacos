@@ -90,7 +90,8 @@ public class CachedJwtTokenManager implements TokenManager {
         }
         String token = jwtTokenManager.createToken(username);
         NacosUser user = jwtTokenManager.parseToken(token);
-        long expiredTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(getTokenValidityInSeconds());
+        long expiredTime =
+                System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(getTokenValidityInSeconds());
         Authentication authentication = jwtTokenManager.getAuthentication(token);
         TokenEntity model = new TokenEntity(token, username, expiredTime, authentication, user);
         tokenMap.put(token, model);
@@ -131,12 +132,14 @@ public class CachedJwtTokenManager implements TokenManager {
         if (username == null || username.isEmpty()) {
             return;
         }
-        long expiredTime = TimeUnit.SECONDS.toMillis(jwtTokenManager.getExpiredTimeInSeconds(token));
+        long expiredTime =
+                TimeUnit.SECONDS.toMillis(jwtTokenManager.getExpiredTimeInSeconds(token));
         if (expiredTime <= System.currentTimeMillis()) {
             return;
         }
         NacosUser user = jwtTokenManager.parseToken(token);
-        tokenMap.putIfAbsent(token, new TokenEntity(token, username, expiredTime, authentication, user));
+        tokenMap.putIfAbsent(token,
+                new TokenEntity(token, username, expiredTime, authentication, user));
     }
     
     @Override
@@ -150,12 +153,14 @@ public class CachedJwtTokenManager implements TokenManager {
         if (username == null || username.isEmpty()) {
             throw new AccessException("invalid token, username is empty");
         }
-        long expiredTime = TimeUnit.SECONDS.toMillis(jwtTokenManager.getExpiredTimeInSeconds(token));
+        long expiredTime =
+                TimeUnit.SECONDS.toMillis(jwtTokenManager.getExpiredTimeInSeconds(token));
         if (expiredTime <= System.currentTimeMillis()) {
             throw new AccessException("expired token");
         }
         NacosUser user = jwtTokenManager.parseToken(token);
-        tokenMap.putIfAbsent(token, new TokenEntity(token, username, expiredTime, authentication, user));
+        tokenMap.putIfAbsent(token,
+                new TokenEntity(token, username, expiredTime, authentication, user));
         return user;
     }
     
@@ -190,7 +195,8 @@ public class CachedJwtTokenManager implements TokenManager {
         
         private NacosUser nacosUser;
         
-        public TokenEntity(String token, String userName, long expiredTimeMills, Authentication authentication,
+        public TokenEntity(String token, String userName, long expiredTimeMills,
+                Authentication authentication,
                 NacosUser nacosUser) {
             this.token = token;
             this.userName = userName;
@@ -241,8 +247,10 @@ public class CachedJwtTokenManager implements TokenManager {
         
         @Override
         public String toString() {
-            return "TokenEntity{" + "token='" + token + '\'' + ", userName='" + userName + '\'' + ", expiredTimeMills="
-                    + expiredTimeMills + ", authentication=" + authentication + ", nacosUser=" + nacosUser + '}';
+            return "TokenEntity{" + "token='" + token + '\'' + ", userName='" + userName + '\''
+                    + ", expiredTimeMills="
+                    + expiredTimeMills + ", authentication=" + authentication + ", nacosUser="
+                    + nacosUser + '}';
         }
     }
     

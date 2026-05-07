@@ -75,7 +75,8 @@ public class PipelineQueryService {
         int offset = (pageNo - 1) * pageSize;
         List<PipelineExecution> list = repository.findByResourceWithPage(resourceType, resourceName,
                 namespaceId, version, offset, pageSize);
-        int totalCount = repository.countByResource(resourceType, resourceName, namespaceId, version);
+        int totalCount =
+                repository.countByResource(resourceType, resourceName, namespaceId, version);
         
         Page<PipelineExecution> page = new Page<>();
         page.setTotalCount(totalCount);

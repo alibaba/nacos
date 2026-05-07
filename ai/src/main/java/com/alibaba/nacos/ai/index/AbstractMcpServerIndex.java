@@ -39,33 +39,36 @@ import com.alibaba.nacos.core.service.NamespaceOperationService;
  * @author xinluo
  */
 public abstract class AbstractMcpServerIndex implements McpServerIndex {
-
+    
     private final NamespaceOperationService namespaceOperationService;
-
+    
     protected final ConfigDetailService configDetailService;
-
-    public AbstractMcpServerIndex(NamespaceOperationService namespaceOperationService, ConfigDetailService configDetailService) {
+    
+    public AbstractMcpServerIndex(NamespaceOperationService namespaceOperationService,
+            ConfigDetailService configDetailService) {
         this.namespaceOperationService = namespaceOperationService;
         this.configDetailService = configDetailService;
     }
-
+    
     protected List<String> fetchOrderedNamespaceList() {
         return namespaceOperationService.getNamespaceList().stream()
-                .sorted(Comparator.comparing(Namespace::getNamespace)).map(Namespace::getNamespace).toList();
+                .sorted(Comparator.comparing(Namespace::getNamespace)).map(Namespace::getNamespace)
+                .toList();
     }
-
+    
     protected McpServerIndexData getFirstMcpServerByName(String name) {
         return fetchOrderedNamespaceList()
-            .stream()
-            .filter(namespaceId -> !StringUtils.isEmpty(namespaceId))
-            .map(namespaceId -> getMcpServerByName(namespaceId, name))
-            .filter(index -> Objects.nonNull(index))
-            .findFirst()
-            .orElse(null);
+                .stream()
+                .filter(namespaceId -> !StringUtils.isEmpty(namespaceId))
+                .map(namespaceId -> getMcpServerByName(namespaceId, name))
+                .filter(index -> Objects.nonNull(index))
+                .findFirst()
+                .orElse(null);
     }
-
+    
     @Override
-    public Page<McpServerIndexData> searchMcpServerByNameWithPage(String namespaceId, String name, String search,
+    public Page<McpServerIndexData> searchMcpServerByNameWithPage(String namespaceId, String name,
+            String search,
             int pageNo, int limit) {
         Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, search, pageNo, limit);
         List<McpServerIndexData> indexDataList = serverInfos.getPageItems().stream()
@@ -79,11 +82,12 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
         Page<McpServerIndexData> result = new Page<>();
         result.setPageItems(indexDataList);
         result.setTotalCount(serverInfos.getTotalCount());
-        result.setPagesAvailable((int) Math.ceil((double) serverInfos.getTotalCount() / (double) limit));
+        result.setPagesAvailable(
+                (int) Math.ceil((double) serverInfos.getTotalCount() / (double) limit));
         result.setPageNumber(pageNo);
         return result;
     }
-
+    
     /**
      * Callback after search operation. Subclasses can implement this to perform additional operations.
      *
@@ -91,11 +95,12 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
      * @param name the search name
      */
     protected abstract void afterSearch(McpServerIndexData searchResult, String name);
-
+    
     /**
      * Search MCP servers.
      */
-    protected Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search, int pageNo,
+    protected Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search,
+            int pageNo,
             int limit) {
         HashMap<String, Object> advanceInfo = new HashMap<>(1);
         if (Objects.isNull(serverName)) {
@@ -114,13 +119,14 @@ public abstract class AbstractMcpServerIndex implements McpServerIndex {
         return configDetailService.findConfigInfoPage(search, pageNo, limit, dataId,
                 Constants.MCP_SERVER_VERSIONS_GROUP, namespace, advanceInfo);
     }
-
+    
     protected McpServerVersionInfo mapToMcpServerVersionInfo(ConfigInfo configInfo) {
-        McpServerVersionInfo obj = JacksonUtils.toObj(configInfo.getContent(), McpServerVersionInfo.class);
+        McpServerVersionInfo obj =
+                JacksonUtils.toObj(configInfo.getContent(), McpServerVersionInfo.class);
         obj.setNamespaceId(configInfo.getTenant());
         return obj;
     }
-
+    
     protected McpServerIndexData mcpToIndexAndUpdateToCache(McpServerVersionInfo versionInfo) {
         McpServerIndexData data = new McpServerIndexData();
         data.setId(versionInfo.getId());

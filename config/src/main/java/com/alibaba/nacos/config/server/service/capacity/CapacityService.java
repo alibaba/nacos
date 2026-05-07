@@ -74,9 +74,11 @@ public class CapacityService {
             watch.start();
             correctUsage();
             watch.stop();
-            LOGGER.info("[capacityManagement] end correct usage, cost: {}s", watch.getTotalTimeSeconds());
+            LOGGER.info("[capacityManagement] end correct usage, cost: {}s",
+                    watch.getTotalTimeSeconds());
             
-        }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
+        }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(),
+                TimeUnit.SECONDS);
     }
     
     public void correctUsage() {
@@ -190,12 +192,20 @@ public class CapacityService {
         if (capacity == null) {
             insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
         }
-        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
+        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER,
+                PropertyUtil.getDefaultClusterQuota(),
                 ignoreQuotaLimit);
     }
     
+    /**
+     * Update cluster usage with counter mode.
+     *
+     * @param counterMode the counter mode
+     * @return true if update successfully
+     */
     public boolean updateClusterUsage(CounterMode counterMode) {
-        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
+        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER,
+                PropertyUtil.getDefaultClusterQuota(),
                 false);
     }
     
@@ -208,12 +218,14 @@ public class CapacityService {
      * @param ignoreQuotaLimit ignoreQuotaLimit flag.
      * @return operate successfully or not.
      */
-    public boolean insertAndUpdateGroupUsage(CounterMode counterMode, String group, boolean ignoreQuotaLimit) {
+    public boolean insertAndUpdateGroupUsage(CounterMode counterMode, String group,
+            boolean ignoreQuotaLimit) {
         GroupCapacity groupCapacity = getGroupCapacity(group);
         if (groupCapacity == null) {
             initGroupCapacity(group, null, null, null, null);
         }
-        return updateGroupUsage(counterMode, group, PropertyUtil.getDefaultGroupQuota(), ignoreQuotaLimit);
+        return updateGroupUsage(counterMode, group, PropertyUtil.getDefaultGroupQuota(),
+                ignoreQuotaLimit);
     }
     
     public boolean updateGroupUsage(CounterMode counterMode, String group) {
@@ -265,9 +277,11 @@ public class CapacityService {
      * @param maxAggrSize  maxAggrSize int value.
      * @return init result.
      */
-    private boolean initGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
+    private boolean initGroupCapacity(String group, Integer quota, Integer maxSize,
+            Integer maxAggrCount,
             Integer maxAggrSize) {
-        boolean insertSuccess = insertGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
+        boolean insertSuccess =
+                insertGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
         if (quota == null) {
             autoExpansion(group, null);
         }
@@ -294,12 +308,16 @@ public class CapacityService {
             int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
-                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the tenant({}), "
-                        + "automatic upgrade to ({})", usage, defaultQuota, tenant, finalQuota);
+                LogUtil.DEFAULT_LOG.warn(
+                        "[capacityManagement] The usage({}) already reach the upper limit({}) when init the tenant({}), "
+                                + "automatic upgrade to ({})",
+                        usage, defaultQuota, tenant, finalQuota);
             } else {
                 groupCapacityPersistService.updateQuota(group, finalQuota);
-                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the group({}), "
-                        + "automatic upgrade to ({})", usage, defaultQuota, group, finalQuota);
+                LogUtil.DEFAULT_LOG.warn(
+                        "[capacityManagement] The usage({}) already reach the upper limit({}) when init the group({}), "
+                                + "automatic upgrade to ({})",
+                        usage, defaultQuota, group, finalQuota);
             }
         }
     }
@@ -378,7 +396,8 @@ public class CapacityService {
         return insertGroupCapacity(group, null, null, null, null);
     }
     
-    private boolean insertGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
+    private boolean insertGroupCapacity(String group, Integer quota, Integer maxSize,
+            Integer maxAggrCount,
             Integer maxAggrSize) {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
@@ -413,7 +432,8 @@ public class CapacityService {
      * @param ignoreQuotaLimit ignoreQuotaLimit flag.
      * @return operate successfully or not.
      */
-    public boolean insertAndUpdateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
+    public boolean insertAndUpdateTenantUsage(CounterMode counterMode, String tenant,
+            boolean ignoreQuotaLimit) {
         NamespaceCapacity tenantCapacity = getTenantCapacity(tenant);
         if (tenantCapacity == null) {
             // Init capacity information.
@@ -422,7 +442,8 @@ public class CapacityService {
         return updateTenantUsage(counterMode, tenant, ignoreQuotaLimit);
     }
     
-    private boolean updateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
+    private boolean updateTenantUsage(CounterMode counterMode, String tenant,
+            boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
         NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setNamespaceId(tenant);
@@ -466,9 +487,11 @@ public class CapacityService {
      * @param maxAggrSize  maxAggrSize int value.
      * @return
      */
-    public boolean initTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
+    public boolean initTenantCapacity(String tenant, Integer quota, Integer maxSize,
+            Integer maxAggrCount,
             Integer maxAggrSize) {
-        boolean insertSuccess = insertTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
+        boolean insertSuccess =
+                insertTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
         if (quota != null) {
             return insertSuccess;
         }
@@ -480,7 +503,8 @@ public class CapacityService {
         return insertTenantCapacity(tenant, null, null, null, null);
     }
     
-    private boolean insertTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
+    private boolean insertTenantCapacity(String tenant, Integer quota, Integer maxSize,
+            Integer maxAggrCount,
             Integer maxAggrSize) {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
@@ -522,19 +546,22 @@ public class CapacityService {
      * @param maxAggrSize  maxAggrSize int value.
      * @return operate successfully or not.
      */
-    public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota, Integer maxSize,
+    public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota,
+            Integer maxSize,
             Integer maxAggrCount, Integer maxAggrSize) {
         if (StringUtils.isNotBlank(tenant)) {
             Capacity capacity = tenantCapacityPersistService.getTenantCapacity(tenant);
             if (capacity == null) {
                 return initTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             }
-            return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
+            return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize,
+                    maxAggrCount, maxAggrSize);
         }
         Capacity capacity = groupCapacityPersistService.getGroupCapacity(group);
         if (capacity == null) {
             return initGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
         }
-        return groupCapacityPersistService.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
+        return groupCapacityPersistService.updateGroupCapacity(group, quota, maxSize, maxAggrCount,
+                maxAggrSize);
     }
 }

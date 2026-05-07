@@ -57,18 +57,18 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 class SkillClientControllerTest {
-
+    
     private static final String SKILL_CLIENT_PATH = Constants.Skills.CLIENT_PATH;
-
+    
     private SkillClientController skillClientController;
-
+    
     private MockMvc mockMvc;
-
+    
     private ConfigurableEnvironment cachedEnvironment;
-
+    
     @Mock
     private SkillOperationService skillOperationService;
-
+    
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
@@ -76,19 +76,19 @@ class SkillClientControllerTest {
         skillClientController = new SkillClientController(skillOperationService);
         mockMvc = MockMvcBuilders.standaloneSetup(skillClientController).build();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnvironment);
     }
-
+    
     @Test
     void testGetSkillWithoutName() throws Throwable {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH);
         assertServletException(NacosApiException.class, () -> mockMvc.perform(builder).andReturn(),
                 "Skill name is required");
     }
-
+    
     @Test
     void testGetSkillByNameSuccess() throws Exception {
         Skill skill = new Skill();
@@ -104,20 +104,21 @@ class SkillClientControllerTest {
         // Response is a ZIP file
         assertEquals("application/octet-stream", response.getContentType());
     }
-
+    
     @Test
     void testGetSkillByLabelSuccess() throws Exception {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(), eq("stable")))
+        when(skillOperationService.querySkill(eq("public"), eq("test-skill"), isNull(),
+                eq("stable")))
                 .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
                 .param("name", "test-skill").param("label", "stable");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
-
+    
     @Test
     void testGetSkillByVersionSuccess() throws Exception {
         Skill skill = new Skill();
@@ -130,21 +131,23 @@ class SkillClientControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
-
+    
     @Test
     void testGetSkillWithNamespaceId() throws Exception {
         Skill skill = new Skill();
         skill.setName("test-skill");
         skill.setSkillMd("---\nname: test-skill\ndescription: desc\n---\n\ninstruction");
-        when(skillOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(), isNull()))
+        when(skillOperationService.querySkill(eq("custom-ns"), eq("test-skill"), isNull(),
+                isNull()))
                 .thenReturn(skill);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(SKILL_CLIENT_PATH)
                 .param("name", "test-skill").param("namespaceId", "custom-ns");
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
-
-    private void assertServletException(Class<? extends Exception> expectedException, Executable executable,
+    
+    private void assertServletException(Class<? extends Exception> expectedException,
+            Executable executable,
             String expectedMessage) throws Throwable {
         try {
             executable.execute();
@@ -153,7 +156,8 @@ class SkillClientControllerTest {
             if (expectedMessage != null) {
                 assertNotNull(e.getCause().getMessage());
                 assertTrue(e.getCause().getMessage().contains(expectedMessage),
-                        "Expected message containing '" + expectedMessage + "', got: " + e.getCause().getMessage());
+                        "Expected message containing '" + expectedMessage + "', got: "
+                                + e.getCause().getMessage());
             }
         }
     }

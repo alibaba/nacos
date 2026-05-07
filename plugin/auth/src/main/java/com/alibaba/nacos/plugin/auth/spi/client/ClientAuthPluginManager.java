@@ -57,7 +57,8 @@ public class ClientAuthPluginManager implements Closeable {
                     clientAuthService.getClass().getCanonicalName());
         }
         if (clientAuthServiceHashSet.isEmpty()) {
-            LOGGER.warn("[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
+            LOGGER.warn(
+                    "[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
         }
     }
     

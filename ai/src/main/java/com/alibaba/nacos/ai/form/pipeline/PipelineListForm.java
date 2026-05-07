@@ -45,7 +45,8 @@ public class PipelineListForm implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(resourceType)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Required parameter 'resourceType' is missing");
         }
     }

@@ -57,6 +57,7 @@ public class IstioConfigProcessor {
     
     public IstioConfigProcessor() {
         NotifyCenter.registerSubscriber(new Subscriber() {
+            
             @Override
             public void onEvent(Event event) {
                 if (event instanceof IstioConfigChangeEvent) {
@@ -78,7 +79,7 @@ public class IstioConfigProcessor {
                 }
                 
             }
-
+            
             @Override
             public Class<? extends Event> subscribeType() {
                 return IstioConfigChangeEvent.class;
@@ -91,7 +92,7 @@ public class IstioConfigProcessor {
             Loggers.MAIN.warn("Configuration content is null or empty.");
             return false;
         }
-    
+        
         Map<String, Object> obj;
         try {
             obj = yaml.load(content);
@@ -102,27 +103,30 @@ public class IstioConfigProcessor {
         
         String apiVersion = obj.containsKey("apiVersion") ? (String) obj.get("apiVersion") : "";
         String kind = obj.containsKey("kind") ? (String) obj.get("kind") : "";
-    
+        
         return API_VERSION.equals(apiVersion) && (VIRTUAL_SERVICE.equals(kind)
-                || DESTINATION_RULE.equals(kind)) && obj.containsKey("metadata") && obj.containsKey("spec");
+                || DESTINATION_RULE.equals(kind)) && obj.containsKey("metadata")
+                && obj.containsKey("spec");
     }
     
     public boolean tryParseContent(String content) {
-    
+        
         if (content == null || content.trim().isEmpty()) {
             Loggers.MAIN.warn("Configuration content is null or empty.");
             return false;
         }
-    
+        
         try {
             Map<String, Object> obj = yaml.load(content);
             String kind = (String) obj.get("kind");
             if (VIRTUAL_SERVICE.equals(kind)) {
                 VirtualService virtualService = yaml.loadAs(content, VirtualService.class);
-                Loggers.MAIN.info("Configuration Content was successfully parsed as VirtualService.");
+                Loggers.MAIN
+                        .info("Configuration Content was successfully parsed as VirtualService.");
             } else if (DESTINATION_RULE.equals(kind)) {
                 DestinationRule destinationRule = yaml.loadAs(content, DestinationRule.class);
-                Loggers.MAIN.info("Configuration Content was successfully parsed as DestinationRule.");
+                Loggers.MAIN
+                        .info("Configuration Content was successfully parsed as DestinationRule.");
             } else {
                 Loggers.MAIN.warn("Unknown Config : Unknown 'kind' field in content: {}", kind);
                 return false;

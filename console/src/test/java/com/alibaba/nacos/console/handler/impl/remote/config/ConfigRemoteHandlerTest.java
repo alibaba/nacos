@@ -72,43 +72,52 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void getConfigListWithPattern() throws NacosException {
         Page<ConfigBasicInfo> mockPage = new Page<>();
-        when(configMaintainerService.searchConfigByDetails(eq("dataId*"), eq("group"), eq("namespaceId"), eq("blur"),
+        when(configMaintainerService.searchConfigByDetails(eq("dataId*"), eq("group"),
+                eq("namespaceId"), eq("blur"),
                 any(), any(), any(), any(), eq(1), eq(100))).thenReturn(mockPage);
-        Page<ConfigBasicInfo> actual = configRemoteHandler.getConfigList(1, 100, "dataId*", "group", "namespaceId",
-                new HashMap<>());
+        Page<ConfigBasicInfo> actual =
+                configRemoteHandler.getConfigList(1, 100, "dataId*", "group", "namespaceId",
+                        new HashMap<>());
         assertEquals(mockPage, actual);
     }
     
     @Test
     void getConfigListWithoutPattern() throws NacosException {
         Page<ConfigBasicInfo> mockPage = new Page<>();
-        when(configMaintainerService.searchConfigByDetails(eq("dataId"), eq("group"), eq("namespaceId"), eq("accurate"),
+        when(configMaintainerService.searchConfigByDetails(eq("dataId"), eq("group"),
+                eq("namespaceId"), eq("accurate"),
                 any(), any(), any(), any(), eq(1), eq(100))).thenReturn(mockPage);
-        Page<ConfigBasicInfo> actual = configRemoteHandler.getConfigList(1, 100, "dataId", "group", "namespaceId",
-                new HashMap<>());
+        Page<ConfigBasicInfo> actual =
+                configRemoteHandler.getConfigList(1, 100, "dataId", "group", "namespaceId",
+                        new HashMap<>());
         assertEquals(mockPage, actual);
     }
     
     @Test
     void getConfigDetail() throws NacosException {
         ConfigDetailInfo mock = new ConfigDetailInfo();
-        when(configMaintainerService.getConfig(eq("dataId"), eq("group"), eq("namespaceId"))).thenReturn(mock);
-        ConfigDetailInfo actual = configRemoteHandler.getConfigDetail("dataId", "group", "namespaceId");
+        when(configMaintainerService.getConfig(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenReturn(mock);
+        ConfigDetailInfo actual =
+                configRemoteHandler.getConfigDetail("dataId", "group", "namespaceId");
         assertEquals(mock, actual);
     }
     
     @Test
     void getConfigDetailNotFound() throws NacosException {
-        when(configMaintainerService.getConfig(eq("dataId"), eq("group"), eq("namespaceId"))).thenThrow(
-                new NacosException(404, "not found"));
+        when(configMaintainerService.getConfig(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenThrow(
+                        new NacosException(404, "not found"));
         assertNull(configRemoteHandler.getConfigDetail("dataId", "group", "namespaceId"));
     }
     
     @Test
     void getConfigDetailWithException() throws NacosException {
-        when(configMaintainerService.getConfig(eq("dataId"), eq("group"), eq("namespaceId"))).thenThrow(
-                new NacosException(403, "test"));
-        assertThrows(NacosException.class, () -> configRemoteHandler.getConfigDetail("dataId", "group", "namespaceId"));
+        when(configMaintainerService.getConfig(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenThrow(
+                        new NacosException(403, "test"));
+        assertThrows(NacosException.class,
+                () -> configRemoteHandler.getConfigDetail("dataId", "group", "namespaceId"));
     }
     
     @Test
@@ -119,7 +128,8 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configForm.setNamespaceId("namespaceId");
         configForm.setContent("content");
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        when(configMaintainerService.publishConfig(eq("dataId"), eq("group"), eq("namespaceId"), eq("content"), any(),
+        when(configMaintainerService.publishConfig(eq("dataId"), eq("group"), eq("namespaceId"),
+                eq("content"), any(),
                 any(), any(), any(), any())).thenReturn(true);
         assertTrue(configRemoteHandler.publishConfig(configForm, configRequestInfo));
     }
@@ -133,49 +143,59 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         configForm.setContent("content");
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setBetaIps("127.0.0.1");
-        when(configMaintainerService.publishBetaConfig(eq("dataId"), eq("group"), eq("namespaceId"), eq("content"),
+        when(configMaintainerService.publishBetaConfig(eq("dataId"), eq("group"), eq("namespaceId"),
+                eq("content"),
                 any(), any(), any(), any(), any(), eq("127.0.0.1"))).thenReturn(true);
         assertTrue(configRemoteHandler.publishConfig(configForm, configRequestInfo));
     }
     
     @Test
     void deleteConfig() throws NacosException {
-        when(configMaintainerService.deleteConfig(eq("dataId"), eq("group"), eq("namespaceId"))).thenReturn(true);
-        assertTrue(configRemoteHandler.deleteConfig("dataId", "group", "namespaceId", null, null, null));
+        when(configMaintainerService.deleteConfig(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenReturn(true);
+        assertTrue(configRemoteHandler.deleteConfig("dataId", "group", "namespaceId", null, null,
+                null));
     }
     
     @Test
     void batchDeleteConfigs() throws NacosException {
         when(configMaintainerService.deleteConfigs(any())).thenReturn(true);
-        assertTrue(configRemoteHandler.batchDeleteConfigs(Collections.singletonList(1L), null, null));
+        assertTrue(
+                configRemoteHandler.batchDeleteConfigs(Collections.singletonList(1L), null, null));
     }
     
     @Test
     void getConfigListByContent() throws NacosException {
         Page<ConfigBasicInfo> mockPage = new Page<>();
-        when(configMaintainerService.searchConfigByDetails(eq("dataId"), eq("group"), eq("namespaceId"), eq("blur"),
+        when(configMaintainerService.searchConfigByDetails(eq("dataId"), eq("group"),
+                eq("namespaceId"), eq("blur"),
                 eq("test"), any(), any(), any(), eq(1), eq(100))).thenReturn(mockPage);
-        Page<ConfigBasicInfo> actual = configRemoteHandler.getConfigListByContent("blur", 1, 100, "dataId", "group",
-                "namespaceId", Collections.singletonMap("content", "test"));
+        Page<ConfigBasicInfo> actual =
+                configRemoteHandler.getConfigListByContent("blur", 1, 100, "dataId", "group",
+                        "namespaceId", Collections.singletonMap("content", "test"));
         assertEquals(mockPage, actual);
     }
     
     @Test
     void getListeners() throws Exception {
         ConfigListenerInfo mock = new ConfigListenerInfo();
-        when(configMaintainerService.getListeners(eq("dataId"), eq("group"), eq("namespaceId"), eq(true))).thenReturn(
-                mock);
-        ConfigListenerInfo actual = configRemoteHandler.getListeners("dataId", "group", "namespaceId", true);
+        when(configMaintainerService.getListeners(eq("dataId"), eq("group"), eq("namespaceId"),
+                eq(true))).thenReturn(
+                        mock);
+        ConfigListenerInfo actual =
+                configRemoteHandler.getListeners("dataId", "group", "namespaceId", true);
         assertEquals(mock, actual);
     }
     
     @Test
     void getAllSubClientConfigByIp() throws NacosException {
         ConfigListenerInfo mock = new ConfigListenerInfo();
-        when(configMaintainerService.getAllSubClientConfigByIp(eq("127.0.0.1"), eq(true), eq("namespaceId"),
+        when(configMaintainerService.getAllSubClientConfigByIp(eq("127.0.0.1"), eq(true),
+                eq("namespaceId"),
                 eq(true))).thenReturn(mock);
-        ConfigListenerInfo actual = configRemoteHandler.getAllSubClientConfigByIp("127.0.0.1", true, "namespaceId",
-                true);
+        ConfigListenerInfo actual =
+                configRemoteHandler.getAllSubClientConfigByIp("127.0.0.1", true, "namespaceId",
+                        true);
         assertEquals(mock, actual);
     }
     
@@ -186,8 +206,9 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         ResponseEntity<byte[]> mock = new ResponseEntity<>(new byte[0], HttpStatus.OK);
         when(importAndExportService.exportConfig("dataId", "group", "namespaceId", "appName",
                 Collections.singletonList(1L))).thenReturn(mock);
-        ResponseEntity<byte[]> actual = configRemoteHandler.exportConfig("dataId", "group", "namespaceId", "appName",
-                Collections.singletonList(1L));
+        ResponseEntity<byte[]> actual =
+                configRemoteHandler.exportConfig("dataId", "group", "namespaceId", "appName",
+                        Collections.singletonList(1L));
         assertEquals(mock, actual);
     }
     
@@ -196,53 +217,65 @@ class ConfigRemoteHandlerTest extends AbstractRemoteHandlerTest {
         // remove lenient warning
         clientHolder.getConfigMaintainerService();
         Result<Map<String, Object>> mock = Result.success();
-        when(importAndExportService.importConfig(any(), eq("namespaceId"), eq(SameConfigPolicy.OVERWRITE),
+        when(importAndExportService.importConfig(any(), eq("namespaceId"),
+                eq(SameConfigPolicy.OVERWRITE),
                 any(MultipartFile.class), any(), any())).thenReturn(mock);
         MultipartFile mockFile = Mockito.mock(MultipartFile.class);
-        Result<Map<String, Object>> actual = configRemoteHandler.importAndPublishConfig("srcUser", "namespaceId",
-                SameConfigPolicy.OVERWRITE, mockFile, "srcIp", "requestIpApp");
+        Result<Map<String, Object>> actual =
+                configRemoteHandler.importAndPublishConfig("srcUser", "namespaceId",
+                        SameConfigPolicy.OVERWRITE, mockFile, "srcIp", "requestIpApp");
         assertEquals(mock, actual);
     }
     
     @Test
     void cloneConfig() throws NacosException {
-        SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean = new SameNamespaceCloneConfigBean();
+        SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean =
+                new SameNamespaceCloneConfigBean();
         sameNamespaceCloneConfigBean.setCfgId(1L);
         when(configMaintainerService.cloneConfig(eq("namespaceId"), any(), eq("srcUser"),
                 eq(SameConfigPolicy.OVERWRITE))).thenReturn(Collections.singletonMap("1", 1));
-        Result<Map<String, Object>> actual = configRemoteHandler.cloneConfig("srcUser", "namespaceId",
-                Collections.singletonList(sameNamespaceCloneConfigBean), SameConfigPolicy.OVERWRITE, "srcIp",
-                "requestIpApp");
+        Result<Map<String, Object>> actual =
+                configRemoteHandler.cloneConfig("srcUser", "namespaceId",
+                        Collections.singletonList(sameNamespaceCloneConfigBean),
+                        SameConfigPolicy.OVERWRITE, "srcIp",
+                        "requestIpApp");
         assertEquals(0, actual.getCode());
         assertEquals(1, actual.getData().size());
     }
     
     @Test
     void removeBetaConfig() throws NacosException {
-        when(configMaintainerService.stopBeta(eq("dataId"), eq("group"), eq("namespaceId"))).thenReturn(true);
-        assertTrue(configRemoteHandler.removeBetaConfig("dataId", "group", "namespaceId", "remoteIp", "requestIpApp",
+        when(configMaintainerService.stopBeta(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenReturn(true);
+        assertTrue(configRemoteHandler.removeBetaConfig("dataId", "group", "namespaceId",
+                "remoteIp", "requestIpApp",
                 "srcUser"));
     }
     
     @Test
     void queryBetaConfig() throws NacosException {
         ConfigGrayInfo mock = new ConfigGrayInfo();
-        when(configMaintainerService.queryBeta(eq("dataId"), eq("group"), eq("namespaceId"))).thenReturn(mock);
-        ConfigGrayInfo actual = configRemoteHandler.queryBetaConfig("dataId", "group", "namespaceId");
+        when(configMaintainerService.queryBeta(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenReturn(mock);
+        ConfigGrayInfo actual =
+                configRemoteHandler.queryBetaConfig("dataId", "group", "namespaceId");
         assertEquals(mock, actual);
     }
     
     @Test
     void queryBetaConfigNotFound() throws NacosException {
-        when(configMaintainerService.queryBeta(eq("dataId"), eq("group"), eq("namespaceId"))).thenThrow(
-                new NacosException(404, "test"));
+        when(configMaintainerService.queryBeta(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenThrow(
+                        new NacosException(404, "test"));
         assertNull(configRemoteHandler.queryBetaConfig("dataId", "group", "namespaceId"));
     }
     
     @Test
     void queryBetaConfigWithException() throws NacosException {
-        when(configMaintainerService.queryBeta(eq("dataId"), eq("group"), eq("namespaceId"))).thenThrow(
-                new NacosException(403, "test"));
-        assertThrows(NacosException.class, () -> configRemoteHandler.queryBetaConfig("dataId", "group", "namespaceId"));
+        when(configMaintainerService.queryBeta(eq("dataId"), eq("group"), eq("namespaceId")))
+                .thenThrow(
+                        new NacosException(403, "test"));
+        assertThrows(NacosException.class,
+                () -> configRemoteHandler.queryBetaConfig("dataId", "group", "namespaceId"));
     }
 }

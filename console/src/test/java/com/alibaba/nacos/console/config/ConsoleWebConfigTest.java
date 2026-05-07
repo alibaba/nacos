@@ -101,8 +101,9 @@ class ConsoleWebConfigTest {
     
     @Test
     void authFilterRegistration() {
-        FilterRegistrationBean<NacosConsoleAuthFilter> registration = consoleWebConfig.authFilterRegistration(
-                consoleWebConfig.consoleAuthFilter(methodsCache));
+        FilterRegistrationBean<NacosConsoleAuthFilter> registration =
+                consoleWebConfig.authFilterRegistration(
+                        consoleWebConfig.consoleAuthFilter(methodsCache));
         assertInstanceOf(NacosConsoleAuthFilter.class, registration.getFilter());
         assertEquals("consoleAuthFilter", registration.getFilterName());
         assertEquals(6, registration.getOrder());
@@ -112,8 +113,9 @@ class ConsoleWebConfigTest {
     
     @Test
     void consoleParamCheckerFilterRegistration() {
-        FilterRegistrationBean<ParamCheckerFilter> registration = consoleWebConfig.consoleParamCheckerFilterRegistration(
-                consoleWebConfig.consoleParamCheckerFilter(methodsCache));
+        FilterRegistrationBean<ParamCheckerFilter> registration =
+                consoleWebConfig.consoleParamCheckerFilterRegistration(
+                        consoleWebConfig.consoleParamCheckerFilter(methodsCache));
         assertInstanceOf(ParamCheckerFilter.class, registration.getFilter());
         assertEquals("consoleParamCheckerFilter", registration.getFilterName());
         assertEquals(8, registration.getOrder());
@@ -132,14 +134,17 @@ class ConsoleWebConfigTest {
     @Test
     void securityFilterChain() throws Exception {
         HttpSecurity mockHttpSecurity = Mockito.mock(HttpSecurity.class);
-        AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry mockRegistry = Mockito.mock(
-                AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry.class);
-        when(mockHttpSecurity.authorizeHttpRequests(any())).then((Answer<HttpSecurity>) invocation -> {
-            Customizer customizer = invocation.getArgument(0, Customizer.class);
-            customizer.customize(mockRegistry);
-            return (HttpSecurity) invocation.getMock();
-        });
-        DefaultSecurityFilterChain mockSecurityFilterChai = Mockito.mock(DefaultSecurityFilterChain.class);
+        AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry mockRegistry =
+                Mockito.mock(
+                        AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry.class);
+        when(mockHttpSecurity.authorizeHttpRequests(any()))
+                .then((Answer<HttpSecurity>) invocation -> {
+                    Customizer customizer = invocation.getArgument(0, Customizer.class);
+                    customizer.customize(mockRegistry);
+                    return (HttpSecurity) invocation.getMock();
+                });
+        DefaultSecurityFilterChain mockSecurityFilterChai =
+                Mockito.mock(DefaultSecurityFilterChain.class);
         when(mockHttpSecurity.build()).thenReturn(mockSecurityFilterChai);
         AuthorizeHttpRequestsConfigurer.AuthorizedUrl mockAuthorizedUrl = Mockito.mock(
                 AuthorizeHttpRequestsConfigurer.AuthorizedUrl.class);
@@ -151,6 +156,7 @@ class ConsoleWebConfigTest {
     
     @Test
     void nacosApiExceptionHandler() {
-        assertInstanceOf(NacosApiExceptionHandler.class, consoleWebConfig.nacosApiExceptionHandler());
+        assertInstanceOf(NacosApiExceptionHandler.class,
+                consoleWebConfig.nacosApiExceptionHandler());
     }
 }

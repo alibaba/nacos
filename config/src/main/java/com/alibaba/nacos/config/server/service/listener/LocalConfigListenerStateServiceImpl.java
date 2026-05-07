@@ -46,16 +46,19 @@ public class LocalConfigListenerStateServiceImpl implements ConfigListenerStateS
     private final ConnectionManager connectionManager;
     
     public LocalConfigListenerStateServiceImpl(LongPollingService longPollingService,
-            ConfigChangeListenContext configChangeListenContext, ConnectionManager connectionManager) {
+            ConfigChangeListenContext configChangeListenContext,
+            ConnectionManager connectionManager) {
         this.longPollingService = longPollingService;
         this.configChangeListenContext = configChangeListenContext;
         this.connectionManager = connectionManager;
     }
     
     @Override
-    public ConfigListenerInfo getListenerState(String dataId, String groupName, String namespaceId) {
+    public ConfigListenerInfo getListenerState(String dataId, String groupName,
+            String namespaceId) {
         // long polling listeners for 1.x client TODO removed after 3.x not support 1.x client.
-        SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, groupName, namespaceId);
+        SampleResult result =
+                longPollingService.getCollectSubscribleInfo(dataId, groupName, namespaceId);
         // rpc listeners for upper 2.x client.
         String groupKey = GroupKey2.getKey(dataId, groupName, namespaceId);
         Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);

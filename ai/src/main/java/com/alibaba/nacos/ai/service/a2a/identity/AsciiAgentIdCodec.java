@@ -75,7 +75,7 @@ public class AsciiAgentIdCodec implements AgentIdCodec {
         
         String body = agentId.substring(ENCODE_PREFIX.length());
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < body.length(); ) {
+        for (int i = 0; i < body.length();) {
             char ch = body.charAt(i);
             if (ch == '_' && i + 4 <= body.length()) {
                 String codePart = body.substring(i + 1, i + 4);

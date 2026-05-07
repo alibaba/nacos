@@ -55,7 +55,8 @@ public class EmbeddedDumpService extends DumpService {
     /**
      * If it's just a normal reading failure, it can be resolved by retrying.
      */
-    final String[] retryMessages = new String[] {"The conformance protocol is temporarily unavailable for reading"};
+    final String[] retryMessages =
+            new String[] {"The conformance protocol is temporarily unavailable for reading"};
     
     /**
      * If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying.
@@ -74,7 +75,8 @@ public class EmbeddedDumpService extends DumpService {
     public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, ServerMemberManager memberManager,
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ServerMemberManager memberManager,
             ProtocolManager protocolManager, ConfigMigrateService configMigrateService) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
                 configInfoGrayPersistService, memberManager, configMigrateService);
@@ -108,14 +110,16 @@ public class EmbeddedDumpService extends DumpService {
                         return;
                     }
                     // Identify without a timeout mechanism
-                    EmbeddedStorageContextHolder.putExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
+                    EmbeddedStorageContextHolder.putExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
                             "true");
                     // Remove your own listening to avoid task accumulation
                     boolean canEnd = false;
-                    for (; ; ) {
+                    for (;;) {
                         try {
                             dumpOperate();
-                            protocol.protocolMetaData().unSubscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP,
+                            protocol.protocolMetaData().unSubscribe(
+                                    PersistenceConstant.CONFIG_MODEL_RAFT_GROUP,
                                     MetadataKey.LEADER_META_DATA, this);
                             canEnd = true;
                         } catch (Throwable ex) {
@@ -136,7 +140,8 @@ public class EmbeddedDumpService extends DumpService {
         };
         
         protocol.protocolMetaData()
-                .subscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, observer);
+                .subscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP,
+                        MetadataKey.LEADER_META_DATA, observer);
         
         // We must wait for the dump task to complete the callback operation before
         // continuing with the initialization

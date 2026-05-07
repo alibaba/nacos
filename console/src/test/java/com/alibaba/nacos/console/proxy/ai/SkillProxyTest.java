@@ -89,7 +89,8 @@ public class SkillProxyTest {
                 com.alibaba.nacos.api.model.v2.ErrorCode.RESOURCE_NOT_FOUND, "version not found");
         doThrow(expectedException).when(skillHandler).forcePublish(any(SkillPublishForm.class));
         
-        NacosApiException ex = assertThrows(NacosApiException.class, () -> skillProxy.forcePublish(form));
+        NacosApiException ex =
+                assertThrows(NacosApiException.class, () -> skillProxy.forcePublish(form));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
     }
     

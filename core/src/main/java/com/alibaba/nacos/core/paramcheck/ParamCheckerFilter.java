@@ -71,15 +71,18 @@ public class ParamCheckerFilter implements Filter {
                 chain.doFilter(req, resp);
                 return;
             }
-            ExtractorManager.Extractor extractor = method.getAnnotation(ExtractorManager.Extractor.class);
+            ExtractorManager.Extractor extractor =
+                    method.getAnnotation(ExtractorManager.Extractor.class);
             if (extractor == null) {
-                extractor = method.getDeclaringClass().getAnnotation(ExtractorManager.Extractor.class);
+                extractor =
+                        method.getDeclaringClass().getAnnotation(ExtractorManager.Extractor.class);
                 if (extractor == null) {
                     chain.doFilter(request, response);
                     return;
                 }
             }
-            AbstractHttpParamExtractor httpParamExtractor = ExtractorManager.getHttpExtractor(extractor);
+            AbstractHttpParamExtractor httpParamExtractor =
+                    ExtractorManager.getHttpExtractor(extractor);
             List<ParamInfo> paramInfoList = httpParamExtractor.extractParam(req);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(
@@ -88,7 +91,8 @@ public class ParamCheckerFilter implements Filter {
             if (paramCheckResponse.isSuccess()) {
                 chain.doFilter(req, resp);
             } else {
-                Loggers.CONTROL.info("Param check invalid,{},url:{}", paramCheckResponse.getMessage(),
+                Loggers.CONTROL.info("Param check invalid,{},url:{}",
+                        paramCheckResponse.getMessage(),
                         req.getRequestURI());
                 generate400Response(resp, paramCheckResponse.getMessage());
             }
@@ -113,7 +117,8 @@ public class ParamCheckerFilter implements Filter {
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
             response.setContentType(MediaType.APPLICATION_JSON);
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            Result<String> result = Result.failure(com.alibaba.nacos.api.model.v2.ErrorCode.PARAMETER_VALIDATE_ERROR,
+            Result<String> result = Result.failure(
+                    com.alibaba.nacos.api.model.v2.ErrorCode.PARAMETER_VALIDATE_ERROR,
                     message);
             response.getWriter().write(JacksonUtils.toJson(result));
         } catch (Exception ex) {

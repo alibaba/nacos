@@ -57,7 +57,8 @@ public class NamingFuzzyWatchLoadEvent extends Event {
      * @param groupKeyPattern The groupKey of the configuration.
      * @return A new FuzzyListenNotifyEvent instance.
      */
-    public static NamingFuzzyWatchLoadEvent buildEvent(int code, String groupKeyPattern, String scope) {
+    public static NamingFuzzyWatchLoadEvent buildEvent(int code, String groupKeyPattern,
+            String scope) {
         return new NamingFuzzyWatchLoadEvent(code, groupKeyPattern, scope);
     }
     

@@ -35,7 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class A2aNoopHandlerTest {
     
-    private static final String A2A_NOT_ENABLED_MESSAGE = "Nacos AI A2A module and API required both `naming` and `config` module.";
+    private static final String A2A_NOT_ENABLED_MESSAGE =
+            "Nacos AI A2A module and API required both `naming` and `config` module.";
     
     private A2aNoopHandler a2aNoopHandler;
     
@@ -83,13 +84,15 @@ public class A2aNoopHandlerTest {
         AgentListForm agentListForm = new AgentListForm();
         PageForm pageForm = new PageForm();
         
-        assertThrows(NacosApiException.class, () -> a2aNoopHandler.listAgents(agentListForm, pageForm),
+        assertThrows(NacosApiException.class,
+                () -> a2aNoopHandler.listAgents(agentListForm, pageForm),
                 A2A_NOT_ENABLED_MESSAGE);
     }
     
     @Test
     void listAgentVersions() {
-        assertThrows(NacosApiException.class, () -> a2aNoopHandler.listAgentVersions("namespace", "agentName"),
+        assertThrows(NacosApiException.class,
+                () -> a2aNoopHandler.listAgentVersions("namespace", "agentName"),
                 A2A_NOT_ENABLED_MESSAGE);
     }
 }

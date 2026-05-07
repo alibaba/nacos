@@ -57,7 +57,8 @@ public class SkillDraftCreateForm extends SkillDetailForm {
         fillDefaultNamespaceId();
         if (StringUtils.isNotBlank(basedOnVersion)) {
             if (StringUtils.isEmpty(getSkillName())) {
-                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                        ErrorCode.PARAMETER_MISSING,
                         "Required parameter 'skillName' when basedOnVersion is set");
             }
             return;
@@ -78,7 +79,8 @@ public class SkillDraftCreateForm extends SkillDetailForm {
         resolvedInitialSkill = parseInitialSkillOrNull();
         String skillName = requireResolvedSkillName(resolvedInitialSkill);
         if (resolvedInitialSkill != null) {
-            SkillRequestUtil.validateInitialDraftSkill(resolvedInitialSkill, getNamespaceId(), skillName);
+            SkillRequestUtil.validateInitialDraftSkill(resolvedInitialSkill, getNamespaceId(),
+                    skillName);
         }
         setSkillName(skillName);
     }
@@ -120,7 +122,8 @@ public class SkillDraftCreateForm extends SkillDetailForm {
         }
         Skill skill = SkillRequestUtil.parseSkill(this);
         if (StringUtils.isNotBlank(getSkillName()) && !getSkillName().equals(skill.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "skillCard name must match skillName parameter");
         }
         return skill;

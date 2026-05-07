@@ -47,8 +47,10 @@ public class PushResult {
     
     private final boolean isPushToAll;
     
-    private PushResult(boolean pushSuccess, String subscribeClientId, Service service, ServiceInfo data,
-            Subscriber subscriber, long networkCost, long allCost, long sla, Throwable exception, boolean isPushToAll) {
+    private PushResult(boolean pushSuccess, String subscribeClientId, Service service,
+            ServiceInfo data,
+            Subscriber subscriber, long networkCost, long allCost, long sla, Throwable exception,
+            boolean isPushToAll) {
         this.pushSuccess = pushSuccess;
         this.subscribeClientId = subscribeClientId;
         this.service = service;
@@ -61,15 +63,43 @@ public class PushResult {
         this.isPushToAll = isPushToAll;
     }
     
-    public static PushResult pushSuccess(Service service, String subscribeClientId, ServiceInfo data,
+    /**
+     * Create a successful push result.
+     *
+     * @param service the service
+     * @param subscribeClientId the subscribe client id
+     * @param data the service info data
+     * @param subscriber the subscriber
+     * @param networkCost the network cost in milliseconds
+     * @param allCost the total cost in milliseconds
+     * @param sla the sla in milliseconds
+     * @param isPushToAll whether push to all subscribers
+     * @return push result
+     */
+    public static PushResult pushSuccess(Service service, String subscribeClientId,
+            ServiceInfo data,
             Subscriber subscriber, long networkCost, long allCost, long sla, boolean isPushToAll) {
-        return new PushResult(true, subscribeClientId, service, data, subscriber, networkCost, allCost, sla, null,
+        return new PushResult(true, subscribeClientId, service, data, subscriber, networkCost,
+                allCost, sla, null,
                 isPushToAll);
     }
     
+    /**
+     * Create a failed push result.
+     *
+     * @param service the service
+     * @param subscribeClientId the subscribe client id
+     * @param data the service info data
+     * @param subscriber the subscriber
+     * @param allCost the total cost in milliseconds
+     * @param exception the exception
+     * @param isPushToAll whether push to all subscribers
+     * @return push result
+     */
     public static PushResult pushFailed(Service service, String subscribeClientId, ServiceInfo data,
             Subscriber subscriber, long allCost, Throwable exception, boolean isPushToAll) {
-        return new PushResult(false, subscribeClientId, service, data, subscriber, -1, allCost, -1, exception,
+        return new PushResult(false, subscribeClientId, service, data, subscriber, -1, allCost, -1,
+                exception,
                 isPushToAll);
     }
     

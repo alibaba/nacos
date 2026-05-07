@@ -144,7 +144,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         }
         
         try {
-            Page<User> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
+            Page<User> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                    params.toArray(), pageNo,
                     pageSize, USER_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
@@ -161,7 +162,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ?";
-        List<String> users = this.jt.queryForList(sql, new String[] {String.format("%%%s%%", username)}, String.class);
+        List<String> users = this.jt.queryForList(sql,
+                new String[] {String.format("%%%s%%", username)}, String.class);
         return users;
     }
     
@@ -179,7 +181,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         
         AuthPaginationHelper<User> helper = createPaginationHelper();
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                    pageNo, pageSize,
                     USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LOGGER.error("[db-error] " + e.toString(), e);

@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Component
 public class CopilotAgentManager {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(CopilotAgentManager.class);
     
     private final CopilotConfigStorage configStorage;
@@ -48,13 +48,13 @@ public class CopilotAgentManager {
     
     @Autowired
     public CopilotAgentManager(CopilotConfigStorage configStorage,
-                               CopilotProperties defaultProperties,
-                               Environment environment) {
+            CopilotProperties defaultProperties,
+            Environment environment) {
         this.configStorage = configStorage;
         this.defaultProperties = defaultProperties;
         this.environment = environment;
     }
-
+    
     /**
      * Initialize AgentScope Studio if studioUrl is configured.
      * This method should be called without holding any locks.
@@ -76,7 +76,8 @@ public class CopilotAgentManager {
             if (StringUtils.isBlank(studioProject)) {
                 studioProject = "NacosCopilot";
             }
-            LOGGER.info("Initializing AgentScope Studio with URL: {}, Project: {}", studioUrl, studioProject);
+            LOGGER.info("Initializing AgentScope Studio with URL: {}, Project: {}", studioUrl,
+                    studioProject);
             StudioManager.init()
                     .studioUrl(studioUrl)
                     .project(studioProject)

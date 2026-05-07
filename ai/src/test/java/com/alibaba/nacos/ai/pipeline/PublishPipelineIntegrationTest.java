@@ -83,7 +83,8 @@ class PublishPipelineIntegrationTest {
     @BeforeEach
     void setUp() {
         JdbcDataSource dataSource = new JdbcDataSource();
-        dataSource.setURL("jdbc:h2:mem:integration_test_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
+        dataSource
+                .setURL("jdbc:h2:mem:integration_test_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
         jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.execute(CREATE_TABLE_SQL);
         repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
@@ -93,6 +94,7 @@ class PublishPipelineIntegrationTest {
     
     private static ExecutorService directExecutor() {
         return new AbstractExecutorService() {
+            
             private volatile boolean shutdown = false;
             
             @Override
@@ -132,6 +134,7 @@ class PublishPipelineIntegrationTest {
     
     private static PublishPipelineService passingService(String id, int order) {
         return new PublishPipelineService() {
+            
             @Override
             public String pipelineId() {
                 return id;
@@ -158,6 +161,7 @@ class PublishPipelineIntegrationTest {
     
     private static PublishPipelineService failingService(String id, int order) {
         return new PublishPipelineService() {
+            
             @Override
             public String pipelineId() {
                 return id;
@@ -184,6 +188,7 @@ class PublishPipelineIntegrationTest {
     
     private static PublishPipelineServiceBuilder builderFor(PublishPipelineService service) {
         return new PublishPipelineServiceBuilder() {
+            
             @Override
             public String pipelineId() {
                 return service.pipelineId();
@@ -216,6 +221,7 @@ class PublishPipelineIntegrationTest {
     
     private static PipelineConfigProvider fixedConfigProvider(PipelineConfig config) {
         return new PipelineConfigProvider() {
+            
             @Override
             public PipelineConfig getConfig() {
                 return config;

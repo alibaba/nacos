@@ -60,7 +60,8 @@ class NacosMcpServerCacheHolderTest {
     void setUp() {
         Properties properties = new Properties();
         properties.put(AiConstants.AI_MCP_SERVER_CACHE_UPDATE_INTERVAL, "100");
-        cacheHolder = new NacosMcpServerCacheHolder(aiGrpcClient, NacosClientProperties.PROTOTYPE.derive(properties));
+        cacheHolder = new NacosMcpServerCacheHolder(aiGrpcClient,
+                NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @AfterEach
@@ -204,7 +205,8 @@ class NacosMcpServerCacheHolderTest {
         cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
         verify(aiGrpcClient, timeout(1200).atLeast(2)).queryMcpServer("test", "1.0.0");
         long deadline = System.currentTimeMillis() + 1000;
-        while (cacheHolder.getMcpServer("test", "1.0.0") == null && System.currentTimeMillis() < deadline) {
+        while (cacheHolder.getMcpServer("test", "1.0.0") == null
+                && System.currentTimeMillis() < deadline) {
             TimeUnit.MILLISECONDS.sleep(20);
         }
         assertNotNull(cacheHolder.getMcpServer("test", "1.0.0"));

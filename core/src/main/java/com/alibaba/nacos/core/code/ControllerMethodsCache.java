@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
 
-
 /**
  * Method cache.
  *
@@ -63,14 +62,16 @@ public class ControllerMethodsCache {
     
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
     
-    private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup =
+            new ConcurrentHashMap<>();
     
     private final Set<Class> scannedClass = new HashSet<>();
     
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
         String httpMethod = request.getMethod();
-        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replaceFirst(EnvUtil.getContextPath(), "");
+        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR
+                + path.replaceFirst(EnvUtil.getContextPath(), "");
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (CollectionUtils.isEmpty(requestMappingInfos)) {
             return null;
@@ -87,7 +88,8 @@ public class ControllerMethodsCache {
             RequestMappingInfo secondBestMatch = matchedInfo.get(1);
             if (comparator.compare(bestMatch, secondBestMatch) == 0) {
                 throw new IllegalStateException(
-                        "Ambiguous methods mapped for '" + request.getRequestURI() + "': {" + bestMatch + ", "
+                        "Ambiguous methods mapped for '" + request.getRequestURI() + "': {"
+                                + bestMatch + ", "
                                 + secondBestMatch + "}");
             }
         }
@@ -123,7 +125,8 @@ public class ControllerMethodsCache {
      */
     public void initClassMethod(String packageName) {
         DefaultPackageScan packageScan = new DefaultPackageScan();
-        Set<Class<Object>> classesList = packageScan.getTypesAnnotatedWith(packageName, RequestMapping.class);
+        Set<Class<Object>> classesList =
+                packageScan.getTypesAnnotatedWith(packageName, RequestMapping.class);
         for (Class clazz : classesList) {
             initClassMethod(clazz);
         }
@@ -167,7 +170,8 @@ public class ControllerMethodsCache {
                     String[] value = requestMapping.value();
                     if (value.length > 0) {
                         for (String methodPath : requestMapping.value()) {
-                            String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
+                            String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR
+                                    + classPath + methodPath;
                             addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
                         }
                     } else {
@@ -201,16 +205,19 @@ public class ControllerMethodsCache {
         }
         
         if (deleteMapping != null) {
-            put(RequestMethod.DELETE, classPath, deleteMapping.value(), deleteMapping.params(), method);
+            put(RequestMethod.DELETE, classPath, deleteMapping.value(), deleteMapping.params(),
+                    method);
         }
         
         if (patchMapping != null) {
-            put(RequestMethod.PATCH, classPath, patchMapping.value(), patchMapping.params(), method);
+            put(RequestMethod.PATCH, classPath, patchMapping.value(), patchMapping.params(),
+                    method);
         }
         
     }
     
-    private void put(RequestMethod requestMethod, String classPath, String[] requestPaths, String[] requestParams,
+    private void put(RequestMethod requestMethod, String classPath, String[] requestPaths,
+            String[] requestParams,
             Method method) {
         if (ArrayUtils.isEmpty(requestPaths)) {
             String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath;
@@ -227,7 +234,8 @@ public class ControllerMethodsCache {
         RequestMappingInfo requestMappingInfo = new RequestMappingInfo();
         requestMappingInfo.setPathRequestCondition(new PathRequestCondition(urlKey));
         requestMappingInfo.setParamRequestCondition(new ParamRequestCondition(requestParam));
-        List<RequestMappingInfo> requestMappingInfos = urlLookup.computeIfAbsent(urlKey, k -> new ArrayList<>());
+        List<RequestMappingInfo> requestMappingInfos =
+                urlLookup.computeIfAbsent(urlKey, k -> new ArrayList<>());
         // For issue #4701.
         urlLookup.computeIfAbsent(urlKey + "/", k -> requestMappingInfos);
         requestMappingInfos.add(requestMappingInfo);

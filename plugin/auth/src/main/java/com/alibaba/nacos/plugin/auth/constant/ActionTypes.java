@@ -24,6 +24,7 @@ package com.alibaba.nacos.plugin.auth.constant;
  * @since 1.2.0
  */
 public enum ActionTypes {
+    
     /**
      * Read.
      */

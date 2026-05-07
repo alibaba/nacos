@@ -61,7 +61,8 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 @SuppressWarnings("checkstyle:linelength")
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedHistoryConfigInfoPersistServiceImpl")
-public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfigInfoPersistService {
+public class EmbeddedHistoryConfigInfoPersistServiceImpl
+        implements HistoryConfigInfoPersistService {
     
     private DataSourceService dataSourceService;
     
@@ -77,8 +78,9 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     public EmbeddedHistoryConfigInfoPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
-                false);
+        Boolean isDataSourceLogEnable =
+                EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+                        false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
@@ -89,7 +91,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public void insertConfigHistoryAtomic(long configHistoryId, ConfigInfo configInfo, String srcIp, String srcUser,
+    public void insertConfigHistoryAtomic(long configHistoryId, ConfigInfo configInfo, String srcIp,
+            String srcUser,
             final Timestamp time, String ops, String publishType, String grayName, String extInfo) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
@@ -101,11 +104,15 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         final String sql = historyConfigInfoMapper.insert(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                        "src_user", "gmt_modified", "op_type", "publish_type", "gray_name", "ext_info",
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content",
+                        "md5", "src_ip",
+                        "src_user", "gmt_modified", "op_type", "publish_type", "gray_name",
+                        "ext_info",
                         "encrypted_data_key"));
-        final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, grayNameTemp,
+        final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(),
+                configInfo.getGroup(), tenantTmp,
+                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops,
+                publishTypeTmp, grayNameTemp,
                 extInfo, encryptedDataKey};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -124,7 +131,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long lastMaxId, final int pageSize,
+    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long lastMaxId,
+            final int pageSize,
             String publishType) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -135,8 +143,9 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
         
         MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
-        List<ConfigHistoryInfo> configHistoryInfos = databaseOperate.queryMany(mapperResult.getSql(),
-                mapperResult.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
+        List<ConfigHistoryInfo> configHistoryInfos =
+                databaseOperate.queryMany(mapperResult.getSql(),
+                        mapperResult.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
         
         List<ConfigInfoStateWrapper> configInfoStateWrappers = new ArrayList<>();
         for (ConfigHistoryInfo configHistoryInfo : configHistoryInfos) {
@@ -146,7 +155,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             configInfoStateWrapper.setGroup(configHistoryInfo.getGroup());
             configInfoStateWrapper.setTenant(configHistoryInfo.getTenant());
             configInfoStateWrapper.setMd5(configHistoryInfo.getMd5());
-            configInfoStateWrapper.setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
+            configInfoStateWrapper
+                    .setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
             configInfoStateWrapper.setGrayName(configHistoryInfo.getGrayName());
             configInfoStateWrappers.add(configInfoStateWrapper);
         }
@@ -154,7 +164,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
+    public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant,
+            int pageNo,
             int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
@@ -166,11 +177,13 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         context.putWhereParameter(FieldConstant.GROUP_ID, group);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
         
-        String sqlCountRows = historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
+        String sqlCountRows =
+                historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
         MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
         
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+        return helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(),
+                sqlFetchRows.getParamList().toArray(), pageNo,
                 pageSize, HISTORY_LIST_ROW_MAPPER);
     }
     
@@ -179,10 +192,14 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         String sqlFetchRows = historyConfigInfoMapper.select(
-                Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user",
-                        "src_ip", "op_type", "publish_type", "gray_name", "ext_info", "gmt_create", "gmt_modified",
-                        "encrypted_data_key"), Collections.singletonList("nid"));
-        return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
+                Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content",
+                        "md5", "src_user",
+                        "src_ip", "op_type", "publish_type", "gray_name", "ext_info", "gmt_create",
+                        "gmt_modified",
+                        "encrypted_data_key"),
+                Collections.singletonList("nid"));
+        return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid},
+                HISTORY_DETAIL_ROW_MAPPER);
     }
     
     @Override
@@ -192,7 +209,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult sqlFetchRows = historyConfigInfoMapper.detailPreviousConfigHistory(context);
-        return databaseOperate.queryOne(sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(),
+        return databaseOperate.queryOne(sqlFetchRows.getSql(),
+                sqlFetchRows.getParamList().toArray(),
                 HISTORY_DETAIL_ROW_MAPPER);
     }
     
@@ -203,16 +221,18 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         MapperResult sqlFetchRows = historyConfigInfoMapper.findConfigHistoryCountByTime(context);
-        Integer result = databaseOperate.queryOne(sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(),
+        Integer result = databaseOperate.queryOne(sqlFetchRows.getSql(),
+                sqlFetchRows.getParamList().toArray(),
                 Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("findConfigHistoryCountByTime error");
         }
         return result;
     }
-
+    
     @Override
-    public ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType,
+    public ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant,
+            String publishType,
             String grayName, long startNid) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -224,8 +244,9 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         context.putWhereParameter(FieldConstant.GRAY_NAME, grayName);
         context.putWhereParameter(FieldConstant.NID, startNid);
         MapperResult sqlFetchRows = historyConfigInfoMapper.getNextHistoryInfo(context);
-        return databaseOperate.queryOne(sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(),
+        return databaseOperate.queryOne(sqlFetchRows.getSql(),
+                sqlFetchRows.getParamList().toArray(),
                 HISTORY_DETAIL_ROW_MAPPER);
     }
-
+    
 }

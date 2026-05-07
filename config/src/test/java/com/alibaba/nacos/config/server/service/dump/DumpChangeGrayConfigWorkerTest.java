@@ -64,7 +64,6 @@ public class DumpChangeGrayConfigWorkerTest {
     
     static MockedStatic<ConfigExecutor> configExecutorMockedStatic;
     
-    
     /**
      * Clean up.
      */
@@ -84,7 +83,8 @@ public class DumpChangeGrayConfigWorkerTest {
         
         envUtilMockedStatic.when(() -> EnvUtil.getAvailableProcessors(anyInt())).thenReturn(2);
         dumpGrayConfigWorker = new DumpChangeGrayConfigWorker(configInfoGrayPersistService,
-                new Timestamp(System.currentTimeMillis()), historyConfigInfoPersistService, configMigrateService);
+                new Timestamp(System.currentTimeMillis()), historyConfigInfoPersistService,
+                configMigrateService);
     }
     
     @Test
@@ -92,20 +92,24 @@ public class DumpChangeGrayConfigWorkerTest {
         List<ConfigInfoGrayWrapper> mockList = new ArrayList<>();
         ConfigInfoGrayWrapper mock1 = mock(1);
         mockList.add(mock1);
-        when(configInfoGrayPersistService.findChangeConfig(any(Timestamp.class), any(long.class), eq(100))).thenReturn(
-                mockList);
+        when(configInfoGrayPersistService.findChangeConfig(any(Timestamp.class), any(long.class),
+                eq(100))).thenReturn(
+                        mockList);
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentMd5(
-                eq(GroupKey.getKeyTenant(mock1.getDataId(), mock1.getGroup(), mock1.getTenant())))).thenReturn("");
+                eq(GroupKey.getKeyTenant(mock1.getDataId(), mock1.getGroup(), mock1.getTenant()))))
+                .thenReturn("");
         
         dumpGrayConfigWorker.run();
         //verify dump gray executed
         configCacheServiceMockedStatic.verify(
-                () -> ConfigCacheService.dumpGray(eq(mock1.getDataId()), eq(mock1.getGroup()), eq(mock1.getTenant()),
+                () -> ConfigCacheService.dumpGray(eq(mock1.getDataId()), eq(mock1.getGroup()),
+                        eq(mock1.getTenant()),
                         eq(mock1.getGrayName()), eq(mock1.getGrayRule()), eq(mock1.getContent()),
                         eq(mock1.getLastModified()), eq(mock1.getEncryptedDataKey())));
         //verify task scheduled
-        configExecutorMockedStatic.verify(() -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
-                eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
+        configExecutorMockedStatic.verify(
+                () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeGrayConfigWorker.class),
+                        eq(PropertyUtil.getDumpChangeWorkerInterval()), eq(TimeUnit.MILLISECONDS)));
         
     }
     

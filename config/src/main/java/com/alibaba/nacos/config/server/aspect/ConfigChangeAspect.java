@@ -105,7 +105,7 @@ public class ConfigChangeAspect {
         String grayName = null;
         String grayRuleExp = null;
         if (StringUtils.isNotBlank(betaIps)) {
-            grayName =  BetaGrayRule.TYPE_BETA;
+            grayName = BetaGrayRule.TYPE_BETA;
             grayRuleExp = betaIps;
         } else if (StringUtils.isNotBlank(tag)) {
             grayName = TagGrayRule.TYPE_TAG + "_" + configForm.getTag();
@@ -166,7 +166,8 @@ public class ConfigChangeAspect {
             // via sdk rpc calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
         }
-        final List<ConfigChangePluginService> pluginServices = getPluginServices(configChangePointCutType);
+        final List<ConfigChangePluginService> pluginServices =
+                getPluginServices(configChangePointCutType);
         // didn't enabled or add relative plugin
         if (pluginServices.isEmpty()) {
             return pjp.proceed();
@@ -192,9 +193,11 @@ public class ConfigChangeAspect {
         ConfigChangeResponse configChangeResponse = new ConfigChangeResponse(handleType);
         // default success,when before plugin service verify failed , set false
         configChangeResponse.setSuccess(true);
-
-        List<ConfigChangePluginService> beforeExecutePluginServices = new ArrayList<>(DEFAULT_BEFORE_LIST_CAPACITY);
-        List<ConfigChangePluginService> afterExecutePluginServices = new ArrayList<>(DEFAULT_AFTER_LIST_CAPACITY);
+        
+        List<ConfigChangePluginService> beforeExecutePluginServices =
+                new ArrayList<>(DEFAULT_BEFORE_LIST_CAPACITY);
+        List<ConfigChangePluginService> afterExecutePluginServices =
+                new ArrayList<>(DEFAULT_AFTER_LIST_CAPACITY);
         
         Object retVal = null;
         Object[] args = pjp.getArgs();
@@ -233,7 +236,8 @@ public class ConfigChangeAspect {
                 retVal = pjp.proceed(args);
             }
         } catch (Throwable e) {
-            LOGGER.warn("Config change join point execution failed. Error details: {}", e.getMessage());
+            LOGGER.warn("Config change join point execution failed. Error details: {}",
+                    e.getMessage());
             configChangeResponse.setMsg("Config change join point failed: " + e.getMessage());
             retVal = false;
         }
@@ -243,7 +247,8 @@ public class ConfigChangeAspect {
             for (ConfigChangePluginService ccs : afterExecutePluginServices) {
                 try {
                     final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
-                    final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
+                    final Properties properties =
+                            configChangeConfigs.getPluginProperties(serviceType);
                     configChangeRequest.setArg(ConfigChangeConstants.PLUGIN_PROPERTIES, properties);
                     ccs.execute(configChangeRequest, configChangeResponse);
                 } catch (Throwable throwable) {

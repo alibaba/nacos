@@ -68,7 +68,8 @@ class PropertyUtilTest {
     @Test
     void testGetPropertyV2() {
         
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"), eq("default"))).thenReturn("default");
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"), eq("default")))
+                .thenReturn("default");
         assertEquals("default", new PropertyUtil().getProperty("test", "default"));
     }
     

@@ -40,7 +40,8 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     private long verifyTimeoutMillis = DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS;
     
-    private long loadDataRetryDelayMillis = DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
+    private long loadDataRetryDelayMillis =
+            DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
     
     private long loadDataTimeoutMillis = DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS;
     
@@ -51,20 +52,27 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     @Override
     protected void getConfigFromEnv() {
-        syncDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS);
-        syncTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS);
-        syncRetryDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS);
-        verifyIntervalMillis = EnvUtil.getProperty(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS);
-        verifyTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS);
-        loadDataRetryDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
-        loadDataTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS, Long.class,
-                DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
+        syncDelayMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS);
+        syncTimeoutMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS);
+        syncRetryDelayMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS);
+        verifyIntervalMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS);
+        verifyTimeoutMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS);
+        loadDataRetryDelayMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
+        loadDataTimeoutMillis =
+                EnvUtil.getProperty(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS, Long.class,
+                        DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
     }
     
     public static DistroConfig getInstance() {
@@ -129,9 +137,12 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     @Override
     protected String printConfig() {
-        return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis=" + syncTimeoutMillis
-                + ", syncRetryDelayMillis=" + syncRetryDelayMillis + ", verifyIntervalMillis=" + verifyIntervalMillis
-                + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis
+        return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis="
+                + syncTimeoutMillis
+                + ", syncRetryDelayMillis=" + syncRetryDelayMillis + ", verifyIntervalMillis="
+                + verifyIntervalMillis
+                + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis="
+                + loadDataRetryDelayMillis
                 + ", loadDataTimeoutMillis=" + loadDataTimeoutMillis + '}';
     }
 }

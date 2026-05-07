@@ -74,8 +74,9 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
-                false);
+        Boolean isDataSourceLogEnable =
+                EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+                        false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
@@ -85,19 +86,24 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public ConfigOperateResult addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser) {
+    public ConfigOperateResult addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
+            String srcIp, String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_BETA);
+            ConfigInfoBetaMapper configInfoBetaMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_BETA);
             
             jt.update(configInfoBetaMapper.insert(
-                            Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
-                                    "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "encrypted_data_key")),
-                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
+                    Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5",
+                            "beta_ips",
+                            "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()",
+                            "encrypted_data_key")),
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
+                    configInfo.getContent(), md5,
                     betaIps, srcIp, srcUser, encryptedDataKey);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
@@ -108,11 +114,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+    public ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps,
+            final String srcIp,
             final String srcUser) {
         
-        ConfigInfoStateWrapper configInfo4BetaState = this.findConfigInfo4BetaState(configInfo.getDataId(),
-                configInfo.getGroup(), configInfo.getTenant());
+        ConfigInfoStateWrapper configInfo4BetaState =
+                this.findConfigInfo4BetaState(configInfo.getDataId(),
+                        configInfo.getGroup(), configInfo.getTenant());
         if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
             
@@ -122,10 +130,12 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps,
+    public ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo,
+            final String betaIps,
             final String srcIp, final String srcUser) {
-        ConfigInfoStateWrapper configInfo4BetaState = this.findConfigInfo4BetaState(configInfo.getDataId(),
-                configInfo.getGroup(), configInfo.getTenant());
+        ConfigInfoStateWrapper configInfo4BetaState =
+                this.findConfigInfo4BetaState(configInfo.getDataId(),
+                        configInfo.getGroup(), configInfo.getTenant());
         if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         } else {
@@ -134,7 +144,8 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
+    public void removeConfigInfo4Beta(final String dataId, final String group,
+            final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         tjt.execute(status -> {
             try {
@@ -142,7 +153,10 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                 if (configInfo != null) {
                     ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                             dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
-                    jt.update(configInfoBetaMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id")), dataId,
+                    jt.update(
+                            configInfoBetaMapper.delete(
+                                    Arrays.asList("data_id", "group_id", "tenant_id")),
+                            dataId,
                             group, tenantTmp);
                 }
             } catch (CannotGetJdbcConnectionException e) {
@@ -154,20 +168,25 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public ConfigOperateResult updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp,
+    public ConfigOperateResult updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
+            String srcIp,
             String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_BETA);
-
+            ConfigInfoBetaMapper configInfoBetaMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_BETA);
+            
             jt.update(configInfoBetaMapper.update(
-                            Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified@NOW()",
-                                    "app_name", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
-                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp, encryptedDataKey,
+                    Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user",
+                            "gmt_modified@NOW()",
+                            "app_name", "encrypted_data_key"),
+                    Arrays.asList("data_id", "group_id", "tenant_id")),
+                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp,
+                    encryptedDataKey,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
@@ -194,7 +213,8 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     private ConfigOperateResult getBetaOperateResult(String dataId, String group, String tenant) {
-        ConfigInfoStateWrapper configInfo4Beta = this.findConfigInfo4BetaState(dataId, group, tenant);
+        ConfigInfoStateWrapper configInfo4Beta =
+                this.findConfigInfo4BetaState(dataId, group, tenant);
         if (configInfo4Beta == null) {
             return new ConfigOperateResult(false);
         }
@@ -203,15 +223,17 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public ConfigOperateResult updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp,
+    public ConfigOperateResult updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps,
+            String srcIp,
             String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_BETA);
-
+            ConfigInfoBetaMapper configInfoBetaMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_BETA);
+            
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
@@ -231,7 +253,8 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             
             boolean result = jt.update(sql, args) > 0;
             if (result) {
-                return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
+                return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(),
+                        tenantTmp);
             } else {
                 return new ConfigOperateResult(false);
             }
@@ -242,14 +265,18 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
+    public ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group,
+            final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_BETA);
+            ConfigInfoBetaMapper configInfoBetaMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_BETA);
             return this.jt.queryForObject(configInfoBetaMapper.select(
-                            Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
-                                    "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id")),
+                    Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content",
+                            "beta_ips",
+                            "encrypted_data_key", "gmt_modified"),
+                    Arrays.asList("data_id", "group_id", "tenant_id")),
                     new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
@@ -261,8 +288,9 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     
     @Override
     public int configInfoBetaCount() {
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_BETA);
+        ConfigInfoBetaMapper configInfoBetaMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_BETA);
         String sql = configInfoBetaMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
         
@@ -270,22 +298,26 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     @Override
-    public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
+    public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo,
+            final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_BETA);
+        ConfigInfoBetaMapper configInfoBetaMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_BETA);
         String sqlCountRows = configInfoBetaMapper.count(null);
         
         MapperContext context = new MapperContext();
         context.setStartRow(startRow);
         context.setPageSize(pageSize);
         
-        MapperResult mapperResult = configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(context);
+        MapperResult mapperResult =
+                configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(context);
         
         String sqlFetchRows = mapperResult.getSql();
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
         try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
+            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo,
+                    pageSize,
                     CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {

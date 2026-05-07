@@ -65,19 +65,24 @@ class MetricsInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String jsonString = "{\"status\":\"UP\",\"serviceCount\":20,\"instanceCount\":100,\"subscribeCount\":200,"
-                + "\"clientCount\":10,\"connectionBasedClientCount\":8,\"ephemeralIpPortClientCount\":2,"
-                + "\"persistentIpPortClientCount\":0,\"responsibleClientCount\":8}\n";
+        String jsonString =
+                "{\"status\":\"UP\",\"serviceCount\":20,\"instanceCount\":100,\"subscribeCount\":200,"
+                        + "\"clientCount\":10,\"connectionBasedClientCount\":8,\"ephemeralIpPortClientCount\":2,"
+                        + "\"persistentIpPortClientCount\":0,\"responsibleClientCount\":8}\n";
         MetricsInfo metricsInfo1 = mapper.readValue(jsonString, MetricsInfo.class);
         assertEquals(metricsInfo.getStatus(), metricsInfo1.getStatus());
         assertEquals(metricsInfo.getClientCount(), metricsInfo1.getClientCount());
         assertEquals(metricsInfo.getInstanceCount(), metricsInfo1.getInstanceCount());
         assertEquals(metricsInfo.getServiceCount(), metricsInfo1.getServiceCount());
         assertEquals(metricsInfo.getSubscribeCount(), metricsInfo1.getSubscribeCount());
-        assertEquals(metricsInfo.getConnectionBasedClientCount(), metricsInfo1.getConnectionBasedClientCount());
-        assertEquals(metricsInfo.getResponsibleClientCount(), metricsInfo1.getResponsibleClientCount());
-        assertEquals(metricsInfo.getEphemeralIpPortClientCount(), metricsInfo1.getEphemeralIpPortClientCount());
-        assertEquals(metricsInfo.getPersistentIpPortClientCount(), metricsInfo1.getPersistentIpPortClientCount());
+        assertEquals(metricsInfo.getConnectionBasedClientCount(),
+                metricsInfo1.getConnectionBasedClientCount());
+        assertEquals(metricsInfo.getResponsibleClientCount(),
+                metricsInfo1.getResponsibleClientCount());
+        assertEquals(metricsInfo.getEphemeralIpPortClientCount(),
+                metricsInfo1.getEphemeralIpPortClientCount());
+        assertEquals(metricsInfo.getPersistentIpPortClientCount(),
+                metricsInfo1.getPersistentIpPortClientCount());
     }
     
 }

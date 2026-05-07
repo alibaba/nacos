@@ -48,7 +48,8 @@ public class ClientSyncData implements Serializable {
     public ClientSyncData() {
     }
     
-    public ClientSyncData(String clientId, List<String> namespaces, List<String> groupNames, List<String> serviceNames,
+    public ClientSyncData(String clientId, List<String> namespaces, List<String> groupNames,
+            List<String> serviceNames,
             List<InstancePublishInfo> instancePublishInfos,
             BatchInstanceData batchInstanceData) {
         this.clientId = clientId;

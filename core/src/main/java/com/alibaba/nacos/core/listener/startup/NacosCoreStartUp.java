@@ -161,7 +161,8 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
         boolean useExternalStorage = judgeStorageMode(EnvUtil.getEnvironment());
         logger.info("Nacos started successfully in {} mode with {} storage in {} ms",
                 System.getProperty(MODE_PROPERTY_KEY_STAND_MODE),
-                useExternalStorage ? DATASOURCE_MODE_EXTERNAL : DATASOURCE_MODE_EMBEDDED, startupCost);
+                useExternalStorage ? DATASOURCE_MODE_EXTERNAL : DATASOURCE_MODE_EMBEDDED,
+                startupCost);
     }
     
     @Override
@@ -174,10 +175,12 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
     
     private void registerWatcher() throws NacosException {
         WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
+            
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
-                    Map<String, ?> tmp = EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
+                    Map<String, ?> tmp =
+                            EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
                     SOURCES.putAll(tmp);
                     NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
                 } catch (IOException ignore) {
@@ -207,7 +210,8 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
         // External data sources are used by default in cluster mode
         String platform = this.getDatasourcePlatform(env);
         boolean useExternalStorage =
-                !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform) && !DERBY_DATABASE.equalsIgnoreCase(platform);
+                !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
+                        && !DERBY_DATABASE.equalsIgnoreCase(platform);
         
         // must initialize after setUseExternalDB
         // This value is true in stand-alone mode and false in cluster mode
@@ -215,7 +219,8 @@ public class NacosCoreStartUp extends AbstractNacosStartUp {
         // default value is depend on ${nacos.standalone}
         
         if (!useExternalStorage) {
-            boolean embeddedStorage = EnvUtil.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
+            boolean embeddedStorage =
+                    EnvUtil.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
             // If the embedded data source storage is not turned on, it is automatically
             // upgraded to the external data source storage, as before
             if (!embeddedStorage) {

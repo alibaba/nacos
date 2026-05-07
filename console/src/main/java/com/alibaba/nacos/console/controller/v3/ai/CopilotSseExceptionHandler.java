@@ -60,8 +60,10 @@ public class CopilotSseExceptionHandler {
         String requestPath = request.getRequestURI();
         
         // Check if this is an SSE endpoint (optimize or generate endpoint) or accepts SSE
-        boolean isSseRequest = (acceptHeader != null && acceptHeader.contains(MediaType.TEXT_EVENT_STREAM_VALUE))
-                || (requestPath != null && (requestPath.contains("/skill/optimize") || requestPath.contains("/skill/generate")));
+        boolean isSseRequest =
+                (acceptHeader != null && acceptHeader.contains(MediaType.TEXT_EVENT_STREAM_VALUE))
+                        || (requestPath != null && (requestPath.contains("/skill/optimize")
+                                || requestPath.contains("/skill/generate")));
         
         if (!isSseRequest) {
             // Not an SSE request, rethrow to let other exception handlers process it

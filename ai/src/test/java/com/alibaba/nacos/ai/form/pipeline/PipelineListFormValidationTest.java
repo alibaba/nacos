@@ -30,15 +30,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @since 3.2.0
  */
 class PipelineListFormValidationTest {
-
+    
     private static String[] blankStrings() {
         return new String[] {"", " ", "  ", "\t", "\n", " \t\n "};
     }
-
+    
     private static String[] nonBlankStrings() {
         return new String[] {"a", "skill", "RESOURCE_TYPE", "abc123def"};
     }
-
+    
     /**
      * Blank resourceType should be rejected with 400.
      *
@@ -53,7 +53,7 @@ class PipelineListFormValidationTest {
             assertEquals(400, ex.getErrCode());
         }
     }
-
+    
     /**
      * Non-blank resourceType with missing optional params should not throw.
      *

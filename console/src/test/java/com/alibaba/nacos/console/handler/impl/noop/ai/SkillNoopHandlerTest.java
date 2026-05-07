@@ -51,7 +51,8 @@ class SkillNoopHandlerTest {
     
     @Test
     void testGetSkillThrowsNotImplemented() {
-        NacosApiException ex = assertThrows(NacosApiException.class, () -> skillNoopHandler.getSkill(new SkillForm()));
+        NacosApiException ex = assertThrows(NacosApiException.class,
+                () -> skillNoopHandler.getSkill(new SkillForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     
@@ -79,7 +80,8 @@ class SkillNoopHandlerTest {
     @Test
     void testListSkillsThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
-                () -> skillNoopHandler.listSkills(new SkillListForm(), new AiResourceFilterableForm(), new PageForm()));
+                () -> skillNoopHandler.listSkills(new SkillListForm(),
+                        new AiResourceFilterableForm(), new PageForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
     

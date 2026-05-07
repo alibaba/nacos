@@ -22,11 +22,11 @@ package com.alibaba.nacos.api.exception.runtime;
  * @author hujun
  */
 public class NacosLoadException extends RuntimeException {
-
+    
     private static final long serialVersionUID = 3513491993982295562L;
-
+    
     public NacosLoadException(String errMsg) {
         super(errMsg);
     }
-
+    
 }

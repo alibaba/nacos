@@ -23,40 +23,40 @@ package com.alibaba.nacos.plugin.ai.pipeline.model;
  * @since 3.2.0
  */
 public enum PublishPipelineMessageType {
-
+    
     /**
      * Plain text.
      */
     TEXT("text"),
-
+    
     /**
      * JSON payload.
      */
     JSON("json"),
-
+    
     /**
      * Markdown (e.g. skill-scanner {@code --format markdown} stdout).
      */
     MARKDOWN("markdown"),
-
+    
     /**
      * HTML fragment or document.
      */
     HTML("html");
-
+    
     private final String code;
-
+    
     PublishPipelineMessageType(String code) {
         this.code = code;
     }
-
+    
     /**
      * Wire / API value (lowercase), e.g. {@code markdown}.
      */
     public String getCode() {
         return code;
     }
-
+    
     /**
      * Resolve from API wire value, or null if unknown.
      */

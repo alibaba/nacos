@@ -28,12 +28,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 3.2.0
  */
 public class PluginStateCheckerHolder {
-
+    
     private static final AtomicReference<PluginStateChecker> INSTANCE = new AtomicReference<>();
-
+    
     private PluginStateCheckerHolder() {
     }
-
+    
     /**
      * Set the PluginStateChecker instance.
      *
@@ -42,7 +42,7 @@ public class PluginStateCheckerHolder {
     public static void setInstance(PluginStateChecker checker) {
         INSTANCE.set(checker);
     }
-
+    
     /**
      * Get the PluginStateChecker instance.
      *
@@ -51,7 +51,7 @@ public class PluginStateCheckerHolder {
     public static Optional<PluginStateChecker> getInstance() {
         return Optional.ofNullable(INSTANCE.get());
     }
-
+    
     /**
      * Check if a plugin is enabled.
      * Returns true if no checker is set (backward compatibility).

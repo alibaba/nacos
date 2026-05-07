@@ -40,13 +40,14 @@ import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
 public class StandaloneProfileApplicationListener
         implements ApplicationListener<ApplicationEnvironmentPreparedEvent>, PriorityOrdered {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(StandaloneProfileApplicationListener.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(StandaloneProfileApplicationListener.class);
     
     @Override
     public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
         
         ConfigurableEnvironment environment = event.getEnvironment();
-
+        
         if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, false)) {
             environment.addActiveProfile(STANDALONE_SPRING_PROFILE);
         }

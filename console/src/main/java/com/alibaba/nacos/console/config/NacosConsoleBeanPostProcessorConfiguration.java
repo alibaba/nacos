@@ -32,7 +32,8 @@ import org.springframework.context.annotation.Configuration;
  * @author xiweng.yy
  */
 @Configuration
-@ConditionalOnProperty(value = Constants.NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED, havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = Constants.NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED,
+        havingValue = "true", matchIfMissing = true)
 @EnabledInnerHandler
 public class NacosConsoleBeanPostProcessorConfiguration {
     

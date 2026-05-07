@@ -28,31 +28,31 @@ import java.util.Map;
  * @author nacos
  */
 public class SkillIndexManifest {
-
+    
     public static final String LABEL_LATEST = "latest";
-
+    
     /**
      * Label-to-version mapping, e.g. {"latest": "v3"}.
      */
     private Map<String, String> labels;
-
+    
     /**
      * Version-to-files mapping, e.g. {"v1": ["SKILL.md", "script/run.sh"], "v3": ["SKILL.md"]}.
      */
     private Map<String, List<String>> versions;
-
+    
     public Map<String, String> getLabels() {
         return labels;
     }
-
+    
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-
+    
     public Map<String, List<String>> getVersions() {
         return versions;
     }
-
+    
     public void setVersions(Map<String, List<String>> versions) {
         this.versions = versions;
     }

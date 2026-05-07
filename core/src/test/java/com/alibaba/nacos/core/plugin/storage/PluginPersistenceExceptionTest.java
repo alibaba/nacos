@@ -22,14 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class PluginPersistenceExceptionTest {
-
+    
     @Test
     void constructorWithMessage() {
         PluginPersistenceException ex = new PluginPersistenceException("save failed");
         assertEquals("save failed", ex.getMessage());
         assertNotNull(ex);
     }
-
+    
     @Test
     void constructorWithMessageAndCause() {
         Throwable cause = new RuntimeException("io error");

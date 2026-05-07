@@ -33,19 +33,23 @@ public class ConfigCachePostProcessorDelegate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheFactoryDelegate.class);
     
-    private static ConfigCachePostProcessorDelegate instance = new ConfigCachePostProcessorDelegate();
+    private static ConfigCachePostProcessorDelegate instance =
+            new ConfigCachePostProcessorDelegate();
     
-    private String configCacheMd5PostProcessorType = EnvUtil.getProperty("nacos.config.cache.type", "nacos");
+    private String configCacheMd5PostProcessorType =
+            EnvUtil.getProperty("nacos.config.cache.type", "nacos");
     
     private ConfigCachePostProcessor configCachePostProcessor;
     
     private ConfigCachePostProcessorDelegate() {
-        Collection<ConfigCachePostProcessor> processors = NacosServiceLoader.load(ConfigCachePostProcessor.class);
+        Collection<ConfigCachePostProcessor> processors =
+                NacosServiceLoader.load(ConfigCachePostProcessor.class);
         for (ConfigCachePostProcessor processor : processors) {
             if (StringUtils.isEmpty(processor.getName())) {
                 LOGGER.warn(
                         "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName(null/empty) fail. "
-                                + "Please add PostProcessorName to resolve", processor.getClass().getName());
+                                + "Please add PostProcessorName to resolve",
+                        processor.getClass().getName());
                 continue;
             }
             LOGGER.info(

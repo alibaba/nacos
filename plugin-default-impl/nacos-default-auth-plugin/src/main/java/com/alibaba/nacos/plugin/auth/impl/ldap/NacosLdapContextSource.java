@@ -125,5 +125,4 @@ public class NacosLdapContextSource extends LdapContextSource {
         }
     }
     
-    
 }

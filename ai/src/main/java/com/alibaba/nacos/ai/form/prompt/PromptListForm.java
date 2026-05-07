@@ -70,7 +70,8 @@ public class PromptListForm implements NacosForm {
         if (StringUtils.isNotBlank(search)
                 && !Constants.Prompt.SEARCH_ACCURATE.equalsIgnoreCase(search)
                 && !Constants.Prompt.SEARCH_BLUR.equalsIgnoreCase(search)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Request parameter 'search' should be 'accurate' or 'blur'.");
         }
         

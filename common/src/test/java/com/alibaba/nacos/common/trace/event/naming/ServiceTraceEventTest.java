@@ -27,16 +27,18 @@ class ServiceTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testRegisterInstanceTraceEvent() {
-        RegisterServiceTraceEvent registerServiceTraceEvent = new RegisterServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
-                SERVICE_NAME);
+        RegisterServiceTraceEvent registerServiceTraceEvent =
+                new RegisterServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                        SERVICE_NAME);
         assertBasicInfo(registerServiceTraceEvent);
         assertEquals("REGISTER_SERVICE_TRACE_EVENT", registerServiceTraceEvent.getType());
     }
     
     @Test
     void testDeregisterInstanceTraceEvent() {
-        DeregisterServiceTraceEvent deregisterServiceTraceEvent = new DeregisterServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
-                SERVICE_NAME);
+        DeregisterServiceTraceEvent deregisterServiceTraceEvent =
+                new DeregisterServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                        SERVICE_NAME);
         assertBasicInfo(deregisterServiceTraceEvent);
         assertEquals("DEREGISTER_SERVICE_TRACE_EVENT", deregisterServiceTraceEvent.getType());
     }
@@ -45,8 +47,9 @@ class ServiceTraceEventTest extends NamingTraceEventTest {
     void testUpdateInstanceTraceEvent() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("test1", "testValue");
-        UpdateServiceTraceEvent updateServiceTraceEvent = new UpdateServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
-                SERVICE_NAME, metadata);
+        UpdateServiceTraceEvent updateServiceTraceEvent =
+                new UpdateServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                        SERVICE_NAME, metadata);
         assertBasicInfo(updateServiceTraceEvent);
         assertEquals("UPDATE_SERVICE_TRACE_EVENT", updateServiceTraceEvent.getType());
         assertEquals(metadata, updateServiceTraceEvent.getMetadata());

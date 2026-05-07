@@ -29,20 +29,20 @@ import java.io.Serial;
  * @author nacos
  */
 public class SkillOnlineForm extends SkillForm {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * "skill" means enable/disable the whole skill. Otherwise version-level.
      */
     private String scope;
-
+    
     /**
      * Version for version-level online/offline.
      */
     private String version;
-
+    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
@@ -51,21 +51,20 @@ public class SkillOnlineForm extends SkillForm {
                     "Request parameter `skillName` should not be blank.");
         }
     }
-
+    
     public String getScope() {
         return scope;
     }
-
+    
     public void setScope(String scope) {
         this.scope = scope;
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
 }
-

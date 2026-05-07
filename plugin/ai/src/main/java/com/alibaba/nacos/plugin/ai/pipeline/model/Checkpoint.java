@@ -24,41 +24,41 @@ import java.util.Objects;
  * @author qiacheng.cxy
  */
 public class Checkpoint {
-
+    
     /**
      * Human-readable name of the audit criterion.
      */
     private String title;
-
+    
     /**
      * Whether this criterion passed.
      */
     private boolean passed;
-
+    
     public Checkpoint() {
     }
-
+    
     public Checkpoint(String title, boolean passed) {
         this.title = title;
         this.passed = passed;
     }
-
+    
     public String getTitle() {
         return title;
     }
-
+    
     public void setTitle(String title) {
         this.title = title;
     }
-
+    
     public boolean getPassed() {
         return passed;
     }
-
+    
     public void setPassed(boolean passed) {
         this.passed = passed;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -70,7 +70,7 @@ public class Checkpoint {
         Checkpoint that = (Checkpoint) o;
         return Objects.equals(title, that.title) && Objects.equals(passed, that.passed);
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(title, passed);

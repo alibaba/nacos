@@ -61,8 +61,10 @@ public class PipelineAdminController {
             throws NacosException {
         form.validate();
         pageForm.validate();
-        return Result.success(pipelineQueryService.listPipelines(form.getResourceType(), form.getResourceName(),
-                form.getNamespaceId(), form.getVersion(), pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(
+                pipelineQueryService.listPipelines(form.getResourceType(), form.getResourceName(),
+                        form.getNamespaceId(), form.getVersion(), pageForm.getPageNo(),
+                        pageForm.getPageSize()));
     }
     
     /**
@@ -70,7 +72,8 @@ public class PipelineAdminController {
      */
     @GetMapping(Constants.Pipeline.DETAIL_SUBPATH)
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<PipelineExecution> getPipelineDetail(PipelineDetailForm form) throws NacosException {
+    public Result<PipelineExecution> getPipelineDetail(PipelineDetailForm form)
+            throws NacosException {
         form.validate();
         return Result.success(pipelineQueryService.getPipeline(form.getPipelineId()));
     }
@@ -83,7 +86,8 @@ public class PipelineAdminController {
     @Deprecated(since = "3.2.1", forRemoval = true)
     @GetMapping("/{pipelineId}")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<PipelineExecution> getPipeline(@PathVariable String pipelineId) throws NacosException {
+    public Result<PipelineExecution> getPipeline(@PathVariable String pipelineId)
+            throws NacosException {
         return Result.success(pipelineQueryService.getPipeline(pipelineId));
     }
     
@@ -95,11 +99,14 @@ public class PipelineAdminController {
     @Deprecated(since = "3.2.1", forRemoval = true)
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<PipelineExecution>> listPipelinesLegacy(PipelineListForm form, PageForm pageForm)
+    public Result<Page<PipelineExecution>> listPipelinesLegacy(PipelineListForm form,
+            PageForm pageForm)
             throws NacosException {
         form.validate();
         pageForm.validate();
-        return Result.success(pipelineQueryService.listPipelines(form.getResourceType(), form.getResourceName(),
-                form.getNamespaceId(), form.getVersion(), pageForm.getPageNo(), pageForm.getPageSize()));
+        return Result.success(
+                pipelineQueryService.listPipelines(form.getResourceType(), form.getResourceName(),
+                        form.getNamespaceId(), form.getVersion(), pageForm.getPageNo(),
+                        pageForm.getPageSize()));
     }
 }

@@ -38,16 +38,16 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Icon {
-
+    
     @JsonProperty(value = "src", required = true)
     private String src;
-
+    
     private MimeType mimeType;
-
+    
     private List<String> sizes;
-
+    
     private Theme theme;
-
+    
     /**
      * Get src.
      *
@@ -56,7 +56,7 @@ public class Icon {
     public String getSrc() {
         return src;
     }
-
+    
     /**
      * Set src.
      *
@@ -65,7 +65,7 @@ public class Icon {
     public void setSrc(String src) {
         this.src = src;
     }
-
+    
     /**
      * Get mime type.
      *
@@ -74,7 +74,7 @@ public class Icon {
     public MimeType getMimeType() {
         return mimeType;
     }
-
+    
     /**
      * Set mime type.
      *
@@ -83,7 +83,7 @@ public class Icon {
     public void setMimeType(MimeType mimeType) {
         this.mimeType = mimeType;
     }
-
+    
     /**
      * Get sizes.
      *
@@ -92,7 +92,7 @@ public class Icon {
     public List<String> getSizes() {
         return sizes;
     }
-
+    
     /**
      * Set sizes.
      *
@@ -101,7 +101,7 @@ public class Icon {
     public void setSizes(List<String> sizes) {
         this.sizes = sizes;
     }
-
+    
     /**
      * Get theme.
      *
@@ -110,7 +110,7 @@ public class Icon {
     public Theme getTheme() {
         return theme;
     }
-
+    
     /**
      * Set theme.
      *
@@ -119,12 +119,13 @@ public class Icon {
     public void setTheme(Theme theme) {
         this.theme = theme;
     }
-
+    
     /**
      * Mime type enum: image/png, image/jpeg, image/jpg, image/svg+xml, image/webp.
      * Serialized/deserialized as the lowercase string value.
      */
     public static enum MimeType {
+        
         /**
          * PNG mime type.
          */
@@ -145,9 +146,9 @@ public class Icon {
          * WebP mime type.
          */
         IMAGE_WEBP("image/webp");
-
+        
         private final String value;
-
+        
         /**
          * Constructor.
          *
@@ -156,7 +157,7 @@ public class Icon {
         MimeType(String value) {
             this.value = value;
         }
-
+        
         /**
          * Get value.
          *
@@ -166,7 +167,7 @@ public class Icon {
         public String getValue() {
             return value;
         }
-
+        
         /**
          * Create from value.
          *
@@ -183,12 +184,13 @@ public class Icon {
             throw new IllegalArgumentException("Unknown mimeType: " + value);
         }
     }
-
+    
     /**
      * Theme enum: light or dark.
      * Serialized/deserialized as the lowercase string value.
      */
     public static enum Theme {
+        
         /**
          * Light theme.
          */
@@ -197,9 +199,9 @@ public class Icon {
          * Dark theme.
          */
         DARK("dark");
-
+        
         private final String value;
-
+        
         /**
          * Constructor.
          *
@@ -208,7 +210,7 @@ public class Icon {
         Theme(String value) {
             this.value = value;
         }
-
+        
         /**
          * Get value.
          *
@@ -218,7 +220,7 @@ public class Icon {
         public String getValue() {
             return value;
         }
-
+        
         /**
          * Create from value.
          *

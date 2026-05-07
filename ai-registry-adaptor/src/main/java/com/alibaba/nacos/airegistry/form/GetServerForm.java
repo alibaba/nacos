@@ -26,15 +26,15 @@ import com.alibaba.nacos.api.model.NacosForm;
 public class GetServerForm implements NacosForm {
     
     private String namespaceId;
-
+    
     public String getNamespaceId() {
         return namespaceId;
     }
-
+    
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
-
+    
     /**
      * check form parameters while valid.
      *

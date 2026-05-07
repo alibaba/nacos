@@ -135,4 +135,4 @@ public interface McpCacheIndex {
             return total == 0 ? 0.0 : (double) hitCount / total;
         }
     }
-} 
+}

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModuleHealthCheckerHolderTest {
-
+    
     @Test
     void testGetInstance() {
         ModuleHealthCheckerHolder instance1 = ModuleHealthCheckerHolder.getInstance();
@@ -33,15 +33,16 @@ class ModuleHealthCheckerHolderTest {
         assertNotNull(instance1);
         assertSame(instance1, instance2);
     }
-
+    
     @Test
     void testCheckReadinessWithPassingStubChecker() {
         AbstractModuleHealthChecker passingChecker = new AbstractModuleHealthChecker() {
+            
             @Override
             public boolean readiness() {
                 return true;
             }
-
+            
             @Override
             public String getModuleName() {
                 return "PassingStubModule";
@@ -53,15 +54,16 @@ class ModuleHealthCheckerHolderTest {
         assertTrue(result.isSuccess());
         assertEquals("OK", result.getResultMessage());
     }
-
+    
     @Test
     void testCheckReadinessWithFailingStubChecker() {
         AbstractModuleHealthChecker failingChecker = new AbstractModuleHealthChecker() {
+            
             @Override
             public boolean readiness() {
                 return false;
             }
-
+            
             @Override
             public String getModuleName() {
                 return "FailingStubModuleForTest";

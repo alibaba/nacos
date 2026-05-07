@@ -75,7 +75,8 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
             return;
         }
         if (StringUtils.isEmpty(nacosAuthSystemType)) {
-            throw new NacosRuntimeException(AuthErrorCode.INVALID_TYPE.getCode(), AuthErrorCode.INVALID_TYPE.getMsg());
+            throw new NacosRuntimeException(AuthErrorCode.INVALID_TYPE.getCode(),
+                    AuthErrorCode.INVALID_TYPE.getMsg());
         }
         if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
             throw new NacosRuntimeException(AuthErrorCode.EMPTY_IDENTITY.getCode(),
@@ -86,7 +87,8 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     private void refreshPluginProperties() {
         try {
             Map<String, Properties> newProperties = new HashMap<>(1);
-            Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
+            Properties properties =
+                    PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
             if (properties != null) {
                 for (String each : properties.stringPropertyNames()) {
                     int typeIndex = each.indexOf('.');
@@ -149,10 +151,14 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     @Override
     protected void getConfigFromEnv() {
         try {
-            authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
-            nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
-            serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
-            serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
+            authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class,
+                    false);
+            nacosAuthSystemType =
+                    EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+            serverIdentityKey =
+                    EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
+            serverIdentityValue =
+                    EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
             refreshPluginProperties();
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
@@ -166,8 +172,11 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     
     @Override
     public String toString() {
-        return "NacosServerAuthConfig{" + "authEnabled=" + authEnabled + ", nacosAuthSystemType='" + nacosAuthSystemType
-                + '\'' + ", serverIdentityKey='" + serverIdentityKey + '\'' + ", serverIdentityValue='"
-                + serverIdentityValue + '\'' + ", authPluginProperties=" + authPluginProperties + '}';
+        return "NacosServerAuthConfig{" + "authEnabled=" + authEnabled + ", nacosAuthSystemType='"
+                + nacosAuthSystemType
+                + '\'' + ", serverIdentityKey='" + serverIdentityKey + '\''
+                + ", serverIdentityValue='"
+                + serverIdentityValue + '\'' + ", authPluginProperties=" + authPluginProperties
+                + '}';
     }
 }

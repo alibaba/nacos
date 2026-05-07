@@ -55,20 +55,24 @@ public final class NacosSignatureAlgorithm {
     
     private static final String HS512_JWT_HEADER = "eyJhbGciOiJIUzUxMiJ9";
     
-    private static final Base64.Encoder URL_BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
+    private static final Base64.Encoder URL_BASE64_ENCODER =
+            Base64.getUrlEncoder().withoutPadding();
     
     private static final Base64.Decoder URL_BASE64_DECODER = Base64.getUrlDecoder();
     
     private static final Map<String, NacosSignatureAlgorithm> MAP = new HashMap<>(4);
     
-    public static final NacosSignatureAlgorithm HS256 = new NacosSignatureAlgorithm("HS256", "HmacSHA256",
-            HS256_JWT_HEADER);
+    public static final NacosSignatureAlgorithm HS256 =
+            new NacosSignatureAlgorithm("HS256", "HmacSHA256",
+                    HS256_JWT_HEADER);
     
-    public static final NacosSignatureAlgorithm HS384 = new NacosSignatureAlgorithm("HS384", "HmacSHA384",
-            HS384_JWT_HEADER);
+    public static final NacosSignatureAlgorithm HS384 =
+            new NacosSignatureAlgorithm("HS384", "HmacSHA384",
+                    HS384_JWT_HEADER);
     
-    public static final NacosSignatureAlgorithm HS512 = new NacosSignatureAlgorithm("HS512", "HmacSHA512",
-            HS512_JWT_HEADER);
+    public static final NacosSignatureAlgorithm HS512 =
+            new NacosSignatureAlgorithm("HS512", "HmacSHA512",
+                    HS512_JWT_HEADER);
     
     private final String algorithm;
     
@@ -121,14 +125,18 @@ public final class NacosSignatureAlgorithm {
      * @return object for payload
      * @throws AccessException access exception
      */
-    public NacosUser verify(String header, String payload, String signature, Key key) throws AccessException {
+    public NacosUser verify(String header, String payload, String signature, Key key)
+            throws AccessException {
         Mac macInstance = getMacInstance(key);
-        byte[] bytes = macInstance.doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
+        byte[] bytes = macInstance
+                .doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
         if (!URL_BASE64_ENCODER.encodeToString(bytes).equals(signature)) {
             throw new AccessException("Invalid signature");
         }
-        NacosJwtPayload nacosJwtPayload = JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
-        if (nacosJwtPayload.getExp() >= TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())) {
+        NacosJwtPayload nacosJwtPayload =
+                JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
+        if (nacosJwtPayload.getExp() >= TimeUnit.MILLISECONDS
+                .toSeconds(System.currentTimeMillis())) {
             return new NacosUser(nacosJwtPayload.getSub());
         }
         
@@ -175,11 +183,13 @@ public final class NacosSignatureAlgorithm {
     public long getExpireTimeInSeconds(String header, String payload, String signature, Key key)
             throws AccessException {
         Mac macInstance = getMacInstance(key);
-        byte[] bytes = macInstance.doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
+        byte[] bytes = macInstance
+                .doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
         if (!URL_BASE64_ENCODER.encodeToString(bytes).equals(signature)) {
             throw new AccessException("Invalid signature");
         }
-        NacosJwtPayload nacosJwtPayload = JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
+        NacosJwtPayload nacosJwtPayload =
+                JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
         return nacosJwtPayload.getExp();
     }
     

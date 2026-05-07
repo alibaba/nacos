@@ -61,18 +61,24 @@ public class CopilotConfigStorage {
             if (StringUtils.isNotBlank(serverAddr)) {
                 Properties properties = new Properties();
                 properties.setProperty("serverAddr", serverAddr);
-                configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
+                configMaintainerService =
+                        ConfigMaintainerFactory.createConfigMaintainerService(properties);
                 LOGGER.info("Copilot config storage initialized with serverAddr: {}", serverAddr);
             } else {
                 // Use default server address from environment
-                String defaultServerAddr = System.getProperty("nacos.server.addr", "127.0.0.1:8848");
+                String defaultServerAddr =
+                        System.getProperty("nacos.server.addr", "127.0.0.1:8848");
                 Properties properties = new Properties();
                 properties.setProperty("serverAddr", defaultServerAddr);
-                configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
-                LOGGER.info("Copilot config storage initialized with default serverAddr: {}", defaultServerAddr);
+                configMaintainerService =
+                        ConfigMaintainerFactory.createConfigMaintainerService(properties);
+                LOGGER.info("Copilot config storage initialized with default serverAddr: {}",
+                        defaultServerAddr);
             }
         } catch (Exception e) {
-            LOGGER.warn("Failed to initialize Copilot config storage, will use default configuration", e);
+            LOGGER.warn(
+                    "Failed to initialize Copilot config storage, will use default configuration",
+                    e);
         }
     }
     
@@ -94,7 +100,8 @@ public class CopilotConfigStorage {
                 return JacksonUtils.toObj(configInfo.getContent(), CopilotProperties.class);
             }
         } catch (NacosException e) {
-            LOGGER.debug("Copilot config not found in Nacos Config, using default configuration", e);
+            LOGGER.debug("Copilot config not found in Nacos Config, using default configuration",
+                    e);
         } catch (Exception e) {
             LOGGER.warn("Failed to parse Copilot config from Nacos Config", e);
         }
@@ -125,8 +132,7 @@ public class CopilotConfigStorage {
                     "system",
                     null,
                     "Copilot configuration",
-                    "json"
-            );
+                    "json");
             
             if (result) {
                 LOGGER.info("Copilot config saved successfully to Nacos Config");

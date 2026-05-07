@@ -96,7 +96,8 @@ public class NacosConsoleStartUp extends AbstractNacosStartUp {
             try {
                 SOURCES.putAll(EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource()));
                 environment.getPropertySources()
-                        .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF, SOURCES));
+                        .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF,
+                                SOURCES));
             } catch (Exception e) {
                 throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
             }

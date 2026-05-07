@@ -85,13 +85,15 @@ class AgentSpecRemoteHandlerTest {
         form.setVersion("v1");
         AgentSpec agentSpec = new AgentSpec();
         agentSpec.setName(AGENT_SPEC_NAME);
-        when(agentSpecMaintainerService.getAgentSpecVersionDetail(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME),
+        when(agentSpecMaintainerService.getAgentSpecVersionDetail(eq(NAMESPACE_ID),
+                eq(AGENT_SPEC_NAME),
                 eq("v1"))).thenReturn(agentSpec);
         
         AgentSpec result = agentSpecRemoteHandler.getAgentSpecVersion(form);
         
         assertEquals(AGENT_SPEC_NAME, result.getName());
-        verify(agentSpecMaintainerService).getAgentSpecVersionDetail(NAMESPACE_ID, AGENT_SPEC_NAME, "v1");
+        verify(agentSpecMaintainerService).getAgentSpecVersionDetail(NAMESPACE_ID, AGENT_SPEC_NAME,
+                "v1");
     }
     
     @Test
@@ -101,8 +103,9 @@ class AgentSpecRemoteHandlerTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         AgentSpecMeta detail = new AgentSpecMeta();
         detail.setBizTags("[\"finance\"]");
-        when(agentSpecMaintainerService.getAgentSpecAdminDetail(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME))).thenReturn(
-                detail);
+        when(agentSpecMaintainerService.getAgentSpecAdminDetail(eq(NAMESPACE_ID),
+                eq(AGENT_SPEC_NAME))).thenReturn(
+                        detail);
         
         AgentSpecMeta result = agentSpecRemoteHandler.getAgentSpec(form);
         
@@ -124,11 +127,13 @@ class AgentSpecRemoteHandlerTest {
         Page<AgentSpecSummary> page = new Page<>();
         page.setPageItems(java.util.List.of(item));
         page.setTotalCount(1);
-        when(agentSpecMaintainerService.listAgentSpecAdminItems(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq(null),
+        when(agentSpecMaintainerService.listAgentSpecAdminItems(eq(NAMESPACE_ID),
+                eq(AGENT_SPEC_NAME), eq(null),
                 isNull(), isNull(), isNull(), eq(1), eq(10))).thenReturn(page);
         
-        Page<AgentSpecSummary> result = agentSpecRemoteHandler.listAgentSpecs(form, new AiResourceFilterableForm(),
-                pageForm);
+        Page<AgentSpecSummary> result =
+                agentSpecRemoteHandler.listAgentSpecs(form, new AiResourceFilterableForm(),
+                        pageForm);
         
         assertEquals("[\"finance\"]", result.getPageItems().get(0).getBizTags());
     }
@@ -139,8 +144,9 @@ class AgentSpecRemoteHandlerTest {
         form.setNamespaceId(NAMESPACE_ID);
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setScope("PUBLIC");
-        when(agentSpecMaintainerService.updateScope(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("PUBLIC"))).thenReturn(
-                true);
+        when(agentSpecMaintainerService.updateScope(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME),
+                eq("PUBLIC"))).thenReturn(
+                        true);
         
         agentSpecRemoteHandler.updateScope(form);
         
@@ -158,7 +164,8 @@ class AgentSpecRemoteHandlerTest {
         
         agentSpecRemoteHandler.updateBizTags(form);
         
-        verify(agentSpecMaintainerService).updateBizTags(NAMESPACE_ID, AGENT_SPEC_NAME, "[\"finance\"]");
+        verify(agentSpecMaintainerService).updateBizTags(NAMESPACE_ID, AGENT_SPEC_NAME,
+                "[\"finance\"]");
     }
     
     @Test
@@ -168,7 +175,8 @@ class AgentSpecRemoteHandlerTest {
         form.setAgentSpecName(AGENT_SPEC_NAME);
         form.setVersion("v1");
         form.setUpdateLatestLabel(true);
-        when(agentSpecMaintainerService.forcePublish(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME), eq("v1"),
+        when(agentSpecMaintainerService.forcePublish(eq(NAMESPACE_ID), eq(AGENT_SPEC_NAME),
+                eq("v1"),
                 eq(true))).thenReturn(true);
         
         agentSpecRemoteHandler.forcePublish(form);

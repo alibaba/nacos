@@ -85,7 +85,8 @@ class CachedMcpServerIndexTest {
         System.setProperty("nacos.mcp.cache.enabled", "true");
         System.setProperty("nacos.mcp.cache.sync.interval", "300");
         
-        cachedIndex = new CachedMcpServerIndex(configDetailService, namespaceOperationService, configQueryChainService,
+        cachedIndex = new CachedMcpServerIndex(configDetailService, namespaceOperationService,
+                configQueryChainService,
                 cacheIndex, scheduledExecutor, true, 300);
     }
     
@@ -123,12 +124,15 @@ class CachedMcpServerIndexTest {
         
         // 模拟数据库查询结果
         ConfigQueryChainResponse mockResponse = mock(ConfigQueryChainResponse.class);
-        when(mockResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
+        when(mockResponse.getStatus())
+                .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+                .thenReturn(mockResponse);
         
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace(namespaceId);
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -192,8 +196,10 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1),
+                eq(1), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行查询
         McpServerIndexData result = cachedIndex.getMcpServerByName(namespaceId, mcpName);
@@ -205,7 +211,8 @@ class CachedMcpServerIndexTest {
         
         // 验证缓存被调用，数据库查询也被调用
         verify(cacheIndex).getMcpServerByName(namespaceId, mcpName);
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE),
+                eq(1), eq(1), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
         
         // 验证缓存被更新
@@ -231,12 +238,15 @@ class CachedMcpServerIndexTest {
         mockPage.setTotalCount(1);
         
         // 使用正确的参数匹配，匹配实际的调用参数
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(10), isNull(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1),
+                eq(10), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行搜索
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
+        Page<McpServerIndexData> result =
+                cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
+                        Constants.MCP_LIST_SEARCH_ACCURATE, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -248,7 +258,8 @@ class CachedMcpServerIndexTest {
         assertEquals(namespaceId, indexData.getNamespaceId());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(10), isNull(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE),
+                eq(1), eq(10), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
         
         // 验证缓存被更新
@@ -262,19 +273,23 @@ class CachedMcpServerIndexTest {
         
         // 重新创建实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor,
+                false, 0);
         
         final String mcpId = "test-id-123";
         final String namespaceId = "test-namespace";
         
         // 模拟数据库查询结果
         ConfigQueryChainResponse mockResponse = mock(ConfigQueryChainResponse.class);
-        when(mockResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
+        when(mockResponse.getStatus())
+                .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+                .thenReturn(mockResponse);
         
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace(namespaceId);
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -326,7 +341,8 @@ class CachedMcpServerIndexTest {
     void testTriggerCacheSync() {
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("test-namespace");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -336,14 +352,16 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(new ArrayList<>());
         mockPage.setTotalCount(0);
         
-        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
+        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
+                anyString(),
                 anyString(), any())).thenReturn(mockPage);
         
         // 执行手动同步
         cachedIndex.triggerCacheSync();
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
+        verify(configDetailService).findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
+                anyString(),
                 anyString(), any());
     }
     
@@ -376,7 +394,8 @@ class CachedMcpServerIndexTest {
     void testRemoveMcpServerByNameWhenCacheDisabled() {
         // 创建禁用缓存的实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor,
+                false, 0);
         
         final String namespaceId = "test-namespace";
         final String mcpName = "test-mcp-name";
@@ -392,7 +411,8 @@ class CachedMcpServerIndexTest {
     void testRemoveMcpServerByIdWhenCacheDisabled() {
         // 创建禁用缓存的实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor,
+                false, 0);
         
         final String mcpId = "test-mcp-id-123";
         
@@ -451,18 +471,22 @@ class CachedMcpServerIndexTest {
     void testGetMcpServerByIdWithCacheDisabledAndNotFound() {
         // 创建禁用缓存的实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor,
+                false, 0);
         
         final String mcpId = "test-id-123";
         
         // 模拟数据库查询结果为null
         ConfigQueryChainResponse mockResponse = mock(ConfigQueryChainResponse.class);
-        when(mockResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
+        when(mockResponse.getStatus())
+                .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+                .thenReturn(mockResponse);
         
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("test-namespace");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -490,12 +514,15 @@ class CachedMcpServerIndexTest {
         
         // 模拟数据库查询结果为null（未找到）
         ConfigQueryChainResponse mockResponse = mock(ConfigQueryChainResponse.class);
-        when(mockResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
+        when(mockResponse.getStatus())
+                .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+                .thenReturn(mockResponse);
         
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("test-namespace");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -520,7 +547,8 @@ class CachedMcpServerIndexTest {
         final Page<ConfigInfo> emptyPage = new Page<>();
         emptyPage.setPageItems(new ArrayList<>());
         emptyPage.setTotalCount(0);
-        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), any(), anyString(),
+        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), any(),
+                anyString(),
                 anyString(), any())).thenReturn(emptyPage);
         
         // 测试null参数 - 当两个都为null时，返回null
@@ -543,7 +571,8 @@ class CachedMcpServerIndexTest {
         
         // 恢复正常的命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("test-namespace");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -563,7 +592,8 @@ class CachedMcpServerIndexTest {
     void testGetMcpServerByNameWithCacheDisabledAndNotFound() {
         // 创建禁用缓存的实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor,
+                false, 0);
         
         final String namespaceId = "test-namespace";
         final String mcpName = "test-mcp";
@@ -573,8 +603,10 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(new ArrayList<>());
         mockPage.setTotalCount(0);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1),
+                eq(1), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行查询
         McpServerIndexData result = disabledIndex.getMcpServerByName(namespaceId, mcpName);
@@ -587,7 +619,8 @@ class CachedMcpServerIndexTest {
         verify(cacheIndex, never()).updateIndex(anyString(), anyString(), anyString());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE),
+                eq(1), eq(1), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
     }
     
@@ -604,8 +637,10 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(new ArrayList<>());
         mockPage.setTotalCount(0);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1),
+                eq(1), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行查询
         McpServerIndexData result = cachedIndex.getMcpServerByName(namespaceId, mcpName);
@@ -615,7 +650,8 @@ class CachedMcpServerIndexTest {
         
         // 验证缓存被调用，数据库查询也被调用
         verify(cacheIndex).getMcpServerByName(namespaceId, mcpName);
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE),
+                eq(1), eq(1), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
         
         // 验证缓存未被更新（因为未找到）
@@ -638,12 +674,15 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), anyString(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(10), anyString(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行搜索，name为null
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, null,
-                Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
+        Page<McpServerIndexData> result =
+                cachedIndex.searchMcpServerByNameWithPage(namespaceId, null,
+                        Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -655,7 +694,8 @@ class CachedMcpServerIndexTest {
         assertEquals(namespaceId, indexData.getNamespaceId());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(10), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
     }
     
@@ -675,8 +715,10 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), anyString(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(10), anyString(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行搜索，name为空字符串
         Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, "",
@@ -692,7 +734,8 @@ class CachedMcpServerIndexTest {
         assertEquals(namespaceId, indexData.getNamespaceId());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(10), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
     }
     
@@ -713,12 +756,15 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), anyString(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(10), anyString(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行搜索
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
-                Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
+        Page<McpServerIndexData> result =
+                cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
+                        Constants.MCP_LIST_SEARCH_BLUR, 1, 10);
         
         // 验证结果
         assertNotNull(result);
@@ -730,7 +776,8 @@ class CachedMcpServerIndexTest {
         assertEquals(namespaceId, indexData.getNamespaceId());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(10), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
     }
     
@@ -751,12 +798,15 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(15); // 总数15，测试分页
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(3), eq(5), isNull(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(3),
+                eq(5), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行搜索，pageNo=3, limit=5
-        Page<McpServerIndexData> result = cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 3, 5);
+        Page<McpServerIndexData> result =
+                cachedIndex.searchMcpServerByNameWithPage(namespaceId, mcpName,
+                        Constants.MCP_LIST_SEARCH_ACCURATE, 3, 5);
         
         // 验证结果
         assertNotNull(result);
@@ -770,19 +820,24 @@ class CachedMcpServerIndexTest {
         assertEquals(namespaceId, indexData.getNamespaceId());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(3), eq(5), isNull(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE),
+                eq(3), eq(5), isNull(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
     }
     
     @Test
     void testFetchOrderedNamespaceList() {
         // 模拟命名空间列表（无序）
-        final List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace1 = new com.alibaba.nacos.api.model.response.Namespace();
+        final List<com.alibaba.nacos.api.model.response.Namespace> namespaceList =
+                new ArrayList<>();
+        com.alibaba.nacos.api.model.response.Namespace namespace1 =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace1.setNamespace("b-namespace");
-        com.alibaba.nacos.api.model.response.Namespace namespace2 = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace2 =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace2.setNamespace("a-namespace");
-        com.alibaba.nacos.api.model.response.Namespace namespace3 = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace3 =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace3.setNamespace("c-namespace");
         namespaceList.add(namespace1);
         namespaceList.add(namespace2);
@@ -797,8 +852,10 @@ class CachedMcpServerIndexTest {
         
         // 模拟数据库查询结果
         ConfigQueryChainResponse mockResponse = mock(ConfigQueryChainResponse.class);
-        when(mockResponse.getStatus()).thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
-        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(mockResponse);
+        when(mockResponse.getStatus())
+                .thenReturn(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class)))
+                .thenReturn(mockResponse);
         
         // 执行查询
         cachedIndex.getMcpServerById(mcpId);
@@ -827,8 +884,10 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(1), isNull(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1),
+                eq(1), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any()))
+                .thenReturn(mockPage);
         
         // 执行查询
         McpServerIndexData result = cachedIndex.getMcpServerByName(namespaceId, mcpName);
@@ -843,46 +902,52 @@ class CachedMcpServerIndexTest {
     void testTriggerCacheSyncWhenCacheDisabled() {
         // 创建禁用缓存的实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor,
+                false, 0);
         
         // 执行手动同步
         disabledIndex.triggerCacheSync();
         
         // 验证数据库查询没有被调用
-        verify(configDetailService, never()).findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
+        verify(configDetailService, never()).findConfigInfoPage(anyString(), anyInt(), anyInt(),
+                anyString(),
                 anyString(), anyString(), any());
     }
     
     @Test
     void testStartSyncTask() {
-        when(scheduledExecutor.scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L), any(TimeUnit.class))).then(
-                (Answer<ScheduledFuture<?>>) invocation -> {
-                    invocation.getArgument(0, Runnable.class).run();
-                    return null;
-                });
+        when(scheduledExecutor.scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
+                any(TimeUnit.class))).then(
+                        (Answer<ScheduledFuture<?>>) invocation -> {
+                            invocation.getArgument(0, Runnable.class).run();
+                            return null;
+                        });
         // 创建一个新的实例来测试startSyncTask方法
         new CachedMcpServerIndex(configDetailService, namespaceOperationService,
                 configQueryChainService, cacheIndex, scheduledExecutor, true, 10);
         
         // 验证调度任务已启动
-        verify(scheduledExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L), any(TimeUnit.class));
+        verify(scheduledExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
+                any(TimeUnit.class));
         verify(namespaceOperationService).getNamespaceList();
     }
     
     @Test
     void testStartSyncTaskWithException() {
-        when(scheduledExecutor.scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L), any(TimeUnit.class))).then(
-                (Answer<ScheduledFuture<?>>) invocation -> {
-                    invocation.getArgument(0, Runnable.class).run();
-                    return null;
-                });
+        when(scheduledExecutor.scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
+                any(TimeUnit.class))).then(
+                        (Answer<ScheduledFuture<?>>) invocation -> {
+                            invocation.getArgument(0, Runnable.class).run();
+                            return null;
+                        });
         when(namespaceOperationService.getNamespaceList()).thenThrow(new RuntimeException("test"));
         // 创建一个新的实例来测试startSyncTask方法
         new CachedMcpServerIndex(configDetailService, namespaceOperationService,
                 configQueryChainService, cacheIndex, scheduledExecutor, true, 10);
         
         // 验证调度任务已启动
-        verify(scheduledExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L), any(TimeUnit.class));
+        verify(scheduledExecutor).scheduleWithFixedDelay(any(Runnable.class), eq(10L), eq(10L),
+                any(TimeUnit.class));
     }
     
     @Test
@@ -892,8 +957,9 @@ class CachedMcpServerIndexTest {
                 any(TimeUnit.class))).then((Answer<?>) invocation -> mock(ScheduledFuture.class));
         
         // 创建一个新的实例来测试destroy方法
-        CachedMcpServerIndex indexToDestroy = new CachedMcpServerIndex(configDetailService, namespaceOperationService,
-                configQueryChainService, cacheIndex, scheduledExecutor, true, 300);
+        CachedMcpServerIndex indexToDestroy =
+                new CachedMcpServerIndex(configDetailService, namespaceOperationService,
+                        configQueryChainService, cacheIndex, scheduledExecutor, true, 300);
         
         // 调用destroy方法
         indexToDestroy.destroy();
@@ -908,8 +974,9 @@ class CachedMcpServerIndexTest {
         doThrow(new RuntimeException("Shutdown failed")).when(scheduledExecutor).shutdown();
         
         // 创建一个新的实例来测试destroy方法
-        CachedMcpServerIndex indexToDestroy = new CachedMcpServerIndex(configDetailService, namespaceOperationService,
-                configQueryChainService, cacheIndex, scheduledExecutor, true, 300);
+        CachedMcpServerIndex indexToDestroy =
+                new CachedMcpServerIndex(configDetailService, namespaceOperationService,
+                        configQueryChainService, cacheIndex, scheduledExecutor, true, 300);
         
         // 调用destroy方法不应该抛出异常
         indexToDestroy.destroy();
@@ -919,9 +986,11 @@ class CachedMcpServerIndexTest {
     void testSyncCacheFromDatabase() {
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace1 = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace1 =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace1.setNamespace("namespace-1");
-        com.alibaba.nacos.api.model.response.Namespace namespace2 = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace2 =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace2.setNamespace("namespace-2");
         namespaceList.add(namespace1);
         namespaceList.add(namespace2);
@@ -948,20 +1017,26 @@ class CachedMcpServerIndexTest {
         mockPage2.setPageItems(configList2);
         mockPage2.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any())).thenReturn(mockPage1);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any()))
+                .thenReturn(mockPage1);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-2"), any())).thenReturn(mockPage2);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-2"), any()))
+                .thenReturn(mockPage2);
         
         // 调用syncCacheFromDatabase方法（通过triggerCacheSync）
         cachedIndex.triggerCacheSync();
         
         // 验证为每个命名空间调用了搜索
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any());
         
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-2"), any());
         
         // 验证缓存被更新。当 name=null 时，updateIndex 的第二个参数为 null
@@ -973,20 +1048,23 @@ class CachedMcpServerIndexTest {
     void testSyncCacheFromDatabaseWithSearchException() {
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("namespace-1");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
         
         // 模拟搜索时抛出异常
-        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
+        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
+                anyString(),
                 anyString(), any())).thenThrow(new RuntimeException("Database error"));
         
         // 调用syncCacheFromDatabase方法（通过triggerCacheSync）
         cachedIndex.triggerCacheSync();
         
         // 即使出现异常也应该继续执行而不会中断
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any());
     }
     
@@ -994,7 +1072,8 @@ class CachedMcpServerIndexTest {
     void testSyncCacheFromDatabaseWithEmptyResult() {
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("namespace-1");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
@@ -1004,14 +1083,17 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(new ArrayList<>());
         mockPage.setTotalCount(0);
         
-        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
-                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any())).thenReturn(mockPage);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any()))
+                .thenReturn(mockPage);
         
         // 调用syncCacheFromDatabase方法（通过triggerCacheSync）
         cachedIndex.triggerCacheSync();
         
         // 验证搜索被调用但缓存未更新
-        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(1000), anyString(),
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1),
+                eq(1000), anyString(),
                 eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq("namespace-1"), any());
         
         // 没有数据所以不需要更新缓存
@@ -1022,13 +1104,15 @@ class CachedMcpServerIndexTest {
     void testSyncCacheFromDatabaseWithException() {
         // 模拟命名空间列表
         List<com.alibaba.nacos.api.model.response.Namespace> namespaceList = new ArrayList<>();
-        com.alibaba.nacos.api.model.response.Namespace namespace = new com.alibaba.nacos.api.model.response.Namespace();
+        com.alibaba.nacos.api.model.response.Namespace namespace =
+                new com.alibaba.nacos.api.model.response.Namespace();
         namespace.setNamespace("test-namespace");
         namespaceList.add(namespace);
         when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
         
         // 模拟搜索时抛出异常
-        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
+        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(),
+                anyString(),
                 anyString(), any())).thenThrow(new RuntimeException("Test exception"));
         
         // 通过调用triggerCacheSync来触发syncCacheFromDatabase

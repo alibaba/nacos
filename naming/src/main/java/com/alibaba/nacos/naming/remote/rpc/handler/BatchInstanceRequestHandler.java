@@ -42,7 +42,8 @@ import org.springframework.stereotype.Component;
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
 @Component("batchInstanceRequestHandler")
-public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceRequest, BatchInstanceResponse> {
+public class BatchInstanceRequestHandler
+        extends RequestHandler<BatchInstanceRequest, BatchInstanceResponse> {
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
@@ -52,13 +53,17 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
     
     @Override
     @NamespaceValidation
-    @TpsControl(pointName = "RemoteNamingInstanceBatchRegister", name = "RemoteNamingInstanceBatchRegister")
+    @TpsControl(pointName = "RemoteNamingInstanceBatchRegister",
+            name = "RemoteNamingInstanceBatchRegister")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(rpcExtractor = BatchInstanceRequestParamExtractor.class)
-    public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta) throws NacosException {
-        Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
+    public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta)
+            throws NacosException {
+        Service service = Service.newService(request.getNamespace(), request.getGroupName(),
+                request.getServiceName(),
                 true);
-        InstanceUtil.batchSetInstanceIdIfEmpty(request.getInstances(), service.getGroupedServiceName());
+        InstanceUtil.batchSetInstanceIdIfEmpty(request.getInstances(),
+                service.getGroupedServiceName());
         switch (request.getType()) {
             case NamingRemoteConstants.BATCH_REGISTER_INSTANCE:
                 return batchRegisterInstance(service, request, meta);
@@ -68,19 +73,24 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
         }
     }
     
-    private BatchInstanceResponse batchRegisterInstance(Service service, BatchInstanceRequest request,
+    private BatchInstanceResponse batchRegisterInstance(Service service,
+            BatchInstanceRequest request,
             RequestMeta meta) {
-        clientOperationService.batchRegisterInstance(service, request.getInstances(), meta.getConnectionId());
+        clientOperationService.batchRegisterInstance(service, request.getInstances(),
+                meta.getConnectionId());
         publishBatchRegisterInstanceTraceEvent(service, request, meta);
         return new BatchInstanceResponse(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
     }
     
-    private void publishBatchRegisterInstanceTraceEvent(Service service, BatchInstanceRequest request,
+    private void publishBatchRegisterInstanceTraceEvent(Service service,
+            BatchInstanceRequest request,
             RequestMeta meta) {
         long eventTime = System.currentTimeMillis();
         String clientIp = NamingRequestUtil.getSourceIpForGrpcRequest(meta);
         request.getInstances().forEach(instance -> NotifyCenter.publishEvent(
-                new BatchRegisterInstanceTraceEvent(eventTime, clientIp, true, service.getNamespace(),
-                        service.getGroup(), service.getName(), instance.getIp(), instance.getPort())));
+                new BatchRegisterInstanceTraceEvent(eventTime, clientIp, true,
+                        service.getNamespace(),
+                        service.getGroup(), service.getName(), instance.getIp(),
+                        instance.getPort())));
     }
 }

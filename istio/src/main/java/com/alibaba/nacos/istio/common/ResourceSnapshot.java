@@ -29,14 +29,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author special.fy
  */
 public class ResourceSnapshot {
+    
     private static AtomicLong versionSuffix = new AtomicLong(0);
     
     private final IstioResources istioResources;
     
     private IstioConfig istioConfig;
-
+    
     private boolean isCompleted;
-
+    
     private String version;
     
     public ResourceSnapshot(IstioConfig istioConfig) {
@@ -44,19 +45,19 @@ public class ResourceSnapshot {
         istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
         this.istioConfig = istioConfig;
     }
-
+    
     public synchronized void initResourceSnapshot(NacosResourceManager manager) {
         if (isCompleted) {
             return;
         }
-
+        
         initIstioResources(manager);
-
+        
         generateVersion();
-
+        
         isCompleted = true;
     }
-
+    
     private void generateVersion() {
         String time = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date());
         version = time + "/" + versionSuffix.getAndIncrement();
@@ -77,7 +78,7 @@ public class ResourceSnapshot {
     public boolean isCompleted() {
         return isCompleted;
     }
-
+    
     public String getVersion() {
         return version;
     }

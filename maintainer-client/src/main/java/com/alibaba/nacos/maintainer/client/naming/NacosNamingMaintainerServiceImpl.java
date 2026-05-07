@@ -60,9 +60,11 @@ import java.util.Properties;
  *
  * @author Nacos
  */
-public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerService implements NamingMaintainerService {
+public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerService
+        implements NamingMaintainerService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosNamingMaintainerServiceImpl.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(NacosNamingMaintainerServiceImpl.class);
     
     public NacosNamingMaintainerServiceImpl(Properties properties) throws NacosException {
         super(properties);
@@ -74,10 +76,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -87,10 +92,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -99,11 +107,15 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         service.validate();
         Map<String, String> params = RequestUtil.toParameters(service);
         RequestResource resource = buildRequestResource(service);
-        HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.DELETE)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        HttpRequest httpRequest =
+                buildRequestWithResource(resource).setHttpMethod(HttpMethod.DELETE)
+                        .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH)
+                        .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -113,8 +125,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ServiceDetailInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ServiceDetailInfo>>() {
                 });
@@ -122,10 +136,12 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public Page<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam,
+    public Page<ServiceView> listServices(String namespaceId, String groupNameParam,
+            String serviceNameParam,
             boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException {
-        HttpRestResult<String> httpRestResult = doListServices(namespaceId, groupNameParam, serviceNameParam, false,
-                ignoreEmptyService, pageNo, pageSize);
+        HttpRestResult<String> httpRestResult =
+                doListServices(namespaceId, groupNameParam, serviceNameParam, false,
+                        ignoreEmptyService, pageNo, pageSize);
         Result<Page<ServiceView>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Page<ServiceView>>>() {
                 });
@@ -135,16 +151,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     @Override
     public Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
             String serviceNameParam, int pageNo, int pageSize) throws NacosException {
-        HttpRestResult<String> httpRestResult = doListServices(namespaceId, groupNameParam, serviceNameParam, true,
-                false, pageNo, pageSize);
+        HttpRestResult<String> httpRestResult =
+                doListServices(namespaceId, groupNameParam, serviceNameParam, true,
+                        false, pageNo, pageSize);
         Result<Page<ServiceDetailInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Page<ServiceDetailInfo>>>() {
                 });
         return result.getData();
     }
     
-    private HttpRestResult<String> doListServices(String namespaceId, String groupNameParam, String serviceNameParam,
-            boolean withInstances, boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException {
+    private HttpRestResult<String> doListServices(String namespaceId, String groupNameParam,
+            String serviceNameParam,
+            boolean withInstances, boolean ignoreEmptyService, int pageNo, int pageSize)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupNameParam", groupNameParam);
@@ -155,12 +174,14 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("pageSize", String.valueOf(pageSize));
         RequestResource resource = buildRequestResource(namespaceId, null, null);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/list").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/list")
+                .setParamValue(params).build();
         return getClientHttpProxy().executeSyncHttpRequest(httpRequest);
     }
     
     @Override
-    public Page<SubscriberInfo> getSubscribers(Service service, int pageNo, int pageSize, boolean aggregation)
+    public Page<SubscriberInfo> getSubscribers(Service service, int pageNo, int pageSize,
+            boolean aggregation)
             throws NacosException {
         service.validate();
         Map<String, String> params = new HashMap<>(8);
@@ -172,18 +193,23 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("aggregation", String.valueOf(aggregation));
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/subscribers").setParamValue(params)
+                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/subscribers")
+                .setParamValue(params)
                 .build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Page<SubscriberInfo>>>() {
-        }).getData();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        return JacksonUtils
+                .toObj(httpRestResult.getData(), new TypeReference<Result<Page<SubscriberInfo>>>() {
+                }).getData();
     }
     
     @Override
     public List<String> listSelectorTypes() throws NacosException {
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/selector/types").build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+                .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/selector/types")
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() {
         });
     }
@@ -194,8 +220,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("onlyStatus", String.valueOf(onlyStatus));
         
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/metrics").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+                .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/metrics")
+                .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<MetricsInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<MetricsInfo>>() {
                 });
@@ -209,10 +237,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("logLevel", logLevel);
         
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/log").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/log")
+                .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -228,16 +259,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
             LOGGER.warn(
                     "Strongly recommended to use the nacos-client for ephemeral instance registration to avoid auto-deregister.");
             LOGGER.warn("If wanted to register ephemeral instance with maintainer client, "
-                            + "please set `{}` in instance metadata to delay auto-deregister time.",
+                    + "please set `{}` in instance metadata to delay auto-deregister time.",
                     PreservedMetadataKeys.IP_DELETE_TIMEOUT);
         }
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -247,7 +281,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         instance.validate();
         checkEphemeral(service, instance);
         if (instance.isEphemeral()) {
-            LOGGER.warn("De-registering an ephemeral instance from service {}@@{}.", service.getGroupName(),
+            LOGGER.warn("De-registering an ephemeral instance from service {}@@{}.",
+                    service.getGroupName(),
                     service.getName());
             LOGGER.warn(
                     "De-registering an ephemeral instance might fail due to the nacos-client registered this instance is keeping connection");
@@ -256,11 +291,15 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         }
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
-        HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.DELETE)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        HttpRequest httpRequest =
+                buildRequestWithResource(resource).setHttpMethod(HttpMethod.DELETE)
+                        .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH)
+                        .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -272,15 +311,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
     @Override
-    public InstanceMetadataBatchResult batchUpdateInstanceMetadata(Service service, List<Instance> instances,
+    public InstanceMetadataBatchResult batchUpdateInstanceMetadata(Service service,
+            List<Instance> instances,
             Map<String, String> newMetadata) throws NacosException {
         service.validate();
         if (Objects.isNull(newMetadata)) {
@@ -297,9 +340,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instances, newMetadata);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch").setParamValue(params)
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch")
+                .setParamValue(params)
                 .build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<InstanceMetadataBatchResult> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<InstanceMetadataBatchResult>>() {
                 });
@@ -307,7 +352,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public InstanceMetadataBatchResult batchDeleteInstanceMetadata(Service service, List<Instance> instances,
+    public InstanceMetadataBatchResult batchDeleteInstanceMetadata(Service service,
+            List<Instance> instances,
             Map<String, String> newMetadata) throws NacosException {
         service.validate();
         if (Objects.isNull(newMetadata)) {
@@ -323,10 +369,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         checkEphemeral(service, instances.get(0));
         Map<String, String> params = RequestUtil.toParameters(service, instances, newMetadata);
         RequestResource resource = buildRequestResource(service);
-        HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.DELETE)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch").setParamValue(params)
+        HttpRequest httpRequest = buildRequestWithResource(resource)
+                .setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch")
+                .setParamValue(params)
                 .build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<InstanceMetadataBatchResult> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<InstanceMetadataBatchResult>>() {
                 });
@@ -341,10 +390,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/partial").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/partial")
+                .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -363,8 +415,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("healthyOnly", String.valueOf(healthyOnly));
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/list").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/list")
+                .setParamValue(params).build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<List<Instance>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<Instance>>>() {
                 });
@@ -378,10 +432,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Instance> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Instance>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<Instance> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Instance>>() {
+                });
         return result.getData();
     }
     
@@ -394,21 +451,26 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateInstanceHealthStatus(Service service, Instance instance) throws NacosException {
+    public String updateInstanceHealthStatus(Service service, Instance instance)
+            throws NacosException {
         service.validate();
         instance.validate();
         Map<String, String> params = RequestUtil.toParameters(service, instance);
         if (!service.isEphemeral() || !instance.isEphemeral()) {
-            LOGGER.warn("Only persistent instance with NONE health checker can be updated healthy statues.");
+            LOGGER.warn(
+                    "Only persistent instance with NONE health checker can be updated healthy statues.");
             params.put("ephemeral", String.valueOf(Boolean.FALSE));
         }
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/instance").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/instance")
+                .setParamValue(params).build();
         
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -416,9 +478,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     public Map<String, AbstractHealthChecker> getHealthCheckers() throws NacosException {
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/checkers").build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Map<String, AbstractHealthChecker>>() {
-        });
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        return JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Map<String, AbstractHealthChecker>>() {
+                });
     }
     
     @Override
@@ -428,10 +492,13 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = RequestUtil.toParameters(service, cluster);
         RequestResource resource = buildRequestResource(service);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_CLUSTER_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+                .setPath(Constants.AdminApiPath.NAMING_CLUSTER_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -439,7 +506,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     public List<String> getClientList() throws NacosException {
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/list").build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() {
         });
     }
@@ -449,8 +517,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH).setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ClientSummaryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ClientSummaryInfo>>() {
                 });
@@ -463,9 +533,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("clientId", clientId);
         
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/publish/list").setParamValue(params)
+                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/publish/list")
+                .setParamValue(params)
                 .build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<List<ClientServiceInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ClientServiceInfo>>>() {
                 });
@@ -478,9 +550,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("clientId", clientId);
         
         HttpRequest httpRequest = buildRequestWithResource().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/subscribe/list").setParamValue(params)
+                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/subscribe/list")
+                .setParamValue(params)
                 .build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<List<ClientServiceInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ClientServiceInfo>>>() {
                 });
@@ -488,7 +562,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+    public List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", namespaceId);
@@ -498,9 +573,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("port", String.valueOf(port));
         RequestResource resource = buildRequestResource(namespaceId, groupName, serviceName);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/publisher/list")
+                .setPath(
+                        Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/publisher/list")
                 .setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<List<ClientPublisherInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ClientPublisherInfo>>>() {
                 });
@@ -508,7 +585,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+    public List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port) throws NacosException {
         Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", namespaceId);
@@ -518,9 +596,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("port", String.valueOf(port));
         RequestResource resource = buildRequestResource(namespaceId, groupName, serviceName);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/subscriber/list")
+                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH
+                        + "/service/subscriber/list")
                 .setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult =
+                getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<List<ClientSubscriberInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ClientSubscriberInfo>>>() {
                 });
@@ -537,10 +617,12 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     private RequestResource buildRequestResource(Service service) {
-        return buildRequestResource(service.getNamespaceId(), service.getGroupName(), service.getName());
+        return buildRequestResource(service.getNamespaceId(), service.getGroupName(),
+                service.getName());
     }
     
-    private RequestResource buildRequestResource(String namespaceId, String groupName, String serviceName) {
+    private RequestResource buildRequestResource(String namespaceId, String groupName,
+            String serviceName) {
         RequestResource.Builder builder = RequestResource.namingBuilder();
         builder.setNamespace(namespaceId);
         builder.setGroup(groupName);

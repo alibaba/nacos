@@ -37,22 +37,22 @@ import java.time.Duration;
  * @author WangzJi
  */
 public class AuthorizationClient {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationClient.class);
-
+    
     private static volatile AuthorizationClient instance;
-
+    
     private final OidcAuthConfig config;
-
+    
     private final HttpClient httpClient;
-
+    
     private AuthorizationClient() {
         this.config = OidcAuthConfig.getInstance();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(config.getAuthorizationTimeoutMs()))
                 .build();
     }
-
+    
     /**
      * Get singleton instance.
      *
@@ -68,7 +68,7 @@ public class AuthorizationClient {
         }
         return instance;
     }
-
+    
     /**
      * Check if user is authorized to perform action on resource.
      * Calls the IdP authorization endpoint - Nacos does NOT make the decision.
@@ -78,16 +78,16 @@ public class AuthorizationClient {
      */
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         String authzEndpoint = config.getAuthorizationEvaluateEndpoint();
-
+        
         if (StringUtils.isBlank(authzEndpoint)) {
             LOGGER.warn("Authorization endpoint not configured. DEFAULTING TO ALLOW ALL ACCESS. "
                     + "Configure 'nacos.auth.oidc.authorization.endpoint' for external authorization.");
             return AuthorizationResponse.allowed();
         }
-
+        
         try {
             LOGGER.debug("Calling IdP authorization endpoint: {}", authzEndpoint);
-
+            
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(authzEndpoint))
                     .header("Content-Type", "application/json")
@@ -95,12 +95,13 @@ public class AuthorizationClient {
                     .POST(HttpRequest.BodyPublishers.ofString(request.toJson()))
                     .timeout(Duration.ofMillis(config.getAuthorizationTimeoutMs()))
                     .build();
-
+            
             HttpResponse<String> response = httpClient.send(httpRequest,
                     HttpResponse.BodyHandlers.ofString());
-
+            
             if (response.statusCode() == OidcProtocolConstants.HTTP_STATUS_OK) {
-                AuthorizationResponse authzResponse = AuthorizationResponse.fromJson(response.body());
+                AuthorizationResponse authzResponse =
+                        AuthorizationResponse.fromJson(response.body());
                 LOGGER.debug("IdP authorization response: {}", authzResponse);
                 return authzResponse;
             } else if (response.statusCode() == OidcConstants.HTTP_STATUS_UNAUTHORIZED
@@ -112,7 +113,7 @@ public class AuthorizationClient {
                         response.statusCode());
                 return AuthorizationResponse.denied("Authorization service error");
             }
-
+            
         } catch (IOException e) {
             LOGGER.error("Failed to call IdP authorization endpoint: {}", e.getMessage());
             return AuthorizationResponse.denied("Authorization service unavailable");
@@ -125,7 +126,7 @@ public class AuthorizationClient {
             return AuthorizationResponse.denied("Authorization error: " + e.getMessage());
         }
     }
-
+    
     /**
      * Check authorization with token, resource and action.
      *
@@ -140,7 +141,7 @@ public class AuthorizationClient {
                 .resource(resource)
                 .action(action)
                 .build();
-
+        
         AuthorizationResponse response = authorize(request);
         return response.isAllowed();
     }

@@ -45,7 +45,8 @@ public class PushExecutorRpcImpl implements PushExecutor {
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
         pushService.pushWithoutAck(clientId,
-                NotifySubscriberRequest.buildNotifySubscriberRequest(getServiceInfo(data, subscriber)));
+                NotifySubscriberRequest
+                        .buildNotifySubscriberRequest(getServiceInfo(data, subscriber)));
     }
     
     @Override
@@ -53,19 +54,23 @@ public class PushExecutorRpcImpl implements PushExecutor {
             NamingPushCallback callBack) {
         ServiceInfo actualServiceInfo = getServiceInfo(data, subscriber);
         callBack.setActualServiceInfo(actualServiceInfo);
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildNotifySubscriberRequest(actualServiceInfo),
+        pushService.pushWithCallback(clientId,
+                NotifySubscriberRequest.buildNotifySubscriberRequest(actualServiceInfo),
                 callBack, GlobalExecutor.getCallbackExecutor());
     }
     
     private ServiceInfo getServiceInfo(PushDataWrapper data, Subscriber subscriber) {
         return ServiceUtil
-                .selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true,
+                .selectInstancesWithHealthyProtection(data.getOriginalData(),
+                        data.getServiceMetadata(), false, true,
                         subscriber);
     }
-
+    
     @Override
-    public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest, PushCallBack callBack) {
-        pushService.pushWithCallback(clientId, watchNotifyRequest, callBack, GlobalExecutor.getCallbackExecutor());
+    public void doFuzzyWatchNotifyPushWithCallBack(String clientId,
+            AbstractFuzzyWatchNotifyRequest watchNotifyRequest, PushCallBack callBack) {
+        pushService.pushWithCallback(clientId, watchNotifyRequest, callBack,
+                GlobalExecutor.getCallbackExecutor());
     }
     
 }

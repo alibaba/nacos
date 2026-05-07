@@ -25,5 +25,5 @@ import org.springframework.context.annotation.Import;
  */
 @Import({NacosAuthPluginEmbeddedStorageConfig.class, NacosAuthPluginExternalStorageConfig.class})
 public class NacosAuthPluginPersistenceConfig {
-
+    
 }

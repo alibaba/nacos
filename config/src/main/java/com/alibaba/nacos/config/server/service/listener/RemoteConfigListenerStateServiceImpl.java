@@ -49,7 +49,8 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 @Service
 public class RemoteConfigListenerStateServiceImpl implements ConfigListenerStateService {
     
-    private static final String CONFIG_LISTENER_STATE_URL = Constants.CONFIG_ADMIN_V3_PATH + "/listener";
+    private static final String CONFIG_LISTENER_STATE_URL =
+            Constants.CONFIG_ADMIN_V3_PATH + "/listener";
     
     private final ServerMemberManager memberManager;
     
@@ -62,9 +63,11 @@ public class RemoteConfigListenerStateServiceImpl implements ConfigListenerState
     }
     
     @Override
-    public ConfigListenerInfo getListenerState(String dataId, String groupName, String namespaceId) {
-        Query query = Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
-                .addParam("namespaceId", namespaceId).addParam("aggregation", false);
+    public ConfigListenerInfo getListenerState(String dataId, String groupName,
+            String namespaceId) {
+        Query query =
+                Query.newInstance().addParam("dataId", dataId).addParam("groupName", groupName)
+                        .addParam("namespaceId", namespaceId).addParam("aggregation", false);
         Header header = buildHeader();
         ConfigListenerInfo result = new ConfigListenerInfo();
         result.setListenersStatus(new HashMap<>(16));
@@ -111,15 +114,18 @@ public class RemoteConfigListenerStateServiceImpl implements ConfigListenerState
                     .get(url, header, query, String.class);
             if (!restResult.ok()) {
                 LogUtil.DEFAULT_LOG.warn(
-                        "Invoke remote server config listener state by url {} failed with code {}, msg {}", url,
+                        "Invoke remote server config listener state by url {} failed with code {}, msg {}",
+                        url,
                         restResult.getCode(), restResult.getMessage());
                 return emptyConfigListenerInfo;
             }
-            Result<ConfigListenerInfo> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
-            });
+            Result<ConfigListenerInfo> result =
+                    JacksonUtils.toObj(restResult.getData(), new TypeReference<>() {
+                    });
             return result.getData();
         } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.error("Invoke remote server config listener by url {} failed :", url, e);
+            LogUtil.DEFAULT_LOG.error("Invoke remote server config listener by url {} failed :",
+                    url, e);
             return emptyConfigListenerInfo;
         }
     }

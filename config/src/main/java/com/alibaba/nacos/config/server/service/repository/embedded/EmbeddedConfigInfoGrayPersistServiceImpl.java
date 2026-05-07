@@ -98,8 +98,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         idGeneratorManager.register(RESOURCE_CONFIG_HISTORY_GRAY_ID, RESOURCE_CONFIG_HISTORY_ID);
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
-                false);
+        Boolean isDataSourceLogEnable =
+                EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+                        false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
@@ -110,10 +111,12 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public ConfigInfoStateWrapper findConfigInfo4GrayState(final String dataId, final String group, final String tenant,
+    public ConfigInfoStateWrapper findConfigInfo4GrayState(final String dataId, final String group,
+            final String tenant,
             String grayName) {
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName.trim();
         
@@ -124,9 +127,11 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
     }
     
-    private ConfigOperateResult getGrayOperateResult(String dataId, String group, String tenant, String grayName) {
+    private ConfigOperateResult getGrayOperateResult(String dataId, String group, String tenant,
+            String grayName) {
         String tenantTmp = StringUtils.defaultEmptyIfBlank(tenant);
-        ConfigInfoStateWrapper configInfo4Gray = this.findConfigInfo4GrayState(dataId, group, tenantTmp, grayName);
+        ConfigInfoStateWrapper configInfo4Gray =
+                this.findConfigInfo4GrayState(dataId, group, tenantTmp, grayName);
         if (configInfo4Gray == null) {
             return new ConfigOperateResult(false);
         }
@@ -135,7 +140,8 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public ConfigOperateResult addConfigInfo4Gray(ConfigInfo configInfo, String grayName, String grayRule, String srcIp,
+    public ConfigOperateResult addConfigInfo4Gray(ConfigInfo configInfo, String grayName,
+            String grayRule, String srcIp,
             String srcUser) {
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName.trim();
@@ -147,25 +153,31 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             long configGrayId = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_GRAY_ID);
             long hisId = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_ID);
             
-            addConfigInfoGrayAtomic(configGrayId, configInfo, grayNameTmp, grayRuleTmp, srcIp, srcUser);
+            addConfigInfoGrayAtomic(configGrayId, configInfo, grayNameTmp, grayRuleTmp, srcIp,
+                    srcUser);
             Timestamp now = new Timestamp(System.currentTimeMillis());
             
             if (!GRAY_MIGRATE_FLAG.get()) {
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I",
+                historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp,
+                        srcUser, now, "I",
                         Constants.GRAY, grayNameTmp,
-                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
+                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp,
+                                srcUser));
             }
             
-            EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, now);
+            EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
+                    srcIp, now);
             databaseOperate.blockUpdate();
-            return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp);
+            return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    grayNameTmp);
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
     @Override
-    public void addConfigInfoGrayAtomic(long configGrayId, ConfigInfo configInfo, String grayName, String grayRule,
+    public void addConfigInfoGrayAtomic(long configGrayId, ConfigInfo configInfo, String grayName,
+            String grayRule,
             String srcIp, String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
@@ -173,24 +185,29 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         String grayRuleTmp = StringUtils.isBlank(grayRule) ? StringUtils.EMPTY : grayRule.trim();
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
         
         final String sql = configInfoGrayMapper.insert(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "gray_name", "gray_rule", "app_name", "content",
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "gray_name", "gray_rule",
+                        "app_name", "content",
                         "md5", "src_ip", "src_user", "gmt_create", "gmt_modified"));
         
         Timestamp time = new Timestamp(System.currentTimeMillis());
-        final Object[] args = new Object[] {configGrayId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                grayNameTmp, grayRuleTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
+        final Object[] args = new Object[] {configGrayId, configInfo.getDataId(),
+                configInfo.getGroup(), tenantTmp,
+                grayNameTmp, grayRuleTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser,
+                time, time};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     
     @Override
-    public ConfigOperateResult insertOrUpdateGray(final ConfigInfo configInfo, final String grayName,
+    public ConfigOperateResult insertOrUpdateGray(final ConfigInfo configInfo,
+            final String grayName,
             final String grayRule, final String srcIp, final String srcUser) {
-        if (findConfigInfo4GrayState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), grayName)
-                == null) {
+        if (findConfigInfo4GrayState(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), grayName) == null) {
             return addConfigInfo4Gray(configInfo, grayName, grayRule, srcIp, srcUser);
         } else {
             return updateConfigInfo4Gray(configInfo, grayName, grayRule, srcIp, srcUser);
@@ -198,10 +215,11 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public ConfigOperateResult insertOrUpdateGrayCas(final ConfigInfo configInfo, final String grayName,
+    public ConfigOperateResult insertOrUpdateGrayCas(final ConfigInfo configInfo,
+            final String grayName,
             final String grayRule, final String srcIp, final String srcUser) {
-        if (findConfigInfo4GrayState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), grayName)
-                == null) {
+        if (findConfigInfo4GrayState(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), grayName) == null) {
             return addConfigInfo4Gray(configInfo, grayName, grayRule, srcIp, srcUser);
         } else {
             return updateConfigInfo4GrayCas(configInfo, grayName, grayRule, srcIp, srcUser);
@@ -214,28 +232,36 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName;
         
-        ConfigInfoGrayWrapper oldConfigAllInfo4Gray = findConfigInfo4Gray(dataId, group, tenantTmp, grayNameTmp);
+        ConfigInfoGrayWrapper oldConfigAllInfo4Gray =
+                findConfigInfo4Gray(dataId, group, tenantTmp, grayNameTmp);
         if (oldConfigAllInfo4Gray == null) {
             if (LogUtil.FATAL_LOG.isErrorEnabled()) {
-                LogUtil.FATAL_LOG.error("expected config info[dataid:{}, group:{}, tenent:{}] but not found.", dataId,
+                LogUtil.FATAL_LOG.error(
+                        "expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
+                        dataId,
                         group, tenant);
             }
         }
         
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
-        final String sql = configInfoGrayMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
+        final String sql = configInfoGrayMapper
+                .delete(Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
         final Object[] args = new Object[] {dataId, group, tenantTmp, grayNameTmp};
         
         Timestamp now = new Timestamp(System.currentTimeMillis());
         if (!GRAY_MIGRATE_FLAG.get()) {
-            historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(), oldConfigAllInfo4Gray,
+            historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
+                    oldConfigAllInfo4Gray,
                     srcIp, srcUser, now, "D", Constants.GRAY, grayNameTmp,
                     ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                            oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                            oldConfigAllInfo4Gray.getGrayRule(),
+                            oldConfigAllInfo4Gray.getSrcUser()));
         }
         
-        EmbeddedStorageContextUtils.onDeleteConfigGrayInfo(tenantTmp, group, dataId, grayNameTmp, srcIp);
+        EmbeddedStorageContextUtils.onDeleteConfigGrayInfo(tenantTmp, group, dataId, grayNameTmp,
+                srcIp);
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         try {
             databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
@@ -245,7 +271,8 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public ConfigOperateResult updateConfigInfo4Gray(ConfigInfo configInfo, String grayName, String grayRule,
+    public ConfigOperateResult updateConfigInfo4Gray(ConfigInfo configInfo, String grayName,
+            String grayRule,
             String srcIp, String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
@@ -255,37 +282,49 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         configInfo.setTenant(tenantTmp);
         
         try {
-            ConfigInfoGrayWrapper oldConfigAllInfo4Gray = findConfigInfo4Gray(configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp, grayNameTmp);
+            ConfigInfoGrayWrapper oldConfigAllInfo4Gray =
+                    findConfigInfo4Gray(configInfo.getDataId(),
+                            configInfo.getGroup(), tenantTmp, grayNameTmp);
             if (oldConfigAllInfo4Gray == null) {
                 if (LogUtil.FATAL_LOG.isErrorEnabled()) {
-                    LogUtil.FATAL_LOG.error("expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
+                    LogUtil.FATAL_LOG.error(
+                            "expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
                             configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
                 }
                 return new ConfigOperateResult(false);
             }
             
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_GRAY);
+            ConfigInfoGrayMapper configInfoGrayMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_GRAY);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
             final String sql = configInfoGrayMapper.update(
-                    Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "gray_rule"),
+                    Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified",
+                            "app_name", "gray_rule"),
                     Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
-            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
-                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp};
+            final Object[] args =
+                    new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+                            grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                            grayNameTmp};
             if (!GRAY_MIGRATE_FLAG.get()) {
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
-                        oldConfigAllInfo4Gray, srcIp, srcUser, time, "U", Constants.GRAY, grayNameTmp,
-                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                                oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                historyConfigInfoPersistService.insertConfigHistoryAtomic(
+                        oldConfigAllInfo4Gray.getId(),
+                        oldConfigAllInfo4Gray, srcIp, srcUser, time, "U", Constants.GRAY,
+                        grayNameTmp,
+                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(
+                                oldConfigAllInfo4Gray.getGrayName(),
+                                oldConfigAllInfo4Gray.getGrayRule(),
+                                oldConfigAllInfo4Gray.getSrcUser()));
             }
-            EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, time);
+            EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
+                    srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
             
             databaseOperate.blockUpdate();
-            return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp);
+            return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    grayNameTmp);
             
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -293,7 +332,8 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public ConfigOperateResult updateConfigInfo4GrayCas(ConfigInfo configInfo, String grayName, String grayRule,
+    public ConfigOperateResult updateConfigInfo4GrayCas(ConfigInfo configInfo, String grayName,
+            String grayRule,
             String srcIp, String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
@@ -303,19 +343,22 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         configInfo.setTenant(tenantTmp);
         
         try {
-            final ConfigInfoGrayWrapper oldConfigAllInfo4Gray = findConfigInfo4Gray(configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp, grayNameTmp);
+            final ConfigInfoGrayWrapper oldConfigAllInfo4Gray =
+                    findConfigInfo4Gray(configInfo.getDataId(),
+                            configInfo.getGroup(), tenantTmp, grayNameTmp);
             if (oldConfigAllInfo4Gray == null) {
                 if (LogUtil.FATAL_LOG.isErrorEnabled()) {
-                    LogUtil.FATAL_LOG.error("expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
+                    LogUtil.FATAL_LOG.error(
+                            "expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
                             configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
                 }
                 return new ConfigOperateResult(false);
             }
             
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_GRAY);
+            ConfigInfoGrayMapper configInfoGrayMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_GRAY);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
             MapperContext context = new MapperContext();
@@ -333,21 +376,29 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             context.putWhereParameter(FieldConstant.GRAY_RULE, grayRuleTmp);
             context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
             
-            final MapperResult mapperResult = configInfoGrayMapper.updateConfigInfo4GrayCas(context);
+            final MapperResult mapperResult =
+                    configInfoGrayMapper.updateConfigInfo4GrayCas(context);
             
-            EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, time);
-            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList().toArray());
+            EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp,
+                    srcIp, time);
+            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(),
+                    mapperResult.getParamList().toArray());
             
             Boolean success = databaseOperate.blockUpdate();
             if (success) {
                 if (!GRAY_MIGRATE_FLAG.get()) {
                     Timestamp now = new Timestamp(System.currentTimeMillis());
-                    historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
-                        oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY, grayNameTmp,
-                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                            oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                    historyConfigInfoPersistService.insertConfigHistoryAtomic(
+                            oldConfigAllInfo4Gray.getId(),
+                            oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
+                            grayNameTmp,
+                            ConfigExtInfoUtil.getExtInfoFromGrayInfo(
+                                    oldConfigAllInfo4Gray.getGrayName(),
+                                    oldConfigAllInfo4Gray.getGrayRule(),
+                                    oldConfigAllInfo4Gray.getSrcUser()));
                 }
-                return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp);
+                return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(),
+                        tenantTmp, grayNameTmp);
             } else {
                 return new ConfigOperateResult(false);
             }
@@ -358,14 +409,17 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public ConfigInfoGrayWrapper findConfigInfo4Gray(final String dataId, final String group, final String tenant,
+    public ConfigInfoGrayWrapper findConfigInfo4Gray(final String dataId, final String group,
+            final String tenant,
             final String grayName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName.trim();
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
         final String sql = configInfoGrayMapper.select(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "gray_name", "gray_rule", "app_name", "content",
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "gray_name", "gray_rule",
+                        "app_name", "content",
                         "md5", "gmt_modified", "src_user", "encrypted_data_key"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
         
@@ -375,8 +429,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     
     @Override
     public int configInfoGrayCount() {
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
         String sql = configInfoGrayMapper.count(null);
         Integer result = databaseOperate.queryOne(sql, Integer.class);
         if (result == null) {
@@ -386,16 +441,19 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     }
     
     @Override
-    public Page<ConfigInfoGrayWrapper> findAllConfigInfoGrayForDumpAll(final int pageNo, final int pageSize) {
+    public Page<ConfigInfoGrayWrapper> findAllConfigInfoGrayForDumpAll(final int pageNo,
+            final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
         String sqlCountRows = configInfoGrayMapper.count(null);
         MapperResult sqlFetchRows = configInfoGrayMapper.findAllConfigInfoGrayForDumpAllFetchRows(
                 new MapperContext(startRow, pageSize));
         
         PaginationHelper<ConfigInfoGrayWrapper> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows.getSql(),
+                sqlFetchRows.getParamList().toArray(), pageNo,
                 pageSize, CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER);
         
     }
@@ -403,19 +461,23 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
     @Override
     public List<String> findConfigInfoGrays(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.CONFIG_INFO_GRAY);
+        ConfigInfoGrayMapper configInfoGrayMapper =
+                mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                        TableConstant.CONFIG_INFO_GRAY);
         final String sql = configInfoGrayMapper.select(Collections.singletonList("gray_name"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         
-        return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenantTmp}, String.class);
+        return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenantTmp},
+                String.class);
     }
     
     @Override
-    public List<ConfigInfoGrayWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize) {
+    public List<ConfigInfoGrayWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId,
+            final int pageSize) {
         try {
-            ConfigInfoGrayMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                    TableConstant.CONFIG_INFO_GRAY);
+            ConfigInfoGrayMapper configInfoMapper =
+                    mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                            TableConstant.CONFIG_INFO_GRAY);
             
             MapperContext context = new MapperContext();
             context.putWhereParameter(FieldConstant.START_TIME, startTime);
@@ -423,7 +485,8 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
             
             MapperResult mapperResult = configInfoMapper.findChangeConfig(context);
-            return databaseOperate.queryMany(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+            return databaseOperate.queryMany(mapperResult.getSql(),
+                    mapperResult.getParamList().toArray(),
                     CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);

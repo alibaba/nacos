@@ -27,7 +27,7 @@ import java.util.List;
  * @since 1.2.0
  */
 public interface UserPersistService {
-
+    
     /**
      * create user.
      *
@@ -35,14 +35,14 @@ public interface UserPersistService {
      * @param password password
      */
     void createUser(String username, String password);
-
+    
     /**
      * delete user by username.
      *
      * @param username username
      */
     void deleteUser(String username);
-
+    
     /**
      * update password of the user.
      *
@@ -50,7 +50,7 @@ public interface UserPersistService {
      * @param password password
      */
     void updateUserPassword(String username, String password);
-
+    
     /**
      * query user by username.
      *
@@ -58,7 +58,7 @@ public interface UserPersistService {
      * @return user
      */
     User findUserByUsername(String username);
-
+    
     /**
      * get users by page.
      *
@@ -67,7 +67,7 @@ public interface UserPersistService {
      * @return user page info
      */
     Page<User> getUsers(int pageNo, int pageSize, String username);
-
+    
     /**
      * fuzzy query user by username.
      *
@@ -75,9 +75,9 @@ public interface UserPersistService {
      * @return usernames
      */
     List<String> findUserLikeUsername(String username);
-
+    
     Page<User> findUsersLike4Page(String username, int pageNo, int pageSize);
-
+    
     String generateLikeArgument(String s);
     
     /**

@@ -77,7 +77,8 @@ public class McpImportForm extends McpForm {
                     "Required parameter 'data' is not present");
         }
         if (ExternalDataTypeEnum.parseType(importType) == null) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "importType must be one of: json, url, file");
         }
     }

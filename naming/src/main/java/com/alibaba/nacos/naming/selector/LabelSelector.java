@@ -79,15 +79,17 @@ public class LabelSelector<T extends Instance> extends AbstractCmdbSelector<T> {
                     if (Objects.isNull(providerEntity)) {
                         return false;
                     }
-                    Map<String, String> providerLabels = Optional.ofNullable(ci.getEntity().getLabels())
-                            .orElse(Collections.emptyMap());
+                    Map<String, String> providerLabels =
+                            Optional.ofNullable(ci.getEntity().getLabels())
+                                    .orElse(Collections.emptyMap());
                     return labels.stream()
                             .allMatch(label -> {
                                 String consumerLabelValue = consumerLabels.get(label);
                                 if (StringUtils.isBlank(consumerLabelValue)) {
                                     return false;
                                 }
-                                return Objects.equals(consumerLabelValue, providerLabels.get(label));
+                                return Objects.equals(consumerLabelValue,
+                                        providerLabels.get(label));
                             });
                 })
                 .map(CmdbContext.CmdbInstance::getInstance)

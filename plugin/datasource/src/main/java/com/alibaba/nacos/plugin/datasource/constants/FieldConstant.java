@@ -43,7 +43,7 @@ public class FieldConstant {
     public static final String PAGE_SIZE = "pageSize";
     
     public static final String ID = "id";
-
+    
     public static final String NID = "nid";
     
     public static final String START_TIME = "startTime";
@@ -107,21 +107,21 @@ public class FieldConstant {
     public static final String TARGET_TENANT = "targetTenant";
     
     public static final String SRC_TENANT = "srcTenant";
-
+    
     public static final String NAMESPACE_ID = "namespaceId";
-
+    
     public static final String NAME = "name";
-
+    
     public static final String VERSION = "version";
-
+    
     public static final String STATUS = "status";
-
+    
     public static final String BIZ_TAGS = "bizTags";
-
+    
     public static final String META_VERSION = "metaVersion";
-
+    
     public static final String ORDER_BY = "orderBy";
-
+    
     public static final String ORDER_BY_DOWNLOAD_COUNT = "download_count";
     
     public static final String SCOPE = "scope";

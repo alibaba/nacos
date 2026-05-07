@@ -60,7 +60,8 @@ public class ConfigOpFailureAspect {
                 }
             }
             String methodName = joinPoint.getSignature().getName();
-            LOGGER.error("An error occurred while executing method [{}].\n Parameters: [{}].", methodName, params,
+            LOGGER.error("An error occurred while executing method [{}].\n Parameters: [{}].",
+                    methodName, params,
                     exception);
         } catch (Exception e) {
             LOGGER.error("An error occurred while logging the original exception. method [{}]",

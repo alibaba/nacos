@@ -31,14 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link ConfigBatchListenRequestParamExtractor} unit test.
  */
 class ConfigBatchListenRequestParamExtractorTest {
-
+    
     private ConfigBatchListenRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new ConfigBatchListenRequestParamExtractor();
     }
-
+    
     @Test
     void extractParamWithNullContexts() {
         ConfigBatchListenRequest request = new ConfigBatchListenRequest();
@@ -47,7 +47,7 @@ class ConfigBatchListenRequestParamExtractorTest {
         assertNotNull(list);
         assertTrue(list.isEmpty());
     }
-
+    
     @Test
     void extractParamWithContexts() {
         ConfigBatchListenRequest request = new ConfigBatchListenRequest();

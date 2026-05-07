@@ -71,7 +71,8 @@ class ReleaseMcpServerRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        requestHandler = new ReleaseMcpServerRequestHandler(mcpServerOperationService, endpointOperationService,
+        requestHandler = new ReleaseMcpServerRequestHandler(mcpServerOperationService,
+                endpointOperationService,
                 mcpServerIndex);
     }
     
@@ -106,7 +107,8 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setServerSpecification(buildMockServerSpecification(false, false));
         McpServerDetailInfo detailInfo = buildMockServerDetail();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenReturn(detailInfo);
         when(meta.getConnectionId()).thenReturn("111");
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
@@ -119,13 +121,18 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setServerSpecification(buildMockServerSpecification(false, false));
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(
-                    new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND, ""));
-        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
-                Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
+                        new NacosApiException(NacosException.NOT_FOUND,
+                                ErrorCode.MCP_SERVER_NOT_FOUND, ""));
+        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                "test::1.0.0")).thenReturn(
+                        Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                                Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull())).thenReturn(id);
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull()))
+                .thenReturn(id);
         when(meta.getConnectionId()).thenReturn("111");
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
@@ -137,11 +144,14 @@ class ReleaseMcpServerRequestHandlerTest {
         request.setServerSpecification(buildMockServerSpecification(false, false));
         request.setEndpointSpecification(new McpEndpointSpec());
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(
-                    new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND, ""));
+                        new NacosApiException(NacosException.NOT_FOUND,
+                                ErrorCode.MCP_SERVER_NOT_FOUND, ""));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
-                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull())).thenReturn(id);
+                eq(request.getServerSpecification()), isNull(), isNull(), isNotNull()))
+                .thenReturn(id);
         when(meta.getConnectionId()).thenReturn("111");
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
@@ -153,9 +163,11 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setServerSpecification(buildMockServerSpecification(true, false));
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(
-                    new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND, ""));
+                        new NacosApiException(NacosException.NOT_FOUND,
+                                ErrorCode.MCP_SERVER_NOT_FOUND, ""));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 eq(request.getServerSpecification()), isNull(), isNull(), isNull())).thenReturn(id);
         when(meta.getConnectionId()).thenReturn("111");
@@ -168,17 +180,24 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setServerSpecification(buildMockServerSpecification(false, false));
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(
-                    new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SEVER_VERSION_NOT_FOUND, ""));
+                        new NacosApiException(NacosException.NOT_FOUND,
+                                ErrorCode.MCP_SEVER_VERSION_NOT_FOUND, ""));
         when(meta.getConnectionId()).thenReturn("111");
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
-                Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
+        McpServerIndexData indexData =
+                McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+                .thenReturn(indexData);
+        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                "test::1.0.0")).thenReturn(
+                        Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                                Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
-        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                eq(false),
                 eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
     }
     
@@ -188,15 +207,20 @@ class ReleaseMcpServerRequestHandlerTest {
         request.setServerSpecification(buildMockServerSpecification(false, false));
         request.setEndpointSpecification(new McpEndpointSpec());
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(
-                    new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SEVER_VERSION_NOT_FOUND, ""));
+                        new NacosApiException(NacosException.NOT_FOUND,
+                                ErrorCode.MCP_SEVER_VERSION_NOT_FOUND, ""));
         when(meta.getConnectionId()).thenReturn("111");
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
+        McpServerIndexData indexData =
+                McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+                .thenReturn(indexData);
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
-        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(false),
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                eq(false),
                 eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
         verify(endpointOperationService, never()).generateService(anyString(), anyString());
     }
@@ -206,27 +230,36 @@ class ReleaseMcpServerRequestHandlerTest {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setServerSpecification(buildMockServerSpecification(false, true));
         String id = UUID.randomUUID().toString();
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(
-                    new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SEVER_VERSION_NOT_FOUND, ""));
+                        new NacosApiException(NacosException.NOT_FOUND,
+                                ErrorCode.MCP_SEVER_VERSION_NOT_FOUND, ""));
         when(meta.getConnectionId()).thenReturn("111");
-        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
-        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
-                Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
+        McpServerIndexData indexData =
+                McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test"))
+                .thenReturn(indexData);
+        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                "test::1.0.0")).thenReturn(
+                        Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                                Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
-        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                eq(true),
                 eq(request.getServerSpecification()), isNull(), isNull(), isNotNull(), eq(false));
     }
     
     @Test
     void handleReleaseWithException() throws NacosException {
-        NacosApiException exceptedException = new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
-                "test");
+        NacosApiException exceptedException =
+                new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,
+                        "test");
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setServerSpecification(buildMockServerSpecification(false, true));
-        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                null, "test",
                 "1.0.0")).thenThrow(exceptedException);
         try {
             requestHandler.handle(request, meta);

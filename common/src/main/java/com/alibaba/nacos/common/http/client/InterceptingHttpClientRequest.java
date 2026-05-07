@@ -42,7 +42,8 @@ public class InterceptingHttpClientRequest implements HttpClientRequest {
     }
     
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
+    public HttpClientResponse execute(URI uri, String httpMethod,
+            RequestHttpEntity requestHttpEntity)
             throws Exception {
         while (interceptors.hasNext()) {
             HttpClientRequestInterceptor nextInterceptor = interceptors.next();

@@ -31,22 +31,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 class ConnectionGeneratorServiceDelegateTest {
-
+    
     @Mock
     private StreamObserver<Object> streamObserver;
-
+    
     @Mock
     private Channel channel;
-
+    
     @Test
     void testGetInstance() {
-        ConnectionGeneratorServiceDelegate delegate = ConnectionGeneratorServiceDelegate.getInstance();
+        ConnectionGeneratorServiceDelegate delegate =
+                ConnectionGeneratorServiceDelegate.getInstance();
         assertNotNull(delegate);
     }
-
+    
     @Test
     void testGetConnection() {
-        ConnectionGeneratorServiceDelegate delegate = ConnectionGeneratorServiceDelegate.getInstance();
+        ConnectionGeneratorServiceDelegate delegate =
+                ConnectionGeneratorServiceDelegate.getInstance();
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
                 "grpc", "3.0.0", "app", Collections.emptyMap());
         Connection conn = delegate.getConnection(meta, streamObserver, channel);

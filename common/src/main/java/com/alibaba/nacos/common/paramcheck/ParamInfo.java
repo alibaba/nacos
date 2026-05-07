@@ -24,6 +24,7 @@ import java.util.Map;
  * @author zhuoguang
  */
 public class ParamInfo {
+    
     private String namespaceShowName;
     
     private String namespaceId;
@@ -135,15 +136,15 @@ public class ParamInfo {
     public String getMcpName() {
         return mcpName;
     }
-
+    
     public String getMcpId() {
         return mcpId;
     }
-
+    
     public void setMcpId(String mcpId) {
         this.mcpId = mcpId;
     }
-
+    
     public void setMcpName(String mcpName) {
         this.mcpName = mcpName;
     }

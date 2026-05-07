@@ -69,25 +69,25 @@ class VersionUtilsTest {
     void testVersionCompareEtWithChar() {
         assertEquals(0, VersionUtils.compareVersion("1.2.1", "1.2.1-beta"));
     }
-
+    
     @Test
     void testVersionCompareTwoDigitMinorIsGreaterThanSingleDigit() {
         assertTrue(VersionUtils.compareVersion("1.10.0", "1.9.0") > 0);
         assertTrue(VersionUtils.compareVersion("1.9.0", "1.10.0") < 0);
     }
-
+    
     @Test
     void testVersionCompareTwoDigitMajorIsGreaterThanSingleDigit() {
         assertTrue(VersionUtils.compareVersion("10.0.0", "9.0.0") > 0);
         assertTrue(VersionUtils.compareVersion("9.0.0", "10.0.0") < 0);
     }
-
+    
     @Test
     void testVersionCompareTwoDigitPatchIsGreaterThanSingleDigit() {
         assertTrue(VersionUtils.compareVersion("1.0.10", "1.0.9") > 0);
         assertTrue(VersionUtils.compareVersion("1.0.9-beta", "1.0.10-beta") < 0);
     }
-
+    
     @Test
     void testVersionCompareNonNumericPartIsRejected() {
         assertThrows(IllegalArgumentException.class,

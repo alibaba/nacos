@@ -87,8 +87,9 @@ class ConfigInfoTest {
     
     @Test
     public void testBasicInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s}";
+        String json =
+                "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+                        + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s}";
         json = String.format(json, createTime, modifyTime);
         assertBasicInfo(mapper.readValue(json, ConfigBasicInfo.class));
     }
@@ -102,11 +103,12 @@ class ConfigInfoTest {
     
     @Test
     public void testDetailInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,"
-                + "\"modifyTime\":%s,\"content\":\"testContent\",\"desc\":\"testDesc\","
-                + "\"encryptedDataKey\":\"testEncryptedDataKey\",\"createUser\":\"testCreateUser\","
-                + "\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\"}";
+        String json =
+                "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+                        + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,"
+                        + "\"modifyTime\":%s,\"content\":\"testContent\",\"desc\":\"testDesc\","
+                        + "\"encryptedDataKey\":\"testEncryptedDataKey\",\"createUser\":\"testCreateUser\","
+                        + "\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\"}";
         json = String.format(json, createTime, modifyTime);
         ConfigDetailInfo detailInfo = mapper.readValue(json, ConfigDetailInfo.class);
         assertBasicInfo(detailInfo);
@@ -128,12 +130,14 @@ class ConfigInfoTest {
     
     @Test
     public void testGrayInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
-                + "\"content\":\"testContent\",\"desc\":\"testDesc\",\"encryptedDataKey\":\"testEncryptedDataKey\","
-                + "\"createUser\":\"testCreateUser\",\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\","
-                + "\"grayName\":\"testGrayName\",\"grayRule\":"
-                + "\"{\\\"type\\\":\\\"beta\\\",\\\"version\\\":\\\"1.0.0\\\",\\\"expr\\\":\\\"127.0.0.1,127.0.0.2\\\",\\\"priority\\\":-1000}\"}";
+        String json =
+                "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+                        + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
+                        + "\"content\":\"testContent\",\"desc\":\"testDesc\",\"encryptedDataKey\":\"testEncryptedDataKey\","
+                        + "\"createUser\":\"testCreateUser\",\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\","
+                        + "\"grayName\":\"testGrayName\",\"grayRule\":"
+                        + "\"{\\\"type\\\":\\\"beta\\\",\\\"version\\\":\\\"1.0.0\\\","
+                        + "\\\"expr\\\":\\\"127.0.0.1,127.0.0.2\\\",\\\"priority\\\":-1000}\"}";
         json = String.format(json, createTime, modifyTime);
         ConfigGrayInfo actualGrayInfo = mapper.readValue(json, ConfigGrayInfo.class);
         assertBasicInfo(actualGrayInfo);

@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DiskUtilsTest {
     
     private static final String TMP_PATH =
-            EnvUtils.getNacosHome() + File.separator + "data" + File.separator + "tmp" + File.separator;
+            EnvUtils.getNacosHome() + File.separator + "data" + File.separator + "tmp"
+                    + File.separator;
     
     private static File testFile;
     
@@ -63,7 +64,8 @@ class DiskUtilsTest {
     
     @Test
     void testWriteFile() {
-        assertTrue(DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
+        assertTrue(
+                DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
         assertEquals("unit test", DiskUtils.readFile(testFile));
     }
     
@@ -73,7 +75,7 @@ class DiskUtilsTest {
         DiskUtils.deleteQuietly(tmpFile);
         assertFalse(tmpFile.exists());
     }
-
+    
     @Test
     void testReadFileConcurrentlyReturnsCorrectContent() throws Exception {
         // Two distinct payloads, each large enough that decoding is non-trivial. If readFile shares a
@@ -87,7 +89,7 @@ class DiskUtilsTest {
         String contentB = repeat("beta-rule-", 1024);
         Files.write(fileA.toPath(), contentA.getBytes(StandardCharsets.UTF_8));
         Files.write(fileB.toPath(), contentB.getBytes(StandardCharsets.UTF_8));
-
+        
         int threads = 16;
         int iterationsPerThread = 50;
         ExecutorService pool = Executors.newFixedThreadPool(threads);
@@ -103,7 +105,8 @@ class DiskUtilsTest {
                     for (int j = 0; j < iterationsPerThread; j++) {
                         String actual = DiskUtils.readFile(target);
                         assertEquals(expected, actual,
-                                "concurrent readFile returned corrupted content for " + target.getName());
+                                "concurrent readFile returned corrupted content for "
+                                        + target.getName());
                     }
                     return null;
                 }));
@@ -116,7 +119,7 @@ class DiskUtilsTest {
             pool.shutdownNow();
         }
     }
-
+    
     @Test
     void testReadFileWithMultiByteUtf8Content() throws IOException {
         // Regression: readFile must round-trip non-ASCII UTF-8 content.
@@ -126,7 +129,7 @@ class DiskUtilsTest {
         Files.write(f.toPath(), content.getBytes(StandardCharsets.UTF_8));
         assertEquals(content, DiskUtils.readFile(f));
     }
-
+    
     @Test
     void testReadFileSequentialCallsAreIndependent() throws IOException {
         // Regression: a previously shared static CharsetDecoder kept state across calls. Each call must
@@ -140,7 +143,7 @@ class DiskUtilsTest {
         Files.write(f.toPath(), second.getBytes(StandardCharsets.UTF_8));
         assertEquals(second, DiskUtils.readFile(f));
     }
-
+    
     private static String repeat(String token, int times) {
         StringBuilder sb = new StringBuilder(token.length() * times);
         for (int i = 0; i < times; i++) {

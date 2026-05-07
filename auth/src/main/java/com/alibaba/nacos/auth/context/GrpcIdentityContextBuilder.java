@@ -68,6 +68,7 @@ public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Reques
     }
     
     private void getRemoteIp(Request request, IdentityContext result) {
-        result.setParameter(Constants.Identity.REMOTE_IP, request.getHeader(Constants.Identity.X_REAL_IP));
+        result.setParameter(Constants.Identity.REMOTE_IP,
+                request.getHeader(Constants.Identity.X_REAL_IP));
     }
 }

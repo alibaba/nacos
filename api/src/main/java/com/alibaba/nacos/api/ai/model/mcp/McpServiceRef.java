@@ -22,13 +22,13 @@ package com.alibaba.nacos.api.ai.model.mcp;
  * @author xiweng.yy
  */
 public class McpServiceRef {
-
+    
     private String namespaceId;
     
     private String groupName;
     
     private String serviceName;
-
+    
     private String transportProtocol;
     
     public String getNamespaceId() {
@@ -54,11 +54,11 @@ public class McpServiceRef {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
-
+    
     public void setTransportProtocol(String transportProtocol) {
         this.transportProtocol = transportProtocol;
     }
-
+    
     public String getTransportProtocol() {
         return transportProtocol;
     }

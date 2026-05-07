@@ -33,8 +33,9 @@ import java.util.List;
  *
  * @author KiteSoar
  **/
-public class TenantCapacityMapperByMySql extends AbstractMapperByMysql implements TenantCapacityMapper {
-
+public class TenantCapacityMapperByMySql extends AbstractMapperByMysql
+        implements TenantCapacityMapper {
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
@@ -42,16 +43,19 @@ public class TenantCapacityMapperByMySql extends AbstractMapperByMysql implement
     
     @Override
     public MapperResult select(MapperContext context) {
-        String sql = "SELECT id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, tenant_id FROM tenant_capacity "
-                + "WHERE tenant_id = ?";
-        return new MapperResult(sql, Collections.singletonList(context.getWhereParameter(FieldConstant.TENANT_ID)));
+        String sql =
+                "SELECT id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, tenant_id FROM tenant_capacity "
+                        + "WHERE tenant_id = ?";
+        return new MapperResult(sql,
+                Collections.singletonList(context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
     
     @Override
     public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
-                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
+        return new MapperResult(sql,
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                        context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
     
     @Override
@@ -75,7 +79,8 @@ public class TenantCapacityMapperByMySql extends AbstractMapperByMysql implement
     
     @Override
     public MapperResult incrementUsage(MapperContext context) {
-        return new MapperResult("UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ?",
+        return new MapperResult(
+                "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ?",
                 CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.TENANT_ID)));
     }

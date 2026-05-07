@@ -32,21 +32,21 @@ import java.util.Properties;
  * @version $Id: RpcServerSslContextRefresherHolder.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
  */
 public class RpcServerSslContextRefresherHolder {
-
+    
     /**
      * The instance of {@link RpcServerSslContextRefresher} for SDK communication.
      */
     private static RpcServerSslContextRefresher sdkInstance;
-
+    
     /**
      * The instance of {@link RpcServerSslContextRefresher} for Cluster communication.
      */
     private static RpcServerSslContextRefresher clusterInstance;
-
+    
     static {
         init();
     }
-
+    
     /**
      * Gets the instance of {@link RpcServerSslContextRefresher} for SDK communication.
      *
@@ -55,7 +55,7 @@ public class RpcServerSslContextRefresherHolder {
     public static RpcServerSslContextRefresher getSdkInstance() {
         return sdkInstance;
     }
-
+    
     /**
      * Gets the instance of {@link RpcServerSslContextRefresher} for Cluster communication.
      *
@@ -64,7 +64,7 @@ public class RpcServerSslContextRefresherHolder {
     public static RpcServerSslContextRefresher getClusterInstance() {
         return clusterInstance;
     }
-
+    
     /**
      * Initializes the holder by loading SSL context refreshers and matching them with the configured types (SDK and
      * Cluster).
@@ -72,8 +72,10 @@ public class RpcServerSslContextRefresherHolder {
     private static void init() {
         synchronized (RpcServerSslContextRefresherHolder.class) {
             Properties properties = EnvUtil.getProperties();
-            RpcServerTlsConfig clusterServerTlsConfig = RpcServerTlsConfigFactory.getInstance().createClusterConfig(properties);
-            RpcServerTlsConfig sdkServerTlsConfig = RpcServerTlsConfigFactory.getInstance().createSdkConfig(properties);
+            RpcServerTlsConfig clusterServerTlsConfig =
+                    RpcServerTlsConfigFactory.getInstance().createClusterConfig(properties);
+            RpcServerTlsConfig sdkServerTlsConfig =
+                    RpcServerTlsConfigFactory.getInstance().createSdkConfig(properties);
             Collection<RpcServerSslContextRefresher> refreshers = NacosServiceLoader.load(
                     RpcServerSslContextRefresher.class);
             sdkInstance = getSslContextRefresher(refreshers, sdkServerTlsConfig);
@@ -81,7 +83,7 @@ public class RpcServerSslContextRefresherHolder {
             Loggers.REMOTE.info("RpcServerSslContextRefresher initialization completed.");
         }
     }
-
+    
     /**
      * Initializes the SSL context refresher instance based on the specified configuration.
      *
@@ -90,7 +92,8 @@ public class RpcServerSslContextRefresherHolder {
      * @return The instance of {@link RpcServerSslContextRefresher}.
      */
     private static RpcServerSslContextRefresher getSslContextRefresher(
-            Collection<RpcServerSslContextRefresher> refreshers, RpcServerTlsConfig serverTlsConfig) {
+            Collection<RpcServerSslContextRefresher> refreshers,
+            RpcServerTlsConfig serverTlsConfig) {
         String refresherName = serverTlsConfig.getSslContextRefresher();
         RpcServerSslContextRefresher instance = null;
         if (StringUtils.isNotBlank(refresherName)) {
@@ -103,7 +106,8 @@ public class RpcServerSslContextRefresherHolder {
                 }
             }
             if (instance == null) {
-                Loggers.REMOTE.warn("Failed to find RpcServerSslContextRefresher with name {}.", refresherName);
+                Loggers.REMOTE.warn("Failed to find RpcServerSslContextRefresher with name {}.",
+                        refresherName);
             }
         } else {
             Loggers.REMOTE.info("Ssl Context auto refresh is not supported.");

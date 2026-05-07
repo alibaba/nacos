@@ -47,7 +47,8 @@ public class RequestMappingInfo {
     
     @Override
     public String toString() {
-        return "RequestMappingInfo{" + "pathRequestCondition=" + pathRequestCondition + ", paramRequestCondition="
+        return "RequestMappingInfo{" + "pathRequestCondition=" + pathRequestCondition
+                + ", paramRequestCondition="
                 + paramRequestCondition + '}';
     }
     

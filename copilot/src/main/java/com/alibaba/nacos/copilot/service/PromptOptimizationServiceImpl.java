@@ -51,10 +51,11 @@ public class PromptOptimizationServiceImpl implements PromptOptimizationService 
     
     @Override
     public void optimizePromptStream(PromptOptimizationRequest request,
-                                     StreamResponseCallback<PromptOptimizationResponse> callback) {
+            StreamResponseCallback<PromptOptimizationResponse> callback) {
         // 1. Validate request
         if (StringUtils.isBlank(request.getPrompt())) {
-            callback.onError(new NacosException(NacosException.INVALID_PARAM, "Prompt is required"));
+            callback.onError(
+                    new NacosException(NacosException.INVALID_PARAM, "Prompt is required"));
             return;
         }
         

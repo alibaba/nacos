@@ -70,18 +70,22 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder,
             NacosClientProperties properties, InstancesChangeNotifier changeNotifier,
-            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
-        this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
-                changeNotifier);
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder)
+            throws NacosException {
+        this.serviceInfoUpdateService =
+                new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
+                        changeNotifier);
         this.serverListManager = new NamingServerListManager(properties, namespace);
         this.serverListManager.start();
         this.serviceInfoHolder = serviceInfoHolder;
         this.securityProxy = new SecurityProxy(this.serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
-        this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties);
-        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
-                serviceInfoHolder, namingFuzzyWatchServiceListHolder);
+        this.httpClientProxy =
+                new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties);
+        this.grpcClientProxy =
+                new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
+                        serviceInfoHolder, namingFuzzyWatchServiceListHolder);
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -89,51 +93,62 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
                 new NameThreadFactory("com.alibaba.nacos.client.naming.security"));
         final Properties nacosClientPropertiesView = properties.asProperties();
         this.securityProxy.login(nacosClientPropertiesView);
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0,
+        this.executorService.scheduleWithFixedDelay(
+                () -> securityProxy.login(nacosClientPropertiesView), 0,
                 SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
     @Override
-    public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void registerService(String serviceName, String groupName, Instance instance)
+            throws NacosException {
         getExecuteClientProxy(instance).registerService(serviceName, groupName, instance);
     }
     
     @Override
     public void batchRegisterService(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
-        NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} begin.", instances, serviceName);
+        NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} begin.", instances,
+                serviceName);
         if (CollectionUtils.isEmpty(instances)) {
             NAMING_LOGGER.warn("batchRegisterInstance instances is Empty:{}", instances);
         }
         grpcClientProxy.batchRegisterService(serviceName, groupName, instances);
-        NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} finish.", instances, serviceName);
+        NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} finish.",
+                instances, serviceName);
     }
     
     @Override
-    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
+    public void batchDeregisterService(String serviceName, String groupName,
+            List<Instance> instances)
             throws NacosException {
-        NAMING_LOGGER.info("batch DeregisterInstance instances: {} ,serviceName: {} begin.", instances, serviceName);
+        NAMING_LOGGER.info("batch DeregisterInstance instances: {} ,serviceName: {} begin.",
+                instances, serviceName);
         if (CollectionUtils.isEmpty(instances)) {
             NAMING_LOGGER.warn("batch DeregisterInstance instances is Empty:{}", instances);
         }
         grpcClientProxy.batchDeregisterService(serviceName, groupName, instances);
-        NAMING_LOGGER.info("batch DeregisterInstance instances: {} ,serviceName: {} finish.", instances, serviceName);
+        NAMING_LOGGER.info("batch DeregisterInstance instances: {} ,serviceName: {} finish.",
+                instances, serviceName);
     }
     
     @Override
-    public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void deregisterService(String serviceName, String groupName, Instance instance)
+            throws NacosException {
         getExecuteClientProxy(instance).deregisterService(serviceName, groupName, instance);
     }
     
     @Override
-    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-    
+    public void updateInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException {
+        
     }
     
     @Override
-    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters,
+    public ServiceInfo queryInstancesOfService(String serviceName, String groupName,
+            String clusters,
             boolean healthyOnly) throws NacosException {
-        return grpcClientProxy.queryInstancesOfService(serviceName, groupName, clusters, healthyOnly);
+        return grpcClientProxy.queryInstancesOfService(serviceName, groupName, clusters,
+                healthyOnly);
     }
     
     @Override
@@ -143,7 +158,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void createService(Service service, AbstractSelector selector) throws NacosException {
-    
+        
     }
     
     @Override
@@ -153,18 +168,21 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void updateService(Service service, AbstractSelector selector) throws NacosException {
-    
+        
     }
     
     @Override
-    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName,
+            AbstractSelector selector)
             throws NacosException {
         return grpcClientProxy.getServiceList(pageNo, pageSize, groupName, selector);
     }
     
     @Override
-    public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        NAMING_LOGGER.info("[SUBSCRIBE-SERVICE] service:{}, group:{}, clusters:{} ", serviceName, groupName, clusters);
+    public ServiceInfo subscribe(String serviceName, String groupName, String clusters)
+            throws NacosException {
+        NAMING_LOGGER.info("[SUBSCRIBE-SERVICE] service:{}, group:{}, clusters:{} ", serviceName,
+                groupName, clusters);
         String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
@@ -177,15 +195,18 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        NAMING_LOGGER.debug("[UNSUBSCRIBE-SERVICE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
+    public void unsubscribe(String serviceName, String groupName, String clusters)
+            throws NacosException {
+        NAMING_LOGGER.debug("[UNSUBSCRIBE-SERVICE] service:{}, group:{}, cluster:{} ", serviceName,
+                groupName,
                 clusters);
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, groupName, clusters);
         grpcClientProxy.unsubscribe(serviceName, groupName, clusters);
     }
     
     @Override
-    public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+    public boolean isSubscribed(String serviceName, String groupName, String clusters)
+            throws NacosException {
         return grpcClientProxy.isSubscribed(serviceName, groupName, clusters);
     }
     

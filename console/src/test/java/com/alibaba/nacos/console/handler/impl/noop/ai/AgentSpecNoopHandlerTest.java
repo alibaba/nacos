@@ -32,21 +32,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author nacos
  */
 class AgentSpecNoopHandlerTest {
-
+    
     private AgentSpecNoopHandler agentSpecNoopHandler;
-
+    
     @BeforeEach
     void setUp() {
         agentSpecNoopHandler = new AgentSpecNoopHandler();
     }
-
+    
     @Test
     void testUpdateScopeThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> agentSpecNoopHandler.updateScope(new AgentSpecScopeForm()));
         assertEquals(NacosException.SERVER_NOT_IMPLEMENTED, ex.getErrCode());
     }
-
+    
     @Test
     void testForcePublishThrowsNotImplemented() {
         NacosApiException ex = assertThrows(NacosApiException.class,

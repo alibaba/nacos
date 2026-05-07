@@ -39,7 +39,8 @@ public class CalculateV4SigningKeyUtil {
     
     private static final String CONSTANT = "aliyun_v4_request";
     
-    private static final DateTimeFormatter V4_SIGN_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter V4_SIGN_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyyMMdd");
     
     private static final ZoneId UTC_0 = ZoneId.of("GMT+00:00");
     
@@ -50,7 +51,8 @@ public class CalculateV4SigningKeyUtil {
         return mac.doFinal(date.getBytes(StandardCharsets.UTF_8));
     }
     
-    private static byte[] regionSigningKey(String secret, String date, String region, String signMethod)
+    private static byte[] regionSigningKey(String secret, String date, String region,
+            String signMethod)
             throws NoSuchAlgorithmException, InvalidKeyException {
         byte[] firstSignkey = firstSigningKey(secret, date, signMethod);
         Mac mac = Mac.getInstance(signMethod);
@@ -58,7 +60,8 @@ public class CalculateV4SigningKeyUtil {
         return mac.doFinal(region.getBytes(StandardCharsets.UTF_8));
     }
     
-    private static byte[] finalSigningKey(String secret, String date, String region, String productCode,
+    private static byte[] finalSigningKey(String secret, String date, String region,
+            String productCode,
             String signMethod) {
         try {
             byte[] secondSignkey = regionSigningKey(secret, date, region, signMethod);
@@ -86,9 +89,11 @@ public class CalculateV4SigningKeyUtil {
      * @param signMethod  sign method
      * @return V4 signature key with base64 encode
      */
-    public static String finalSigningKeyString(String secret, String date, String region, String productCode,
+    public static String finalSigningKeyString(String secret, String date, String region,
+            String productCode,
             String signMethod) {
-        return Base64.getEncoder().encodeToString(finalSigningKey(secret, date, region, productCode, signMethod));
+        return Base64.getEncoder()
+                .encodeToString(finalSigningKey(secret, date, region, productCode, signMethod));
     }
     
     /**

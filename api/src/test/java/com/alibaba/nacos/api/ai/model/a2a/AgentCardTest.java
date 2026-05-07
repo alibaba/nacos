@@ -59,19 +59,20 @@ class AgentCardTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
-                + "\"version\":\"1.0.0\",\"iconUrl\":\"http://test.com/icon.png\","
-                + "\"url\":\"http://test.com/agent\",\"preferredTransport\":\"JSONRPC\","
-                + "\"supportedInterfaces\":[{\"url\":\"http://test.com/v1\",\"protocolBinding\":\"JSONRPC\","
-                + "\"protocolVersion\":\"1.0\",\"tenant\":\"public\"}],"
-                + "\"documentationUrl\":\"http://test.com/docs\","
-                + "\"signatures\":[{\"alg\":\"EdDSA\"}],"
-                + "\"defaultInputModes\":[\"text\",\"voice\"],"
-                + "\"defaultOutputModes\":[\"text\",\"image\"],"
-                + "\"supportsAuthenticatedExtendedCard\":true,"
-                + "\"capabilities\":{\"streaming\":true},"
-                + "\"provider\":{\"organization\":\"test-org\",\"url\":\"http://test.org\"},"
-                + "\"securitySchemes\":{\"default\":{\"type\":\"apiKey\",\"name\":\"Authorization\",\"in\":\"header\"}}}";
+        String json =
+                "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
+                        + "\"version\":\"1.0.0\",\"iconUrl\":\"http://test.com/icon.png\","
+                        + "\"url\":\"http://test.com/agent\",\"preferredTransport\":\"JSONRPC\","
+                        + "\"supportedInterfaces\":[{\"url\":\"http://test.com/v1\",\"protocolBinding\":\"JSONRPC\","
+                        + "\"protocolVersion\":\"1.0\",\"tenant\":\"public\"}],"
+                        + "\"documentationUrl\":\"http://test.com/docs\","
+                        + "\"signatures\":[{\"alg\":\"EdDSA\"}],"
+                        + "\"defaultInputModes\":[\"text\",\"voice\"],"
+                        + "\"defaultOutputModes\":[\"text\",\"image\"],"
+                        + "\"supportsAuthenticatedExtendedCard\":true,"
+                        + "\"capabilities\":{\"streaming\":true},"
+                        + "\"provider\":{\"organization\":\"test-org\",\"url\":\"http://test.org\"},"
+                        + "\"securitySchemes\":{\"default\":{\"type\":\"apiKey\",\"name\":\"Authorization\",\"in\":\"header\"}}}";
         
         AgentCard agentCard = mapper.readValue(json, AgentCard.class);
         assertNotNull(agentCard);
@@ -172,7 +173,8 @@ class AgentCardTest extends BasicRequestTest {
         
         assertNotNull(agentCard.getAdditionalInterfaces());
         assertEquals(1, agentCard.getAdditionalInterfaces().size());
-        assertEquals("http://test.com/interface", agentCard.getAdditionalInterfaces().get(0).getUrl());
+        assertEquals("http://test.com/interface",
+                agentCard.getAdditionalInterfaces().get(0).getUrl());
         assertEquals("JSONRPC", agentCard.getAdditionalInterfaces().get(0).getTransport());
     }
     
@@ -212,7 +214,8 @@ class AgentCardTest extends BasicRequestTest {
         agentCard.setDefaultInputModes(Arrays.asList("text", "voice"));
         agentCard.setDefaultOutputModes(Arrays.asList("text", "image"));
         agentCard.setSupportsAuthenticatedExtendedCard(true);
-        agentCard.setSignatures(Collections.singletonList(Collections.<String, Object>singletonMap("alg", "EdDSA")));
+        agentCard.setSignatures(Collections
+                .singletonList(Collections.<String, Object>singletonMap("alg", "EdDSA")));
         
         // Create capabilities
         AgentCapabilities capabilities = new AgentCapabilities();

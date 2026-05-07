@@ -68,7 +68,8 @@ import java.util.Map;
 @EnabledRemoteHandler
 public class ConfigImportAndExportService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigImportAndExportService.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(ConfigImportAndExportService.class);
     
     private static final String REMOTE_CONFIG_IMPORT_URL = "http://%s%s/v3/admin/cs/config/import";
     
@@ -91,20 +92,24 @@ public class ConfigImportAndExportService {
      * @param sourceApp     source app from console request
      * @return Maps of import success and failed count
      */
-    public Result<Map<String, Object>> importConfig(String sourceUser, String namespaceId, SameConfigPolicy policy,
+    public Result<Map<String, Object>> importConfig(String sourceUser, String namespaceId,
+            SameConfigPolicy policy,
             MultipartFile importFile, String sourceIp, String sourceApp) throws NacosException {
         String serverContextPath = remoteServerConnector.getServerContextPath();
         Member serverMember = remoteServerConnector.randomOneHealthyMember();
-        String url = String.format(REMOTE_CONFIG_IMPORT_URL, serverMember.getAddress(), serverContextPath);
+        String url = String.format(REMOTE_CONFIG_IMPORT_URL, serverMember.getAddress(),
+                serverContextPath);
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            Query query = Query.newInstance().addParam("namespaceId", namespaceId).addParam("srcUser", sourceUser);
+            Query query = Query.newInstance().addParam("namespaceId", namespaceId)
+                    .addParam("srcUser", sourceUser);
             URI uri = HttpUtils.buildUri(url, query);
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setHeader(WebUtils.X_FORWARDED_FOR, sourceIp);
             httpPost.setHeader(RequestUtil.CLIENT_APPNAME_HEADER, sourceApp);
             remoteServerConnector.addAuthIdentity(httpPost);
-            String contentTypeString = null == importFile.getContentType() ? MediaType.MULTIPART_FORM_DATA_VALUE
-                    : importFile.getContentType();
+            String contentTypeString =
+                    null == importFile.getContentType() ? MediaType.MULTIPART_FORM_DATA_VALUE
+                            : importFile.getContentType();
             ContentType contentType = ContentType.create(contentTypeString, Constants.ENCODE);
             MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
             multipartEntityBuilder.addBinaryBody("file", importFile.getInputStream(), contentType,
@@ -112,16 +117,20 @@ public class ConfigImportAndExportService {
             multipartEntityBuilder.addTextBody("policy", policy.name(), contentType);
             HttpEntity entity = multipartEntityBuilder.build();
             httpPost.setEntity(entity);
-            String executeResult = httpClient.execute(httpPost, new BasicHttpClientResponseHandler());
+            String executeResult =
+                    httpClient.execute(httpPost, new BasicHttpClientResponseHandler());
             return JacksonUtils.toObj(executeResult, new TypeReference<>() {
             });
         } catch (HttpResponseException responseException) {
-            LOGGER.error("Import config to server {} failed with code {}: ", serverMember.getAddress(),
+            LOGGER.error("Import config to server {} failed with code {}: ",
+                    serverMember.getAddress(),
                     responseException.getStatusCode());
-            throw new NacosRuntimeException(responseException.getStatusCode(), responseException.getMessage());
+            throw new NacosRuntimeException(responseException.getStatusCode(),
+                    responseException.getMessage());
         } catch (IOException | URISyntaxException e) {
             LOGGER.error("Import config to server {} failed: ", serverMember.getAddress(), e);
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Import config to server failed.");
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                    "Import config to server failed.");
         }
     }
     
@@ -136,25 +145,31 @@ public class ConfigImportAndExportService {
      * @return export file entity
      * @throws Exception    any exception during export config
      */
-    public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
+    public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId,
+            String appName,
             List<Long> ids) throws Exception {
         String serverContextPath = remoteServerConnector.getServerContextPath();
         Member serverMember = remoteServerConnector.randomOneHealthyMember();
-        String url = String.format(REMOTE_CONFIG_EXPORT_URL, serverMember.getAddress(), serverContextPath);
+        String url = String.format(REMOTE_CONFIG_EXPORT_URL, serverMember.getAddress(),
+                serverContextPath);
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            Query query = Query.newInstance().addParam("namespaceId", namespaceId).addParam("dataId", dataId)
+            Query query = Query.newInstance().addParam("namespaceId", namespaceId)
+                    .addParam("dataId", dataId)
                     .addParam("groupName", group).addParam("ids", StringUtils.join(ids, ","));
             URI uri = HttpUtils.buildUri(url, query);
             HttpGet httpGet = new HttpGet(uri);
             remoteServerConnector.addAuthIdentity(httpGet);
             return httpClient.execute(httpGet, new ExportHttpClientResponseHandler());
         } catch (HttpResponseException responseException) {
-            LOGGER.error("Export config from server {} failed with code {}: ", serverMember.getAddress(),
+            LOGGER.error("Export config from server {} failed with code {}: ",
+                    serverMember.getAddress(),
                     responseException.getStatusCode());
-            throw new NacosRuntimeException(responseException.getStatusCode(), responseException.getMessage());
+            throw new NacosRuntimeException(responseException.getStatusCode(),
+                    responseException.getMessage());
         } catch (IOException | URISyntaxException e) {
             LOGGER.error("Export config from server {} failed: ", serverMember.getAddress(), e);
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Export config to server failed.");
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                    "Export config to server failed.");
         }
     }
     
@@ -164,7 +179,8 @@ public class ConfigImportAndExportService {
         private String contentDisposition;
         
         @Override
-        public ResponseEntity<byte[]> handleResponse(ClassicHttpResponse response) throws IOException {
+        public ResponseEntity<byte[]> handleResponse(ClassicHttpResponse response)
+                throws IOException {
             try {
                 contentDisposition = response.getHeader("Content-Disposition").getValue();
             } catch (ProtocolException e) {

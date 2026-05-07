@@ -64,8 +64,9 @@ class ConfigQueryRequestTest extends BasedConfigRequestTest {
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
-                + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\",\"tag\":\"tag\"}";
+        String json =
+                "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
+                        + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\",\"tag\":\"tag\"}";
         ConfigQueryRequest actual = mapper.readValue(json, ConfigQueryRequest.class);
         assertEquals(DATA_ID, actual.getDataId());
         assertEquals(GROUP, actual.getGroup());

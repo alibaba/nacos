@@ -26,24 +26,25 @@ import io.grpc.stub.StreamObserver;
  * @author special.fy
  */
 public class XdsConnection extends AbstractConnection<DiscoveryResponse> {
-
+    
     public XdsConnection(StreamObserver<DiscoveryResponse> streamObserver) {
         super(streamObserver);
     }
-
+    
     @Override
     public synchronized void push(DiscoveryResponse response, WatchedStatus watchedStatus) {
         if (Loggers.MAIN.isDebugEnabled()) {
             Loggers.MAIN.debug("discoveryResponse: {}", response.toString());
         }
-
+        
         this.streamObserver.onNext(response);
-
+        
         // Update watched status
         watchedStatus.setLatestVersion(response.getVersionInfo());
         watchedStatus.setLatestNonce(response.getNonce());
-
-        Loggers.MAIN.info("xds: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
+        
+        Loggers.MAIN.info(
+                "xds: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
                 watchedStatus.getType(),
                 getConnectionId(),
                 response.getVersionInfo(),

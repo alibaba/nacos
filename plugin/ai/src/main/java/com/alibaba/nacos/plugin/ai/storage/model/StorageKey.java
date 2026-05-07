@@ -26,13 +26,13 @@ package com.alibaba.nacos.plugin.ai.storage.model;
  * @since 3.2.0
  */
 public class StorageKey {
-
+    
     /**
      * Storage provider identifier, e.g. "nacos_config", "oss".
      * Corresponds to the provider field in Storage JSON.
      */
     private String provider;
-
+    
     /**
      * Internal key used by the specific storage implementation.
      * Opaque to upper layers, e.g.:
@@ -42,34 +42,33 @@ public class StorageKey {
      * </ul>
      */
     private String key;
-
+    
     public StorageKey() {
     }
-
+    
     public StorageKey(String provider, String key) {
         this.provider = provider;
         this.key = key;
     }
-
+    
     public String getProvider() {
         return provider;
     }
-
+    
     public void setProvider(String provider) {
         this.provider = provider;
     }
-
+    
     public String getKey() {
         return key;
     }
-
+    
     public void setKey(String key) {
         this.key = key;
     }
-
+    
     @Override
     public String toString() {
         return "StorageKey{provider='" + provider + "', key='" + key + "'}";
     }
 }
-

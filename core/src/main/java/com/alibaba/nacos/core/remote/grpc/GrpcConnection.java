@@ -110,7 +110,8 @@ public class GrpcConnection extends Connection {
                 if (tpsControlManager == null) {
                     synchronized (GrpcConnection.class) {
                         if (tpsControlManager == null) {
-                            tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
+                            tpsControlManager =
+                                    ControlManagerCenter.getInstance().getTpsControlManager();
                             tpsControlManager.registerTpsPoint("SERVER_PUSH_BLOCK");
                         }
                     }
@@ -120,7 +121,8 @@ public class GrpcConnection extends Connection {
                 //record block only.
                 tpsControlManager.check(tpsCheckRequest);
                 getMetaInfo().recordPushQueueBlockTimes();
-                throw new ConnectionBusyException("too much bytes on sending queue of this stream.");
+                throw new ConnectionBusyException(
+                        "too much bytes on sending queue of this stream.");
             } else {
                 getMetaInfo().clearPushQueueBlockTimes();
             }
@@ -135,20 +137,25 @@ public class GrpcConnection extends Connection {
                 Loggers.REMOTE_DIGEST.info("[{}]Send request to client ,payload={}", connectionId,
                         payload.toByteString().toStringUtf8());
             } catch (Throwable throwable) {
-                Loggers.REMOTE_DIGEST.warn("[{}]Send request to client trace error, ,error={}", connectionId,
+                Loggers.REMOTE_DIGEST.warn("[{}]Send request to client trace error, ,error={}",
+                        connectionId,
                         throwable);
             }
         }
     }
     
-    private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack) throws NacosException {
+    private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack)
+            throws NacosException {
         final String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         
-        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(getMetaInfo().getConnectionId(), requestId,
-                callBack, () -> RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId));
+        DefaultRequestFuture defaultPushFuture =
+                new DefaultRequestFuture(getMetaInfo().getConnectionId(), requestId,
+                        callBack, () -> RpcAckCallbackSynchronizer
+                                .clearFuture(getMetaInfo().getConnectionId(), requestId));
         
-        RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
+        RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId,
+                defaultPushFuture);
         try {
             sendRequestNoAck(request);
         } catch (NacosRuntimeException nacosRuntimeException) {
@@ -166,7 +173,8 @@ public class GrpcConnection extends Connection {
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         } finally {
-            RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), pushFuture.getRequestId());
+            RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(),
+                    pushFuture.getRequestId());
         }
     }
     
@@ -176,7 +184,8 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
+    public void asyncRequest(Request request, RequestCallBack requestCallBack)
+            throws NacosException {
         sendRequestInner(request, requestCallBack);
     }
     
@@ -194,7 +203,8 @@ public class GrpcConnection extends Connection {
             try {
                 closeBiStream();
             } catch (Throwable e) {
-                Loggers.REMOTE_DIGEST.warn("[{}] connection  close bi stream exception  : {}", connectionId, e);
+                Loggers.REMOTE_DIGEST.warn("[{}] connection  close bi stream exception  : {}",
+                        connectionId, e);
             }
             channel.close();
             
@@ -205,7 +215,8 @@ public class GrpcConnection extends Connection {
     
     private void closeBiStream() {
         if (streamObserver instanceof ServerCallStreamObserver) {
-            ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) streamObserver);
+            ServerCallStreamObserver serverCallStreamObserver =
+                    ((ServerCallStreamObserver) streamObserver);
             if (!serverCallStreamObserver.isCancelled()) {
                 serverCallStreamObserver.onCompleted();
             }

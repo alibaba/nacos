@@ -123,6 +123,7 @@ public final class WhereBuilder {
         parameters.add(parameter);
         return this;
     }
+    
     /**
      * Build IN.
      *
@@ -184,7 +185,7 @@ public final class WhereBuilder {
         where.append(" GROUP BY ").append(fields);
         return this;
     }
-
+    
     /**
      * Build ORDER BY.
      *
@@ -195,7 +196,7 @@ public final class WhereBuilder {
         where.append(" ORDER BY ").append(fields);
         return this;
     }
-
+    
     /**
      * Build EXISTS conditional.
      * <p>

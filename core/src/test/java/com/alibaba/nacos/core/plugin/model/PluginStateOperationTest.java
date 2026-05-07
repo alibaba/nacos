@@ -33,35 +33,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author WangzJi
  */
 class PluginStateOperationTest {
-
+    
     @Test
     void defaultConstructorTest() {
         PluginStateOperation operation = new PluginStateOperation();
-
+        
         assertNull(operation.getType());
         assertNull(operation.getPluginId());
         assertNull(operation.getEnabled());
         assertNull(operation.getConfig());
     }
-
+    
     @Test
     void setterGetterTest() {
         PluginStateOperation operation = new PluginStateOperation();
-
+        
         operation.setType(PluginStateOperation.OperationType.CHANGE_STATE);
         operation.setPluginId("trace:test");
         operation.setEnabled(true);
-
+        
         Map<String, String> config = new HashMap<>();
         config.put("key", "value");
         operation.setConfig(config);
-
+        
         assertEquals(PluginStateOperation.OperationType.CHANGE_STATE, operation.getType());
         assertEquals("trace:test", operation.getPluginId());
         assertTrue(operation.getEnabled());
         assertEquals("value", operation.getConfig().get("key"));
     }
-
+    
     @Test
     void builderChangeStateTest() {
         PluginStateOperation operation = PluginStateOperation.builder()
@@ -69,42 +69,42 @@ class PluginStateOperationTest {
                 .pluginId("auth:nacos")
                 .enabled(false)
                 .build();
-
+        
         assertNotNull(operation);
         assertEquals(PluginStateOperation.OperationType.CHANGE_STATE, operation.getType());
         assertEquals("auth:nacos", operation.getPluginId());
         assertEquals(false, operation.getEnabled());
     }
-
+    
     @Test
     void builderUpdateConfigTest() {
         Map<String, String> config = new HashMap<>();
         config.put("endpoint", "http://localhost:8080");
         config.put("timeout", "5000");
-
+        
         PluginStateOperation operation = PluginStateOperation.builder()
                 .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
                 .pluginId("trace:otel")
                 .config(config)
                 .build();
-
+        
         assertNotNull(operation);
         assertEquals(PluginStateOperation.OperationType.UPDATE_CONFIG, operation.getType());
         assertEquals("trace:otel", operation.getPluginId());
         assertEquals("http://localhost:8080", operation.getConfig().get("endpoint"));
         assertEquals("5000", operation.getConfig().get("timeout"));
     }
-
+    
     @Test
     void operationTypeChangeStateTest() {
         assertEquals("CHANGE_STATE", PluginStateOperation.OperationType.CHANGE_STATE.name());
     }
-
+    
     @Test
     void operationTypeUpdateConfigTest() {
         assertEquals("UPDATE_CONFIG", PluginStateOperation.OperationType.UPDATE_CONFIG.name());
     }
-
+    
     @Test
     void builderPartialBuildTest() {
         // Builder should throw exception when type is not set
@@ -115,7 +115,7 @@ class PluginStateOperationTest {
         });
         assertEquals("type is required", exception.getMessage());
     }
-
+    
     @Test
     void builderEmptyPluginIdTest() {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -127,7 +127,7 @@ class PluginStateOperationTest {
         });
         assertEquals("pluginId is required", exception.getMessage());
     }
-
+    
     @Test
     void builderChangeStateWithoutEnabledTest() {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -138,7 +138,7 @@ class PluginStateOperationTest {
         });
         assertEquals("enabled is required for CHANGE_STATE operation", exception.getMessage());
     }
-
+    
     @Test
     void builderUpdateConfigWithoutConfigTest() {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {

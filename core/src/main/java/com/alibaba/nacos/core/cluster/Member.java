@@ -59,7 +59,8 @@ public class Member extends NacosMember implements Comparable<Member>, Cloneable
         super.getExtendInfo().put(MemberMetaDataConstants.AD_WEIGHT,
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
         super.getExtendInfo()
-                .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
+                .put(MemberMetaDataConstants.WEIGHT,
+                        EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
     public boolean isGrpcReportEnabled() {

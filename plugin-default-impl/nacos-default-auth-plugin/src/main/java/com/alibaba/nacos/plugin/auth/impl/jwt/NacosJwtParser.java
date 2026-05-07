@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/1/15 21:38
  */
 public class NacosJwtParser {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(NacosJwtParser.class);
     
     private final NacosSignatureAlgorithm signatureAlgorithm;
@@ -62,7 +62,7 @@ public class NacosJwtParser {
         }
         this.key = new SecretKeySpec(decode, signatureAlgorithm.getJcaName());
     }
-
+    
     private void validKey(String base64edKey) {
         int length = base64edKey.toCharArray().length;
         if (length % 4 != 0) {
@@ -97,7 +97,8 @@ public class NacosJwtParser {
         }
         
         public JwtBuilder setExpiredTime(long validSeconds) {
-            this.nacosJwtPayload.setExp(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + validSeconds);
+            this.nacosJwtPayload.setExp(
+                    TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + validSeconds);
             return this;
         }
         

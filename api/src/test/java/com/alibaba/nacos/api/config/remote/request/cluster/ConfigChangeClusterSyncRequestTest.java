@@ -70,7 +70,8 @@ class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
                 "{\"headers\":{\"header1\":\"test_header1\"},\"requestId\":\"ece89111-3c42-4055-aca4-c95e16ec564b\",\"dataId\":\"test_data\","
                         + "\"group\":\"group\",\"tenant\":\"test_tenant\","
                         + "\"tag\":\"tag\",\"lastModified\":0,\"beta\":true,\"grayName\":\"test-gray-name\",\"module\":\"config\"}";
-        ConfigChangeClusterSyncRequest actual = mapper.readValue(json, ConfigChangeClusterSyncRequest.class);
+        ConfigChangeClusterSyncRequest actual =
+                mapper.readValue(json, ConfigChangeClusterSyncRequest.class);
         assertEquals(DATA_ID, actual.getDataId());
         assertEquals(GROUP, actual.getGroup());
         assertEquals(TENANT, actual.getTenant());

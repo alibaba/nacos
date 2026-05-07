@@ -55,16 +55,20 @@ public class DumpAllGrayProcessor implements NacosTaskProcessor {
         
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoGrayWrapper> page = configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoGrayWrapper> page =
+                    configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
                 for (ConfigInfoGrayWrapper cf : page.getPageItems()) {
                     if (StringUtils.isBlank(cf.getTenant())) {
                         continue;
                     }
                     boolean result = ConfigCacheService
-                            .dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getGrayName(), cf.getGrayRule(), cf.getContent(),
+                            .dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(),
+                                    cf.getGrayName(), cf.getGrayRule(), cf.getContent(),
                                     cf.getLastModified(), cf.getEncryptedDataKey());
-                    LogUtil.DUMP_LOG.info("[dump-all-gray-ok] result={}, {}, {}, length={}, md5={}, grayName={}", result,
+                    LogUtil.DUMP_LOG.info(
+                            "[dump-all-gray-ok] result={}, {}, {}, length={}, md5={}, grayName={}",
+                            result,
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             cf.getContent().length(), cf.getMd5(), cf.getGrayName());
                 }

@@ -88,9 +88,11 @@ class EnvUtilTest {
     @Test
     void testCustomEnvironment() {
         environment.setProperty("nacos.custom.environment.enabled", "true");
-        List<CustomEnvironmentPluginService> pluginServices = (List<CustomEnvironmentPluginService>) ReflectionTestUtils.getField(
-                CustomEnvironmentPluginManager.getInstance(), "SERVICE_LIST");
+        List<CustomEnvironmentPluginService> pluginServices =
+                (List<CustomEnvironmentPluginService>) ReflectionTestUtils.getField(
+                        CustomEnvironmentPluginManager.getInstance(), "SERVICE_LIST");
         pluginServices.add(new CustomEnvironmentPluginService() {
+            
             @Override
             public Map<String, Object> customValue(Map<String, Object> property) {
                 return Collections.emptyMap();
@@ -190,7 +192,8 @@ class EnvUtilTest {
     void testGetPropertyList() {
         environment.setProperty("nacos.properties[0]", "value1");
         environment.setProperty("nacos.properties[1]", "value2");
-        assertEquals(Arrays.asList("value1", "value2"), EnvUtil.getPropertyList("nacos.properties"));
+        assertEquals(Arrays.asList("value1", "value2"),
+                EnvUtil.getPropertyList("nacos.properties"));
     }
     
     @Test
@@ -282,14 +285,17 @@ class EnvUtilTest {
     
     @Test
     void testGetCpu() {
-        systemBeanManagerMocked.when(OperatingSystemBeanManager::getSystemCpuUsage).thenReturn(50.0d);
+        systemBeanManagerMocked.when(OperatingSystemBeanManager::getSystemCpuUsage)
+                .thenReturn(50.0d);
         assertEquals(50.0d, EnvUtil.getCpu());
     }
     
     @Test
     public void testGetMem() {
-        systemBeanManagerMocked.when(OperatingSystemBeanManager::getFreePhysicalMem).thenReturn(123L);
-        systemBeanManagerMocked.when(OperatingSystemBeanManager::getTotalPhysicalMem).thenReturn(2048L);
+        systemBeanManagerMocked.when(OperatingSystemBeanManager::getFreePhysicalMem)
+                .thenReturn(123L);
+        systemBeanManagerMocked.when(OperatingSystemBeanManager::getTotalPhysicalMem)
+                .thenReturn(2048L);
         assertEquals(EnvUtil.getMem(), 1 - ((double) 123L / (double) 2048L));
         
         systemBeanManagerMocked.when(OperatingSystemBeanManager::getFreePhysicalMem).thenReturn(0L);
@@ -309,13 +315,15 @@ class EnvUtilTest {
     
     @Test
     void testGetClusterConfFilePath() {
-        assertEquals(EnvUtil.getNacosHome() + "/conf/cluster.conf", EnvUtil.getClusterConfFilePath());
+        assertEquals(EnvUtil.getNacosHome() + "/conf/cluster.conf",
+                EnvUtil.getClusterConfFilePath());
     }
     
     @Test
     void testReadClusterConfFromFile() throws URISyntaxException, IOException {
         try {
-            File file = new File(EnvUtilTest.class.getClassLoader().getResource("conf/cluster.conf").toURI());
+            File file = new File(
+                    EnvUtilTest.class.getClassLoader().getResource("conf/cluster.conf").toURI());
             EnvUtil.setNacosHomePath(file.getParentFile().getParentFile().getAbsolutePath());
             List<String> actual = EnvUtil.readClusterConf();
             assertEquals(3, actual.size());
@@ -375,7 +383,8 @@ class EnvUtilTest {
     
     @Test
     void testGetApplicationConfFileResourceCustom() throws IOException {
-        String path = new ClassPathResource("test-properties.properties").getFile().getParentFile().getAbsolutePath();
+        String path = new ClassPathResource("test-properties.properties").getFile().getParentFile()
+                .getAbsolutePath();
         environment.setProperty("spring.config.additional-location",
                 "file:test-properties-malformed-unicode.properties,file:" + path);
         Resource resource = EnvUtil.getApplicationConfFileResource();

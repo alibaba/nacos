@@ -47,22 +47,27 @@ public class HistoryRemoteHandler implements HistoryHandler {
     }
     
     @Override
-    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
+    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group,
+            String namespaceId, Long nid)
             throws NacosException {
-        return clientHolder.getConfigMaintainerService().getConfigHistoryInfo(dataId, group, namespaceId, nid);
+        return clientHolder.getConfigMaintainerService().getConfigHistoryInfo(dataId, group,
+                namespaceId, nid);
     }
     
     @Override
-    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group,
+            String namespaceId,
             Integer pageNo, Integer pageSize) throws NacosException {
         return clientHolder.getConfigMaintainerService()
                 .listConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
     }
     
     @Override
-    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId,
+    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group,
+            String namespaceId,
             Long id) throws NacosException {
-        return clientHolder.getConfigMaintainerService().getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+        return clientHolder.getConfigMaintainerService().getPreviousConfigHistoryInfo(dataId, group,
+                namespaceId, id);
     }
     
     @Override

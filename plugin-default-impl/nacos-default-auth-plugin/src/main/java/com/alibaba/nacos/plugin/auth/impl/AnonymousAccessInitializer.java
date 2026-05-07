@@ -51,8 +51,10 @@ public class AnonymousAccessInitializer {
     
     private final PermissionPersistService permissionPersistService;
     
-    public AnonymousAccessInitializer(AuthConfigs authConfigs, UserPersistService userPersistService,
-            RolePersistService rolePersistService, PermissionPersistService permissionPersistService) {
+    public AnonymousAccessInitializer(AuthConfigs authConfigs,
+            UserPersistService userPersistService,
+            RolePersistService rolePersistService,
+            PermissionPersistService permissionPersistService) {
         this.authConfigs = authConfigs;
         this.userPersistService = userPersistService;
         this.rolePersistService = rolePersistService;
@@ -72,7 +74,8 @@ public class AnonymousAccessInitializer {
             ensureAnonymousUser();
             ensureAnonymousRole();
             ensureDefaultPermission();
-            LOGGER.info("[ANONYMOUS-INIT] Anonymous user/role/permission initialized successfully.");
+            LOGGER.info(
+                    "[ANONYMOUS-INIT] Anonymous user/role/permission initialized successfully.");
         } catch (Exception e) {
             LOGGER.error("[ANONYMOUS-INIT] Failed to initialize anonymous access", e);
         }
@@ -92,9 +95,11 @@ public class AnonymousAccessInitializer {
     private void ensureAnonymousRole() {
         try {
             rolePersistService.addRole(AuthConstants.ANONYMOUS_ROLE, AuthConstants.ANONYMOUS_USER);
-            LOGGER.info("[ANONYMOUS-INIT] Created anonymous role: {}", AuthConstants.ANONYMOUS_ROLE);
+            LOGGER.info("[ANONYMOUS-INIT] Created anonymous role: {}",
+                    AuthConstants.ANONYMOUS_ROLE);
         } catch (Exception e) {
-            LOGGER.debug("[ANONYMOUS-INIT] Anonymous role binding may already exist: {}", e.getMessage());
+            LOGGER.debug("[ANONYMOUS-INIT] Anonymous role binding may already exist: {}",
+                    e.getMessage());
         }
     }
     
@@ -106,7 +111,8 @@ public class AnonymousAccessInitializer {
                     AuthConstants.ANONYMOUS_ROLE, DEFAULT_ANONYMOUS_PERMISSION_RESOURCE,
                     DEFAULT_ANONYMOUS_PERMISSION_ACTION);
         } catch (Exception e) {
-            LOGGER.debug("[ANONYMOUS-INIT] Default anonymous permission may already exist: {}", e.getMessage());
+            LOGGER.debug("[ANONYMOUS-INIT] Default anonymous permission may already exist: {}",
+                    e.getMessage());
         }
     }
 }

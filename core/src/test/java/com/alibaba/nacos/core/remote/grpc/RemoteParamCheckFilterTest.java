@@ -43,17 +43,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 class RemoteParamCheckFilterTest {
-
+    
     @BeforeEach
     void setUp() {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(false);
     }
-
+    
     @AfterEach
     void tearDown() {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(true);
     }
-
+    
     @Test
     void testFilterReturnsNullWhenParamCheckDisabled() throws Exception {
         RemoteParamCheckFilter filter = new RemoteParamCheckFilter();
@@ -63,7 +63,7 @@ class RemoteParamCheckFilterTest {
         Object result = filterMethod.invoke(filter, null, null, HealthCheckRequestHandler.class);
         assertNull(result);
     }
-
+    
     @Test
     void testFilterReturnsNullWhenParamCheckEnabledButNoExtractor() throws Exception {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(true);
@@ -72,23 +72,27 @@ class RemoteParamCheckFilterTest {
             Method filterMethod = RemoteParamCheckFilter.class.getDeclaredMethod("filter",
                     Request.class, RequestMeta.class, Class.class);
             filterMethod.setAccessible(true);
-            Object result = filterMethod.invoke(filter, null, null, HealthCheckRequestHandler.class);
+            Object result =
+                    filterMethod.invoke(filter, null, null, HealthCheckRequestHandler.class);
             assertNull(result);
         } finally {
             ServerParamCheckConfig.getInstance().setParamCheckEnabled(false);
         }
     }
-
+    
     @Test
     void testFilterReturnsFailResponseWhenExtractorManagerThrows() throws Exception {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(true);
-        try (MockedStatic<ExtractorManager> extractorMock = Mockito.mockStatic(ExtractorManager.class)) {
-            extractorMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenThrow(new RuntimeException("extractor-error"));
+        try (MockedStatic<ExtractorManager> extractorMock =
+                Mockito.mockStatic(ExtractorManager.class)) {
+            extractorMock.when(() -> ExtractorManager.getRpcExtractor(any()))
+                    .thenThrow(new RuntimeException("extractor-error"));
             RemoteParamCheckFilter filter = new RemoteParamCheckFilter();
             Method filterMethod = RemoteParamCheckFilter.class.getDeclaredMethod("filter",
                     Request.class, RequestMeta.class, Class.class);
             filterMethod.setAccessible(true);
-            Object result = filterMethod.invoke(filter, new HealthCheckRequest(), null, HandlerWithExtractor.class);
+            Object result = filterMethod.invoke(filter, new HealthCheckRequest(), null,
+                    HandlerWithExtractor.class);
             assertNotNull(result);
             assertTrue(result instanceof Response);
             assertTrue(((Response) result).getMessage().contains("extractor-error"));
@@ -96,7 +100,7 @@ class RemoteParamCheckFilterTest {
             ServerParamCheckConfig.getInstance().setParamCheckEnabled(false);
         }
     }
-
+    
     @Test
     void testFilterReturnsFailResponseWhenParamCheckFails() throws Exception {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(true);
@@ -105,7 +109,8 @@ class RemoteParamCheckFilterTest {
         failResponse.setMessage("param invalid");
         AbstractParamChecker mockChecker = Mockito.mock(AbstractParamChecker.class);
         when(mockChecker.checkParamInfoList(any())).thenReturn(failResponse);
-        try (MockedStatic<ParamCheckerManager> pmMock = Mockito.mockStatic(ParamCheckerManager.class)) {
+        try (MockedStatic<ParamCheckerManager> pmMock =
+                Mockito.mockStatic(ParamCheckerManager.class)) {
             ParamCheckerManager mockManager = Mockito.mock(ParamCheckerManager.class);
             pmMock.when(ParamCheckerManager::getInstance).thenReturn(mockManager);
             when(mockManager.getParamChecker(any())).thenReturn(mockChecker);
@@ -113,7 +118,8 @@ class RemoteParamCheckFilterTest {
             Method filterMethod = RemoteParamCheckFilter.class.getDeclaredMethod("filter",
                     Request.class, RequestMeta.class, Class.class);
             filterMethod.setAccessible(true);
-            Object result = filterMethod.invoke(filter, new HealthCheckRequest(), null, HandlerWithExtractor.class);
+            Object result = filterMethod.invoke(filter, new HealthCheckRequest(), null,
+                    HandlerWithExtractor.class);
             assertNotNull(result);
             assertTrue(result instanceof Response);
             assertTrue(((Response) result).getMessage().contains("param invalid"));
@@ -121,7 +127,7 @@ class RemoteParamCheckFilterTest {
             ServerParamCheckConfig.getInstance().setParamCheckEnabled(false);
         }
     }
-
+    
     @Test
     void testGenerateFailResponseReturnsNullWhenGetDefaultResponseThrows() throws Exception {
         ServerParamCheckConfig.getInstance().setParamCheckEnabled(true);
@@ -130,7 +136,8 @@ class RemoteParamCheckFilterTest {
         failResponse.setMessage("check fail");
         AbstractParamChecker mockChecker = Mockito.mock(AbstractParamChecker.class);
         when(mockChecker.checkParamInfoList(any())).thenReturn(failResponse);
-        try (MockedStatic<ParamCheckerManager> pmMock = Mockito.mockStatic(ParamCheckerManager.class)) {
+        try (MockedStatic<ParamCheckerManager> pmMock =
+                Mockito.mockStatic(ParamCheckerManager.class)) {
             ParamCheckerManager mockManager = Mockito.mock(ParamCheckerManager.class);
             pmMock.when(ParamCheckerManager::getInstance).thenReturn(mockManager);
             when(mockManager.getParamChecker(any())).thenReturn(mockChecker);
@@ -138,26 +145,30 @@ class RemoteParamCheckFilterTest {
             Method filterMethod = RemoteParamCheckFilter.class.getDeclaredMethod("filter",
                     Request.class, RequestMeta.class, Class.class);
             filterMethod.setAccessible(true);
-            Object result = filterMethod.invoke(filter, new HealthCheckRequest(), null, HandlerWithAbstractResponse.class);
+            Object result = filterMethod.invoke(filter, new HealthCheckRequest(), null,
+                    HandlerWithAbstractResponse.class);
             assertNull(result);
         } finally {
             ServerParamCheckConfig.getInstance().setParamCheckEnabled(false);
         }
     }
-
+    
     @ExtractorManager.Extractor
-    static class HandlerWithExtractor extends RequestHandler<HealthCheckRequest, HealthCheckResponse> {
+    static class HandlerWithExtractor
+            extends RequestHandler<HealthCheckRequest, HealthCheckResponse> {
+        
         @Override
         public HealthCheckResponse handle(HealthCheckRequest request, RequestMeta meta) {
             return null;
         }
     }
-
+    
     static abstract class AbstractFakeResponse extends Response {
     }
-
+    
     @ExtractorManager.Extractor
     static class HandlerWithAbstractResponse extends RequestHandler<Request, AbstractFakeResponse> {
+        
         @Override
         public AbstractFakeResponse handle(Request request, RequestMeta meta) {
             return null;

@@ -141,20 +141,27 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
             return false;
         }
         InstanceMetadataBatchOperationForm that = (InstanceMetadataBatchOperationForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName) && Objects
-                .equals(serviceName, that.serviceName) && Objects.equals(consistencyType, that.consistencyType)
-                && Objects.equals(instances, that.instances) && Objects.equals(metadata, that.metadata);
+        return Objects.equals(namespaceId, that.namespaceId)
+                && Objects.equals(groupName, that.groupName) && Objects
+                        .equals(serviceName, that.serviceName)
+                && Objects.equals(consistencyType, that.consistencyType)
+                && Objects.equals(instances, that.instances)
+                && Objects.equals(metadata, that.metadata);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, groupName, serviceName, consistencyType, instances, metadata);
+        return Objects.hash(namespaceId, groupName, serviceName, consistencyType, instances,
+                metadata);
     }
     
     @Override
     public String toString() {
-        return "InstanceMetadataBatchOperationForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='"
-                + groupName + '\'' + ", serviceName='" + serviceName + '\'' + ", consistencyType='" + consistencyType
-                + '\'' + ", instances='" + instances + '\'' + ", metadata='" + metadata + '\'' + '}';
+        return "InstanceMetadataBatchOperationForm{" + "namespaceId='" + namespaceId + '\''
+                + ", groupName='"
+                + groupName + '\'' + ", serviceName='" + serviceName + '\'' + ", consistencyType='"
+                + consistencyType
+                + '\'' + ", instances='" + instances + '\'' + ", metadata='" + metadata + '\''
+                + '}';
     }
 }

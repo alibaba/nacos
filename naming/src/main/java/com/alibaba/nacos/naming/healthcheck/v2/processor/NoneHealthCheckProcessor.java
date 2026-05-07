@@ -33,7 +33,7 @@ public class NoneHealthCheckProcessor implements HealthCheckProcessorV2 {
     
     @Override
     public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
-    
+        
     }
     
     @Override

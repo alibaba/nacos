@@ -60,7 +60,8 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
     
     private final SwitchDomain switchDomain;
     
-    public HttpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon, SwitchDomain switchDomain) {
+    public HttpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon,
+            SwitchDomain switchDomain) {
         this.healthCheckCommon = healthCheckCommon;
         this.switchDomain = switchDomain;
     }
@@ -75,15 +76,19 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
         try {
             // TODO handle marked(white list) logic like v1.x.
             if (!instance.tryStartCheck()) {
-                SRV_LOG.warn("http check started before last one finished, service: {} : {} : {}:{}",
-                        service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
+                SRV_LOG.warn(
+                        "http check started before last one finished, service: {} : {} : {}:{}",
+                        service.getGroupedServiceName(), instance.getCluster(), instance.getIp(),
+                        instance.getPort());
                 healthCheckCommon
-                        .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
+                        .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,
+                                switchDomain.getHttpHealthParams());
                 return;
             }
             
             Http healthChecker = (Http) metadata.getHealthChecker();
-            int ckPort = metadata.isUseInstancePortForCheck() ? instance.getPort() : metadata.getHealthyCheckPort();
+            int ckPort = metadata.isUseInstancePortForCheck() ? instance.getPort()
+                    : metadata.getHealthyCheckPort();
             URL host = new URL(HTTP_PREFIX + instance.getIp() + ":" + ckPort);
             URL target = new URL(host, healthChecker.getPath());
             Map<String, String> customHeaders = healthChecker.getCustomHeaders();
@@ -116,7 +121,8 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
         
         private long startTime = System.currentTimeMillis();
         
-        public HttpHealthCheckCallback(HealthCheckInstancePublishInfo instance, HealthCheckTaskV2 task,
+        public HttpHealthCheckCallback(HealthCheckInstancePublishInfo instance,
+                HealthCheckTaskV2 task,
                 Service service) {
             this.instance = instance;
             this.task = task;
@@ -136,11 +142,13 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
                 // server is busy, need verification later
                 healthCheckCommon.checkFail(task, service, "http:" + httpCode);
                 healthCheckCommon
-                        .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
+                        .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,
+                                switchDomain.getHttpHealthParams());
             } else {
                 //probably means the state files has been removed by administrator
                 healthCheckCommon.checkFailNow(task, service, "http:" + httpCode);
-                healthCheckCommon.reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(), task,
+                healthCheckCommon.reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(),
+                        task,
                         switchDomain.getHttpHealthParams());
             }
         }
@@ -162,7 +170,8 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             
             // connection error, probably not reachable
             if (throwable instanceof ConnectException) {
-                healthCheckCommon.checkFailNow(task, service, "http:unable2connect:" + throwable.getMessage());
+                healthCheckCommon.checkFailNow(task, service,
+                        "http:unable2connect:" + throwable.getMessage());
             } else {
                 healthCheckCommon.checkFail(task, service, "http:error:" + throwable.getMessage());
             }
@@ -172,7 +181,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
         
         @Override
         public void onCancel() {
-        
+            
         }
     }
 }

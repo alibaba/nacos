@@ -45,7 +45,8 @@ public class AgentSpecScopeForm extends AgentSpecForm {
         }
         if (!VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(scope)
                 && !VisibilityConstants.SCOPE_PRIVATE.equalsIgnoreCase(scope)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Parameter 'scope' must be PUBLIC or PRIVATE");
         }
     }

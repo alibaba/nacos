@@ -36,7 +36,8 @@ public class NacosDuplicateSpringBeanPostProcessor extends AbstractNacosDuplicat
     }
     
     @Override
-    protected boolean isReUsingBean(Class<?> beanClass, String beanName, BeanDefinition beanDefinition) {
+    protected boolean isReUsingBean(Class<?> beanClass, String beanName,
+            BeanDefinition beanDefinition) {
         return !isContextBean(beanClass);
     }
     

@@ -49,15 +49,17 @@ public class PromptDebugServiceImpl implements PromptDebugService {
     
     @Override
     public void debugPromptStream(PromptDebugRequest request,
-                                  StreamResponseCallback<PromptDebugResponse> callback) {
+            StreamResponseCallback<PromptDebugResponse> callback) {
         // 1. Validate request
         if (StringUtils.isBlank(request.getPrompt())) {
-            callback.onError(new NacosException(NacosException.INVALID_PARAM, "Prompt is required"));
+            callback.onError(
+                    new NacosException(NacosException.INVALID_PARAM, "Prompt is required"));
             return;
         }
         
         if (StringUtils.isBlank(request.getUserInput())) {
-            callback.onError(new NacosException(NacosException.INVALID_PARAM, "User input is required"));
+            callback.onError(
+                    new NacosException(NacosException.INVALID_PARAM, "User input is required"));
             return;
         }
         

@@ -61,17 +61,24 @@ public class JRaftUtils {
     public static RpcServer initRpcServer(JRaftServer server, PeerId peerId) {
         GrpcRaftRpcFactory raftRpcFactory = (GrpcRaftRpcFactory) RpcFactoryHelper.rpcFactory();
         raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(), GetRequest.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(WriteRequest.class.getName(), WriteRequest.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(ReadRequest.class.getName(), ReadRequest.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(Response.class.getName(), Response.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(),
+                GetRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(WriteRequest.class.getName(),
+                WriteRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(ReadRequest.class.getName(),
+                ReadRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(Response.class.getName(),
+                Response.getDefaultInstance());
         
         MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
         registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
-        registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(GetRequest.class.getName(),
+                Response.getDefaultInstance());
         
-        registry.registerResponseInstance(WriteRequest.class.getName(), Response.getDefaultInstance());
-        registry.registerResponseInstance(ReadRequest.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(WriteRequest.class.getName(),
+                Response.getDefaultInstance());
+        registry.registerResponseInstance(ReadRequest.class.getName(),
+                Response.getDefaultInstance());
         
         final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
@@ -104,10 +111,12 @@ public class JRaftUtils {
     }
     
     public static List<String> toStrings(List<PeerId> peerIds) {
-        return peerIds.stream().map(peerId -> peerId.getEndpoint().toString()).collect(Collectors.toList());
+        return peerIds.stream().map(peerId -> peerId.getEndpoint().toString())
+                .collect(Collectors.toList());
     }
     
-    public static void joinCluster(CliService cliService, Collection<String> members, Configuration conf, String group,
+    public static void joinCluster(CliService cliService, Collection<String> members,
+            Configuration conf, String group,
             PeerId self) {
         ServerMemberManager memberManager = ApplicationUtils.getBean(ServerMemberManager.class);
         if (!memberManager.isFirstIp()) {
@@ -118,7 +127,7 @@ public class JRaftUtils {
             peerIds.add(PeerId.parsePeer(s));
         }
         peerIds.remove(self);
-        for (; ; ) {
+        for (;;) {
             if (peerIds.isEmpty()) {
                 return;
             }

@@ -82,7 +82,8 @@ public class HttpClientConfig {
      */
     private final String userAgent;
     
-    public HttpClientConfig(int conTimeOutMillis, int readTimeOutMillis, long connTimeToLive, TimeUnit timeUnit,
+    public HttpClientConfig(int conTimeOutMillis, int readTimeOutMillis, long connTimeToLive,
+            TimeUnit timeUnit,
             int connectionRequestTimeout, int maxRedirects, int maxConnTotal, int maxConnPerRoute,
             boolean contentCompressionEnabled, int ioThreadCount, String userAgent) {
         this.conTimeOutMillis = conTimeOutMillis;
@@ -183,7 +184,8 @@ public class HttpClientConfig {
             return this;
         }
         
-        public HttpClientConfigBuilder setConnectionTimeToLive(long connTimeToLive, TimeUnit connTimeToLiveTimeUnit) {
+        public HttpClientConfigBuilder setConnectionTimeToLive(long connTimeToLive,
+                TimeUnit connTimeToLiveTimeUnit) {
             this.connTimeToLive = connTimeToLive;
             this.connTimeToLiveTimeUnit = connTimeToLiveTimeUnit;
             return this;
@@ -209,7 +211,8 @@ public class HttpClientConfig {
             return this;
         }
         
-        public HttpClientConfigBuilder setContentCompressionEnabled(boolean contentCompressionEnabled) {
+        public HttpClientConfigBuilder setContentCompressionEnabled(
+                boolean contentCompressionEnabled) {
             this.contentCompressionEnabled = contentCompressionEnabled;
             return this;
         }
@@ -223,15 +226,17 @@ public class HttpClientConfig {
             this.userAgent = userAgent;
             return this;
         }
-    
+        
         /**
          * build http client config.
          *
          * @return HttpClientConfig
          */
         public HttpClientConfig build() {
-            return new HttpClientConfig(conTimeOutMillis, readTimeOutMillis, connTimeToLive, connTimeToLiveTimeUnit,
-                    connectionRequestTimeout, maxRedirects, maxConnTotal, maxConnPerRoute, contentCompressionEnabled,
+            return new HttpClientConfig(conTimeOutMillis, readTimeOutMillis, connTimeToLive,
+                    connTimeToLiveTimeUnit,
+                    connectionRequestTimeout, maxRedirects, maxConnTotal, maxConnPerRoute,
+                    contentCompressionEnabled,
                     ioThreadCount, userAgent);
         }
     }

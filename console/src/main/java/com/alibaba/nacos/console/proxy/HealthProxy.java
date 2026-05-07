@@ -45,4 +45,3 @@ public class HealthProxy {
         return healthHandler.checkReadiness();
     }
 }
-

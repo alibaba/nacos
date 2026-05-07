@@ -58,8 +58,9 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
                 break;
         }
         // TODO: stage-2 authorized resources integration.
-        List<String> authorized = advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
-                .getResources();
+        List<String> authorized =
+                advisor.getAuthorizedPredicate() == null ? null : advisor.getAuthorizedPredicate()
+                        .getResources();
         if (authorized != null && !authorized.isEmpty()) {
             result.setAuthorizedResourceNames(authorized);
             result.putOrGroup("name", authorized);
@@ -97,7 +98,8 @@ public class DefaultVisibilityAdvisorConverter implements VisibilityAdvisorConve
             applyPublic(condition);
             return;
         }
-        boolean scopeIsPublic = VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
+        boolean scopeIsPublic =
+                VisibilityConstants.SCOPE_PUBLIC.equalsIgnoreCase(condition.getScope());
         boolean hasScope = StringUtils.isNotBlank(condition.getScope());
         boolean ownerIsIdentity = identity.equals(condition.getOwner());
         boolean hasOwner = StringUtils.isNotBlank(condition.getOwner());

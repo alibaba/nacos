@@ -33,22 +33,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MembersChangeEventTest {
-
+    
     private Member member1;
     private Member member2;
-
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         member1 = Member.builder().ip("127.0.0.1").port(8848).state(NodeState.UP).build();
         member2 = Member.builder().ip("127.0.0.2").port(8848).state(NodeState.UP).build();
     }
-
+    
     @AfterEach
     void tearDown() {
         EnvUtil.setEnvironment(null);
     }
-
+    
     @Test
     void builderWithMembersAndTriggers() {
         List<Member> members = Arrays.asList(member1, member2);
@@ -65,7 +65,7 @@ class MembersChangeEventTest {
         assertEquals(1, event.getTriggers().size());
         assertTrue(event.getTriggers().contains(member1));
     }
-
+    
     @Test
     void builderWithTriggerSingle() {
         MembersChangeEvent event = MembersChangeEvent.builder()
@@ -75,7 +75,7 @@ class MembersChangeEventTest {
         assertTrue(event.hasTriggers());
         assertEquals(1, event.getTriggers().size());
     }
-
+    
     @Test
     void builderWithNullTriggers() {
         MembersChangeEvent event = MembersChangeEvent.builder()
@@ -85,7 +85,7 @@ class MembersChangeEventTest {
         assertNotNull(event.getTriggers());
         assertTrue(event.getTriggers().isEmpty());
     }
-
+    
     @Test
     void toStringContainsMembersAndTriggers() {
         MembersChangeEvent event = MembersChangeEvent.builder()

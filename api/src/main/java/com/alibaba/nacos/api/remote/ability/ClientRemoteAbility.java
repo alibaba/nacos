@@ -25,9 +25,9 @@ import java.io.Serializable;
  * @version $Id: ClientRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ClientRemoteAbility implements Serializable {
-
+    
     private static final long serialVersionUID = -5794603724540260652L;
-
+    
     /**
      * if support remote connection.
      */

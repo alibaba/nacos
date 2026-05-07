@@ -30,9 +30,10 @@ public class DynamicDataSource {
     private DataSourceService basicDataSourceService = null;
     
     private static final DynamicDataSource INSTANCE = new DynamicDataSource();
-
-    private DynamicDataSource() {}
-
+    
+    private DynamicDataSource() {
+    }
+    
     public static DynamicDataSource getInstance() {
         return INSTANCE;
     }

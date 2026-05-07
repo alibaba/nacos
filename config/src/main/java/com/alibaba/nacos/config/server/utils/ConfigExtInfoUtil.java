@@ -57,7 +57,8 @@ public class ConfigExtInfoUtil {
     /**
      * Extract the extInfo from advance config info.
      */
-    public static String getExtraInfoFromAdvanceInfoMap(Map<String, Object> advanceConfigInfoMap, String srcUser) {
+    public static String getExtraInfoFromAdvanceInfoMap(Map<String, Object> advanceConfigInfoMap,
+            String srcUser) {
         try {
             if (advanceConfigInfoMap == null || advanceConfigInfoMap.isEmpty()) {
                 return null;
@@ -125,7 +126,8 @@ public class ConfigExtInfoUtil {
     /**
      * Extract the extInfo from gray config info.
      */
-    public static String getExtInfoFromGrayInfo(String grayName, String grayRuleTmp, String oldSrcUser) {
+    public static String getExtInfoFromGrayInfo(String grayName, String grayRuleTmp,
+            String oldSrcUser) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         ObjectNode grayRuleNode = OBJECT_MAPPER.createObjectNode();
         

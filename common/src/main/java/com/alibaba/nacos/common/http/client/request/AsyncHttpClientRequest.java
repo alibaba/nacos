@@ -30,7 +30,6 @@ import java.net.URI;
  */
 public interface AsyncHttpClientRequest extends Closeable {
     
-    
     /**
      * execute async http request.
      *

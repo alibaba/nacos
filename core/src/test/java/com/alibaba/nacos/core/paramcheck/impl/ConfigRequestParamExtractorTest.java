@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@link ConfigRequestParamExtractor} unit test.
  */
 class ConfigRequestParamExtractorTest {
-
+    
     private ConfigRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new ConfigRequestParamExtractor();
     }
-
+    
     @Test
     void extractParam() {
         ConfigBatchListenRequest request = new ConfigBatchListenRequest();

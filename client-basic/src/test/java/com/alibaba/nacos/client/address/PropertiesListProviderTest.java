@@ -64,8 +64,10 @@ class PropertiesListProviderTest {
         assertEquals("http://3.3.3.3", propertiesListProvider.getServerList().get(4));
         assertEquals("https://4.4.4.4", propertiesListProvider.getServerList().get(5));
         assertTrue(propertiesListProvider.isFixed());
-        assertEquals(Constants.Address.ADDRESS_SERVER_LIST_PROVIDER_ORDER, propertiesListProvider.getOrder());
-        assertEquals("fixed-localhost_1111-127.0.0.1_2222-1.1.1.1_3333-2.2.2.2_8848-3.3.3.3-4.4.4.4",
+        assertEquals(Constants.Address.ADDRESS_SERVER_LIST_PROVIDER_ORDER,
+                propertiesListProvider.getOrder());
+        assertEquals(
+                "fixed-localhost_1111-127.0.0.1_2222-1.1.1.1_3333-2.2.2.2_8848-3.3.3.3-4.4.4.4",
                 propertiesListProvider.getServerName());
     }
     

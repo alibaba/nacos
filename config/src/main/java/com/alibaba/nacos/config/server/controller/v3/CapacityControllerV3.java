@@ -77,14 +77,18 @@ public class CapacityControllerV3 {
         try {
             Capacity capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             if (capacity == null) {
-                LOGGER.warn("[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}", groupName,
+                LOGGER.warn(
+                        "[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}",
+                        groupName,
                         namespaceId);
                 capacityService.initCapacity(groupName, namespaceId);
                 capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             }
             return Result.success(capacity);
         } catch (Exception e) {
-            LOGGER.error("[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}", groupName,
+            LOGGER.error(
+                    "[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}",
+                    groupName,
                     namespaceId, e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
@@ -96,7 +100,8 @@ public class CapacityControllerV3 {
     @PostMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm) throws NacosApiException {
+    public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm)
+            throws NacosApiException {
         updateCapacityForm.checkNamespaceIdAndGroupName(capacityService);
         updateCapacityForm.validate();
         
@@ -108,17 +113,23 @@ public class CapacityControllerV3 {
         Integer maxAggrSize = updateCapacityForm.getMaxAggrSize();
         
         try {
-            boolean isSuccess = capacityService.insertOrUpdateCapacity(groupName, namespaceId, quota, maxSize,
-                    maxAggrCount, maxAggrSize);
+            boolean isSuccess =
+                    capacityService.insertOrUpdateCapacity(groupName, namespaceId, quota, maxSize,
+                            maxAggrCount, maxAggrSize);
             if (isSuccess) {
                 return Result.success(true);
             } else {
                 return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
-                        String.format("Failed to update the capacity for groupName: %s, namespaceId: %s", groupName,
-                                namespaceId), null);
+                        String.format(
+                                "Failed to update the capacity for groupName: %s, namespaceId: %s",
+                                groupName,
+                                namespaceId),
+                        null);
             }
         } catch (Exception e) {
-            LOGGER.error("[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}", groupName,
+            LOGGER.error(
+                    "[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}",
+                    groupName,
                     namespaceId, e);
             return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }

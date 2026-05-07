@@ -56,15 +56,15 @@ class AgentSpecTypeIsolationTest {
     private static final String RESOURCE_TYPE_SKILL = "skill";
     
     private static final String NAMESPACE_ID = "test-ns";
-
+    
     private static String[] sampleResourceNames() {
         return new String[] {"myres", "abc", "resourcex"};
     }
-
+    
     private static String[] sampleVersions() {
         return new String[] {"v1", "v2", "v5"};
     }
-
+    
     private static List<List<AiResource>> sampleMixedAiResources() {
         List<List<AiResource>> out = new ArrayList<>();
         out.add(Arrays.asList(
@@ -76,7 +76,7 @@ class AgentSpecTypeIsolationTest {
                 buildAiResource("e", RESOURCE_TYPE_SKILL)));
         return out;
     }
-
+    
     private static List<List<AiResourceVersion>> sampleMixedAiResourceVersions() {
         List<List<AiResourceVersion>> out = new ArrayList<>();
         out.add(Arrays.asList(
@@ -87,7 +87,7 @@ class AgentSpecTypeIsolationTest {
                 buildAiResourceVersion("y", RESOURCE_TYPE_AGENTSPEC, "v3")));
         return out;
     }
-
+    
     /**
      * All AgentSpec AiResource records use type = "agentspec".
      *
@@ -97,23 +97,26 @@ class AgentSpecTypeIsolationTest {
     @Test
     void agentSpecQueryOnlyReturnsAgentSpecResources() {
         for (List<AiResource> mixedResources : sampleMixedAiResources()) {
-            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            InMemoryAiResourcePersistService persistService =
+                    new InMemoryAiResourcePersistService();
             for (AiResource resource : mixedResources) {
                 persistService.insert(resource);
             }
-
-            Page<AiResource> agentSpecPage = persistService.list(NAMESPACE_ID, RESOURCE_TYPE_AGENTSPEC, null, null, 1,
-                    200);
-
+            
+            Page<AiResource> agentSpecPage =
+                    persistService.list(NAMESPACE_ID, RESOURCE_TYPE_AGENTSPEC, null, null, 1,
+                            200);
+            
             if (agentSpecPage != null && agentSpecPage.getPageItems() != null) {
                 for (AiResource resource : agentSpecPage.getPageItems()) {
                     assertEquals(RESOURCE_TYPE_AGENTSPEC, resource.getType(),
-                            "AgentSpec query returned a non-agentspec record: " + resource.getName());
+                            "AgentSpec query returned a non-agentspec record: "
+                                    + resource.getName());
                 }
             }
         }
     }
-
+    
     /**
      * All Skill AiResource records use type = "skill".
      *
@@ -123,13 +126,15 @@ class AgentSpecTypeIsolationTest {
     @Test
     void skillQueryOnlyReturnsSkillResources() {
         for (List<AiResource> mixedResources : sampleMixedAiResources()) {
-            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
+            InMemoryAiResourcePersistService persistService =
+                    new InMemoryAiResourcePersistService();
             for (AiResource resource : mixedResources) {
                 persistService.insert(resource);
             }
-
-            Page<AiResource> skillPage = persistService.list(NAMESPACE_ID, RESOURCE_TYPE_SKILL, null, null, 1, 200);
-
+            
+            Page<AiResource> skillPage =
+                    persistService.list(NAMESPACE_ID, RESOURCE_TYPE_SKILL, null, null, 1, 200);
+            
             if (skillPage != null && skillPage.getPageItems() != null) {
                 for (AiResource resource : skillPage.getPageItems()) {
                     assertEquals(RESOURCE_TYPE_SKILL, resource.getType(),
@@ -138,7 +143,7 @@ class AgentSpecTypeIsolationTest {
             }
         }
     }
-
+    
     /**
      * AgentSpec version queries never return Skill version records.
      *
@@ -148,11 +153,12 @@ class AgentSpecTypeIsolationTest {
     @Test
     void agentSpecVersionQueryNeverReturnsSkillVersions() {
         for (List<AiResourceVersion> mixedVersions : sampleMixedAiResourceVersions()) {
-            InMemoryAiResourceVersionPersistService versionService = new InMemoryAiResourceVersionPersistService();
+            InMemoryAiResourceVersionPersistService versionService =
+                    new InMemoryAiResourceVersionPersistService();
             for (AiResourceVersion version : mixedVersions) {
                 versionService.insert(version);
             }
-
+            
             // Query each unique name with agentspec type
             for (AiResourceVersion version : mixedVersions) {
                 if (RESOURCE_TYPE_AGENTSPEC.equals(version.getType())) {
@@ -166,7 +172,7 @@ class AgentSpecTypeIsolationTest {
             }
         }
     }
-
+    
     /**
      * AgentSpec storage keys use "agentspec__" group prefix, Skill uses "skill_".
      *
@@ -179,28 +185,35 @@ class AgentSpecTypeIsolationTest {
         for (String name : sampleResourceNames()) {
             for (String version : sampleVersions()) {
                 // AgentSpec storage key embeds "agentspec" resource type
-                String agentSpecKey = NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
-                        NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, name, version,
-                        AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID).getKey();
-
+                String agentSpecKey = NacosConfigAiResourceStorage
+                        .buildStorageKey(NacosConfigAiResourceStorage.TYPE,
+                                NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                                name, version,
+                                AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID)
+                        .getKey();
+                
                 // Key format: namespaceId:resourceType:name:version:filePath
                 String[] agentSpecParts = agentSpecKey.split(":", 5);
                 assertEquals(5, agentSpecParts.length, "AgentSpec key should have 5 parts");
                 assertEquals(RESOURCE_TYPE_AGENTSPEC, agentSpecParts[1],
                         "AgentSpec key resource type should be 'agentspec'");
-
+                
                 // Skill storage key embeds "skill" resource type
-                String skillKey = NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
-                                NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, name, version,
+                String skillKey = NacosConfigAiResourceStorage
+                        .buildStorageKey(NacosConfigAiResourceStorage.TYPE,
+                                NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL,
+                                name, version,
                                 SkillUtils.SKILL_MAIN_DATA_ID)
                         .getKey();
-
+                
                 String[] skillParts = skillKey.split(":", 5);
                 assertEquals(5, skillParts.length, "Skill key should have 5 parts");
-                assertEquals(RESOURCE_TYPE_SKILL, skillParts[1], "Skill key resource type should be 'skill'");
-
+                assertEquals(RESOURCE_TYPE_SKILL, skillParts[1],
+                        "Skill key resource type should be 'skill'");
+                
                 // Group prefixes are distinct
-                assertFalse(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.equals(SkillUtils.SKILL_GROUP_PREFIX),
+                assertFalse(
+                        AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.equals(SkillUtils.SKILL_GROUP_PREFIX),
                         "AgentSpec and Skill group prefixes must be different");
                 assertTrue(AgentSpecUtils.AGENTSPEC_GROUP_PREFIX.startsWith("agentspec"),
                         "AgentSpec group prefix should start with 'agentspec'");
@@ -209,7 +222,7 @@ class AgentSpecTypeIsolationTest {
             }
         }
     }
-
+    
     /**
      * AgentSpec and Skill records with the same name are isolated by type.
      *
@@ -219,21 +232,23 @@ class AgentSpecTypeIsolationTest {
     @Test
     void sameNameDifferentTypeIsolation() {
         for (String name : sampleResourceNames()) {
-            InMemoryAiResourcePersistService persistService = new InMemoryAiResourcePersistService();
-
+            InMemoryAiResourcePersistService persistService =
+                    new InMemoryAiResourcePersistService();
+            
             AiResource agentSpecResource = buildAiResource(name, RESOURCE_TYPE_AGENTSPEC);
             AiResource skillResource = buildAiResource(name, RESOURCE_TYPE_SKILL);
             persistService.insert(agentSpecResource);
             persistService.insert(skillResource);
-
-            AiResource foundAgentSpec = persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_AGENTSPEC);
+            
+            AiResource foundAgentSpec =
+                    persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_AGENTSPEC);
             AiResource foundSkill = persistService.find(NAMESPACE_ID, name, RESOURCE_TYPE_SKILL);
-
+            
             assertEquals(RESOURCE_TYPE_AGENTSPEC, foundAgentSpec.getType());
             assertEquals(RESOURCE_TYPE_SKILL, foundSkill.getType());
         }
     }
-
+    
     // ---- Helpers ----
     
     private static AiResource buildAiResource(String name, String type) {
@@ -247,7 +262,8 @@ class AgentSpecTypeIsolationTest {
         return resource;
     }
     
-    private static AiResourceVersion buildAiResourceVersion(String name, String type, String version) {
+    private static AiResourceVersion buildAiResourceVersion(String name, String type,
+            String version) {
         AiResourceVersion v = new AiResourceVersion();
         v.setNamespaceId(NAMESPACE_ID);
         v.setName(name);
@@ -277,16 +293,20 @@ class AgentSpecTypeIsolationTest {
         @Override
         public AiResource find(String namespaceId, String name, String type) {
             return store.stream()
-                    .filter(r -> namespaceId.equals(r.getNamespaceId()) && name.equals(r.getName()) && type.equals(
-                            r.getType())).findFirst().orElse(null);
+                    .filter(r -> namespaceId.equals(r.getNamespaceId()) && name.equals(r.getName())
+                            && type.equals(
+                                    r.getType()))
+                    .findFirst().orElse(null);
         }
         
         @Override
-        public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike, int pageNo,
+        public Page<AiResource> list(String namespaceId, String type, String nameLike,
+                String bizTagsLike, int pageNo,
                 int pageSize) {
             List<AiResource> filtered = store.stream()
                     .filter(r -> namespaceId.equals(r.getNamespaceId()) && type.equals(r.getType()))
-                    .filter(r -> nameLike == null || r.getName().contains(nameLike.replace("%", "")))
+                    .filter(r -> nameLike == null
+                            || r.getName().contains(nameLike.replace("%", "")))
                     .collect(java.util.stream.Collectors.toList());
             Page<AiResource> page = new Page<>();
             page.setPageItems(filtered);
@@ -297,7 +317,8 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public Page<AiResource> list(String namespaceId, String type, String nameLike, String bizTagsLike,
+        public Page<AiResource> list(String namespaceId, String type, String nameLike,
+                String bizTagsLike,
                 String orderBy, int pageNo, int pageSize) {
             return list(namespaceId, type, nameLike, bizTagsLike, pageNo, pageSize);
         }
@@ -308,15 +329,17 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public boolean updateMetaCas(String namespaceId, String name, String type, long expectedMetaVersion,
+        public boolean updateMetaCas(String namespaceId, String name, String type,
+                long expectedMetaVersion,
                 AiResource newValue) {
             return false;
         }
         
         @Override
         public int delete(String namespaceId, String name, String type) {
-            store.removeIf(r -> namespaceId.equals(r.getNamespaceId()) && name.equals(r.getName()) && type.equals(
-                    r.getType()));
+            store.removeIf(r -> namespaceId.equals(r.getNamespaceId()) && name.equals(r.getName())
+                    && type.equals(
+                            r.getType()));
             return 1;
         }
         
@@ -326,7 +349,8 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public boolean incrementDownloadCount(String namespaceId, String name, String type, long increment) {
+        public boolean incrementDownloadCount(String namespaceId, String name, String type,
+                long increment) {
             return false;
         }
     }
@@ -335,7 +359,8 @@ class AgentSpecTypeIsolationTest {
      * Minimal in-memory implementation of AiResourceVersionPersistService that simulates the type-filtered behavior of
      * the real database layer.
      */
-    private static class InMemoryAiResourceVersionPersistService implements AiResourceVersionPersistService {
+    private static class InMemoryAiResourceVersionPersistService
+            implements AiResourceVersionPersistService {
         
         private final List<AiResourceVersion> store = new ArrayList<>();
         
@@ -346,18 +371,25 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public AiResourceVersion find(String namespaceId, String name, String type, String version) {
+        public AiResourceVersion find(String namespaceId, String name, String type,
+                String version) {
             return store.stream()
-                    .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()) && type.equals(
-                            v.getType()) && version.equals(v.getVersion())).findFirst().orElse(null);
+                    .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName())
+                            && type.equals(
+                                    v.getType())
+                            && version.equals(v.getVersion()))
+                    .findFirst().orElse(null);
         }
         
         @Override
-        public Page<AiResourceVersion> list(String namespaceId, String name, String type, String status, int pageNo,
+        public Page<AiResourceVersion> list(String namespaceId, String name, String type,
+                String status, int pageNo,
                 int pageSize) {
             List<AiResourceVersion> filtered = store.stream()
-                    .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()) && type.equals(
-                            v.getType())).filter(v -> status == null || status.equals(v.getStatus()))
+                    .filter(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName())
+                            && type.equals(
+                                    v.getType()))
+                    .filter(v -> status == null || status.equals(v.getStatus()))
                     .collect(java.util.stream.Collectors.toList());
             Page<AiResourceVersion> page = new Page<>();
             page.setPageItems(filtered);
@@ -370,7 +402,8 @@ class AgentSpecTypeIsolationTest {
         @Override
         public int delete(String namespaceId, String name, String type, String version) {
             store.removeIf(
-                    v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()) && type.equals(v.getType())
+                    v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName())
+                            && type.equals(v.getType())
                             && version.equals(v.getVersion()));
             return 1;
         }
@@ -383,18 +416,21 @@ class AgentSpecTypeIsolationTest {
         
         @Override
         public int deleteByNameAndType(String namespaceId, String name, String type) {
-            store.removeIf(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName()) && type.equals(
-                    v.getType()));
+            store.removeIf(v -> namespaceId.equals(v.getNamespaceId()) && name.equals(v.getName())
+                    && type.equals(
+                            v.getType()));
             return 1;
         }
         
         @Override
-        public int updateStatus(String namespaceId, String name, String type, String version, String status) {
+        public int updateStatus(String namespaceId, String name, String type, String version,
+                String status) {
             return 0;
         }
         
         @Override
-        public int updateStorage(String namespaceId, String name, String type, String version, String storage) {
+        public int updateStorage(String namespaceId, String name, String type, String version,
+                String storage) {
             AiResourceVersion found = find(namespaceId, name, type, version);
             if (found == null) {
                 return 0;
@@ -404,7 +440,8 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public int updateStorageAndDesc(String namespaceId, String name, String type, String version, String storage,
+        public int updateStorageAndDesc(String namespaceId, String name, String type,
+                String version, String storage,
                 String desc) {
             AiResourceVersion found = find(namespaceId, name, type, version);
             if (found == null) {
@@ -416,13 +453,15 @@ class AgentSpecTypeIsolationTest {
         }
         
         @Override
-        public int updatePublishPipelineInfo(String namespaceId, String name, String type, String version,
+        public int updatePublishPipelineInfo(String namespaceId, String name, String type,
+                String version,
                 String publishPipelineInfo) {
             return 0;
         }
         
         @Override
-        public int incrementDownloadCount(String namespaceId, String name, String type, String version,
+        public int incrementDownloadCount(String namespaceId, String name, String type,
+                String version,
                 long increment) {
             return 0;
         }

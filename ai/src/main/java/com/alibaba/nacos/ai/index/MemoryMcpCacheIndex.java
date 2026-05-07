@@ -119,7 +119,8 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
         
         // Schedule periodic cleanup
         this.cleanupScheduler.scheduleWithFixedDelay(this::cleanupExpiredEntries,
-                properties.getCleanupIntervalSeconds(), properties.getCleanupIntervalSeconds(), TimeUnit.SECONDS);
+                properties.getCleanupIntervalSeconds(), properties.getCleanupIntervalSeconds(),
+                TimeUnit.SECONDS);
     }
     
     @Override
@@ -197,7 +198,8 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
     
     @Override
     public void updateIndex(String namespaceId, String mcpName, String mcpId) {
-        if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(mcpName) || StringUtils.isBlank(mcpId)) {
+        if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(mcpName)
+                || StringUtils.isBlank(mcpId)) {
             return;
         }
         
@@ -292,7 +294,8 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             shutdown = true;
             cleanupScheduler.shutdown();
             try {
-                if (!cleanupScheduler.awaitTermination(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                if (!cleanupScheduler.awaitTermination(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS,
+                        TimeUnit.SECONDS)) {
                     cleanupScheduler.shutdownNow();
                 }
             } catch (InterruptedException e) {
@@ -402,4 +405,4 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             return (currentTimeSeconds - createTimeSeconds) >= expireTimeSeconds;
         }
     }
-} 
+}

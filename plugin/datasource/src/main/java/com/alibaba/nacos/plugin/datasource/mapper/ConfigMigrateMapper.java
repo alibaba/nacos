@@ -58,7 +58,8 @@ public interface ConfigMigrateMapper extends Mapper {
                 + " ( SELECT 1 FROM config_info ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id AND ci2.tenant_id = 'public' )"
                 + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                        context.getPageSize()));
     }
     
     /**
@@ -79,7 +80,8 @@ public interface ConfigMigrateMapper extends Mapper {
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
                         context.getWhereParameter(FieldConstant.SRC_USER),
                         context.getWhereParameter(FieldConstant.TARGET_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER), context.getWhereParameter(FieldConstant.ID),
+                        context.getWhereParameter(FieldConstant.SRC_USER),
+                        context.getWhereParameter(FieldConstant.ID),
                         context.getPageSize()));
     }
     
@@ -101,7 +103,8 @@ public interface ConfigMigrateMapper extends Mapper {
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
                         context.getWhereParameter(FieldConstant.SRC_USER),
                         context.getWhereParameter(FieldConstant.TARGET_TENANT),
-                        context.getWhereParameter(FieldConstant.SRC_USER), context.getWhereParameter(FieldConstant.ID),
+                        context.getWhereParameter(FieldConstant.SRC_USER),
+                        context.getWhereParameter(FieldConstant.ID),
                         context.getPageSize()));
     }
     
@@ -158,10 +161,12 @@ public interface ConfigMigrateMapper extends Mapper {
     default MapperResult findConfigGrayIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info_gray ci WHERE ci.tenant_id = '' AND NOT EXISTS "
                 + " ( SELECT 1 FROM config_info_gray ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id"
-                + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND ci.id > ?"
+                + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )"
+                + " AND ci.id > ?"
                 + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                        context.getPageSize()));
     }
     
     /**

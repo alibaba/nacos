@@ -120,7 +120,8 @@ class StsConfigTest {
     
     @Test
     void testFromEnv()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+            InstantiationException {
         Constructor<StsConfig> constructor = StsConfig.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         System.setProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY, "test");

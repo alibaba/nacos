@@ -22,6 +22,7 @@ package com.alibaba.nacos.config.server.service.query.enums;
  * @author Nacos
  */
 public enum ResponseCode {
+    
     /**
      * Request success.
      */

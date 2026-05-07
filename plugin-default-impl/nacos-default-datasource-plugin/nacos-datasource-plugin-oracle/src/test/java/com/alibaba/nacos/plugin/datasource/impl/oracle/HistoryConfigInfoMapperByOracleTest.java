@@ -64,9 +64,11 @@ class HistoryConfigInfoMapperByOracleTest {
     @Test
     void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByOracle.removeConfigHistory(context);
-        assertEquals("DELETE FROM his_config_info WHERE ROWID IN (SELECT ROWID FROM his_config_info WHERE gmt_modified < ? FETCH FIRST ? ROWS ONLY)", 
+        assertEquals(
+                "DELETE FROM his_config_info WHERE ROWID IN (SELECT ROWID FROM his_config_info WHERE gmt_modified < ? FETCH FIRST ? ROWS ONLY)",
                 mapperResult.getSql());
-        assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {startTime, limitSize},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -92,12 +94,15 @@ class HistoryConfigInfoMapperByOracleTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
-        MapperResult mapperResult = historyConfigInfoMapperByOracle.pageFindConfigHistoryFetchRows(context);
+        MapperResult mapperResult =
+                historyConfigInfoMapperByOracle.pageFindConfigHistoryFetchRows(context);
         assertEquals(mapperResult.getSql(),
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,ext_info,publish_type,gray_name,gmt_create,gmt_modified "
-                        + "FROM his_config_info " + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC OFFSET "
+                        + "FROM his_config_info "
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC OFFSET "
                         + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        assertArrayEquals(new Object[] {dataId, groupId, tenantId}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {dataId, groupId, tenantId},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -118,7 +123,8 @@ class HistoryConfigInfoMapperByOracleTest {
                         + "gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND publish_type = ? "
                         + "AND nid > ? ORDER BY nid FETCH FIRST 1 ROWS ONLY");
-        assertArrayEquals(new Object[] {dataId, groupId, tenantId, publishType, nid}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {dataId, groupId, tenantId, publishType, nid},
+                mapperResult.getParamList().toArray());
     }
     
     @Test

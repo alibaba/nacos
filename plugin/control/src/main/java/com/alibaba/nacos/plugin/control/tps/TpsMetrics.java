@@ -47,7 +47,8 @@ public class TpsMetrics {
     
     @Override
     public String toString() {
-        return "TpsMetrics{" + "pointName='" + pointName + '\'' + ", type='" + type + '\'' + ", timeStamp=" + timeStamp
+        return "TpsMetrics{" + "pointName='" + pointName + '\'' + ", type='" + type + '\''
+                + ", timeStamp=" + timeStamp
                 + ", period=" + period + ", counter=" + counter + '}';
     }
     

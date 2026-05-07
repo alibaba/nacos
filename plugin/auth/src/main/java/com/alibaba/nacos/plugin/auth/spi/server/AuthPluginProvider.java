@@ -28,12 +28,12 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class AuthPluginProvider implements PluginProvider<AuthPluginService> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.AUTH;
     }
-
+    
     @Override
     public Map<String, AuthPluginService> getAllPlugins() {
         return AuthPluginManager.getInstance().getAllPlugins();

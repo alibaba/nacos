@@ -24,7 +24,7 @@ import java.util.Date;
  * @author zzq
  */
 public class DateFormatUtils {
-
+    
     private DateFormatUtils() {
     }
     
@@ -65,5 +65,5 @@ public class DateFormatUtils {
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);
         return sdf.format(date);
     }
-
+    
 }

@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class PipelineQueryServiceTest {
-
+    
     private static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS pipeline_execution ("
             + "execution_id  VARCHAR(64)  PRIMARY KEY, "
             + "resource_type VARCHAR(32)  NOT NULL, "
@@ -54,13 +54,13 @@ class PipelineQueryServiceTest {
             + "pipeline      TEXT         NOT NULL, "
             + "create_time   BIGINT       NOT NULL, "
             + "update_time   BIGINT       NOT NULL)";
-
+    
     private static JdbcTemplate jdbcTemplate;
-
+    
     private static PipelineExecutionRepositoryImpl repository;
-
+    
     private static PipelineQueryService service;
-
+    
     @BeforeAll
     static void setUp() {
         JdbcDataSource dataSource = new JdbcDataSource();
@@ -70,12 +70,12 @@ class PipelineQueryServiceTest {
         repository = new PipelineExecutionRepositoryImpl(jdbcTemplate);
         service = new PipelineQueryService(repository);
     }
-
+    
     @AfterEach
     void cleanUp() {
         jdbcTemplate.execute("DELETE FROM pipeline_execution");
     }
-
+    
     private static List<PipelineExecution> samplePipelineExecutions() {
         List<PipelineExecution> list = new ArrayList<>();
         long t = 1_700_000_000_000L;
@@ -97,7 +97,7 @@ class PipelineQueryServiceTest {
         }
         return list;
     }
-
+    
     private static String[] randomIds() {
         return new String[] {
                 UUID.randomUUID().toString(),
@@ -105,7 +105,7 @@ class PipelineQueryServiceTest {
                 "00000000-0000-0000-0000-000000000001"
         };
     }
-
+    
     private static List<PaginationInput> paginationInputs() {
         List<PaginationInput> list = new ArrayList<>();
         for (int total : new int[] {1, 5, 10, 15}) {
@@ -119,7 +119,7 @@ class PipelineQueryServiceTest {
         }
         return list;
     }
-
+    
     private PipelineExecution createExecution(String resourceType, String resourceName,
             String namespaceId, String version, long createTime) {
         PipelineExecution exec = new PipelineExecution();
@@ -134,7 +134,7 @@ class PipelineQueryServiceTest {
         exec.setUpdateTime(createTime);
         return exec;
     }
-
+    
     /**
      * getPipeline round-trip — saved record should be retrievable.
      */
@@ -150,18 +150,19 @@ class PipelineQueryServiceTest {
             assertEquals(original.getStatus(), found.getStatus());
         }
     }
-
+    
     /**
      * getPipeline with non-existent ID should throw 404.
      */
     @Test
     void getPipelineNotFoundThrows404() {
         for (String randomId : randomIds()) {
-            NacosApiException ex = assertThrows(NacosApiException.class, () -> service.getPipeline(randomId));
+            NacosApiException ex =
+                    assertThrows(NacosApiException.class, () -> service.getPipeline(randomId));
             assertEquals(404, ex.getErrCode());
         }
     }
-
+    
     /**
      * listPipelines pagination correctness.
      */
@@ -174,10 +175,10 @@ class PipelineQueryServiceTest {
                         1_000_000_000L + i);
                 repository.save(exec);
             }
-
+            
             Page<PipelineExecution> page = service.listPipelines(resourceType, "res", "ns", "v1",
                     input.pageNo, input.pageSize);
-
+            
             assertTrue(page.getPageItems().size() <= input.pageSize,
                     "pageItems.size() should be <= pageSize");
             assertEquals(input.totalRecords, page.getTotalCount(),
@@ -188,7 +189,7 @@ class PipelineQueryServiceTest {
             jdbcTemplate.execute("DELETE FROM pipeline_execution");
         }
     }
-
+    
     /**
      * listPipelines sort correctness — createTime descending.
      */
@@ -201,22 +202,24 @@ class PipelineQueryServiceTest {
                         1_000_000_000L + (long) i * 1000L);
                 repository.save(exec);
             }
-
-            Page<PipelineExecution> page = service.listPipelines(resourceType, "res", "ns", "v1", 1, 100);
+            
+            Page<PipelineExecution> page =
+                    service.listPipelines(resourceType, "res", "ns", "v1", 1, 100);
             List<PipelineExecution> items = page.getPageItems();
-
+            
             for (int i = 1; i < items.size(); i++) {
                 assertTrue(items.get(i - 1).getCreateTime() >= items.get(i).getCreateTime(),
                         "Results should be ordered by createTime DESC");
             }
         }
     }
-
+    
     static class PaginationInput {
+        
         final int totalRecords;
         final int pageNo;
         final int pageSize;
-
+        
         PaginationInput(int totalRecords, int pageNo, int pageSize) {
             this.totalRecords = totalRecords;
             this.pageNo = pageNo;

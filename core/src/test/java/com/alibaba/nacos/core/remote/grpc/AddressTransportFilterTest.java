@@ -36,10 +36,10 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AddressTransportFilterTest {
-
+    
     @Mock
     private ConnectionManager connectionManager;
-
+    
     @Test
     void testTransportReady() {
         AddressTransportFilter filter = new AddressTransportFilter(connectionManager);
@@ -56,7 +56,7 @@ class AddressTransportFilterTest {
         assertEquals(12345, (int) result.get(ATTR_TRANS_KEY_REMOTE_PORT));
         assertEquals(9848, (int) result.get(ATTR_TRANS_KEY_LOCAL_PORT));
     }
-
+    
     @Test
     void testTransportTerminatedWithConnectionId() {
         AddressTransportFilter filter = new AddressTransportFilter(connectionManager);
@@ -66,7 +66,7 @@ class AddressTransportFilterTest {
         filter.transportTerminated(transportAttrs);
         verify(connectionManager).unregister("conn-123");
     }
-
+    
     @Test
     void testTransportTerminatedWithBlankConnectionId() {
         AddressTransportFilter filter = new AddressTransportFilter(connectionManager);

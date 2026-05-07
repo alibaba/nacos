@@ -59,7 +59,7 @@ public abstract class AbstractCachedUserService implements NacosUserService {
             Loggers.AUTH.warn("[LOAD-USERS] load failed", e);
         }
     }
-
+    
     /**
      * Reject reserved system usernames from being created or deleted.
      *

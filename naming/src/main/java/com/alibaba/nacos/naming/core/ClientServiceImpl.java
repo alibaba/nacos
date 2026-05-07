@@ -107,7 +107,8 @@ public class ClientServiceImpl implements ClientService {
         for (Service service : allPublishedService) {
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                List<InstancePublishInfo> instancePublishInfos = ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
+                List<InstancePublishInfo> instancePublishInfos =
+                        ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
                 for (InstancePublishInfo publishInfo : instancePublishInfos) {
                     res.add(wrapSingleInstanceNode(publishInfo, service));
                 }
@@ -127,7 +128,8 @@ public class ClientServiceImpl implements ClientService {
         for (Service each : allPublishedService) {
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(each);
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                for (InstancePublishInfo eachPub : ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos()) {
+                for (InstancePublishInfo eachPub : ((BatchInstancePublishInfo) instancePublishInfo)
+                        .getInstancePublishInfos()) {
                     result.add(buildClientServiceInfo(each, eachPub, null));
                 }
             } else {
@@ -137,7 +139,8 @@ public class ClientServiceImpl implements ClientService {
         return result;
     }
     
-    private ObjectNode wrapSingleInstanceNode(InstancePublishInfo instancePublishInfo, Service service) {
+    private ObjectNode wrapSingleInstanceNode(InstancePublishInfo instancePublishInfo,
+            Service service) {
         ObjectNode item = JacksonUtils.createEmptyJsonNode();
         item.put("namespace", service.getNamespace());
         item.put("group", service.getGroup());
@@ -189,19 +192,23 @@ public class ClientServiceImpl implements ClientService {
     }
     
     @Override
-    public List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+    public List<ObjectNode> getPublishedClientList(String namespaceId, String groupName,
+            String serviceName,
             boolean ephemeral, String ip, Integer port) {
         Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
-        Collection<String> allClientsRegisteredService = clientServiceIndexesManager.getAllClientsRegisteredService(
-                service);
+        Collection<String> allClientsRegisteredService =
+                clientServiceIndexesManager.getAllClientsRegisteredService(
+                        service);
         ArrayList<ObjectNode> res = new ArrayList<>();
         for (String clientId : allClientsRegisteredService) {
             Client client = clientManager.getClient(clientId);
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                List<InstancePublishInfo> list = ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
+                List<InstancePublishInfo> list =
+                        ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
                 for (InstancePublishInfo info : list) {
-                    if (!Objects.equals(info.getIp(), ip) || !Objects.equals(port, info.getPort())) {
+                    if (!Objects.equals(info.getIp(), ip)
+                            || !Objects.equals(port, info.getPort())) {
                         continue;
                     }
                     res.add(wrapSingleInstance(info).put("clientId", clientId));
@@ -219,30 +226,37 @@ public class ClientServiceImpl implements ClientService {
     }
     
     @Override
-    public List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+    public List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port) {
         Service service = Service.newService(namespaceId, groupName, serviceName);
-        Collection<String> allClientsRegisteredService = clientServiceIndexesManager.getAllClientsRegisteredService(
-                service);
+        Collection<String> allClientsRegisteredService =
+                clientServiceIndexesManager.getAllClientsRegisteredService(
+                        service);
         List<ClientPublisherInfo> result = new LinkedList<>();
         for (String clientId : allClientsRegisteredService) {
             Client client = clientManager.getClient(clientId);
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                for (InstancePublishInfo info : ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos()) {
+                for (InstancePublishInfo info : ((BatchInstancePublishInfo) instancePublishInfo)
+                        .getInstancePublishInfos()) {
                     filterInstancePublishInfo(info, ip, port, clientId).ifPresent(result::add);
                 }
             } else {
-                filterInstancePublishInfo(instancePublishInfo, ip, port, clientId).ifPresent(result::add);
+                filterInstancePublishInfo(instancePublishInfo, ip, port, clientId)
+                        .ifPresent(result::add);
             }
         }
         return result;
     }
     
-    private Optional<ClientPublisherInfo> filterInstancePublishInfo(InstancePublishInfo instancePublishInfo,
+    private Optional<ClientPublisherInfo> filterInstancePublishInfo(
+            InstancePublishInfo instancePublishInfo,
             String expectedIp, Integer expectedPort, String clientId) {
-        boolean ipMatch = Objects.isNull(expectedIp) || Objects.equals(expectedIp, instancePublishInfo.getIp());
-        boolean portMatch = Objects.isNull(expectedPort) || Objects.equals(expectedPort, instancePublishInfo.getPort());
+        boolean ipMatch = Objects.isNull(expectedIp)
+                || Objects.equals(expectedIp, instancePublishInfo.getIp());
+        boolean portMatch = Objects.isNull(expectedPort)
+                || Objects.equals(expectedPort, instancePublishInfo.getPort());
         if (!ipMatch || !portMatch) {
             return Optional.empty();
         }
@@ -252,11 +266,13 @@ public class ClientServiceImpl implements ClientService {
     }
     
     @Override
-    public List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+    public List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName,
+            String serviceName,
             boolean ephemeral, String ip, Integer port) {
         Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager.getAllClientsSubscribeService(
-                service);
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsSubscribeService(
+                        service);
         ArrayList<ObjectNode> res = new ArrayList<>();
         for (String clientId : allClientsSubscribeService) {
             Client client = clientManager.getClient(clientId);
@@ -277,11 +293,13 @@ public class ClientServiceImpl implements ClientService {
     }
     
     @Override
-    public List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+    public List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port) {
         Service service = Service.newService(namespaceId, groupName, serviceName);
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager.getAllClientsSubscribeService(
-                service);
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsSubscribeService(
+                        service);
         List<ClientSubscriberInfo> result = new LinkedList<>();
         for (String clientId : allClientsSubscribeService) {
             Client client = clientManager.getClient(clientId);
@@ -310,7 +328,8 @@ public class ClientServiceImpl implements ClientService {
         return result;
     }
     
-    private ClientServiceInfo buildClientServiceInfo(Service service, InstancePublishInfo instancePublishInfo,
+    private ClientServiceInfo buildClientServiceInfo(Service service,
+            InstancePublishInfo instancePublishInfo,
             Subscriber subscriber) {
         ClientServiceInfo result = new ClientServiceInfo();
         result.setNamespaceId(service.getNamespace());

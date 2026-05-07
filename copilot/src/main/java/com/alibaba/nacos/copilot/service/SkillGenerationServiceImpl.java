@@ -73,7 +73,7 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             throw new RuntimeException(new NacosException(NacosException.INVALID_PARAM,
                     "Background information is required"));
         }
-    
+        
         // 2. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             throw new RuntimeException(new NacosException(NacosException.INVALID_PARAM,
@@ -132,8 +132,7 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                     },
                     () -> {
                         latch.countDown();
-                    }
-            );
+                    });
             
             // Wait for completion (with timeout)
             boolean completed = latch.await(60, TimeUnit.SECONDS);
@@ -166,14 +165,14 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
     @Override
     @SuppressWarnings("PMD.MethodTooLongRule")
     public void generateSkillStream(SkillGenerationRequest request,
-                                    StreamResponseCallback<SkillGenerationResponse> callback) {
+            StreamResponseCallback<SkillGenerationResponse> callback) {
         // 1. Validate request
         if (request == null || StringUtils.isBlank(request.getBackgroundInfo())) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
                     "Background information is required"));
             return;
         }
-    
+        
         // 2. Check if Copilot is enabled
         if (!agentManager.isEnabled()) {
             callback.onError(new NacosException(NacosException.INVALID_PARAM,
@@ -228,7 +227,7 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         boolean hasConversationHistory = request.getConversationHistory() != null
                 && request.getConversationHistory().getMessages() != null
                 && !request.getConversationHistory().getMessages().isEmpty();
-                            
+        
         // Add conversation history analysis if provided
         if (hasConversationHistory) {
             sb.append("对话历史分析（请充分理解这段对话历史，判断是否适合沉淀为一个 Skill）：\n\n");
@@ -316,7 +315,6 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         return sb.toString();
     }
     
-    
     @SuppressWarnings("unchecked")
     private void parseGenerationResult(String fullContent, SkillGenerationResponse response) {
         try {
@@ -359,7 +357,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                     if (skillMap != null) {
                         normalizeResourceStructure(skillMap);
                         normalizeSkillMdField(skillMap);
-                        Skill skill = JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
+                        Skill skill =
+                                JacksonUtils.toObj(JacksonUtils.toJson(skillMap), Skill.class);
                         response.setSkill(skill);
                     }
                 }
@@ -419,7 +418,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
             boolean isClosingMarker = nextBacktick > startPos
                     && (nextBacktick == 0
                             || content.charAt(nextBacktick - 1) == '\n'
-                            || content.substring(Math.max(0, nextBacktick - 10), nextBacktick).trim().isEmpty());
+                            || content.substring(Math.max(0, nextBacktick - 10), nextBacktick)
+                                    .trim().isEmpty());
             if (isClosingMarker) {
                 return nextBacktick;
             }
@@ -541,7 +541,7 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
         skillMap.remove("resources");
         skillMap.put("resource", flatResourceMap);
     }
-
+    
     /**
      * Accept legacy "instruction" field from model output and map it to skillMd.
      */
@@ -567,7 +567,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
      * @param prefix prefix for resource keys (currently unused, kept for API consistency)
      */
     @SuppressWarnings({"unchecked", "unused"})
-    private void flattenResources(Map<String, Object> nestedResources, Map<String, Object> flatMap, String prefix) {
+    private void flattenResources(Map<String, Object> nestedResources, Map<String, Object> flatMap,
+            String prefix) {
         for (Map.Entry<String, Object> entry : nestedResources.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -602,7 +603,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                                 name = key + ".sh";
                             } else if ("template".equals(type) || "json".equals(type)) {
                                 name = key + ".json";
-                            } else if ("document".equals(type) || "md".equals(type) || "documentation".equals(type)) {
+                            } else if ("document".equals(type) || "md".equals(type)
+                                    || "documentation".equals(type)) {
                                 name = key + ".md";
                             } else {
                                 name = key;
@@ -635,7 +637,8 @@ public class SkillGenerationServiceImpl implements SkillGenerationService {
                 }
             } else {
                 // Not a Map, skip
-                LOGGER.warn("Unexpected resource value type for key {}: {}", key, value.getClass().getName());
+                LOGGER.warn("Unexpected resource value type for key {}: {}", key,
+                        value.getClass().getName());
             }
         }
     }

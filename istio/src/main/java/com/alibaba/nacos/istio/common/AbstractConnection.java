@@ -28,37 +28,37 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author special.fy
  */
 public abstract class AbstractConnection<MessageT> {
-
+    
     private static AtomicLong connectIdGenerator = new AtomicLong(0);
-
+    
     private String connectionId;
-
+    
     protected StreamObserver<MessageT> streamObserver;
-
+    
     private final Map<String, WatchedStatus> watchedResources;
-
+    
     public AbstractConnection(StreamObserver<MessageT> streamObserver) {
         this.streamObserver = streamObserver;
         this.watchedResources = new HashMap<>(1 << 4);
     }
-
+    
     public void setConnectionId(String clientId) {
         long id = connectIdGenerator.getAndIncrement();
         this.connectionId = clientId + "-" + id;
     }
-
+    
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     public void addWatchedResource(String resourceType, WatchedStatus watchedStatus) {
         watchedResources.put(resourceType, watchedStatus);
     }
-
+    
     public WatchedStatus getWatchedStatusByType(String resourceType) {
         return watchedResources.get(resourceType);
     }
-
+    
     /**
      * Push data to grpc connection.
      *

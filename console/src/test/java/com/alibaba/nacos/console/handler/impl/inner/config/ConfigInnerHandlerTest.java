@@ -126,7 +126,8 @@ class ConfigInnerHandlerTest {
         cachedEnv = EnvUtil.getEnvironment();
         EnvUtil.setEnvironment(new MockEnvironment());
         cachedGrayCompatibleModel = PropertyUtil.isGrayCompatibleModel();
-        configInnerHandler = new ConfigInnerHandler(configOperationService, configInfoPersistService,
+        configInnerHandler = new ConfigInnerHandler(configOperationService,
+                configInfoPersistService,
                 configDetailService, namespacePersistService, configInfoBetaPersistService,
                 configInfoGrayPersistService, configListenerStateDelegate, configMigrateService);
     }
@@ -147,21 +148,26 @@ class ConfigInnerHandlerTest {
         mockPage.setPageNumber(1);
         when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "dataId", "group", "tenant",
                 new HashMap<>())).thenReturn(mockPage);
-        Page<ConfigBasicInfo> actual = configInnerHandler.getConfigList(1, 10, "dataId", "group", "tenant",
-                new HashMap<>());
+        Page<ConfigBasicInfo> actual =
+                configInnerHandler.getConfigList(1, 10, "dataId", "group", "tenant",
+                        new HashMap<>());
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPagesAvailable());
         assertEquals(1, actual.getPageNumber());
         assertEquals(mockPage.getPageItems().get(0).getId(), actual.getPageItems().get(0).getId());
-        assertEquals(mockPage.getPageItems().get(0).getDataId(), actual.getPageItems().get(0).getDataId());
-        assertEquals(mockPage.getPageItems().get(0).getGroup(), actual.getPageItems().get(0).getGroupName());
-        assertEquals(mockPage.getPageItems().get(0).getTenant(), actual.getPageItems().get(0).getNamespaceId());
+        assertEquals(mockPage.getPageItems().get(0).getDataId(),
+                actual.getPageItems().get(0).getDataId());
+        assertEquals(mockPage.getPageItems().get(0).getGroup(),
+                actual.getPageItems().get(0).getGroupName());
+        assertEquals(mockPage.getPageItems().get(0).getTenant(),
+                actual.getPageItems().get(0).getNamespaceId());
     }
     
     @Test
     void getConfigDetail() throws NacosException {
         ConfigAllInfo mockConfig = mockConfigAllInfo();
-        when(configInfoPersistService.findConfigAllInfo("dataId", "group", "tenant")).thenReturn(mockConfig);
+        when(configInfoPersistService.findConfigAllInfo("dataId", "group", "tenant"))
+                .thenReturn(mockConfig);
         ConfigDetailInfo actual = configInnerHandler.getConfigDetail("dataId", "group", "tenant");
         assertNotNull(actual);
         assertEquals(mockConfig.getId(), actual.getId());
@@ -183,22 +189,26 @@ class ConfigInnerHandlerTest {
         configForm.setContent("content");
         configForm.setEncryptedDataKey("");
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        when(configOperationService.publishConfig(configForm, configRequestInfo, "")).thenReturn(true);
+        when(configOperationService.publishConfig(configForm, configRequestInfo, ""))
+                .thenReturn(true);
         assertTrue(configInnerHandler.publishConfig(configForm, configRequestInfo));
     }
     
     @Test
     void deleteConfig() throws NacosException {
-        when(configOperationService.deleteConfig("dataId", "group", "tenant", "", "clientIp", "srcUser",
+        when(configOperationService.deleteConfig("dataId", "group", "tenant", "", "clientIp",
+                "srcUser",
                 Constants.HTTP)).thenReturn(true);
-        assertTrue(configInnerHandler.deleteConfig("dataId", "group", "tenant", "", "clientIp", "srcUser"));
+        assertTrue(configInnerHandler.deleteConfig("dataId", "group", "tenant", "", "clientIp",
+                "srcUser"));
     }
     
     @Test
     void batchDeleteConfigs() {
         when(configInfoPersistService.findConfigInfo(1L)).thenReturn(mockConfigInfo());
         assertTrue(configInnerHandler.batchDeleteConfigs(List.of(1L, 2L), "clientIp", "srcUser"));
-        verify(configOperationService).deleteConfig(anyString(), anyString(), anyString(), any(), anyString(),
+        verify(configOperationService).deleteConfig(anyString(), anyString(), anyString(), any(),
+                anyString(),
                 anyString(), anyString());
     }
     
@@ -211,15 +221,19 @@ class ConfigInnerHandlerTest {
         mockPage.setPageNumber(1);
         when(configDetailService.findConfigInfoPage("blur", 1, 10, "dataId", "group", "tenant",
                 new HashMap<>())).thenReturn(mockPage);
-        Page<ConfigBasicInfo> actual = configInnerHandler.getConfigListByContent("blur", 1, 10, "dataId", "group",
-                "tenant", new HashMap<>());
+        Page<ConfigBasicInfo> actual =
+                configInnerHandler.getConfigListByContent("blur", 1, 10, "dataId", "group",
+                        "tenant", new HashMap<>());
         assertEquals(1, actual.getTotalCount());
         assertEquals(1, actual.getPagesAvailable());
         assertEquals(1, actual.getPageNumber());
         assertEquals(mockPage.getPageItems().get(0).getId(), actual.getPageItems().get(0).getId());
-        assertEquals(mockPage.getPageItems().get(0).getDataId(), actual.getPageItems().get(0).getDataId());
-        assertEquals(mockPage.getPageItems().get(0).getGroup(), actual.getPageItems().get(0).getGroupName());
-        assertEquals(mockPage.getPageItems().get(0).getTenant(), actual.getPageItems().get(0).getNamespaceId());
+        assertEquals(mockPage.getPageItems().get(0).getDataId(),
+                actual.getPageItems().get(0).getDataId());
+        assertEquals(mockPage.getPageItems().get(0).getGroup(),
+                actual.getPageItems().get(0).getGroupName());
+        assertEquals(mockPage.getPageItems().get(0).getTenant(),
+                actual.getPageItems().get(0).getNamespaceId());
     }
     
     @Test
@@ -227,14 +241,16 @@ class ConfigInnerHandlerTest {
         when(configDetailService.findConfigInfoPage("blur", 1, 10, "dataId", "group", "tenant",
                 new HashMap<>())).thenThrow(new NacosRuntimeException(500, "test"));
         assertThrows(NacosRuntimeException.class,
-                () -> configInnerHandler.getConfigListByContent("blur", 1, 10, "dataId", "group", "tenant",
+                () -> configInnerHandler.getConfigListByContent("blur", 1, 10, "dataId", "group",
+                        "tenant",
                         new HashMap<>()));
     }
     
     @Test
     void getListeners() throws Exception {
         ConfigListenerInfo mock = new ConfigListenerInfo();
-        when(configListenerStateDelegate.getListenerState("dataId", "group", "tenant", true)).thenReturn(mock);
+        when(configListenerStateDelegate.getListenerState("dataId", "group", "tenant", true))
+                .thenReturn(mock);
         assertEquals(mock, configInnerHandler.getListeners("dataId", "group", "tenant", true));
     }
     
@@ -242,7 +258,8 @@ class ConfigInnerHandlerTest {
     void getAllSubClientConfigByIpEmpty() {
         ConfigListenerInfo mock = new ConfigListenerInfo();
         when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", true)).thenReturn(mock);
-        assertEquals(mock, configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", true, "tenant", true));
+        assertEquals(mock,
+                configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", true, "tenant", true));
     }
     
     @Test
@@ -253,7 +270,8 @@ class ConfigInnerHandlerTest {
         configMd5Status.put("dataId+group+aaa", "2");
         mock.setListenersStatus(configMd5Status);
         when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", false)).thenReturn(mock);
-        ConfigListenerInfo actual = configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", true, "tenant", false);
+        ConfigListenerInfo actual =
+                configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", true, "tenant", false);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, actual.getQueryType());
         assertEquals(2, actual.getListenersStatus().size());
         assertEquals("1", actual.getListenersStatus().get("dataId+group+tenant"));
@@ -268,7 +286,8 @@ class ConfigInnerHandlerTest {
         configMd5Status.put("dataId+group+aaa", "2");
         mock.setListenersStatus(configMd5Status);
         when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", false)).thenReturn(mock);
-        ConfigListenerInfo actual = configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", false, "", false);
+        ConfigListenerInfo actual =
+                configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", false, "", false);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, actual.getQueryType());
         assertEquals(1, actual.getListenersStatus().size());
         assertEquals("1", actual.getListenersStatus().get("dataId+group"));
@@ -283,7 +302,8 @@ class ConfigInnerHandlerTest {
         configMd5Status.put("dataId+group+tenant", "3");
         mock.setListenersStatus(configMd5Status);
         when(configListenerStateDelegate.getListenerStateByIp("127.0.0.1", false)).thenReturn(mock);
-        ConfigListenerInfo actual = configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", false, "aaa", false);
+        ConfigListenerInfo actual =
+                configInnerHandler.getAllSubClientConfigByIp("127.0.0.1", false, "aaa", false);
         assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, actual.getQueryType());
         assertEquals(2, actual.getListenersStatus().size());
         assertEquals("1", actual.getListenersStatus().get("dataId+group"));
@@ -293,10 +313,12 @@ class ConfigInnerHandlerTest {
     @Test
     void exportConfig() throws Exception {
         List<ConfigAllInfo> mockList = Collections.singletonList(mockConfigAllInfo());
-        when(configInfoPersistService.findAllConfigInfo4Export("dataId", "group", "tenant", "appName",
+        when(configInfoPersistService.findAllConfigInfo4Export("dataId", "group", "tenant",
+                "appName",
                 Collections.singletonList(1L))).thenReturn(mockList);
-        ResponseEntity<byte[]> actual = configInnerHandler.exportConfig("dataId", "group", "tenant", "appName",
-                Collections.singletonList(1L));
+        ResponseEntity<byte[]> actual =
+                configInnerHandler.exportConfig("dataId", "group", "tenant", "appName",
+                        Collections.singletonList(1L));
         assertNotNull(actual);
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         assertTrue(actual.getHeaders().containsKey("Content-Disposition"));
@@ -304,16 +326,18 @@ class ConfigInnerHandlerTest {
     
     @Test
     void importAndPublishConfigWithEmptyFile() throws NacosException {
-        Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "tenant",
-                SameConfigPolicy.OVERWRITE, null, "srcIp", "requestIpApp");
+        Result<Map<String, Object>> actual =
+                configInnerHandler.importAndPublishConfig("srcUser", "tenant",
+                        SameConfigPolicy.OVERWRITE, null, "srcIp", "requestIpApp");
         assertEquals(ErrorCode.DATA_EMPTY.getCode(), actual.getCode());
     }
     
     @Test
     void importAndPublishConfigWithNonExistNamespace() throws NacosException {
         MultipartFile mockFile = Mockito.mock(MultipartFile.class);
-        Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "tenant",
-                SameConfigPolicy.OVERWRITE, mockFile, "srcIp", "requestIpApp");
+        Result<Map<String, Object>> actual =
+                configInnerHandler.importAndPublishConfig("srcUser", "tenant",
+                        SameConfigPolicy.OVERWRITE, mockFile, "srcIp", "requestIpApp");
         assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), actual.getCode());
     }
     
@@ -321,31 +345,38 @@ class ConfigInnerHandlerTest {
     void importAndPublishConfigWithUnzipException() throws NacosException, IOException {
         MultipartFile mockFile = Mockito.mock(MultipartFile.class);
         when(mockFile.getBytes()).thenThrow(new IOException());
-        Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                SameConfigPolicy.OVERWRITE, mockFile, "srcIp", "requestIpApp");
+        Result<Map<String, Object>> actual =
+                configInnerHandler.importAndPublishConfig("srcUser", "public",
+                        SameConfigPolicy.OVERWRITE, mockFile, "srcIp", "requestIpApp");
         assertEquals(ErrorCode.PARSING_DATA_FAILED.getCode(), actual.getCode());
     }
     
     @Test
     void importAndPublishConfigWithoutMetadata() throws NacosException {
         ZipUtils.UnZipResult unziped = mockZipFile(false, true, false, false);
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
-            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                    .thenReturn(unziped);
+            Result<Map<String, Object>> actual =
+                    configInnerHandler.importAndPublishConfig("srcUser", "public",
+                            SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
             assertEquals(ErrorCode.METADATA_ILLEGAL.getCode(), actual.getCode());
         }
     }
-
+    
     @Test
     void importAndPublishConfigWithNullMetadataItem() throws NacosException {
         ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(new ArrayList<>(), null);
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
-            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                    .thenReturn(unziped);
+            Result<Map<String, Object>> actual =
+                    configInnerHandler.importAndPublishConfig("srcUser", "public",
+                            SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
             assertEquals(ErrorCode.METADATA_ILLEGAL.getCode(), actual.getCode());
         }
     }
@@ -353,11 +384,14 @@ class ConfigInnerHandlerTest {
     @Test
     void importAndPublishConfigWithWrongMetadata() throws NacosException {
         ZipUtils.UnZipResult unziped = mockZipFile(true, false, false, false);
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
-            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                    .thenReturn(unziped);
+            Result<Map<String, Object>> actual =
+                    configInnerHandler.importAndPublishConfig("srcUser", "public",
+                            SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
             assertEquals(ErrorCode.METADATA_ILLEGAL.getCode(), actual.getCode());
         }
     }
@@ -365,11 +399,14 @@ class ConfigInnerHandlerTest {
     @Test
     void importAndPublishConfigWithEmptyData() throws NacosException {
         ZipUtils.UnZipResult unziped = mockZipFile(true, true, false, true);
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
-            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                    .thenReturn(unziped);
+            Result<Map<String, Object>> actual =
+                    configInnerHandler.importAndPublishConfig("srcUser", "public",
+                            SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
             assertEquals(ErrorCode.DATA_EMPTY.getCode(), actual.getCode());
         }
     }
@@ -377,13 +414,17 @@ class ConfigInnerHandlerTest {
     @Test
     void importAndPublishConfig() throws NacosException {
         ZipUtils.UnZipResult unziped = mockZipFile(true, true, false, false);
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
-            when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any())).thenReturn(
-                    Collections.singletonMap("dataId23456.json+group132", true));
-            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                    .thenReturn(unziped);
+            when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any()))
+                    .thenReturn(
+                            Collections.singletonMap("dataId23456.json+group132", true));
+            Result<Map<String, Object>> actual =
+                    configInnerHandler.importAndPublishConfig("srcUser", "public",
+                            SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
             assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
             assertTrue(actual.getData().containsKey("dataId23456.json+group132"));
         }
@@ -392,14 +433,18 @@ class ConfigInnerHandlerTest {
     @Test
     void importAndPublishConfigWithUnrecognizedItem() throws NacosException {
         ZipUtils.UnZipResult unziped = mockZipFile(true, true, true, false);
-        MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         try (MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class)) {
-            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
+            zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes())))
+                    .thenReturn(unziped);
             HashMap<String, Object> result = new HashMap<>();
             result.put("dataId23456.json+group132", true);
-            when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any())).thenReturn(result);
-            Result<Map<String, Object>> actual = configInnerHandler.importAndPublishConfig("srcUser", "public",
-                    SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
+            when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any()))
+                    .thenReturn(result);
+            Result<Map<String, Object>> actual =
+                    configInnerHandler.importAndPublishConfig("srcUser", "public",
+                            SameConfigPolicy.OVERWRITE, file, "srcIp", "requestIpApp");
             assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
             assertTrue(actual.getData().containsKey("dataId23456.json+group132"));
             assertTrue(actual.getData().containsKey("unrecognizedCount"));
@@ -428,7 +473,8 @@ class ConfigInnerHandlerTest {
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(new ArrayList<>());
         if (containsMetadata) {
-            ConfigMetadata.ConfigExportItem configExportItem = new ConfigMetadata.ConfigExportItem();
+            ConfigMetadata.ConfigExportItem configExportItem =
+                    new ConfigMetadata.ConfigExportItem();
             configExportItem.setDataId(dataId);
             configExportItem.setGroup(group);
             configExportItem.setType(correctMetadata ? "json" : "");
@@ -444,7 +490,8 @@ class ConfigInnerHandlerTest {
             }
         }
         return new ZipUtils.UnZipResult(zipItems,
-                new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
+                new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
+                        YamlParserUtil.dumpObject(configMetadata)));
     }
     
     @Test
@@ -458,7 +505,8 @@ class ConfigInnerHandlerTest {
     void cloneConfigWithNamespaceNotExist() throws NacosException {
         SameNamespaceCloneConfigBean configBean = new SameNamespaceCloneConfigBean();
         Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "tenant",
-                Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
+                Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
+                "requestIpApp");
         assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), actual.getCode());
     }
     
@@ -468,7 +516,8 @@ class ConfigInnerHandlerTest {
         configBean.setCfgId(1L);
         when(namespacePersistService.tenantInfoCountByTenantId("tenant")).thenReturn(1);
         Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "tenant",
-                Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
+                Collections.singletonList(configBean), SameConfigPolicy.OVERWRITE, "srcIp",
+                "requestIpApp");
         assertEquals(ErrorCode.DATA_EMPTY.getCode(), actual.getCode());
     }
     
@@ -481,59 +530,75 @@ class ConfigInnerHandlerTest {
         configBean = new SameNamespaceCloneConfigBean();
         configBean.setCfgId(1L);
         configBeansList.add(configBean);
-        when(configInfoPersistService.findAllConfigInfo4Export(isNull(), isNull(), isNull(), isNull(),
+        when(configInfoPersistService.findAllConfigInfo4Export(isNull(), isNull(), isNull(),
+                isNull(),
                 anyList())).thenReturn(Collections.singletonList(mockConfigAllInfo()));
-        when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any())).thenReturn(
-                Collections.singletonMap("dataId23456.json+group132", true));
-        Result<Map<String, Object>> actual = configInnerHandler.cloneConfig("srcUser", "public", configBeansList,
-                SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
+        when(configInfoPersistService.batchInsertOrUpdate(any(), any(), any(), any(), any()))
+                .thenReturn(
+                        Collections.singletonMap("dataId23456.json+group132", true));
+        Result<Map<String, Object>> actual =
+                configInnerHandler.cloneConfig("srcUser", "public", configBeansList,
+                        SameConfigPolicy.OVERWRITE, "srcIp", "requestIpApp");
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().size());
     }
-
+    
     @Test
     void removeBetaConfigWithGrayCompatibleModelAndOldTableVersion() {
         PropertyUtil.setGrayCompatibleModel(true);
         ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", true);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
+        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
+                "requestIpApp",
                 "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
+                BetaGrayRule.TYPE_BETA,
                 "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
+                BetaGrayRule.TYPE_BETA,
                 "remoteIp", "srcUser");
         verify(configInfoBetaPersistService).removeConfigInfo4Beta("dataId", "group", "tenant");
     }
-
+    
     @Test
     void removeBetaConfigWithGrayCompatibleModelAndLatestTableVersion() {
         PropertyUtil.setGrayCompatibleModel(true);
         ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
+        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
+                "requestIpApp",
                 "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
+                BetaGrayRule.TYPE_BETA,
                 "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
+                BetaGrayRule.TYPE_BETA,
                 "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group", "tenant");
+        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group",
+                "tenant");
     }
-
+    
     @Test
     void removeBetaConfigWithoutGrayCompatibleModel() {
         PropertyUtil.setGrayCompatibleModel(false);
-        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
+        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
+                "requestIpApp",
                 "srcUser"));
-        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant",
+                BetaGrayRule.TYPE_BETA,
                 "remoteIp", "srcUser");
-        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant",
+                BetaGrayRule.TYPE_BETA,
                 "remoteIp", "srcUser");
-        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group", "tenant");
+        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group",
+                "tenant");
     }
     
     @Test
     void removeBetaConfigWithException() {
         doThrow(new NacosRuntimeException(0, "test")).when(configInfoGrayPersistService)
-                .removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA, "remoteIp", "srcUser");
-        assertFalse(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
+                .removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+                        "remoteIp", "srcUser");
+        assertFalse(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp",
+                "requestIpApp",
                 "srcUser"));
     }
     
@@ -555,11 +620,12 @@ class ConfigInnerHandlerTest {
         mockConfigInfo.setMd5("md5");
         mockConfigInfo.setEncryptedDataKey("");
         mockConfigInfo.setGrayName("beta");
-        when(configInfoGrayPersistService.findConfigInfo4Gray("dataId", "group", "tenant", "beta")).thenReturn(
-                mockConfigInfo);
+        when(configInfoGrayPersistService.findConfigInfo4Gray("dataId", "group", "tenant", "beta"))
+                .thenReturn(
+                        mockConfigInfo);
         assertNotNull(configInnerHandler.queryBetaConfig("dataId", "group", "tenant"));
     }
-
+    
     @Test
     void queryBetaConfigWithTypeFieldFromProductionConfig() throws NacosException {
         ConfigInfoGrayWrapper mockBetaConfigInfo = new ConfigInfoGrayWrapper();
@@ -573,9 +639,10 @@ class ConfigInnerHandlerTest {
         mockBetaConfigInfo.setMd5("md5");
         mockBetaConfigInfo.setEncryptedDataKey("");
         mockBetaConfigInfo.setGrayName("beta");
-        when(configInfoGrayPersistService.findConfigInfo4Gray("dataId", "group", "tenant", "beta")).thenReturn(
-                mockBetaConfigInfo);
-
+        when(configInfoGrayPersistService.findConfigInfo4Gray("dataId", "group", "tenant", "beta"))
+                .thenReturn(
+                        mockBetaConfigInfo);
+        
         ConfigInfoWrapper mockConfigInfo = new ConfigInfoWrapper();
         mockConfigInfo.setId(1L);
         mockConfigInfo.setDataId("dataId");
@@ -588,7 +655,7 @@ class ConfigInnerHandlerTest {
         mockConfigInfo.setEncryptedDataKey("");
         when(configInfoPersistService.findConfigInfo("dataId", "group", "tenant")).thenReturn(
                 mockConfigInfo);
-
+        
         ConfigGrayInfo grayInfo = configInnerHandler.queryBetaConfig("dataId", "group", "tenant");
         assertNotNull(grayInfo);
         assertEquals("type", grayInfo.getType());

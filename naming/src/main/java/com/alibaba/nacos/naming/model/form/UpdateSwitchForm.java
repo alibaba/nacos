@@ -102,6 +102,7 @@ public class UpdateSwitchForm implements Serializable {
     
     @Override
     public String toString() {
-        return "UpdateSwitchForm{" + "debug=" + debug + ", entry='" + entry + '\'' + ", value='" + value + '\'' + '}';
+        return "UpdateSwitchForm{" + "debug=" + debug + ", entry='" + entry + '\'' + ", value='"
+                + value + '\'' + '}';
     }
 }

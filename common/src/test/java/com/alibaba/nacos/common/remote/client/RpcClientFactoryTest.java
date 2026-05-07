@@ -64,10 +64,12 @@ class RpcClientFactoryTest {
     
     @BeforeAll
     static void setUpBeforeClass()
-            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
+            InvocationTargetException {
         clientMapField = RpcClientFactory.class.getDeclaredField("CLIENT_MAP");
         clientMapField.setAccessible(true);
-        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        Method getDeclaredFields0 =
+                Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
         getDeclaredFields0.setAccessible(true);
         Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
         Field modifiersField1 = null;
@@ -96,8 +98,10 @@ class RpcClientFactoryTest {
     }
     
     @Test
-    void testDestroyClientWhenClientExistThenRemoveAndShutDownRpcClient() throws IllegalAccessException, NacosException {
-        clientMapField.set(null, new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
+    void testDestroyClientWhenClientExistThenRemoveAndShutDownRpcClient()
+            throws IllegalAccessException, NacosException {
+        clientMapField.set(null,
+                new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
         
         RpcClientFactory.destroyClient("testClient");
         
@@ -106,12 +110,15 @@ class RpcClientFactoryTest {
     }
     
     @Test
-    void testDestroyClientWhenClientNotExistThenDoNothing() throws IllegalAccessException, NacosException {
-        clientMapField.set(null, new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
+    void testDestroyClientWhenClientNotExistThenDoNothing()
+            throws IllegalAccessException, NacosException {
+        clientMapField.set(null,
+                new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
         
         RpcClientFactory.destroyClient("notExistClientName");
         
-        Map.Entry<String, RpcClient> element = CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries());
+        Map.Entry<String, RpcClient> element =
+                CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries());
         assertEquals("testClient", element.getKey());
         assertEquals(rpcClient, element.getValue());
         verify(rpcClient, times(0)).shutdown();
@@ -122,7 +129,8 @@ class RpcClientFactoryTest {
         // may be null
         assertNull(RpcClientFactory.getClient("notExistClientName"));
         
-        clientMapField.set(null, new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
+        clientMapField.set(null,
+                new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
         assertEquals(rpcClient, RpcClientFactory.getClient("testClient"));
     }
     
@@ -135,7 +143,8 @@ class RpcClientFactoryTest {
         labesMap.put("tls.enable", "false");
         assertEquals(labesMap, client.rpcClientConfig.labels());
         assertEquals(ConnectionType.GRPC, client.getConnectionType());
-        assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+        assertEquals("testClient",
+                CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
     
     @Test
@@ -166,7 +175,8 @@ class RpcClientFactoryTest {
         labesMap.put("tls.enable", "false");
         assertEquals(labesMap, client.rpcClientConfig.labels());
         assertEquals(ConnectionType.GRPC, client.getConnectionType());
-        assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+        assertEquals("testClient",
+                CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
     
     @Test
@@ -198,7 +208,8 @@ class RpcClientFactoryTest {
         labesMap.put("tls.enable", "true");
         assertEquals(labesMap, client.rpcClientConfig.labels());
         assertEquals(ConnectionType.GRPC, client.getConnectionType());
-        assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+        assertEquals("testClient",
+                CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
     
     @Test
@@ -211,7 +222,8 @@ class RpcClientFactoryTest {
         labesMap.put("tls.enable", "true");
         assertEquals(labesMap, client.rpcClientConfig.labels());
         assertEquals(ConnectionType.GRPC, client.getConnectionType());
-        assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+        assertEquals("testClient",
+                CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
     
     @Test
@@ -223,7 +235,8 @@ class RpcClientFactoryTest {
         labels.put("labelKey", "labelValue");
         GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
                 .createGrpcClientConfig(properties, labels);
-        RpcClient testClient = RpcClientFactory.createClient("testClient", ConnectionType.GRPC, grpcClientConfig);
+        RpcClient testClient =
+                RpcClientFactory.createClient("testClient", ConnectionType.GRPC, grpcClientConfig);
         assertEquals(testClient.getLabels(), labels);
         assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
         assertEquals(testClient.getName(), "testClient");
@@ -237,10 +250,12 @@ class RpcClientFactoryTest {
         Map<String, String> labels = new HashMap<>();
         labels.put("tls.enable", "false");
         labels.put("labelKey", "labelValue");
-        GrpcClientConfig clientConfig = DefaultGrpcClientConfig.newBuilder().buildClusterFromProperties(properties)
-                .setLabels(labels).build();
-        GrpcClusterClient testClient = (GrpcClusterClient) RpcClientFactory.createClusterClient("testClient",
-                ConnectionType.GRPC, clientConfig);
+        GrpcClientConfig clientConfig =
+                DefaultGrpcClientConfig.newBuilder().buildClusterFromProperties(properties)
+                        .setLabels(labels).build();
+        GrpcClusterClient testClient =
+                (GrpcClusterClient) RpcClientFactory.createClusterClient("testClient",
+                        ConnectionType.GRPC, clientConfig);
         assertEquals(testClient.getLabels(), labels);
         assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
         assertEquals(testClient.getName(), "testClient");

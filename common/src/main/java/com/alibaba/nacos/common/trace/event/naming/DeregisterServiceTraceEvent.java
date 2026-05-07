@@ -27,6 +27,7 @@ public class DeregisterServiceTraceEvent extends NamingTraceEvent {
     
     public DeregisterServiceTraceEvent(long eventTime, String serviceNamespace, String serviceGroup,
             String serviceName) {
-        super("DEREGISTER_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+        super("DEREGISTER_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup,
+                serviceName);
     }
 }

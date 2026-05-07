@@ -62,7 +62,8 @@ public class ConfigFuzzyWatchChangeEvent {
      * @param dataId      The data ID of the configuration that has changed
      * @param changedType The type of change that has occurred
      */
-    private ConfigFuzzyWatchChangeEvent(String namespace, String group, String dataId, String changedType,
+    private ConfigFuzzyWatchChangeEvent(String namespace, String group, String dataId,
+            String changedType,
             String syncType) {
         this.group = group;
         this.dataId = dataId;
@@ -79,7 +80,8 @@ public class ConfigFuzzyWatchChangeEvent {
      * @param changedType The type of change that has occurred
      * @return A new FuzzyListenConfigChangeEvent instance
      */
-    public static ConfigFuzzyWatchChangeEvent build(String namespace, String group, String dataId, String changedType,
+    public static ConfigFuzzyWatchChangeEvent build(String namespace, String group, String dataId,
+            String changedType,
             String syncType) {
         return new ConfigFuzzyWatchChangeEvent(namespace, group, dataId, changedType, syncType);
     }
@@ -106,8 +108,10 @@ public class ConfigFuzzyWatchChangeEvent {
     
     @Override
     public String toString() {
-        return "ConfigFuzzyWatchChangeEvent{" + "group='" + group + '\'' + ", dataId='" + dataId + '\''
-                + ", namespace='" + namespace + '\'' + ", changedType='" + changedType + '\'' + ", syncType='"
+        return "ConfigFuzzyWatchChangeEvent{" + "group='" + group + '\'' + ", dataId='" + dataId
+                + '\''
+                + ", namespace='" + namespace + '\'' + ", changedType='" + changedType + '\''
+                + ", syncType='"
                 + syncType + '\'' + '}';
     }
 }

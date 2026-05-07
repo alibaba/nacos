@@ -40,7 +40,8 @@ public class NamingRequestUtil {
      * @return source ip, null if not found
      */
     public static String getSourceIp() {
-        AddressContext addressContext = RequestContextHolder.getContext().getBasicContext().getAddressContext();
+        AddressContext addressContext =
+                RequestContextHolder.getContext().getBasicContext().getAddressContext();
         String sourceIp = addressContext.getSourceIp();
         if (StringUtils.isBlank(sourceIp)) {
             sourceIp = addressContext.getRemoteIp();

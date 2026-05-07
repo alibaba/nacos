@@ -55,8 +55,10 @@ public class PushServiceTraceEvent extends NamingTraceEvent {
         return serviceLevelAgreementTime;
     }
     
-    public PushServiceTraceEvent(long eventTime, long pushCostTimeForNetWork, long pushCostTimeForAll,
-            long serviceLevelAgreementTime, String clientIp, String serviceNamespace, String serviceGroup,
+    public PushServiceTraceEvent(long eventTime, long pushCostTimeForNetWork,
+            long pushCostTimeForAll,
+            long serviceLevelAgreementTime, String clientIp, String serviceNamespace,
+            String serviceGroup,
             String serviceName, int instanceSize) {
         super("PUSH_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;

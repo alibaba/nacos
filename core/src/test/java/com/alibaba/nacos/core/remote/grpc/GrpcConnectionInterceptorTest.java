@@ -34,16 +34,16 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GrpcConnectionInterceptorTest {
-
+    
     @Mock
     private ServerCall<byte[], byte[]> serverCall;
-
+    
     @Mock
     private Metadata headers;
-
+    
     @Mock
     private ServerCallHandler<byte[], byte[]> next;
-
+    
     @Test
     void testInterceptCallWithNonBiStreamService() {
         Attributes attrs = Attributes.newBuilder()
@@ -58,7 +58,7 @@ class GrpcConnectionInterceptorTest {
         when(serverCall.getMethodDescriptor()).thenReturn(methodDescriptor);
         ServerCall.Listener<byte[]> listener = mock(ServerCall.Listener.class);
         when(next.startCall(any(), any())).thenReturn(listener);
-
+        
         ServerInterceptor interceptor = new GrpcConnectionInterceptor();
         ServerCall.Listener<byte[]> result = interceptor.interceptCall(serverCall, headers, next);
         assertNotNull(result);

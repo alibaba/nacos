@@ -96,17 +96,20 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             if (connection == null) {
                 continue;
             }
-            boolean ifNamespaceTransfer = configChangeListenContext.getConfigListenState(client, groupKey).isNamespaceTransfer();
+            boolean ifNamespaceTransfer = configChangeListenContext
+                    .getConfigListenState(client, groupKey).isNamespaceTransfer();
             if (ifNamespaceTransfer) {
                 tenant = null;
             }
             ConnectionMeta metaInfo = connection.getMetaInfo();
             String clientIp = metaInfo.getClientIp();
             
-            ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
+            ConfigChangeNotifyRequest notifyRequest =
+                    ConfigChangeNotifyRequest.build(dataId, group, tenant);
             
             RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest,
-                    ConfigCommonConfig.getInstance().getMaxPushRetryTimes(), client, clientIp, metaInfo.getAppName());
+                    ConfigCommonConfig.getInstance().getMaxPushRetryTimes(), client, clientIp,
+                    metaInfo.getAppName());
             push(rpcPushRetryTask, connectionManager);
             notifyClientCount++;
         }
@@ -145,7 +148,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         String appName;
         
-        public RpcPushTask(ConfigChangeNotifyRequest notifyRequest, int maxRetryTimes, String connectionId,
+        public RpcPushTask(ConfigChangeNotifyRequest notifyRequest, int maxRetryTimes,
+                String connectionId,
                 String clientIp, String appName) {
             this.notifyRequest = notifyRequest;
             this.maxRetryTimes = maxRetryTimes;
@@ -227,7 +231,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_FAIL);
             tpsControlManager.check(tpsCheckRequest);
             Loggers.REMOTE_PUSH.warn("Push fail, dataId={}, group={}, tenant={}, clientId={}",
-                    rpcPushTask.getNotifyRequest().getDataId(), rpcPushTask.getNotifyRequest().getGroup(),
+                    rpcPushTask.getNotifyRequest().getDataId(),
+                    rpcPushTask.getNotifyRequest().getGroup(),
                     rpcPushTask.getNotifyRequest().getTenant(), rpcPushTask.getConnectionId(), e);
             push(rpcPushTask, connectionManager);
         }
@@ -243,11 +248,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             connectionManager.unregister(retryTask.getConnectionId());
         } else if (connectionManager.getConnection(retryTask.getConnectionId()) != null) {
             // first time:delay 0s; second time:delay 2s; third time:delay 4s
-            ConfigExecutor.scheduleClientConfigNotifier(retryTask, retryTask.getTryTimes() * 2, TimeUnit.SECONDS);
+            ConfigExecutor.scheduleClientConfigNotifier(retryTask, retryTask.getTryTimes() * 2,
+                    TimeUnit.SECONDS);
         } else {
             // client is already offline, ignore task.
         }
     }
     
 }
-

@@ -55,7 +55,8 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     
     private final ServerMemberManager memberManager;
     
-    public NamingSubscriberServiceAggregationImpl(NamingSubscriberServiceLocalImpl subscriberServiceLocal,
+    public NamingSubscriberServiceAggregationImpl(
+            NamingSubscriberServiceLocalImpl subscriberServiceLocal,
             ServerMemberManager serverMemberManager) {
         this.subscriberServiceLocal = subscriberServiceLocal;
         this.memberManager = serverMemberManager;
@@ -73,9 +74,11 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
-        Collection<Subscriber> result = new LinkedList<>(subscriberServiceLocal.getSubscribers(service));
+        Collection<Subscriber> result =
+                new LinkedList<>(subscriberServiceLocal.getSubscribers(service));
         if (memberManager.getServerList().size() > 1) {
-            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(), result);
+            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(),
+                    result);
         }
         return result;
     }
@@ -92,14 +95,17 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(Service service) {
-        Collection<Subscriber> result = new LinkedList<>(subscriberServiceLocal.getFuzzySubscribers(service));
+        Collection<Subscriber> result =
+                new LinkedList<>(subscriberServiceLocal.getFuzzySubscribers(service));
         if (memberManager.getServerList().size() > 1) {
-            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(), result);
+            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(),
+                    result);
         }
         return result;
     }
     
-    private void getSubscribersFromRemotes(String namespaceId, String serviceName, Collection<Subscriber> result) {
+    private void getSubscribersFromRemotes(String namespaceId, String serviceName,
+            Collection<Subscriber> result) {
         for (Member server : memberManager.allMembersWithoutSelf()) {
             Map<String, String> paramValues = new HashMap<>(128);
             String groupName = NamingUtils.getGroupName(serviceName);
@@ -110,14 +116,16 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
             paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
             RestResult<String> response = HttpClient.httpGet(
                     HTTP_PREFIX + server.getAddress() + EnvUtil.getContextPath()
-                            + UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH + SUBSCRIBER_ON_SYNC_URL,
+                            + UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH
+                            + SUBSCRIBER_ON_SYNC_URL,
                     new ArrayList<>(), paramValues);
             if (response.ok()) {
                 Result<Page<SubscriberInfo>> subscribers = JacksonUtils.toObj(response.getData(),
                         new TypeReference<>() {
                         });
                 for (SubscriberInfo each : subscribers.getData().getPageItems()) {
-                    result.add(new Subscriber(each.getAddress(), each.getAgent(), each.getAppName(), each.getIp(),
+                    result.add(new Subscriber(each.getAddress(), each.getAgent(), each.getAppName(),
+                            each.getIp(),
                             each.getNamespaceId(), serviceName, each.getPort()));
                 }
             }

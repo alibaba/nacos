@@ -35,13 +35,16 @@ public class MemoryMonitor {
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
         
-        ConfigExecutor.scheduleConfigTask(new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+        ConfigExecutor.scheduleConfigTask(new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS,
+                TimeUnit.SECONDS);
         
         ConfigExecutor
-                .scheduleConfigTask(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+                .scheduleConfigTask(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS,
+                        TimeUnit.SECONDS);
         
         ConfigExecutor
-                .scheduleConfigTask(new ThreadTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS, DELAY_SECONDS,
+                .scheduleConfigTask(new ThreadTaskQueueMonitorTask(notifySingleService),
+                        DELAY_SECONDS, DELAY_SECONDS,
                         TimeUnit.SECONDS);
         
     }

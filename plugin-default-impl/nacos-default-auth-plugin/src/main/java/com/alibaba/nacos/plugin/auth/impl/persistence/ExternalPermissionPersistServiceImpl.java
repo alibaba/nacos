@@ -71,8 +71,9 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         }
         
         try {
-            Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
-                    params.toArray(), pageNo, pageSize, PERMISSION_ROW_MAPPER);
+            Page<PermissionInfo> pageInfo =
+                    helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                            params.toArray(), pageNo, pageSize, PERMISSION_ROW_MAPPER);
             
             if (pageInfo == null) {
                 pageInfo = new Page<>();
@@ -142,8 +143,9 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         }
         
         try {
-            Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
-                    params.toArray(), pageNo, pageSize, PERMISSION_ROW_MAPPER);
+            Page<PermissionInfo> pageInfo =
+                    helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                            params.toArray(), pageNo, pageSize, PERMISSION_ROW_MAPPER);
             
             if (pageInfo == null) {
                 pageInfo = new Page<>();

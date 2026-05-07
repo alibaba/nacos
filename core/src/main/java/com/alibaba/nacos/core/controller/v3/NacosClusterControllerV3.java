@@ -80,7 +80,8 @@ public class NacosClusterControllerV3 {
     @GetMapping(value = "/node/list")
     @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
+    public Result<Collection<Member>> listNodes(
+            @RequestParam(value = "address", required = false) String address,
             @RequestParam(value = "state", required = false) String state) throws NacosException {
         
         NodeState nodeState = null;

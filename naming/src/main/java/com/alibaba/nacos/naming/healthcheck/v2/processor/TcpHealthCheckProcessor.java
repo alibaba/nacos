@@ -81,7 +81,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
     
     private final Selector selector;
     
-    public TcpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon, SwitchDomain switchDomain) {
+    public TcpHealthCheckProcessor(HealthCheckCommonV2 healthCheckCommon,
+            SwitchDomain switchDomain) {
         this.healthCheckCommon = healthCheckCommon;
         this.switchDomain = switchDomain;
         try {
@@ -101,10 +102,13 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
         }
         // TODO handle marked(white list) logic like v1.x.
         if (!instance.tryStartCheck()) {
-            SRV_LOG.warn("[HEALTH-CHECK-V2] tcp check started before last one finished, service: {} : {} : {}:{}",
-                    service.getNameSpaceGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
+            SRV_LOG.warn(
+                    "[HEALTH-CHECK-V2] tcp check started before last one finished, service: {} : {} : {}:{}",
+                    service.getNameSpaceGroupedServiceName(), instance.getCluster(),
+                    instance.getIp(), instance.getPort());
             healthCheckCommon
-                    .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
+                    .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,
+                            switchDomain.getTcpHealthParams());
             return;
         }
         taskQueue.add(new Beat(task, service, metadata, instance));
@@ -181,7 +185,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 if (key.isValid() && key.isConnectable()) {
                     //connected
                     channel.finishConnect();
-                    beat.finishCheck(true, false, System.currentTimeMillis() - beat.getTask().getStartTime(),
+                    beat.finishCheck(true, false,
+                            System.currentTimeMillis() - beat.getTask().getStartTime(),
                             "tcp:ok+");
                 }
                 
@@ -287,7 +292,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
         
         @Override
         public String toString() {
-            return service.getNameSpaceGroupedServiceName() + ":" + instance.getCluster() + ":" + instance.getIp() + ":"
+            return service.getNameSpaceGroupedServiceName() + ":" + instance.getCluster() + ":"
+                    + instance.getIp() + ":"
                     + instance.getPort();
         }
         
@@ -342,7 +348,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 }
                 
                 try {
-                    beat.finishCheck(false, false, beat.getTask().getCheckRtNormalized() * 2, "tcp:timeout");
+                    beat.finishCheck(false, false, beat.getTask().getCheckRtNormalized() * 2,
+                            "tcp:timeout");
                     key.cancel();
                     key.channel().close();
                 } catch (Exception ignore) {
@@ -392,17 +399,20 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 channel.socket().setTcpNoDelay(true);
                 
                 ClusterMetadata cluster = beat.getMetadata();
-                int port = cluster.isUseInstancePortForCheck() ? instance.getPort() : cluster.getHealthyCheckPort();
+                int port = cluster.isUseInstancePortForCheck() ? instance.getPort()
+                        : cluster.getHealthyCheckPort();
                 channel.connect(new InetSocketAddress(instance.getIp(), port));
                 
-                SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
+                SelectionKey key =
+                        channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
                 key.attach(beat);
                 keyMap.put(beat.toString(), new BeatKey(key));
                 
                 beat.setStartTime(System.currentTimeMillis());
                 
                 GlobalExecutor
-                        .scheduleTcpSuperSenseTask(new TimeOutTask(key), CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                        .scheduleTcpSuperSenseTask(new TimeOutTask(key), CONNECT_TIMEOUT_MS,
+                                TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(),
                         "tcp:error:" + e.getMessage());

@@ -81,7 +81,8 @@ class PropertiesPropertySource extends AbstractPropertySource {
         propertiesList = lookForProperties(this, propertiesList);
         
         Properties ret = new Properties();
-        final ListIterator<Properties> iterator = propertiesList.listIterator(propertiesList.size());
+        final ListIterator<Properties> iterator =
+                propertiesList.listIterator(propertiesList.size());
         while (iterator.hasPrevious()) {
             final Properties properties = iterator.previous();
             ret.putAll(properties);
@@ -89,7 +90,8 @@ class PropertiesPropertySource extends AbstractPropertySource {
         return ret;
     }
     
-    List<Properties> lookForProperties(PropertiesPropertySource propertiesPropertySource, List<Properties> propertiesList) {
+    List<Properties> lookForProperties(PropertiesPropertySource propertiesPropertySource,
+            List<Properties> propertiesList) {
         propertiesList.add(propertiesPropertySource.properties);
         final PropertiesPropertySource parent = propertiesPropertySource.parent;
         if (parent == null) {

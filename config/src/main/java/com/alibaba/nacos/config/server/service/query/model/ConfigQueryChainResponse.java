@@ -195,6 +195,7 @@ public class ConfigQueryChainResponse {
     
     @Override
     public int hashCode() {
-        return Objects.hash(content, contentType, encryptedDataKey, md5, lastModified, matchedGray, resultCode, message, status);
+        return Objects.hash(content, contentType, encryptedDataKey, md5, lastModified, matchedGray,
+                resultCode, message, status);
     }
 }

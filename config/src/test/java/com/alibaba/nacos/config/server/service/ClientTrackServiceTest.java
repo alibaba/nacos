@@ -69,7 +69,8 @@ class ClientTrackServiceTest {
         assertEquals(1, ClientTrackService.subscriberCount());
         
         //服务端数据更新
-        ConfigCacheService.updateMd5(groupKey, md5 + "111", content, System.currentTimeMillis(), "");
+        ConfigCacheService.updateMd5(groupKey, md5 + "111", content, System.currentTimeMillis(),
+                "");
         assertFalse(ClientTrackService.isClientUptodate(clientIp).get(groupKey));
     }
     

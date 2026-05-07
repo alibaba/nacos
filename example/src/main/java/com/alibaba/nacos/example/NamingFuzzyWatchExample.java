@@ -56,7 +56,8 @@ public class NamingFuzzyWatchExample {
         
         System.out.println(num + " instance have been registered");
         
-        Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+        Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
                 runnable -> {
                     Thread thread = new Thread(runnable);
                     thread.setName("test-thread");
@@ -75,8 +76,9 @@ public class NamingFuzzyWatchExample {
             @Override
             public void onEvent(FuzzyWatchChangeEvent event) {
                 System.out.println(
-                        "[Fuzzy-Watch-GROUP]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),
-                                event.getGroupName(), event.getServiceName()));
+                        "[Fuzzy-Watch-GROUP]changed service name: "
+                                + NamingUtils.getServiceKey(event.getNamespace(),
+                                        event.getGroupName(), event.getServiceName()));
                 System.out.println("[Fuzzy-Watch-GROUP]change type: " + event.getChangeType());
             }
         });
@@ -91,8 +93,9 @@ public class NamingFuzzyWatchExample {
             @Override
             public void onEvent(FuzzyWatchChangeEvent event) {
                 System.out.println(
-                        "[Prefix-Fuzzy-Watch]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),
-                                event.getGroupName(), event.getServiceName()));
+                        "[Prefix-Fuzzy-Watch]changed service name: "
+                                + NamingUtils.getServiceKey(event.getNamespace(),
+                                        event.getGroupName(), event.getServiceName()));
                 System.out.println("[Prefix-Fuzzy-Watch]change type: " + event.getChangeType());
             }
         });

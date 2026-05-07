@@ -62,7 +62,8 @@ public class AuthModuleStateBuilder extends AbstractServerModuleStateBuilder {
     private Boolean isAdminRequest(String authConfigs) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs);
-        boolean isAdminRequest = authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
+        boolean isAdminRequest =
+                authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
         if (!isAdminRequest) {
             cacheable = true;
         }

@@ -41,7 +41,8 @@ class ServerIdentityCheckerHolderTest {
     
     @BeforeEach
     void setUp() {
-        servicesMap = (Map<Class<?>, Collection<Class<?>>>) ReflectionTestUtils.getField(NacosServiceLoader.class,
+        servicesMap = (Map<Class<?>, Collection<Class<?>>>) ReflectionTestUtils.getField(
+                NacosServiceLoader.class,
                 "SERVICES");
         cachedCheckerClass = (Class<? extends ServerIdentityChecker>) ReflectionTestUtils.getField(
                 ServerIdentityCheckerHolder.getInstance(), "checkerClass");
@@ -50,31 +51,36 @@ class ServerIdentityCheckerHolderTest {
     @AfterEach
     void tearDown() {
         servicesMap.remove(ServerIdentityChecker.class);
-        ReflectionTestUtils.setField(ServerIdentityCheckerHolder.getInstance(), "checkerClass", cachedCheckerClass);
+        ReflectionTestUtils.setField(ServerIdentityCheckerHolder.getInstance(), "checkerClass",
+                cachedCheckerClass);
     }
     
     @Test
     void testConstructorWithSingleImplementation()
-            throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+            throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+            IllegalAccessException {
         ServerIdentityCheckerHolder holder = getNewHolder(1);
         assertInstanceOf(MockChecker.class, holder.newChecker());
     }
     
     @Test
     void testConstructorWithMultipleImplementation()
-            throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+            throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+            IllegalAccessException {
         ServerIdentityCheckerHolder holder = getNewHolder(2);
         assertInstanceOf(MockChecker.class, holder.newChecker());
     }
     
     ServerIdentityCheckerHolder getNewHolder(int size)
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException,
+            IllegalAccessException {
         List<Class<?>> classes = new LinkedList<>();
         for (int i = 0; i < size; i++) {
             classes.add(MockChecker.class);
         }
         servicesMap.put(ServerIdentityChecker.class, classes);
-        Constructor<ServerIdentityCheckerHolder> constructor = ServerIdentityCheckerHolder.class.getDeclaredConstructor();
+        Constructor<ServerIdentityCheckerHolder> constructor =
+                ServerIdentityCheckerHolder.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         return constructor.newInstance();
     }
@@ -90,11 +96,12 @@ class ServerIdentityCheckerHolderTest {
             return ServerIdentityResult.success();
         }
     }
-
+    
     @Test
     void testNewCheckerWithInvalidClass() {
         ReflectionTestUtils.setField(ServerIdentityCheckerHolder.getInstance(), "checkerClass",
                 ServerIdentityChecker.class);
-        assertInstanceOf(DefaultChecker.class, ServerIdentityCheckerHolder.getInstance().newChecker());
+        assertInstanceOf(DefaultChecker.class,
+                ServerIdentityCheckerHolder.getInstance().newChecker());
     }
 }

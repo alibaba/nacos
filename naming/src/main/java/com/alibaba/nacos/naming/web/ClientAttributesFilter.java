@@ -68,7 +68,8 @@ public class ClientAttributesFilter implements Filter {
     }
     
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+            FilterChain filterChain)
             throws IOException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         String uri = request.getRequestURI();
@@ -83,7 +84,8 @@ public class ClientAttributesFilter implements Filter {
                 //beat
                 String ip = WebUtils.optional(request, IP, StringUtils.EMPTY);
                 int port = Integer.parseInt(WebUtils.optional(request, PORT, ZERO));
-                String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
+                String clientId = IpPortBasedClient
+                        .getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
                 IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
                 if (client != null) {
                     ClientAttributes requestClientAttributes = getClientAttributes();
@@ -105,25 +107,31 @@ public class ClientAttributesFilter implements Filter {
     
     private boolean isBeatUri(String uri, String httpMethod) {
         return ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(uri) || (
-                UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(uri)
+                || (UtilsAndCommons.NACOS_SERVER_CONTEXT
+                        + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
                         + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(uri))
                 && HttpMethod.PUT.equals(httpMethod);
     }
     
     private boolean isRegisterInstanceUri(String uri, String httpMethod) {
         return ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(uri) || (UtilsAndCommons.NACOS_SERVER_CONTEXT
-                + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
-                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(uri)) && HttpMethod.POST.equals(httpMethod);
+                + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(uri)
+                || (UtilsAndCommons.NACOS_SERVER_CONTEXT
+                        + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(uri))
+                && HttpMethod.POST.equals(httpMethod);
     }
     
-    private boolean canUpdateClientAttributes(IpPortBasedClient client, ClientAttributes requestClientAttributes) {
-        if (requestClientAttributes.getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER) == null) {
+    private boolean canUpdateClientAttributes(IpPortBasedClient client,
+            ClientAttributes requestClientAttributes) {
+        if (requestClientAttributes
+                .getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER) == null) {
             return false;
         }
         if (client.getClientAttributes() != null
-                && client.getClientAttributes().getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER) != null) {
+                && client.getClientAttributes()
+                        .getClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER) != null) {
             return false;
         }
         return true;
@@ -132,7 +140,8 @@ public class ClientAttributesFilter implements Filter {
     private ClientAttributes getClientAttributes() {
         String version = RequestContextHolder.getContext().getBasicContext().getUserAgent();
         String app = RequestContextHolder.getContext().getBasicContext().getApp();
-        String clientIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
+        String clientIp = RequestContextHolder.getContext().getBasicContext().getAddressContext()
+                .getSourceIp();
         ClientAttributes clientAttributes = new ClientAttributes();
         if (version != null) {
             clientAttributes.addClientAttribute(HttpHeaderConsts.CLIENT_VERSION_HEADER, version);

@@ -69,14 +69,17 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName,
+            String tenantDesc,
             String createResource, final long time) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.insert(Arrays
-                    .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                            "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResource, time, time);
+                    .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source",
+                            "gmt_create",
+                            "gmt_modified")),
+                    kp, tenantId, tenantName, tenantDesc, createResource, time, time);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -96,12 +99,16 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName,
+            String tenantDesc) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
-            jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
-                    Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
+            jt.update(
+                    tenantInfoMapper.update(
+                            Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
+                            Arrays.asList("kp", "tenant_id")),
+                    tenantName, tenantDesc, System.currentTimeMillis(), kp,
                     tenantId);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
@@ -114,7 +121,8 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
-                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Collections.singletonList("kp"));
+                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                        Collections.singletonList("kp"));
         try {
             return this.jt.query(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -133,7 +141,8 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
-                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Arrays.asList("kp", "tenant_id"));
+                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                        Arrays.asList("kp", "tenant_id"));
         try {
             return jt.queryForObject(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {

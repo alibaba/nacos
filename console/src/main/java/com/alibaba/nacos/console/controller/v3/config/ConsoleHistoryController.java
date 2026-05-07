@@ -69,13 +69,15 @@ public class ConsoleHistoryController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
+    public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm,
+            @RequestParam("nid") Long nid)
             throws NacosException {
         configForm.validate();
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        return Result.success(historyProxy.getConfigHistoryInfo(dataId, groupName, namespaceId, nid));
+        return Result
+                .success(historyProxy.getConfigHistoryInfo(dataId, groupName, namespaceId, nid));
     }
     
     /**
@@ -87,7 +89,8 @@ public class ConsoleHistoryController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<Page<ConfigHistoryBasicInfo>> listConfigHistory(ConfigFormV3 configForm, PageForm pageForm)
+    public Result<Page<ConfigHistoryBasicInfo>> listConfigHistory(ConfigFormV3 configForm,
+            PageForm pageForm)
             throws NacosException {
         configForm.validate();
         pageForm.validate();
@@ -96,7 +99,8 @@ public class ConsoleHistoryController {
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        return Result.success(historyProxy.listConfigHistory(dataId, groupName, namespaceId, pageNo, pageSize));
+        return Result.success(
+                historyProxy.listConfigHistory(dataId, groupName, namespaceId, pageNo, pageSize));
     }
     
     /**
@@ -114,7 +118,8 @@ public class ConsoleHistoryController {
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        return Result.success(historyProxy.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id));
+        return Result.success(
+                historyProxy.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id));
     }
     
     /**
@@ -125,7 +130,8 @@ public class ConsoleHistoryController {
      */
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<List<ConfigBasicInfo>> getConfigsByTenant(@RequestParam("namespaceId") String namespaceId)
+    public Result<List<ConfigBasicInfo>> getConfigsByTenant(
+            @RequestParam("namespaceId") String namespaceId)
             throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         return Result.success(historyProxy.getConfigsByTenant(namespaceId));

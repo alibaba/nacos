@@ -70,15 +70,20 @@ class NacosSkillsRegistryServiceTest {
     void testBuildIndexFiltersBinarySkill() throws Exception {
         Page<SkillSummary> page = new Page<>();
         page.setPagesAvailable(1);
-        page.setPageItems(List.of(buildSummary("text-skill", 5L), buildSummary("binary-skill", 10L)));
-        when(skillOperationService.listSkills(eq("public"), eq((String) null), eq(SEARCH_BLUR), eq("download_count"),
+        page.setPageItems(
+                List.of(buildSummary("text-skill", 5L), buildSummary("binary-skill", 10L)));
+        when(skillOperationService.listSkills(eq("public"), eq((String) null), eq(SEARCH_BLUR),
+                eq("download_count"),
                 eq(1), eq(100))).thenReturn(page);
-        when(skillIndexManifestService.query("public", "text-skill")).thenReturn(buildManifest("v1"));
-        when(skillIndexManifestService.query("public", "binary-skill")).thenReturn(buildManifest("v1"));
+        when(skillIndexManifestService.query("public", "text-skill"))
+                .thenReturn(buildManifest("v1"));
+        when(skillIndexManifestService.query("public", "binary-skill"))
+                .thenReturn(buildManifest("v1"));
         when(skillOperationService.getSkillVersionDetail("public", "text-skill", "v1")).thenReturn(
                 buildTextSkill("text-skill"));
-        when(skillOperationService.getSkillVersionDetail("public", "binary-skill", "v1")).thenReturn(
-                buildBinarySkill("binary-skill"));
+        when(skillOperationService.getSkillVersionDetail("public", "binary-skill", "v1"))
+                .thenReturn(
+                        buildBinarySkill("binary-skill"));
         
         WellKnownSkillsIndex result = service.buildIndex("public");
         
@@ -93,7 +98,8 @@ class NacosSkillsRegistryServiceTest {
         Page<SkillSummary> page = new Page<>();
         page.setPagesAvailable(1);
         page.setPageItems(List.of(buildSummary("b-skill", 2L), buildSummary("a-skill", 9L)));
-        when(skillOperationService.listSkills(eq("public"), eq("demo"), eq(SEARCH_BLUR), eq("download_count"), eq(1),
+        when(skillOperationService.listSkills(eq("public"), eq("demo"), eq(SEARCH_BLUR),
+                eq("download_count"), eq(1),
                 eq(100))).thenReturn(page);
         when(skillIndexManifestService.query("public", "a-skill")).thenReturn(buildManifest("v1"));
         when(skillIndexManifestService.query("public", "b-skill")).thenReturn(buildManifest("v1"));
@@ -102,7 +108,8 @@ class NacosSkillsRegistryServiceTest {
         when(skillOperationService.getSkillVersionDetail("public", "b-skill", "v1")).thenReturn(
                 buildTextSkill("b-skill"));
         
-        SkillsSearchResponse result = service.search("public", "demo", 10, "http://localhost/registry/public");
+        SkillsSearchResponse result =
+                service.search("public", "demo", 10, "http://localhost/registry/public");
         
         assertEquals(2, result.getSkills().size());
         assertEquals("a-skill", result.getSkills().get(0).getName());
@@ -115,9 +122,11 @@ class NacosSkillsRegistryServiceTest {
         Page<SkillSummary> page = new Page<>();
         page.setPagesAvailable(1);
         page.setPageItems(List.of(buildSummary("demo-skill", 1L)));
-        when(skillOperationService.listSkills(eq("public"), eq("demo-skill"), eq(SEARCH_ACCURATE), eq("download_count"),
+        when(skillOperationService.listSkills(eq("public"), eq("demo-skill"), eq(SEARCH_ACCURATE),
+                eq("download_count"),
                 eq(1), eq(1))).thenReturn(page);
-        when(skillIndexManifestService.query("public", "demo-skill")).thenReturn(buildManifest("v1"));
+        when(skillIndexManifestService.query("public", "demo-skill"))
+                .thenReturn(buildManifest("v1"));
         when(skillOperationService.getSkillVersionDetail("public", "demo-skill", "v1")).thenReturn(
                 buildTextSkill("demo-skill"));
         
@@ -154,7 +163,8 @@ class NacosSkillsRegistryServiceTest {
         result.setNamespaceId("public");
         result.setName(name);
         result.setDescription(name + " description");
-        result.setSkillMd("---\nname: " + name + "\ndescription: " + name + " description\n---\n\n# " + name);
+        result.setSkillMd(
+                "---\nname: " + name + "\ndescription: " + name + " description\n---\n\n# " + name);
         SkillResource resource = new SkillResource();
         resource.setType("docs");
         resource.setName("guide.md");

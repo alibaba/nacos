@@ -43,7 +43,8 @@ public class PersistenceExecutor {
             .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
                     new NameThreadFactory("com.alibaba.nacos.persistence.embedded.snapshot"));
     
-    public static void scheduleTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    public static void scheduleTask(Runnable command, long initialDelay, long delay,
+            TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
     

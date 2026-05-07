@@ -28,7 +28,7 @@ import org.springframework.http.HttpStatus;
  *
  * @author Nacos
  */
-public class UpdateCapacityForm implements NacosForm  {
+public class UpdateCapacityForm implements NacosForm {
     
     private static final long serialVersionUID = -1912905276914026856L;
     
@@ -106,7 +106,8 @@ public class UpdateCapacityForm implements NacosForm  {
      * @param capacityService capacity service
      * @throws NacosApiException NacosApiException
      */
-    public void checkNamespaceIdAndGroupName(CapacityService capacityService) throws NacosApiException {
+    public void checkNamespaceIdAndGroupName(CapacityService capacityService)
+            throws NacosApiException {
         if (StringUtils.isBlank(groupName) && StringUtils.isBlank(namespaceId)) {
             capacityService.initAllCapacity();
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,

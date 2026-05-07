@@ -79,31 +79,37 @@ public class NamingFuzzyWatchServiceListHolderTest {
         namingFuzzyWatchServiceListHolder.registerNamingGrpcClientProxy(namingGrpcClientProxy);
         namingFuzzyWatchNotifyRequestHandler = new NamingFuzzyWatchNotifyRequestHandler(
                 namingFuzzyWatchServiceListHolder);
-        when(namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(true);
+        when(namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH))
+                .thenReturn(true);
     }
     
     @AfterEach
     void after() {
-    
+        
     }
     
     @Test
     void testOnEventWatchNotify() throws InterruptedException {
         
         String serviceKey = NamingUtils.getServiceKey("namespace123", "group", "serviceName124");
-        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
+        String generatePattern =
+                FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
-        namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern, new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(FuzzyWatchChangeEvent event) {
-                watcherFlag.incrementAndGet();
-            }
-        });
+        namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern,
+                new AbstractFuzzyWatchEventWatcher() {
+                    
+                    @Override
+                    public void onEvent(FuzzyWatchChangeEvent event) {
+                        watcherFlag.incrementAndGet();
+                    }
+                });
         
-        NamingFuzzyWatchChangeNotifyRequest namingFuzzyWatchChangeNotifyRequest = new NamingFuzzyWatchChangeNotifyRequest(
-                serviceKey, ADD_SERVICE);
-        Response response = namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchChangeNotifyRequest,
+        NamingFuzzyWatchChangeNotifyRequest namingFuzzyWatchChangeNotifyRequest =
+                new NamingFuzzyWatchChangeNotifyRequest(
+                        serviceKey, ADD_SERVICE);
+        Response response = namingFuzzyWatchNotifyRequestHandler.requestReply(
+                namingFuzzyWatchChangeNotifyRequest,
                 connection);
         Assertions.assertNotNull(response);
         Thread.sleep(100L);
@@ -116,7 +122,8 @@ public class NamingFuzzyWatchServiceListHolderTest {
         Assertions.assertEquals(1, watcherFlag.get());
         
         namingFuzzyWatchChangeNotifyRequest.setChangedType(DELETE_SERVICE);
-        Response deleteResponse = namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchChangeNotifyRequest,
+        Response deleteResponse = namingFuzzyWatchNotifyRequestHandler.requestReply(
+                namingFuzzyWatchChangeNotifyRequest,
                 connection);
         Assertions.assertNotNull(deleteResponse);
         Thread.sleep(100L);
@@ -127,29 +134,35 @@ public class NamingFuzzyWatchServiceListHolderTest {
     @Test
     void testOnEventWatchSync() throws InterruptedException {
         
-        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
+        String generatePattern =
+                FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
-        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
-                generatePattern, new AbstractFuzzyWatchEventWatcher() {
-                    @Override
-                    public void onEvent(FuzzyWatchChangeEvent event) {
-                        watcherFlag.incrementAndGet();
-                    }
-                });
+        NamingFuzzyWatchContext namingFuzzyWatchContext =
+                namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
+                        generatePattern, new AbstractFuzzyWatchEventWatcher() {
+                            
+                            @Override
+                            public void onEvent(FuzzyWatchChangeEvent event) {
+                                watcherFlag.incrementAndGet();
+                            }
+                        });
         
         String serviceKey1 = NamingUtils.getServiceKey("namespace123", "group", "serviceName124");
-        String serviceKey2 = NamingUtils.getServiceKey("namespace123", "group", "serviceName124234");
+        String serviceKey2 =
+                NamingUtils.getServiceKey("namespace123", "group", "serviceName124234");
         
         Set<NamingFuzzyWatchSyncRequest.Context> contexts = new HashSet<>();
         contexts.add(NamingFuzzyWatchSyncRequest.Context.build(serviceKey1, ADD_SERVICE));
         contexts.add(NamingFuzzyWatchSyncRequest.Context.build(serviceKey2, ADD_SERVICE));
         
         //init notify
-        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest = new NamingFuzzyWatchSyncRequest(generatePattern,
-                FUZZY_WATCH_INIT_NOTIFY, contexts);
-        Response responseInitNotify = namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchSyncRequest,
-                connection);
+        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest =
+                new NamingFuzzyWatchSyncRequest(generatePattern,
+                        FUZZY_WATCH_INIT_NOTIFY, contexts);
+        Response responseInitNotify =
+                namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchSyncRequest,
+                        connection);
         Assertions.assertNotNull(responseInitNotify);
         Thread.sleep(100L);
         Assertions.assertEquals(2, watcherFlag.get());
@@ -163,8 +176,9 @@ public class NamingFuzzyWatchServiceListHolderTest {
             throw new RuntimeException(e);
         }
         //init finish notify
-        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequestFinish = new NamingFuzzyWatchSyncRequest(generatePattern,
-                FINISH_FUZZY_WATCH_INIT_NOTIFY, null);
+        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequestFinish =
+                new NamingFuzzyWatchSyncRequest(generatePattern,
+                        FINISH_FUZZY_WATCH_INIT_NOTIFY, null);
         Response responseInitNotifyFinish = namingFuzzyWatchNotifyRequestHandler.requestReply(
                 namingFuzzyWatchSyncRequestFinish, connection);
         
@@ -175,7 +189,8 @@ public class NamingFuzzyWatchServiceListHolderTest {
             Future<ListView<String>> newFuture = namingFuzzyWatchContext.createNewFuture();
             ListView<String> stringListView = newFuture.get();
             Assertions.assertTrue(
-                    stringListView.getData().contains(serviceKey1) && stringListView.getData().contains(serviceKey2));
+                    stringListView.getData().contains(serviceKey1)
+                            && stringListView.getData().contains(serviceKey2));
             
             Assertions.assertFalse(newFuture.isCancelled());
             Assertions.assertTrue(newFuture.isDone());
@@ -189,12 +204,14 @@ public class NamingFuzzyWatchServiceListHolderTest {
             Assertions.fail();
         }
         
-        namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern, new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(FuzzyWatchChangeEvent event) {
-                watcherFlag.incrementAndGet();
-            }
-        });
+        namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern,
+                new AbstractFuzzyWatchEventWatcher() {
+                    
+                    @Override
+                    public void onEvent(FuzzyWatchChangeEvent event) {
+                        watcherFlag.incrementAndGet();
+                    }
+                });
         Thread.sleep(100L);
         Assertions.assertEquals(4, watcherFlag.get());
     }
@@ -202,27 +219,30 @@ public class NamingFuzzyWatchServiceListHolderTest {
     @Test
     void testOnEventLoadEvent() throws InterruptedException {
         
-        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
+        String generatePattern =
+                FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
         
         AtomicInteger watcherPatternOverFlag = new AtomicInteger(0);
         AtomicInteger watcherServiceOverFlag = new AtomicInteger(0);
         
-        namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern, new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(FuzzyWatchChangeEvent event) {
-            
-            }
-            
-            @Override
-            public void onPatternOverLimit() {
-                watcherPatternOverFlag.incrementAndGet();
-            }
-            
-            @Override
-            public void onServiceReachUpLimit() {
-                watcherServiceOverFlag.incrementAndGet();
-            }
-        });
+        namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern,
+                new AbstractFuzzyWatchEventWatcher() {
+                    
+                    @Override
+                    public void onEvent(FuzzyWatchChangeEvent event) {
+                        
+                    }
+                    
+                    @Override
+                    public void onPatternOverLimit() {
+                        watcherPatternOverFlag.incrementAndGet();
+                    }
+                    
+                    @Override
+                    public void onServiceReachUpLimit() {
+                        watcherServiceOverFlag.incrementAndGet();
+                    }
+                });
         
         NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEvent = NamingFuzzyWatchLoadEvent.buildEvent(
                 FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), generatePattern, eventScope);
@@ -230,13 +250,16 @@ public class NamingFuzzyWatchServiceListHolderTest {
         Assertions.assertEquals(1, watcherPatternOverFlag.get());
         Assertions.assertEquals(0, watcherServiceOverFlag.get());
         
-        NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEventDup = NamingFuzzyWatchLoadEvent.buildEvent(
-                FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(), generatePattern, eventScope);
+        NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEventDup =
+                NamingFuzzyWatchLoadEvent.buildEvent(
+                        FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(), generatePattern,
+                        eventScope);
         namingFuzzyWatchServiceListHolder.onEvent(namingFuzzyWatchLoadEventDup);
         Assertions.assertEquals(1, watcherPatternOverFlag.get());
         Assertions.assertEquals(0, watcherServiceOverFlag.get());
-        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(
-                generatePattern);
+        NamingFuzzyWatchContext namingFuzzyWatchContext =
+                namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(
+                        generatePattern);
         namingFuzzyWatchContext.clearOverLimitTs();
         NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEvent2 = NamingFuzzyWatchLoadEvent.buildEvent(
                 FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(), generatePattern, eventScope);
@@ -247,36 +270,41 @@ public class NamingFuzzyWatchServiceListHolderTest {
     
     @Test
     void testExecuteNamingFuzzyWatch() throws NacosException, InterruptedException {
-        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
+        String generatePattern =
+                FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
         
         AtomicInteger watcherPatternOverFlag = new AtomicInteger(0);
         AtomicInteger watcherServiceOverFlag = new AtomicInteger(0);
         
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(FuzzyWatchChangeEvent event) {
-            
-            }
-            
-            @Override
-            public void onPatternOverLimit() {
-                watcherPatternOverFlag.incrementAndGet();
-            }
-            
-            @Override
-            public void onServiceReachUpLimit() {
-                watcherServiceOverFlag.incrementAndGet();
-            }
-            
-        };
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
+                new AbstractFuzzyWatchEventWatcher() {
+                    
+                    @Override
+                    public void onEvent(FuzzyWatchChangeEvent event) {
+                        
+                    }
+                    
+                    @Override
+                    public void onPatternOverLimit() {
+                        watcherPatternOverFlag.incrementAndGet();
+                    }
+                    
+                    @Override
+                    public void onServiceReachUpLimit() {
+                        watcherServiceOverFlag.incrementAndGet();
+                    }
+                    
+                };
         
-        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
-                generatePattern, abstractFuzzyWatchEventWatcher);
+        NamingFuzzyWatchContext namingFuzzyWatchContext =
+                namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
+                        generatePattern, abstractFuzzyWatchEventWatcher);
         Assertions.assertFalse(namingFuzzyWatchContext.isConsistentWithServer());
         
         //check success fuzzy watch
-        when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class))).thenReturn(
-                NamingFuzzyWatchResponse.buildSuccessResponse());
+        when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class)))
+                .thenReturn(
+                        NamingFuzzyWatchResponse.buildSuccessResponse());
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
         Assertions.assertTrue(namingFuzzyWatchContext.isConsistentWithServer());
         
@@ -286,7 +314,8 @@ public class NamingFuzzyWatchServiceListHolderTest {
         namingFuzzyWatchServiceListHolder.resetConsistenceStatus();
         //check over fuzzy watch pattern count
         when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class))).thenThrow(
-                new NacosException(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg()));
+                new NacosException(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(),
+                        FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg()));
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
         Thread.sleep(1000L);
         Assertions.assertEquals(1, watcherPatternOverFlag.get());
@@ -308,10 +337,12 @@ public class NamingFuzzyWatchServiceListHolderTest {
         
         //check cancel fuzzy watch
         namingFuzzyWatchContext.removeWatcher(abstractFuzzyWatchEventWatcher);
-        when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class))).thenReturn(
-                NamingFuzzyWatchResponse.buildSuccessResponse());
+        when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class)))
+                .thenReturn(
+                        NamingFuzzyWatchResponse.buildSuccessResponse());
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
-        Assertions.assertNull(namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(generatePattern));
+        Assertions.assertNull(
+                namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(generatePattern));
         
     }
     
@@ -320,29 +351,35 @@ public class NamingFuzzyWatchServiceListHolderTest {
         
         String serviceKey = NamingUtils.getServiceKey("namespace123", "group", "serviceName124");
         
-        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
+        String generatePattern =
+                FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
         
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
-            @Override
-            public void onEvent(FuzzyWatchChangeEvent event) {
-                int get = watcherFlag.incrementAndGet();
-                if (get < 2) {
-                    System.out.println("times " + get + " fail");
-                    throw new RuntimeException("mock exception");
-                } else {
-                    System.out.println("times " + get + " success");
-                }
-            }
-        };
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
+                new AbstractFuzzyWatchEventWatcher() {
+                    
+                    @Override
+                    public void onEvent(FuzzyWatchChangeEvent event) {
+                        int get = watcherFlag.incrementAndGet();
+                        if (get < 2) {
+                            System.out.println("times " + get + " fail");
+                            throw new RuntimeException("mock exception");
+                        } else {
+                            System.out.println("times " + get + " success");
+                        }
+                    }
+                };
         
-        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
-                generatePattern, abstractFuzzyWatchEventWatcher);
+        NamingFuzzyWatchContext namingFuzzyWatchContext =
+                namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
+                        generatePattern, abstractFuzzyWatchEventWatcher);
         
-        NamingFuzzyWatchChangeNotifyRequest namingFuzzyWatchChangeNotifyRequest = new NamingFuzzyWatchChangeNotifyRequest(
-                serviceKey, ADD_SERVICE);
-        namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchChangeNotifyRequest, connection);
+        NamingFuzzyWatchChangeNotifyRequest namingFuzzyWatchChangeNotifyRequest =
+                new NamingFuzzyWatchChangeNotifyRequest(
+                        serviceKey, ADD_SERVICE);
+        namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchChangeNotifyRequest,
+                connection);
         //notify 1, fail
         namingFuzzyWatchContext.syncFuzzyWatchers();
         //notify 2,success
@@ -357,14 +394,17 @@ public class NamingFuzzyWatchServiceListHolderTest {
     
     @Test
     void testFuzzyWatchNotSupport() {
-        when(namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(false);
+        when(namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH))
+                .thenReturn(false);
         Assertions.assertThrows(NacosRuntimeException.class, () -> {
-            namingFuzzyWatchServiceListHolder.registerFuzzyWatcher("*", new AbstractFuzzyWatchEventWatcher() {
-                @Override
-                public void onEvent(FuzzyWatchChangeEvent event) {
-                
-                }
-            });
+            namingFuzzyWatchServiceListHolder.registerFuzzyWatcher("*",
+                    new AbstractFuzzyWatchEventWatcher() {
+                        
+                        @Override
+                        public void onEvent(FuzzyWatchChangeEvent event) {
+                            
+                        }
+                    });
         });
     }
 }

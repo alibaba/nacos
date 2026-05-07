@@ -60,9 +60,11 @@ class AbstractHttpClientFactoryTest {
     @Test
     void testCreateNacosAsyncRestTemplate() {
         HttpClientFactory httpClientFactory = new AbstractHttpClientFactory() {
+            
             @Override
             protected HttpClientConfig buildHttpClientConfig() {
-                return HttpClientConfig.builder().setMaxConnTotal(10).setMaxConnPerRoute(10).build();
+                return HttpClientConfig.builder().setMaxConnTotal(10).setMaxConnPerRoute(10)
+                        .build();
             }
             
             @Override
@@ -85,6 +87,7 @@ class AbstractHttpClientFactoryTest {
     @Test
     void testCreateNacosAsyncRestTemplateWithCustomConfig() {
         HttpClientFactory httpClientFactory = new AbstractHttpClientFactory() {
+            
             @Override
             protected HttpClientConfig buildHttpClientConfig() {
                 return HttpClientConfig.builder()
@@ -105,13 +108,15 @@ class AbstractHttpClientFactoryTest {
                 return logger;
             }
         };
-        NacosAsyncRestTemplate nacosAsyncRestTemplate = httpClientFactory.createNacosAsyncRestTemplate();
+        NacosAsyncRestTemplate nacosAsyncRestTemplate =
+                httpClientFactory.createNacosAsyncRestTemplate();
         assertNotNull(nacosAsyncRestTemplate);
     }
     
     @Test
     void testCreateNacosAsyncRestTemplateWithMonitorAndExtension() {
         HttpClientFactory httpClientFactory = new AbstractHttpClientFactory() {
+            
             @Override
             protected HttpClientConfig buildHttpClientConfig() {
                 return HttpClientConfig.builder()
@@ -126,12 +131,14 @@ class AbstractHttpClientFactoryTest {
             }
             
             @Override
-            protected void monitorAndExtension(org.apache.hc.client5.http.nio.AsyncClientConnectionManager connectionManager) {
+            protected void monitorAndExtension(
+                    org.apache.hc.client5.http.nio.AsyncClientConnectionManager connectionManager) {
                 // Custom extension logic - this exercises the hook
                 assertNotNull(connectionManager);
             }
         };
-        NacosAsyncRestTemplate nacosAsyncRestTemplate = httpClientFactory.createNacosAsyncRestTemplate();
+        NacosAsyncRestTemplate nacosAsyncRestTemplate =
+                httpClientFactory.createNacosAsyncRestTemplate();
         assertNotNull(nacosAsyncRestTemplate);
     }
     
@@ -139,6 +146,7 @@ class AbstractHttpClientFactoryTest {
     void testLoadSslContextReturnsNullOnException() {
         // Test that loadSslContext handles exceptions gracefully
         AbstractHttpClientFactory factory = new AbstractHttpClientFactory() {
+            
             @Override
             protected HttpClientConfig buildHttpClientConfig() {
                 return HttpClientConfig.builder().build();
@@ -171,6 +179,7 @@ class AbstractHttpClientFactoryTest {
     @Test
     void testCreateNacosAsyncRestTemplateWithMinimalConfig() {
         HttpClientFactory httpClientFactory = new AbstractHttpClientFactory() {
+            
             @Override
             protected HttpClientConfig buildHttpClientConfig() {
                 // Return config with minimal/custom values
@@ -182,7 +191,8 @@ class AbstractHttpClientFactoryTest {
                 return logger;
             }
         };
-        NacosAsyncRestTemplate nacosAsyncRestTemplate = httpClientFactory.createNacosAsyncRestTemplate();
+        NacosAsyncRestTemplate nacosAsyncRestTemplate =
+                httpClientFactory.createNacosAsyncRestTemplate();
         assertNotNull(nacosAsyncRestTemplate);
     }
 }

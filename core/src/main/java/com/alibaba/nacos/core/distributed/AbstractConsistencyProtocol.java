@@ -40,7 +40,8 @@ public abstract class AbstractConsistencyProtocol<T extends Config, L extends Re
     protected Map<String, L> processorMap = Collections.synchronizedMap(new HashMap<>());
     
     public void loadLogProcessor(List<L> logProcessors) {
-        logProcessors.forEach(logDispatcher -> processorMap.put(logDispatcher.group(), logDispatcher));
+        logProcessors
+                .forEach(logDispatcher -> processorMap.put(logDispatcher.group(), logDispatcher));
     }
     
     protected Map<String, L> allProcessor() {

@@ -36,7 +36,8 @@ class FuzzyWatchSyncNotifyTask implements Runnable {
     
     static final String CONFIG_FUZZY_WATCH_CONFIG_SYNC = "FUZZY_WATCH_CONFIG_SYNC_PUSH";
     
-    static final String CONFIG_FUZZY_WATCH_CONFIG_SYNC_SUCCESS = "CONFIG_FUZZY_WATCH_CONFIG_SYNC_SUCCESS";
+    static final String CONFIG_FUZZY_WATCH_CONFIG_SYNC_SUCCESS =
+            "CONFIG_FUZZY_WATCH_CONFIG_SYNC_SUCCESS";
     
     static final String CONFIG_FUZZY_WATCH_CONFIG_SYNC_FAIL = "CONFIG_FUZZY_WATCH_CONFIG_SYNC_FAIL";
     
@@ -74,8 +75,10 @@ class FuzzyWatchSyncNotifyTask implements Runnable {
      * @param maxRetryTimes    The maximum number of times to retry pushing the request
      * @param connectionId     The ID of the connection associated with the client
      */
-    public FuzzyWatchSyncNotifyTask(ConnectionManager connectionManager, RpcPushService rpcPushService,
-            ConfigFuzzyWatchSyncRequest notifyRequest, BatchTaskCounter batchTaskCounter, int maxRetryTimes,
+    public FuzzyWatchSyncNotifyTask(ConnectionManager connectionManager,
+            RpcPushService rpcPushService,
+            ConfigFuzzyWatchSyncRequest notifyRequest, BatchTaskCounter batchTaskCounter,
+            int maxRetryTimes,
             String connectionId) {
         this.connectionManager = connectionManager;
         this.rpcPushService = rpcPushService;
@@ -111,10 +114,12 @@ class FuzzyWatchSyncNotifyTask implements Runnable {
             TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
             
             tpsCheckRequest.setPointName(CONFIG_FUZZY_WATCH_CONFIG_SYNC);
-            if (!ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest).isSuccess()) {
+            if (!ControlManagerCenter.getInstance().getTpsControlManager().check(tpsCheckRequest)
+                    .isSuccess()) {
                 scheduleSelf();
             } else {
-                rpcPushService.pushWithCallback(connectionId, notifyRequest, new FuzzyWatchSyncNotifyCallback(this),
+                rpcPushService.pushWithCallback(connectionId, notifyRequest,
+                        new FuzzyWatchSyncNotifyCallback(this),
                         ConfigExecutor.getClientConfigNotifierServiceExecutor());
             }
         }

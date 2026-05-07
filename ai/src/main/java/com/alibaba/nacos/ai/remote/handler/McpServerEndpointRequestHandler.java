@@ -60,7 +60,8 @@ import org.springframework.stereotype.Component;
 public class McpServerEndpointRequestHandler
         extends RequestHandler<McpServerEndpointRequest, McpServerEndpointResponse> {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(McpServerEndpointRequestHandler.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(McpServerEndpointRequestHandler.class);
     
     private static final String VERSION_TAG = "_mcp_server_version";
     
@@ -70,7 +71,8 @@ public class McpServerEndpointRequestHandler
     
     private final McpServerIndex mcpServerIndex;
     
-    public McpServerEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
+    public McpServerEndpointRequestHandler(
+            EphemeralClientOperationServiceImpl clientOperationService,
             McpServerOperationService mcpServerOperationService, McpServerIndex mcpServerIndex) {
         this.clientOperationService = clientOperationService;
         this.mcpServerOperationService = mcpServerOperationService;
@@ -81,7 +83,8 @@ public class McpServerEndpointRequestHandler
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
+    public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta)
+            throws NacosException {
         McpRequestUtil.fillNamespaceId(request);
         try {
             checkParameters(request);
@@ -101,39 +104,49 @@ public class McpServerEndpointRequestHandler
         }
     }
     
-    private McpServerEndpointResponse doHandler(McpServerEndpointRequest request, Instance instance, RequestMeta meta)
+    private McpServerEndpointResponse doHandler(McpServerEndpointRequest request, Instance instance,
+            RequestMeta meta)
             throws NacosException {
         McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(),
                 request.getMcpName());
         if (null == indexData) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
-                    String.format("MCP server `%s` not found in namespaceId: `%s`", request.getMcpName(),
+                    String.format("MCP server `%s` not found in namespaceId: `%s`",
+                            request.getMcpName(),
                             request.getNamespaceId()));
         }
-        McpServerDetailInfo mcpServer = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
-                indexData.getId(), null, request.getVersion());
+        McpServerDetailInfo mcpServer =
+                mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
+                        indexData.getId(), null, request.getVersion());
         McpServiceRef serviceRef = buildServiceRef(mcpServer);
         if (null == serviceRef) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_REF_ENDPOINT_SERVICE_NOT_FOUND,
+            throw new NacosApiException(NacosException.NOT_FOUND,
+                    ErrorCode.MCP_SERVER_REF_ENDPOINT_SERVICE_NOT_FOUND,
                     "The Mcp Server Ref endpoint service not found.");
         }
         Service service = Service.newService(request.getNamespaceId(), serviceRef.getGroupName(),
                 serviceRef.getServiceName(), true);
         switch (request.getType()) {
             case AiRemoteConstants.REGISTER_ENDPOINT:
-                LOGGER.info("[{}] register endpoint {}:{} version {} for mcp server: {}", meta.getConnectionId(),
-                        request.getAddress(), request.getPort(), request.getVersion(), request.getMcpName());
+                LOGGER.info("[{}] register endpoint {}:{} version {} for mcp server: {}",
+                        meta.getConnectionId(),
+                        request.getAddress(), request.getPort(), request.getVersion(),
+                        request.getMcpName());
                 doRegister(service, instance, meta);
                 break;
             case AiRemoteConstants.DE_REGISTER_ENDPOINT:
-                LOGGER.info("[{}] de-register endpoint {}:{} version {} for mcp server: {}", meta.getConnectionId(),
-                        request.getAddress(), request.getPort(), request.getVersion(), request.getMcpName());
+                LOGGER.info("[{}] de-register endpoint {}:{} version {} for mcp server: {}",
+                        meta.getConnectionId(),
+                        request.getAddress(), request.getPort(), request.getVersion(),
+                        request.getMcpName());
                 doDeregister(service, instance, meta);
                 break;
             default:
-                throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                throw new NacosApiException(NacosException.INVALID_PARAM,
+                        ErrorCode.PARAMETER_VALIDATE_ERROR,
                         String.format("parameter `type` should be %s or %s, but was %s",
-                                AiRemoteConstants.REGISTER_ENDPOINT, AiRemoteConstants.DE_REGISTER_ENDPOINT,
+                                AiRemoteConstants.REGISTER_ENDPOINT,
+                                AiRemoteConstants.DE_REGISTER_ENDPOINT,
                                 request.getType()));
         }
         McpServerEndpointResponse response = new McpServerEndpointResponse();
@@ -153,10 +166,12 @@ public class McpServerEndpointRequestHandler
     }
     
     private McpServiceRef buildServiceRef(McpServerDetailInfo mcpServer) {
-        boolean isRegisterToFrontend = AiConstants.Mcp.MCP_PROTOCOL_HTTP.equals(mcpServer.getProtocol());
+        boolean isRegisterToFrontend =
+                AiConstants.Mcp.MCP_PROTOCOL_HTTP.equals(mcpServer.getProtocol());
         McpServiceRef result = null;
         if (isRegisterToFrontend) {
-            for (FrontEndpointConfig each : mcpServer.getRemoteServerConfig().getFrontEndpointConfigList()) {
+            for (FrontEndpointConfig each : mcpServer.getRemoteServerConfig()
+                    .getFrontEndpointConfigList()) {
                 if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
                     result = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
                     break;
@@ -168,17 +183,20 @@ public class McpServerEndpointRequestHandler
         return result;
     }
     
-    private void doRegister(Service service, Instance instance, RequestMeta meta) throws NacosException {
+    private void doRegister(Service service, Instance instance, RequestMeta meta)
+            throws NacosException {
         clientOperationService.registerInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
+                service.getGroup(),
                 service.getName(), instance.getIp(), instance.getPort()));
     }
     
     private void doDeregister(Service service, Instance instance, RequestMeta meta) {
         clientOperationService.deregisterInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true,
+                DeregisterInstanceReason.REQUEST,
                 service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
                 instance.getPort()));
     }

@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class IstioConfig {
-
+    
     @Value("${nacos.istio.mcp.server.enabled:false}")
     private boolean serverEnabled = false;
     @Value("${nacos.istio.mcp.server.port:18848}")
@@ -44,15 +44,15 @@ public class IstioConfig {
     
     @Value("${nacos.istio.domain.suffix:nacos}")
     private String domainSuffix;
-
+    
     public boolean isServerEnabled() {
         return serverEnabled;
     }
-
+    
     public int getServerPort() {
         return serverPort;
     }
-
+    
     public String getDomainSuffix() {
         return domainSuffix;
     }

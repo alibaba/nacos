@@ -53,7 +53,8 @@ public interface AgentSpecOperationService {
      * @return agentspec admin detail (governance info + version summaries)
      * @throws NacosException if agentspec not found
      */
-    AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName) throws NacosException;
+    AgentSpecMeta getAgentSpecDetail(String namespaceId, String agentSpecName)
+            throws NacosException;
     
     /**
      * Get agentspec version detail for admin usage. Returns full agentspec content for a specific version, used for
@@ -78,7 +79,8 @@ public interface AgentSpecOperationService {
      * @return agentspec with resource list containing only name and type (no content or metadata)
      * @throws NacosException if agentspec or version not found
      */
-    AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version) throws NacosException;
+    AgentSpec getAgentSpecVersionMeta(String namespaceId, String agentSpecName, String version)
+            throws NacosException;
     
     /**
      * Delete agentspec.
@@ -100,8 +102,10 @@ public interface AgentSpecOperationService {
      * @return agentspec admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search, int pageNo,
+    Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search,
+            int pageNo,
             int pageSize) throws NacosException;
+    
     /**
      * List agentspecs with pagination, optional ordering, and additional filter criteria for admin usage.
      *
@@ -120,10 +124,13 @@ public interface AgentSpecOperationService {
      * @return agentspec admin list page with governance metadata
      * @throws NacosException if query failed
      */
-    default Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName, String search,
-            String orderBy, String owner, String scope, int pageNo, int pageSize) throws NacosException {
+    default Page<AgentSpecSummary> listAgentSpecs(String namespaceId, String agentSpecName,
+            String search,
+            String orderBy, String owner, String scope, int pageNo, int pageSize)
+            throws NacosException {
         return listAgentSpecs(namespaceId, agentSpecName, search, pageNo, pageSize);
-    }    
+    }
+    
     /**
      * Upload agentspec from zip file.
      *
@@ -132,7 +139,8 @@ public interface AgentSpecOperationService {
      * @return agentspec name
      * @throws NacosException if upload failed
      */
-    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException {
+    default String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes)
+            throws NacosException {
         return uploadAgentSpecFromZip(namespaceId, zipBytes, false);
     }
     
@@ -145,7 +153,8 @@ public interface AgentSpecOperationService {
      * @return agentspec name
      * @throws NacosException if upload failed
      */
-    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite) throws NacosException;
+    String uploadAgentSpecFromZip(String namespaceId, byte[] zipBytes, boolean overwrite)
+            throws NacosException;
     
     /**
      * Bootstrap agentspec from zip file as an online agentspec.
@@ -157,7 +166,7 @@ public interface AgentSpecOperationService {
      * @throws NacosException if bootstrap failed
      */
     void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes) throws NacosException;
-
+    
     /**
      * Bootstrap agentspec from zip file as an online agentspec with source metadata.
      *
@@ -166,7 +175,8 @@ public interface AgentSpecOperationService {
      * @param from source identifier, e.g. github.com/nacos
      * @throws NacosException if bootstrap failed
      */
-    default void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes, String from) throws NacosException {
+    default void bootstrapAgentSpecFromZip(String namespaceId, byte[] zipBytes, String from)
+            throws NacosException {
         bootstrapAgentSpecFromZip(namespaceId, zipBytes);
     }
     
@@ -181,7 +191,8 @@ public interface AgentSpecOperationService {
      * @return paginated list of agentspec basic info
      * @throws NacosException if search failed
      */
-    Page<AgentSpecBasicInfo> searchAgentSpecs(String namespaceId, String keyword, int pageNo, int pageSize)
+    Page<AgentSpecBasicInfo> searchAgentSpecs(String namespaceId, String keyword, int pageNo,
+            int pageSize)
             throws NacosException;
     
     /**
@@ -194,7 +205,8 @@ public interface AgentSpecOperationService {
      * @return resolved agentspec
      * @throws NacosException if agentspec not found
      */
-    AgentSpec queryAgentSpec(String namespaceId, String name, String version, String label) throws NacosException;
+    AgentSpec queryAgentSpec(String namespaceId, String name, String version, String label)
+            throws NacosException;
     
     /**
      * Create a new draft version based on latest or specified version.
@@ -247,7 +259,8 @@ public interface AgentSpecOperationService {
      * @param updateLatestLabel whether to update the latest label to this version
      * @throws NacosException if publish failed
      */
-    void publish(String namespaceId, String name, String version, boolean updateLatestLabel) throws NacosException;
+    void publish(String namespaceId, String name, String version, boolean updateLatestLabel)
+            throws NacosException;
     
     /**
      * Force-publish an agentspec version, bypassing pipeline validation.
@@ -270,8 +283,9 @@ public interface AgentSpecOperationService {
      * @param labels label-to-version mapping
      * @throws NacosException if update failed
      */
-    void updateLabels(String namespaceId, String name, Map<String, String> labels) throws NacosException;
-
+    void updateLabels(String namespaceId, String name, Map<String, String> labels)
+            throws NacosException;
+    
     /**
      * Update agentspec biz tags JSON.
      *
@@ -292,7 +306,8 @@ public interface AgentSpecOperationService {
      * @param online true means online/enable, false means offline/disable
      * @throws NacosException if operation failed
      */
-    void changeOnlineStatus(String namespaceId, String name, String scope, String version, boolean online)
+    void changeOnlineStatus(String namespaceId, String name, String scope, String version,
+            boolean online)
             throws NacosException;
     
     /**

@@ -124,7 +124,8 @@ class AiGrpcRedoServiceTest {
         endpoint2.setAddress("127.0.0.2");
         endpoint2.setPort(8081);
         
-        AgentEndpointWrapper wrapper = AgentEndpointWrapper.wrap(Collections.singletonList(endpoint1));
+        AgentEndpointWrapper wrapper =
+                AgentEndpointWrapper.wrap(Collections.singletonList(endpoint1));
         
         redoService.cachedAgentEndpointForRedo("testAgent", wrapper);
         assertFalse(redoService.isAgentEndpointRegistered("testAgent"));

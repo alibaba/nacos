@@ -29,7 +29,8 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 public class ConditionOnInnerDatasource implements Condition {
     
     @Override
-    public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
+    public boolean matches(ConditionContext conditionContext,
+            AnnotatedTypeMetadata annotatedTypeMetadata) {
         return !Constants.NACOS_DEPLOYMENT_TYPE_CONSOLE.equalsIgnoreCase(
                 conditionContext.getEnvironment().getProperty(Constants.NACOS_DEPLOYMENT_TYPE));
     }

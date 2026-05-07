@@ -21,7 +21,7 @@ package com.alibaba.nacos.common.utils;
  * @author zzq
  */
 public class NumberUtils {
-
+    
     private NumberUtils() {
     }
     
@@ -94,7 +94,7 @@ public class NumberUtils {
             return defaultValue;
         }
     }
-
+    
     /**
      * Checks whether the <code>String</code> contains only
      * digit characters.

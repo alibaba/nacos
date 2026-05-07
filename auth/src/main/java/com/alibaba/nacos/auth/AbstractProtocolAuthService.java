@@ -67,13 +67,15 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
         if (authPluginService.isPresent()) {
             return authPluginService.get().enableAuth(secured.action(), secured.signType());
         }
-        Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
+        Loggers.AUTH.warn(
+                "Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
                 authConfig.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return false;
     }
     
     @Override
-    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource)
+            throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
@@ -83,7 +85,8 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     @Override
-    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission)
+            throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {

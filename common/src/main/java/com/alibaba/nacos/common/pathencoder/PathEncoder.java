@@ -22,7 +22,7 @@ package com.alibaba.nacos.common.pathencoder;
  * @author daydreamer-ia
  */
 public interface PathEncoder {
-
+    
     /**
      * encode path.
      *
@@ -31,7 +31,7 @@ public interface PathEncoder {
      * @return new path
      */
     String encode(String str, String charset);
-
+    
     /**
      * decode path.
      *
@@ -40,14 +40,14 @@ public interface PathEncoder {
      * @return origin path
      */
     String decode(String str, String charset);
-
+    
     /**
      * return simple lowercase os name.
      *
      * @return simple lowercase os name
      */
     String name();
-
+    
     /**
      * whether to encode.
      *

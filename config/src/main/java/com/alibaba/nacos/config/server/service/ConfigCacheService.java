@@ -81,7 +81,8 @@ public class ConfigCacheService {
      * @param type           file type.
      * @return dumpChange success or not.
      */
-    public static boolean dumpWithMd5(String dataId, String group, String tenant, String content, String md5,
+    public static boolean dumpWithMd5(String dataId, String group, String tenant, String content,
+            String md5,
             long lastModifiedTs, String type, String encryptedDataKey) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         CacheItem ci = makeSure(groupKey, encryptedDataKey);
@@ -96,13 +97,15 @@ public class ConfigCacheService {
         try {
             
             //check timestamp
-            boolean lastModifiedOutDated = lastModifiedTs < ConfigCacheService.getLastModifiedTs(groupKey);
+            boolean lastModifiedOutDated =
+                    lastModifiedTs < ConfigCacheService.getLastModifiedTs(groupKey);
             if (lastModifiedOutDated) {
                 DUMP_LOG.warn("[dump-ignore] timestamp is outdated,groupKey={}", groupKey);
                 return true;
             }
             
-            boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
+            boolean newLastModified =
+                    lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
             
             if (md5 == null) {
                 md5 = MD5Utils.md5Hex(content, PERSIST_ENCODE);
@@ -112,11 +115,14 @@ public class ConfigCacheService {
             String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
             boolean md5Changed = !md5.equals(localContentMd5);
             if (md5Changed) {
-                DUMP_LOG.info("[dump] md5 changed, save to disk cache ,groupKey={}, newMd5={},oldMd5={}", groupKey, md5,
+                DUMP_LOG.info(
+                        "[dump] md5 changed, save to disk cache ,groupKey={}, newMd5={},oldMd5={}",
+                        groupKey, md5,
                         localContentMd5);
                 ConfigDiskServiceFactory.getInstance().saveToDisk(dataId, group, tenant, content);
             } else {
-                DUMP_LOG.warn("[dump-ignore] ignore to save to disk cache. md5 consistent,groupKey={}, md5={}",
+                DUMP_LOG.warn(
+                        "[dump-ignore] ignore to save to disk cache. md5 consistent,groupKey={}, md5={}",
                         groupKey, md5);
             }
             
@@ -142,7 +148,8 @@ public class ConfigCacheService {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (errMsg.contains(NO_SPACE_CN) || errMsg.contains(NO_SPACE_EN) || errMsg.contains(DISK_QUOTA_CN)
+                if (errMsg.contains(NO_SPACE_CN) || errMsg.contains(NO_SPACE_EN)
+                        || errMsg.contains(DISK_QUOTA_CN)
                         || errMsg.contains(DISK_QUOTA_EN)) {
                     // Protect from disk full.
                     FATAL_LOG.error("Local Disk Full,Exit", ioe);
@@ -168,9 +175,11 @@ public class ConfigCacheService {
      * @param encryptedDataKey encryptedDataKey.
      * @return dumpChange success or not.
      */
-    public static boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs,
+    public static boolean dump(String dataId, String group, String tenant, String content,
+            long lastModifiedTs,
             String type, String encryptedDataKey) {
-        return dumpWithMd5(dataId, group, tenant, content, null, lastModifiedTs, type, encryptedDataKey);
+        return dumpWithMd5(dataId, group, tenant, content, null, lastModifiedTs, type,
+                encryptedDataKey);
     }
     
     /**
@@ -185,7 +194,8 @@ public class ConfigCacheService {
      * @param lastModifiedTs lastModifiedTs.
      * @return dumpChange success or not.
      */
-    public static boolean dumpGray(String dataId, String group, String tenant, String grayName, String grayRule,
+    public static boolean dumpGray(String dataId, String group, String tenant, String grayName,
+            String grayRule,
             String content, long lastModifiedTs, String encryptedDataKey) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
@@ -200,7 +210,8 @@ public class ConfigCacheService {
         try {
             
             //check timestamp
-            long localGrayLastModifiedTs = ConfigCacheService.getGrayLastModifiedTs(groupKey, grayName);
+            long localGrayLastModifiedTs =
+                    ConfigCacheService.getGrayLastModifiedTs(groupKey, grayName);
             
             boolean timestampOutdated = lastModifiedTs < localGrayLastModifiedTs;
             if (timestampOutdated) {
@@ -219,7 +230,8 @@ public class ConfigCacheService {
             GrayRule grayRuleNew = GrayRuleManager.constructGrayRule(
                     GrayRuleManager.deserializeConfigGrayPersistInfo(grayRule));
             if (grayRuleNew == null) {
-                DUMP_LOG.warn("[dump-gray-exception] . " + groupKey + ",  unknown gray rule for  gray name" + grayName);
+                DUMP_LOG.warn("[dump-gray-exception] . " + groupKey
+                        + ",  unknown gray rule for  gray name" + grayName);
                 return false;
             }
             
@@ -228,30 +240,41 @@ public class ConfigCacheService {
             if (md5Changed) {
                 DUMP_LOG.info(
                         "[dump-gray] md5 changed, update local jvm cache& local disk cache, groupKey={},grayName={}, "
-                                + "newMd5={},oldMd5={}, newGrayRule={}, oldGrayRule={},lastModifiedTs={}", groupKey,
-                        grayName, md5, localContentGrayMd5, grayRule, localGrayRule, lastModifiedTs);
-                updateGrayMd5(groupKey, grayName, grayRule, md5, content, lastModifiedTs, encryptedDataKey);
-                ConfigDiskServiceFactory.getInstance().saveGrayToDisk(dataId, group, tenant, grayName, content);
+                                + "newMd5={},oldMd5={}, newGrayRule={}, oldGrayRule={},lastModifiedTs={}",
+                        groupKey,
+                        grayName, md5, localContentGrayMd5, grayRule, localGrayRule,
+                        lastModifiedTs);
+                updateGrayMd5(groupKey, grayName, grayRule, md5, content, lastModifiedTs,
+                        encryptedDataKey);
+                ConfigDiskServiceFactory.getInstance().saveGrayToDisk(dataId, group, tenant,
+                        grayName, content);
                 
             } else if (grayRuleChanged) {
-                DUMP_LOG.info("[dump-gray] gray rule changed, update local jvm cache, groupKey={},grayName={}, "
-                                + "newMd5={},oldMd5={}, newGrayRule={}, oldGrayRule={},lastModifiedTs={}", groupKey, grayName,
+                DUMP_LOG.info(
+                        "[dump-gray] gray rule changed, update local jvm cache, groupKey={},grayName={}, "
+                                + "newMd5={},oldMd5={}, newGrayRule={}, oldGrayRule={},lastModifiedTs={}",
+                        groupKey, grayName,
                         md5, localContentGrayMd5, grayRule, localGrayRule, lastModifiedTs);
                 updateGrayRule(groupKey, grayName, grayRule, lastModifiedTs, encryptedDataKey);
             } else if (timestampChanged) {
                 DUMP_LOG.info(
                         "[dump-gray] timestamp changed, update last modified in local jvm cache, groupKey={},grayName={},"
-                                + "grayLastModifiedTs={},oldgrayLastModifiedTs={}", groupKey, grayName, lastModifiedTs,
+                                + "grayLastModifiedTs={},oldgrayLastModifiedTs={}",
+                        groupKey, grayName, lastModifiedTs,
                         localGrayLastModifiedTs);
                 updateGrayTimeStamp(groupKey, grayName, lastModifiedTs);
                 
             } else {
-                DUMP_LOG.warn("[dump-gray-ignore] md5 & timestamp not changed. groupKey={},grayName={}", groupKey,
+                DUMP_LOG.warn(
+                        "[dump-gray-ignore] md5 & timestamp not changed. groupKey={},grayName={}",
+                        groupKey,
                         grayName);
             }
             return true;
         } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-gray-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error(
+                    "[dump-gray-exception] save disk error. " + groupKey + ", " + ioe.toString(),
+                    ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -284,9 +307,12 @@ public class ConfigCacheService {
         }
         
         try {
-            DUMP_LOG.info("[remove-gray-ok] remove gray in local disk cache,grayName={},groupKey={} ", grayName,
+            DUMP_LOG.info(
+                    "[remove-gray-ok] remove gray in local disk cache,grayName={},groupKey={} ",
+                    grayName,
                     groupKey);
-            ConfigDiskServiceFactory.getInstance().removeConfigInfo4Gray(dataId, group, tenant, grayName);
+            ConfigDiskServiceFactory.getInstance().removeConfigInfo4Gray(dataId, group, tenant,
+                    grayName);
             
             CacheItem ci = CACHE.get(groupKey);
             if (ci.getConfigCacheGray() != null) {
@@ -298,7 +324,9 @@ public class ConfigCacheService {
                 }
             }
             
-            DUMP_LOG.info("[remove-gray-ok] remove gray in local jvm cache,grayName={},groupKey={} ", grayName,
+            DUMP_LOG.info(
+                    "[remove-gray-ok] remove gray in local jvm cache,grayName={},groupKey={} ",
+                    grayName,
                     groupKey);
             
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
@@ -356,7 +384,8 @@ public class ConfigCacheService {
      * @param lastModifiedTs   the last modified ts
      * @param encryptedDataKey the encrypted data key
      */
-    public static void updateMd5(String groupKey, String md5, String content, long lastModifiedTs, String encryptedDataKey) {
+    public static void updateMd5(String groupKey, String md5, String content, long lastModifiedTs,
+            String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey);
         ConfigCache configCache = cache.getConfigCache();
         if (configCache.getMd5() == null || !configCache.getMd5().equals(md5)) {
@@ -379,7 +408,8 @@ public class ConfigCacheService {
      * @param lastModifiedTs   the last modified ts
      * @param encryptedDataKey the encrypted data key
      */
-    public static void updateGrayMd5(String groupKey, String grayName, String grayRule, String md5, String content,
+    public static void updateGrayMd5(String groupKey, String grayName, String grayRule, String md5,
+            String content,
             long lastModifiedTs, String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initConfigGrayIfEmpty(grayName);
@@ -404,7 +434,8 @@ public class ConfigCacheService {
         return getContentMd5(groupKey, ip, tag, null);
     }
     
-    public static String getContentMd5(String groupKey, String ip, String tag, Map<String, String> connLabels) {
+    public static String getContentMd5(String groupKey, String ip, String tag,
+            Map<String, String> connLabels) {
         CacheItem item = CACHE.get(groupKey);
         if (item == null) {
             return NULL;
@@ -433,7 +464,8 @@ public class ConfigCacheService {
         return md5 == null ? NULL : md5;
     }
     
-    private static void updateGrayRule(String groupKey, String grayName, String grayRule, long lastModifiedTs,
+    private static void updateGrayRule(String groupKey, String grayName, String grayRule,
+            long lastModifiedTs,
             String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initConfigGrayIfEmpty(grayName);
@@ -454,7 +486,8 @@ public class ConfigCacheService {
      */
     public static String getContentGrayMd5(String groupKey, String grayName) {
         CacheItem item = CACHE.get(groupKey);
-        if (item == null || item.getConfigCacheGray() == null || !item.getConfigCacheGray().containsKey(grayName)) {
+        if (item == null || item.getConfigCacheGray() == null
+                || !item.getConfigCacheGray().containsKey(grayName)) {
             return NULL;
         }
         return item.getConfigCacheGray().get(grayName).getMd5();
@@ -472,7 +505,8 @@ public class ConfigCacheService {
     
     public static GrayRule getGrayRule(String groupKey, String grayName) {
         CacheItem item = CACHE.get(groupKey);
-        if (item == null || item.getConfigCacheGray() == null || !item.getConfigCacheGray().containsKey(grayName)) {
+        if (item == null || item.getConfigCacheGray() == null
+                || !item.getConfigCacheGray().containsKey(grayName)) {
             return null;
         }
         return item.getConfigCacheGray().get(grayName).getGrayRule();
@@ -588,7 +622,8 @@ public class ConfigCacheService {
      * @param lastModifiedTs   lastModifiedTs.
      * @param encryptedDataKey encryptedDataKey.
      */
-    private static void updateTimeStamp(String groupKey, long lastModifiedTs, String encryptedDataKey) {
+    private static void updateTimeStamp(String groupKey, long lastModifiedTs,
+            String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey);
         cache.getConfigCache().setLastModifiedTs(lastModifiedTs);
     }
@@ -633,4 +668,3 @@ public class ConfigCacheService {
         return lockResult;
     }
 }
-

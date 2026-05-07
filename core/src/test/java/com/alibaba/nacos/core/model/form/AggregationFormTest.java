@@ -27,19 +27,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link AggregationForm} unit test.
  */
 class AggregationFormTest {
-
+    
     @Test
     void defaultAggregationIsTrue() {
         AggregationForm form = new AggregationForm();
         assertTrue(form.isAggregation());
     }
-
+    
     @Test
     void validateDoesNotThrow() throws NacosApiException {
         AggregationForm form = new AggregationForm();
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void setAggregationAndIsAggregation() {
         AggregationForm form = new AggregationForm();

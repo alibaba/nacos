@@ -38,7 +38,8 @@ class InstanceNoopHandlerTest {
     
     @Test
     void listInstances() {
-        assertThrows(NacosApiException.class, () -> instanceNoopHandler.listInstances("", "", "", "", 0, 0),
+        assertThrows(NacosApiException.class,
+                () -> instanceNoopHandler.listInstances("", "", "", "", 0, 0),
                 "Current functionMode is `config`, naming module is disabled.");
     }
     

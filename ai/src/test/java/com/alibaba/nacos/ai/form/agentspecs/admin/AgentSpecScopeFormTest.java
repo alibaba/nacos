@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AgentSpecScopeFormTest {
-
+    
     @Test
     void testValidateSuccess() {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
@@ -33,7 +33,7 @@ class AgentSpecScopeFormTest {
         form.setScope("PUBLIC");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void testValidateSuccessPrivateLowerCase() {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
@@ -41,7 +41,7 @@ class AgentSpecScopeFormTest {
         form.setScope("private");
         assertDoesNotThrow(form::validate);
     }
-
+    
     @Test
     void testValidateMissingAgentSpecName() {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
@@ -49,7 +49,7 @@ class AgentSpecScopeFormTest {
         NacosApiException ex = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
-
+    
     @Test
     void testValidateMissingScope() {
         AgentSpecScopeForm form = new AgentSpecScopeForm();
@@ -57,7 +57,7 @@ class AgentSpecScopeFormTest {
         NacosApiException ex = assertThrows(NacosApiException.class, form::validate);
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
     }
-
+    
     @Test
     void testValidateInvalidScope() {
         AgentSpecScopeForm form = new AgentSpecScopeForm();

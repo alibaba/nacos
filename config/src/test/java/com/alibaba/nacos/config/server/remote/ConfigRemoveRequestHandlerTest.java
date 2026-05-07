@@ -78,9 +78,10 @@ class ConfigRemoveRequestHandlerTest {
                 eq("1.1.1.1"),
                 isNull(),
                 eq(Constants.RPC))).thenReturn(true);
-
-        ConfigRemoveResponse response = configRemoveRequestHandler.handle(configRemoveRequest, meta);
-
+        
+        ConfigRemoveResponse response =
+                configRemoveRequestHandler.handle(configRemoveRequest, meta);
+        
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         verify(configOperationService, times(1)).deleteConfig(
                 anyString(),
@@ -111,7 +112,8 @@ class ConfigRemoveRequestHandlerTest {
                 isNull(),
                 eq(Constants.RPC))).thenThrow(new RuntimeException("test exception"));
         
-        ConfigRemoveResponse response = configRemoveRequestHandler.handle(configRemoveRequest, meta);
+        ConfigRemoveResponse response =
+                configRemoveRequestHandler.handle(configRemoveRequest, meta);
         
         assertNotEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
         assertTrue(response.getMessage().contains("test exception"));

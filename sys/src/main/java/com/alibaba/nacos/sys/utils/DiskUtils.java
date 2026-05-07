@@ -175,7 +175,8 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(InputStream is) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader =
+                new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder textBuilder = new StringBuilder();
             String lineTxt = null;
             while ((lineTxt = reader.readLine()) != null) {
@@ -263,7 +264,8 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN)
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg)
+                        || errMsg.contains(DISK_QUOTA_CN)
                         || errMsg.contains(DISK_QUOTA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
@@ -384,7 +386,8 @@ public final class DiskUtils {
      * @param checksum   checksum
      * @throws IOException IOException
      */
-    public static void compress(final String rootDir, final String sourceDir, final String outputFile,
+    public static void compress(final String rootDir, final String sourceDir,
+            final String outputFile,
             final Checksum checksum) throws IOException {
         try (final FileOutputStream fos = new FileOutputStream(outputFile);
                 final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
@@ -429,8 +432,10 @@ public final class DiskUtils {
             return;
         }
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
-                final CheckedOutputStream checkedOutputStream = new CheckedOutputStream(fileOutputStream, checksum);
-                final ZipOutputStream zipStream = new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
+                final CheckedOutputStream checkedOutputStream =
+                        new CheckedOutputStream(fileOutputStream, checksum);
+                final ZipOutputStream zipStream =
+                        new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
             compressIntoZipFile(childName, inputStream, zipStream);
             zipStream.flush();
             fileOutputStream.getFD().sync();
@@ -453,7 +458,8 @@ public final class DiskUtils {
      * @param checksum   checksum
      * @throws IOException IOException
      */
-    public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
+    public static void decompress(final String sourceFile, final String outputDir,
+            final Checksum checksum)
             throws IOException {
         try (final FileInputStream fis = new FileInputStream(sourceFile);
                 final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
@@ -489,7 +495,8 @@ public final class DiskUtils {
      * @return decompress byte array
      * @throws IOException IOException during decompress
      */
-    public static byte[] decompress(final String sourceFile, final Checksum checksum) throws IOException {
+    public static byte[] decompress(final String sourceFile, final Checksum checksum)
+            throws IOException {
         byte[] result;
         try (final FileInputStream fis = new FileInputStream(sourceFile);
                 final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
@@ -513,8 +520,9 @@ public final class DiskUtils {
      * @return {@code true} when file name contain <code>..</code> or start with root path.
      */
     public static boolean isIllegalFileName(String fileName) {
-        return fileName.contains(TOP_PATH) || fileName.startsWith(FOLDER_SEPARATOR) || fileName.startsWith(
-                WINDOWS_FOLDER_SEPARATOR);
+        return fileName.contains(TOP_PATH) || fileName.startsWith(FOLDER_SEPARATOR)
+                || fileName.startsWith(
+                        WINDOWS_FOLDER_SEPARATOR);
     }
     
     public static boolean isIllegalPath(String path) {

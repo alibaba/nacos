@@ -50,7 +50,8 @@ public class PipelineRemoteHandler implements PipelineHandler {
     
     @Override
     public PipelineExecution getPipeline(String pipelineId) throws NacosException {
-        JsonNode jsonNode = clientHolder.getAiMaintainerService().pipeline().getPipeline(pipelineId);
+        JsonNode jsonNode =
+                clientHolder.getAiMaintainerService().pipeline().getPipeline(pipelineId);
         return JacksonUtils.toObj(jsonNode.toString(), PipelineExecution.class);
     }
     
@@ -60,6 +61,7 @@ public class PipelineRemoteHandler implements PipelineHandler {
         JsonNode jsonNode = clientHolder.getAiMaintainerService().pipeline()
                 .listPipelines(resourceType, resourceName, namespaceId, version, pageNo, pageSize);
         return JacksonUtils.toObj(jsonNode.toString(),
-                new TypeReference<Page<PipelineExecution>>() { });
+                new TypeReference<Page<PipelineExecution>>() {
+                });
     }
 }

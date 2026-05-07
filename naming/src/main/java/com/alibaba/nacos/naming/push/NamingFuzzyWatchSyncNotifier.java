@@ -56,7 +56,8 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
     
     static final int BATCH_SIZE = 10;
     
-    public NamingFuzzyWatchSyncNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,
+    public NamingFuzzyWatchSyncNotifier(
+            NamingFuzzyWatchContextService namingFuzzyWatchContextService,
             FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
         this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
         this.fuzzyWatchPushDelayTaskEngine = fuzzyWatchPushDelayTaskEngine;
@@ -75,20 +76,25 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         
         if (event instanceof ClientOperationEvent.ClientFuzzyWatchEvent) {
             //fuzzy watch event
-            ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = (ClientOperationEvent.ClientFuzzyWatchEvent) event;
+            ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent =
+                    (ClientOperationEvent.ClientFuzzyWatchEvent) event;
             handleClientFuzzyWatchEvent(clientFuzzyWatchEvent);
         }
     }
     
-    private void handleClientFuzzyWatchEvent(ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent) {
+    private void handleClientFuzzyWatchEvent(
+            ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent) {
         String completedPattern = clientFuzzyWatchEvent.getGroupKeyPattern();
         
         //sync fuzzy watch context
-        Set<String> patternMatchedServiceKeys = namingFuzzyWatchContextService.matchServiceKeys(completedPattern);
+        Set<String> patternMatchedServiceKeys =
+                namingFuzzyWatchContextService.matchServiceKeys(completedPattern);
         
-        Set<String> clientReceivedGroupKeys = new HashSet<>(clientFuzzyWatchEvent.getClientReceivedServiceKeys());
-        List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
-                patternMatchedServiceKeys, clientReceivedGroupKeys);
+        Set<String> clientReceivedGroupKeys =
+                new HashSet<>(clientFuzzyWatchEvent.getClientReceivedServiceKeys());
+        List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates =
+                FuzzyGroupKeyPattern.diffGroupKeys(
+                        patternMatchedServiceKeys, clientReceivedGroupKeys);
         
         // delete notify protection when pattern match count over limit because patternMatchedServiceKeys may not full set.
         if (namingFuzzyWatchContextService.reachToUpLimit(completedPattern)) {
@@ -96,12 +102,14 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         }
         
         String syncType =
-                clientFuzzyWatchEvent.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
+                clientFuzzyWatchEvent.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY
+                        : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
         
         Set<NamingFuzzyWatchSyncRequest.Context> syncContext = convert(groupKeyStates);
         
         if (CollectionUtils.isNotEmpty(groupKeyStates)) {
-            Set<Set<NamingFuzzyWatchSyncRequest.Context>> dividedServices = divideServiceByBatch(syncContext);
+            Set<Set<NamingFuzzyWatchSyncRequest.Context>> dividedServices =
+                    divideServiceByBatch(syncContext);
             BatchTaskCounter batchTaskCounter = new BatchTaskCounter(dividedServices.size());
             int currentBatch = 1;
             for (Set<NamingFuzzyWatchSyncRequest.Context> batchData : dividedServices) {
@@ -112,14 +120,17 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
                 fuzzyWatchSyncNotifyTask.setTotalBatch(dividedServices.size());
                 fuzzyWatchSyncNotifyTask.setCurrentBatch(currentBatch);
                 fuzzyWatchPushDelayTaskEngine.addTask(
-                        FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask), fuzzyWatchSyncNotifyTask);
+                        FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
+                        fuzzyWatchSyncNotifyTask);
                 currentBatch++;
             }
         } else if (FUZZY_WATCH_INIT_NOTIFY.equals(syncType)) {
             FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(
-                    clientFuzzyWatchEvent.getClientId(), completedPattern, FINISH_FUZZY_WATCH_INIT_NOTIFY, null,
+                    clientFuzzyWatchEvent.getClientId(), completedPattern,
+                    FINISH_FUZZY_WATCH_INIT_NOTIFY, null,
                     PushConfig.getInstance().getPushTaskRetryDelay());
-            fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
+            fuzzyWatchPushDelayTaskEngine.addTask(
+                    FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
                     fuzzyWatchSyncNotifyTask);
             
         }
@@ -145,7 +156,8 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         return result;
     }
     
-    private Set<NamingFuzzyWatchSyncRequest.Context> convert(List<FuzzyGroupKeyPattern.GroupKeyState> diffGroupKeys) {
+    private Set<NamingFuzzyWatchSyncRequest.Context> convert(
+            List<FuzzyGroupKeyPattern.GroupKeyState> diffGroupKeys) {
         Set<NamingFuzzyWatchSyncRequest.Context> syncContext = new HashSet<>();
         for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : diffGroupKeys) {
             NamingFuzzyWatchSyncRequest.Context context = new NamingFuzzyWatchSyncRequest.Context();

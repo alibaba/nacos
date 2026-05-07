@@ -57,15 +57,17 @@ class ServerStateRemoteHandlerTest extends AbstractRemoteHandlerTest {
         remoteHandler = new ServerStateRemoteHandler(clientHolder);
         mockModuleState = new ModuleState("mock");
         mockModuleState.newState("moduleK", "moduleV");
-        Map<String, ModuleState> moduleStates = (Map<String, ModuleState>) ReflectionTestUtils.getField(
-                ModuleStateHolder.getInstance(), "moduleStates");
+        Map<String, ModuleState> moduleStates =
+                (Map<String, ModuleState>) ReflectionTestUtils.getField(
+                        ModuleStateHolder.getInstance(), "moduleStates");
         moduleStates.put("mock", mockModuleState);
     }
     
     @AfterEach
     void tearDown() {
-        Map<String, ModuleState> moduleStates = (Map<String, ModuleState>) ReflectionTestUtils.getField(
-                ModuleStateHolder.getInstance(), "moduleStates");
+        Map<String, ModuleState> moduleStates =
+                (Map<String, ModuleState>) ReflectionTestUtils.getField(
+                        ModuleStateHolder.getInstance(), "moduleStates");
         moduleStates.remove("mock");
         EnvUtil.setEnvironment(cachedEnvironment);
     }

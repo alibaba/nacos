@@ -55,13 +55,15 @@ public class InstanceInnerHandler implements InstanceHandler {
      *
      * @param catalogServiceV2 the service for catalog-related operations
      */
-    public InstanceInnerHandler(CatalogServiceV2Impl catalogServiceV2, InstanceOperatorClientImpl instanceServiceV2) {
+    public InstanceInnerHandler(CatalogServiceV2Impl catalogServiceV2,
+            InstanceOperatorClientImpl instanceServiceV2) {
         this.catalogService = catalogServiceV2;
         this.instanceServiceV2 = instanceServiceV2;
     }
     
     @Override
-    public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
+    public Page<? extends Instance> listInstances(String namespaceId,
+            String serviceNameWithoutGroup, String groupName,
             String clusterName, int page, int pageSize) throws NacosException {
         List<? extends Instance> instances = catalogService.listInstances(namespaceId, groupName,
                 serviceNameWithoutGroup, clusterName);
@@ -73,8 +75,10 @@ public class InstanceInnerHandler implements InstanceHandler {
         instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
                 instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", instanceForm.getNamespaceId(),
-                        instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "",
+                        instanceForm.getNamespaceId(),
+                        instanceForm.getGroupName(), instanceForm.getServiceName(),
+                        instance.getIp(),
                         instance.getPort(), instance.getMetadata()));
     }
     
@@ -84,8 +88,8 @@ public class InstanceInnerHandler implements InstanceHandler {
                 instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
                 new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "", false,
-                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(),
+                        instanceForm.getGroupName(),
                         instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
     }
 }
-

@@ -91,7 +91,8 @@ public class EnvUtil {
     
     private static final String NACOS_HOME_PROPERTY = "user.home";
     
-    private static final String CUSTOM_CONFIG_LOCATION_PROPERTY = "spring.config.additional-location";
+    private static final String CUSTOM_CONFIG_LOCATION_PROPERTY =
+            "spring.config.additional-location";
     
     private static final String DEFAULT_CONFIG_LOCATION = "application.properties";
     
@@ -107,7 +108,8 @@ public class EnvUtil {
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
     
-    private static final String NACOS_CUSTOM_ENVIRONMENT_ENABLED = "nacos.custom.environment.enabled";
+    private static final String NACOS_CUSTOM_ENVIRONMENT_ENABLED =
+            "nacos.custom.environment.enabled";
     
     private static final String NACOS_CUSTOM_CONFIG_NAME = "customFirstNacosConfig";
     
@@ -127,7 +129,8 @@ public class EnvUtil {
     public static void customEnvironment() {
         boolean enableCustom = getProperty(NACOS_CUSTOM_ENVIRONMENT_ENABLED, Boolean.class, false);
         if (enableCustom) {
-            Set<String> propertyKeys = CustomEnvironmentPluginManager.getInstance().getPropertyKeys();
+            Set<String> propertyKeys =
+                    CustomEnvironmentPluginManager.getInstance().getPropertyKeys();
             Map<String, Object> sourcePropertyMap = new HashMap<>(propertyKeys.size());
             for (String key : propertyKeys) {
                 sourcePropertyMap.put(key, getProperty(key, Object.class));
@@ -171,15 +174,17 @@ public class EnvUtil {
         return environment.getRequiredProperty(key);
     }
     
-    public static <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
+    public static <T> T getRequiredProperty(String key, Class<T> targetType)
+            throws IllegalStateException {
         return environment.getRequiredProperty(key, targetType);
     }
-
+    
     public static Properties getProperties() {
         Properties properties = new Properties();
         for (PropertySource<?> propertySource : environment.getPropertySources()) {
             if (propertySource instanceof EnumerablePropertySource) {
-                EnumerablePropertySource<?> enumerablePropertySource = (EnumerablePropertySource<?>) propertySource;
+                EnumerablePropertySource<?> enumerablePropertySource =
+                        (EnumerablePropertySource<?>) propertySource;
                 String[] propertyNames = enumerablePropertySource.getPropertyNames();
                 for (String propertyName : propertyNames) {
                     Object propertyValue = enumerablePropertySource.getProperty(propertyName);
@@ -293,7 +298,9 @@ public class EnvUtil {
         if (StringUtils.isBlank(nacosHomePath)) {
             String nacosHome = System.getProperty(NACOS_HOME_KEY);
             if (StringUtils.isBlank(nacosHome)) {
-                nacosHome = Paths.get(System.getProperty(NACOS_HOME_PROPERTY), NACOS_HOME_ADDITIONAL_FILEPATH)
+                nacosHome = Paths
+                        .get(System.getProperty(NACOS_HOME_PROPERTY),
+                                NACOS_HOME_ADDITIONAL_FILEPATH)
                         .toString();
             }
             return nacosHome;
@@ -321,7 +328,8 @@ public class EnvUtil {
     
     public static float getMem() {
         return (float) (1
-                - (double) OperatingSystemBeanManager.getFreePhysicalMem() / (double) OperatingSystemBeanManager.getTotalPhysicalMem());
+                - (double) OperatingSystemBeanManager.getFreePhysicalMem()
+                        / (double) OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
@@ -337,7 +345,8 @@ public class EnvUtil {
     }
     
     public static String getClusterConfFilePath() {
-        return Paths.get(getNacosHome(), DEFAULT_ADDITIONAL_PATH, DEFAULT_ADDITIONAL_FILE).toString();
+        return Paths.get(getNacosHome(), DEFAULT_ADDITIONAL_PATH, DEFAULT_ADDITIONAL_FILE)
+                .toString();
     }
     
     /**
@@ -398,7 +407,8 @@ public class EnvUtil {
     }
     
     public static void writeClusterConf(String content) throws IOException {
-        DiskUtils.writeFile(new File(getClusterConfFilePath()), content.getBytes(StandardCharsets.UTF_8), false);
+        DiskUtils.writeFile(new File(getClusterConfFilePath()),
+                content.getBytes(StandardCharsets.UTF_8), false);
     }
     
     public static String getMemberList() {
@@ -481,7 +491,8 @@ public class EnvUtil {
             throw new IllegalArgumentException("processors multiple must upper than 1");
         }
         Integer processor = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, Integer.class);
-        return null != processor && processor > 0 ? processor * multiple : ThreadUtils.getSuitableThreadCount(multiple);
+        return null != processor && processor > 0 ? processor * multiple
+                : ThreadUtils.getSuitableThreadCount(multiple);
     }
     
     /**
@@ -495,7 +506,8 @@ public class EnvUtil {
             throw new IllegalArgumentException("processors scale must between 0 and 1");
         }
         double result =
-                getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class, ThreadUtils.getSuitableThreadCount(1))
+                getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
+                        ThreadUtils.getSuitableThreadCount(1))
                         * scale;
         return result > 1 ? (int) result : 1;
     }

@@ -27,14 +27,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PageUtilTest {
-
+    
     @Test
     void subPageListWhenEmptyReturnsEmpty() {
         List<String> empty = Collections.emptyList();
         List<String> result = PageUtil.subPageList(empty, 1, 10);
         assertTrue(result.isEmpty());
     }
-
+    
     @Test
     void subPageListFirstPage() {
         List<String> source = Arrays.asList("a", "b", "c", "d", "e");
@@ -43,7 +43,7 @@ class PageUtilTest {
         assertEquals("a", result.get(0));
         assertEquals("b", result.get(1));
     }
-
+    
     @Test
     void subPageListSecondPage() {
         List<String> source = Arrays.asList("a", "b", "c", "d", "e");
@@ -52,7 +52,7 @@ class PageUtilTest {
         assertEquals("c", result.get(0));
         assertEquals("d", result.get(1));
     }
-
+    
     @Test
     void subPageListLastPagePartial() {
         List<String> source = Arrays.asList("a", "b", "c", "d", "e");
@@ -60,14 +60,14 @@ class PageUtilTest {
         assertEquals(1, result.size());
         assertEquals("e", result.get(0));
     }
-
+    
     @Test
     void subPageListPageBeyondSizeReturnsEmpty() {
         List<String> source = Arrays.asList("a", "b", "c");
         List<String> result = PageUtil.subPageList(source, 5, 2);
         assertTrue(result.isEmpty());
     }
-
+    
     @Test
     void subPageWhenEmptyReturnsEmptyPage() {
         List<String> empty = Collections.emptyList();
@@ -75,7 +75,7 @@ class PageUtilTest {
         assertEquals(1, result.getPageNumber());
         assertTrue(result.getPageItems().isEmpty());
     }
-
+    
     @Test
     void subPageFirstPage() {
         List<String> source = Arrays.asList("a", "b", "c", "d", "e");
@@ -87,7 +87,7 @@ class PageUtilTest {
         assertEquals("a", result.getPageItems().get(0));
         assertEquals("b", result.getPageItems().get(1));
     }
-
+    
     @Test
     void subPageLastPagePartial() {
         List<String> source = Arrays.asList("a", "b", "c", "d", "e");
@@ -97,7 +97,7 @@ class PageUtilTest {
         assertEquals(1, result.getPageItems().size());
         assertEquals("e", result.getPageItems().get(0));
     }
-
+    
     @Test
     void subPagePageBeyondSizeReturnsEmptyItems() {
         List<String> source = Arrays.asList("a", "b", "c");
@@ -106,7 +106,7 @@ class PageUtilTest {
         assertEquals(3, result.getTotalCount());
         assertTrue(result.getPageItems().isEmpty());
     }
-
+    
     @Test
     void subPageListWithInvalidPageNumber() {
         List<String> source = Arrays.asList("a", "b", "c");
@@ -115,7 +115,7 @@ class PageUtilTest {
         assertEquals("a", result.get(0));
         assertEquals("b", result.get(1));
     }
-
+    
     @Test
     void subPageExactlyOneFullPage() {
         List<String> source = Arrays.asList("a", "b");
@@ -124,7 +124,7 @@ class PageUtilTest {
         assertEquals(2, result.getTotalCount());
         assertEquals(2, result.getPagesAvailable());
     }
-
+    
     @Test
     void subPageListWhenStartEqualsSizeReturnsEmpty() {
         List<String> source = Arrays.asList("a", "b");

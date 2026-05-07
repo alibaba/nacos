@@ -75,7 +75,8 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String createService(String namespaceId, String groupName, String serviceName) throws NacosException {
+    default String createService(String namespaceId, String groupName, String serviceName)
+            throws NacosException {
         return createService(namespaceId, groupName, serviceName, false);
     }
     
@@ -91,7 +92,8 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String createService(String namespaceId, String groupName, String serviceName, boolean ephemeral)
+    default String createService(String namespaceId, String groupName, String serviceName,
+            boolean ephemeral)
             throws NacosException {
         return createService(namespaceId, groupName, serviceName, ephemeral, 0.0F);
     }
@@ -109,7 +111,8 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String createService(String namespaceId, String groupName, String serviceName, boolean ephemeral,
+    default String createService(String namespaceId, String groupName, String serviceName,
+            boolean ephemeral,
             float protectThreshold) throws NacosException {
         Service service = new Service();
         service.setNamespaceId(namespaceId);
@@ -139,9 +142,11 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String updateService(String serviceName, Map<String, String> newMetadata, float newProtectThreshold,
+    default String updateService(String serviceName, Map<String, String> newMetadata,
+            float newProtectThreshold,
             Selector newSelector) throws NacosException {
-        return updateService(Constants.DEFAULT_GROUP, serviceName, newMetadata, newProtectThreshold, newSelector);
+        return updateService(Constants.DEFAULT_GROUP, serviceName, newMetadata, newProtectThreshold,
+                newSelector);
     }
     
     /**
@@ -155,7 +160,8 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String updateService(String groupName, String serviceName, Map<String, String> newMetadata,
+    default String updateService(String groupName, String serviceName,
+            Map<String, String> newMetadata,
             float newProtectThreshold, Selector newSelector) throws NacosException {
         return updateService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName, newMetadata,
                 newProtectThreshold, newSelector);
@@ -174,8 +180,10 @@ public interface ServiceMaintainerService {
      * @throws NacosException if an error occurs
      */
     default String updateService(String namespaceId, String groupName, String serviceName,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
-        return updateService(namespaceId, groupName, serviceName, false, newMetadata, newProtectThreshold, newSelector);
+            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector)
+            throws NacosException {
+        return updateService(namespaceId, groupName, serviceName, false, newMetadata,
+                newProtectThreshold, newSelector);
     }
     
     /**
@@ -191,8 +199,10 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String updateService(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
+    default String updateService(String namespaceId, String groupName, String serviceName,
+            boolean ephemeral,
+            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector)
+            throws NacosException {
         Service service = new Service();
         service.setNamespaceId(namespaceId);
         service.setGroupName(groupName);
@@ -257,7 +267,8 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    default String removeService(String namespaceId, String groupName, String serviceName) throws NacosException {
+    default String removeService(String namespaceId, String groupName, String serviceName)
+            throws NacosException {
         Service service = new Service();
         service.setNamespaceId(namespaceId);
         service.setGroupName(groupName);
@@ -293,7 +304,8 @@ public interface ServiceMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
-    default ServiceDetailInfo getServiceDetail(String groupName, String serviceName) throws NacosException {
+    default ServiceDetailInfo getServiceDetail(String groupName, String serviceName)
+            throws NacosException {
         return getServiceDetail(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName);
     }
     
@@ -306,7 +318,8 @@ public interface ServiceMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
-    default ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName)
+    default ServiceDetailInfo getServiceDetail(String namespaceId, String groupName,
+            String serviceName)
             throws NacosException {
         Service service = new Service();
         service.setNamespaceId(namespaceId);
@@ -348,7 +361,8 @@ public interface ServiceMaintainerService {
      * @return page of service view, {@link ServiceView} is a summary of service.
      * @throws NacosException if an error occurs
      */
-    default Page<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam)
+    default Page<ServiceView> listServices(String namespaceId, String groupNameParam,
+            String serviceNameParam)
             throws NacosException {
         return listServices(namespaceId, groupNameParam, serviceNameParam, true, 1, 100);
     }
@@ -367,7 +381,8 @@ public interface ServiceMaintainerService {
      * @return page of service view, {@link ServiceView} is a summary of service.
      * @throws NacosException if an error occurs
      */
-    Page<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam,
+    Page<ServiceView> listServices(String namespaceId, String groupNameParam,
+            String serviceNameParam,
             boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException;
     
     /**
@@ -384,7 +399,8 @@ public interface ServiceMaintainerService {
      * @return page of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
-    default Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId) throws NacosException {
+    default Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId)
+            throws NacosException {
         return listServicesWithDetail(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
     }
     
@@ -404,7 +420,8 @@ public interface ServiceMaintainerService {
      * @return page of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
-    default Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
+    default Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId,
+            String groupNameParam,
             String serviceNameParam) throws NacosException {
         return listServicesWithDetail(namespaceId, groupNameParam, serviceNameParam, 1, 100);
     }
@@ -426,7 +443,8 @@ public interface ServiceMaintainerService {
      * @return page of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
-    Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam, String serviceNameParam,
+    Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
+            String serviceNameParam,
             int pageNo, int pageSize) throws NacosException;
     
     /**
@@ -460,7 +478,8 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
-    default Page<SubscriberInfo> getSubscribers(String groupName, String serviceName) throws NacosException {
+    default Page<SubscriberInfo> getSubscribers(String groupName, String serviceName)
+            throws NacosException {
         return getSubscribers(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceName);
     }
     
@@ -479,7 +498,8 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
-    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName, String serviceName)
+    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName,
+            String serviceName)
             throws NacosException {
         return getSubscribers(namespaceId, groupName, serviceName, 1, 100);
     }
@@ -501,7 +521,8 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
-    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
+    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName,
+            String serviceName, int pageNo,
             int pageSize) throws NacosException {
         return getSubscribers(namespaceId, groupName, serviceName, pageNo, pageSize, false);
     }
@@ -520,7 +541,8 @@ public interface ServiceMaintainerService {
      * @return the list of subscribers
      * @throws NacosException if an error occurs
      */
-    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
+    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName,
+            String serviceName, int pageNo,
             int pageSize, boolean aggregation) throws NacosException {
         Service service = new Service();
         service.setNamespaceId(namespaceId);
@@ -542,7 +564,8 @@ public interface ServiceMaintainerService {
      * @return the list of subscribers
      * @throws NacosException if an error occurs
      */
-    Page<SubscriberInfo> getSubscribers(Service service, int pageNo, int pageSize, boolean aggregation)
+    Page<SubscriberInfo> getSubscribers(Service service, int pageNo, int pageSize,
+            boolean aggregation)
             throws NacosException;
     
     /**

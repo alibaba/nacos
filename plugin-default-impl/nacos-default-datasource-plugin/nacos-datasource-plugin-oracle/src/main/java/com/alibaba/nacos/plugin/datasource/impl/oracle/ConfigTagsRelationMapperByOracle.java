@@ -33,8 +33,9 @@ import java.util.List;
  *
  * @author liam.fu
  **/
-public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle implements ConfigTagsRelationMapper {
-
+public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle
+        implements ConfigTagsRelationMapper {
+    
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -43,9 +44,9 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-
+        
         List<Object> paramList = new ArrayList<>();
-
+        
         // 构建内层查询：根据标签条件筛选配置
         StringBuilder idSql = new StringBuilder();
         idSql.append("SELECT DISTINCT a.id ")
@@ -53,7 +54,7 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
                 .append("LEFT JOIN config_tags_relation b ON a.id = b.id ")
                 .append("WHERE a.tenant_id = ? ");
         paramList.add(tenant);
-
+        
         if (StringUtils.isNotBlank(dataId)) {
             idSql.append(" AND a.data_id=? ");
             paramList.add(dataId);
@@ -81,13 +82,13 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
             }
             idSql.append(") ");
         }
-
+        
         idSql.append(" ORDER BY a.id OFFSET ")
                 .append(context.getStartRow())
                 .append(" ROWS FETCH NEXT ")
                 .append(context.getPageSize())
                 .append(" ROWS ONLY ");
-
+        
         // 使用子查询分离筛选逻辑和标签聚合逻辑
         String sql =
                 "WITH tag_agg AS ( "
@@ -103,10 +104,10 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
                         + idSql.toString()
                         + ") x ON a.id = x.id "
                         + "LEFT JOIN tag_agg t ON a.id = t.id";
-
+        
         return new MapperResult(sql, paramList);
     }
-
+    
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -116,14 +117,14 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
-
+        
         // 构建内层查询：根据标签条件筛选配置
         WhereBuilder idQuery = new WhereBuilder(
                 "SELECT DISTINCT a.id FROM config_info a "
                         + "LEFT JOIN config_tags_relation b ON a.id=b.id");
-
+        
         idQuery.like("a.tenant_id", tenant);
-
+        
         if (StringUtils.isNotBlank(dataId)) {
             idQuery.and().like("a.data_id", dataId);
         }
@@ -149,10 +150,10 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
         if (!ArrayUtils.isEmpty(types)) {
             idQuery.and().in("a.type", types);
         }
-
+        
         idQuery.orderBy("a.id").offset(context.getStartRow(), context.getPageSize());
         MapperResult idResult = idQuery.build();
-
+        
         // 构建外层查询：获取筛选出的配置的完整标签信息
         final String sql =
                 "WITH tag_agg AS ( "
@@ -168,10 +169,10 @@ public class ConfigTagsRelationMapperByOracle extends AbstractMapperByOracle imp
                         + idResult.getSql()
                         + ") x ON a.id = x.id "
                         + "LEFT JOIN tag_agg t ON a.id = t.id";
-
+        
         return new MapperResult(sql, idResult.getParamList());
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.ORACLE;

@@ -35,10 +35,13 @@ import java.util.concurrent.TimeoutException;
 public class RpcAckCallbackSynchronizer {
     
     @SuppressWarnings("checkstyle:linelength")
-    public static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
-            .maximumWeightedCapacity(1000000)
-            .listener((s, pushCallBack) -> pushCallBack.entrySet().forEach(
-                stringDefaultPushFutureEntry -> stringDefaultPushFutureEntry.getValue().setFailResult(new TimeoutException()))).build();
+    public static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT =
+            new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
+                    .maximumWeightedCapacity(1000000)
+                    .listener((s, pushCallBack) -> pushCallBack.entrySet().forEach(
+                            stringDefaultPushFutureEntry -> stringDefaultPushFutureEntry.getValue()
+                                    .setFailResult(new TimeoutException())))
+                    .build();
     
     /**
      * notify  ack.
@@ -48,20 +51,24 @@ public class RpcAckCallbackSynchronizer {
      */
     public static void ackNotify(String connectionId, Response response) {
         
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap =
+                CALLBACK_CONTEXT.get(connectionId);
         if (stringDefaultPushFutureMap == null) {
             
             Loggers.REMOTE_DIGEST
-                    .warn("Ack receive on a outdated connection ,connection id={},requestId={} ", connectionId,
+                    .warn("Ack receive on a outdated connection ,connection id={},requestId={} ",
+                            connectionId,
                             response.getRequestId());
             return;
         }
         
-        DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(response.getRequestId());
+        DefaultRequestFuture currentCallback =
+                stringDefaultPushFutureMap.remove(response.getRequestId());
         if (currentCallback == null) {
             
             Loggers.REMOTE_DIGEST
-                    .warn("Ack receive on a outdated request ,connection id={},requestId={} ", connectionId,
+                    .warn("Ack receive on a outdated request ,connection id={},requestId={} ",
+                            connectionId,
                             response.getRequestId());
             return;
         }
@@ -69,7 +76,8 @@ public class RpcAckCallbackSynchronizer {
         if (response.isSuccess()) {
             currentCallback.setResponse(response);
         } else {
-            currentCallback.setFailResult(new NacosException(response.getErrorCode(), response.getMessage()));
+            currentCallback.setFailResult(
+                    new NacosException(response.getErrorCode(), response.getMessage()));
         }
     }
     
@@ -81,10 +89,12 @@ public class RpcAckCallbackSynchronizer {
      * @param defaultPushFuture defaultPushFuture
      * @throws NacosException NacosException
      */
-    public static void syncCallback(String connectionId, String requestId, DefaultRequestFuture defaultPushFuture)
+    public static void syncCallback(String connectionId, String requestId,
+            DefaultRequestFuture defaultPushFuture)
             throws NacosException {
         
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = initContextIfNecessary(connectionId);
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap =
+                initContextIfNecessary(connectionId);
         
         if (!stringDefaultPushFutureMap.containsKey(requestId)) {
             DefaultRequestFuture pushCallBackPrev = stringDefaultPushFutureMap
@@ -129,13 +139,14 @@ public class RpcAckCallbackSynchronizer {
      * @param requestId    requestId
      */
     public static void clearFuture(String connectionId, String requestId) {
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap =
+                CALLBACK_CONTEXT.get(connectionId);
         
-        if (stringDefaultPushFutureMap == null || !stringDefaultPushFutureMap.containsKey(requestId)) {
+        if (stringDefaultPushFutureMap == null
+                || !stringDefaultPushFutureMap.containsKey(requestId)) {
             return;
         }
         stringDefaultPushFutureMap.remove(requestId);
     }
     
 }
-

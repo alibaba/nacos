@@ -38,19 +38,22 @@ class HistoryNoopHandlerTest {
     
     @Test
     void getConfigHistoryInfo() {
-        assertThrows(NacosApiException.class, () -> historyNoopHandler.getConfigHistoryInfo("", "", "", 1L),
+        assertThrows(NacosApiException.class,
+                () -> historyNoopHandler.getConfigHistoryInfo("", "", "", 1L),
                 "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void listConfigHistory() {
-        assertThrows(NacosApiException.class, () -> historyNoopHandler.listConfigHistory("", "", "", 1, 1),
+        assertThrows(NacosApiException.class,
+                () -> historyNoopHandler.listConfigHistory("", "", "", 1, 1),
                 "Current functionMode is `naming`, config module is disabled.");
     }
     
     @Test
     void getPreviousConfigHistoryInfo() {
-        assertThrows(NacosApiException.class, () -> historyNoopHandler.getPreviousConfigHistoryInfo("", "", "", 1L),
+        assertThrows(NacosApiException.class,
+                () -> historyNoopHandler.getPreviousConfigHistoryInfo("", "", "", 1L),
                 "Current functionMode is `naming`, config module is disabled.");
     }
     

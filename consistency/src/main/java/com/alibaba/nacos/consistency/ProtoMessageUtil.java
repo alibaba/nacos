@@ -73,7 +73,8 @@ public class ProtoMessageUtil {
         } catch (Throwable ignore) {
         }
         
-        throw new ConsistencyException("The current array cannot be serialized to the corresponding object");
+        throw new ConsistencyException(
+                "The current array cannot be serialized to the corresponding object");
     }
     
     /**

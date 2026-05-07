@@ -37,8 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpRequestUtilTest {
     
-    private static final String MCP_SERVER_SPEC_OLD = "{\"protocol\":\"stdio\",\"name\":\"nacos-mcp-server\","
-            + "\"description\":\"nacos local mcp server(test version)\",\"version\":\"0.1.0\",\"enabled\":true,\"localServerConfig\":{}}";
+    private static final String MCP_SERVER_SPEC_OLD =
+            "{\"protocol\":\"stdio\",\"name\":\"nacos-mcp-server\","
+                    + "\"description\":\"nacos local mcp server(test version)\",\"version\":\"0.1.0\",\"enabled\":true,\"localServerConfig\":{}}";
     
     private static final String MCP_SERVER_SPEC_NEW =
             "{\"protocol\":\"stdio\",\"frontProtocol\":\"stdio\",\"name\":\"nacos-mcp-server\","
@@ -47,18 +48,19 @@ class McpRequestUtilTest {
     
     private static final String MCP_TOOL_SPEC =
             "{\"tools\":[{\"name\":\"list_namespace\",\"description\":\"list namespace in nacos\","
-                + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"description\":\"aaa\"}}},"
-                + "\"outputSchema\":{\"type\":\"object\",\"properties\":{\"result\":{\"type\":\"string\"}}}}],"
+                    + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"description\":\"aaa\"}}},"
+                    + "\"outputSchema\":{\"type\":\"object\",\"properties\":{\"result\":{\"type\":\"string\"}}}}],"
                     + "\"toolsMeta\":{\"list_namespace\":{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,"
                     + "\"templates\":{\"json-go-tamplate\":{\"templateType\":\"string\",\"requestTemplate\":{\"url\":\"\",\"method\":\"GET\","
                     + "\"headers\":[],\"argsToJsonBody\":false,\"argsToUrlParam\":true,\"argsToFormBody\":true,\"body\":\"string\"},"
                     + "\"responseTemplate\":{\"body\":\"string\"}}}}}}";
     
-    private static final String MCP_ENDPOINT_SPEC = "{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\",\"port\":8848}}";
+    private static final String MCP_ENDPOINT_SPEC =
+            "{\"type\":\"DIRECT\",\"data\":{\"address\":\"127.0.0.1\",\"port\":8848}}";
     
     private static final String MCP_RESOURCE_SPEC =
             "{\"resources\":[{\"name\":\"readme\",\"uri\":\"file:///README.md\",\"description\":\"test resource\"}]}";
-
+    
     @Test
     void parseMcpServerBasicInfoWithOldData() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -149,7 +151,7 @@ class McpRequestUtilTest {
         McpDetailForm mcpForm = new McpDetailForm();
         assertNull(McpRequestUtil.parseMcpResources(mcpForm));
     }
-
+    
     @Test
     void parseMcpResourcesSuccess() throws NacosApiException {
         McpDetailForm mcpForm = new McpDetailForm();
@@ -159,7 +161,7 @@ class McpRequestUtilTest {
         assertEquals("readme", actual.getResources().get(0).get("name"));
         assertEquals("file:///README.md", actual.getResources().get(0).get("uri"));
     }
-
+    
     @Test
     void parseMcpEndpointSpecForStdioType() throws NacosApiException {
         McpServerBasicInfo mcpServerBasicInfo = new McpServerBasicInfo();
@@ -212,6 +214,7 @@ class McpRequestUtilTest {
     
     @Test
     void transferToMcpServiceRefForOther() {
-        assertThrows(IllegalArgumentException.class, () -> McpRequestUtil.transferToMcpServiceRef(new Object()));
+        assertThrows(IllegalArgumentException.class,
+                () -> McpRequestUtil.transferToMcpServiceRef(new Object()));
     }
 }

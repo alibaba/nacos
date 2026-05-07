@@ -132,8 +132,9 @@ public class ConfigMigrateService {
     public ConfigMigrateService(ConfigInfoBetaPersistService configInfoBetaPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ConfigMigratePersistService configMigratePersistService, NamespacePersistService namespacePersistService,
-             ConfigInfoPersistService configInfoPersistService) {
+            ConfigMigratePersistService configMigratePersistService,
+            NamespacePersistService namespacePersistService,
+            ConfigInfoPersistService configInfoPersistService) {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
@@ -166,24 +167,30 @@ public class ConfigMigrateService {
      * @param configRequestInfo configRequestInfo.
      * @throws NacosApiException NacosApiException.
      */
-    public void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
+    public void persistTagv1(ConfigForm configForm, ConfigInfo configInfo,
+            ConfigRequestInfo configRequestInfo)
             throws NacosApiException {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
             return;
         }
         
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-            ConfigOperateResult configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo,
-                    configForm.getTag(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+            ConfigOperateResult configOperateResult =
+                    configInfoTagPersistService.insertOrUpdateTagCas(configInfo,
+                            configForm.getTag(), configRequestInfo.getSrcIp(),
+                            configForm.getSrcUser());
             if (!configOperateResult.isSuccess()) {
                 LOGGER.warn(
                         "[cas-publish-tag-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                        configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                        configRequestInfo.getSrcIp(), configForm.getDataId(),
+                        configRequestInfo.getCasMd5());
+                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        ErrorCode.RESOURCE_CONFLICT,
                         "Cas publish tag config fail, server md5 may have changed.");
             }
         } else {
-            configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(), configRequestInfo.getSrcIp(),
+            configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
+                    configRequestInfo.getSrcIp(),
                     configForm.getSrcUser());
         }
     }
@@ -196,7 +203,8 @@ public class ConfigMigrateService {
      * @param configRequestInfo configRequestInfo.
      * @throws NacosApiException NacosApiException.
      */
-    public void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
+    public void persistBeta(ConfigForm configForm, ConfigInfo configInfo,
+            ConfigRequestInfo configRequestInfo)
             throws NacosApiException {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
             return;
@@ -205,16 +213,20 @@ public class ConfigMigrateService {
         // beta publish
         if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
             configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
-                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(),
+                    configForm.getSrcUser());
             if (!configOperateResult.isSuccess()) {
                 LOGGER.warn(
                         "[cas-publish-beta-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                        configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                        configRequestInfo.getSrcIp(), configForm.getDataId(),
+                        configRequestInfo.getCasMd5());
+                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        ErrorCode.RESOURCE_CONFLICT,
                         "Cas publish beta config fail, server md5 may have changed.");
             }
         } else {
-            configInfoBetaPersistService.insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(),
+            configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
+                    configRequestInfo.getBetaIps(),
                     configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
     }
@@ -229,7 +241,8 @@ public class ConfigMigrateService {
      * @param clientIp    clientIp.
      * @param srcUser     srcUser.
      */
-    public void deleteConfigGrayV1(String dataId, String group, String namespaceId, String grayName, String clientIp,
+    public void deleteConfigGrayV1(String dataId, String group, String namespaceId, String grayName,
+            String clientIp,
             String srcUser) {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
             return;
@@ -237,7 +250,8 @@ public class ConfigMigrateService {
         if (BetaGrayRule.TYPE_BETA.equals(grayName)) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
         } else if (grayName.startsWith(TagGrayRule.TYPE_TAG + SPLIT)) {
-            configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, grayName.substring(4), clientIp,
+            configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId,
+                    grayName.substring(4), clientIp,
                     srcUser);
         }
         
@@ -251,27 +265,35 @@ public class ConfigMigrateService {
      * @param tenant tenant.
      */
     public void checkMigrateBeta(String dataId, String group, String tenant) {
-        ConfigInfoBetaWrapper configInfo4Beta = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
+        ConfigInfoBetaWrapper configInfo4Beta =
+                configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
         if (configInfo4Beta == null) {
-            ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(dataId,
-                    group, tenant, BetaGrayRule.TYPE_BETA);
+            ConfigInfoGrayWrapper configInfoGrayWrapper =
+                    configInfoGrayPersistService.findConfigInfo4Gray(dataId,
+                            group, tenant, BetaGrayRule.TYPE_BETA);
             if (configInfoGrayWrapper == null) {
                 return;
             }
-            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA,
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant,
+                    BetaGrayRule.TYPE_BETA,
                     NetUtils.localIp(), "nacos_auto_migrate");
             return;
         }
-        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
-                BetaGrayRule.TYPE_BETA);
-        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < configInfo4Beta.getLastModified()) {
+        ConfigInfoGrayWrapper configInfo4Gray =
+                configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                        BetaGrayRule.TYPE_BETA);
+        if (configInfo4Gray == null
+                || configInfo4Gray.getLastModified() < configInfo4Beta.getLastModified()) {
             DEFAULT_LOG.info("[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
-                    configInfo4Beta.getDataId(), configInfo4Beta.getGroup(), configInfo4Beta.getTenant(),
+                    configInfo4Beta.getDataId(), configInfo4Beta.getGroup(),
+                    configInfo4Beta.getTenant(),
                     configInfo4Beta.getMd5());
-            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
+            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
+                    BetaGrayRule.TYPE_BETA,
                     BetaGrayRule.VERSION, configInfo4Beta.getBetaIps(), BetaGrayRule.PRIORITY);
             configInfoGrayPersistService.insertOrUpdateGray(configInfo4Beta, BetaGrayRule.TYPE_BETA,
-                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIp(),
+                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
+                    NetUtils.localIp(),
                     "nacos_auto_migrate");
         }
         
@@ -286,28 +308,36 @@ public class ConfigMigrateService {
      * @param tag    tag.
      */
     public void checkMigrateTag(String dataId, String group, String tenant, String tag) {
-        ConfigInfoTagWrapper configInfo4Tag = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
-                tag);
+        ConfigInfoTagWrapper configInfo4Tag =
+                configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
+                        tag);
         if (configInfo4Tag == null) {
-            ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group,
-                    tenant, TagGrayRule.TYPE_TAG + "_" + tag);
+            ConfigInfoGrayWrapper configInfo4Gray =
+                    configInfoGrayPersistService.findConfigInfo4Gray(dataId, group,
+                            tenant, TagGrayRule.TYPE_TAG + "_" + tag);
             if (configInfo4Gray == null) {
                 return;
             }
-            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, TagGrayRule.TYPE_TAG + "_" + tag,
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant,
+                    TagGrayRule.TYPE_TAG + "_" + tag,
                     NetUtils.localIp(), "nacos_auto_migrate");
             return;
         }
-        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
-                TagGrayRule.TYPE_TAG + "_" + tag);
-        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < configInfo4Tag.getLastModified()) {
+        ConfigInfoGrayWrapper configInfo4Gray =
+                configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                        TagGrayRule.TYPE_TAG + "_" + tag);
+        if (configInfo4Gray == null
+                || configInfo4Gray.getLastModified() < configInfo4Tag.getLastModified()) {
             DEFAULT_LOG.info("[migrate tag to gray] dataId={}, group={}, tenant={},  md5={}",
-                    configInfo4Tag.getDataId(), configInfo4Tag.getGroup(), configInfo4Tag.getTenant(),
+                    configInfo4Tag.getDataId(), configInfo4Tag.getGroup(),
+                    configInfo4Tag.getTenant(),
                     configInfo4Tag.getMd5());
-            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
-                    TagGrayRule.VERSION, configInfo4Tag.getTag(), TagGrayRule.PRIORITY);
+            ConfigGrayPersistInfo localConfigGrayPersistInfo =
+                    new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
+                            TagGrayRule.VERSION, configInfo4Tag.getTag(), TagGrayRule.PRIORITY);
             configInfoGrayPersistService.insertOrUpdateGray(configInfo4Tag, TagGrayRule.TYPE_TAG,
-                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIp(),
+                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
+                    NetUtils.localIp(),
                     "nacos_auto_migrate");
         }
     }
@@ -317,7 +347,8 @@ public class ConfigMigrateService {
      *
      * @param changedConfigInfoGrayWrapper the changed config info gray wrapper
      */
-    public void checkChangedConfigGrayMigrateState(ConfigInfoGrayWrapper changedConfigInfoGrayWrapper) {
+    public void checkChangedConfigGrayMigrateState(
+            ConfigInfoGrayWrapper changedConfigInfoGrayWrapper) {
         String tenant = changedConfigInfoGrayWrapper.getTenant();
         if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
@@ -329,24 +360,33 @@ public class ConfigMigrateService {
         if (StringUtils.isBlank(tenant)) {
             targetTenant = namespacePublic;
         }
-        ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                changedConfigInfoGrayWrapper.getDataId(), changedConfigInfoGrayWrapper.getGroup(), targetTenant,
-                changedConfigInfoGrayWrapper.getGrayName());
+        ConfigInfoGrayWrapper targetConfigInfoGrayWrapper =
+                configInfoGrayPersistService.findConfigInfo4Gray(
+                        changedConfigInfoGrayWrapper.getDataId(),
+                        changedConfigInfoGrayWrapper.getGroup(), targetTenant,
+                        changedConfigInfoGrayWrapper.getGrayName());
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
-            if (StringUtils.equals(changedConfigInfoGrayWrapper.getSrcUser(), NAMESPACE_MIGRATE_SRC_USER)) {
+            if (StringUtils.equals(changedConfigInfoGrayWrapper.getSrcUser(),
+                    NAMESPACE_MIGRATE_SRC_USER)) {
                 if (targetConfigInfoGrayWrapper == null) {
-                    configInfoGrayPersistService.removeConfigInfoGray(changedConfigInfoGrayWrapper.getDataId(),
-                            changedConfigInfoGrayWrapper.getGroup(), tenant, changedConfigInfoGrayWrapper.getGrayName(),
+                    configInfoGrayPersistService.removeConfigInfoGray(
+                            changedConfigInfoGrayWrapper.getDataId(),
+                            changedConfigInfoGrayWrapper.getGroup(), tenant,
+                            changedConfigInfoGrayWrapper.getGrayName(),
                             null, NAMESPACE_MIGRATE_SRC_USER);
-                } else if (!targetConfigInfoGrayWrapper.getMd5().equals(changedConfigInfoGrayWrapper.getMd5())
+                } else if (!targetConfigInfoGrayWrapper.getMd5()
+                        .equals(changedConfigInfoGrayWrapper.getMd5())
                         || !targetConfigInfoGrayWrapper.getGrayRule()
-                        .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
-                    if (targetConfigInfoGrayWrapper.getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
+                                .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
+                    if (targetConfigInfoGrayWrapper
+                            .getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
                             || !StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(),
-                            NAMESPACE_MIGRATE_SRC_USER)) {
+                                    NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigInfoGrayWrapper.setTenant(tenant);
-                        configInfoGrayPersistService.updateConfigInfo4Gray(targetConfigInfoGrayWrapper,
-                                targetConfigInfoGrayWrapper.getGrayName(), targetConfigInfoGrayWrapper.getGrayRule(),
+                        configInfoGrayPersistService.updateConfigInfo4Gray(
+                                targetConfigInfoGrayWrapper,
+                                targetConfigInfoGrayWrapper.getGrayName(),
+                                targetConfigInfoGrayWrapper.getGrayRule(),
                                 null, NAMESPACE_MIGRATE_SRC_USER);
                     }
                 }
@@ -354,22 +394,30 @@ public class ConfigMigrateService {
                 if (targetConfigInfoGrayWrapper == null) {
                     changedConfigInfoGrayWrapper.setTenant(targetTenant);
                     configInfoGrayPersistService.addConfigInfo4Gray(changedConfigInfoGrayWrapper,
-                            changedConfigInfoGrayWrapper.getGrayName(), changedConfigInfoGrayWrapper.getGrayRule(),
+                            changedConfigInfoGrayWrapper.getGrayName(),
+                            changedConfigInfoGrayWrapper.getGrayRule(),
                             null, NAMESPACE_MIGRATE_SRC_USER);
-                } else if (!targetConfigInfoGrayWrapper.getMd5().equals(changedConfigInfoGrayWrapper.getMd5())
+                } else if (!targetConfigInfoGrayWrapper.getMd5()
+                        .equals(changedConfigInfoGrayWrapper.getMd5())
                         || !targetConfigInfoGrayWrapper.getGrayRule()
-                        .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
-                    if (targetConfigInfoGrayWrapper.getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
+                                .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
+                    if (targetConfigInfoGrayWrapper
+                            .getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
                             && !StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(),
-                            NAMESPACE_MIGRATE_SRC_USER)) {
+                                    NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigInfoGrayWrapper.setTenant(tenant);
-                        configInfoGrayPersistService.updateConfigInfo4Gray(targetConfigInfoGrayWrapper,
-                                targetConfigInfoGrayWrapper.getGrayName(), targetConfigInfoGrayWrapper.getGrayRule(),
+                        configInfoGrayPersistService.updateConfigInfo4Gray(
+                                targetConfigInfoGrayWrapper,
+                                targetConfigInfoGrayWrapper.getGrayName(),
+                                targetConfigInfoGrayWrapper.getGrayRule(),
                                 null, NAMESPACE_MIGRATE_SRC_USER);
-                    } else if (targetConfigInfoGrayWrapper.getLastModified() < changedConfigInfoGrayWrapper.getLastModified()) {
+                    } else if (targetConfigInfoGrayWrapper
+                            .getLastModified() < changedConfigInfoGrayWrapper.getLastModified()) {
                         changedConfigInfoGrayWrapper.setTenant(targetTenant);
-                        configInfoGrayPersistService.updateConfigInfo4Gray(changedConfigInfoGrayWrapper,
-                                changedConfigInfoGrayWrapper.getGrayName(), changedConfigInfoGrayWrapper.getGrayRule(),
+                        configInfoGrayPersistService.updateConfigInfo4Gray(
+                                changedConfigInfoGrayWrapper,
+                                changedConfigInfoGrayWrapper.getGrayName(),
+                                changedConfigInfoGrayWrapper.getGrayRule(),
                                 null, NAMESPACE_MIGRATE_SRC_USER);
                     }
                 }
@@ -382,7 +430,8 @@ public class ConfigMigrateService {
      *
      * @param changedConfigInfoStateWrapper the config info state wrapper
      */
-    public void checkChangedConfigMigrateState(ConfigInfoStateWrapper changedConfigInfoStateWrapper) {
+    public void checkChangedConfigMigrateState(
+            ConfigInfoStateWrapper changedConfigInfoStateWrapper) {
         String tenant = changedConfigInfoStateWrapper.getTenant();
         if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
@@ -395,34 +444,43 @@ public class ConfigMigrateService {
             targetTenant = namespacePublic;
         }
         ConfigAllInfo changedConfigAllInfo = configInfoPersistService.findConfigAllInfo(
-                changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), tenant);
+                changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(),
+                tenant);
         ConfigAllInfo targetConfigAllInfo = configInfoPersistService.findConfigAllInfo(
-                changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), targetTenant);
+                changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(),
+                targetTenant);
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (NAMESPACE_MIGRATE_SRC_USER.equals(changedConfigAllInfo.getCreateUser())) {
                 if (targetConfigAllInfo == null) {
                     configInfoPersistService.removeConfigInfo(changedConfigAllInfo.getDataId(),
-                            changedConfigAllInfo.getGroup(), tenant, null, NAMESPACE_MIGRATE_SRC_USER);
+                            changedConfigAllInfo.getGroup(), tenant, null,
+                            NAMESPACE_MIGRATE_SRC_USER);
                 } else if (!targetConfigAllInfo.getMd5().equals(changedConfigAllInfo.getMd5())) {
                     if (targetConfigAllInfo.getModifyTime() >= changedConfigAllInfo.getModifyTime()
-                            || !StringUtils.equals(targetConfigAllInfo.getCreateUser(), NAMESPACE_MIGRATE_SRC_USER)) {
+                            || !StringUtils.equals(targetConfigAllInfo.getCreateUser(),
+                                    NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigAllInfo.setTenant(tenant);
-                        configInfoPersistService.updateConfigInfo(targetConfigAllInfo, null, NAMESPACE_MIGRATE_SRC_USER,
+                        configInfoPersistService.updateConfigInfo(targetConfigAllInfo, null,
+                                NAMESPACE_MIGRATE_SRC_USER,
                                 null);
                     }
                 }
             } else {
                 if (targetConfigAllInfo == null) {
                     changedConfigAllInfo.setTenant(targetTenant);
-                    configInfoPersistService.addConfigInfo(null, NAMESPACE_MIGRATE_SRC_USER, changedConfigAllInfo,
+                    configInfoPersistService.addConfigInfo(null, NAMESPACE_MIGRATE_SRC_USER,
+                            changedConfigAllInfo,
                             null);
                 } else if (!targetConfigAllInfo.getMd5().equals(changedConfigAllInfo.getMd5())) {
                     if (targetConfigAllInfo.getModifyTime() >= changedConfigAllInfo.getModifyTime()
-                            && !StringUtils.equals(targetConfigAllInfo.getCreateUser(), NAMESPACE_MIGRATE_SRC_USER)) {
+                            && !StringUtils.equals(targetConfigAllInfo.getCreateUser(),
+                                    NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigAllInfo.setTenant(tenant);
-                        configInfoPersistService.updateConfigInfo(targetConfigAllInfo, null, NAMESPACE_MIGRATE_SRC_USER,
+                        configInfoPersistService.updateConfigInfo(targetConfigAllInfo, null,
+                                NAMESPACE_MIGRATE_SRC_USER,
                                 null);
-                    } else if (targetConfigAllInfo.getModifyTime() < changedConfigAllInfo.getModifyTime()) {
+                    } else if (targetConfigAllInfo.getModifyTime() < changedConfigAllInfo
+                            .getModifyTime()) {
                         changedConfigAllInfo.setTenant(targetTenant);
                         configInfoPersistService.updateConfigInfo(changedConfigAllInfo, null,
                                 NAMESPACE_MIGRATE_SRC_USER, null);
@@ -437,7 +495,8 @@ public class ConfigMigrateService {
      *
      * @param deletedConfigInfoGrayStateWrapper the deleted config info gray state wrapper
      */
-    public void checkDeletedConfigGrayMigrateState(ConfigInfoStateWrapper deletedConfigInfoGrayStateWrapper) {
+    public void checkDeletedConfigGrayMigrateState(
+            ConfigInfoStateWrapper deletedConfigInfoGrayStateWrapper) {
         if (deletedConfigInfoGrayStateWrapper == null) {
             return;
         }
@@ -452,19 +511,23 @@ public class ConfigMigrateService {
         if (StringUtils.isBlank(tenant)) {
             targetTenant = namespacePublic;
         }
-        ConfigInfoStateWrapper targetConfigInfoGrayStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(
-                deletedConfigInfoGrayStateWrapper.getDataId(), deletedConfigInfoGrayStateWrapper.getGroup(),
-                targetTenant, deletedConfigInfoGrayStateWrapper.getGrayName());
+        ConfigInfoStateWrapper targetConfigInfoGrayStateWrapper =
+                configInfoGrayPersistService.findConfigInfo4GrayState(
+                        deletedConfigInfoGrayStateWrapper.getDataId(),
+                        deletedConfigInfoGrayStateWrapper.getGroup(),
+                        targetTenant, deletedConfigInfoGrayStateWrapper.getGrayName());
         if (targetConfigInfoGrayStateWrapper == null) {
             return;
         }
         
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
-            if (targetConfigInfoGrayStateWrapper.getLastModified()
-                    <= deletedConfigInfoGrayStateWrapper.getLastModified()) {
-                configInfoGrayPersistService.removeConfigInfoGray(deletedConfigInfoGrayStateWrapper.getDataId(),
+            if (targetConfigInfoGrayStateWrapper
+                    .getLastModified() <= deletedConfigInfoGrayStateWrapper.getLastModified()) {
+                configInfoGrayPersistService.removeConfigInfoGray(
+                        deletedConfigInfoGrayStateWrapper.getDataId(),
                         deletedConfigInfoGrayStateWrapper.getGroup(), targetTenant,
-                        deletedConfigInfoGrayStateWrapper.getGrayName(), null, NAMESPACE_MIGRATE_SRC_USER);
+                        deletedConfigInfoGrayStateWrapper.getGrayName(), null,
+                        NAMESPACE_MIGRATE_SRC_USER);
             }
         }
     }
@@ -474,7 +537,8 @@ public class ConfigMigrateService {
      *
      * @param deletedConfigInfoStateWrapper the deleted config info state wrapper
      */
-    public void checkDeletedConfigMigrateState(ConfigInfoStateWrapper deletedConfigInfoStateWrapper) {
+    public void checkDeletedConfigMigrateState(
+            ConfigInfoStateWrapper deletedConfigInfoStateWrapper) {
         String tenant = deletedConfigInfoStateWrapper.getTenant();
         if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
@@ -486,25 +550,31 @@ public class ConfigMigrateService {
         if (StringUtils.isBlank(tenant)) {
             targetTenant = namespacePublic;
         }
-        ConfigInfoStateWrapper targetConfigInfoStateWrapper = configInfoPersistService.findConfigInfoState(
-                deletedConfigInfoStateWrapper.getDataId(), deletedConfigInfoStateWrapper.getGroup(), targetTenant);
+        ConfigInfoStateWrapper targetConfigInfoStateWrapper =
+                configInfoPersistService.findConfigInfoState(
+                        deletedConfigInfoStateWrapper.getDataId(),
+                        deletedConfigInfoStateWrapper.getGroup(), targetTenant);
         if (targetConfigInfoStateWrapper == null) {
             return;
         }
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
-            if (targetConfigInfoStateWrapper.getLastModified() <= deletedConfigInfoStateWrapper.getLastModified()) {
+            if (targetConfigInfoStateWrapper.getLastModified() <= deletedConfigInfoStateWrapper
+                    .getLastModified()) {
                 configInfoPersistService.removeConfigInfo(deletedConfigInfoStateWrapper.getDataId(),
-                        deletedConfigInfoStateWrapper.getGroup(), targetTenant, null, NAMESPACE_MIGRATE_SRC_USER);
+                        deletedConfigInfoStateWrapper.getGroup(), targetTenant, null,
+                        NAMESPACE_MIGRATE_SRC_USER);
             }
         }
     }
     
     private void doCheckNamespaceMigrate() throws Exception {
         final long startTime = System.currentTimeMillis();
-        int maxNamespaceMigrateRetryTimes = EnvUtil.getProperty("nacos.namespace.migrate.retry.times", Integer.class,
-                3);
+        int maxNamespaceMigrateRetryTimes =
+                EnvUtil.getProperty("nacos.namespace.migrate.retry.times", Integer.class,
+                        3);
         namespaceMigratePreCheck(maxNamespaceMigrateRetryTimes);
-        int batchSize = EnvUtil.getProperty("nacos.namespace.migrate.batch.size", Integer.class, 100);
+        int batchSize =
+                EnvUtil.getProperty("nacos.namespace.migrate.batch.size", Integer.class, 100);
         long startId = -1;
         List<Long> batchIds = new ArrayList<>();
         int totalInsertNums = 0;
@@ -514,15 +584,19 @@ public class ConfigMigrateService {
             boolean migrateSuccess = false;
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
-                    batchIds = configMigratePersistService.getMigrateConfigInsertIdList(startId, batchSize);
+                    batchIds = configMigratePersistService.getMigrateConfigInsertIdList(startId,
+                            batchSize);
                     if (!batchIds.isEmpty()) {
-                        configMigratePersistService.migrateConfigInsertByIds(batchIds, NAMESPACE_MIGRATE_SRC_USER);
+                        configMigratePersistService.migrateConfigInsertByIds(batchIds,
+                                NAMESPACE_MIGRATE_SRC_USER);
                         startId = batchIds.get(batchIds.size() - 1);
                     }
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] config_info namespace migrate insert failed, retry times={}, error={}", retryTimes,
+                    LOGGER.error(
+                            "[migrate] config_info namespace migrate insert failed, retry times={}, error={}",
+                            retryTimes,
                             e.getMessage());
                 }
                 retryTimes++;
@@ -534,7 +608,8 @@ public class ConfigMigrateService {
             } else {
                 totalInsertNums += batchIds.size();
             }
-            LOGGER.info("[migrate] migrating config namespace from empty to public, finished:" + totalInsertNums);
+            LOGGER.info("[migrate] migrating config namespace from empty to public, finished:"
+                    + totalInsertNums);
         } while (batchIds.size() == batchSize);
         
         long startEmptyId = -1;
@@ -546,33 +621,41 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfosFromEmpty = configMigratePersistService
-                            .getMigrateConfigUpdateList(startEmptyId, batchSize, StringUtils.EMPTY, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
+                            .getMigrateConfigUpdateList(startEmptyId, batchSize, StringUtils.EMPTY,
+                                    namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfosFromEmpty.isEmpty()) {
                         for (ConfigInfo configInfo : batchConfigInfosFromEmpty) {
-                            configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
+                            configMigratePersistService.syncConfig(configInfo.getDataId(),
+                                    configInfo.getGroup(),
                                     StringUtils.EMPTY, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
                         }
-                        startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
-                                .getId();
+                        startEmptyId =
+                                batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
+                                        .getId();
                     }
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] config_info namespace migrate update from empty failed, retry times={}, error={}", retryTimes,
+                    LOGGER.error(
+                            "[migrate] config_info namespace migrate update from empty failed, retry times={}, error={}",
+                            retryTimes,
                             e.getMessage());
                 }
                 retryTimes++;
                 Thread.sleep(1000L);
             }
             if (!migrateSuccess) {
-                LOGGER.error("[migrate] config_info namespace migrate update from empty failed, skipped");
+                LOGGER.error(
+                        "[migrate] config_info namespace migrate update from empty failed, skipped");
                 if (!batchConfigInfosFromEmpty.isEmpty()) {
-                    startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1).getId();
+                    startEmptyId = batchConfigInfosFromEmpty
+                            .get(batchConfigInfosFromEmpty.size() - 1).getId();
                 }
             } else {
                 totalUpdateFromEmptyNums += batchConfigInfosFromEmpty.size();
             }
-            LOGGER.info("[migrate] syncing config namespace from empty to public, finished:" + totalUpdateFromEmptyNums);
+            LOGGER.info("[migrate] syncing config namespace from empty to public, finished:"
+                    + totalUpdateFromEmptyNums);
         } while (batchConfigInfosFromEmpty.size() == batchSize);
         
         long startPublicId = -1;
@@ -584,34 +667,42 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfosFromPublic = configMigratePersistService
-                            .getMigrateConfigUpdateList(startPublicId, batchSize, namespacePublic, StringUtils.EMPTY,
+                            .getMigrateConfigUpdateList(startPublicId, batchSize, namespacePublic,
+                                    StringUtils.EMPTY,
                                     NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfosFromPublic.isEmpty()) {
                         for (ConfigInfo configInfo : batchConfigInfosFromPublic) {
-                            configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
+                            configMigratePersistService.syncConfig(configInfo.getDataId(),
+                                    configInfo.getGroup(),
                                     namespacePublic, StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
                         }
-                        startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
+                        startPublicId = batchConfigInfosFromPublic
+                                .get(batchConfigInfosFromPublic.size() - 1)
                                 .getId();
                     }
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] config_info namespace migrate update from public failed, retry times={}, error={}", retryTimes,
+                    LOGGER.error(
+                            "[migrate] config_info namespace migrate update from public failed, retry times={}, error={}",
+                            retryTimes,
                             e.getMessage());
                 }
                 retryTimes++;
                 Thread.sleep(1000L);
             }
             if (!migrateSuccess) {
-                LOGGER.error("[migrate] config_info namespace migrate update from public failed, skipped");
+                LOGGER.error(
+                        "[migrate] config_info namespace migrate update from public failed, skipped");
                 if (!batchConfigInfosFromPublic.isEmpty()) {
-                    startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1).getId();
+                    startPublicId = batchConfigInfosFromPublic
+                            .get(batchConfigInfosFromPublic.size() - 1).getId();
                 }
             } else {
                 totalUpdateFromPublicNums += batchConfigInfosFromPublic.size();
             }
-            LOGGER.info("[migrate] syncing config namespace from public to empty, finished:" + totalUpdateFromPublicNums);
+            LOGGER.info("[migrate] syncing config namespace from public to empty, finished:"
+                    + totalUpdateFromPublicNums);
         } while (batchConfigInfosFromPublic.size() == batchSize);
         
         long startGrayId = -1;
@@ -621,15 +712,19 @@ public class ConfigMigrateService {
             boolean migrateSuccess = false;
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
-                    batchIds = configMigratePersistService.getMigrateConfigGrayInsertIdList(startGrayId, batchSize);
+                    batchIds = configMigratePersistService
+                            .getMigrateConfigGrayInsertIdList(startGrayId, batchSize);
                     if (!batchIds.isEmpty()) {
-                        configMigratePersistService.migrateConfigGrayInsertByIds(batchIds, NAMESPACE_MIGRATE_SRC_USER);
+                        configMigratePersistService.migrateConfigGrayInsertByIds(batchIds,
+                                NAMESPACE_MIGRATE_SRC_USER);
                         startGrayId = batchIds.get(batchIds.size() - 1);
                     }
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] config_info gray namespace migrate insert failed, retry times={}, error={}", retryTimes,
+                    LOGGER.error(
+                            "[migrate] config_info gray namespace migrate insert failed, retry times={}, error={}",
+                            retryTimes,
                             e.getMessage());
                 }
                 retryTimes++;
@@ -641,7 +736,8 @@ public class ConfigMigrateService {
             } else {
                 totalInsertGrayNum += batchIds.size();
             }
-            LOGGER.info("[migrate] migrating config gray namespace from empty to public, finished:" + totalInsertGrayNum);
+            LOGGER.info("[migrate] migrating config gray namespace from empty to public, finished:"
+                    + totalInsertGrayNum);
         } while (batchIds.size() == batchSize);
         
         long startGrayEmptyId = -1;
@@ -653,36 +749,44 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfoGraysFromEmpty = configMigratePersistService
-                            .getMigrateConfigGrayUpdateList(startGrayEmptyId, batchSize, StringUtils.EMPTY,
+                            .getMigrateConfigGrayUpdateList(startGrayEmptyId, batchSize,
+                                    StringUtils.EMPTY,
                                     namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfoGraysFromEmpty.isEmpty()) {
                         for (ConfigInfoGrayWrapper configInfoGrayWrapper : batchConfigInfoGraysFromEmpty) {
-                            configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
+                            configMigratePersistService.syncConfigGray(
+                                    configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), StringUtils.EMPTY,
-                                    configInfoGrayWrapper.getGrayName(), namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
+                                    configInfoGrayWrapper.getGrayName(), namespacePublic,
+                                    NAMESPACE_MIGRATE_SRC_USER);
                         }
-                        startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
+                        startGrayEmptyId = batchConfigInfoGraysFromEmpty
+                                .get(batchConfigInfoGraysFromEmpty.size() - 1)
                                 .getId();
                     }
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] config_info_gray namespace migrate update from empty failed, retry times={}, error={}",
+                    LOGGER.error(
+                            "[migrate] config_info_gray namespace migrate update from empty failed, retry times={}, error={}",
                             retryTimes, e.getMessage());
                 }
                 retryTimes++;
                 Thread.sleep(1000L);
             }
             if (!migrateSuccess) {
-                LOGGER.error("[migrate] config_info_gray namespace migrate update from empty failed, skipped");
+                LOGGER.error(
+                        "[migrate] config_info_gray namespace migrate update from empty failed, skipped");
                 if (!batchConfigInfoGraysFromEmpty.isEmpty()) {
-                    startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
+                    startGrayEmptyId = batchConfigInfoGraysFromEmpty
+                            .get(batchConfigInfoGraysFromEmpty.size() - 1)
                             .getId();
                 }
             } else {
                 totalUpdateGrayFromEmptyNum += batchConfigInfoGraysFromEmpty.size();
             }
-            LOGGER.info("[migrate] syncing config gray namespace from empty to public, finished:" + totalUpdateGrayFromEmptyNum);
+            LOGGER.info("[migrate] syncing config gray namespace from empty to public, finished:"
+                    + totalUpdateGrayFromEmptyNum);
         } while (batchConfigInfoGraysFromEmpty.size() == batchSize);
         
         long startGrayPublicId = -1;
@@ -694,36 +798,44 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfoGraysFromPublic = configMigratePersistService
-                            .getMigrateConfigGrayUpdateList(startGrayPublicId, batchSize, namespacePublic,
+                            .getMigrateConfigGrayUpdateList(startGrayPublicId, batchSize,
+                                    namespacePublic,
                                     StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfoGraysFromPublic.isEmpty()) {
                         for (ConfigInfoGrayWrapper configInfoGrayWrapper : batchConfigInfoGraysFromPublic) {
-                            configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
+                            configMigratePersistService.syncConfigGray(
+                                    configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), namespacePublic,
-                                    configInfoGrayWrapper.getGrayName(), StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                                    configInfoGrayWrapper.getGrayName(), StringUtils.EMPTY,
+                                    NAMESPACE_MIGRATE_SRC_USER);
                         }
-                        startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                        startGrayPublicId = batchConfigInfoGraysFromPublic
+                                .get(batchConfigInfoGraysFromPublic.size() - 1)
                                 .getId();
                     }
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] config_info_gray namespace migrate update from public failed, retry times={}, error={}",
+                    LOGGER.error(
+                            "[migrate] config_info_gray namespace migrate update from public failed, retry times={}, error={}",
                             retryTimes, e.getMessage());
                 }
                 retryTimes++;
                 Thread.sleep(1000L);
             }
             if (!migrateSuccess) {
-                LOGGER.error("[migrate] config_info_gray namespace migrate update from public failed, skipped");
+                LOGGER.error(
+                        "[migrate] config_info_gray namespace migrate update from public failed, skipped");
                 if (!batchConfigInfoGraysFromPublic.isEmpty()) {
-                    startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                    startGrayPublicId = batchConfigInfoGraysFromPublic
+                            .get(batchConfigInfoGraysFromPublic.size() - 1)
                             .getId();
                 }
             } else {
                 totalUpdateGrayFromPublicNum += batchConfigInfoGraysFromPublic.size();
             }
-            LOGGER.info("[migrate] syncing config gray namespace from public to empty, finished:" + totalUpdateGrayFromPublicNum);
+            LOGGER.info("[migrate] syncing config gray namespace from public to empty, finished:"
+                    + totalUpdateGrayFromPublicNum);
         } while (batchConfigInfoGraysFromPublic.size() == batchSize);
         LOGGER.info("[migrate] finish migrate config namespace" + "total time taken: "
                 + (System.currentTimeMillis() - startTime) + " ms");
@@ -734,7 +846,8 @@ public class ConfigMigrateService {
         boolean checkSuccess = false;
         while (retryTimes <= maxRetryTimes) {
             try {
-                int conflictCount = configMigratePersistService.configInfoConflictCount(NAMESPACE_MIGRATE_SRC_USER);
+                int conflictCount = configMigratePersistService
+                        .configInfoConflictCount(NAMESPACE_MIGRATE_SRC_USER);
                 if (conflictCount > 0) {
                     LOGGER.error("[migrate] config_info conflict count=" + conflictCount);
                 } else {
@@ -742,7 +855,9 @@ public class ConfigMigrateService {
                     break;
                 }
             } catch (Exception e) {
-                LOGGER.error("[migrate] namespace migrate pre check failed, retry times={}, error={}", retryTimes,
+                LOGGER.error(
+                        "[migrate] namespace migrate pre check failed, retry times={}, error={}",
+                        retryTimes,
                         e.getMessage());
             }
             retryTimes++;
@@ -756,7 +871,8 @@ public class ConfigMigrateService {
         checkSuccess = false;
         while (retryTimes <= maxRetryTimes) {
             try {
-                int conflictCount = configMigratePersistService.configInfoGrayConflictCount(NAMESPACE_MIGRATE_SRC_USER);
+                int conflictCount = configMigratePersistService
+                        .configInfoGrayConflictCount(NAMESPACE_MIGRATE_SRC_USER);
                 if (conflictCount > 0) {
                     LOGGER.error("[migrate] config_info_gray conflict count=" + conflictCount);
                 } else {
@@ -764,7 +880,9 @@ public class ConfigMigrateService {
                     break;
                 }
             } catch (Exception e) {
-                LOGGER.error("[migrate] namespace migrate pre check failed, retry times={}, error={}", retryTimes,
+                LOGGER.error(
+                        "[migrate] namespace migrate pre check failed, retry times={}, error={}",
+                        retryTimes,
                         e.getMessage());
             }
             retryTimes++;
@@ -786,7 +904,8 @@ public class ConfigMigrateService {
     public void namespaceMigrateGray(String dataId, String group, String tenant, String grayName) {
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isBlank(tenant)) {
-                configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName, namespacePublic,
+                configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName,
+                        namespacePublic,
                         NAMESPACE_MIGRATE_SRC_USER);
             } else if (StringUtils.equals(tenant, namespacePublic)) {
                 configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName, "",
@@ -807,9 +926,11 @@ public class ConfigMigrateService {
     public void namespaceMigrate(String dataId, String group, String tenant) {
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isBlank(tenant)) {
-                configMigratePersistService.syncConfig(dataId, group, tenant, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
+                configMigratePersistService.syncConfig(dataId, group, tenant, namespacePublic,
+                        NAMESPACE_MIGRATE_SRC_USER);
             } else if (StringUtils.equals(tenant, namespacePublic)) {
-                configMigratePersistService.syncConfig(dataId, group, tenant, "", NAMESPACE_MIGRATE_SRC_USER);
+                configMigratePersistService.syncConfig(dataId, group, tenant, "",
+                        NAMESPACE_MIGRATE_SRC_USER);
             }
         } catch (Exception e) {
             LOGGER.error("[migrate] namespace migrate failed", e);
@@ -824,15 +945,18 @@ public class ConfigMigrateService {
      * @param encryptedDataKey  the encrypted data key
      * @throws NacosException the nacos exception
      */
-    public void publishConfigMigrate(ConfigForm configFormOrigin, ConfigRequestInfo configRequestInfo,
+    public void publishConfigMigrate(ConfigForm configFormOrigin,
+            ConfigRequestInfo configRequestInfo,
             String encryptedDataKey) throws NacosException {
         ConfigForm configForm = configFormOrigin.clone();
-        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !ConfigCompatibleConfig.getInstance()
-                .isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic)
+                || !ConfigCompatibleConfig.getInstance()
+                        .isNamespaceCompatibleMode()) {
             return;
         }
-        ConfigInfoWrapper targetConfigInfoWrapper = configInfoPersistService.findConfigInfo(configForm.getDataId(),
-                configForm.getGroup(), "");
+        ConfigInfoWrapper targetConfigInfoWrapper =
+                configInfoPersistService.findConfigInfo(configForm.getDataId(),
+                        configForm.getGroup(), "");
         configForm.setNamespaceId(StringUtils.EMPTY);
         configForm.setSrcUser(NAMESPACE_MIGRATE_SRC_USER);
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
@@ -851,30 +975,38 @@ public class ConfigMigrateService {
         
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
             if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-                configOperateResult = configInfoPersistService.insertOrUpdateCas(configRequestInfo.getSrcIp(),
-                        configForm.getSrcUser(), configInfo, configAdvanceInfo);
+                configOperateResult =
+                        configInfoPersistService.insertOrUpdateCas(configRequestInfo.getSrcIp(),
+                                configForm.getSrcUser(), configInfo, configAdvanceInfo);
                 if (!configOperateResult.isSuccess()) {
                     LOGGER.warn(
                             "[cas-publish-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                            configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                    throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                            configRequestInfo.getSrcIp(), configForm.getDataId(),
+                            configRequestInfo.getCasMd5());
+                    throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                            ErrorCode.RESOURCE_CONFLICT,
                             "Cas publish fail, server md5 may have changed.");
                 }
             } else {
                 if (configRequestInfo.getUpdateForExist()) {
-                    configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(), configForm.getSrcUser(),
+                    configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
+                            configForm.getSrcUser(),
                             configInfo, configAdvanceInfo);
                 } else {
                     try {
-                        configInfoPersistService.addConfigInfo(configRequestInfo.getSrcIp(), configForm.getSrcUser(),
+                        configInfoPersistService.addConfigInfo(configRequestInfo.getSrcIp(),
+                                configForm.getSrcUser(),
                                 configInfo, configAdvanceInfo);
                     } catch (DataIntegrityViolationException ive) {
                         LOGGER.warn(
                                 "[publish-config-failed] config already exists. dataId: {}, group: {}, namespaceId: {}",
-                                configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId());
+                                configForm.getDataId(), configForm.getGroup(),
+                                configForm.getNamespaceId());
                         throw new ConfigAlreadyExistsException(
-                                String.format("config already exist, dataId: %s, group: %s, namespaceId: %s",
-                                        configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId()));
+                                String.format(
+                                        "config already exist, dataId: %s, group: %s, namespaceId: %s",
+                                        configForm.getDataId(), configForm.getGroup(),
+                                        configForm.getNamespaceId()));
                     }
                 }
             }
@@ -892,18 +1024,22 @@ public class ConfigMigrateService {
      * @throws NacosException the nacos exception
      */
     public void updateConfigMetadataMigrate(final String dataId,
-            final String group, final String namespaceId, final String configTags, final String description)
+            final String group, final String namespaceId, final String configTags,
+            final String description)
             throws NacosException {
-        if (!StringUtils.equals(namespaceId, namespacePublic) || !ConfigCompatibleConfig.getInstance()
-                .isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(namespaceId, namespacePublic)
+                || !ConfigCompatibleConfig.getInstance()
+                        .isNamespaceCompatibleMode()) {
             return;
         }
         ConfigOperateResult configOperateResult;
-        configOperateResult = configInfoPersistService.updateConfigInfoMetadata(dataId, group, StringUtils.EMPTY, configTags, description);
+        configOperateResult = configInfoPersistService.updateConfigInfoMetadata(dataId, group,
+                StringUtils.EMPTY, configTags, description);
         if (!configOperateResult.isSuccess()) {
             LOGGER.warn("[update-config-metadata-fail] dataId: {}, group: {}, namespaceId: {}",
                     dataId, group, namespaceId);
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    ErrorCode.RESOURCE_CONFLICT,
                     "update metadata fail.");
         }
     }
@@ -919,28 +1055,33 @@ public class ConfigMigrateService {
     public void publishConfigGrayMigrate(String grayType, ConfigForm configFormOrigin,
             ConfigRequestInfo configRequestInfo) throws NacosException {
         ConfigForm configForm = configFormOrigin.clone();
-        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !ConfigCompatibleConfig.getInstance()
-                .isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic)
+                || !ConfigCompatibleConfig.getInstance()
+                        .isNamespaceCompatibleMode()) {
             return;
         }
-        ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
-                configForm.getDataId(), configForm.getGroup(), "",
-                configForm.getGrayName());
+        ConfigInfoGrayWrapper targetConfigInfoGrayWrapper =
+                configInfoGrayPersistService.findConfigInfo4Gray(
+                        configForm.getDataId(), configForm.getGroup(), "",
+                        configForm.getGrayName());
         configForm.setNamespaceId(StringUtils.EMPTY);
         configForm.setSrcUser(NAMESPACE_MIGRATE_SRC_USER);
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
         ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(grayType,
-                configForm.getGrayVersion(), configForm.getGrayRuleExp(), configForm.getGrayPriority());
+                configForm.getGrayVersion(), configForm.getGrayRuleExp(),
+                configForm.getGrayPriority());
         GrayRule grayRuleStruct = GrayRuleManager.constructGrayRule(localConfigGrayPersistInfo);
         if (grayRuleStruct == null) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.CONFIG_GRAY_VERSION_INVALID,
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.CONFIG_GRAY_VERSION_INVALID,
                     ErrorCode.CONFIG_GRAY_VERSION_INVALID.getMsg());
         }
         
         if (!grayRuleStruct.isValid()) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.CONFIG_GRAY_RULE_FORMAT_INVALID,
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.CONFIG_GRAY_RULE_FORMAT_INVALID,
                     ErrorCode.CONFIG_GRAY_RULE_FORMAT_INVALID.getMsg());
         }
         
@@ -970,13 +1111,16 @@ public class ConfigMigrateService {
                 if (!configOperateResult.isSuccess()) {
                     LOGGER.warn(
                             "[cas-publish-gray-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, grayName = {}, msg = server md5 may have changed.",
-                            configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5(),
+                            configRequestInfo.getSrcIp(), configForm.getDataId(),
+                            configRequestInfo.getCasMd5(),
                             configForm.getGrayName());
-                    throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                    throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                            ErrorCode.RESOURCE_CONFLICT,
                             "Cas publish gray config fail, server md5 may have changed.");
                 }
             } else {
-                configInfoGrayPersistService.insertOrUpdateGray(configInfo, configForm.getGrayName(),
+                configInfoGrayPersistService.insertOrUpdateGray(configInfo,
+                        configForm.getGrayName(),
                         GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
                         configRequestInfo.getSrcIp(), configForm.getSrcUser());
             }
@@ -992,13 +1136,15 @@ public class ConfigMigrateService {
      * @param srcIp   the src ip
      * @param srcUser the src user
      */
-    public void removeConfigInfoMigrate(String dataId, String group, String tenant, String srcIp, String srcUser) {
+    public void removeConfigInfoMigrate(String dataId, String group, String tenant, String srcIp,
+            String srcUser) {
         if (!StringUtils.equals(tenant, namespacePublic) || !ConfigCompatibleConfig.getInstance()
                 .isNamespaceCompatibleMode()) {
             return;
         }
         try (ConfigPersistContext.Guard ignored = ConfigPersistContext.withSkipHistory()) {
-            configInfoPersistService.removeConfigInfo(dataId, group, "", srcIp, NAMESPACE_MIGRATE_SRC_USER);
+            configInfoPersistService.removeConfigInfo(dataId, group, "", srcIp,
+                    NAMESPACE_MIGRATE_SRC_USER);
         }
     }
     
@@ -1012,7 +1158,8 @@ public class ConfigMigrateService {
      * @param srcIp    the src ip
      * @param srcUser  the src user
      */
-    public void removeConfigInfoGrayMigrate(String dataId, String group, String tenant, String grayName, String srcIp,
+    public void removeConfigInfoGrayMigrate(String dataId, String group, String tenant,
+            String grayName, String srcIp,
             String srcUser) {
         if (!StringUtils.equals(tenant, namespacePublic) || !ConfigCompatibleConfig.getInstance()
                 .isNamespaceCompatibleMode()) {
@@ -1038,33 +1185,45 @@ public class ConfigMigrateService {
     
     private void doCheckMigrate() throws Exception {
         
-        int migrateMulti = EnvUtil.getProperty("nacos.gray.migrate.executor.multi", Integer.class, Integer.valueOf(4));
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(ThreadUtils.getSuitableThreadCount(migrateMulti),
-                ThreadUtils.getSuitableThreadCount(migrateMulti), 60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * migrateMulti),
-                r -> new Thread(r, "gray-migrate-worker"), new ThreadPoolExecutor.CallerRunsPolicy());
+        int migrateMulti = EnvUtil.getProperty("nacos.gray.migrate.executor.multi", Integer.class,
+                Integer.valueOf(4));
+        ThreadPoolExecutor executorService =
+                new ThreadPoolExecutor(ThreadUtils.getSuitableThreadCount(migrateMulti),
+                        ThreadUtils.getSuitableThreadCount(migrateMulti), 60L, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * migrateMulti),
+                        r -> new Thread(r, "gray-migrate-worker"),
+                        new ThreadPoolExecutor.CallerRunsPolicy());
         int pageSize = 100;
         int rowCount = configInfoBetaPersistService.configInfoBetaCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / pageSize);
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoBetaWrapper> page = configInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(pageNo,
-                    pageSize);
+            Page<ConfigInfoBetaWrapper> page =
+                    configInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(pageNo,
+                            pageSize);
             if (page != null) {
                 for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
                     
                     executorService.execute(() -> {
                         GRAY_MIGRATE_FLAG.set(true);
-                        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(
-                                cf.getDataId(), cf.getGroup(), cf.getTenant(), BetaGrayRule.TYPE_BETA);
-                        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < cf.getLastModified()) {
-                            DEFAULT_LOG.info("[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
+                        ConfigInfoGrayWrapper configInfo4Gray =
+                                configInfoGrayPersistService.findConfigInfo4Gray(
+                                        cf.getDataId(), cf.getGroup(), cf.getTenant(),
+                                        BetaGrayRule.TYPE_BETA);
+                        if (configInfo4Gray == null
+                                || configInfo4Gray.getLastModified() < cf.getLastModified()) {
+                            DEFAULT_LOG.info(
+                                    "[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
                                     cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getMd5());
-                            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
-                                    BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION, cf.getBetaIps(),
-                                    BetaGrayRule.PRIORITY);
-                            configInfoGrayPersistService.insertOrUpdateGray(cf, BetaGrayRule.TYPE_BETA,
-                                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
+                            ConfigGrayPersistInfo localConfigGrayPersistInfo =
+                                    new ConfigGrayPersistInfo(
+                                            BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION,
+                                            cf.getBetaIps(),
+                                            BetaGrayRule.PRIORITY);
+                            configInfoGrayPersistService.insertOrUpdateGray(cf,
+                                    BetaGrayRule.TYPE_BETA,
+                                    GrayRuleManager.serializeConfigGrayPersistInfo(
+                                            localConfigGrayPersistInfo),
                                     NetUtils.localIp(), "nacos_auto_migrate");
                             GRAY_MIGRATE_FLAG.set(false);
                         }
@@ -1072,15 +1231,18 @@ public class ConfigMigrateService {
                     
                 }
                 actualRowCount += page.getPageItems().size();
-                DEFAULT_LOG.info("[gray-migrate-beta] submit gray task {} / {}", actualRowCount, rowCount);
+                DEFAULT_LOG.info("[gray-migrate-beta] submit gray task {} / {}", actualRowCount,
+                        rowCount);
                 
             }
         }
         
         try {
             int unfinishedTaskCount = 0;
-            while ((unfinishedTaskCount = executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
-                DEFAULT_LOG.info("[gray-migrate-beta] wait {} migrate tasks to be finished", unfinishedTaskCount);
+            while ((unfinishedTaskCount =
+                    executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
+                DEFAULT_LOG.info("[gray-migrate-beta] wait {} migrate tasks to be finished",
+                        unfinishedTaskCount);
                 Thread.sleep(1000L);
             }
             
@@ -1093,24 +1255,31 @@ public class ConfigMigrateService {
         pageCount = (int) Math.ceil(rowCount * 1.0 / pageSize);
         actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoTagWrapper> page = configInfoTagPersistService.findAllConfigInfoTagForDumpAll(pageNo,
-                    pageSize);
+            Page<ConfigInfoTagWrapper> page =
+                    configInfoTagPersistService.findAllConfigInfoTagForDumpAll(pageNo,
+                            pageSize);
             if (page != null) {
                 for (ConfigInfoTagWrapper cf : page.getPageItems()) {
                     
                     executorService.execute(() -> {
                         GRAY_MIGRATE_FLAG.set(true);
-                        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(
-                                cf.getDataId(), cf.getGroup(), cf.getTenant(),
-                                TagGrayRule.TYPE_TAG + "_" + cf.getTag());
-                        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < cf.getLastModified()) {
-                            DEFAULT_LOG.info("[migrate tag to gray] dataId={}, group={}, tenant={},  md5={}",
+                        ConfigInfoGrayWrapper configInfo4Gray =
+                                configInfoGrayPersistService.findConfigInfo4Gray(
+                                        cf.getDataId(), cf.getGroup(), cf.getTenant(),
+                                        TagGrayRule.TYPE_TAG + "_" + cf.getTag());
+                        if (configInfo4Gray == null
+                                || configInfo4Gray.getLastModified() < cf.getLastModified()) {
+                            DEFAULT_LOG.info(
+                                    "[migrate tag to gray] dataId={}, group={}, tenant={},  md5={}",
                                     cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getMd5());
-                            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
-                                    TagGrayRule.TYPE_TAG, TagGrayRule.VERSION, cf.getTag(), TagGrayRule.PRIORITY);
+                            ConfigGrayPersistInfo localConfigGrayPersistInfo =
+                                    new ConfigGrayPersistInfo(
+                                            TagGrayRule.TYPE_TAG, TagGrayRule.VERSION, cf.getTag(),
+                                            TagGrayRule.PRIORITY);
                             configInfoGrayPersistService.insertOrUpdateGray(cf,
                                     TagGrayRule.TYPE_TAG + "_" + cf.getTag(),
-                                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
+                                    GrayRuleManager.serializeConfigGrayPersistInfo(
+                                            localConfigGrayPersistInfo),
                                     NetUtils.localIp(), "nacos_auto_migrate");
                             GRAY_MIGRATE_FLAG.set(false);
                         }
@@ -1119,14 +1288,17 @@ public class ConfigMigrateService {
                 }
                 
                 actualRowCount += page.getPageItems().size();
-                DEFAULT_LOG.info("[gray-migrate-tag]  submit gray task  {} / {}", actualRowCount, rowCount);
+                DEFAULT_LOG.info("[gray-migrate-tag]  submit gray task  {} / {}", actualRowCount,
+                        rowCount);
             }
         }
         
         try {
             int unfinishedTaskCount = 0;
-            while ((unfinishedTaskCount = executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
-                DEFAULT_LOG.info("[gray-migrate-tag] wait {} migrate tasks to be finished", unfinishedTaskCount);
+            while ((unfinishedTaskCount =
+                    executorService.getQueue().size() + executorService.getActiveCount()) > 0) {
+                DEFAULT_LOG.info("[gray-migrate-tag] wait {} migrate tasks to be finished",
+                        unfinishedTaskCount);
                 Thread.sleep(1000L);
             }
             

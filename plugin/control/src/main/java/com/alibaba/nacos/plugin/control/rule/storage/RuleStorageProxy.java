@@ -61,7 +61,9 @@ public class RuleStorageProxy {
                 try {
                     externalRuleStorage = each.buildExternalRuleStorage();
                 } catch (Exception e) {
-                    LOGGER.warn("Build external rule storage failed, the rules will not be persisted", e);
+                    LOGGER.warn(
+                            "Build external rule storage failed, the rules will not be persisted",
+                            e);
                 }
                 LOGGER.info("Build external rule storage of name {} finished", externalStorageType);
                 break;
@@ -75,7 +77,8 @@ public class RuleStorageProxy {
     private void initLocalStorage() {
         localDiskRuleStorage = new LocalDiskRuleStorage();
         if (StringUtils.isNotBlank(ControlConfigs.getInstance().getLocalRuleStorageBaseDir())) {
-            localDiskRuleStorage.setLocalRuleBaseDir(ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
+            localDiskRuleStorage
+                    .setLocalRuleBaseDir(ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
         }
     }
     

@@ -49,7 +49,8 @@ class VisibilityPluginManagerTest {
         manager = VisibilityPluginManager.getInstance();
         Field field = VisibilityPluginManager.class.getDeclaredField("visibilityServiceMap");
         field.setAccessible(true);
-        @SuppressWarnings("unchecked") Map<String, VisibilityService> serviceMap = (Map<String, VisibilityService>) field.get(
+        @SuppressWarnings("unchecked")
+        Map<String, VisibilityService> serviceMap = (Map<String, VisibilityService>) field.get(
                 manager);
         serviceMap.put(TEST_SERVICE_NAME, mockVisibilityService);
     }

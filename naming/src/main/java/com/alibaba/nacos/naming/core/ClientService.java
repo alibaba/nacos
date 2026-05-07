@@ -98,7 +98,8 @@ public interface ClientService {
      * @deprecated with removing 2.x http api. use {@link #getPublishedClientList(String, String, String, String, Integer)} replaced
      */
     @Deprecated
-    List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName, boolean ephemeral,
+    List<ObjectNode> getPublishedClientList(String namespaceId, String groupName,
+            String serviceName, boolean ephemeral,
             String ip, Integer port);
     
     /**
@@ -111,7 +112,8 @@ public interface ClientService {
      * @param port        The port number of the client (optional filter).
      * @return A list of {@link ClientPublisherInfo} with clientId
      */
-    List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+    List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port);
     
     /**
@@ -127,7 +129,8 @@ public interface ClientService {
      * @deprecated @deprecated with removing 2.x http api. use {@link #getSubscribeClientList(String, String, String, String, Integer)} replaced
      */
     @Deprecated
-    List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName, boolean ephemeral,
+    List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName,
+            String serviceName, boolean ephemeral,
             String ip, Integer port);
     
     /**
@@ -140,7 +143,8 @@ public interface ClientService {
      * @param port        The port number of the client (optional filter).
      * @return A list of {@link ClientSubscriberInfo} with clientId
      */
-    List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+    List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port);
     
     /**

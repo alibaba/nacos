@@ -83,7 +83,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final DefaultConnectingIOReactor ioreactor = getIoReactor(ASYNC_IO_REACTOR_NAME);
         final RequestConfig defaultConfig = getRequestConfig();
-        final AsyncClientConnectionManager connectionManager = getConnectionManager(originalRequestConfig);
+        final AsyncClientConnectionManager connectionManager =
+                getConnectionManager(originalRequestConfig);
         monitorAndExtension(connectionManager);
         
         // issue#12028 upgrade to httpclient5
@@ -100,41 +101,42 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                         .setUserAgent(originalRequestConfig.getUserAgent())
                         .setConnectionManager(connectionManager)
                         .build(),
-                ioreactor, defaultConfig)
-        );
+                ioreactor, defaultConfig));
     }
     
     private DefaultConnectingIOReactor getIoReactor(String threadName) {
         return new DefaultConnectingIOReactor(
                 (session, ojb) -> new IOEventHandler() {
+                    
                     @Override
                     public void connected(IOSession ioSession) throws IOException {
-                    
+                        
                     }
                     
                     @Override
-                    public void inputReady(IOSession ioSession, ByteBuffer byteBuffer) throws IOException {
-                    
+                    public void inputReady(IOSession ioSession, ByteBuffer byteBuffer)
+                            throws IOException {
+                        
                     }
                     
                     @Override
                     public void outputReady(IOSession ioSession) throws IOException {
-                    
+                        
                     }
                     
                     @Override
                     public void timeout(IOSession ioSession, Timeout timeout) throws IOException {
-                    
+                        
                     }
                     
                     @Override
                     public void exception(IOSession ioSession, Exception e) {
-                    
+                        
                     }
                     
                     @Override
                     public void disconnected(IOSession ioSession) {
-                    
+                        
                     }
                 },
                 getIoReactorConfig(),
@@ -143,17 +145,21 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                 // handle exception in io reactor
                 (ex) -> {
                     if (ex instanceof IOException) {
-                        assignLogger().warn("[AsyncClientConnectionManager] handle IOException, ignore it.", ex);
+                        assignLogger().warn(
+                                "[AsyncClientConnectionManager] handle IOException, ignore it.",
+                                ex);
                     } else if (ex instanceof RuntimeException) {
-                        assignLogger().warn("[AsyncClientConnectionManager] handle RuntimeException, ignore it.", ex);
+                        assignLogger().warn(
+                                "[AsyncClientConnectionManager] handle RuntimeException, ignore it.",
+                                ex);
                     } else {
-                        assignLogger().error("[DefaultConnectingIOReactor] Exception! I/O Reactor error time: {}",
+                        assignLogger().error(
+                                "[DefaultConnectingIOReactor] Exception! I/O Reactor error time: {}",
                                 System.currentTimeMillis(), ex.getCause());
                     }
                 },
                 null,
-                null
-        );
+                null);
     }
     
     /**
@@ -165,7 +171,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
      * @param originalRequestConfig request config.
      * @return {@link AsyncClientConnectionManager}.
      */
-    private AsyncClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig) {
+    private AsyncClientConnectionManager getConnectionManager(
+            HttpClientConfig originalRequestConfig) {
         try {
             SSLContext sslcontext = SSLContext.getDefault();
             HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
@@ -188,7 +195,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     protected IOReactorConfig getIoReactorConfig() {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
-        return IOReactorConfig.custom().setIoThreadCount(httpClientConfig.getIoThreadCount()).build();
+        return IOReactorConfig.custom().setIoThreadCount(httpClientConfig.getIoThreadCount())
+                .build();
     }
     
     protected RequestConfig getRequestConfig() {
@@ -197,7 +205,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                 .custom()
                 .setConnectTimeout(httpClientConfig.getConTimeOutMillis(), TimeUnit.MILLISECONDS)
                 .setResponseTimeout(httpClientConfig.getReadTimeOutMillis(), TimeUnit.MILLISECONDS)
-                .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout(), TimeUnit.MILLISECONDS)
+                .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout(),
+                        TimeUnit.MILLISECONDS)
                 .setContentCompressionEnabled(httpClientConfig.getContentCompressionEnabled())
                 .setMaxRedirects(httpClientConfig.getMaxRedirects()).build();
     }
@@ -216,7 +225,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         if (tlsChangeListener != null) {
             try {
                 TlsFileWatcher.getInstance()
-                        .addFileChangeListener(tlsChangeListener, TlsSystemConfig.tlsClientTrustCertPath,
+                        .addFileChangeListener(tlsChangeListener,
+                                TlsSystemConfig.tlsClientTrustCertPath,
                                 TlsSystemConfig.tlsClientKeyPath);
             } catch (IOException e) {
                 assignLogger().error("add tls file listener fail", e);

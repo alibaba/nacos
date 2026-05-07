@@ -50,7 +50,7 @@ public class GrpcClusterClient extends GrpcClient {
     public GrpcClusterClient(GrpcClientConfig config) {
         super(config);
     }
-
+    
     /**
      * Constructor.
      *

@@ -40,7 +40,8 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
     
     private final FuzzyWatchPushDelayTaskEngine delayTaskEngine;
     
-    public FuzzyWatchChangeNotifyExecuteTask(FuzzyWatchPushDelayTaskEngine delayTaskEngine, String serviceKey,
+    public FuzzyWatchChangeNotifyExecuteTask(FuzzyWatchPushDelayTaskEngine delayTaskEngine,
+            String serviceKey,
             String changedType, String targetClient) {
         this.serviceKey = serviceKey;
         this.changedType = changedType;
@@ -65,7 +66,8 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
         
         private String changedType;
         
-        private FuzzyWatchChangeNotifyCallback(String clientId, String serviceKey, String changedType) {
+        private FuzzyWatchChangeNotifyCallback(String clientId, String serviceKey,
+                String changedType) {
             this.clientId = clientId;
             this.serviceKey = serviceKey;
             this.changedType = changedType;
@@ -78,7 +80,8 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onSuccess() {
-            Loggers.PUSH.info("[fuzzy watch] change notify success ,clientId {}, serviceKey {] ,changedType {} ",
+            Loggers.PUSH.info(
+                    "[fuzzy watch] change notify success ,clientId {}, serviceKey {] ,changedType {} ",
                     clientId, clientId, changedType);
             
         }
@@ -86,13 +89,18 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
         @Override
         public void onFail(Throwable e) {
             
-            Loggers.PUSH.warn("[fuzzy watch] change notify fail ,clientId {}, serviceKey {] ,changedType {} ", clientId,
+            Loggers.PUSH.warn(
+                    "[fuzzy watch] change notify fail ,clientId {}, serviceKey {] ,changedType {} ",
+                    clientId,
                     clientId, changedType, e);
             
             if (!(e instanceof NoRequiredRetryException)) {
-                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = new FuzzyWatchChangeNotifyTask(serviceKey,
-                        changedType, clientId, PushConfig.getInstance().getPushTaskRetryDelay());
-                delayTaskEngine.addTask(getTaskKey(fuzzyWatchChangeNotifyTask), fuzzyWatchChangeNotifyTask);
+                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask =
+                        new FuzzyWatchChangeNotifyTask(serviceKey,
+                                changedType, clientId,
+                                PushConfig.getInstance().getPushTaskRetryDelay());
+                delayTaskEngine.addTask(getTaskKey(fuzzyWatchChangeNotifyTask),
+                        fuzzyWatchChangeNotifyTask);
             }
         }
     }

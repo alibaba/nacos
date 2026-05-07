@@ -165,7 +165,8 @@ class PluginControllerV3Test {
         config.put("key", "value");
         String configJson = "{\"key\":\"value\"}";
         
-        Result<String> result = pluginControllerV3.updatePluginConfig("auth", "nacos", configJson, false);
+        Result<String> result =
+                pluginControllerV3.updatePluginConfig("auth", "nacos", configJson, false);
         
         assertNotNull(result);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -180,7 +181,8 @@ class PluginControllerV3Test {
     
     @Test
     void testGetPluginListDatasourceDialectExclusive() {
-        PluginInfo info = createPluginInfo("datasource-dialect:mysql", PluginType.DATASOURCE_DIALECT, "mysql");
+        PluginInfo info = createPluginInfo("datasource-dialect:mysql",
+                PluginType.DATASOURCE_DIALECT, "mysql");
         when(unifiedPluginManager.listAllPlugins()).thenReturn(Collections.singletonList(info));
         
         Result<List<PluginInfoVO>> result = pluginControllerV3.getPluginList(null);

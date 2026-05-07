@@ -29,7 +29,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PipelineNodeResultTest {
-
+    
     @Test
     void testJsonSerializationRoundTripForRepresentativeCases() {
         List<List<PipelineNodeResult>> cases = Arrays.asList(
@@ -40,18 +40,20 @@ class PipelineNodeResultTest {
                         newNodeResult("node-2", false, "rejected by checker", "markdown",
                                 Arrays.asList(new Checkpoint("security", false)), 20L),
                         newNodeResult("node-3", true, "passed", null,
-                                Arrays.asList(new Checkpoint("lint", true), new Checkpoint("syntax", true)), 30L)
-                )
-        );
+                                Arrays.asList(new Checkpoint("lint", true),
+                                        new Checkpoint("syntax", true)),
+                                30L)));
         for (List<PipelineNodeResult> original : cases) {
             String json = JacksonUtils.toJson(original);
             List<PipelineNodeResult> deserialized = JacksonUtils.toObj(json,
-                    new TypeReference<List<PipelineNodeResult>>() { });
+                    new TypeReference<List<PipelineNodeResult>>() {
+                    });
             assertEquals(original, deserialized);
         }
     }
-
-    private PipelineNodeResult newNodeResult(String nodeId, boolean passed, String message, String messageType,
+    
+    private PipelineNodeResult newNodeResult(String nodeId, boolean passed, String message,
+            String messageType,
             List<Checkpoint> checkpoints, long durationMs) {
         PipelineNodeResult result = new PipelineNodeResult();
         result.setNodeId(nodeId);

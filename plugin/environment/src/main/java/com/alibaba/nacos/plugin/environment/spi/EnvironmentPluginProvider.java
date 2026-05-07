@@ -32,12 +32,12 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class EnvironmentPluginProvider implements PluginProvider<CustomEnvironmentPluginService> {
-
+    
     @Override
     public PluginType getPluginType() {
         return PluginType.ENVIRONMENT;
     }
-
+    
     @Override
     public Map<String, CustomEnvironmentPluginService> getAllPlugins() {
         Collection<CustomEnvironmentPluginService> services = NacosServiceLoader.load(

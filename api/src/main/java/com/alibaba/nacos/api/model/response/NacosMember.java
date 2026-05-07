@@ -112,7 +112,8 @@ public class NacosMember implements Serializable {
     
     @Override
     public String toString() {
-        return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state + ", extendInfo=" + extendInfo
+        return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state
+                + ", extendInfo=" + extendInfo
                 + '}';
     }
     

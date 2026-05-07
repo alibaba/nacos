@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionMetaTest {
-
+    
     @Test
     void testGetLabelAndGetTag() {
         Map<String, String> labels = new HashMap<>();
@@ -42,7 +42,7 @@ class ConnectionMetaTest {
         assertEquals("vipTag", meta.getTag());
         assertNull(meta.getLabel("absent"));
     }
-
+    
     @Test
     void testIsSdkSourceAndIsClusterSource() {
         Map<String, String> labelsSdk = new HashMap<>();
@@ -51,20 +51,21 @@ class ConnectionMetaTest {
                 "grpc", "3.0.0", "app", labelsSdk);
         assertTrue(metaSdk.isSdkSource());
         assertFalse(metaSdk.isClusterSource());
-
+        
         Map<String, String> labelsCluster = new HashMap<>();
         labelsCluster.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_CLUSTER);
-        ConnectionMeta metaCluster = new ConnectionMeta("id2", "127.0.0.1", "127.0.0.1", 8080, 18080,
-                "grpc", "3.0.0", "app", labelsCluster);
+        ConnectionMeta metaCluster =
+                new ConnectionMeta("id2", "127.0.0.1", "127.0.0.1", 8080, 18080,
+                        "grpc", "3.0.0", "app", labelsCluster);
         assertFalse(metaCluster.isSdkSource());
         assertTrue(metaCluster.isClusterSource());
-
+        
         ConnectionMeta metaNone = new ConnectionMeta("id3", "127.0.0.1", "127.0.0.1", 8080, 18080,
                 "grpc", "3.0.0", "app", new HashMap<>());
         assertFalse(metaNone.isSdkSource());
         assertFalse(metaNone.isClusterSource());
     }
-
+    
     @Test
     void testGetAppLabels() {
         Map<String, String> labels = new HashMap<>();
@@ -79,7 +80,7 @@ class ConnectionMetaTest {
         assertEquals("value1", appLabels.get("key1"));
         assertEquals("value2", appLabels.get("key2"));
     }
-
+    
     @Test
     void testSetLabels() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
@@ -89,7 +90,7 @@ class ConnectionMetaTest {
         meta.setLabels(newLabels);
         assertEquals(newLabels, meta.getLabels());
     }
-
+    
     @Test
     void testRecordPushQueueBlockTimesAndClearAndLastOver() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
@@ -109,7 +110,7 @@ class ConnectionMetaTest {
         meta.recordPushQueueBlockTimes();
         assertTrue(meta.pushQueueBlockTimesLastOver(1L));
     }
-
+    
     @Test
     void testTlsProtected() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
@@ -118,7 +119,7 @@ class ConnectionMetaTest {
         meta.setTlsProtected(true);
         assertTrue(meta.isTlsProtected());
     }
-
+    
     @Test
     void testSettersAndGetters() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,
@@ -143,7 +144,7 @@ class ConnectionMetaTest {
         meta.setNamespaceId("ns1");
         assertEquals("ns1", meta.getNamespaceId());
     }
-
+    
     @Test
     void testToString() {
         ConnectionMeta meta = new ConnectionMeta("id", "127.0.0.1", "127.0.0.1", 8080, 18080,

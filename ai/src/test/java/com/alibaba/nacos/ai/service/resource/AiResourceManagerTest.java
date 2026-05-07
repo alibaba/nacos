@@ -106,9 +106,11 @@ class AiResourceManagerTest {
         manager = new AiResourceManager(aiResourcePersistService, aiResourceVersionPersistService,
                 pipelineExecutionRepository);
         mockVisibilityManager = mock(VisibilityPluginManager.class);
-        lenient().when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.empty());
+        lenient().when(mockVisibilityManager.findVisibilityService(anyString()))
+                .thenReturn(Optional.empty());
         visibilityManagerStatic = org.mockito.Mockito.mockStatic(VisibilityPluginManager.class);
-        visibilityManagerStatic.when(VisibilityPluginManager::getInstance).thenReturn(mockVisibilityManager);
+        visibilityManagerStatic.when(VisibilityPluginManager::getInstance)
+                .thenReturn(mockVisibilityManager);
     }
     
     @AfterEach
@@ -135,7 +137,8 @@ class AiResourceManagerTest {
     
     @Test
     void parseVersionInfoShouldParseValidJson() {
-        String json = "{\"editingVersion\":\"v2\",\"reviewingVersion\":\"v1\",\"onlineCnt\":3,\"labels\":{\"latest\":\"v1\"}}";
+        String json =
+                "{\"editingVersion\":\"v2\",\"reviewingVersion\":\"v1\",\"onlineCnt\":3,\"labels\":{\"latest\":\"v1\"}}";
         ResourceVersionInfo info = AiResourceManager.parseVersionInfo(json);
         assertNotNull(info);
         assertEquals("v2", info.getEditingVersion());
@@ -286,7 +289,8 @@ class AiResourceManagerTest {
     @Test
     void requireMetaShouldReturnMetaWhenFound() throws NacosException {
         AiResource meta = buildMeta("test-resource");
-        when(aiResourcePersistService.find(NAMESPACE_ID, "test-resource", RESOURCE_TYPE)).thenReturn(meta);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "test-resource", RESOURCE_TYPE))
+                .thenReturn(meta);
         
         AiResource result = manager.requireMeta(NAMESPACE_ID, "test-resource", RESOURCE_TYPE);
         assertEquals(meta, result);
@@ -294,7 +298,8 @@ class AiResourceManagerTest {
     
     @Test
     void requireMetaShouldThrowNotFoundWhenMissing() {
-        when(aiResourcePersistService.find(NAMESPACE_ID, "missing", RESOURCE_TYPE)).thenReturn(null);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "missing", RESOURCE_TYPE))
+                .thenReturn(null);
         
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.requireMeta(NAMESPACE_ID, "missing", RESOURCE_TYPE));
@@ -315,34 +320,42 @@ class AiResourceManagerTest {
     void findVersionShouldDelegateToPersistService() {
         AiResourceVersion row = new AiResourceVersion();
         row.setVersion("v1");
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(row);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(row);
         assertEquals(row, manager.findVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"));
     }
     
     @Test
     void updateVersionStorageAndDescShouldDelegate() {
-        manager.updateVersionStorageAndDesc(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", "{\"x\":1}", "desc");
-        verify(aiResourceVersionPersistService).updateStorageAndDesc(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        manager.updateVersionStorageAndDesc(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", "{\"x\":1}",
+                "desc");
+        verify(aiResourceVersionPersistService).updateStorageAndDesc(NAMESPACE_ID, "res",
+                RESOURCE_TYPE, "v1",
                 "{\"x\":1}", "desc");
     }
     
     @Test
     void updateVersionStorageShouldDelegate() {
         manager.updateVersionStorage(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", "{\"x\":1}");
-        verify(aiResourceVersionPersistService).updateStorage(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", "{\"x\":1}");
+        verify(aiResourceVersionPersistService).updateStorage(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1", "{\"x\":1}");
     }
     
     @Test
     void updateVersionStatusShouldDelegate() {
-        manager.updateVersionStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", AiResourceConstants.VERSION_STATUS_ONLINE);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        manager.updateVersionStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+                AiResourceConstants.VERSION_STATUS_ONLINE);
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
     @Test
     void updateVersionPublishPipelineInfoShouldDelegate() {
-        manager.updateVersionPublishPipelineInfo(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", "{\"executionId\":\"1\"}");
-        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        manager.updateVersionPublishPipelineInfo(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+                "{\"executionId\":\"1\"}");
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(NAMESPACE_ID, "res",
+                RESOURCE_TYPE, "v1",
                 "{\"executionId\":\"1\"}");
     }
     
@@ -355,7 +368,8 @@ class AiResourceManagerTest {
     @Test
     void deleteVersionsByNameAndTypeShouldDelegate() {
         manager.deleteVersionsByNameAndType(NAMESPACE_ID, "res", RESOURCE_TYPE);
-        verify(aiResourceVersionPersistService).deleteByNameAndType(NAMESPACE_ID, "res", RESOURCE_TYPE);
+        verify(aiResourceVersionPersistService).deleteByNameAndType(NAMESPACE_ID, "res",
+                RESOURCE_TYPE);
     }
     
     @Test
@@ -373,8 +387,10 @@ class AiResourceManagerTest {
     @Test
     void listMetaByTypeShouldDelegate() {
         Page<AiResource> expected = new Page<>();
-        when(aiResourcePersistService.list(NAMESPACE_ID, RESOURCE_TYPE, "name", "tag", 1, 10)).thenReturn(expected);
-        assertEquals(expected, manager.listMetaByType(NAMESPACE_ID, RESOURCE_TYPE, "name", "tag", 1, 10));
+        when(aiResourcePersistService.list(NAMESPACE_ID, RESOURCE_TYPE, "name", "tag", 1, 10))
+                .thenReturn(expected);
+        assertEquals(expected,
+                manager.listMetaByType(NAMESPACE_ID, RESOURCE_TYPE, "name", "tag", 1, 10));
     }
     
     @Test
@@ -388,9 +404,11 @@ class AiResourceManagerTest {
     @Test
     void listVersionsShouldDelegate() {
         Page<AiResourceVersion> expected = new Page<>();
-        when(aiResourceVersionPersistService.list(NAMESPACE_ID, "res", RESOURCE_TYPE, "online", 1, 10))
+        when(aiResourceVersionPersistService.list(NAMESPACE_ID, "res", RESOURCE_TYPE, "online", 1,
+                10))
                 .thenReturn(expected);
-        assertEquals(expected, manager.listVersions(NAMESPACE_ID, "res", RESOURCE_TYPE, "online", 1, 10));
+        assertEquals(expected,
+                manager.listVersions(NAMESPACE_ID, "res", RESOURCE_TYPE, "online", 1, 10));
     }
     
     // ---- updateVersionInfoCas ----
@@ -413,14 +431,16 @@ class AiResourceManagerTest {
     @Test
     void updateVersionInfoCasShouldSucceedOnFirstAttempt() throws NacosException {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         ResourceVersionInfo info = new ResourceVersionInfo();
         info.setEditingVersion("v2");
         manager.updateVersionInfoCas(NAMESPACE_ID, meta, info);
         
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any());
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L), any());
     }
     
     @Test
@@ -429,10 +449,12 @@ class AiResourceManagerTest {
         AiResource updated = buildMeta("res");
         updated.setMetaVersion(2L);
         
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(updated);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(2L), any()))
                 .thenReturn(true);
         
         manager.updateVersionInfoCas(NAMESPACE_ID, meta, new ResourceVersionInfo());
@@ -441,7 +463,8 @@ class AiResourceManagerTest {
     @Test
     void updateVersionInfoCasShouldThrowConflictAfterMaxRetries() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), anyLong(), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                anyLong(), any()))
                 .thenReturn(false);
         AiResource latest = buildMeta("res");
         latest.setMetaVersion(99L);
@@ -455,7 +478,8 @@ class AiResourceManagerTest {
     @Test
     void updateVersionInfoCasShouldThrowWhenRetryFindReturnsNull() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(null);
         
@@ -469,12 +493,14 @@ class AiResourceManagerTest {
     @Test
     void updateBizTagsCasShouldSucceedOnFirstAttempt() throws NacosException {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.updateBizTagsCas(NAMESPACE_ID, meta, "[\"tag1\"]");
         
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any());
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L), any());
     }
     
     @Test
@@ -497,16 +523,20 @@ class AiResourceManagerTest {
         latestMeta.setExt("e2");
         latestMeta.setVersionInfo("{\"onlineCnt\":2}");
         
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(latestMeta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L), any()))
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+                .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(2L), any()))
                 .thenReturn(true);
         
         manager.updateBizTagsCas(NAMESPACE_ID, meta, "[\"newTag\"]");
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(2L),
                 captor.capture());
         AiResource written = captor.getValue();
         assertEquals("[\"newTag\"]", written.getBizTags());
@@ -519,7 +549,8 @@ class AiResourceManagerTest {
     @Test
     void updateBizTagsCasShouldThrowWhenRetryFindReturnsNull() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(null);
         
@@ -531,7 +562,8 @@ class AiResourceManagerTest {
     @Test
     void updateBizTagsCasShouldThrowConflictAfterMaxRetries() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), anyLong(), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                anyLong(), any()))
                 .thenReturn(false);
         AiResource latest = buildMeta("res");
         latest.setMetaVersion(99L);
@@ -548,13 +580,15 @@ class AiResourceManagerTest {
     void metaEnableDisableShouldSetEnableStatus() throws NacosException {
         AiResource meta = buildMeta("res");
         meta.setStatus(AiResourceConstants.META_STATUS_DISABLE);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.metaEnableDisable(NAMESPACE_ID, meta, true);
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L),
                 captor.capture());
         assertEquals(AiResourceConstants.META_STATUS_ENABLE, captor.getValue().getStatus());
     }
@@ -563,13 +597,15 @@ class AiResourceManagerTest {
     void metaEnableDisableShouldSetDisableStatus() throws NacosException {
         AiResource meta = buildMeta("res");
         meta.setStatus(AiResourceConstants.META_STATUS_ENABLE);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.metaEnableDisable(NAMESPACE_ID, meta, false);
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L),
                 captor.capture());
         assertEquals(AiResourceConstants.META_STATUS_DISABLE, captor.getValue().getStatus());
     }
@@ -587,16 +623,20 @@ class AiResourceManagerTest {
         latestMeta.setBizTags("[\"b2\"]");
         latestMeta.setExt("e2");
         
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(latestMeta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L), any()))
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+                .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(2L), any()))
                 .thenReturn(true);
         
         manager.metaEnableDisable(NAMESPACE_ID, meta, true);
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(2L),
                 captor.capture());
         AiResource written = captor.getValue();
         assertEquals(AiResourceConstants.META_STATUS_ENABLE, written.getStatus());
@@ -608,7 +648,8 @@ class AiResourceManagerTest {
     @Test
     void metaEnableDisableShouldThrowWhenRetryFindReturnsNull() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(null);
         
@@ -620,7 +661,8 @@ class AiResourceManagerTest {
     @Test
     void metaEnableDisableShouldThrowConflictAfterMaxRetries() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), anyLong(), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                anyLong(), any()))
                 .thenReturn(false);
         AiResource latest = buildMeta("res");
         latest.setMetaVersion(99L);
@@ -636,7 +678,8 @@ class AiResourceManagerTest {
     @Test
     void bumpMetaDescriptionShouldDoNothingForNullMeta() {
         manager.bumpMetaDescription(NAMESPACE_ID, null, "desc");
-        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+                anyString(), anyLong(), any());
     }
     
     @Test
@@ -644,19 +687,22 @@ class AiResourceManagerTest {
         AiResource meta = new AiResource();
         meta.setName("res");
         manager.bumpMetaDescription(NAMESPACE_ID, meta, "desc");
-        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+                anyString(), anyLong(), any());
     }
     
     @Test
     void bumpMetaDescriptionShouldSucceed() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.bumpMetaDescription(NAMESPACE_ID, meta, "new description");
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L),
                 captor.capture());
         assertEquals("new description", captor.getValue().getDesc());
     }
@@ -676,16 +722,20 @@ class AiResourceManagerTest {
         latestMeta.setExt("e2");
         latestMeta.setVersionInfo("{\"onlineCnt\":2}");
         
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(latestMeta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L), any()))
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+                .thenReturn(latestMeta);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(2L), any()))
                 .thenReturn(true);
         
         manager.bumpMetaDescription(NAMESPACE_ID, meta, "bumped");
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(2L),
                 captor.capture());
         AiResource written = captor.getValue();
         assertEquals("bumped", written.getDesc());
@@ -698,7 +748,8 @@ class AiResourceManagerTest {
     @Test
     void bumpMetaDescriptionShouldReturnSilentlyWhenRetryFindReturnsNull() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(null);
         
@@ -715,7 +766,8 @@ class AiResourceManagerTest {
         stale.setName("res");
         stale.setType(RESOURCE_TYPE);
         
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(stale);
         
@@ -730,7 +782,8 @@ class AiResourceManagerTest {
     @Test
     void syncImportedMetaShouldDoNothingForNullMeta() {
         manager.syncImportedMeta(NAMESPACE_ID, null, "desc", "tags");
-        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(), anyString(), anyLong(), any());
+        verify(aiResourcePersistService, never()).updateMetaCas(anyString(), anyString(),
+                anyString(), anyLong(), any());
     }
     
     @Test
@@ -738,13 +791,15 @@ class AiResourceManagerTest {
         AiResource meta = buildMeta("res");
         meta.setDesc("original-desc");
         meta.setBizTags("[\"original\"]");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.syncImportedMeta(NAMESPACE_ID, meta, "", "");
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L),
                 captor.capture());
         assertEquals("original-desc", captor.getValue().getDesc());
         assertEquals("[\"original\"]", captor.getValue().getBizTags());
@@ -753,13 +808,15 @@ class AiResourceManagerTest {
     @Test
     void syncImportedMetaShouldUseProvidedValuesWhenNotBlank() {
         AiResource meta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.syncImportedMeta(NAMESPACE_ID, meta, "imported-desc", "[\"imported\"]");
         
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L),
                 captor.capture());
         assertEquals("imported-desc", captor.getValue().getDesc());
         assertEquals("[\"imported\"]", captor.getValue().getBizTags());
@@ -780,19 +837,23 @@ class AiResourceManagerTest {
         latestMeta.setVersionInfo("{\"onlineCnt\":2}");
         
         // First CAS attempt fails
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         // find returns updated meta
-        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(latestMeta);
+        when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
+                .thenReturn(latestMeta);
         // Second CAS attempt succeeds with new metaVersion
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(2L), any()))
                 .thenReturn(true);
         
         manager.syncImportedMeta(NAMESPACE_ID, meta, "new-desc", "[\"new\"]");
         
         // Verify the second CAS call carries refreshed fields from latestMeta
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(2L),
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(2L),
                 captor.capture());
         AiResource written = captor.getValue();
         assertEquals("new-desc", written.getDesc());
@@ -807,7 +868,8 @@ class AiResourceManagerTest {
         AiResource meta = buildMeta("res");
         
         // CAS fails
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         // find returns null
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(null);
@@ -829,7 +891,8 @@ class AiResourceManagerTest {
         stale.setType(RESOURCE_TYPE);
         // metaVersion is null
         
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(stale);
         
@@ -858,18 +921,22 @@ class AiResourceManagerTest {
                 mock(com.alibaba.nacos.plugin.visibility.spi.VisibilityService.class);
         com.alibaba.nacos.plugin.visibility.spi.ValidationResult denied =
                 com.alibaba.nacos.plugin.visibility.spi.ValidationResult.deny("denied");
-        when(mockService.validateVisibility(anyString(), anyString(), anyString(), any())).thenReturn(denied);
-        when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.of(mockService));
+        when(mockService.validateVisibility(anyString(), anyString(), anyString(), any()))
+                .thenReturn(denied);
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+                .thenReturn(Optional.of(mockService));
         
-        assertThrows(NacosApiException.class, () -> manager.ensureReadableOrNotFound(meta, "resource not found"));
+        assertThrows(NacosApiException.class,
+                () -> manager.ensureReadableOrNotFound(meta, "resource not found"));
     }
     
     // ---- buildQueryCondition ----
     
     @Test
     void buildQueryConditionShouldReturnConditionWithCorrectFields() {
-        QueryCondition condition = manager.buildQueryCondition(NAMESPACE_ID, RESOURCE_TYPE, "name%", "tag%",
-                VisibilityConstants.ACTION_READ);
+        QueryCondition condition =
+                manager.buildQueryCondition(NAMESPACE_ID, RESOURCE_TYPE, "name%", "tag%",
+                        VisibilityConstants.ACTION_READ);
         assertNotNull(condition);
         assertEquals(NAMESPACE_ID, condition.getNamespaceId());
         assertEquals(RESOURCE_TYPE, condition.getType());
@@ -888,13 +955,16 @@ class AiResourceManagerTest {
         
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
         
-        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(NAMESPACE_ID),
+                eq("res"), eq(RESOURCE_TYPE),
                 eq("v1"), anyString());
         // Approved -> should NOT rollback to draft
-        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(), anyString(),
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+                anyString(), anyString(),
                 eq(AiResourceConstants.VERSION_STATUS_DRAFT));
         // Approved -> should transition to reviewed
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_REVIEWED);
     }
     
@@ -912,12 +982,14 @@ class AiResourceManagerTest {
         meta.setVersionInfo(JacksonUtils.toJson(vInfo));
         
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
         
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_DRAFT);
     }
     
@@ -930,12 +1002,14 @@ class AiResourceManagerTest {
         meta.setVersionInfo(JacksonUtils.toJson(vInfo));
         
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", null);
         
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_DRAFT);
     }
     
@@ -967,17 +1041,19 @@ class AiResourceManagerTest {
         
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
         // Make updateVersionInfoCas fail: CAS returns false, then find returns null -> throws SERVER_ERROR
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(false);
         // On retry find returns null, causing META_LOST -> inner catch
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE))
-                .thenReturn(meta)   // first call: in onPipelineComplete to get meta
-                .thenReturn(null);  // second call: inside doCasLoop retry -> META_LOST
+                .thenReturn(meta) // first call: in onPipelineComplete to get meta
+                .thenReturn(null); // second call: inside doCasLoop retry -> META_LOST
         
         // Should not throw - inner exception is caught and logged as warn
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
         
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_DRAFT);
     }
     
@@ -990,13 +1066,15 @@ class AiResourceManagerTest {
         
         // Make updatePublishPipelineInfo throw to trigger the outer catch
         doThrow(new RuntimeException("db error")).when(aiResourceVersionPersistService)
-                .updatePublishPipelineInfo(anyString(), anyString(), anyString(), anyString(), anyString());
+                .updatePublishPipelineInfo(anyString(), anyString(), anyString(), anyString(),
+                        anyString());
         
         // Should not throw - outer exception is caught and logged as error
         manager.onPipelineComplete(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", result);
         
         // Verify no further interactions after the exception
-        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+                anyString(),
                 anyString(), anyString());
     }
     
@@ -1006,7 +1084,8 @@ class AiResourceManagerTest {
     void resolveBaseVersionWithExplicitVersionShouldResolve() throws NacosException {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{\"latest\":\"1.0.0\"},\"onlineCnt\":1}");
-        String result = manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, "1.0.0");
+        String result =
+                manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, "1.0.0");
         assertEquals("1.0.0", result);
     }
     
@@ -1015,7 +1094,8 @@ class AiResourceManagerTest {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
         // resolveVersion with explicit non-blank basedOnVersion always returns it as-is
-        String result = manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, "nonexist");
+        String result =
+                manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, "nonexist");
         assertEquals("nonexist", result);
     }
     
@@ -1037,7 +1117,8 @@ class AiResourceManagerTest {
         AiResourceVersion v2 = new AiResourceVersion();
         v2.setVersion("2.0.0");
         page.setPageItems(List.of(v1, v2));
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(500)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(500)))
                 .thenReturn(page);
         String result = manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, null);
         assertEquals("2.0.0", result);
@@ -1053,7 +1134,8 @@ class AiResourceManagerTest {
         AiResourceVersion v2 = new AiResourceVersion();
         v2.setVersion("v5");
         page.setPageItems(List.of(v1, v2));
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(500)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(500)))
                 .thenReturn(page);
         String result = manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, null);
         assertEquals("v5", result);
@@ -1063,7 +1145,8 @@ class AiResourceManagerTest {
     void resolveBaseVersionShouldReturnNullWhenNoVersionExists() throws NacosException {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":0}");
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(500)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(500)))
                 .thenReturn(null);
         String result = manager.resolveBaseVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, meta, null);
         assertNull(result);
@@ -1130,7 +1213,8 @@ class AiResourceManagerTest {
         AiResourceVersion v2 = new AiResourceVersion();
         v2.setVersion("2.0.0");
         page.setPageItems(List.of(v1, v2));
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(500)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(500)))
                 .thenReturn(page);
         List<String> result = manager.listExistingVersions(NAMESPACE_ID, "res", RESOURCE_TYPE);
         assertEquals(2, result.size());
@@ -1140,7 +1224,8 @@ class AiResourceManagerTest {
     
     @Test
     void listExistingVersionsShouldReturnEmptyForNullPage() {
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(500)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(500)))
                 .thenReturn(null);
         List<String> result = manager.listExistingVersions(NAMESPACE_ID, "res", RESOURCE_TYPE);
         assertTrue(result.isEmpty());
@@ -1156,7 +1241,8 @@ class AiResourceManagerTest {
         AiResourceVersion v3 = new AiResourceVersion();
         // v3.version is null
         page.setPageItems(List.of(v1, v2, v3));
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(500)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(500)))
                 .thenReturn(page);
         List<String> result = manager.listExistingVersions(NAMESPACE_ID, "res", RESOURCE_TYPE);
         assertEquals(1, result.size());
@@ -1189,14 +1275,17 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("1.0.0");
         v.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0")).thenReturn(v);
-        AiResourceVersion result = manager.requireDraftVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0");
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0"))
+                .thenReturn(v);
+        AiResourceVersion result =
+                manager.requireDraftVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0");
         assertEquals(v, result);
     }
     
     @Test
     void requireDraftVersionShouldThrowWhenNotFound() {
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0")).thenReturn(null);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0"))
+                .thenReturn(null);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.requireDraftVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0"));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
@@ -1207,7 +1296,8 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("1.0.0");
         v.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0")).thenReturn(v);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0"))
+                .thenReturn(v);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.requireDraftVersion(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0"));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
@@ -1222,10 +1312,12 @@ class AiResourceManagerTest {
         info.setEditingVersion("1.0.0");
         info.setLabels(new HashMap<>());
         info.setOnlineCnt(0);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         manager.directPublishVersion(NAMESPACE_ID, meta, info, "1.0.0", true);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "1.0.0",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "1.0.0",
                 AiResourceConstants.VERSION_STATUS_ONLINE);
         assertNull(info.getEditingVersion());
         assertEquals(1, info.getOnlineCnt());
@@ -1239,7 +1331,8 @@ class AiResourceManagerTest {
         info.setReviewingVersion("1.0.0");
         info.setLabels(new HashMap<>());
         info.setOnlineCnt(2);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         manager.directPublishVersion(NAMESPACE_ID, meta, info, "1.0.0", false);
         assertNull(info.getReviewingVersion());
@@ -1280,10 +1373,12 @@ class AiResourceManagerTest {
         ResourceVersionInfo info = new ResourceVersionInfo();
         info.setEditingVersion("v1");
         info.setLabels(new HashMap<>());
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         manager.moveToReviewing(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", meta, info);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_REVIEWING);
         assertNull(info.getEditingVersion());
         assertEquals("v1", info.getReviewingVersion());
@@ -1294,7 +1389,8 @@ class AiResourceManagerTest {
     @Test
     void writePipelineInfoInProgressShouldPersist() {
         manager.writePipelineInfoInProgress(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", "exec-1");
-        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(NAMESPACE_ID), eq("res"),
+        verify(aiResourceVersionPersistService).updatePublishPipelineInfo(eq(NAMESPACE_ID),
+                eq("res"),
                 eq(RESOURCE_TYPE), eq("v1"), anyString());
     }
     
@@ -1311,7 +1407,8 @@ class AiResourceManagerTest {
     void insertBootstrapMetaShouldCreateOnlineVersionAndMeta() {
         manager.insertBootstrapMeta(NAMESPACE_ID, "res", RESOURCE_TYPE, "desc", "[\"tag\"]",
                 "owner", "builtin", "v1", "{}");
-        ArgumentCaptor<AiResourceVersion> vCaptor = ArgumentCaptor.forClass(AiResourceVersion.class);
+        ArgumentCaptor<AiResourceVersion> vCaptor =
+                ArgumentCaptor.forClass(AiResourceVersion.class);
         verify(aiResourceVersionPersistService).insert(vCaptor.capture());
         assertEquals(AiResourceConstants.VERSION_STATUS_ONLINE, vCaptor.getValue().getStatus());
         assertEquals("v1", vCaptor.getValue().getVersion());
@@ -1335,12 +1432,16 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWING);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
-        AiResourceVersion result = manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
+        AiResourceVersion result =
+                manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
         assertNotNull(result);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
@@ -1348,7 +1449,8 @@ class AiResourceManagerTest {
     void doPublishShouldThrowWhenVersionNotFound() {
         AiResource meta = buildMeta("res");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99")).thenReturn(null);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99"))
+                .thenReturn(null);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99", true));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
@@ -1361,7 +1463,8 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
@@ -1375,7 +1478,8 @@ class AiResourceManagerTest {
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWING);
         v.setPublishPipelineInfo("{\"executionId\":\"exec-1\",\"status\":\"IN_PROGRESS\"}");
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
         PipelineExecution execution = new PipelineExecution();
         execution.setStatus(PipelineExecutionStatus.IN_PROGRESS);
         when(pipelineExecutionRepository.findById("exec-1")).thenReturn(execution);
@@ -1392,7 +1496,8 @@ class AiResourceManagerTest {
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWING);
         v.setPublishPipelineInfo("{\"executionId\":\"exec-missing\",\"status\":\"IN_PROGRESS\"}");
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
         when(pipelineExecutionRepository.findById("exec-missing")).thenReturn(null);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true));
@@ -1407,11 +1512,14 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", false);
-        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+                anyString(),
                 anyString(), anyString());
     }
     
@@ -1423,12 +1531,16 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_REVIEWED);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
-        AiResourceVersion result = manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
+        AiResourceVersion result =
+                manager.doPublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
         assertNotNull(result);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
@@ -1442,12 +1554,16 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_DRAFT);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
-        AiResourceVersion result = manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
+        AiResourceVersion result =
+                manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true);
         assertNotNull(result);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_ONLINE);
     }
     
@@ -1455,7 +1571,8 @@ class AiResourceManagerTest {
     void doForcePublishShouldThrowWhenVersionNotFound() {
         AiResource meta = buildMeta("res");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99")).thenReturn(null);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99"))
+                .thenReturn(null);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99", true));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
@@ -1468,7 +1585,8 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.doForcePublish(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", true));
         assertEquals(NacosException.INVALID_PARAM, ex.getErrCode());
@@ -1481,12 +1599,14 @@ class AiResourceManagerTest {
         AiResource meta = buildMeta("res");
         meta.setVersionInfo("{\"labels\":{},\"onlineCnt\":1}");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put("latest", "v2");
         manager.validateAndUpdateLabels(NAMESPACE_ID, "res", RESOURCE_TYPE, labels);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any());
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L), any());
     }
     
     @Test
@@ -1517,10 +1637,12 @@ class AiResourceManagerTest {
     void validateAndUpdateLabelsShouldHandleNullLabels() throws NacosException {
         AiResource meta = buildMeta("res");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         manager.validateAndUpdateLabels(NAMESPACE_ID, "res", RESOURCE_TYPE, null);
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any());
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L), any());
     }
     
     // ---- doUpdateScope ----
@@ -1529,7 +1651,8 @@ class AiResourceManagerTest {
     void doUpdateScopeShouldSucceed() throws NacosException {
         AiResource meta = buildMeta("res");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "PUBLIC")).thenReturn(true);
+        when(aiResourcePersistService.updateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "PUBLIC"))
+                .thenReturn(true);
         manager.doUpdateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "public");
         verify(aiResourcePersistService).updateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "PUBLIC");
     }
@@ -1538,7 +1661,8 @@ class AiResourceManagerTest {
     void doUpdateScopeShouldThrowOnFailure() {
         AiResource meta = buildMeta("res");
         when(aiResourcePersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE)).thenReturn(meta);
-        when(aiResourcePersistService.updateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "PRIVATE")).thenReturn(false);
+        when(aiResourcePersistService.updateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "PRIVATE"))
+                .thenReturn(false);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.doUpdateScope(NAMESPACE_ID, "res", RESOURCE_TYPE, "private"));
         assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
@@ -1555,12 +1679,16 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_OFFLINE);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
-        AiResourceVersion result = manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v1", true);
+        AiResourceVersion result =
+                manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v1", true);
         assertNotNull(result);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_ONLINE);
         assertEquals(2, info.getOnlineCnt());
     }
@@ -1574,28 +1702,36 @@ class AiResourceManagerTest {
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
-        AiResourceVersion result = manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v1", false);
+        AiResourceVersion result =
+                manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v1", false);
         assertNotNull(result);
-        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1",
+        verify(aiResourceVersionPersistService).updateStatus(NAMESPACE_ID, "res", RESOURCE_TYPE,
+                "v1",
                 AiResourceConstants.VERSION_STATUS_OFFLINE);
         assertEquals(2, info.getOnlineCnt());
     }
     
     @Test
-    void toggleVersionOnlineStatusShouldReturnNullWhenAlreadyInTargetStatus() throws NacosException {
+    void toggleVersionOnlineStatusShouldReturnNullWhenAlreadyInTargetStatus()
+            throws NacosException {
         AiResource meta = buildMeta("res");
         ResourceVersionInfo info = new ResourceVersionInfo();
         info.setOnlineCnt(1);
         AiResourceVersion v = new AiResourceVersion();
         v.setVersion("v1");
         v.setStatus(AiResourceConstants.VERSION_STATUS_ONLINE);
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1")).thenReturn(v);
-        AiResourceVersion result = manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v1", true);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1"))
+                .thenReturn(v);
+        AiResourceVersion result =
+                manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v1", true);
         assertNull(result);
-        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(), anyString(),
+        verify(aiResourceVersionPersistService, never()).updateStatus(anyString(), anyString(),
+                anyString(),
                 anyString(), anyString());
     }
     
@@ -1603,7 +1739,8 @@ class AiResourceManagerTest {
     void toggleVersionOnlineStatusShouldThrowWhenNotFound() {
         AiResource meta = buildMeta("res");
         ResourceVersionInfo info = new ResourceVersionInfo();
-        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99")).thenReturn(null);
+        when(aiResourceVersionPersistService.find(NAMESPACE_ID, "res", RESOURCE_TYPE, "v99"))
+                .thenReturn(null);
         NacosApiException ex = assertThrows(NacosApiException.class,
                 () -> manager.toggleVersionOnlineStatus(NAMESPACE_ID, meta, info, "v99", true));
         assertEquals(NacosException.NOT_FOUND, ex.getErrCode());
@@ -1628,12 +1765,15 @@ class AiResourceManagerTest {
     }
     
     @Test
-    void initOrUpdateMetaForDraftShouldUsePluginDefaultScopeWhenCreateNewMeta() throws NacosException {
+    void initOrUpdateMetaForDraftShouldUsePluginDefaultScopeWhenCreateNewMeta()
+            throws NacosException {
         com.alibaba.nacos.plugin.visibility.spi.VisibilityService mockVisibilityService =
                 mock(com.alibaba.nacos.plugin.visibility.spi.VisibilityService.class);
-        when(mockVisibilityService.resolveDefaultScopeForCreate(anyString(), anyString(), anyString()))
+        when(mockVisibilityService.resolveDefaultScopeForCreate(anyString(), anyString(),
+                anyString()))
                 .thenReturn(VisibilityConstants.SCOPE_PUBLIC);
-        when(mockVisibilityManager.findVisibilityService(anyString())).thenReturn(Optional.of(mockVisibilityService));
+        when(mockVisibilityManager.findVisibilityService(anyString()))
+                .thenReturn(Optional.of(mockVisibilityService));
         manager.initOrUpdateMetaForDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "desc", "[\"tag\"]",
                 "v1", null, true);
         ArgumentCaptor<AiResource> captor = ArgumentCaptor.forClass(AiResource.class);
@@ -1644,12 +1784,14 @@ class AiResourceManagerTest {
     @Test
     void initOrUpdateMetaForDraftShouldUpdateExistingMeta() throws NacosException {
         AiResource existedMeta = buildMeta("res");
-        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any()))
+        when(aiResourcePersistService.updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                eq(1L), any()))
                 .thenReturn(true);
         manager.initOrUpdateMetaForDraft(NAMESPACE_ID, "res", RESOURCE_TYPE, "desc", null,
                 "v2", existedMeta, false);
         verify(aiResourcePersistService, never()).insert(any());
-        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), eq(1L), any());
+        verify(aiResourcePersistService).updateMetaCas(eq(NAMESPACE_ID), eq("res"),
+                eq(RESOURCE_TYPE), eq(1L), any());
     }
     
     // ---- deleteResourceWithVersions ----
@@ -1662,20 +1804,25 @@ class AiResourceManagerTest {
         AiResourceVersion v2 = new AiResourceVersion();
         v2.setVersion("v2");
         page.setPageItems(List.of(v1, v2));
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(200)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(200)))
                 .thenReturn(page);
-        AiResourceManager.VersionStorageDeleter deleter = mock(AiResourceManager.VersionStorageDeleter.class);
+        AiResourceManager.VersionStorageDeleter deleter =
+                mock(AiResourceManager.VersionStorageDeleter.class);
         manager.deleteResourceWithVersions(NAMESPACE_ID, "res", RESOURCE_TYPE, deleter);
         verify(aiResourcePersistService).delete(NAMESPACE_ID, "res", RESOURCE_TYPE);
-        verify(aiResourceVersionPersistService).deleteByNameAndType(NAMESPACE_ID, "res", RESOURCE_TYPE);
+        verify(aiResourceVersionPersistService).deleteByNameAndType(NAMESPACE_ID, "res",
+                RESOURCE_TYPE);
         verify(deleter, times(2)).deleteStorage(any());
     }
     
     @Test
     void deleteResourceWithVersionsShouldHandleNullPage() throws NacosException {
-        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE), isNull(), eq(1), eq(200)))
+        when(aiResourceVersionPersistService.list(eq(NAMESPACE_ID), eq("res"), eq(RESOURCE_TYPE),
+                isNull(), eq(1), eq(200)))
                 .thenReturn(null);
-        AiResourceManager.VersionStorageDeleter deleter = mock(AiResourceManager.VersionStorageDeleter.class);
+        AiResourceManager.VersionStorageDeleter deleter =
+                mock(AiResourceManager.VersionStorageDeleter.class);
         manager.deleteResourceWithVersions(NAMESPACE_ID, "res", RESOURCE_TYPE, deleter);
         verify(aiResourcePersistService).delete(NAMESPACE_ID, "res", RESOURCE_TYPE);
         verify(deleter, never()).deleteStorage(any());
@@ -1688,10 +1835,12 @@ class AiResourceManagerTest {
         PublishPipelineExecutor executor = mock(PublishPipelineExecutor.class);
         ResourceFilesPipelineContext ctx = mock(ResourceFilesPipelineContext.class);
         when(executor.execute(eq(ctx), any(), anyString())).thenReturn(null);
-        boolean result = manager.runPipelineExecution(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", ctx, executor);
+        boolean result = manager.runPipelineExecution(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", ctx,
+                executor);
         assertFalse(result);
         // Should write then clear pipeline info
-        verify(aiResourceVersionPersistService, times(2)).updatePublishPipelineInfo(eq(NAMESPACE_ID), eq("res"),
+        verify(aiResourceVersionPersistService, times(2)).updatePublishPipelineInfo(
+                eq(NAMESPACE_ID), eq("res"),
                 eq(RESOURCE_TYPE), eq("v1"), any());
     }
     
@@ -1700,10 +1849,12 @@ class AiResourceManagerTest {
         PublishPipelineExecutor executor = mock(PublishPipelineExecutor.class);
         ResourceFilesPipelineContext ctx = mock(ResourceFilesPipelineContext.class);
         when(executor.execute(eq(ctx), any(), anyString())).thenReturn("exec-async");
-        boolean result = manager.runPipelineExecution(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", ctx, executor);
+        boolean result = manager.runPipelineExecution(NAMESPACE_ID, "res", RESOURCE_TYPE, "v1", ctx,
+                executor);
         assertTrue(result);
         // Should only write pipeline info (not clear)
-        verify(aiResourceVersionPersistService, times(1)).updatePublishPipelineInfo(eq(NAMESPACE_ID), eq("res"),
+        verify(aiResourceVersionPersistService, times(1)).updatePublishPipelineInfo(
+                eq(NAMESPACE_ID), eq("res"),
                 eq(RESOURCE_TYPE), eq("v1"), anyString());
     }
     

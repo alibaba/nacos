@@ -81,9 +81,11 @@ class NamingClientProxyDelegateTest {
         props.setProperty("serverAddr", "localhost");
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
         notifier = new InstancesChangeNotifier();
-        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties, notifier,
+        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties,
+                notifier,
                 namingFuzzyWatchServiceListHolder);
-        Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
+        Field grpcClientProxyField =
+                NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
         grpcClientProxyField.set(delegate, mockGrpcClient);
     }
@@ -128,11 +130,13 @@ class NamingClientProxyDelegateTest {
         String groupName = "group1";
         List<Instance> instanceList = new ArrayList<>();
         delegate.batchDeregisterService(serviceName, groupName, instanceList);
-        verify(mockGrpcClient, times(1)).batchDeregisterService(serviceName, groupName, instanceList);
+        verify(mockGrpcClient, times(1)).batchDeregisterService(serviceName, groupName,
+                instanceList);
         reset(mockGrpcClient);
         instanceList.add(new Instance());
         delegate.batchDeregisterService(serviceName, groupName, instanceList);
-        verify(mockGrpcClient, times(1)).batchDeregisterService(serviceName, groupName, instanceList);
+        verify(mockGrpcClient, times(1)).batchDeregisterService(serviceName, groupName,
+                instanceList);
     }
     
     @Test
@@ -154,9 +158,11 @@ class NamingClientProxyDelegateTest {
     }
     
     @Test
-    void testRegisterPersistentServiceByHttp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+    void testRegisterPersistentServiceByHttp()
+            throws NacosException, NoSuchFieldException, IllegalAccessException {
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
-        Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
+        Field mockHttpClientField =
+                NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
         mockHttpClientField.setAccessible(true);
         mockHttpClientField.set(delegate, mockHttpClient);
         
@@ -208,9 +214,11 @@ class NamingClientProxyDelegateTest {
     }
     
     @Test
-    void testDeregisterPersistentServiceHttp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+    void testDeregisterPersistentServiceHttp()
+            throws NacosException, NoSuchFieldException, IllegalAccessException {
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
-        Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
+        Field mockHttpClientField =
+                NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
         mockHttpClientField.setAccessible(true);
         mockHttpClientField.set(delegate, mockHttpClient);
         
@@ -243,7 +251,8 @@ class NamingClientProxyDelegateTest {
         String groupName = "group1";
         String clusters = "cluster1";
         delegate.queryInstancesOfService(serviceName, groupName, clusters, false);
-        verify(mockGrpcClient, times(1)).queryInstancesOfService(serviceName, groupName, clusters, false);
+        verify(mockGrpcClient, times(1)).queryInstancesOfService(serviceName, groupName, clusters,
+                false);
     }
     
     @Test

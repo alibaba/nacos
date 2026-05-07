@@ -34,24 +34,28 @@ import java.util.List;
  *
  * @author KiteSoar
  */
-public class GroupCapacityMapperByMysql extends AbstractMapperByMysql implements GroupCapacityMapper {
-
+public class GroupCapacityMapperByMysql extends AbstractMapperByMysql
+        implements GroupCapacityMapper {
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-
+    
     @Override
     public MapperResult selectGroupInfoBySize(MapperContext context) {
         String sql = "SELECT id, group_id FROM group_capacity WHERE id > ? LIMIT ?";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+        return new MapperResult(sql, CollectionUtils
+                .list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
     
     @Override
     public MapperResult select(MapperContext context) {
-        String sql = "SELECT id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, group_id FROM group_capacity "
-                + "WHERE group_id = ?";
-        return new MapperResult(sql, Collections.singletonList(context.getWhereParameter(FieldConstant.GROUP_ID)));
+        String sql =
+                "SELECT id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, group_id FROM group_capacity "
+                        + "WHERE group_id = ?";
+        return new MapperResult(sql,
+                Collections.singletonList(context.getWhereParameter(FieldConstant.GROUP_ID)));
     }
     
     @Override
@@ -110,7 +114,8 @@ public class GroupCapacityMapperByMysql extends AbstractMapperByMysql implements
     
     @Override
     public MapperResult incrementUsageByWhere(MapperContext context) {
-        return new MapperResult("UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?",
+        return new MapperResult(
+                "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?",
                 CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.GROUP_ID)));
     }
@@ -135,10 +140,10 @@ public class GroupCapacityMapperByMysql extends AbstractMapperByMysql implements
     public MapperResult updateUsageByWhere(MapperContext context) {
         return new MapperResult(
                 "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = '"
-                        + NamespaceUtil.getNamespaceDefaultId() + "')," + " gmt_modified = ? WHERE group_id= ?",
+                        + NamespaceUtil.getNamespaceDefaultId() + "'),"
+                        + " gmt_modified = ? WHERE group_id= ?",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.GROUP_ID),
                         context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.GROUP_ID)));
     }
 }
-

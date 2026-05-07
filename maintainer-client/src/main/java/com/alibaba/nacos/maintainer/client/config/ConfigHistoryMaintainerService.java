@@ -39,7 +39,8 @@ public interface ConfigHistoryMaintainerService {
      * @return A paginated list of configuration history.
      * @throws NacosException If the query fails.
      */
-    Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo,
+    Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String groupName,
+            String namespaceId, int pageNo,
             int pageSize) throws NacosException;
     
     /**
@@ -52,7 +53,8 @@ public interface ConfigHistoryMaintainerService {
      * @return Detailed configuration history information.
      * @throws NacosException If the history record does not exist or the query fails.
      */
-    ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
+    ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String groupName,
+            String namespaceId, Long nid)
             throws NacosException;
     
     /**
@@ -65,6 +67,7 @@ public interface ConfigHistoryMaintainerService {
      * @return Previous configuration history information.
      * @throws NacosException If the previous history record does not exist or the query fails.
      */
-    ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
+    ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String groupName,
+            String namespaceId, Long id)
             throws NacosException;
 }

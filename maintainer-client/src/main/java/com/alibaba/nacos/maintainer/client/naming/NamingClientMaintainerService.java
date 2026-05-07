@@ -77,7 +77,8 @@ public interface NamingClientMaintainerService {
      * @return the list of clients
      * @throws NacosException if an error occurs
      */
-    List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+    List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port) throws NacosException;
     
     /**
@@ -91,7 +92,8 @@ public interface NamingClientMaintainerService {
      * @return the list of clients
      * @throws NacosException if an error occurs
      */
-    List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+    List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName,
+            String serviceName,
             String ip, Integer port) throws NacosException;
     
 }

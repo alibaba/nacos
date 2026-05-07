@@ -34,7 +34,8 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby implements ConfigTagsRelationMapper {
+public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby
+        implements ConfigTagsRelationMapper {
     
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
@@ -81,7 +82,8 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
+        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
+                + context.getPageSize()
                 + " ROWS ONLY";
         return new MapperResult(sql, paramList);
     }
@@ -94,10 +96,10 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-
+        
         WhereBuilder where = new WhereBuilder(
                 "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
-
+        
         where.likeWithEscape("a.tenant_id", tenantId);
         if (StringUtils.isNotBlank(dataId)) {
             where.and().likeWithEscape("a.data_id", dataId);
@@ -123,7 +125,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
         }
         return where.build();
     }
-
+    
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
@@ -141,7 +143,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
                         + "config_tags_relation b ON a.id=b.id");
         
         where.likeWithEscape("a.tenant_id", tenantId);
-
+        
         if (StringUtils.isNotBlank(dataId)) {
             where.and().likeWithEscape("a.data_id", dataId);
         }

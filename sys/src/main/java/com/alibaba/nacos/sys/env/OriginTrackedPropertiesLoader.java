@@ -67,7 +67,8 @@ public class OriginTrackedPropertiesLoader {
      * @throws IOException on read error
      */
     public Map<String, OriginTrackedValue> load(boolean expandLists) throws IOException {
-        try (OriginTrackedPropertiesLoader.CharacterReader reader = new CharacterReader(this.resource)) {
+        try (OriginTrackedPropertiesLoader.CharacterReader reader =
+                new CharacterReader(this.resource)) {
             Map<String, OriginTrackedValue> result = new LinkedHashMap<>();
             StringBuilder buffer = new StringBuilder();
             while (reader.read()) {
@@ -97,7 +98,8 @@ public class OriginTrackedPropertiesLoader {
         }
     }
     
-    private String loadKey(StringBuilder buffer, OriginTrackedPropertiesLoader.CharacterReader reader)
+    private String loadKey(StringBuilder buffer,
+            OriginTrackedPropertiesLoader.CharacterReader reader)
             throws IOException {
         buffer.setLength(0);
         boolean previousWhitespace = false;
@@ -116,7 +118,8 @@ public class OriginTrackedPropertiesLoader {
         return buffer.toString();
     }
     
-    private OriginTrackedValue loadValue(StringBuilder buffer, OriginTrackedPropertiesLoader.CharacterReader reader,
+    private OriginTrackedValue loadValue(StringBuilder buffer,
+            OriginTrackedPropertiesLoader.CharacterReader reader,
             boolean splitLists) throws IOException {
         buffer.setLength(0);
         while (reader.isWhiteSpace() && !reader.isEndOfLine()) {
@@ -227,7 +230,8 @@ public class OriginTrackedPropertiesLoader {
         }
         
         public boolean isWhiteSpace() {
-            return !this.escaped && (this.character == ' ' || this.character == '\t' || this.character == '\f');
+            return !this.escaped
+                    && (this.character == ' ' || this.character == '\t' || this.character == '\f');
         }
         
         public boolean isEndOfFile() {

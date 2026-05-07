@@ -43,7 +43,6 @@ public interface ConfigInfoGrayPersistService {
     
     //------------------------------------------insert---------------------------------------------//
     
-    
     /**
      * get gray config info state.
      *
@@ -53,7 +52,8 @@ public interface ConfigInfoGrayPersistService {
      * @param grayName gray name.
      * @return config info state.
      */
-    ConfigInfoStateWrapper findConfigInfo4GrayState(final String dataId, final String group, final String tenant,
+    ConfigInfoStateWrapper findConfigInfo4GrayState(final String dataId, final String group,
+            final String tenant,
             String grayName);
     
     /**
@@ -80,7 +80,8 @@ public interface ConfigInfoGrayPersistService {
      * @param srcIp        the IP address of the source
      * @param srcUser      the user who performs the addition
      */
-    void addConfigInfoGrayAtomic(final long configGrayId, final ConfigInfo configInfo, final String grayName, final String grayRule,
+    void addConfigInfoGrayAtomic(final long configGrayId, final ConfigInfo configInfo,
+            final String grayName, final String grayRule,
             final String srcIp, final String srcUser);
     
     /**
@@ -93,7 +94,8 @@ public interface ConfigInfoGrayPersistService {
      * @param srcUser           user
      * @return config operation result.
      */
-    ConfigOperateResult insertOrUpdateGray(final ConfigInfo configInfo, final String grayName, final String grayRule,
+    ConfigOperateResult insertOrUpdateGray(final ConfigInfo configInfo, final String grayName,
+            final String grayRule,
             final String srcIp, final String srcUser);
     
     /**
@@ -106,7 +108,8 @@ public interface ConfigInfoGrayPersistService {
      * @param srcUser    user.
      * @return config operation result.
      */
-    ConfigOperateResult insertOrUpdateGrayCas(final ConfigInfo configInfo, final String grayName, final String grayRule,
+    ConfigOperateResult insertOrUpdateGrayCas(final ConfigInfo configInfo, final String grayName,
+            final String grayRule,
             final String srcIp, final String srcUser);
     //------------------------------------------delete---------------------------------------------//
     
@@ -120,7 +123,8 @@ public interface ConfigInfoGrayPersistService {
      * @param srcIp    remote ip
      * @param srcUser  user
      */
-    void removeConfigInfoGray(final String dataId, final String group, final String tenant, final String grayName,
+    void removeConfigInfoGray(final String dataId, final String group, final String tenant,
+            final String grayName,
             final String srcIp, final String srcUser);
     //------------------------------------------update---------------------------------------------//
     
@@ -134,7 +138,8 @@ public interface ConfigInfoGrayPersistService {
      * @param srcUser    user
      * @return config operation result.
      */
-    ConfigOperateResult updateConfigInfo4Gray(ConfigInfo configInfo, String grayName, String grayRule,
+    ConfigOperateResult updateConfigInfo4Gray(ConfigInfo configInfo, String grayName,
+            String grayRule,
             String srcIp, String srcUser);
     
     /**
@@ -147,7 +152,8 @@ public interface ConfigInfoGrayPersistService {
      * @param srcUser    user
      * @return success or not.
      */
-    ConfigOperateResult updateConfigInfo4GrayCas(ConfigInfo configInfo, String grayName, String grayRule,
+    ConfigOperateResult updateConfigInfo4GrayCas(ConfigInfo configInfo, String grayName,
+            String grayRule,
             String srcIp, String srcUser);
     //------------------------------------------select---------------------------------------------//
     
@@ -160,7 +166,8 @@ public interface ConfigInfoGrayPersistService {
      * @param grayName gray name
      * @return ConfigInfoGrayWrapper gray model instance.
      */
-    ConfigInfoGrayWrapper findConfigInfo4Gray(final String dataId, final String group, final String tenant,
+    ConfigInfoGrayWrapper findConfigInfo4Gray(final String dataId, final String group,
+            final String tenant,
             final String grayName);
     
     /**
@@ -177,7 +184,8 @@ public interface ConfigInfoGrayPersistService {
      * @param pageSize page sizxe
      * @return {@link Page} with {@link ConfigInfoGrayWrapper} generation
      */
-    Page<ConfigInfoGrayWrapper> findAllConfigInfoGrayForDumpAll(final int pageNo, final int pageSize);
+    Page<ConfigInfoGrayWrapper> findAllConfigInfoGrayForDumpAll(final int pageNo,
+            final int pageSize);
     
     /**
      * Query all gray config info for dump task.
@@ -187,7 +195,8 @@ public interface ConfigInfoGrayPersistService {
      * @param pageSize  pageSize
      * @return {@link Page} with {@link ConfigInfoGrayWrapper} generation
      */
-    List<ConfigInfoGrayWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
+    List<ConfigInfoGrayWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId,
+            final int pageSize);
     
     /**
      * found all config grays.

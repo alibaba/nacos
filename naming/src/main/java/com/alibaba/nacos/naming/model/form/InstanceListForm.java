@@ -124,8 +124,10 @@ public class InstanceListForm implements NacosForm {
             return false;
         }
         InstanceListForm that = (InstanceListForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName)
-                && Objects.equals(serviceName, that.serviceName) && Objects.equals(clusterName, that.clusterName)
+        return Objects.equals(namespaceId, that.namespaceId)
+                && Objects.equals(groupName, that.groupName)
+                && Objects.equals(serviceName, that.serviceName)
+                && Objects.equals(clusterName, that.clusterName)
                 && Objects.equals(healthyOnly, that.healthyOnly);
     }
     

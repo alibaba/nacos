@@ -38,13 +38,16 @@ public class HttpTpsCheckRequestParserRegistry {
      * @param httpTpsCheckParser httpTpsCheckParser.
      */
     public static synchronized void register(HttpTpsCheckRequestParser httpTpsCheckParser) {
-        HttpTpsCheckRequestParser prevTpsCheckParser = PARSER_MAP.put(httpTpsCheckParser.getName(), httpTpsCheckParser);
+        HttpTpsCheckRequestParser prevTpsCheckParser =
+                PARSER_MAP.put(httpTpsCheckParser.getName(), httpTpsCheckParser);
         if (prevTpsCheckParser != null) {
-            Loggers.CONTROL.info("HttpTpsCheckRequestParser  name {}, point name {} will be replaced with {}",
+            Loggers.CONTROL.info(
+                    "HttpTpsCheckRequestParser  name {}, point name {} will be replaced with {}",
                     httpTpsCheckParser.getName(), prevTpsCheckParser.getPointName(),
                     httpTpsCheckParser.getClass().getSimpleName());
         } else {
-            Loggers.CONTROL.info("HttpTpsCheckRequestParser register parser {} of name {},point name {}",
+            Loggers.CONTROL.info(
+                    "HttpTpsCheckRequestParser register parser {} of name {},point name {}",
                     httpTpsCheckParser.getClass().getSimpleName(), httpTpsCheckParser.getName(),
                     httpTpsCheckParser.getPointName());
         }

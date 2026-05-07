@@ -53,7 +53,8 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
     private void refreshPluginProperties() {
         try {
             Map<String, Properties> newProperties = new HashMap<>(3);
-            Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
+            Properties properties =
+                    PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
             if (properties != null) {
                 for (String each : properties.stringPropertyNames()) {
                     int typeIndex = each.indexOf('.');

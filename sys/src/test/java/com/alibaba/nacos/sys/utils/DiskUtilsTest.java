@@ -52,7 +52,8 @@ class DiskUtilsTest {
     @BeforeAll
     static void setup() throws IOException, URISyntaxException {
         testFile = DiskUtils.createTmpFile("nacostmp", ".ut");
-        testLineFile = new File(DiskUtilsTest.class.getClassLoader().getResource("line_iterator_test.txt").toURI());
+        testLineFile = new File(
+                DiskUtilsTest.class.getClassLoader().getResource("line_iterator_test.txt").toURI());
         openTestFile = new File(testLineFile.getParent(), "temp_open_file");
     }
     
@@ -156,12 +157,14 @@ class DiskUtilsTest {
     void testReadNonExistFile2() {
         File file = new File("non-path/non-exist");
         file.deleteOnExit();
-        assertEquals("", DiskUtils.readFile(file.getParentFile().getAbsolutePath(), file.getName()));
+        assertEquals("",
+                DiskUtils.readFile(file.getParentFile().getAbsolutePath(), file.getName()));
     }
     
     @Test
     void testReadFileWithIllegalPath() {
-        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        String path = testFile.getParentFile().getAbsolutePath() + "/../"
+                + testFile.getParentFile().getName();
         assertNull(DiskUtils.readFile(path, testFile.getName()));
     }
     
@@ -205,7 +208,8 @@ class DiskUtilsTest {
     
     @Test
     void testReadFileBytesWithIllegalPath() {
-        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        String path = testFile.getParentFile().getAbsolutePath() + "/../"
+                + testFile.getParentFile().getName();
         assertNull(DiskUtils.readFileBytes(path, testFile.getName()));
     }
     
@@ -218,7 +222,8 @@ class DiskUtilsTest {
     
     @Test
     void writeFile() {
-        assertTrue(DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
+        assertTrue(
+                DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
         assertEquals("unit test", DiskUtils.readFile(testFile));
     }
     
@@ -255,7 +260,8 @@ class DiskUtilsTest {
     
     @Test
     void testDeleteFileIllegalPath() {
-        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        String path = testFile.getParentFile().getAbsolutePath() + "/../"
+                + testFile.getParentFile().getName();
         assertFalse(DiskUtils.deleteFile(path, testFile.getName()));
     }
     
@@ -281,7 +287,9 @@ class DiskUtilsTest {
     
     @Test
     void testForceMkdir() throws IOException {
-        File dir = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(), UUID.randomUUID().toString())
+        File dir = Paths
+                .get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(),
+                        UUID.randomUUID().toString())
                 .toFile();
         DiskUtils.forceMkdir(dir);
         assertTrue(dir.exists());
@@ -290,7 +298,8 @@ class DiskUtilsTest {
     
     @Test
     void testForceMkdirWithPath() throws IOException {
-        Path path = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        Path path = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(),
+                UUID.randomUUID().toString());
         DiskUtils.forceMkdir(path.toString());
         File file = path.toFile();
         assertTrue(file.exists());
@@ -420,7 +429,8 @@ class DiskUtilsTest {
         // 测试磁盘满异常处理 - 模拟 IOException
         // 由于无法真正触发磁盘满，这里测试正常写入失败的返回值
         File invalidFile = new File("/non/existent/path/file.txt");
-        assertFalse(DiskUtils.writeFile(invalidFile, "test".getBytes(StandardCharsets.UTF_8), false));
+        assertFalse(
+                DiskUtils.writeFile(invalidFile, "test".getBytes(StandardCharsets.UTF_8), false));
     }
     
     @Test

@@ -36,7 +36,8 @@ public class McpServerListenerInvoker
     }
     
     protected void logInvoke(NacosMcpServerEvent event) {
-        LOGGER.info("Invoke event namespaceId: {}, mcpId: {}, mcpName: {} to Listener: {}", event.getNamespaceId(),
+        LOGGER.info("Invoke event namespaceId: {}, mcpId: {}, mcpName: {} to Listener: {}",
+                event.getNamespaceId(),
                 event.getMcpId(), event.getMcpName(), listener.toString());
     }
 }

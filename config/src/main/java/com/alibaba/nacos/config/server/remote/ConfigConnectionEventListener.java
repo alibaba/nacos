@@ -49,7 +49,8 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     @Override
     public void clientDisConnected(Connection connect) {
         String connectionId = connect.getMetaInfo().getConnectionId();
-        Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context", connectionId);
+        Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context",
+                connectionId);
         configChangeListenContext.clearContextForConnectionId(connectionId);
         configFuzzyWatchContextService.clearFuzzyWatchContext(connectionId);
     }

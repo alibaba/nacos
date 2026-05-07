@@ -72,7 +72,7 @@ public class RegexParser {
     }
     
     private static Boolean isAsciiAlphanumeric(final char ch) {
-        return  isAsciiAlphaUpper(ch) || isAsciiAlphaLower(ch) || isAsciiNumeric(ch);
+        return isAsciiAlphaUpper(ch) || isAsciiAlphaLower(ch) || isAsciiNumeric(ch);
     }
     
     private static Boolean isAsciiNumeric(final char ch) {

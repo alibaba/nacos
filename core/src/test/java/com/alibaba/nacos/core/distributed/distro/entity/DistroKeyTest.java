@@ -56,27 +56,27 @@ class DistroKeyTest {
     void testEquals() {
         assertEquals(distroKey1, distroKey2);
     }
-
+    
     @Test
     void testEqualsSameInstance() {
         assertEquals(distroKey1, distroKey1);
     }
-
+    
     @Test
     void testEqualsNull() {
         assertFalse(distroKey1.equals(null));
     }
-
+    
     @Test
     void testEqualsDifferentClass() {
         assertFalse(distroKey1.equals("not a DistroKey"));
     }
-
+    
     @Test
     void testHashCode() {
         assertEquals(distroKey1.hashCode(), distroKey2.hashCode());
     }
-
+    
     @Test
     void testToString() {
         String s = distroKey1.toString();

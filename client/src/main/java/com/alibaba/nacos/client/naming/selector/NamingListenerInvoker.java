@@ -45,7 +45,8 @@ public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
     public void invoke(NamingEvent event) {
         invoked.set(true);
         logInvoke(event);
-        if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
+        if (listener instanceof AbstractEventListener
+                && ((AbstractEventListener) listener).getExecutor() != null) {
             ((AbstractEventListener) listener).getExecutor().execute(() -> listener.onEvent(event));
         } else {
             listener.onEvent(event);
@@ -53,7 +54,8 @@ public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
     }
     
     private void logInvoke(NamingEvent event) {
-        NAMING_LOGGER.info("Invoke event groupName: {}, serviceName: {} to Listener: {}", event.getGroupName(),
+        NAMING_LOGGER.info("Invoke event groupName: {}, serviceName: {} to Listener: {}",
+                event.getGroupName(),
                 event.getServiceName(), listener.toString());
     }
     

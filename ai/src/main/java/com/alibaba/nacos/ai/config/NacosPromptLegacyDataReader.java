@@ -98,10 +98,12 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
     }
     
     @Override
-    public PromptVersionInfo readVersionContent(String namespaceId, String promptKey, String version) {
+    public PromptVersionInfo readVersionContent(String namespaceId, String promptKey,
+            String version) {
         String versionDataId = PromptDataIdUtils.buildVersionDataId(promptKey, version);
-        ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(versionDataId, PROMPT_GROUP,
-                namespaceId);
+        ConfigAllInfo configAllInfo =
+                configInfoPersistService.findConfigAllInfo(versionDataId, PROMPT_GROUP,
+                        namespaceId);
         if (configAllInfo == null || StringUtils.isBlank(configAllInfo.getContent())) {
             return null;
         }
@@ -143,14 +145,16 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         List<String> promptKeys = new ArrayList<>();
         int pageNo = 1;
         while (true) {
-            Page<ConfigInfo> page = configInfoPersistService.findConfigInfo4Page(pageNo, SCAN_PAGE_SIZE, null,
-                    PROMPT_GROUP, namespaceId, null);
+            Page<ConfigInfo> page =
+                    configInfoPersistService.findConfigInfo4Page(pageNo, SCAN_PAGE_SIZE, null,
+                            PROMPT_GROUP, namespaceId, null);
             if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
                 break;
             }
             for (ConfigInfo info : page.getPageItems()) {
                 if (PromptDataIdUtils.isDescriptorDataId(info.getDataId())) {
-                    String key = PromptDataIdUtils.extractPromptKeyFromDescriptorDataId(info.getDataId());
+                    String key = PromptDataIdUtils
+                            .extractPromptKeyFromDescriptorDataId(info.getDataId());
                     if (StringUtils.isNotBlank(key)) {
                         promptKeys.add(key);
                     }
@@ -168,10 +172,12 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         LegacyDescriptor descriptor = readConfigJson(namespaceId,
                 PromptDataIdUtils.buildDescriptorDataId(promptKey), LegacyDescriptor.class);
         LegacyLabelVersionMapping mapping = readConfigJson(namespaceId,
-                PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey), LegacyLabelVersionMapping.class);
+                PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey),
+                LegacyLabelVersionMapping.class);
         
         if (mapping == null || mapping.versions == null || mapping.versions.isEmpty()) {
-            LOGGER.warn("Prompt '{}' in namespace '{}' has no versions in mapping, skip", promptKey, namespaceId);
+            LOGGER.warn("Prompt '{}' in namespace '{}' has no versions in mapping, skip", promptKey,
+                    namespaceId);
             return null;
         }
         
@@ -194,17 +200,20 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
         try {
             return JacksonUtils.toObj(content, clazz);
         } catch (Exception e) {
-            LOGGER.warn("Failed to parse config '{}' as {}: {}", dataId, clazz.getSimpleName(), e.getMessage());
+            LOGGER.warn("Failed to parse config '{}' as {}: {}", dataId, clazz.getSimpleName(),
+                    e.getMessage());
             return null;
         }
     }
     
     private String readConfigContent(String namespaceId, String dataId) {
         try {
-            ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId,
-                    PROMPT_GROUP, namespaceId);
+            ConfigQueryChainRequest request =
+                    ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId,
+                            PROMPT_GROUP, namespaceId);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
-            if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+            if (response
+                    .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
                 return null;
             }
             return response.getContent();
@@ -217,18 +226,22 @@ public class NacosPromptLegacyDataReader implements PromptLegacyDataReader {
     @Override
     public void cleanupLegacyData(String namespaceId, String promptKey, List<String> versions) {
         deleteConfigSilently(namespaceId, PromptDataIdUtils.buildDescriptorDataId(promptKey));
-        deleteConfigSilently(namespaceId, PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey));
+        deleteConfigSilently(namespaceId,
+                PromptDataIdUtils.buildLabelVersionMappingDataId(promptKey));
         if (versions != null) {
             for (String version : versions) {
-                deleteConfigSilently(namespaceId, PromptDataIdUtils.buildVersionDataId(promptKey, version));
+                deleteConfigSilently(namespaceId,
+                        PromptDataIdUtils.buildVersionDataId(promptKey, version));
             }
         }
-        LOGGER.info("Cleaned up legacy config for prompt '{}' in namespace '{}'", promptKey, namespaceId);
+        LOGGER.info("Cleaned up legacy config for prompt '{}' in namespace '{}'", promptKey,
+                namespaceId);
     }
     
     private void deleteConfigSilently(String namespaceId, String dataId) {
         try {
-            configOperationService.deleteConfig(dataId, PROMPT_GROUP, namespaceId, null, null, "nacos", null);
+            configOperationService.deleteConfig(dataId, PROMPT_GROUP, namespaceId, null, null,
+                    "nacos", null);
         } catch (Exception e) {
             LOGGER.warn("Failed to cleanup legacy config '{}': {}", dataId, e.getMessage());
         }

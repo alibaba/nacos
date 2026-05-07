@@ -64,7 +64,8 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
         try {
             requests.put(pushRequest);
         } catch (InterruptedException e) {
-            Loggers.MAIN.warn("There are too many events, this event {} will be ignored.", pushRequest.getReason());
+            Loggers.MAIN.warn("There are too many events, this event {} will be ignored.",
+                    pushRequest.getReason());
             // set the interrupted flag
             Thread.currentThread().interrupt();
         }
@@ -100,7 +101,8 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
                 try {
                     // Today we only care about service event,
                     // so we simply ignore event until the last task has been completed.
-                    PushRequest pushRequest = requests.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);
+                    PushRequest pushRequest =
+                            requests.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);
                     if (pushRequest != null) {
                         hasNewEvent = true;
                         lastEvent = pushRequest;
@@ -156,6 +158,7 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
         if (null == nacosMcpService) {
             nacosMcpService = ApplicationUtils.getBean(NacosMcpService.class);
         }
-        return Objects.nonNull(resourceManager) && Objects.nonNull(nacosMcpService) && Objects.nonNull(nacosXdsService);
+        return Objects.nonNull(resourceManager) && Objects.nonNull(nacosMcpService)
+                && Objects.nonNull(nacosXdsService);
     }
 }

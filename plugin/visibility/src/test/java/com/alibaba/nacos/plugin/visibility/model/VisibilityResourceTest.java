@@ -29,6 +29,7 @@ class VisibilityResourceTest {
     @BeforeEach
     void setUp() {
         resource = new VisibilityResource() {
+            
             @Override
             public String getNamespaceId() {
                 return "test-ns";

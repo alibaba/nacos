@@ -24,5 +24,5 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @author tanyongquan
  */
 public class NamingFuzzyWatchChangeNotifyResponse extends Response {
-
+    
 }

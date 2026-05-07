@@ -46,30 +46,33 @@ import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_COLLECTION;
 @Service
 public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
-    private final Map<String, AbstractConnection<Mcp.Resources>> connections = new ConcurrentHashMap<>(16);
-
+    private final Map<String, AbstractConnection<Mcp.Resources>> connections =
+            new ConcurrentHashMap<>(16);
+    
     @Autowired
     ApiGeneratorFactory apiGeneratorFactory;
-
+    
     @Autowired
     NacosResourceManager resourceManager;
-
+    
     public boolean hasClientConnection() {
         return connections.size() != 0;
     }
-
+    
     @Override
-    public StreamObserver<Mcp.RequestResources> establishResourceStream(StreamObserver<Mcp.Resources> responseObserver) {
-
+    public StreamObserver<Mcp.RequestResources> establishResourceStream(
+            StreamObserver<Mcp.Resources> responseObserver) {
+        
         // TODO add authN
-
+        
         // Init snapshot of nacos service info.
         resourceManager.initResourceSnapshot();
         AbstractConnection<Mcp.Resources> newConnection = new McpConnection(responseObserver);
-
+        
         return new StreamObserver<Mcp.RequestResources>() {
+            
             private boolean initRequest = true;
-
+            
             @Override
             public void onNext(Mcp.RequestResources requestResources) {
                 // init connection
@@ -78,13 +81,14 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     connections.put(newConnection.getConnectionId(), newConnection);
                     initRequest = false;
                 }
-
+                
                 process(requestResources, newConnection);
             }
             
             @Override
             public void onError(Throwable throwable) {
-                Loggers.MAIN.error("mcp: {} stream error.", newConnection.getConnectionId(), throwable);
+                Loggers.MAIN.error("mcp: {} stream error.", newConnection.getConnectionId(),
+                        throwable);
                 clear();
             }
             
@@ -93,28 +97,32 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                 responseObserver.onCompleted();
                 clear();
             }
-
+            
             private void clear() {
                 connections.remove(newConnection.getConnectionId());
             }
         };
     }
-
-    private void process(Mcp.RequestResources requestResources, AbstractConnection<Mcp.Resources> connection) {
+    
+    private void process(Mcp.RequestResources requestResources,
+            AbstractConnection<Mcp.Resources> connection) {
         if (!shouldPush(requestResources, connection)) {
             return;
         }
-    
+        
         PushRequest pushRequest = new PushRequest(resourceManager.getResourceSnapshot(), true);
         
-        Mcp.Resources response = buildMcpResourcesResponse(requestResources.getCollection(), pushRequest);
-        connection.push(response, connection.getWatchedStatusByType(requestResources.getCollection()));
+        Mcp.Resources response =
+                buildMcpResourcesResponse(requestResources.getCollection(), pushRequest);
+        connection.push(response,
+                connection.getWatchedStatusByType(requestResources.getCollection()));
     }
-
-    private boolean shouldPush(Mcp.RequestResources requestResources, AbstractConnection<Mcp.Resources> connection) {
+    
+    private boolean shouldPush(Mcp.RequestResources requestResources,
+            AbstractConnection<Mcp.Resources> connection) {
         String type = requestResources.getCollection();
         String connectionId = connection.getConnectionId();
-
+        
         if (requestResources.getErrorDetail().getCode() != 0) {
             Loggers.MAIN.error("mcp: ACK error, connection-id: {}, code: {}, message: {}",
                     connectionId,
@@ -122,19 +130,19 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     requestResources.getErrorDetail().getMessage());
             return false;
         }
-
+        
         WatchedStatus watchedStatus;
         if (requestResources.getResponseNonce().isEmpty()) {
             Loggers.MAIN.info("mcp: init request, type {}, connection-id {}, is incremental {}",
                     type, connectionId, requestResources.getIncremental());
-
+            
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(type);
             connection.addWatchedResource(type, watchedStatus);
-
+            
             return true;
         }
-
+        
         watchedStatus = connection.getWatchedStatusByType(type);
         if (watchedStatus == null) {
             Loggers.MAIN.info("mcp: reconnect, type {}, connection-id {}, is incremental {}",
@@ -144,41 +152,45 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             connection.addWatchedResource(type, watchedStatus);
             return true;
         }
-
+        
         if (!watchedStatus.getLatestNonce().equals(requestResources.getResponseNonce())) {
-            Loggers.MAIN.warn("mcp: request dis match, type {}, connection-id {}", type, connectionId);
+            Loggers.MAIN.warn("mcp: request dis match, type {}, connection-id {}", type,
+                    connectionId);
             return false;
         }
-
+        
         // This request is ack, we should record nonce.
         watchedStatus.setAckedNonce(requestResources.getResponseNonce());
         Loggers.MAIN.info("mcp: ack, type {}, connection-id {}, nonce {}", type, connectionId,
                 requestResources.getResponseNonce());
         return false;
     }
-
+    
     public void handleEvent(PushRequest pushRequest) {
         if (connections.size() == 0) {
             return;
         }
-    
+        
         Loggers.MAIN.info("mcp: event {} trigger push.", pushRequest.getReason());
         
-        Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushRequest);
-    
+        Mcp.Resources serviceEntryMcpResponse =
+                buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushRequest);
+        
         for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
-            WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
+            WatchedStatus watchedStatus =
+                    connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
             if (watchedStatus != null) {
                 connection.push(serviceEntryMcpResponse, watchedStatus);
             }
         }
     }
-
+    
     private Mcp.Resources buildMcpResourcesResponse(String type, PushRequest pushRequest) {
         @SuppressWarnings("unchecked")
-        ApiGenerator<Resource> serviceEntryGenerator = (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
+        ApiGenerator<Resource> serviceEntryGenerator =
+                (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
         List<Resource> rawResources = serviceEntryGenerator.generate(pushRequest);
-
+        
         String nonce = NonceGenerator.generateNonce();
         return Mcp.Resources.newBuilder()
                 .setCollection(type)

@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author qiacheng.cxy
  */
 class SkillScannerMarkdownFindingParserTest {
-
+    
     @Test
     void extractFindingTitlesSingleHeading() {
         String md = ""
@@ -43,7 +43,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("HIGH — Prompt injection", titles.get(0));
     }
-
+    
     @Test
     void extractFindingTitlesMultipleHeadings() {
         String md = ""
@@ -57,7 +57,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("HIGH — Rule A", titles.get(0));
         assertEquals("MEDIUM — Rule B", titles.get(1));
     }
-
+    
     @Test
     void extractFindingTitlesStopsAtNextH2() {
         String md = ""
@@ -69,7 +69,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("HIGH — Only this", titles.get(0));
     }
-
+    
     @Test
     void extractFindingTitlesCaseInsensitiveSection() {
         String md = "## FINDINGS\n\n### CRITICAL — X\n";
@@ -77,7 +77,7 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals(1, titles.size());
         assertEquals("CRITICAL — X", titles.get(0));
     }
-
+    
     @Test
     void buildRejectCheckpointsUsesParsedTitles() {
         String md = "## Findings\n\n### HIGH — A\n\n### HIGH — B\n";
@@ -88,18 +88,20 @@ class SkillScannerMarkdownFindingParserTest {
         assertEquals("HIGH — B", cps.get(1).getTitle());
         assertFalse(cps.get(1).getPassed());
     }
-
+    
     @Test
     void buildRejectCheckpointsFallbackWhenNoFindings() {
-        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildRejectCheckpoints("no structured report");
+        List<Checkpoint> cps =
+                SkillScannerMarkdownFindingParser.buildRejectCheckpoints("no structured report");
         assertEquals(1, cps.size());
         assertEquals("HIGH/CRITICAL 风险检测", cps.get(0).getTitle());
         assertFalse(cps.get(0).getPassed());
     }
-
+    
     @Test
     void buildPassCheckpointsBaseChecks() {
-        List<Checkpoint> cps = SkillScannerMarkdownFindingParser.buildPassCheckpoints(SkillScannerScanOptions.none());
+        List<Checkpoint> cps = SkillScannerMarkdownFindingParser
+                .buildPassCheckpoints(SkillScannerScanOptions.none());
         assertEquals(5, cps.size());
         assertEquals("Prompt injection 检查", cps.get(0).getTitle());
         assertTrue(cps.get(0).getPassed());

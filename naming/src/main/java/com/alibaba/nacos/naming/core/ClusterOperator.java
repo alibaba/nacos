@@ -48,6 +48,7 @@ public interface ClusterOperator {
      * @param clusterMetadata cluster metadata
      * @throws NacosException exception during update metadata
      */
-    void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
+    void updateClusterMetadata(String namespaceId, String groupName, String serviceName,
+            String clusterName,
             ClusterMetadata clusterMetadata) throws NacosException;
 }

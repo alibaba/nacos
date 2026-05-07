@@ -177,7 +177,8 @@ class LocalDataSourceServiceImplTest {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("test.jdbc.url");
         when(jt.getDataSource()).thenReturn(dataSource);
-        assertEquals(dataSource.getJdbcUrl(), ((HikariDataSource) service.getDatasource()).getJdbcUrl());
+        assertEquals(dataSource.getJdbcUrl(),
+                ((HikariDataSource) service.getDatasource()).getJdbcUrl());
     }
     
     @Test

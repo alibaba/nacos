@@ -182,19 +182,22 @@ class ResponseUtilTest {
     @Test
     void testTransferToConfigHistoryBasicInfo() {
         ConfigHistoryInfo configHistoryInfo = mockConfigHistoryInfo();
-        ConfigHistoryBasicInfo configHistoryBasicInfo = ResponseUtil.transferToConfigHistoryBasicInfo(
-                configHistoryInfo);
+        ConfigHistoryBasicInfo configHistoryBasicInfo =
+                ResponseUtil.transferToConfigHistoryBasicInfo(
+                        configHistoryInfo);
         assertConfigHistoryBasicInfo(configHistoryInfo, configHistoryBasicInfo);
     }
     
     @Test
     void testTransferToConfigHistoryDetialInfo() {
         ConfigHistoryInfo configHistoryInfo = mockConfigHistoryInfo();
-        ConfigHistoryDetailInfo configHistoryBasicInfo = ResponseUtil.transferToConfigHistoryDetailInfo(
-                configHistoryInfo);
+        ConfigHistoryDetailInfo configHistoryBasicInfo =
+                ResponseUtil.transferToConfigHistoryDetailInfo(
+                        configHistoryInfo);
         assertConfigHistoryBasicInfo(configHistoryInfo, configHistoryBasicInfo);
         assertEquals(configHistoryInfo.getContent(), configHistoryBasicInfo.getContent());
-        assertEquals(configHistoryInfo.getEncryptedDataKey(), configHistoryBasicInfo.getEncryptedDataKey());
+        assertEquals(configHistoryInfo.getEncryptedDataKey(),
+                configHistoryBasicInfo.getEncryptedDataKey());
         assertEquals(configHistoryInfo.getGrayName(), configHistoryBasicInfo.getGrayName());
         assertEquals(configHistoryInfo.getExtInfo(), configHistoryBasicInfo.getExtInfo());
     }
@@ -232,7 +235,9 @@ class ResponseUtilTest {
         assertEquals(configHistoryInfo.getSrcUser(), configHistoryBasicInfo.getSrcUser());
         assertEquals(configHistoryInfo.getOpType(), configHistoryBasicInfo.getOpType());
         assertEquals(configHistoryInfo.getPublishType(), configHistoryBasicInfo.getPublishType());
-        assertEquals(configHistoryInfo.getCreatedTime().getTime(), configHistoryBasicInfo.getCreateTime());
-        assertEquals(configHistoryInfo.getLastModifiedTime().getTime(), configHistoryBasicInfo.getModifyTime());
+        assertEquals(configHistoryInfo.getCreatedTime().getTime(),
+                configHistoryBasicInfo.getCreateTime());
+        assertEquals(configHistoryInfo.getLastModifiedTime().getTime(),
+                configHistoryBasicInfo.getModifyTime());
     }
 }

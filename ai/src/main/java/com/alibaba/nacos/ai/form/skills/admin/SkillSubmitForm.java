@@ -29,12 +29,12 @@ import java.io.Serial;
  * @author nacos
  */
 public class SkillSubmitForm extends SkillForm {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     private String version;
-
+    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
@@ -43,13 +43,12 @@ public class SkillSubmitForm extends SkillForm {
                     "Request parameter `skillName` should not be blank.");
         }
     }
-
+    
     public String getVersion() {
         return version;
     }
-
+    
     public void setVersion(String version) {
         this.version = version;
     }
 }
-

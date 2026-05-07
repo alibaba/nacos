@@ -46,7 +46,8 @@ public class FuzzyGroupKeyPatternTest {
         String group = "exampleGroup";
         String namespace = "exampleNamespace";
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
+        String groupKeyPattern =
+                FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
         
         assertEquals("exampleNamespace>>exampleGroup>>examplePattern*", groupKeyPattern);
     }
@@ -100,7 +101,8 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("matchPattern with accurate match should return true")
     void testMatchPatternWithAccurateMatchShouldReturnTrue() {
         String pattern = "namespace>>group>>exactPattern";
-        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "exactPattern", "group", "namespace"));
+        assertTrue(
+                FuzzyGroupKeyPattern.matchPattern(pattern, "exactPattern", "group", "namespace"));
     }
     
     @Test
@@ -130,7 +132,8 @@ public class FuzzyGroupKeyPatternTest {
     @DisplayName("matchPattern with contains pattern should return true")
     void testMatchPatternWithContainsPatternShouldReturnTrue() {
         String pattern = "namespace>>group>>*middle*";
-        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testmiddlevalue", "group", "namespace"));
+        assertTrue(FuzzyGroupKeyPattern.matchPattern(pattern, "testmiddlevalue", "group",
+                "namespace"));
         assertFalse(FuzzyGroupKeyPattern.matchPattern(pattern, "testvalue", "group", "namespace"));
     }
     

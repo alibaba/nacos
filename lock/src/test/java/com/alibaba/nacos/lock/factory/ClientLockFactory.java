@@ -41,6 +41,6 @@ public class ClientLockFactory implements LockFactory {
     }
     
     public static class ClientLockInstance extends LockInfo {
-    
+        
     }
 }

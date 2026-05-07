@@ -65,10 +65,12 @@ class ConfigChangeListenContextTest {
     @Test
     void testClearContextForConnectionId() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId", false);
-        Map<String, String> connectionIdBefore = configChangeListenContext.getListenKeys("connectionId");
+        Map<String, String> connectionIdBefore =
+                configChangeListenContext.getListenKeys("connectionId");
         assertNotNull(connectionIdBefore);
         configChangeListenContext.clearContextForConnectionId("connectionId");
-        Map<String, String> connectionIdAfter = configChangeListenContext.getListenKeys("connectionId");
+        Map<String, String> connectionIdAfter =
+                configChangeListenContext.getListenKeys("connectionId");
         assertNull(connectionIdAfter);
     }
     

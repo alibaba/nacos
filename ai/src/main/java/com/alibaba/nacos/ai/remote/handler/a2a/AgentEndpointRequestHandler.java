@@ -53,7 +53,8 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointRequest, AgentEndpointResponse> {
+public class AgentEndpointRequestHandler
+        extends RequestHandler<AgentEndpointRequest, AgentEndpointResponse> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentEndpointRequestHandler.class);
     
@@ -71,7 +72,8 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = AgentRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public AgentEndpointResponse handle(AgentEndpointRequest request, RequestMeta meta) throws NacosException {
+    public AgentEndpointResponse handle(AgentEndpointRequest request, RequestMeta meta)
+            throws NacosException {
         AgentEndpointResponse response = new AgentEndpointResponse();
         response.setType(request.getType());
         AgentRequestUtil.fillNamespaceId(request);
@@ -79,9 +81,11 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
             validateRequest(request);
             Instance instance = transferInstance(request);
             String serviceName =
-                    agentIdCodecHolder.encode(request.getAgentName()) + "::" + request.getEndpoint().getVersion();
-            Service service = Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
-                    serviceName);
+                    agentIdCodecHolder.encode(request.getAgentName()) + "::"
+                            + request.getEndpoint().getVersion();
+            Service service =
+                    Service.newService(request.getNamespaceId(), Constants.A2A.AGENT_ENDPOINT_GROUP,
+                            serviceName);
             switch (request.getType()) {
                 case AiRemoteConstants.REGISTER_ENDPOINT:
                     doRegisterEndpoint(service, instance, meta);
@@ -90,14 +94,17 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
                     doDeregisterEndpoint(service, instance, meta);
                     break;
                 default:
-                    throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    throw new NacosApiException(NacosException.INVALID_PARAM,
+                            ErrorCode.PARAMETER_VALIDATE_ERROR,
                             String.format("parameter `type` should be %s or %s, but was %s",
-                                    AiRemoteConstants.REGISTER_ENDPOINT, AiRemoteConstants.DE_REGISTER_ENDPOINT,
+                                    AiRemoteConstants.REGISTER_ENDPOINT,
+                                    AiRemoteConstants.DE_REGISTER_ENDPOINT,
                                     request.getType()));
             }
         } catch (NacosApiException e) {
             response.setErrorInfo(e.getErrCode(), e.getErrMsg());
-            LOGGER.error("[{}] Register agent endpoint to agent {} error: {}", meta.getConnectionId(),
+            LOGGER.error("[{}] Register agent endpoint to agent {} error: {}",
+                    meta.getConnectionId(),
                     request.getAgentName(), e.getErrMsg());
         }
         return response;
@@ -122,10 +129,12 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
         }
     }
     
-    private void doRegisterEndpoint(Service service, Instance instance, RequestMeta meta) throws NacosException {
+    private void doRegisterEndpoint(Service service, Instance instance, RequestMeta meta)
+            throws NacosException {
         clientOperationService.registerInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(), service.getGroup(),
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, service.getNamespace(),
+                service.getGroup(),
                 service.getName(), instance.getIp(), instance.getPort()));
         
     }
@@ -133,7 +142,8 @@ public class AgentEndpointRequestHandler extends RequestHandler<AgentEndpointReq
     private void doDeregisterEndpoint(Service service, Instance instance, RequestMeta meta) {
         clientOperationService.deregisterInstance(service, instance, meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true, DeregisterInstanceReason.REQUEST,
+                NamingRequestUtil.getSourceIpForGrpcRequest(meta), true,
+                DeregisterInstanceReason.REQUEST,
                 service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
                 instance.getPort()));
     }

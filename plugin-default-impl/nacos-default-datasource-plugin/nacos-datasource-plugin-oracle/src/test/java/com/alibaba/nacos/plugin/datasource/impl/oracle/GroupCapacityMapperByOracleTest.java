@@ -89,7 +89,9 @@ class GroupCapacityMapperByOracleTest {
                 "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size, gmt_create, gmt_modified) "
                         + "VALUES (?, ?, (SELECT COUNT(*) FROM config_info), ?, ?, ?, ?, ?)");
         
-        assertArrayEquals(new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified},
+        assertArrayEquals(
+                new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime,
+                        modified},
                 mapperResult.getParamList().toArray());
     }
     
@@ -115,7 +117,9 @@ class GroupCapacityMapperByOracleTest {
         assertEquals(mapperResult.getSql(),
                 "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size, gmt_create, "
                         + "gmt_modified) VALUES (?, ?, (SELECT COUNT(*) FROM config_info WHERE group_id=? AND tenant_id = 'public'), ?, ?, ?, ?, ?)");
-        assertArrayEquals(new Object[] {group, quota, group, maxSize, maxAggrCount, maxAggrSize, createTime, modified},
+        assertArrayEquals(
+                new Object[] {group, quota, group, maxSize, maxAggrCount, maxAggrSize, createTime,
+                        modified},
                 mapperResult.getParamList().toArray());
     }
     
@@ -123,17 +127,22 @@ class GroupCapacityMapperByOracleTest {
     void testIncrementUsageByWhereQuotaEqualZero() {
         Object usage = 1;
         context.putWhereParameter(FieldConstant.USAGE, usage);
-        MapperResult mapperResult = groupCapacityMapperByOracle.incrementUsageByWhereQuotaEqualZero(context);
-        assertEquals("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0",
+        MapperResult mapperResult =
+                groupCapacityMapperByOracle.incrementUsageByWhereQuotaEqualZero(context);
+        assertEquals(
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0",
                 mapperResult.getSql());
-        assertArrayEquals(new Object[] {modified, groupId, usage}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {modified, groupId, usage},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
     void testIncrementUsageByWhereQuotaNotEqualZero() {
         
-        MapperResult mapperResult = groupCapacityMapperByOracle.incrementUsageByWhereQuotaNotEqualZero(context);
-        assertEquals("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0",
+        MapperResult mapperResult =
+                groupCapacityMapperByOracle.incrementUsageByWhereQuotaNotEqualZero(context);
+        assertEquals(
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0",
                 mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
@@ -141,14 +150,17 @@ class GroupCapacityMapperByOracleTest {
     @Test
     void testIncrementUsageByWhere() {
         MapperResult mapperResult = groupCapacityMapperByOracle.incrementUsageByWhere(context);
-        assertEquals("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?", mapperResult.getSql());
+        assertEquals(
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?",
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testDecrementUsageByWhere() {
         MapperResult mapperResult = groupCapacityMapperByOracle.decrementUsageByWhere(context);
-        assertEquals("UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0",
+        assertEquals(
+                "UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0",
                 mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
@@ -156,7 +168,8 @@ class GroupCapacityMapperByOracleTest {
     @Test
     void testUpdateUsage() {
         MapperResult mapperResult = groupCapacityMapperByOracle.updateUsage(context);
-        assertEquals("UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?",
+        assertEquals(
+                "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?",
                 mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
@@ -167,7 +180,8 @@ class GroupCapacityMapperByOracleTest {
         assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = 'public'),"
                         + " gmt_modified = ? WHERE group_id= ?");
-        assertArrayEquals(new Object[] {groupId, modified, groupId}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {groupId, modified, groupId},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -175,7 +189,8 @@ class GroupCapacityMapperByOracleTest {
         Object id = 1;
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult mapperResult = groupCapacityMapperByOracle.selectGroupInfoBySize(context);
-        assertEquals("SELECT id, group_id FROM group_capacity WHERE id > ? FETCH FIRST ? ROWS ONLY", mapperResult.getSql());
+        assertEquals("SELECT id, group_id FROM group_capacity WHERE id > ? FETCH FIRST ? ROWS ONLY",
+                mapperResult.getSql());
         context.putWhereParameter(FieldConstant.GMT_CREATE, createTime);
         assertArrayEquals(new Object[] {id, pageSize}, mapperResult.getParamList().toArray());
     }

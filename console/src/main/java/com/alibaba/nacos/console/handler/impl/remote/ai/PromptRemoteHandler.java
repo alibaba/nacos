@@ -58,50 +58,62 @@ public class PromptRemoteHandler implements PromptHandler {
     // ========== Common APIs ==========
     
     @Override
-    public boolean deletePrompt(PromptForm form, String srcUser, String srcIp) throws NacosException {
+    public boolean deletePrompt(PromptForm form, String srcUser, String srcIp)
+            throws NacosException {
         return clientHolder.getAiMaintainerService().prompt().deletePrompt(form.getNamespaceId(),
                 form.getPromptKey());
     }
     
     @Override
     public Page<PromptMetaSummary> listPrompts(PromptListForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().prompt().listPrompts(form.getNamespaceId(), form.getPromptKey(),
+        return clientHolder.getAiMaintainerService().prompt().listPrompts(form.getNamespaceId(),
+                form.getPromptKey(),
                 form.getSearch(), form.getBizTags(), form.getPageNo(), form.getPageSize());
     }
     
     @Override
-    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form) throws NacosException {
-        return clientHolder.getAiMaintainerService().prompt().listPromptVersions(form.getNamespaceId(),
+    public Page<PromptVersionSummary> listPromptVersions(PromptHistoryForm form)
+            throws NacosException {
+        return clientHolder.getAiMaintainerService().prompt().listPromptVersions(
+                form.getNamespaceId(),
                 form.getPromptKey(), form.getPageNo(), form.getPageSize());
     }
     
     // ========== Lifecycle APIs ==========
     
     @Override
-    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey) throws NacosException {
-        return clientHolder.getAiMaintainerService().prompt().getPromptGovernanceDetail(namespaceId, promptKey);
+    public PromptMetaInfo getPromptGovernanceDetail(String namespaceId, String promptKey)
+            throws NacosException {
+        return clientHolder.getAiMaintainerService().prompt().getPromptGovernanceDetail(namespaceId,
+                promptKey);
     }
     
     @Override
     public PromptVersionInfo getVersionDetail(String namespaceId, String promptKey, String version)
             throws NacosException {
-        return clientHolder.getAiMaintainerService().prompt().getVersionDetail(namespaceId, promptKey, version);
+        return clientHolder.getAiMaintainerService().prompt().getVersionDetail(namespaceId,
+                promptKey, version);
     }
     
     @Override
-    public String createDraft(String namespaceId, String promptKey, String basedOnVersion, String targetVersion,
-            String template, List<PromptVariable> variables, String commitMsg, String description, String bizTags)
+    public String createDraft(String namespaceId, String promptKey, String basedOnVersion,
+            String targetVersion,
+            String template, List<PromptVariable> variables, String commitMsg, String description,
+            String bizTags)
             throws NacosException {
         String variablesJson = variables != null ? JacksonUtils.toJson(variables) : null;
-        return clientHolder.getAiMaintainerService().prompt().createDraft(namespaceId, promptKey, basedOnVersion,
+        return clientHolder.getAiMaintainerService().prompt().createDraft(namespaceId, promptKey,
+                basedOnVersion,
                 targetVersion, template, variablesJson, commitMsg, description, bizTags);
     }
     
     @Override
-    public void updateDraft(String namespaceId, String promptKey, String template, List<PromptVariable> variables,
+    public void updateDraft(String namespaceId, String promptKey, String template,
+            List<PromptVariable> variables,
             String commitMsg) throws NacosException {
         String variablesJson = variables != null ? JacksonUtils.toJson(variables) : null;
-        clientHolder.getAiMaintainerService().prompt().updateDraft(namespaceId, promptKey, template, variablesJson,
+        clientHolder.getAiMaintainerService().prompt().updateDraft(namespaceId, promptKey, template,
+                variablesJson,
                 commitMsg);
     }
     
@@ -111,42 +123,54 @@ public class PromptRemoteHandler implements PromptHandler {
     }
     
     @Override
-    public String submit(String namespaceId, String promptKey, String version) throws NacosException {
-        return clientHolder.getAiMaintainerService().prompt().submit(namespaceId, promptKey, version);
-    }
-    
-    @Override
-    public void publish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+    public String submit(String namespaceId, String promptKey, String version)
             throws NacosException {
-        clientHolder.getAiMaintainerService().prompt().publish(namespaceId, promptKey, version, updateLatestLabel);
+        return clientHolder.getAiMaintainerService().prompt().submit(namespaceId, promptKey,
+                version);
     }
     
     @Override
-    public void forcePublish(String namespaceId, String promptKey, String version, boolean updateLatestLabel)
+    public void publish(String namespaceId, String promptKey, String version,
+            boolean updateLatestLabel)
+            throws NacosException {
+        clientHolder.getAiMaintainerService().prompt().publish(namespaceId, promptKey, version,
+                updateLatestLabel);
+    }
+    
+    @Override
+    public void forcePublish(String namespaceId, String promptKey, String version,
+            boolean updateLatestLabel)
             throws NacosException {
         clientHolder.getAiMaintainerService().prompt().forcePublish(namespaceId, promptKey, version,
                 updateLatestLabel);
     }
     
     @Override
-    public void changeOnlineStatus(String namespaceId, String promptKey, String version, boolean online)
+    public void changeOnlineStatus(String namespaceId, String promptKey, String version,
+            boolean online)
             throws NacosException {
-        clientHolder.getAiMaintainerService().prompt().changeOnlineStatus(namespaceId, promptKey, version, online);
+        clientHolder.getAiMaintainerService().prompt().changeOnlineStatus(namespaceId, promptKey,
+                version, online);
     }
     
     @Override
-    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels) throws NacosException {
+    public void updateLabels(String namespaceId, String promptKey, Map<String, String> labels)
+            throws NacosException {
         clientHolder.getAiMaintainerService().prompt().updateLabels(namespaceId, promptKey,
                 JacksonUtils.toJson(labels));
     }
     
     @Override
-    public void updateDescription(String namespaceId, String promptKey, String description) throws NacosException {
-        clientHolder.getAiMaintainerService().prompt().updateDescription(namespaceId, promptKey, description);
+    public void updateDescription(String namespaceId, String promptKey, String description)
+            throws NacosException {
+        clientHolder.getAiMaintainerService().prompt().updateDescription(namespaceId, promptKey,
+                description);
     }
     
     @Override
-    public void updateBizTags(String namespaceId, String promptKey, String bizTags) throws NacosException {
-        clientHolder.getAiMaintainerService().prompt().updateBizTags(namespaceId, promptKey, bizTags);
+    public void updateBizTags(String namespaceId, String promptKey, String bizTags)
+            throws NacosException {
+        clientHolder.getAiMaintainerService().prompt().updateBizTags(namespaceId, promptKey,
+                bizTags);
     }
 }

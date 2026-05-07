@@ -42,6 +42,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  */
 @Service
 public class ConfigDetailService {
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigDetailService.class);
     
     private final ConfigInfoPersistService configInfoPersistService;
@@ -76,10 +77,12 @@ public class ConfigDetailService {
     }
     
     private void loadSetting() {
-        setMaxCapacity(Math.min(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_CAPACITY,
-                String.valueOf(getMaxCapacity()))), MAX_CAPACITY));
-        setMaxThread(Math.min(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_THREAD,
-                String.valueOf(getMaxThread()))), MAX_THREAD));
+        setMaxCapacity(Math
+                .min(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_CAPACITY,
+                        String.valueOf(getMaxCapacity()))), MAX_CAPACITY));
+        setMaxThread(
+                Math.min(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_THREAD,
+                        String.valueOf(getMaxThread()))), MAX_THREAD));
         setWaitTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_WAIT_TIMEOUT,
                 String.valueOf(getWaitTimeout()))));
     }
@@ -89,7 +92,7 @@ public class ConfigDetailService {
      */
     private void initWorker() {
         this.eventLinkedBlockingQueue = new LinkedBlockingQueue<>(maxCapacity);
-    
+        
         clientEventExecutor = new ScheduledThreadPoolExecutor(maxThread,
                 new NameThreadFactory("com.alibaba.nacos.config.search.worker"));
         
@@ -100,11 +103,15 @@ public class ConfigDetailService {
                         SearchEvent event = eventLinkedBlockingQueue.take();
                         Page<ConfigInfo> result = null;
                         if (Constants.CONFIG_SEARCH_BLUR.equals(event.getType())) {
-                            result = configInfoPersistService.findConfigInfoLike4Page(event.pageNo, event.pageSize,
-                                    event.dataId, event.group, event.tenant, event.configAdvanceInfo);
+                            result = configInfoPersistService.findConfigInfoLike4Page(event.pageNo,
+                                    event.pageSize,
+                                    event.dataId, event.group, event.tenant,
+                                    event.configAdvanceInfo);
                         } else {
-                            result = configInfoPersistService.findConfigInfo4Page(event.pageNo, event.pageSize,
-                                    event.dataId, event.group, event.tenant, event.configAdvanceInfo);
+                            result = configInfoPersistService.findConfigInfo4Page(event.pageNo,
+                                    event.pageSize,
+                                    event.dataId, event.group, event.tenant,
+                                    event.configAdvanceInfo);
                         }
                         synchronized (event) {
                             event.setResponse(result);
@@ -121,7 +128,8 @@ public class ConfigDetailService {
     /**
      * block thread and use workerThread to search config.
      */
-    public Page<ConfigInfo> findConfigInfoPage(String search, int pageNo, int pageSize, String dataId, String group,
+    public Page<ConfigInfo> findConfigInfoPage(String search, int pageNo, int pageSize,
+            String dataId, String group,
             String tenant, Map<String, Object> configAdvanceInfo) throws NacosRuntimeException {
         SearchEvent searchEvent = new SearchEvent(search, pageNo, pageSize, dataId, group, tenant,
                 configAdvanceInfo);
@@ -170,6 +178,7 @@ public class ConfigDetailService {
     }
     
     public static class SearchEvent {
+        
         private String type;
         
         private int pageNo;
@@ -185,11 +194,12 @@ public class ConfigDetailService {
         private Map<String, Object> configAdvanceInfo;
         
         private Page<ConfigInfo> response;
-    
+        
         public SearchEvent() {
         }
-    
-        public SearchEvent(String type, int pageNo, int pageSize, String dataId, String group, String tenant,
+        
+        public SearchEvent(String type, int pageNo, int pageSize, String dataId, String group,
+                String tenant,
                 Map<String, Object> configAdvanceInfo) {
             this.type = type;
             this.pageNo = pageNo;
@@ -199,39 +209,39 @@ public class ConfigDetailService {
             this.tenant = tenant;
             this.configAdvanceInfo = configAdvanceInfo;
         }
-    
+        
         public String getType() {
             return type;
         }
-    
+        
         public int getPageNo() {
             return pageNo;
         }
-    
+        
         public int getPageSize() {
             return pageSize;
         }
-    
+        
         public String getDataId() {
             return dataId;
         }
-    
+        
         public String getGroup() {
             return group;
         }
-    
+        
         public String getTenant() {
             return tenant;
         }
-    
+        
         public Map<String, Object> getConfigAdvanceInfo() {
             return configAdvanceInfo;
         }
-    
+        
         public Page<ConfigInfo> getResponse() {
             return response;
         }
-    
+        
         public void setResponse(Page<ConfigInfo> response) {
             this.response = response;
         }

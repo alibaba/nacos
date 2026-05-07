@@ -57,7 +57,8 @@ public class VisibilityHelper {
      */
     public static String resolveCurrentIdentity() {
         try {
-            IdentityContext identity = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+            IdentityContext identity =
+                    RequestContextHolder.getContext().getAuthContext().getIdentityContext();
             Object id = identity.getParameter(Constants.Identity.IDENTITY_ID);
             return id == null ? "" : id.toString();
         } catch (Exception e) {
@@ -86,7 +87,8 @@ public class VisibilityHelper {
      */
     public static String resolveClientIp() {
         try {
-            String sourceIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
+            String sourceIp = RequestContextHolder.getContext().getBasicContext()
+                    .getAddressContext().getSourceIp();
             return sourceIp == null ? "" : sourceIp;
         } catch (Exception e) {
             return "";
@@ -100,7 +102,8 @@ public class VisibilityHelper {
      * @param <T>        filterable resource type
      * @return resources the current user is allowed to read
      */
-    public static <T extends VisibilityResource> List<T> filterReadableResources(List<T> candidates) {
+    public static <T extends VisibilityResource> List<T> filterReadableResources(
+            List<T> candidates) {
         Optional<VisibilityService> visibilityService = findVisibilityService();
         if (visibilityService.isEmpty()) {
             return candidates;
@@ -109,7 +112,8 @@ public class VisibilityHelper {
         List<T> result = new ArrayList<>(candidates.size());
         for (T each : candidates) {
             ValidationResult validationResult = visibilityService.get()
-                    .validateVisibility(currentUser, VisibilityConstants.ACTION_READ, resolveCurrentApiType(), each);
+                    .validateVisibility(currentUser, VisibilityConstants.ACTION_READ,
+                            resolveCurrentApiType(), each);
             if (validationResult.isAllowed()) {
                 result.add(each);
             }
@@ -129,7 +133,8 @@ public class VisibilityHelper {
             return true;
         }
         ValidationResult result = visibilityService.get()
-                .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_READ, resolveCurrentApiType(),
+                .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_READ,
+                        resolveCurrentApiType(),
                         resource);
         return result.isAllowed();
     }
@@ -146,7 +151,8 @@ public class VisibilityHelper {
             return;
         }
         ValidationResult result = visibilityService.get()
-                .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_WRITE, resolveCurrentApiType(),
+                .validateVisibility(resolveCurrentIdentity(), VisibilityConstants.ACTION_WRITE,
+                        resolveCurrentApiType(),
                         resource);
         if (!result.isAllowed()) {
             throw new NacosApiException(NacosException.NO_RIGHT, ErrorCode.ACCESS_DENIED,
@@ -164,7 +170,8 @@ public class VisibilityHelper {
         String identity = resolveCurrentIdentity();
         String apiType = resolveCurrentApiType();
         return findVisibilityService()
-                .map(service -> service.resolveDefaultScopeForCreate(identity, apiType, resourceType))
+                .map(service -> service.resolveDefaultScopeForCreate(identity, apiType,
+                        resourceType))
                 .filter(StringUtils::isNotBlank)
                 .map(each -> each.toUpperCase(Locale.ROOT))
                 .orElse(VisibilityConstants.SCOPE_PRIVATE);
@@ -191,6 +198,7 @@ public class VisibilityHelper {
      * @return optional visibility service
      */
     public static Optional<VisibilityService> findVisibilityService() {
-        return VisibilityPluginManager.getInstance().findVisibilityService(resolveVisibilityServiceName());
+        return VisibilityPluginManager.getInstance()
+                .findVisibilityService(resolveVisibilityServiceName());
     }
 }

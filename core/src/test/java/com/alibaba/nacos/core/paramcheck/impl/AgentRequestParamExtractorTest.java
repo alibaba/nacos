@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * {@link AgentRequestParamExtractor} unit test.
  */
 class AgentRequestParamExtractorTest {
-
+    
     private AgentRequestParamExtractor extractor;
-
+    
     @BeforeEach
     void setUp() {
         extractor = new AgentRequestParamExtractor();
     }
-
+    
     @Test
     void extractParamForAbstractAgentRequest() throws Exception {
         QueryAgentCardRequest request = new QueryAgentCardRequest();
@@ -51,7 +51,7 @@ class AgentRequestParamExtractorTest {
         assertEquals("ns1", list.get(0).getNamespaceId());
         assertEquals("agent1", list.get(0).getAgentName());
     }
-
+    
     @Test
     void extractParamForReleaseAgentCardRequestWithoutCard() throws Exception {
         ReleaseAgentCardRequest request = new ReleaseAgentCardRequest();
@@ -63,7 +63,7 @@ class AgentRequestParamExtractorTest {
         assertEquals(1, list.size());
         assertEquals("agent1", list.get(0).getAgentName());
     }
-
+    
     @Test
     void extractParamForReleaseAgentCardRequestWithCard() throws Exception {
         ReleaseAgentCardRequest request = new ReleaseAgentCardRequest();

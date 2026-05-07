@@ -32,19 +32,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 class ConnectionGeneratorServiceImplTest {
-
+    
     @Mock
     private StreamObserver streamObserver;
-
+    
     @Mock
     private Channel channel;
-
+    
     @Test
     void testGetType() {
         ConnectionGeneratorServiceImpl service = new ConnectionGeneratorServiceImpl();
         assertEquals("nacos", service.getType());
     }
-
+    
     @Test
     void testGetConnection() {
         ConnectionGeneratorServiceImpl service = new ConnectionGeneratorServiceImpl();

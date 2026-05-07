@@ -99,14 +99,18 @@ public class AgentSpecZipParser {
      * @return parsed AgentSpec
      * @throws NacosApiException if parsing failed, zip exceeds size limit, manifest.json missing, or suggested_name empty
      */
-    public static AgentSpec parseAgentSpecFromZip(byte[] zipBytes, String namespaceId) throws NacosApiException {
+    public static AgentSpec parseAgentSpecFromZip(byte[] zipBytes, String namespaceId)
+            throws NacosApiException {
         if (zipBytes == null || zipBytes.length == 0) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "AgentSpec zip file is empty");
         }
         if (zipBytes.length > Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    "AgentSpec zip size must not exceed " + (Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "AgentSpec zip size must not exceed "
+                            + (Constants.AgentSpecs.MAX_UPLOAD_ZIP_BYTES / 1024 / 1024)
                             + "MB, current: " + (zipBytes.length / 1024 / 1024) + "MB");
         }
         try {
@@ -126,7 +130,8 @@ public class AgentSpecZipParser {
             }
             
             if (StringUtils.isBlank(manifestContent)) {
-                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                        ErrorCode.PARAMETER_VALIDATE_ERROR,
                         "manifest.json file not found in zip");
             }
             
@@ -139,7 +144,8 @@ public class AgentSpecZipParser {
             throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to parse AgentSpec zip file", e);
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARSING_DATA_FAILED,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARSING_DATA_FAILED,
                     "Failed to parse zip file: " + e.getMessage());
         }
     }
@@ -150,8 +156,9 @@ public class AgentSpecZipParser {
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         List<ZipEntryData> result = new ArrayList<>();
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
-                StandardCharsets.UTF_8.name(), true, true)) {
+        try (ZipArchiveInputStream zis =
+                new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
+                        StandardCharsets.UTF_8.name(), true, true)) {
             ZipArchiveEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
@@ -178,12 +185,14 @@ public class AgentSpecZipParser {
      * Extracts worker.suggested_name as the AgentSpec name.
      */
     @SuppressWarnings("unchecked")
-    private static AgentSpec parseManifest(String manifestContent, String namespaceId) throws NacosApiException {
+    private static AgentSpec parseManifest(String manifestContent, String namespaceId)
+            throws NacosApiException {
         Map<String, Object> root;
         try {
             root = JacksonUtils.toObj(manifestContent, Map.class);
         } catch (Exception e) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "manifest.json is not valid JSON: " + e.getMessage());
         }
         
@@ -198,7 +207,8 @@ public class AgentSpecZipParser {
         }
         
         if (StringUtils.isBlank(suggestedName)) {
-            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+            throw new NacosApiException(NacosApiException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_MISSING,
                     "worker.suggested_name is required in manifest.json");
         }
         
@@ -220,7 +230,7 @@ public class AgentSpecZipParser {
         
         return agentSpec;
     }
-
+    
     private static String parseBizTags(Object bizTagsObj) {
         if (bizTagsObj instanceof List) {
             List<?> bizTags = (List<?>) bizTagsObj;
@@ -247,7 +257,8 @@ public class AgentSpecZipParser {
      * Parse resources from zip entries. Text files use UTF-8 content; binary (by extension) use Base64 content
      * and metadata encoding=base64. manifest.json is excluded from resources.
      */
-    private static Map<String, AgentSpecResource> parseResources(List<ZipEntryData> entries, String agentSpecName) {
+    private static Map<String, AgentSpecResource> parseResources(List<ZipEntryData> entries,
+            String agentSpecName) {
         Map<String, AgentSpecResource> resources = new HashMap<>(16);
         
         for (ZipEntryData entry : entries) {
@@ -319,7 +330,8 @@ public class AgentSpecZipParser {
         if (StringUtils.isBlank(fileName) || !fileName.contains(DOT)) {
             return false;
         }
-        String ext = fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
+        String ext =
+                fileName.substring(fileName.lastIndexOf(DOT.charAt(0)) + 1).trim().toLowerCase();
         return BINARY_EXTENSIONS.contains(ext);
     }
     

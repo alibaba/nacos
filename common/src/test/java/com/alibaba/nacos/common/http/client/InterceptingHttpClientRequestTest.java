@@ -61,7 +61,8 @@ class InterceptingHttpClientRequestTest {
     void setUp() throws Exception {
         List<HttpClientRequestInterceptor> interceptorList = new LinkedList<>();
         interceptorList.add(interceptor);
-        clientRequest = new InterceptingHttpClientRequest(httpClientRequest, interceptorList.listIterator());
+        clientRequest = new InterceptingHttpClientRequest(httpClientRequest,
+                interceptorList.listIterator());
         when(interceptor.intercept()).thenReturn(interceptorResponse);
         when(httpClientRequest.execute(any(), any(), any())).thenReturn(httpClientResponse);
     }

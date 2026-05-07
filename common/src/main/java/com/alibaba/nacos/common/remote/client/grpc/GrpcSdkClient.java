@@ -52,7 +52,8 @@ public class GrpcSdkClient extends GrpcClient {
         this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
     
-    public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
+    public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
+            Map<String, String> labels,
             RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
     }

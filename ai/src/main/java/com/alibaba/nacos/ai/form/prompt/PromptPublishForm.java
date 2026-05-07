@@ -76,7 +76,8 @@ public class PromptPublishForm extends PromptForm {
         }
         
         if (!PromptVersionUtils.isValidVersion(version)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Parameter 'version' must be in format 'major.minor.patch' (e.g., '1.0.0')");
         }
     }

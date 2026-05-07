@@ -93,7 +93,8 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfoByAppCountRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoByAppCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?",
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -109,14 +110,16 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testConfigInfoLikeTenantCount() {
         MapperResult mapperResult = configInfoMapperByMySql.configInfoLikeTenantCount(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?",
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testGetTenantIdList() {
         MapperResult mapperResult = configInfoMapperByMySql.getTenantIdList(context);
-        assertEquals(mapperResult.getSql(), "SELECT tenant_id FROM config_info WHERE tenant_id != '" + NamespaceUtil.getNamespaceDefaultId()
+        assertEquals(mapperResult.getSql(), "SELECT tenant_id FROM config_info WHERE tenant_id != '"
+                + NamespaceUtil.getNamespaceDefaultId()
                 + "' GROUP BY tenant_id ORDER BY tenant_id LIMIT " + startRow + "," + pageSize);
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
@@ -125,7 +128,8 @@ class ConfigInfoMapperByMySqlTest {
     void testGetGroupIdList() {
         MapperResult mapperResult = configInfoMapperByMySql.getGroupIdList(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT group_id FROM config_info WHERE tenant_id ='public' GROUP BY group_id ORDER BY group_id LIMIT " + startRow + "," + pageSize);
+                "SELECT group_id FROM config_info WHERE tenant_id ='public' GROUP BY group_id ORDER BY group_id LIMIT "
+                        + startRow + "," + pageSize);
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
@@ -133,8 +137,10 @@ class ConfigInfoMapperByMySqlTest {
     void testFindAllConfigKey() {
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigKey(context);
         assertEquals(mapperResult.getSql(),
-                " SELECT data_id,group_id,app_name  FROM ( " + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT "
-                        + context.getStartRow() + "," + context.getPageSize() + " )" + " g, config_info t WHERE g.id = t.id  ");
+                " SELECT data_id,group_id,app_name  FROM ( "
+                        + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT "
+                        + context.getStartRow() + "," + context.getPageSize() + " )"
+                        + " g, config_info t WHERE g.id = t.id  ");
         assertArrayEquals(new Object[] {tenantId}, mapperResult.getParamList().toArray());
     }
     
@@ -142,7 +148,8 @@ class ConfigInfoMapperByMySqlTest {
     void testFindAllConfigInfoBaseFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoBaseFetchRows(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT t.id,data_id,group_id,content,md5 FROM ( SELECT id FROM config_info ORDER BY id LIMIT " + context.getStartRow()
+                "SELECT t.id,data_id,group_id,content,md5 FROM ( SELECT id FROM config_info ORDER BY id LIMIT "
+                        + context.getStartRow()
                         + "," + context.getPageSize() + " ) g, config_info t  WHERE g.id = t.id ");
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
@@ -153,14 +160,20 @@ class ConfigInfoMapperByMySqlTest {
         context.putContextParameter(ContextConstant.NEED_CONTENT, "true");
         
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoFragment(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize, mapperResult.getSql());
+        assertEquals(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + ","
+                        + pageSize,
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {id}, mapperResult.getParamList().toArray());
         
         context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
         MapperResult mapperResult2 = configInfoMapperByMySql.findAllConfigInfoFragment(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
-                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize, mapperResult2.getSql());
+        assertEquals(
+                "SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + ","
+                        + pageSize,
+                mapperResult2.getSql());
         assertArrayEquals(new Object[] {id}, mapperResult2.getParamList().toArray());
     }
     
@@ -170,16 +183,19 @@ class ConfigInfoMapperByMySqlTest {
         assertEquals(mapperResult.getSql(),
                 "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info"
                         + " WHERE gmt_modified >= ? and id > ? order by id  limit ? ");
-        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindChangeConfigCountRows() {
         
         MapperResult mapperResult = configInfoMapperByMySql.findChangeConfigCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=? ",
+        assertEquals(
+                "SELECT count(*) FROM config_info WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=? ",
                 mapperResult.getSql());
-        assertArrayEquals(new Object[] {appName, startTime, endTime}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {appName, startTime, endTime},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -187,17 +203,21 @@ class ConfigInfoMapperByMySqlTest {
         Object lastMaxId = 100;
         context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
         MapperResult mapperResult = configInfoMapperByMySql.findChangeConfigFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info "
-                + "WHERE  1=1  AND tenant_id = ?  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  AND id > " + lastMaxId
-                + " ORDER BY id ASC LIMIT " + startRow + "," + pageSize);
-        assertArrayEquals(new Object[] {tenantId, appName, startTime, endTime}, mapperResult.getParamList().toArray());
+        assertEquals(mapperResult.getSql(),
+                "SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info "
+                        + "WHERE  1=1  AND tenant_id = ?  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  AND id > "
+                        + lastMaxId
+                        + " ORDER BY id ASC LIMIT " + startRow + "," + pageSize);
+        assertArrayEquals(new Object[] {tenantId, appName, startTime, endTime},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
     void testListGroupKeyMd5ByPageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.listGroupKeyMd5ByPageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
-                + "( SELECT id FROM config_info ORDER BY id LIMIT 0,5 ) g, config_info t WHERE g.id = t.id");
+        assertEquals(mapperResult.getSql(),
+                "SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
+                        + "( SELECT id FROM config_info ORDER BY id LIMIT 0,5 ) g, config_info t WHERE g.id = t.id");
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
         
     }
@@ -220,16 +240,20 @@ class ConfigInfoMapperByMySqlTest {
     
     @Test
     void testFindConfigInfoBaseLikeCountRows() {
-        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoBaseLikeCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='public' ", mapperResult.getSql());
+        MapperResult mapperResult =
+                configInfoMapperByMySql.findConfigInfoBaseLikeCountRows(context);
+        assertEquals("SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='public' ",
+                mapperResult.getSql());
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     void testFindConfigInfoBaseLikeFetchRows() {
-        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoBaseLikeFetchRows(context);
+        MapperResult mapperResult =
+                configInfoMapperByMySql.findConfigInfoBaseLikeFetchRows(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id='public'  ORDER BY id LIMIT " + startRow + ","
+                "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id='public'  ORDER BY id LIMIT "
+                        + startRow + ","
                         + pageSize);
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
@@ -237,7 +261,8 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfo4PageCountRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ",
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
@@ -245,13 +270,16 @@ class ConfigInfoMapperByMySqlTest {
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageFetchRows(context);
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
-        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info "
-                + "WHERE tenant_id=? AND app_name=? ORDER BY id LIMIT " + startRow + "," + pageSize;
-        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
-                + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
-                + "FROM (" + expectedInnerSql + ") a "
-                + "LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc";
+        String expectedInnerSql =
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key,c_desc FROM config_info "
+                        + "WHERE tenant_id=? AND app_name=? ORDER BY id LIMIT " + startRow + ","
+                        + pageSize;
+        String expectedSql =
+                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc,"
+                        + "GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                        + "FROM (" + expectedInnerSql + ") a "
+                        + "LEFT JOIN config_tags_relation b ON a.id=b.id "
+                        + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.type,a.encrypted_data_key,a.c_desc";
         assertEquals(expectedSql, mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
@@ -259,31 +287,40 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfoBaseByGroupFetchRows() {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
-        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoBaseByGroupFetchRows(context);
-        String expectedSql = "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? "
-                + "ORDER BY id LIMIT " + startRow + "," + pageSize;
+        MapperResult mapperResult =
+                configInfoMapperByMySql.findConfigInfoBaseByGroupFetchRows(context);
+        String expectedSql =
+                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? "
+                        + "ORDER BY id LIMIT " + startRow + "," + pageSize;
         assertEquals(mapperResult.getSql(), expectedSql);
         assertArrayEquals(new Object[] {groupId, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
-        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?  AND app_name = ? ", mapperResult.getSql());
+        MapperResult mapperResult =
+                configInfoMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?  AND app_name = ? ",
+                mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
-        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+                configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         // 验证新的优化后的 SQL 结构：先 LIMIT 再 JOIN
-        String expectedInnerSql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified"
-                + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? ORDER BY id LIMIT " + startRow + "," + pageSize;
-        String expectedSql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
-                + ",a.gmt_modified,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
-                + "FROM (" + expectedInnerSql + ") a "
-                + "LEFT JOIN config_tags_relation b ON a.id=b.id "
-                + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
+        String expectedInnerSql =
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type,c_desc,gmt_modified"
+                        + " FROM config_info WHERE tenant_id LIKE ? AND app_name = ? ORDER BY id LIMIT "
+                        + startRow + "," + pageSize;
+        String expectedSql =
+                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc"
+                        + ",a.gmt_modified,GROUP_CONCAT(b.tag_name SEPARATOR ',') as config_tags "
+                        + "FROM (" + expectedInnerSql + ") a "
+                        + "LEFT JOIN config_tags_relation b ON a.id=b.id "
+                        + "GROUP BY a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,"
+                        + "a.content,a.md5,a.encrypted_data_key,a.type,a.c_desc,a.gmt_modified";
         assertEquals(expectedSql, mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
@@ -294,13 +331,15 @@ class ConfigInfoMapperByMySqlTest {
         assertEquals(mapperResult.getSql(),
                 "SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5  FROM (  SELECT id FROM config_info "
                         + "WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? ) g, config_info t  WHERE g.id = t.id ");
-        assertArrayEquals(new Object[] {tenantId, startRow, pageSize}, mapperResult.getParamList().toArray());
+        assertArrayEquals(new Object[] {tenantId, startRow, pageSize},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfosByIds() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfosByIds(context);
-        assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ",
+        assertEquals(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ",
                 mapperResult.getSql());
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
     }
@@ -359,12 +398,15 @@ class ConfigInfoMapperByMySqlTest {
         
         MapperResult mapperResult = configInfoMapperByMySql.updateConfigInfoAtomicCas(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE config_info SET " + "content=?, md5=?, src_ip=?, src_user=?, gmt_modified=NOW(3),"
+                "UPDATE config_info SET "
+                        + "content=?, md5=?, src_ip=?, src_user=?, gmt_modified=NOW(3),"
                         + " app_name=?, c_desc=?, c_use=?, effect=?, type=?, c_schema=?, encrypted_data_key=? "
                         + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
         assertArrayEquals(
-                new Object[]{newContent, newMD5, srcIp, srcUser, appNameTmp, desc, use, effect, type, schema,
-                        encryptedDataKey, dataId, group, tenantId, md5}, mapperResult.getParamList().toArray());
+                new Object[] {newContent, newMD5, srcIp, srcUser, appNameTmp, desc, use, effect,
+                        type, schema,
+                        encryptedDataKey, dataId, group, tenantId, md5},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -388,7 +430,7 @@ class ConfigInfoMapperByMySqlTest {
         assertEquals(true, sql.contains("GROUP BY"));
         assertEquals(true, sql.contains("FROM (SELECT"));
         assertEquals(true, sql.contains("ORDER BY id LIMIT"));
-
+        
         // 验证参数
         assertEquals(5, paramList.size());
         assertEquals(tenantId, paramList.get(0));
@@ -407,9 +449,10 @@ class ConfigInfoMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, "DEFAULT");
         context.putWhereParameter(FieldConstant.APP_NAME, appName);
         context.putWhereParameter(FieldConstant.CONTENT, "key");
-        context.putWhereParameter(FieldConstant.TYPE, new String[]{"properties", "yaml"});
+        context.putWhereParameter(FieldConstant.TYPE, new String[] {"properties", "yaml"});
         
-        MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult =
+                configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         

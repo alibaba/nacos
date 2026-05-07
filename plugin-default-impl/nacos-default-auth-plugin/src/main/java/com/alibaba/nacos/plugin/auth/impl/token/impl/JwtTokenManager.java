@@ -65,8 +65,9 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     }
     
     private void processProperties() {
-        this.tokenValidityInSeconds = EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
-                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
+        this.tokenValidityInSeconds =
+                EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
+                        AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
         
         String encodedSecretKey = EnvUtil.getProperty(AuthConstants.TOKEN_SECRET_KEY,
                 AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
@@ -77,7 +78,8 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
             if (authConfigs.isAuthEnabled() || authConfigs.isConsoleAuthEnabled()) {
                 throw new IllegalArgumentException(
                         "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
-                                + "Please see https://nacos.io/docs/latest/manual/admin/auth/", e);
+                                + "Please see https://nacos.io/docs/latest/manual/admin/auth/",
+                        e);
             }
         }
         
@@ -108,7 +110,8 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
             // check nacos.core.auth.plugin.nacos.token.secret.key only if auth enabled
             checkJwtParser();
         }
-        return jwtParser.jwtBuilder().setUserName(userName).setExpiredTime(this.tokenValidityInSeconds).compact();
+        return jwtParser.jwtBuilder().setUserName(userName)
+                .setExpiredTime(this.tokenValidityInSeconds).compact();
     }
     
     /**
@@ -121,7 +124,8 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     public Authentication getAuthentication(String token) throws AccessException {
         NacosUser nacosUser = jwtParser.parse(token);
         
-        List<GrantedAuthority> authorities = AuthorityUtils.commaSeparatedStringToAuthorityList(StringUtils.EMPTY);
+        List<GrantedAuthority> authorities =
+                AuthorityUtils.commaSeparatedStringToAuthorityList(StringUtils.EMPTY);
         
         User principal = new User(nacosUser.getUserName(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
@@ -150,7 +154,8 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
         if (!authConfigs.isAuthEnabled()) {
             return tokenValidityInSeconds;
         }
-        return jwtParser.getExpireTimeInSeconds(token) - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        return jwtParser.getExpireTimeInSeconds(token)
+                - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
     }
     
     public long getExpiredTimeInSeconds(String token) throws AccessException {

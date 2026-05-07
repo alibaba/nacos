@@ -29,15 +29,15 @@ import java.io.Serial;
  * @author nacos
  */
 public class SkillLabelsUpdateForm extends SkillForm {
-
+    
     @Serial
     private static final long serialVersionUID = 1L;
-
+    
     /**
      * JSON string: {"latest":"v3","stable":"v2"}.
      */
     private String labels;
-
+    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultNamespaceId();
@@ -50,13 +50,12 @@ public class SkillLabelsUpdateForm extends SkillForm {
                     "Request parameter `labels` should not be blank.");
         }
     }
-
+    
     public String getLabels() {
         return labels;
     }
-
+    
     public void setLabels(String labels) {
         this.labels = labels;
     }
 }
-

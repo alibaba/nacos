@@ -64,7 +64,7 @@ class HttpRequestTest {
     }
     
     // ========== File Upload Tests ==========
-
+    
     @Test
     @DisplayName("isFileUpload with fileBytes should return true")
     void testIsFileUploadWithFileBytes() {
@@ -76,7 +76,7 @@ class HttpRequestTest {
                 .build();
         assertTrue(httpRequest.isFileUpload());
     }
-
+    
     @Test
     @DisplayName("isFileUpload with empty fileBytes should return false")
     void testIsFileUploadWithEmptyFileBytes() {
@@ -87,7 +87,7 @@ class HttpRequestTest {
                 .build();
         assertFalse(httpRequest.isFileUpload());
     }
-
+    
     @Test
     @DisplayName("isFileUpload with null fileBytes should return false")
     void testIsFileUploadWithNullFileBytes() {
@@ -98,7 +98,7 @@ class HttpRequestTest {
                 .build();
         assertFalse(httpRequest.isFileUpload());
     }
-
+    
     @Test
     @DisplayName("Builder setFileUpload should set all fields")
     void testBuilderSetFileUpload() {
@@ -114,12 +114,12 @@ class HttpRequestTest {
         assertEquals("test.zip", httpRequest.getFileName());
         assertEquals("file", httpRequest.getFileFieldName());
     }
-
+    
     @Test
     @DisplayName("getFileBytes should return byte array")
     void testGetFileBytes() {
         byte[] fileBytes = "test content".getBytes();
-        HttpRequest httpRequest = new HttpRequest("POST", "/upload", null, null, null, 
+        HttpRequest httpRequest = new HttpRequest("POST", "/upload", null, null, null,
                 new RequestResource(), fileBytes, "test.zip", "file");
         assertArrayEquals(fileBytes, httpRequest.getFileBytes());
     }

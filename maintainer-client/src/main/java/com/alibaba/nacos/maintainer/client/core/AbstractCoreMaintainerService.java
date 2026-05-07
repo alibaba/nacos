@@ -87,10 +87,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("groupId", groupId);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/raft").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/raft").setParamValue(params)
+                .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -112,18 +114,21 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("logLevel", logLevel);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/log").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/log").setParamValue(params)
+                .build();
         clientHttpProxy.executeSyncHttpRequest(httpRequest);
     }
     
     @Override
-    public Collection<NacosMember> listClusterNodes(String address, String state) throws NacosException {
+    public Collection<NacosMember> listClusterNodes(String address, String state)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("address", address);
         params.put("state", state);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list")
+                .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Collection<NacosMember>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Collection<NacosMember>>>() {
@@ -137,10 +142,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("type", type);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/lookup").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/lookup")
+                .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
+        Result<Boolean> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+                });
         return result.getData();
     }
     
@@ -156,17 +163,20 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     }
     
     @Override
-    public String reloadConnectionCount(Integer count, String redirectAddress) throws NacosException {
+    public String reloadConnectionCount(Integer count, String redirectAddress)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("count", String.valueOf(count));
         params.put("redirectAddress", redirectAddress);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadCurrent").setParamValue(params)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadCurrent")
+                .setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -176,25 +186,30 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("loaderFactorStr", loaderFactorStr);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/smartReloadCluster").setParamValue(params)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/smartReloadCluster")
+                .setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
     @Override
-    public String reloadSingleClient(String connectionId, String redirectAddress) throws NacosException {
+    public String reloadSingleClient(String connectionId, String redirectAddress)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("connectionId", connectionId);
         params.put("redirectAddress", redirectAddress);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadClient").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadClient")
+                .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
+        Result<String> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
+                });
         return result.getData();
     }
     
@@ -226,10 +241,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("namespaceId", namespaceId);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params)
+                .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Namespace> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Namespace>>() {
-        });
+        Result<Namespace> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Namespace>>() {
+                });
         return result.getData();
     }
     
@@ -242,10 +259,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("namespaceDesc", namespaceDesc);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params)
+                .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
+        Result<Boolean> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+                });
         return result.getData();
     }
     
@@ -258,10 +277,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("namespaceDesc", namespaceDesc);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params)
+                .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
+        Result<Boolean> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+                });
         return result.getData();
     }
     
@@ -271,10 +292,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("namespaceId", namespaceId);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
-                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params)
+                .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
+        Result<Boolean> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+                });
         return result.getData();
     }
     
@@ -284,53 +307,59 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("namespaceId", namespaceId);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH + "/check").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH + "/check")
+                .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Integer> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Integer>>() {
-        });
+        Result<Integer> result =
+                JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Integer>>() {
+                });
         return result.getData() > 0;
     }
-
+    
     @Override
     public List<Map<String, Object>> listPlugins(String pluginType) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         if (pluginType != null && !pluginType.isEmpty()) {
             params.put("pluginType", pluginType);
         }
-
+        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/list").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/list")
+                .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<List<Map<String, Object>>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<Map<String, Object>>>>() {
                 });
         return result.getData();
     }
-
+    
     @Override
-    public Map<String, Object> getPluginDetail(String pluginType, String pluginName) throws NacosException {
+    public Map<String, Object> getPluginDetail(String pluginType, String pluginName)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("pluginType", pluginType);
         params.put("pluginName", pluginName);
-
+        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/detail").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/detail")
+                .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Map<String, Object>>>() {
                 });
         return result.getData();
     }
-
+    
     @Override
-    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled, boolean localOnly)
+    public void updatePluginStatus(String pluginType, String pluginName, boolean enabled,
+            boolean localOnly)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("pluginType", pluginType);
         params.put("pluginName", pluginName);
         params.put("enabled", String.valueOf(enabled));
         params.put("localOnly", String.valueOf(localOnly));
-
+        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/status")
                 .setParamValue(params).build();
@@ -340,7 +369,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
                     "Failed to update plugin status: " + httpRestResult.getMessage());
         }
     }
-
+    
     @Override
     public void updatePluginConfig(String pluginType, String pluginName, Map<String, String> config,
             boolean localOnly) throws NacosException {
@@ -349,7 +378,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("pluginName", pluginName);
         params.put("config", JacksonUtils.toJson(config));
         params.put("localOnly", String.valueOf(localOnly));
-
+        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/config")
                 .setParamValue(params).build();
@@ -359,13 +388,14 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
                     "Failed to update plugin config: " + httpRestResult.getMessage());
         }
     }
-
+    
     @Override
-    public Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName) throws NacosException {
+    public Map<String, Boolean> getPluginAvailability(String pluginType, String pluginName)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("pluginType", pluginType);
         params.put("pluginName", pluginName);
-
+        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_PLUGIN_ADMIN_PATH + "/availability")
                 .setParamValue(params).build();
@@ -375,7 +405,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
                 });
         return result.getData();
     }
-
+    
     protected ClientHttpProxy getClientHttpProxy() {
         return this.clientHttpProxy;
     }

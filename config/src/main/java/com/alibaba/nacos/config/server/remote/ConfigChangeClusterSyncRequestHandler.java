@@ -58,7 +58,8 @@ public class ConfigChangeClusterSyncRequestHandler
     
     private ConfigMigrateService configMigrateService;
     
-    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService, ConfigMigrateService configMigrateService) {
+    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService,
+            ConfigMigrateService configMigrateService) {
         this.dumpService = dumpService;
         this.configMigrateService = configMigrateService;
     }
@@ -68,7 +69,8 @@ public class ConfigChangeClusterSyncRequestHandler
     @TpsControl(pointName = "ClusterConfigChangeNotify")
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
-    public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
+    public ConfigChangeClusterSyncResponse handle(
+            ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
         
         checkCompatity(configChangeSyncRequest, meta);
@@ -88,15 +90,19 @@ public class ConfigChangeClusterSyncRequestHandler
      *
      * @param configChangeSyncRequest request.
      */
-    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest, RequestMeta meta) {
-        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
-            if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
+    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest,
+            RequestMeta meta) {
+        if (PropertyUtil.isGrayCompatibleModel()
+                && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
+            if (configChangeSyncRequest.isBeta()
+                    || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
                 
                 String grayName = null;
                 //from old server ,beta or tag persist into old model,try migrate and transfer gray model.
                 if (configChangeSyncRequest.isBeta()) {
                     configMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
-                            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+                            configChangeSyncRequest.getGroup(),
+                            configChangeSyncRequest.getTenant());
                     grayName = BetaGrayRule.TYPE_BETA;
                 } else {
                     configMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
@@ -132,7 +138,8 @@ public class ConfigChangeClusterSyncRequestHandler
      * @param meta              the meta
      * @return the boolean
      */
-    public boolean checkNamespaceCompatible(ConfigChangeClusterSyncRequest configSyncRequest, RequestMeta meta) {
+    public boolean checkNamespaceCompatible(ConfigChangeClusterSyncRequest configSyncRequest,
+            RequestMeta meta) {
         if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return false;
         }

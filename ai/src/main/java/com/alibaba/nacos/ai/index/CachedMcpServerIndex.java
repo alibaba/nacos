@@ -47,7 +47,7 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedMcpServerIndex.class);
     
     private final McpCacheIndex cacheIndex;
-
+    
     private final ConfigQueryChainService configQueryChainService;
     
     private final ScheduledExecutorService scheduledExecutor;
@@ -62,8 +62,10 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
      * Constructor.
      */
     public CachedMcpServerIndex(ConfigDetailService configDetailService,
-            NamespaceOperationService namespaceOperationService, ConfigQueryChainService configQueryChainService,
-            McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor, boolean cacheEnabled,
+            NamespaceOperationService namespaceOperationService,
+            ConfigQueryChainService configQueryChainService,
+            McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor,
+            boolean cacheEnabled,
             long syncInterval) {
         super(namespaceOperationService, configDetailService);
         this.configQueryChainService = configQueryChainService;
@@ -74,7 +76,8 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
         if (cacheEnabled) {
             startSyncTask();
         }
-        LOGGER.info("CachedMcpServerIndex initialized with cacheEnabled={}, syncInterval={}s", cacheEnabled,
+        LOGGER.info("CachedMcpServerIndex initialized with cacheEnabled={}, syncInterval={}s",
+                cacheEnabled,
                 syncInterval);
     }
     
@@ -109,16 +112,18 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     @Override
     public McpServerIndexData getMcpServerByName(String namespaceId, String name) {
         if (StringUtils.isEmpty(namespaceId) && StringUtils.isEmpty(name)) {
-            LOGGER.warn("Invalid parameters for getMcpServerByName: namespaceId={}, name={}", namespaceId, name);
+            LOGGER.warn("Invalid parameters for getMcpServerByName: namespaceId={}, name={}",
+                    namespaceId, name);
             return null;
         }
-
+        
         if (StringUtils.isEmpty(namespaceId)) {
             return getFirstMcpServerByName(name);
         }
-
+        
         if (!cacheEnabled) {
-            LOGGER.debug("Cache disabled, querying directly from database for name: {}:{}", namespaceId, name);
+            LOGGER.debug("Cache disabled, querying directly from database for name: {}:{}",
+                    namespaceId, name);
             return getMcpServerByNameFromDatabase(namespaceId, name);
         }
         // Priority query cache
@@ -136,7 +141,7 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
         }
         return dbData;
     }
-
+    
     @Override
     protected void afterSearch(McpServerIndexData indexData, String name) {
         // Update cache
@@ -156,11 +161,13 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
         for (String namespaceId : namespaceList) {
             request.setTenant(namespaceId);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
-            if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL) {
+            if (response
+                    .getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL) {
                 McpServerIndexData result = new McpServerIndexData();
                 result.setId(id);
                 result.setNamespaceId(namespaceId);
-                LOGGER.debug("Found MCP server in database: mcpId={}, namespaceId={}", id, namespaceId);
+                LOGGER.debug("Found MCP server in database: mcpId={}, namespaceId={}", id,
+                        namespaceId);
                 return result;
             }
         }
@@ -173,19 +180,22 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
      */
     private McpServerIndexData getMcpServerByNameFromDatabase(String namespaceId, String name) {
         // 直接查询数据库，避免调用searchMcpServerByName导致重复更新缓存
-        Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, Constants.MCP_LIST_SEARCH_ACCURATE, 1, 1);
+        Page<ConfigInfo> serverInfos =
+                searchMcpServers(namespaceId, name, Constants.MCP_LIST_SEARCH_ACCURATE, 1, 1);
         if (CollectionUtils.isNotEmpty(serverInfos.getPageItems())) {
             ConfigInfo configInfo = serverInfos.getPageItems().get(0);
             McpServerIndexData result = new McpServerIndexData();
-            result.setId(configInfo.getDataId().replace(Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX, ""));
+            result.setId(configInfo.getDataId().replace(Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX,
+                    ""));
             result.setNamespaceId(configInfo.getTenant());
-            LOGGER.debug("Found MCP server in database: name={}:{}, mcpId={}", namespaceId, name, result.getId());
+            LOGGER.debug("Found MCP server in database: name={}:{}, mcpId={}", namespaceId, name,
+                    result.getId());
             return result;
         }
         LOGGER.debug("MCP server not found in database: name={}:{}", namespaceId, name);
         return null;
     }
-
+    
     /**
      * Start scheduled sync task.
      */
@@ -238,8 +248,10 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
      */
     public McpCacheIndex.CacheStats getCacheStats() {
         McpCacheIndex.CacheStats stats = cacheIndex.getStats();
-        LOGGER.debug("Cache stats: hitCount={}, missCount={}, evictionCount={}, size={}, hitRate=%.2f%%",
-                stats.getHitCount(), stats.getMissCount(), stats.getEvictionCount(), stats.getSize(),
+        LOGGER.debug(
+                "Cache stats: hitCount={}, missCount={}, evictionCount={}, size={}, hitRate=%.2f%%",
+                stats.getHitCount(), stats.getMissCount(), stats.getEvictionCount(),
+                stats.getSize(),
                 stats.getHitRate() * 100);
         return stats;
     }
@@ -273,10 +285,13 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
     @Override
     public void removeMcpServerByName(String namespaceId, String mcpName) {
         if (cacheEnabled) {
-            LOGGER.debug("Removing cache entry by name: namespaceId={}, mcpName={}", namespaceId, mcpName);
+            LOGGER.debug("Removing cache entry by name: namespaceId={}, mcpName={}", namespaceId,
+                    mcpName);
             cacheIndex.removeIndex(namespaceId, mcpName);
         } else {
-            LOGGER.debug("Cache is disabled, ignoring cache removal by name: namespaceId={}, mcpName={}", namespaceId,
+            LOGGER.debug(
+                    "Cache is disabled, ignoring cache removal by name: namespaceId={}, mcpName={}",
+                    namespaceId,
                     mcpName);
         }
     }
@@ -295,4 +310,4 @@ public class CachedMcpServerIndex extends AbstractMcpServerIndex {
             LOGGER.debug("Cache is disabled, ignoring cache removal by ID: mcpId={}", mcpId);
         }
     }
-} 
+}

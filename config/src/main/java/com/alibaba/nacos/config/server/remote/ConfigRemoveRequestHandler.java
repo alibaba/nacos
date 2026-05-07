@@ -44,7 +44,8 @@ import org.springframework.stereotype.Component;
  * @version $Id: ConfiRemoveRequestHandler.java, v 0.1 2020年07月16日 5:49 PM liuzunfei Exp $
  */
 @Component
-public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
+public class ConfigRemoveRequestHandler
+        extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
     
     private final ConfigInfoPersistService configInfoPersistService;
     
@@ -53,7 +54,8 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
     private final ConfigOperationService configOperationService;
     
     public ConfigRemoveRequestHandler(ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, ConfigOperationService configOperationService) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ConfigOperationService configOperationService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configOperationService = configOperationService;
@@ -77,7 +79,8 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             ParamUtils.checkParam(dataId, group, "datumId", "rm");
             ParamUtils.checkParam(tag);
             String clientIp = meta.getClientIp();
-            configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, null, Constants.RPC);
+            configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, null,
+                    Constants.RPC);
             return ConfigRemoveResponse.buildSuccessResponse();
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("remove config error,error msg is {}", e.getMessage(), e);

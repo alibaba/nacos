@@ -70,8 +70,10 @@ class ReleaseMcpServerRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"endpointSpecification\":{"));
         assertTrue(json.contains("\"type\":\"DIRECT\""));
         assertTrue(json.contains(String.format("\"mcpId\":\"%s\"", id)));
-        assertTrue(json.contains(String.format("\"protocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
-        assertTrue(json.contains(String.format("\"frontProtocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
+        assertTrue(json.contains(
+                String.format("\"protocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
+        assertTrue(json.contains(
+                String.format("\"frontProtocol\":\"%s\"", AiConstants.Mcp.MCP_PROTOCOL_STDIO)));
     }
     
     @Test

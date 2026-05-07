@@ -92,4 +92,4 @@ class McpServerIndexConfigurationTest {
                     "Should be PlainMcpServerIndex when cache disabled");
         }
     }
-} 
+}

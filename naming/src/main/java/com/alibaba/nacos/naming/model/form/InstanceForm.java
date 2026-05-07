@@ -202,26 +202,35 @@ public class InstanceForm implements Serializable {
             return false;
         }
         InstanceForm that = (InstanceForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName) && Objects
-                .equals(serviceName, that.serviceName) && Objects.equals(ip, that.ip) && Objects
-                .equals(clusterName, that.clusterName) && Objects.equals(port, that.port) && Objects
-                .equals(healthy, that.healthy) && Objects.equals(weight, that.weight) && Objects
-                .equals(enabled, that.enabled) && Objects.equals(metadata, that.metadata) && Objects
-                .equals(ephemeral, that.ephemeral);
+        return Objects.equals(namespaceId, that.namespaceId)
+                && Objects.equals(groupName, that.groupName) && Objects
+                        .equals(serviceName, that.serviceName)
+                && Objects.equals(ip, that.ip) && Objects
+                        .equals(clusterName, that.clusterName)
+                && Objects.equals(port, that.port) && Objects
+                        .equals(healthy, that.healthy)
+                && Objects.equals(weight, that.weight) && Objects
+                        .equals(enabled, that.enabled)
+                && Objects.equals(metadata, that.metadata) && Objects
+                        .equals(ephemeral, that.ephemeral);
     }
     
     @Override
     public int hashCode() {
         return Objects
-                .hash(namespaceId, groupName, serviceName, ip, clusterName, port, healthy, weight, enabled, metadata,
+                .hash(namespaceId, groupName, serviceName, ip, clusterName, port, healthy, weight,
+                        enabled, metadata,
                         ephemeral);
     }
     
     @Override
     public String toString() {
-        return "InstanceForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='" + groupName + '\''
-                + ", serviceName='" + serviceName + '\'' + ", ip='" + ip + '\'' + ", clusterName='" + clusterName + '\''
-                + ", port=" + port + ", healthy=" + healthy + ", weight=" + weight + ", enabled=" + enabled
+        return "InstanceForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='" + groupName
+                + '\''
+                + ", serviceName='" + serviceName + '\'' + ", ip='" + ip + '\'' + ", clusterName='"
+                + clusterName + '\''
+                + ", port=" + port + ", healthy=" + healthy + ", weight=" + weight + ", enabled="
+                + enabled
                 + ", metadata='" + metadata + '\'' + ", ephemeral=" + ephemeral + '}';
     }
 }

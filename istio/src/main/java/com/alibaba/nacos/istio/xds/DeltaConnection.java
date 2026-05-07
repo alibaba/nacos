@@ -47,7 +47,8 @@ public class DeltaConnection extends AbstractConnection<DeltaDiscoveryResponse> 
         watchedStatus.setLatestVersion(response.getSystemVersionInfo());
         watchedStatus.setLatestNonce(response.getNonce());
         
-        Loggers.MAIN.info("delta: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
+        Loggers.MAIN.info(
+                "delta: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
                 watchedStatus.getType(),
                 getConnectionId(),
                 response.getSystemVersionInfo(),
@@ -55,4 +56,3 @@ public class DeltaConnection extends AbstractConnection<DeltaDiscoveryResponse> 
                 response.getResourcesCount());
     }
 }
-

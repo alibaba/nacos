@@ -80,7 +80,8 @@ public class ServiceControllerV3 {
     
     private final CatalogServiceV2Impl catalogServiceV2;
     
-    public ServiceControllerV3(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
+    public ServiceControllerV3(ServiceOperatorV2Impl serviceOperatorV2,
+            SelectorManager selectorManager,
             CatalogServiceV2Impl catalogServiceV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
@@ -100,10 +101,12 @@ public class ServiceControllerV3 {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setEphemeral(serviceForm.getEphemeral());
-        serviceOperatorV2.create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
-                serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
+        serviceOperatorV2
+                .create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                        serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
         NotifyCenter.publishEvent(
-                new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                new RegisterServiceTraceEvent(System.currentTimeMillis(),
+                        serviceForm.getNamespaceId(),
                         serviceForm.getGroupName(), serviceForm.getServiceName()));
         
         return Result.success("ok");
@@ -122,7 +125,8 @@ public class ServiceControllerV3 {
         String serviceName = serviceForm.getServiceName();
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
         NotifyCenter.publishEvent(
-                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName, serviceName));
+                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName,
+                        serviceName));
         
         return Result.success("ok");
     }
@@ -157,7 +161,8 @@ public class ServiceControllerV3 {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<Object> list(ServiceListForm serviceListForm, PageForm pageForm) throws Exception {
+    public Result<Object> list(ServiceListForm serviceListForm, PageForm pageForm)
+            throws Exception {
         serviceListForm.validate();
         pageForm.validate();
         String namespaceId = serviceListForm.getNamespaceId();
@@ -170,10 +175,12 @@ public class ServiceControllerV3 {
         
         if (withInstances) {
             return Result.success(
-                    catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize));
+                    catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName,
+                            pageNo, pageSize));
         }
         return Result.success(
-                catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize, hasIpCount));
+                catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize,
+                        hasIpCount));
     }
     
     /**
@@ -189,12 +196,14 @@ public class ServiceControllerV3 {
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
         serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
-        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
-                serviceForm.getServiceName());
+        Service service =
+                Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                        serviceForm.getServiceName());
         
         serviceOperatorV2.update(service, serviceMetadata);
         
-        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(),
+                serviceForm.getNamespaceId(),
                 serviceForm.getGroupName(), serviceForm.getServiceName(), metadata));
         
         return Result.success("ok");
@@ -208,8 +217,10 @@ public class ServiceControllerV3 {
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
         String type = Optional.ofNullable(selectorJson.get("type")).orElseThrow(
                 () -> new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
-                        "not match any type of selector!")).asText();
-        String expression = Optional.ofNullable(selectorJson.get("expression")).map(JsonNode::asText).orElse(null);
+                        "not match any type of selector!"))
+                .asText();
+        String expression = Optional.ofNullable(selectorJson.get("expression"))
+                .map(JsonNode::asText).orElse(null);
         Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
@@ -235,7 +246,8 @@ public class ServiceControllerV3 {
         String groupName = serviceForm.getGroupName();
         boolean aggregation = aggregationForm.isAggregation();
         return Result.success(
-                serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation, pageNo, pageSize));
+                serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation,
+                        pageNo, pageSize));
     }
     
     /**
@@ -247,4 +259,3 @@ public class ServiceControllerV3 {
         return Result.success(selectorManager.getAllSelectorTypes());
     }
 }
-

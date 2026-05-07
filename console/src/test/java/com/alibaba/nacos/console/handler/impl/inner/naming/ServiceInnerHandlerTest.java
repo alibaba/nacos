@@ -74,8 +74,9 @@ class ServiceInnerHandlerTest {
     
     @BeforeEach
     void setUp() {
-        serviceInnerHandler = new ServiceInnerHandler(serviceOperatorV2, selectorManager, catalogServiceV2,
-                clusterOperatorV2);
+        serviceInnerHandler =
+                new ServiceInnerHandler(serviceOperatorV2, selectorManager, catalogServiceV2,
+                        clusterOperatorV2);
     }
     
     @AfterEach
@@ -107,7 +108,8 @@ class ServiceInnerHandlerTest {
         serviceForm.setGroupName(TEST_GROUP_NAME);
         serviceForm.setServiceName(TEST_SERVICE_NAME);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
-        assertThrows(NacosApiException.class, () -> serviceInnerHandler.updateService(serviceForm, serviceMetadata));
+        assertThrows(NacosApiException.class,
+                () -> serviceInnerHandler.updateService(serviceForm, serviceMetadata));
     }
     
     @Test
@@ -118,7 +120,8 @@ class ServiceInnerHandlerTest {
         serviceForm.setServiceName(TEST_SERVICE_NAME);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         ServiceManager.getInstance()
-                .getSingleton(Service.newService(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME));
+                .getSingleton(
+                        Service.newService(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME));
         serviceInnerHandler.updateService(serviceForm, serviceMetadata);
         serviceOperatorV2.update(any(Service.class), any(ServiceMetadata.class));
     }
@@ -134,30 +137,36 @@ class ServiceInnerHandlerTest {
     @Test
     void getSubscribers() throws Exception {
         Page<SubscriberInfo> mockPage = new Page<>();
-        when(serviceOperatorV2.getSubscribers(eq(TEST_NAMESPACE_ID), eq(TEST_SERVICE_NAME), eq(TEST_GROUP_NAME),
+        when(serviceOperatorV2.getSubscribers(eq(TEST_NAMESPACE_ID), eq(TEST_SERVICE_NAME),
+                eq(TEST_GROUP_NAME),
                 eq(true), eq(1), eq(10))).thenReturn(mockPage);
-        Page<SubscriberInfo> actual = serviceInnerHandler.getSubscribers(1, 10, TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
-                TEST_GROUP_NAME, true);
+        Page<SubscriberInfo> actual =
+                serviceInnerHandler.getSubscribers(1, 10, TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
+                        TEST_GROUP_NAME, true);
         assertEquals(mockPage, actual);
     }
     
     @Test
     void getServiceListWithInstances() throws NacosException {
         Page<ServiceDetailInfo> mockPage = new Page<>();
-        when(catalogServiceV2.pageListServiceDetail(eq(TEST_NAMESPACE_ID), eq(TEST_GROUP_NAME), eq(TEST_SERVICE_NAME),
+        when(catalogServiceV2.pageListServiceDetail(eq(TEST_NAMESPACE_ID), eq(TEST_GROUP_NAME),
+                eq(TEST_SERVICE_NAME),
                 eq(1), eq(10))).thenReturn(mockPage);
-        Page<ServiceDetailInfo> actual = (Page<ServiceDetailInfo>) serviceInnerHandler.getServiceList(true,
-                TEST_NAMESPACE_ID, 1, 10, TEST_SERVICE_NAME, TEST_GROUP_NAME, false);
+        Page<ServiceDetailInfo> actual =
+                (Page<ServiceDetailInfo>) serviceInnerHandler.getServiceList(true,
+                        TEST_NAMESPACE_ID, 1, 10, TEST_SERVICE_NAME, TEST_GROUP_NAME, false);
         assertEquals(mockPage, actual);
     }
     
     @Test
     void getServiceListWithoutInstances() throws NacosException {
         Page<ServiceView> mockPage = new Page<>();
-        when(catalogServiceV2.listService(eq(TEST_NAMESPACE_ID), eq(TEST_GROUP_NAME), eq(TEST_SERVICE_NAME), eq(1),
+        when(catalogServiceV2.listService(eq(TEST_NAMESPACE_ID), eq(TEST_GROUP_NAME),
+                eq(TEST_SERVICE_NAME), eq(1),
                 eq(10), eq(false))).thenReturn(mockPage);
-        Page<ServiceView> actual = (Page<ServiceView>) serviceInnerHandler.getServiceList(false, TEST_NAMESPACE_ID, 1,
-                10, TEST_SERVICE_NAME, TEST_GROUP_NAME, false);
+        Page<ServiceView> actual =
+                (Page<ServiceView>) serviceInnerHandler.getServiceList(false, TEST_NAMESPACE_ID, 1,
+                        10, TEST_SERVICE_NAME, TEST_GROUP_NAME, false);
         assertEquals(mockPage, actual);
     }
     
@@ -166,15 +175,17 @@ class ServiceInnerHandlerTest {
         ServiceDetailInfo mock = new ServiceDetailInfo();
         when(catalogServiceV2.getServiceDetail(eq(TEST_NAMESPACE_ID), eq(TEST_GROUP_NAME),
                 eq(TEST_SERVICE_NAME))).thenReturn(mock);
-        ServiceDetailInfo actual = serviceInnerHandler.getServiceDetail(TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
-                TEST_GROUP_NAME);
+        ServiceDetailInfo actual =
+                serviceInnerHandler.getServiceDetail(TEST_NAMESPACE_ID, TEST_SERVICE_NAME,
+                        TEST_GROUP_NAME);
         assertEquals(mock, actual);
     }
     
     @Test
     void updateClusterMetadata() throws Exception {
         ClusterMetadata clusterMetadata = new ClusterMetadata();
-        serviceInnerHandler.updateClusterMetadata(TEST_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME,
+        serviceInnerHandler.updateClusterMetadata(TEST_NAMESPACE_ID, TEST_GROUP_NAME,
+                TEST_SERVICE_NAME,
                 Constants.DEFAULT_CLUSTER_NAME, clusterMetadata);
         verify(clusterOperatorV2).updateClusterMetadata(eq(TEST_NAMESPACE_ID), eq(TEST_GROUP_NAME),
                 eq(TEST_SERVICE_NAME), eq(Constants.DEFAULT_CLUSTER_NAME), eq(clusterMetadata));

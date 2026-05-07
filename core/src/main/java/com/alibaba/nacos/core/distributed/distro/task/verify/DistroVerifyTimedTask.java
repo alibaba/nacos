@@ -40,7 +40,8 @@ public class DistroVerifyTimedTask implements Runnable {
     
     private final DistroExecuteTaskExecuteEngine executeTaskExecuteEngine;
     
-    public DistroVerifyTimedTask(ServerMemberManager serverMemberManager, DistroComponentHolder distroComponentHolder,
+    public DistroVerifyTimedTask(ServerMemberManager serverMemberManager,
+            DistroComponentHolder distroComponentHolder,
             DistroExecuteTaskExecuteEngine executeTaskExecuteEngine) {
         this.serverMemberManager = serverMemberManager;
         this.distroComponentHolder = distroComponentHolder;
@@ -65,7 +66,8 @@ public class DistroVerifyTimedTask implements Runnable {
     private void verifyForDataStorage(String type, List<Member> targetServer) {
         DistroDataStorage dataStorage = distroComponentHolder.findDataStorage(type);
         if (!dataStorage.isFinishInitial()) {
-            Loggers.DISTRO.warn("data storage {} has not finished initial step, do not send verify data",
+            Loggers.DISTRO.warn(
+                    "data storage {} has not finished initial step, do not send verify data",
                     dataStorage.getClass().getSimpleName());
             return;
         }

@@ -64,15 +64,15 @@ class PublishPipelineManagerRoutingTest {
         
         // Plugin A: supports only SKILL
         builders.add(createBuilder(PLUGIN_A_ID, 1,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL}));
+                new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL}));
         
         // Plugin B: supports only AGENTSPEC
         builders.add(createBuilder(PLUGIN_B_ID, 2,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.AGENTSPEC}));
+                new PublishPipelineResourceType[] {PublishPipelineResourceType.AGENTSPEC}));
         
         // Plugin C: supports both SKILL and AGENTSPEC
         builders.add(createBuilder(PLUGIN_C_ID, 3,
-                new PublishPipelineResourceType[]{PublishPipelineResourceType.SKILL,
+                new PublishPipelineResourceType[] {PublishPipelineResourceType.SKILL,
                         PublishPipelineResourceType.AGENTSPEC}));
         
         PipelineConfig config = new PipelineConfig();
@@ -83,7 +83,7 @@ class PublishPipelineManagerRoutingTest {
         
         // Build nodes list referencing all three plugins
         allNodes = new ArrayList<>();
-        for (String id : new String[]{PLUGIN_A_ID, PLUGIN_B_ID, PLUGIN_C_ID}) {
+        for (String id : new String[] {PLUGIN_A_ID, PLUGIN_B_ID, PLUGIN_C_ID}) {
             PipelineNodeConfig node = new PipelineNodeConfig();
             node.setPipelineId(id);
             node.setProperties(new Properties());
@@ -173,6 +173,7 @@ class PublishPipelineManagerRoutingTest {
     private PublishPipelineServiceBuilder createBuilder(String pipelineId, int order,
             PublishPipelineResourceType[] supportedTypes) {
         return new PublishPipelineServiceBuilder() {
+            
             @Override
             public String pipelineId() {
                 return pipelineId;
@@ -181,6 +182,7 @@ class PublishPipelineManagerRoutingTest {
             @Override
             public PublishPipelineService build(Properties properties) {
                 return new PublishPipelineService() {
+                    
                     @Override
                     public String pipelineId() {
                         return pipelineId;

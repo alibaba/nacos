@@ -87,7 +87,7 @@ class ParamUtilTest {
         assertTrue(exception.getMessage().contains(invalidValue),
                 "Exception message should contain the invalid input value");
     }
-
+    
     @Test
     void testInitReadTimeoutWithException() throws Throwable {
         String invalidValue = "xyz";
@@ -104,7 +104,7 @@ class ParamUtilTest {
         assertTrue(exception.getMessage().contains(invalidValue),
                 "Exception message should contain the invalid input value");
     }
-
+    
     @Test
     void testInitMaxRetryTimesWithException() throws Throwable {
         String invalidValue = "not_a_number";
@@ -121,7 +121,7 @@ class ParamUtilTest {
         assertTrue(exception.getMessage().contains(invalidValue),
                 "Exception message should contain the invalid input value");
     }
-
+    
     @Test
     void testInitRefreshIntervalMillsWithException() throws Throwable {
         String invalidValue = "invalid_mills";

@@ -47,8 +47,7 @@ class OptimizationChangeTest {
                 "instruction",
                 "improved",
                 "Added more detailed steps",
-                "To make the skill more actionable"
-        );
+                "To make the skill more actionable");
         
         // Then
         assertEquals("instruction", change.getField());
@@ -100,8 +99,7 @@ class OptimizationChangeTest {
                 "description",
                 "added",
                 "Added a comprehensive description",
-                "The skill lacked a clear description"
-        );
+                "The skill lacked a clear description");
         
         // Then
         assertEquals("description", change.getField());
@@ -129,15 +127,18 @@ class OptimizationChangeTest {
     @Test
     void testMultipleChangeTypes() {
         // Test improved change
-        OptimizationChange improved = new OptimizationChange("instruction", "improved", "Enhanced clarity", "Better UX");
+        OptimizationChange improved =
+                new OptimizationChange("instruction", "improved", "Enhanced clarity", "Better UX");
         assertEquals("improved", improved.getType());
         
         // Test added change
-        OptimizationChange added = new OptimizationChange("example", "added", "Added example", "Help users");
+        OptimizationChange added =
+                new OptimizationChange("example", "added", "Added example", "Help users");
         assertEquals("added", added.getType());
         
         // Test removed change
-        OptimizationChange removed = new OptimizationChange("deprecated", "removed", "Removed field", "No longer needed");
+        OptimizationChange removed = new OptimizationChange("deprecated", "removed",
+                "Removed field", "No longer needed");
         assertEquals("removed", removed.getType());
     }
 }

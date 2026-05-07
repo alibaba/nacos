@@ -63,7 +63,8 @@ public class ClientHttpProxy implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientHttpProxy.class);
     
-    private final NacosRestTemplate nacosRestTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate =
+            HttpClientManager.getInstance().getNacosRestTemplate();
     
     private final boolean enableHttps = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
@@ -83,8 +84,15 @@ public class ClientHttpProxy implements Closeable {
         initScheduledExecutor(properties);
     }
     
+    /**
+     * Initialize the server list manager with the given properties.
+     *
+     * @param properties properties containing server address configuration
+     * @throws NacosException if server list manager fails to start
+     */
     public void initServerListManager(Properties properties) throws NacosException {
-        serverListManager = new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
+        serverListManager =
+                new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
         serverListManager.start();
     }
     
@@ -97,7 +105,8 @@ public class ClientHttpProxy implements Closeable {
     private void initScheduledExecutor(Properties properties) {
         executor = new ScheduledThreadPoolExecutor(1,
                 new NameThreadFactory("com.alibaba.nacos.maintainer.client.http.proxy"));
-        executor.scheduleWithFixedDelay(() -> login(properties), 0, this.refreshIntervalMills, TimeUnit.MILLISECONDS);
+        executor.scheduleWithFixedDelay(() -> login(properties), 0, this.refreshIntervalMills,
+                TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -106,7 +115,8 @@ public class ClientHttpProxy implements Closeable {
      * @param properties login identity information.
      */
     public void login(Properties properties) {
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+        for (ClientAuthService clientAuthService : clientAuthPluginManager
+                .getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
     }
@@ -118,7 +128,8 @@ public class ClientHttpProxy implements Closeable {
      * @return http result
      * @throws NacosException exception when request
      */
-    public HttpRestResult<String> executeSyncHttpRequest(HttpRequest request) throws NacosException {
+    public HttpRestResult<String> executeSyncHttpRequest(HttpRequest request)
+            throws NacosException {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         int retryCount = maxRetry;
@@ -138,7 +149,8 @@ public class ClientHttpProxy implements Closeable {
                 requestException = nacosException;
                 resultCode = nacosException.getErrCode();
             } catch (Exception ex) {
-                LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr, ex.getMessage());
+                LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr,
+                        ex.getMessage());
                 resultCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
             }
             
@@ -156,19 +168,22 @@ public class ClientHttpProxy implements Closeable {
         
         if (null != requestException) {
             throw new NacosException(requestException.getErrCode(),
-                    "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr
+                    "No available server after " + maxRetry + " retries, last tried server: "
+                            + currentServerAddr
                             + ", last errMsg: " + requestException.getErrMsg());
         }
         throw new NacosException(NacosException.BAD_GATEWAY,
-                "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
+                "No available server after " + maxRetry + " retries, last tried server: "
+                        + currentServerAddr);
     }
-
+    
     private String resolveErrorMessage(HttpRestResult<String> result) {
         String responseBody = result.getData();
         if (StringUtils.isNotBlank(responseBody)) {
             try {
-                Result<Object> response = JacksonUtils.toObj(responseBody, new TypeReference<Result<Object>>() {
-                });
+                Result<Object> response =
+                        JacksonUtils.toObj(responseBody, new TypeReference<Result<Object>>() {
+                        });
                 if (response != null) {
                     String message = response.getMessage();
                     Object data = response.getData();
@@ -190,7 +205,8 @@ public class ClientHttpProxy implements Closeable {
         return result.getMessage();
     }
     
-    private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr) throws Exception {
+    private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr)
+            throws Exception {
         long readTimeoutMs = ParamUtil.getReadTimeout();
         long connectTimeoutMs = ParamUtil.getConnectTimeout();
         Map<String, String> paramValues = request.getParamValues();
@@ -216,16 +232,20 @@ public class ClientHttpProxy implements Closeable {
                 return nacosRestTemplate.get(url, httpConfig, httpHeaders, query, String.class);
             case HttpMethod.POST:
                 if (StringUtils.isNotBlank(request.getBody())) {
-                    return nacosRestTemplate.postJson(url, httpHeaders, query, request.getBody(), String.class);
+                    return nacosRestTemplate.postJson(url, httpHeaders, query, request.getBody(),
+                            String.class);
                 } else {
-                    return nacosRestTemplate.postForm(url, httpConfig, httpHeaders, paramValues, String.class);
+                    return nacosRestTemplate.postForm(url, httpConfig, httpHeaders, paramValues,
+                            String.class);
                 }
             case HttpMethod.PUT:
-                return nacosRestTemplate.putForm(url, httpConfig, httpHeaders, paramValues, String.class);
+                return nacosRestTemplate.putForm(url, httpConfig, httpHeaders, paramValues,
+                        String.class);
             case HttpMethod.DELETE:
                 return nacosRestTemplate.delete(url, httpConfig, httpHeaders, query, String.class);
             default:
-                throw new IllegalArgumentException("Unsupported HTTP method: " + request.getHttpMethod());
+                throw new IllegalArgumentException(
+                        "Unsupported HTTP method: " + request.getHttpMethod());
         }
     }
     
@@ -233,7 +253,8 @@ public class ClientHttpProxy implements Closeable {
     
     private static final String BOUNDARY_PREFIX = "----NacosBoundary";
     
-    private HttpRestResult<String> executeMultipartPost(String url, HttpClientConfig httpConfig, Header httpHeaders,
+    private HttpRestResult<String> executeMultipartPost(String url, HttpClientConfig httpConfig,
+            Header httpHeaders,
             Query query, HttpRequest request) throws IOException {
         String fullUrl = query != null && !query.isEmpty() ? url + "?" + query.toQueryUrl() : url;
         String boundary = BOUNDARY_PREFIX + System.currentTimeMillis();
@@ -256,12 +277,14 @@ public class ClientHttpProxy implements Closeable {
         
         StringBuilder header = new StringBuilder();
         header.append("--").append(boundary).append(LINE_FEED);
-        header.append("Content-Disposition: form-data; name=\"").append(fieldName).append("\"; filename=\"")
+        header.append("Content-Disposition: form-data; name=\"").append(fieldName)
+                .append("\"; filename=\"")
                 .append(fileName).append("\"").append(LINE_FEED);
         header.append("Content-Type: application/octet-stream").append(LINE_FEED).append(LINE_FEED);
         
         byte[] headerBytes = header.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] tailBytes = (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
+        byte[] tailBytes =
+                (LINE_FEED + "--" + boundary + "--" + LINE_FEED).getBytes(StandardCharsets.UTF_8);
         
         try (OutputStream outputStream = conn.getOutputStream()) {
             outputStream.write(headerBytes);
@@ -279,7 +302,8 @@ public class ClientHttpProxy implements Closeable {
             java.io.InputStream inputStream = conn.getResponseCode() >= 400
                     ? conn.getErrorStream() : conn.getInputStream();
             if (inputStream != null) {
-                result.setData(com.alibaba.nacos.common.utils.IoUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+                result.setData(com.alibaba.nacos.common.utils.IoUtils.toString(inputStream,
+                        StandardCharsets.UTF_8.name()));
             }
         } finally {
             conn.disconnect();
@@ -311,7 +335,8 @@ public class ClientHttpProxy implements Closeable {
     }
     
     private boolean isFail(int resultCode) {
-        return resultCode == HttpURLConnection.HTTP_INTERNAL_ERROR || resultCode == HttpURLConnection.HTTP_BAD_GATEWAY
+        return resultCode == HttpURLConnection.HTTP_INTERNAL_ERROR
+                || resultCode == HttpURLConnection.HTTP_BAD_GATEWAY
                 || resultCode == HttpURLConnection.HTTP_UNAVAILABLE
                 || resultCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
     }
@@ -320,10 +345,12 @@ public class ClientHttpProxy implements Closeable {
      * Login again to refresh the accessToken.
      */
     public void reLogin() {
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+        for (ClientAuthService clientAuthService : clientAuthPluginManager
+                .getAuthServiceSpiImplSet()) {
             try {
-                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(
-                        new RequestResource());
+                LoginIdentityContext loginIdentityContext =
+                        clientAuthService.getLoginIdentityContext(
+                                new RequestResource());
                 if (loginIdentityContext != null) {
                     loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
                 }

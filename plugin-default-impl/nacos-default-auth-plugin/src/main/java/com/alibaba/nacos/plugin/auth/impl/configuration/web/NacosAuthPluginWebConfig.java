@@ -58,7 +58,8 @@ public class NacosAuthPluginWebConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         String ignoreUrls = null;
         String authSystemType = NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE).getNacosAuthSystemType();
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
+                .getNacosAuthSystemType();
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authSystemType)) {
             ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authSystemType)) {

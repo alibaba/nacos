@@ -109,6 +109,7 @@ class CacheDataTest {
         final CacheData cacheData1 = new CacheData(filter, "name1", "key", "group", "tenant");
         
         Listener listener = new Listener() {
+            
             @Override
             public Executor getExecutor() {
                 return null;
@@ -133,6 +134,7 @@ class CacheDataTest {
         final CacheData data = new CacheData(filter, "name1", "key", "group", "tenant");
         final List<String> list = new ArrayList<>();
         Listener listener = new Listener() {
+            
             @Override
             public Executor getExecutor() {
                 return Runnable::run;
@@ -164,6 +166,7 @@ class CacheDataTest {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         final CacheData data = new CacheData(filter, "name1", "keytimeouts", "group", "tenant");
         Listener listener = new Listener() {
+            
             @Override
             public Executor getExecutor() {
                 return Runnable::run;
@@ -211,6 +214,7 @@ class CacheDataTest {
         final String[] contentReceive = new String[1];
         
         Listener listener = new AbstractSharedListener() {
+            
             @Override
             public Executor getExecutor() {
                 return Runnable::run;
@@ -243,6 +247,7 @@ class CacheDataTest {
         
         AtomicReference<ConfigChangeEvent> changeItemReceived = new AtomicReference<>();
         Listener listener = new AbstractConfigChangeListener() {
+            
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 changeItemReceived.set(event);
@@ -259,21 +264,27 @@ class CacheDataTest {
         data.setContent(content);
         data.checkListenerMd5();
         assertTrue(data.checkListenersMd5Consistent());
-        assertEquals(PropertyChangeType.DELETED, changeItemReceived.get().getChangeItem("a").getType());
-        assertEquals(PropertyChangeType.MODIFIED, changeItemReceived.get().getChangeItem("c").getType());
-        assertEquals(PropertyChangeType.ADDED, changeItemReceived.get().getChangeItem("d").getType());
+        assertEquals(PropertyChangeType.DELETED,
+                changeItemReceived.get().getChangeItem("a").getType());
+        assertEquals(PropertyChangeType.MODIFIED,
+                changeItemReceived.get().getChangeItem("c").getType());
+        assertEquals(PropertyChangeType.ADDED,
+                changeItemReceived.get().getChangeItem("d").getType());
     }
-
+    
     @Test
     void testNotifyTaskExecutorExceptionResetsInNotifying() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        final CacheData data = new CacheData(filter, "name1", "key_executor_fail", "group", "tenant");
+        final CacheData data =
+                new CacheData(filter, "name1", "key_executor_fail", "group", "tenant");
         
         Listener listener = new Listener() {
+            
             @Override
             public Executor getExecutor() {
                 return command -> {
-                    throw new java.util.concurrent.RejectedExecutionException("Mock ThreadPool Full");
+                    throw new java.util.concurrent.RejectedExecutionException(
+                            "Mock ThreadPool Full");
                 };
             }
             

@@ -36,7 +36,8 @@ class DefaultServerListManagerTest {
     void setUp() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
-        defaultServerListManager = new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
+        defaultServerListManager =
+                new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @Test

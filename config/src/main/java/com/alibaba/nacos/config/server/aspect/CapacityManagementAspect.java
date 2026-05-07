@@ -54,12 +54,13 @@ public class CapacityManagementAspect {
     
     private static final String DELETE_CONFIG =
             "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
-
+    
     private final CapacityService capacityService;
-
+    
     private final ConfigInfoPersistService configInfoPersistService;
-
-    public CapacityManagementAspect(ConfigInfoPersistService configInfoPersistService, CapacityService capacityService) {
+    
+    public CapacityManagementAspect(ConfigInfoPersistService configInfoPersistService,
+            CapacityService capacityService) {
         this.configInfoPersistService = configInfoPersistService;
         this.capacityService = capacityService;
     }
@@ -72,7 +73,7 @@ public class CapacityManagementAspect {
         if (!PropertyUtil.isManageCapacity()) {
             return pjp.proceed();
         }
-
+        
         Object[] args = pjp.getArgs();
         ConfigForm configForm = (ConfigForm) args[0];
         ConfigRequestInfo configRequestInfo = (ConfigRequestInfo) args[1];
@@ -82,11 +83,13 @@ public class CapacityManagementAspect {
         String content = configForm.getContent();
         String betaIps = configRequestInfo.getBetaIps();
         String tag = configForm.getTag();
-
-        LOGGER.info("[CapacityManagement] Intercepting publishConfig operation for dataId: {}, group: {}, namespaceId: {}",
+        
+        LOGGER.info(
+                "[CapacityManagement] Intercepting publishConfig operation for dataId: {}, group: {}, namespaceId: {}",
                 dataId, group, namespaceId);
-
-        if (StringUtils.isBlank(betaIps) && StringUtils.isBlank(tag) && StringUtils.isBlank(configForm.getGrayName())) {
+        
+        if (StringUtils.isBlank(betaIps) && StringUtils.isBlank(tag)
+                && StringUtils.isBlank(configForm.getGrayName())) {
             // do capacity management limitation check for writing or updating config_info table.
             if (configInfoPersistService.findConfigInfo(dataId, group, namespaceId) == null) {
                 // Write operation.
@@ -104,19 +107,24 @@ public class CapacityManagementAspect {
      *
      * @throws Throwable Throws Exception when actually operate.
      */
-    private Object do4Update(ProceedingJoinPoint pjp, String dataId, String group, String namespaceId, String content) throws Throwable {
+    private Object do4Update(ProceedingJoinPoint pjp, String dataId, String group,
+            String namespaceId, String content) throws Throwable {
         if (!PropertyUtil.isCapacityLimitCheck()) {
             return pjp.proceed();
         }
         try {
             boolean hasTenant = StringUtils.isNotBlank(namespaceId);
             Capacity capacity = getCapacity(group, namespaceId, hasTenant);
-            if (isSizeLimited(group, namespaceId, getCurrentSize(content), hasTenant, false, capacity)) {
+            if (isSizeLimited(group, namespaceId, getCurrentSize(content), hasTenant, false,
+                    capacity)) {
                 throw new NacosException(ErrorCode.OVER_MAX_SIZE.getCode(),
-                    String.format("Configuration content size limit exceeded [group=%s, namespaceId=%s].", group, namespaceId));
+                        String.format(
+                                "Configuration content size limit exceeded [group=%s, namespaceId=%s].",
+                                group, namespaceId));
             }
         } catch (Exception e) {
-            LOGGER.error("[CapacityManagement] Error during update operation for dataId: {}, group: {}, namespaceId: {}",
+            LOGGER.error(
+                    "[CapacityManagement] Error during update operation for dataId: {}, group: {}, namespaceId: {}",
                     dataId, group, namespaceId, e);
             throw e;
         }
@@ -129,8 +137,10 @@ public class CapacityManagementAspect {
      *
      * @throws Throwable Exception.
      */
-    private Object do4Insert(ProceedingJoinPoint pjp, String group, String namespaceId, String content) throws Throwable {
-        LOGGER.info("[CapacityManagement] Handling insert operation for group: {}, namespaceId: {}", group, namespaceId);
+    private Object do4Insert(ProceedingJoinPoint pjp, String group, String namespaceId,
+            String content) throws Throwable {
+        LOGGER.info("[CapacityManagement] Handling insert operation for group: {}, namespaceId: {}",
+                group, namespaceId);
         CounterMode counterMode = CounterMode.INCREMENT;
         boolean hasTenant = StringUtils.isNotBlank(namespaceId);
         
@@ -141,7 +151,9 @@ public class CapacityManagementAspect {
                 ErrorCode errorCode = ErrorCode.getErrorCode(limitType.name());
                 if (errorCode != null) {
                     throw new NacosException(errorCode.getCode(),
-                            String.format("Configuration limit exceeded [group=%s, namespaceId=%s].", group, namespaceId));
+                            String.format(
+                                    "Configuration limit exceeded [group=%s, namespaceId=%s].",
+                                    group, namespaceId));
                 }
             }
         } else {
@@ -166,7 +178,9 @@ public class CapacityManagementAspect {
         String namespaceId = (String) args[2];
         String grayName = (String) args[3];
         
-        LOGGER.info("[CapacityManagement] Intercepting deleteConfig operation for dataId: {}, group: {}, namespaceId: {}", dataId, group,
+        LOGGER.info(
+                "[CapacityManagement] Intercepting deleteConfig operation for dataId: {}, group: {}, namespaceId: {}",
+                dataId, group,
                 namespaceId);
         
         if (StringUtils.isNotBlank(grayName)) {
@@ -185,7 +199,8 @@ public class CapacityManagementAspect {
      *
      * @throws Throwable Exception.
      */
-    private Object do4Delete(ProceedingJoinPoint pjp, String group, String namespaceId, ConfigInfo configInfo) throws Throwable {
+    private Object do4Delete(ProceedingJoinPoint pjp, String group, String namespaceId,
+            ConfigInfo configInfo) throws Throwable {
         boolean hasTenant = StringUtils.isNotBlank(namespaceId);
         if (configInfo == null) {
             // "configInfo == null", has two possible points.
@@ -224,7 +239,8 @@ public class CapacityManagementAspect {
         }
     }
     
-    private Object getResult(ProceedingJoinPoint pjp, String group, String namespaceId, CounterMode counterMode, boolean hasTenant) throws Throwable {
+    private Object getResult(ProceedingJoinPoint pjp, String group, String namespaceId,
+            CounterMode counterMode, boolean hasTenant) throws Throwable {
         try {
             // Execute operation actually.
             Boolean result = (Boolean) pjp.proceed();
@@ -233,7 +249,9 @@ public class CapacityManagementAspect {
             }
             return result;
         } catch (Throwable throwable) {
-            LOGGER.warn("[capacityManagement] inner operation throw exception, rollback, group: {}, namespaceId: {}", group,
+            LOGGER.warn(
+                    "[capacityManagement] inner operation throw exception, rollback, group: {}, namespaceId: {}",
+                    group,
                     namespaceId, throwable);
             rollbackUsage(counterMode, group, namespaceId, hasTenant);
             throw throwable;
@@ -243,7 +261,8 @@ public class CapacityManagementAspect {
     /**
      * Usage counting service: it will count whether the limitation check function will be open.
      */
-    private void insertOrUpdateUsage(String group, String namespaceId, CounterMode counterMode, boolean hasTenant) {
+    private void insertOrUpdateUsage(String group, String namespaceId, CounterMode counterMode,
+            boolean hasTenant) {
         try {
             capacityService.insertAndUpdateClusterUsage(counterMode, true);
             if (hasTenant) {
@@ -256,10 +275,12 @@ public class CapacityManagementAspect {
         }
     }
     
-    private LimitType getLimitType(CounterMode counterMode, String group, String namespaceId, String content,
+    private LimitType getLimitType(CounterMode counterMode, String group, String namespaceId,
+            String content,
             boolean hasTenant) {
         try {
-            boolean clusterLimited = !capacityService.insertAndUpdateClusterUsage(counterMode, false);
+            boolean clusterLimited =
+                    !capacityService.insertAndUpdateClusterUsage(counterMode, false);
             if (clusterLimited) {
                 LOGGER.warn("[capacityManagement] cluster capacity reaches quota.");
                 return LimitType.OVER_CLUSTER_QUOTA;
@@ -268,7 +289,8 @@ public class CapacityManagementAspect {
                 return null;
             }
             int currentSize = getCurrentSize(content);
-            LimitType limitType = getGroupOrTenantLimitType(counterMode, group, namespaceId, currentSize, hasTenant);
+            LimitType limitType = getGroupOrTenantLimitType(counterMode, group, namespaceId,
+                    currentSize, hasTenant);
             if (limitType != null) {
                 rollbackClusterUsage(counterMode);
                 return limitType;
@@ -291,7 +313,8 @@ public class CapacityManagementAspect {
         return 0;
     }
     
-    private LimitType getGroupOrTenantLimitType(CounterMode counterMode, String group, String namespaceId, int currentSize,
+    private LimitType getGroupOrTenantLimitType(CounterMode counterMode, String group,
+            String namespaceId, int currentSize,
             boolean hasTenant) {
         if (group == null) {
             return null;
@@ -313,12 +336,15 @@ public class CapacityManagementAspect {
         return LimitType.OVER_GROUP_QUOTA;
     }
     
-    private boolean isUpdateSuccess(CounterMode counterMode, String group, String namespaceId, boolean hasTenant) {
+    private boolean isUpdateSuccess(CounterMode counterMode, String group, String namespaceId,
+            boolean hasTenant) {
         boolean updateSuccess;
         if (hasTenant) {
             updateSuccess = capacityService.updateTenantUsage(counterMode, namespaceId);
             if (!updateSuccess) {
-                LOGGER.warn("[capacityManagement] namespaceId capacity reaches quota, namespaceId: {}", namespaceId);
+                LOGGER.warn(
+                        "[capacityManagement] namespaceId capacity reaches quota, namespaceId: {}",
+                        namespaceId);
             }
         } else {
             updateSuccess = capacityService.updateGroupUsage(counterMode, group);
@@ -347,7 +373,8 @@ public class CapacityManagementAspect {
         return capacity;
     }
     
-    private boolean isSizeLimited(String group, String namespaceId, int currentSize, boolean hasTenant, boolean isAggr,
+    private boolean isSizeLimited(String group, String namespaceId, int currentSize,
+            boolean hasTenant, boolean isAggr,
             Capacity capacity) {
         int defaultMaxSize = getDefaultMaxSize(isAggr);
         if (capacity != null) {
@@ -377,7 +404,8 @@ public class CapacityManagementAspect {
         return PropertyUtil.getDefaultMaxSize();
     }
     
-    private boolean isOverSize(String group, String namespaceId, int currentSize, int maxSize, boolean hasTenant) {
+    private boolean isOverSize(String group, String namespaceId, int currentSize, int maxSize,
+            boolean hasTenant) {
         if (currentSize > maxSize) {
             if (hasTenant) {
                 LOGGER.warn(
@@ -393,7 +421,8 @@ public class CapacityManagementAspect {
         return false;
     }
     
-    private void rollbackUsage(CounterMode counterMode, String group, String namespaceId, boolean hasTenant) {
+    private void rollbackUsage(CounterMode counterMode, String group, String namespaceId,
+            boolean hasTenant) {
         try {
             rollbackClusterUsage(counterMode);
             if (hasTenant) {
@@ -409,7 +438,8 @@ public class CapacityManagementAspect {
     private void rollbackClusterUsage(CounterMode counterMode) {
         try {
             if (!capacityService.updateClusterUsage(counterMode.reverse())) {
-                LOGGER.error("[capacityManagement] cluster usage rollback fail counterMode: {}", counterMode);
+                LOGGER.error("[capacityManagement] cluster usage rollback fail counterMode: {}",
+                        counterMode);
             }
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] rollback ", e);
@@ -422,13 +452,18 @@ public class CapacityManagementAspect {
      * @author Nacos.
      */
     public enum LimitType {
+        
         /**
          * over limit.
          */
-        OVER_CLUSTER_QUOTA("Exceeded the maximum number of configurations in the cluster", LIMIT_ERROR_CODE),
-        OVER_GROUP_QUOTA("Exceeded the maximum number of configurations in this group", LIMIT_ERROR_CODE),
-        OVER_TENANT_QUOTA("Exceeded the maximum number of configurations for this namespaceId", LIMIT_ERROR_CODE),
-        OVER_MAX_SIZE("Exceeded the maximum size limit of the configuration content", LIMIT_ERROR_CODE);
+        OVER_CLUSTER_QUOTA("Exceeded the maximum number of configurations in the cluster",
+                LIMIT_ERROR_CODE),
+        OVER_GROUP_QUOTA("Exceeded the maximum number of configurations in this group",
+                LIMIT_ERROR_CODE),
+        OVER_TENANT_QUOTA("Exceeded the maximum number of configurations for this namespaceId",
+                LIMIT_ERROR_CODE),
+        OVER_MAX_SIZE("Exceeded the maximum size limit of the configuration content",
+                LIMIT_ERROR_CODE);
         
         public final String description;
         

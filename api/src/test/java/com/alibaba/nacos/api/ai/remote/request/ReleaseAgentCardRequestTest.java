@@ -57,13 +57,14 @@ class ReleaseAgentCardRequestTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
-                + "\"agentCard\":{\"protocolVersion\":null,\"name\":\"testAgentCard\",\"description\":null,\"version\":\"1.0.0\","
-                + "\"iconUrl\":null,\"capabilities\":null,\"skills\":null,\"url\":null,\"preferredTransport\":null,"
-                + "\"additionalInterfaces\":null,\"provider\":null,\"documentationUrl\":null,\"securitySchemes\":null,"
-                + "\"security\":null,\"defaultInputModes\":null,\"defaultOutputModes\":null,"
-                + "\"supportsAuthenticatedExtendedCard\":null},"
-                + "\"registrationType\":\"SERVICE\",\"setAsLatest\":true,\"module\":\"ai\"}";
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"namespaceId\":\"public\",\"agentName\":\"testAgent\","
+                        + "\"agentCard\":{\"protocolVersion\":null,\"name\":\"testAgentCard\",\"description\":null,\"version\":\"1.0.0\","
+                        + "\"iconUrl\":null,\"capabilities\":null,\"skills\":null,\"url\":null,\"preferredTransport\":null,"
+                        + "\"additionalInterfaces\":null,\"provider\":null,\"documentationUrl\":null,\"securitySchemes\":null,"
+                        + "\"security\":null,\"defaultInputModes\":null,\"defaultOutputModes\":null,"
+                        + "\"supportsAuthenticatedExtendedCard\":null},"
+                        + "\"registrationType\":\"SERVICE\",\"setAsLatest\":true,\"module\":\"ai\"}";
         ReleaseAgentCardRequest result = mapper.readValue(json, ReleaseAgentCardRequest.class);
         assertNotNull(result);
         assertEquals("1", result.getRequestId());

@@ -50,19 +50,24 @@ public class DefaultTlsContextBuilder {
         try {
             if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile()) || StringUtils
                     .isBlank(rpcServerTlsConfig.getCertPrivateKey())) {
-                throw new IllegalArgumentException("Server certChainFile or certPrivateKey must be not null");
+                throw new IllegalArgumentException(
+                        "Server certChainFile or certPrivateKey must be not null");
             }
-            InputStream certificateChainFile = getInputStream(rpcServerTlsConfig.getCertChainFile(), "certChainFile");
-            InputStream privateKeyFile = getInputStream(rpcServerTlsConfig.getCertPrivateKey(), "certPrivateKey");
+            InputStream certificateChainFile =
+                    getInputStream(rpcServerTlsConfig.getCertChainFile(), "certChainFile");
+            InputStream privateKeyFile =
+                    getInputStream(rpcServerTlsConfig.getCertPrivateKey(), "certPrivateKey");
             SslContextBuilder sslClientContextBuilder = SslContextBuilder
-                    .forServer(certificateChainFile, privateKeyFile, rpcServerTlsConfig.getCertPrivateKeyPassword());
+                    .forServer(certificateChainFile, privateKeyFile,
+                            rpcServerTlsConfig.getCertPrivateKeyPassword());
             
             if (StringUtils.isNotBlank(rpcServerTlsConfig.getProtocols())) {
                 sslClientContextBuilder.protocols(rpcServerTlsConfig.getProtocols().split(","));
             }
             
             if (StringUtils.isNotBlank(rpcServerTlsConfig.getCiphers())) {
-                sslClientContextBuilder.ciphers(Arrays.asList(rpcServerTlsConfig.getCiphers().split(",")));
+                sslClientContextBuilder
+                        .ciphers(Arrays.asList(rpcServerTlsConfig.getCiphers().split(",")));
             }
             if (rpcServerTlsConfig.getMutualAuthEnable()) {
                 // trust all certificate
@@ -74,8 +79,9 @@ public class DefaultTlsContextBuilder {
                                 "enable mutual auth,trustCollectionCertFile must be not null");
                     }
                     
-                    InputStream clientCert = getInputStream(rpcServerTlsConfig.getTrustCollectionCertFile(),
-                            "trustCollectionCertFile");
+                    InputStream clientCert =
+                            getInputStream(rpcServerTlsConfig.getTrustCollectionCertFile(),
+                                    "trustCollectionCertFile");
                     sslClientContextBuilder.trustManager(clientCert);
                 }
                 sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);

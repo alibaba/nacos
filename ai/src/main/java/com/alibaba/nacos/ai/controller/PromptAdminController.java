@@ -90,7 +90,8 @@ public class PromptAdminController {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> deletePrompt(PromptForm form, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> deletePrompt(PromptForm form, HttpServletRequest request)
+            throws NacosException {
         form.validate();
         promptOperationService.deletePrompt(form.getNamespaceId(), form.getPromptKey());
         return Result.success(true);
@@ -104,7 +105,8 @@ public class PromptAdminController {
     public Result<Page<PromptMetaSummary>> listPrompts(PromptListForm form) throws NacosException {
         form.validate();
         Page<PromptMetaSummary> result = promptOperationService.listPrompts(form.getNamespaceId(),
-                form.getPromptKey(), form.getSearch(), form.getBizTags(), form.getPageNo(), form.getPageSize());
+                form.getPromptKey(), form.getSearch(), form.getBizTags(), form.getPageNo(),
+                form.getPageSize());
         return Result.success(result);
     }
     
@@ -113,10 +115,12 @@ public class PromptAdminController {
      */
     @GetMapping("/versions")
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form) throws NacosException {
+    public Result<Page<PromptVersionSummary>> listPromptVersions(PromptHistoryForm form)
+            throws NacosException {
         form.validate();
-        Page<PromptVersionSummary> result = promptOperationService.listPromptVersions(form.getNamespaceId(),
-                form.getPromptKey(), form.getPageNo(), form.getPageSize());
+        Page<PromptVersionSummary> result =
+                promptOperationService.listPromptVersions(form.getNamespaceId(),
+                        form.getPromptKey(), form.getPageNo(), form.getPageSize());
         return Result.success(result);
     }
     
@@ -129,7 +133,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<PromptMetaInfo> getPromptGovernanceDetail(PromptForm form) throws NacosException {
         form.validate();
-        return Result.success(promptOperationService.getPromptDetail(form.getNamespaceId(), form.getPromptKey()));
+        return Result.success(
+                promptOperationService.getPromptDetail(form.getNamespaceId(), form.getPromptKey()));
     }
     
     /**
@@ -150,9 +155,11 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> createDraft(PromptDraftCreateForm form) throws NacosException {
         form.validate();
-        String version = promptOperationService.createDraft(form.getNamespaceId(), form.getPromptKey(),
-                form.getBasedOnVersion(), form.getTargetVersion(), form.getTemplate(),
-                parseVariables(form.getVariables()), form.getCommitMsg(), form.getDescription(), form.getBizTags());
+        String version =
+                promptOperationService.createDraft(form.getNamespaceId(), form.getPromptKey(),
+                        form.getBasedOnVersion(), form.getTargetVersion(), form.getTemplate(),
+                        parseVariables(form.getVariables()), form.getCommitMsg(),
+                        form.getDescription(), form.getBizTags());
         return Result.success(version);
     }
     
@@ -163,7 +170,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateDraft(PromptDraftUpdateForm form) throws NacosException {
         form.validate();
-        promptOperationService.updateDraft(form.getNamespaceId(), form.getPromptKey(), form.getTemplate(),
+        promptOperationService.updateDraft(form.getNamespaceId(), form.getPromptKey(),
+                form.getTemplate(),
                 parseVariables(form.getVariables()), form.getCommitMsg());
         return Result.success("ok");
     }
@@ -186,7 +194,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> submit(PromptSubmitForm form) throws NacosException {
         form.validate();
-        String result = promptOperationService.submit(form.getNamespaceId(), form.getPromptKey(), form.getVersion());
+        String result = promptOperationService.submit(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion());
         return Result.success(result);
     }
     
@@ -198,7 +207,8 @@ public class PromptAdminController {
     public Result<String> publish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        promptOperationService.publish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), updateLatest);
+        promptOperationService.publish(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion(), updateLatest);
         return Result.success("ok");
     }
     
@@ -207,11 +217,13 @@ public class PromptAdminController {
      */
     @PostMapping("/force-publish")
     @Secured(resource = Constants.Prompt.ADMIN_PATH
-            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+            + "/force-publish", action = ActionTypes.WRITE, signType = SignType.CONSOLE,
+            apiType = ApiType.ADMIN_API)
     public Result<String> forcePublish(PromptVersionPublishForm form) throws NacosException {
         form.validate();
         boolean updateLatest = form.getUpdateLatestLabel() == null || form.getUpdateLatestLabel();
-        promptOperationService.forcePublish(form.getNamespaceId(), form.getPromptKey(), form.getVersion(),
+        promptOperationService.forcePublish(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion(),
                 updateLatest);
         return Result.success("ok");
     }
@@ -223,7 +235,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> online(PromptOnlineForm form) throws NacosException {
         form.validate();
-        promptOperationService.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), true);
+        promptOperationService.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion(), true);
         return Result.success("ok");
     }
     
@@ -234,7 +247,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> offline(PromptOnlineForm form) throws NacosException {
         form.validate();
-        promptOperationService.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(), form.getVersion(), false);
+        promptOperationService.changeOnlineStatus(form.getNamespaceId(), form.getPromptKey(),
+                form.getVersion(), false);
         return Result.success("ok");
     }
     
@@ -255,9 +269,11 @@ public class PromptAdminController {
      */
     @PutMapping("/description")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> updateDescription(PromptDescriptionUpdateForm form) throws NacosException {
+    public Result<String> updateDescription(PromptDescriptionUpdateForm form)
+            throws NacosException {
         form.validate();
-        promptOperationService.updateDescription(form.getNamespaceId(), form.getPromptKey(), form.getDescription());
+        promptOperationService.updateDescription(form.getNamespaceId(), form.getPromptKey(),
+                form.getDescription());
         return Result.success("ok");
     }
     
@@ -268,7 +284,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateBizTags(PromptBizTagsUpdateForm form) throws NacosException {
         form.validate();
-        promptOperationService.updateBizTags(form.getNamespaceId(), form.getPromptKey(), form.getBizTags());
+        promptOperationService.updateBizTags(form.getNamespaceId(), form.getPromptKey(),
+                form.getBizTags());
         return Result.success("ok");
     }
     
@@ -292,9 +309,11 @@ public class PromptAdminController {
     @Deprecated
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> publishPrompt(PromptPublishForm form, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> publishPrompt(PromptPublishForm form, HttpServletRequest request)
+            throws NacosException {
         form.validate();
-        boolean success = promptOperationService.publishPromptVersion(form.getNamespaceId(), form.getPromptKey(),
+        boolean success = promptOperationService.publishPromptVersion(form.getNamespaceId(),
+                form.getPromptKey(),
                 form.getVersion(), form.getTemplate(), form.getCommitMsg(), form.getDescription(),
                 form.getBizTags(), parseVariables(form.getVariables()));
         return Result.success(success);
@@ -310,7 +329,8 @@ public class PromptAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<PromptMetaInfo> getPromptMetadata(PromptForm form) throws NacosException {
         form.validate();
-        PromptMetaInfo detail = promptOperationService.getPromptMeta(form.getNamespaceId(), form.getPromptKey());
+        PromptMetaInfo detail =
+                promptOperationService.getPromptMeta(form.getNamespaceId(), form.getPromptKey());
         return Result.success(detail);
     }
     
@@ -337,10 +357,12 @@ public class PromptAdminController {
     @Deprecated
     @PutMapping("/label")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> bindLabel(PromptLabelBindForm form, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> bindLabel(PromptLabelBindForm form, HttpServletRequest request)
+            throws NacosException {
         form.validate();
-        boolean success = promptOperationService.bindLabel(form.getNamespaceId(), form.getPromptKey(),
-                form.getLabel(), form.getVersion());
+        boolean success =
+                promptOperationService.bindLabel(form.getNamespaceId(), form.getPromptKey(),
+                        form.getLabel(), form.getVersion());
         return Result.success(success);
     }
     
@@ -352,10 +374,12 @@ public class PromptAdminController {
     @Deprecated
     @DeleteMapping("/label")
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> unbindLabel(PromptLabelForm form, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> unbindLabel(PromptLabelForm form, HttpServletRequest request)
+            throws NacosException {
         form.validate();
-        boolean success = promptOperationService.unbindLabel(form.getNamespaceId(), form.getPromptKey(),
-                form.getLabel());
+        boolean success =
+                promptOperationService.unbindLabel(form.getNamespaceId(), form.getPromptKey(),
+                        form.getLabel());
         return Result.success(success);
     }
     
@@ -370,7 +394,8 @@ public class PromptAdminController {
     public Result<Boolean> updatePromptMetadata(PromptMetadataForm form, HttpServletRequest request)
             throws NacosException {
         form.validate();
-        boolean success = promptOperationService.updatePromptMetadata(form.getNamespaceId(), form.getPromptKey(),
+        boolean success = promptOperationService.updatePromptMetadata(form.getNamespaceId(),
+                form.getPromptKey(),
                 form.getDescription(), form.getBizTags());
         return Result.success(success);
     }

@@ -145,24 +145,29 @@ class StandaloneDatabaseOperateImplTest {
         Long num = 1L;
         when(jdbcTemplate.queryForObject(sql, clazz)).thenReturn(num);
         assertEquals(operate.queryOne(sql, clazz), (Long) 1L);
-        when(jdbcTemplate.queryForObject(sql, clazz)).thenThrow(new IncorrectResultSizeDataAccessException("test", 1));
+        when(jdbcTemplate.queryForObject(sql, clazz))
+                .thenThrow(new IncorrectResultSizeDataAccessException("test", 1));
         assertNull(operate.queryOne(sql, clazz));
         reset(jdbcTemplate);
-        when(jdbcTemplate.queryForObject(sql, clazz)).thenThrow(new CannotGetJdbcConnectionException("test"));
+        when(jdbcTemplate.queryForObject(sql, clazz))
+                .thenThrow(new CannotGetJdbcConnectionException("test"));
         assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryOne(sql, clazz));
         reset(jdbcTemplate);
-        when(jdbcTemplate.queryForObject(sql, clazz)).thenThrow(new NJdbcException("test", "OriginalExceptionName"));
+        when(jdbcTemplate.queryForObject(sql, clazz))
+                .thenThrow(new NJdbcException("test", "OriginalExceptionName"));
         assertThrows(NJdbcException.class, () -> operate.queryOne(sql, clazz));
     }
     
     @Test
     void testQueryOne2() {
-        final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
+        final String sql =
+                "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
         MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        Object[] args =
+                new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenReturn(configInfo);
         assertEquals(operate.queryOne(sql, args, MockConfigInfo.class), configInfo);
         when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenThrow(
@@ -171,7 +176,8 @@ class StandaloneDatabaseOperateImplTest {
         reset(jdbcTemplate);
         when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenThrow(
                 new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryOne(sql, args, MockConfigInfo.class));
+        assertThrows(CannotGetJdbcConnectionException.class,
+                () -> operate.queryOne(sql, args, MockConfigInfo.class));
         reset(jdbcTemplate);
         when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenThrow(
                 new NJdbcException("test", "OriginalExceptionName"));
@@ -180,13 +186,16 @@ class StandaloneDatabaseOperateImplTest {
     
     @Test
     void testQueryOne3() {
-        final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
+        final String sql =
+                "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
         MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
-        when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
+        Object[] args =
+                new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class)))
+                .thenReturn(configInfo);
         assertEquals(operate.queryOne(sql, args, rowMapper), configInfo);
         when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
                 new IncorrectResultSizeDataAccessException("test", 1));
@@ -194,7 +203,8 @@ class StandaloneDatabaseOperateImplTest {
         reset(jdbcTemplate);
         when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
                 new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryOne(sql, args, rowMapper));
+        assertThrows(CannotGetJdbcConnectionException.class,
+                () -> operate.queryOne(sql, args, rowMapper));
         reset(jdbcTemplate);
         when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
                 new NJdbcException("test", "OriginalExceptionName"));
@@ -212,25 +222,32 @@ class StandaloneDatabaseOperateImplTest {
     
     @Test
     void testQueryOne5() {
-        final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
+        final String sql =
+                "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
         MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
-        when(tempJdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenReturn(configInfo);
-        assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, MockConfigInfo.class), configInfo);
+        Object[] args =
+                new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        when(tempJdbcTemplate.queryForObject(sql, args, MockConfigInfo.class))
+                .thenReturn(configInfo);
+        assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, MockConfigInfo.class),
+                configInfo);
     }
     
     @Test
     void testQueryOne6() {
-        final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
+        final String sql =
+                "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
         MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
-        when(tempJdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
+        Object[] args =
+                new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        when(tempJdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class)))
+                .thenReturn(configInfo);
         assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, rowMapper), configInfo);
     }
     
@@ -249,7 +266,8 @@ class StandaloneDatabaseOperateImplTest {
         assertEquals(configInfos, operate.queryMany(sql, args, rowMapper));
         when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
                 new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryMany(sql, args, rowMapper));
+        assertThrows(CannotGetJdbcConnectionException.class,
+                () -> operate.queryMany(sql, args, rowMapper));
         reset(jdbcTemplate);
         when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
                 new NJdbcException("test", "OriginalExceptionName"));
@@ -258,7 +276,8 @@ class StandaloneDatabaseOperateImplTest {
     
     @Test
     void testQueryMany2() {
-        final String sql = "SELECT id, data_id, group_id FROM config_info WHERE id >= ? AND id <= ?";
+        final String sql =
+                "SELECT id, data_id, group_id FROM config_info WHERE id >= ? AND id <= ?";
         final Object[] args = new Object[] {1, 2};
         
         final List<Map<String, Object>> resultList = new ArrayList<>();
@@ -277,10 +296,12 @@ class StandaloneDatabaseOperateImplTest {
         
         when(jdbcTemplate.queryForList(sql, args)).thenReturn(resultList);
         assertEquals(operate.queryMany(sql, args), resultList);
-        when(jdbcTemplate.queryForList(sql, args)).thenThrow(new CannotGetJdbcConnectionException("test"));
+        when(jdbcTemplate.queryForList(sql, args))
+                .thenThrow(new CannotGetJdbcConnectionException("test"));
         assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryMany(sql, args));
         reset(jdbcTemplate);
-        when(jdbcTemplate.queryForList(sql, args)).thenThrow(new NJdbcException("test", "OriginalExceptionName"));
+        when(jdbcTemplate.queryForList(sql, args))
+                .thenThrow(new NJdbcException("test", "OriginalExceptionName"));
         assertThrows(NJdbcException.class, () -> operate.queryMany(sql, args));
     }
     
@@ -300,8 +321,10 @@ class StandaloneDatabaseOperateImplTest {
                 new IncorrectResultSizeDataAccessException("test", 1));
         assertNull(operate.queryMany(sql, args, clazz));
         reset(jdbcTemplate);
-        when(jdbcTemplate.queryForList(sql, args, clazz)).thenThrow(new CannotGetJdbcConnectionException("test"));
-        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryMany(sql, args, clazz));
+        when(jdbcTemplate.queryForList(sql, args, clazz))
+                .thenThrow(new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class,
+                () -> operate.queryMany(sql, args, clazz));
         reset(jdbcTemplate);
         when(jdbcTemplate.queryForList(sql, args, clazz)).thenThrow(
                 new NJdbcException("test", "OriginalExceptionName"));
@@ -356,13 +379,16 @@ class StandaloneDatabaseOperateImplTest {
         List<MockConfigInfo> configInfos = new ArrayList<>();
         configInfos.add(configInfo1);
         configInfos.add(configInfo2);
-        when(tempJdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfos);
+        when(tempJdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class)))
+                .thenReturn(configInfos);
         assertEquals(operate.queryMany(tempJdbcTemplate, sql, args, rowMapper), configInfos);
     }
     
     @Test
-    void testDataImportSuccess() throws ExecutionException, InterruptedException, URISyntaxException {
-        File file = new File(getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
+    void testDataImportSuccess()
+            throws ExecutionException, InterruptedException, URISyntaxException {
+        File file = new File(
+                getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
         int[] executeResult = new int[21];
         for (int i = executeResult.length - 1; i > executeResult.length - 6; i--) {
             executeResult[i] = 1;
@@ -375,8 +401,10 @@ class StandaloneDatabaseOperateImplTest {
     }
     
     @Test
-    void testDataImportFailed() throws ExecutionException, InterruptedException, URISyntaxException {
-        File file = new File(getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
+    void testDataImportFailed()
+            throws ExecutionException, InterruptedException, URISyntaxException {
+        File file = new File(
+                getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
         int[] executeResult = new int[5];
         when(jdbcTemplate.batchUpdate(any(String[].class))).thenReturn(executeResult);
         CompletableFuture<RestResult<String>> result = operate.dataImport(file);
@@ -387,9 +415,12 @@ class StandaloneDatabaseOperateImplTest {
     }
     
     @Test
-    void testDataImportException() throws ExecutionException, InterruptedException, URISyntaxException {
-        File file = new File(getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
-        when(jdbcTemplate.batchUpdate(any(String[].class))).thenThrow(new NJdbcException("test import failed"));
+    void testDataImportException()
+            throws ExecutionException, InterruptedException, URISyntaxException {
+        File file = new File(
+                getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
+        when(jdbcTemplate.batchUpdate(any(String[].class)))
+                .thenThrow(new NJdbcException("test import failed"));
         CompletableFuture<RestResult<String>> result = operate.dataImport(file);
         TimeUnit.MILLISECONDS.sleep(1000L);
         assertFalse(result.get().ok());
@@ -470,7 +501,8 @@ class StandaloneDatabaseOperateImplTest {
     void testBlockUpdateWithException() {
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = 1;";
         EmbeddedStorageContextHolder.addSqlContext(sql);
-        when(transactionTemplate.execute(any(TransactionCallback.class))).thenThrow(new NJdbcException("test"));
+        when(transactionTemplate.execute(any(TransactionCallback.class)))
+                .thenThrow(new NJdbcException("test"));
         assertThrows(NJdbcException.class, () -> operate.blockUpdate(biConsumer));
         assertTrue(EmbeddedStorageContextHolder.getCurrentSqlContext().isEmpty());
     }

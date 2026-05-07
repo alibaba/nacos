@@ -47,8 +47,11 @@ public class PrometheusSecurityConfiguration {
     @Conditional(ConditionOnNoAuthPluginType.class)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(
-                (authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers(PROMETHEUS_CONTROLLER_PATH,
-                        PROMETHEUS_CONTROLLER_NAMESPACE_PATH, PROMETHEUS_CONTROLLER_SERVICE_PATH).permitAll());
+                (authorizeHttpRequests) -> authorizeHttpRequests
+                        .requestMatchers(PROMETHEUS_CONTROLLER_PATH,
+                                PROMETHEUS_CONTROLLER_NAMESPACE_PATH,
+                                PROMETHEUS_CONTROLLER_SERVICE_PATH)
+                        .permitAll());
         return http.getOrBuild();
     }
     

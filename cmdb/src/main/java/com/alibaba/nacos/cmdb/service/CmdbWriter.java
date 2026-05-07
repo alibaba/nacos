@@ -23,5 +23,5 @@ package com.alibaba.nacos.cmdb.service;
  * @since 0.7.0
  */
 public interface CmdbWriter {
-
+    
 }

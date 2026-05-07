@@ -54,7 +54,8 @@ class AgentHttpParamExtractorTest {
         when(request.getParameter("namespaceId")).thenReturn("testNs");
         when(request.getParameter("agentName")).thenReturn(agentName);
         when(request.getParameterMap()).thenReturn(
-                Map.of("namespaceId", new String[] {"testNs"}, "agentName", new String[] {agentName}));
+                Map.of("namespaceId", new String[] {"testNs"}, "agentName",
+                        new String[] {agentName}));
         
         List<ParamInfo> actual = httpParamExtractor.extractParam(request);
         assertEquals(1, actual.size());
@@ -77,7 +78,8 @@ class AgentHttpParamExtractorTest {
         when(request.getParameter("agentName")).thenReturn("shouldBeOverridden");
         when(request.getParameter("agentCard")).thenReturn(agentCardJson);
         when(request.getParameterMap()).thenReturn(
-                Map.of("namespaceId", new String[] {"testNs"}, "agentName", new String[] {"shouldBeOverridden"},
+                Map.of("namespaceId", new String[] {"testNs"}, "agentName",
+                        new String[] {"shouldBeOverridden"},
                         "agentCard", new String[] {agentCardJson}));
         
         List<ParamInfo> actual = httpParamExtractor.extractParam(request);
@@ -92,7 +94,8 @@ class AgentHttpParamExtractorTest {
         when(request.getParameter("agentName")).thenReturn("testAgent");
         when(request.getParameter("agentCard")).thenReturn("{invalidJson");
         when(request.getParameterMap()).thenReturn(
-                Map.of("namespaceId", new String[] {"testNs"}, "agentName", new String[] {"testAgent"}, "agentCard",
+                Map.of("namespaceId", new String[] {"testNs"}, "agentName",
+                        new String[] {"testAgent"}, "agentCard",
                         new String[] {"{invalidJson"}));
         
         List<ParamInfo> actual = httpParamExtractor.extractParam(request);
@@ -107,7 +110,8 @@ class AgentHttpParamExtractorTest {
         
         List<ParamInfo> actual = httpParamExtractor.extractParam(request);
         assertEquals(1, actual.size());
-        assertTrue(actual.get(0).getNamespaceId() == null || actual.get(0).getNamespaceId().isEmpty());
+        assertTrue(
+                actual.get(0).getNamespaceId() == null || actual.get(0).getNamespaceId().isEmpty());
         assertTrue(actual.get(0).getAgentName() == null || actual.get(0).getAgentName().isEmpty());
     }
 }

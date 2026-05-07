@@ -49,6 +49,7 @@ class AbilityTest {
     @Test
     void testReceive() throws Exception {
         rpcClient = new RpcClient(new RpcClientConfig() {
+            
             @Override
             public String name() {
                 return "test";
@@ -106,7 +107,8 @@ class AbilityTest {
                     }
                     
                     @Override
-                    public Response request(Request request, long timeoutMills) throws NacosException {
+                    public Response request(Request request, long timeoutMills)
+                            throws NacosException {
                         return null;
                     }
                     
@@ -116,13 +118,14 @@ class AbilityTest {
                     }
                     
                     @Override
-                    public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
-                    
+                    public void asyncRequest(Request request, RequestCallBack requestCallBack)
+                            throws NacosException {
+                        
                     }
                     
                     @Override
                     public void close() {
-                    
+                        
                     }
                 };
                 ;
@@ -153,16 +156,20 @@ class AbilityTest {
         });
         rpcClient.start();
         // if connect successfully
-        assertEquals(AbilityStatus.SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+        assertEquals(AbilityStatus.SUPPORTED,
+                rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+        assertEquals(AbilityStatus.NOT_SUPPORTED,
+                rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @AfterEach
     void testServerRequestAbility() {
         //test support
         ServerRequestHandler serverRequestHandler = (request, connection) -> {
-            assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
-            assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+            assertEquals(AbilityStatus.SUPPORTED,
+                    connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+            assertEquals(AbilityStatus.NOT_SUPPORTED,
+                    connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
             return new Response() {
             };
         };
@@ -170,7 +177,8 @@ class AbilityTest {
         
         // test no ability table
         serverRequestHandler = (request, connection) -> {
-            assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+            assertEquals(AbilityStatus.UNKNOWN,
+                    connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
             return new Response() {
             };
         };

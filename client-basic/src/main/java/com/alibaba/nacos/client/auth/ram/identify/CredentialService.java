@@ -32,7 +32,8 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CredentialService.class);
     
-    private static final ConcurrentHashMap<String, CredentialService> INSTANCES = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, CredentialService> INSTANCES =
+            new ConcurrentHashMap<>();
     
     private final String appName;
     
@@ -44,7 +45,8 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
+            String value = NacosClientProperties.PROTOTYPE
+                    .getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
@@ -97,7 +99,8 @@ public final class CredentialService implements SpasCredentialLoader {
     }
     
     public void setCredential(Credentials credential) {
-        boolean changed = !(credentials == credential || (credentials != null && credentials.identical(credential)));
+        boolean changed = !(credentials == credential
+                || (credentials != null && credentials.identical(credential)));
         credentials = credential;
         if (changed && listener != null) {
             listener.onUpdateCredential();

@@ -114,7 +114,8 @@ public class ParamUtils {
      * @param datumId datumId
      * @throws NacosException nacos exception
      */
-    public static void checkKeyParam(String dataId, String group, String datumId) throws NacosException {
+    public static void checkKeyParam(String dataId, String group, String datumId)
+            throws NacosException {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
@@ -155,7 +156,8 @@ public class ParamUtils {
      * @param content content
      * @throws NacosException nacos exception
      */
-    public static void checkParam(String dataId, String group, String content) throws NacosException {
+    public static void checkParam(String dataId, String group, String content)
+            throws NacosException {
         checkKeyParam(dataId, group);
         if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);
@@ -171,7 +173,8 @@ public class ParamUtils {
      * @param content content
      * @throws NacosException nacos exception
      */
-    public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
+    public static void checkParam(String dataId, String group, String datumId, String content)
+            throws NacosException {
         checkKeyParam(dataId, group, datumId);
         if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);

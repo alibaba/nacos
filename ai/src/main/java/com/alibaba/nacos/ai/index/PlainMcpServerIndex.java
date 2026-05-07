@@ -41,7 +41,8 @@ public class PlainMcpServerIndex extends AbstractMcpServerIndex {
     private final ConfigQueryChainService configQueryChainService;
     
     public PlainMcpServerIndex(NamespaceOperationService namespaceOperationService,
-            ConfigDetailService configDetailService, ConfigQueryChainService configQueryChainService) {
+            ConfigDetailService configDetailService,
+            ConfigQueryChainService configQueryChainService) {
         super(namespaceOperationService, configDetailService);
         this.configQueryChainService = configQueryChainService;
     }
@@ -77,7 +78,8 @@ public class PlainMcpServerIndex extends AbstractMcpServerIndex {
         return null;
     }
     
-    private ConfigQueryChainRequest buildConfigQueryChainRequest(String namespaceId, String serverId) {
+    private ConfigQueryChainRequest buildConfigQueryChainRequest(String namespaceId,
+            String serverId) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setTenant(namespaceId);
         request.setDataId(McpConfigUtils.formatServerVersionInfoDataId(serverId));
@@ -97,7 +99,7 @@ public class PlainMcpServerIndex extends AbstractMcpServerIndex {
         if (StringUtils.isEmpty(namespaceId)) {
             return getFirstMcpServerByName(name);
         }
-
+        
         Page<McpServerIndexData> indexDataPage = searchMcpServerByNameWithPage(namespaceId, name,
                 Constants.MCP_LIST_SEARCH_ACCURATE, 1, 1);
         if (CollectionUtils.isNotEmpty(indexDataPage.getPageItems())) {
@@ -127,7 +129,7 @@ public class PlainMcpServerIndex extends AbstractMcpServerIndex {
     public void removeMcpServerById(String mcpId) {
         // No-op implementation since PlainMcpServerIndex doesn't use cache
     }
-
+    
     @Override
     protected void afterSearch(McpServerIndexData searchResult, String name) {
     }

@@ -59,7 +59,8 @@ public final class TlsHelper {
         
         SSLContext sslcontext = SSLContext.getInstance("TLS");
         sslcontext.init(null, SelfTrustManager
-                        .trustManager(TlsSystemConfig.tlsClientAuthServer, TlsSystemConfig.tlsClientTrustCertPath),
+                .trustManager(TlsSystemConfig.tlsClientAuthServer,
+                        TlsSystemConfig.tlsClientTrustCertPath),
                 new java.security.SecureRandom());
         return sslcontext;
     }

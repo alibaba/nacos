@@ -61,7 +61,8 @@ class LockGrpcClientTest {
     
     @BeforeEach
     void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        lockGrpcClient = new LockGrpcClient(NacosClientProperties.PROTOTYPE, serverListFactory, securityProxy);
+        lockGrpcClient = new LockGrpcClient(NacosClientProperties.PROTOTYPE, serverListFactory,
+                securityProxy);
         Field rpcClientField = LockGrpcClient.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         rpcClientField.set(lockGrpcClient, rpcClient);
@@ -75,60 +76,77 @@ class LockGrpcClientTest {
     private void mockRequest() {
         Map<String, String> context = new HashMap<>();
         when(securityProxy.getIdentityContext(any())).thenReturn(context);
-        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK)).thenReturn(AbilityStatus.SUPPORTED);
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK))
+                .thenReturn(AbilityStatus.SUPPORTED);
     }
     
     @Test
     void lockNotSupportedFeature() {
-        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK)).thenReturn(AbilityStatus.NOT_SUPPORTED);
-        assertThrows(NacosRuntimeException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)));
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK))
+                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        assertThrows(NacosRuntimeException.class,
+                () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)));
     }
     
     @Test
     void lockWithNacosException() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenThrow(new NacosException(NacosException.SERVER_ERROR, "test"));
-        assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "test");
+        when(rpcClient.request(any(AbstractLockRequest.class)))
+                .thenThrow(new NacosException(NacosException.SERVER_ERROR, "test"));
+        assertThrows(NacosException.class,
+                () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "test");
     }
     
     @Test
     void lockWithOtherException() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenThrow(new RuntimeException("test"));
-        assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "Request nacos server failed: test");
+        when(rpcClient.request(any(AbstractLockRequest.class)))
+                .thenThrow(new RuntimeException("test"));
+        assertThrows(NacosException.class,
+                () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)),
+                "Request nacos server failed: test");
     }
     
     @Test
     void lockWithUnexpectedResponse() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(new ServerCheckResponse());
-        assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "Server return invalid response");
+        when(rpcClient.request(any(AbstractLockRequest.class)))
+                .thenReturn(new ServerCheckResponse());
+        assertThrows(NacosException.class,
+                () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)),
+                "Server return invalid response");
     }
     
     @Test
     void lockFailed() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(ErrorResponse.build(500, "test fail code"));
-        assertThrows(NacosException.class, () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "test fail code");
+        when(rpcClient.request(any(AbstractLockRequest.class)))
+                .thenReturn(ErrorResponse.build(500, "test fail code"));
+        assertThrows(NacosException.class,
+                () -> lockGrpcClient.lock(NLockFactory.getLock("test", -1L)), "test fail code");
     }
     
     @Test
     void lockSuccess() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(new LockOperationResponse(true));
+        when(rpcClient.request(any(AbstractLockRequest.class)))
+                .thenReturn(new LockOperationResponse(true));
         assertTrue(lockGrpcClient.lock(NLockFactory.getLock("test", -1L)));
     }
     
     @Test
     void unLockNotSupportedFeature() {
-        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK)).thenReturn(AbilityStatus.NOT_SUPPORTED);
-        assertThrows(NacosRuntimeException.class, () -> lockGrpcClient.unLock(NLockFactory.getLock("test", -1L)));
+        when(rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK))
+                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        assertThrows(NacosRuntimeException.class,
+                () -> lockGrpcClient.unLock(NLockFactory.getLock("test", -1L)));
     }
     
     @Test
     void unlockSuccess() throws NacosException {
         mockRequest();
-        when(rpcClient.request(any(AbstractLockRequest.class))).thenReturn(new LockOperationResponse(true));
+        when(rpcClient.request(any(AbstractLockRequest.class)))
+                .thenReturn(new LockOperationResponse(true));
         assertTrue(lockGrpcClient.unLock(NLockFactory.getLock("test", -1L)));
     }
 }

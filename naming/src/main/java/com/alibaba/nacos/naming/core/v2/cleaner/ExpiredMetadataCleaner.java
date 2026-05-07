@@ -46,7 +46,8 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
             NamingMetadataOperateService metadataOperateService) {
         this.metadataManager = metadataManager;
         this.metadataOperateService = metadataOperateService;
-        GlobalExecutor.scheduleExpiredClientCleaner(this, INITIAL_DELAY, GlobalConfig.getExpiredMetadataCleanInterval(),
+        GlobalExecutor.scheduleExpiredClientCleaner(this, INITIAL_DELAY,
+                GlobalConfig.getExpiredMetadataCleanInterval(),
                 TimeUnit.MILLISECONDS);
     }
     
@@ -72,8 +73,10 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
                 metadataOperateService.deleteServiceMetadata(expiredInfo.getService());
             }
         } else {
-            if (metadataManager.containInstanceMetadata(expiredInfo.getService(), expiredInfo.getMetadataId())) {
-                metadataOperateService.deleteInstanceMetadata(expiredInfo.getService(), expiredInfo.getMetadataId());
+            if (metadataManager.containInstanceMetadata(expiredInfo.getService(),
+                    expiredInfo.getMetadataId())) {
+                metadataOperateService.deleteInstanceMetadata(expiredInfo.getService(),
+                        expiredInfo.getMetadataId());
             }
         }
     }

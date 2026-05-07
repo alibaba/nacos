@@ -56,7 +56,8 @@ class RaftExecutorTest {
     void testGetRaftCoreExecutor() throws Exception {
         ExecutorService executor = RaftExecutor.getRaftCoreExecutor();
         assertNotNull(executor);
-        assertTrue(executor.submit(() -> { }).get(2, TimeUnit.SECONDS) == null);
+        assertTrue(executor.submit(() -> {
+        }).get(2, TimeUnit.SECONDS) == null);
     }
     
     @Test

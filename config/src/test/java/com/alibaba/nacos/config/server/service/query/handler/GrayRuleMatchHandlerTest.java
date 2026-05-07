@@ -68,7 +68,8 @@ class GrayRuleMatchHandlerTest {
         configChainEntryHandlerMockedStatic.when(ConfigChainEntryHandler::getThreadLocalCacheItem)
                 .thenReturn(cacheItem);
         configDiskServiceFactoryMockedStatic = Mockito.mockStatic(ConfigDiskServiceFactory.class);
-        configDiskServiceFactoryMockedStatic.when(ConfigDiskServiceFactory::getInstance).thenReturn(configDiskService);
+        configDiskServiceFactoryMockedStatic.when(ConfigDiskServiceFactory::getInstance)
+                .thenReturn(configDiskService);
     }
     
     @AfterEach
@@ -117,8 +118,9 @@ class GrayRuleMatchHandlerTest {
         when(configCacheGray.getEncryptedDataKey()).thenReturn("encryptedKey");
         when(configCacheGray.getGrayName()).thenReturn("grayName");
         when(cacheItem.getType()).thenReturn("configType");
-        when(configDiskService.getGrayContent(anyString(), anyString(), anyString(), anyString())).thenReturn(
-                "content");
+        when(configDiskService.getGrayContent(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(
+                        "content");
         
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId("dataId");
@@ -132,7 +134,8 @@ class GrayRuleMatchHandlerTest {
         assertEquals(123456L, response.getLastModified());
         assertEquals("encryptedKey", response.getEncryptedDataKey());
         assertEquals("configType", response.getConfigType());
-        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY, response.getStatus());
+        assertEquals(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY,
+                response.getStatus());
     }
     
     @Test

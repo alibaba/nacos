@@ -51,7 +51,8 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServiceRequest, SubscribeServiceResponse> {
+public class SubscribeServiceRequestHandler
+        extends RequestHandler<SubscribeServiceRequest, SubscribeServiceResponse> {
     
     private final ServiceStorage serviceStorage;
     
@@ -59,7 +60,8 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager,
+    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage,
+            NamingMetadataManager metadataManager,
             EphemeralClientOperationServiceImpl clientOperationService) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
@@ -68,10 +70,12 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     
     @Override
     @NamespaceValidation
-    @TpsControl(pointName = "RemoteNamingServiceSubscribeUnSubscribe", name = "RemoteNamingServiceSubscribeUnsubscribe")
+    @TpsControl(pointName = "RemoteNamingServiceSubscribeUnSubscribe",
+            name = "RemoteNamingServiceSubscribeUnsubscribe")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(rpcExtractor = SubscribeServiceRequestParamExtractor.class)
-    public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
+    public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta)
+            throws NacosException {
         String namespaceId = request.getNamespace();
         String serviceName = request.getServiceName();
         String groupName = request.getGroupName();
@@ -80,25 +84,31 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
                     "Param 'serviceName' is illegal, serviceName is blank");
         }
         if (StringUtils.isBlank(groupName)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Param 'groupName' is illegal, groupName is blank");
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "Param 'groupName' is illegal, groupName is blank");
         }
         String app = RequestContextHolder.getContext().getBasicContext().getApp();
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
-        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),
-                namespaceId, groupedServiceName, 0, request.getClusters());
-        ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
-                metadataManager.getServiceMetadata(service).orElse(null), subscriber.getCluster(), false, true,
-                subscriber.getIp());
+        Subscriber subscriber =
+                new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),
+                        namespaceId, groupedServiceName, 0, request.getClusters());
+        ServiceInfo serviceInfo =
+                ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
+                        metadataManager.getServiceMetadata(service).orElse(null),
+                        subscriber.getCluster(), false, true,
+                        subscriber.getIp());
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
             NotifyCenter.publishEvent(new SubscribeServiceTraceEvent(System.currentTimeMillis(),
-                    NamingRequestUtil.getSourceIpForGrpcRequest(meta), service.getNamespace(), service.getGroup(),
+                    NamingRequestUtil.getSourceIpForGrpcRequest(meta), service.getNamespace(),
+                    service.getGroup(),
                     service.getName()));
         } else {
             clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
             NotifyCenter.publishEvent(new UnsubscribeServiceTraceEvent(System.currentTimeMillis(),
-                    NamingRequestUtil.getSourceIpForGrpcRequest(meta), service.getNamespace(), service.getGroup(),
+                    NamingRequestUtil.getSourceIpForGrpcRequest(meta), service.getNamespace(),
+                    service.getGroup(),
                     service.getName()));
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);

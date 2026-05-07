@@ -37,7 +37,7 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
     
     @Override
     protected void doDestroy() throws NacosException {
-    
+        
     }
     
     @Override

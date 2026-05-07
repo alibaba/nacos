@@ -43,10 +43,12 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
     
     @Test
     void listInstances() throws NacosException {
-        when(namingMaintainerService.listInstances("namespaceId", "groupName", "serviceName", "clusterName",
+        when(namingMaintainerService.listInstances("namespaceId", "groupName", "serviceName",
+                "clusterName",
                 false)).thenReturn(Collections.singletonList(new Instance()));
-        Page<? extends Instance> page = instanceRemoteHandler.listInstances("namespaceId", "serviceName", "groupName",
-                "clusterName", 1, 10);
+        Page<? extends Instance> page =
+                instanceRemoteHandler.listInstances("namespaceId", "serviceName", "groupName",
+                        "clusterName", 1, 10);
         assertEquals(1, page.getPageItems().size());
     }
     
@@ -59,7 +61,8 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         instanceForm.validate();
         Instance instance = new Instance();
         instanceRemoteHandler.updateInstance(instanceForm, instance);
-        verify(namingMaintainerService).updateInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "test",
+        verify(namingMaintainerService).updateInstance(Constants.DEFAULT_NAMESPACE_ID,
+                Constants.DEFAULT_GROUP, "test",
                 instance);
     }
     
@@ -74,7 +77,8 @@ class InstanceRemoteHandlerTest extends AbstractRemoteHandlerTest {
         Instance instance = new Instance();
         instance.setEphemeral(false);
         instanceRemoteHandler.removeInstance(instanceForm, instance);
-        verify(namingMaintainerService).deregisterInstance(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+        verify(namingMaintainerService).deregisterInstance(Constants.DEFAULT_NAMESPACE_ID,
+                Constants.DEFAULT_GROUP,
                 "test", instance);
     }
 }

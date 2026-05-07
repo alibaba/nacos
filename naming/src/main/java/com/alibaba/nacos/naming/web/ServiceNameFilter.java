@@ -44,7 +44,8 @@ import java.io.IOException;
 public class ServiceNameFilter implements Filter {
     
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+            FilterChain filterChain)
             throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
@@ -61,7 +62,8 @@ public class ServiceNameFilter implements Filter {
             
             // use groupName@@serviceName as new service name:
             String groupedServiceName = serviceName;
-            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+            if (StringUtils.isNotBlank(serviceName)
+                    && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
             }
             if (StringUtils.isNotBlank(groupedServiceName)) {
@@ -72,7 +74,8 @@ public class ServiceNameFilter implements Filter {
                             "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
                 }
             }
-            OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
+            OverrideParameterRequestWrapper requestWrapper =
+                    OverrideParameterRequestWrapper.buildRequest(request);
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
             filterChain.doFilter(requestWrapper, servletResponse);
         } catch (Exception e) {

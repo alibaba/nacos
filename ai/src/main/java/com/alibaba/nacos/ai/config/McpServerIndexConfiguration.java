@@ -57,9 +57,11 @@ public class McpServerIndexConfiguration {
      * Create memory cache index Bean.
      */
     @Bean
-    @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true",
+            matchIfMissing = true)
     public McpCacheIndex mcpCacheIndex() {
-        LOGGER.info("Creating McpCacheIndex bean with maxSize={}, expireTime={}s, cleanupInterval={}s",
+        LOGGER.info(
+                "Creating McpCacheIndex bean with maxSize={}, expireTime={}s, cleanupInterval={}s",
                 cacheProperties.getMaxSize(), cacheProperties.getExpireTimeSeconds(),
                 cacheProperties.getCleanupIntervalSeconds());
         return new MemoryMcpCacheIndex(cacheProperties);
@@ -69,7 +71,8 @@ public class McpServerIndexConfiguration {
      * Create scheduled task executor Bean.
      */
     @Bean
-    @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true",
+            matchIfMissing = true)
     public ScheduledExecutorService mcpCacheScheduledExecutor() {
         LOGGER.info("Creating ScheduledExecutorService for MCP cache with syncInterval={}s",
                 cacheProperties.getSyncIntervalSeconds());
@@ -86,12 +89,15 @@ public class McpServerIndexConfiguration {
      */
     @Bean
     @Primary
-    @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true",
+            matchIfMissing = true)
     public McpServerIndex cachedMcpServerIndex(ConfigDetailService configDetailService,
-            NamespaceOperationService namespaceOperationService, ConfigQueryChainService configQueryChainService,
+            NamespaceOperationService namespaceOperationService,
+            ConfigQueryChainService configQueryChainService,
             McpCacheIndex mcpCacheIndex, ScheduledExecutorService mcpCacheScheduledExecutor) {
         LOGGER.info("Creating CachedMcpServerIndex bean with cache enabled");
-        return new CachedMcpServerIndex(configDetailService, namespaceOperationService, configQueryChainService,
+        return new CachedMcpServerIndex(configDetailService, namespaceOperationService,
+                configQueryChainService,
                 mcpCacheIndex, mcpCacheScheduledExecutor, cacheProperties.isEnabled(),
                 cacheProperties.getSyncIntervalSeconds());
     }
@@ -103,8 +109,10 @@ public class McpServerIndexConfiguration {
     @Primary
     @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "false")
     public McpServerIndex plainMcpServerIndex(ConfigDetailService configDetailService,
-            NamespaceOperationService namespaceOperationService, ConfigQueryChainService configQueryChainService) {
+            NamespaceOperationService namespaceOperationService,
+            ConfigQueryChainService configQueryChainService) {
         LOGGER.info("Creating PlainMcpServerIndex bean as cache is disabled");
-        return new PlainMcpServerIndex(namespaceOperationService, configDetailService, configQueryChainService);
+        return new PlainMcpServerIndex(namespaceOperationService, configDetailService,
+                configQueryChainService);
     }
-} 
+}

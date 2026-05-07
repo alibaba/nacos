@@ -80,7 +80,8 @@ public class ClientManagerDelegate implements ClientManager {
     
     @Override
     public boolean contains(String clientId) {
-        return connectionBasedClientManager.contains(clientId) || ephemeralIpPortClientManager.contains(clientId)
+        return connectionBasedClientManager.contains(clientId)
+                || ephemeralIpPortClientManager.contains(clientId)
                 || persistentIpPortClientManager.contains(clientId);
     }
     
@@ -107,7 +108,8 @@ public class ClientManagerDelegate implements ClientManager {
         if (isConnectionBasedClient(clientId)) {
             return connectionBasedClientManager;
         }
-        return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
+        return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager
+                : ephemeralIpPortClientManager;
     }
     
     private boolean isConnectionBasedClient(String clientId) {

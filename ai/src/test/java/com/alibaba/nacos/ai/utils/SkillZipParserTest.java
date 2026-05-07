@@ -118,7 +118,8 @@ class SkillZipParserTest {
         byte[] zipBytes = createZipWithInvalidYaml();
         
         // When & Then
-        assertThrows(NacosApiException.class, () -> SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace"));
+        assertThrows(NacosApiException.class,
+                () -> SkillZipParser.parseSkillFromZip(zipBytes, "test-namespace"));
     }
     
     @Test
@@ -195,7 +196,8 @@ class SkillZipParserTest {
     @Test
     void testParseYamlFrontMatterFromMarkdownSupportsMetadataVersion() {
         String markdown =
-                "---\n" + "name: baidu-search\n" + "description: test\n" + "metadata:\n" + "  author: example-org\n"
+                "---\n" + "name: baidu-search\n" + "description: test\n" + "metadata:\n"
+                        + "  author: example-org\n"
                         + "  version: \"1.0\"\n" + "---\n\n" + "body";
         
         Map<String, String> result = SkillZipParser.parseYamlFrontMatterFromMarkdown(markdown);
@@ -264,7 +266,8 @@ class SkillZipParserTest {
             // Add SKILL.md
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -272,13 +275,15 @@ class SkillZipParserTest {
         return baos.toByteArray();
     }
     
-    private byte[] createZipWithSkillMdAndMetaSibling(String dir, String metaVersion) throws IOException {
+    private byte[] createZipWithSkillMdAndMetaSibling(String dir, String metaVersion)
+            throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String prefix = (dir == null || dir.isEmpty()) ? "" : (dir.endsWith("/") ? dir : dir + "/");
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry skillMd = new ZipEntry(prefix + "SKILL.md");
             zos.putNextEntry(skillMd);
-            String skillMdContent = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMdContent = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMdContent.getBytes());
             zos.closeEntry();
@@ -286,8 +291,10 @@ class SkillZipParserTest {
             ZipEntry meta = new ZipEntry(prefix + "_meta.json");
             zos.putNextEntry(meta);
             String metaJson =
-                    "{\n" + "  \"ownerId\": \"kn7akgt520t01vgs2tzx7yk6m180kt26\",\n" + "  \"slug\": \"baidu-search\",\n"
-                            + "  \"version\": \"" + metaVersion + "\",\n" + "  \"publishedAt\": 1773828934466\n" + "}";
+                    "{\n" + "  \"ownerId\": \"kn7akgt520t01vgs2tzx7yk6m180kt26\",\n"
+                            + "  \"slug\": \"baidu-search\",\n"
+                            + "  \"version\": \"" + metaVersion + "\",\n"
+                            + "  \"publishedAt\": 1773828934466\n" + "}";
             zos.write(metaJson.getBytes());
             zos.closeEntry();
         }
@@ -303,7 +310,8 @@ class SkillZipParserTest {
             // Add SKILL.md in subdirectory
             ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -320,7 +328,8 @@ class SkillZipParserTest {
             // Add SKILL.md
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -372,7 +381,8 @@ class SkillZipParserTest {
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
             String skillMd =
-                    "---\n" + "description: Test skill description\n" + "---\n\n" + "This is a test instruction";
+                    "---\n" + "description: Test skill description\n" + "---\n\n"
+                            + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
         }
@@ -387,7 +397,8 @@ class SkillZipParserTest {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "---\n\n" + "This is a test instruction";
+            String skillMd =
+                    "---\n" + "name: test-skill\n" + "---\n\n" + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
         }
@@ -403,7 +414,8 @@ class SkillZipParserTest {
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
             String skillMd =
-                    "---\n" + "name: \"test\\\\skill\\\"name\"\n" + "description: \"desc\\\\folder\\\"quoted\"\n"
+                    "---\n" + "name: \"test\\\\skill\\\"name\"\n"
+                            + "description: \"desc\\\\folder\\\"quoted\"\n"
                             + "---\n\n" + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -420,7 +432,8 @@ class SkillZipParserTest {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -442,7 +455,8 @@ class SkillZipParserTest {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -469,7 +483,8 @@ class SkillZipParserTest {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -490,7 +505,8 @@ class SkillZipParserTest {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "## Instructions\n" + "instruction content";
             zos.write(skillMd.getBytes());
             zos.closeEntry();
@@ -510,7 +526,8 @@ class SkillZipParserTest {
         assertNotNull(skill);
         assertEquals("test-skill", skill.getName());
         assertEquals("Test skill description", skill.getDescription());
-        assertEquals("---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n" + "\n"
+        assertEquals("---\n" + "name: test-skill\n" + "description: Test skill description\n"
+                + "---\n" + "\n"
                 + "This is a test instruction", skill.getSkillMd().trim());
     }
     
@@ -537,7 +554,8 @@ class SkillZipParserTest {
             ZipEntry entry = new ZipEntry("SKILL.md");
             zos.putNextEntry(entry);
             // UTF-8 BOM bytes followed by normal SKILL.md content
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             byte[] bom = new byte[] {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
             byte[] content = skillMd.getBytes("UTF-8");
@@ -558,7 +576,8 @@ class SkillZipParserTest {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("test-skill/SKILL.md");
             zos.putNextEntry(entry);
-            String skillMd = "---\n" + "name: test-skill\n" + "description: Test skill description\n" + "---\n\n"
+            String skillMd = "---\n" + "name: test-skill\n"
+                    + "description: Test skill description\n" + "---\n\n"
                     + "This is a test instruction";
             byte[] bom = new byte[] {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
             byte[] content = skillMd.getBytes("UTF-8");

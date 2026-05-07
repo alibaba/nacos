@@ -52,7 +52,8 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpServerRequest, ReleaseMcpServerResponse> {
+public class ReleaseMcpServerRequestHandler
+        extends RequestHandler<ReleaseMcpServerRequest, ReleaseMcpServerResponse> {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseMcpServerRequest.class);
     
@@ -73,7 +74,8 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
     @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
-    public ReleaseMcpServerResponse handle(ReleaseMcpServerRequest request, RequestMeta meta) throws NacosException {
+    public ReleaseMcpServerResponse handle(ReleaseMcpServerRequest request, RequestMeta meta)
+            throws NacosException {
         McpRequestUtil.fillNamespaceId(request);
         try {
             checkParameters(request);
@@ -107,34 +109,43 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
             throws NacosException {
         String namespaceId = request.getNamespaceId();
         McpServerBasicInfo serverSpecification = request.getServerSpecification();
-        LOGGER.info("Release new mcp server {}, version {} into namespaceId {} from connectionId {}.",
-                serverSpecification.getName(), serverSpecification.getVersionDetail().getVersion(), namespaceId,
+        LOGGER.info(
+                "Release new mcp server {}, version {} into namespaceId {} from connectionId {}.",
+                serverSpecification.getName(), serverSpecification.getVersionDetail().getVersion(),
+                namespaceId,
                 meta.getConnectionId());
         ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
         try {
             // mcp server and version found, means this version of mcp server has been release, throw exception.
-            McpServerBasicInfo existMcpServer = mcpServerOperationService.getMcpServerDetail(namespaceId,
-                    serverSpecification.getId(), serverSpecification.getName(),
-                    serverSpecification.getVersionDetail().getVersion());
+            McpServerBasicInfo existMcpServer =
+                    mcpServerOperationService.getMcpServerDetail(namespaceId,
+                            serverSpecification.getId(), serverSpecification.getName(),
+                            serverSpecification.getVersionDetail().getVersion());
             String version = existMcpServer.getVersionDetail().getVersion();
-            LOGGER.info("Mcp Server {} and target version {} already exist.", existMcpServer.getName(), version);
+            LOGGER.info("Mcp Server {} and target version {} already exist.",
+                    existMcpServer.getName(), version);
             throw new NacosApiException(NacosException.CONFLICT, ErrorCode.MCP_SERVER_VERSION_EXIST,
-                    String.format("Mcp Server %s and target version %s already exist, do not do release",
+                    String.format(
+                            "Mcp Server %s and target version %s already exist, do not do release",
                             existMcpServer.getName(), version));
         } catch (NacosApiException e) {
             if (ErrorCode.MCP_SERVER_NOT_FOUND.getCode() == e.getDetailErrCode()) {
                 // mcp server not found, create new mcp server.
                 String mcpId = createNewMcpServer(namespaceId, request);
                 response.setMcpId(mcpId);
-                LOGGER.info("Mcp Server {} released, Mcp Server id: {}", serverSpecification.getName(), mcpId);
+                LOGGER.info("Mcp Server {} released, Mcp Server id: {}",
+                        serverSpecification.getName(), mcpId);
             } else if (ErrorCode.MCP_SEVER_VERSION_NOT_FOUND.getCode() == e.getDetailErrCode()) {
                 // mcp server found but version not found, update mcp server.
                 createNewVersionMcpServer(namespaceId, request);
-                McpServerIndexData mcpServerIndexData = mcpServerIndex.getMcpServerByName(namespaceId,
-                        serverSpecification.getName());
+                McpServerIndexData mcpServerIndexData =
+                        mcpServerIndex.getMcpServerByName(namespaceId,
+                                serverSpecification.getName());
                 response.setMcpId(mcpServerIndexData.getId());
-                LOGGER.info("Mcp Server {} new version {} released, Mcp Server id: {}", serverSpecification.getName(),
-                        serverSpecification.getVersionDetail().getVersion(), mcpServerIndexData.getId());
+                LOGGER.info("Mcp Server {} new version {} released, Mcp Server id: {}",
+                        serverSpecification.getName(),
+                        serverSpecification.getVersionDetail().getVersion(),
+                        mcpServerIndexData.getId());
             } else {
                 LOGGER.error("Mcp Server {} released failed.", serverSpecification.getName(), e);
                 throw e;
@@ -143,27 +154,35 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         return response;
     }
     
-    private String createNewMcpServer(String namespaceId, ReleaseMcpServerRequest request) throws NacosException {
+    private String createNewMcpServer(String namespaceId, ReleaseMcpServerRequest request)
+            throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = request.getServerSpecification();
         McpToolSpecification toolSpecification = request.getToolSpecification();
         McpResourceSpecification resourceSpecification = request.getResourceSpecification();
         McpEndpointSpec endpointSpecification =
-                null == request.getEndpointSpecification() ? autoBuildMcpEndpointSpecification(namespaceId,
-                        mcpServerBasicInfo) : request.getEndpointSpecification();
-        return mcpServerOperationService.createMcpServer(namespaceId, mcpServerBasicInfo, toolSpecification,
+                null == request.getEndpointSpecification()
+                        ? autoBuildMcpEndpointSpecification(namespaceId,
+                                mcpServerBasicInfo)
+                        : request.getEndpointSpecification();
+        return mcpServerOperationService.createMcpServer(namespaceId, mcpServerBasicInfo,
+                toolSpecification,
                 resourceSpecification, endpointSpecification);
     }
     
-    private void createNewVersionMcpServer(String namespaceId, ReleaseMcpServerRequest request) throws NacosException {
+    private void createNewVersionMcpServer(String namespaceId, ReleaseMcpServerRequest request)
+            throws NacosException {
         McpServerBasicInfo mcpServerBasicInfo = request.getServerSpecification();
         McpToolSpecification toolSpecification = request.getToolSpecification();
         McpResourceSpecification resourceSpecification = request.getResourceSpecification();
         McpEndpointSpec endpointSpecification =
-                null == request.getEndpointSpecification() ? autoBuildMcpEndpointSpecification(namespaceId,
-                        mcpServerBasicInfo) : request.getEndpointSpecification();
+                null == request.getEndpointSpecification()
+                        ? autoBuildMcpEndpointSpecification(namespaceId,
+                                mcpServerBasicInfo)
+                        : request.getEndpointSpecification();
         Boolean isLatest = mcpServerBasicInfo.getVersionDetail().getIs_latest();
         boolean isPublish = isLatest != null && isLatest;
-        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, mcpServerBasicInfo, toolSpecification,
+        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, mcpServerBasicInfo,
+                toolSpecification,
                 resourceSpecification, endpointSpecification, Boolean.FALSE);
         
     }
@@ -178,7 +197,8 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
                 mcpServerBasicInfo.getVersionDetail().getVersion());
     }
     
-    private McpEndpointSpec autoBuildMcpEndpointSpecification(String namespaceId, String mcpName, String version) {
+    private McpEndpointSpec autoBuildMcpEndpointSpecification(String namespaceId, String mcpName,
+            String version) {
         String versionMcpName = mcpName + "::" + version;
         Service service = endpointOperationService.generateService(namespaceId, versionMcpName);
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();

@@ -24,6 +24,6 @@ public class MockAutoConfiguration {
     
     @Configuration
     public static class MockConfiguration {
-    
+        
     }
 }

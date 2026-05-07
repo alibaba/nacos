@@ -530,8 +530,9 @@ class MemoryMcpCacheIndexTest {
     
     @Test
     void testShutdownTimeout() throws InterruptedException {
-        ScheduledExecutorService executorService = (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
-                "cleanupScheduler");
+        ScheduledExecutorService executorService =
+                (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
+                        "cleanupScheduler");
         executorService.shutdownNow();
         ScheduledExecutorService mockExecutorService = Mockito.mock(ScheduledExecutorService.class);
         ReflectionTestUtils.setField(cache, "cleanupScheduler", mockExecutorService);
@@ -541,11 +542,13 @@ class MemoryMcpCacheIndexTest {
     
     @Test
     void testShutdownWithInterruptedException() throws InterruptedException {
-        ScheduledExecutorService executorService = (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
-                "cleanupScheduler");
+        ScheduledExecutorService executorService =
+                (ScheduledExecutorService) ReflectionTestUtils.getField(cache,
+                        "cleanupScheduler");
         executorService.shutdownNow();
         ScheduledExecutorService mockExecutorService = Mockito.mock(ScheduledExecutorService.class);
-        when(mockExecutorService.awaitTermination(anyLong(), any())).thenThrow(new InterruptedException());
+        when(mockExecutorService.awaitTermination(anyLong(), any()))
+                .thenThrow(new InterruptedException());
         ReflectionTestUtils.setField(cache, "cleanupScheduler", mockExecutorService);
         cache.shutdown();
         verify(mockExecutorService).shutdownNow();
@@ -642,7 +645,8 @@ class MemoryMcpCacheIndexTest {
             
             // 轮询等待id1过期，避免固定sleep导致秒级边界抖动
             long deadline = System.currentTimeMillis() + 3000;
-            while (mixedCache.getMcpId("ns1", "name1") != null && System.currentTimeMillis() < deadline) {
+            while (mixedCache.getMcpId("ns1", "name1") != null
+                    && System.currentTimeMillis() < deadline) {
                 Thread.sleep(50);
             }
             
@@ -759,8 +763,9 @@ class MemoryMcpCacheIndexTest {
             // Manually invoke cleanup — should return early due to shutdown flag
             invokeCleanupExpiredEntries(testCache);
         } finally {
-            ScheduledExecutorService cleanupScheduler = (ScheduledExecutorService) ReflectionTestUtils.getField(testCache,
-                    "cleanupScheduler");
+            ScheduledExecutorService cleanupScheduler =
+                    (ScheduledExecutorService) ReflectionTestUtils.getField(testCache,
+                            "cleanupScheduler");
             cleanupScheduler.shutdownNow();
         }
     }

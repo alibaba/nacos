@@ -23,7 +23,7 @@ package com.alibaba.nacos.common.utils;
  * @since 0.8.0
  */
 public class HttpMethod {
-
+    
     private HttpMethod() {
     }
     

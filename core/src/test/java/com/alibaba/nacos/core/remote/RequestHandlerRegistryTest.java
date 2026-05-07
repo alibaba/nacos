@@ -77,7 +77,8 @@ class RequestHandlerRegistryTest {
         when(controlManagerCenter.getTpsControlManager()).thenReturn(tpsControlManager);
         
         Map<String, Object> handlerMap = new HashMap<>();
-        handlerMap.put(HealthCheckRequestHandler.class.getSimpleName(), new HealthCheckRequestHandler());
+        handlerMap.put(HealthCheckRequestHandler.class.getSimpleName(),
+                new HealthCheckRequestHandler());
         Mockito.when(applicationContext.getBeansOfType(Mockito.any())).thenReturn(handlerMap);
         
         registry.onApplicationEvent(contextRefreshedEvent);
@@ -97,7 +98,8 @@ class RequestHandlerRegistryTest {
     @Test
     public void testSourceInvokeAllowed() {
         Map<String, Object> handlerMap = new HashMap<>();
-        handlerMap.put(ServerReloadRequest.class.getSimpleName(), new ServerReloaderRequestHandler());
+        handlerMap.put(ServerReloadRequest.class.getSimpleName(),
+                new ServerReloaderRequestHandler());
         Mockito.when(applicationContext.getBeansOfType(Mockito.any())).thenReturn(handlerMap);
         
         registry.onApplicationEvent(contextRefreshedEvent);
@@ -106,11 +108,11 @@ class RequestHandlerRegistryTest {
         
         assertFalse(registry.checkSourceInvokeAllowed(ServerReloadRequest.class.getSimpleName(),
                 RemoteConstants.LABEL_SOURCE_SDK));
-
+        
         assertTrue(registry.checkSourceInvokeAllowed(ServerReloadRequest.class.getSimpleName(),
                 RemoteConstants.LABEL_SOURCE_CLUSTER));
     }
-
+    
     @Test
     void testCheckSourceInvokeAllowedWhenTypeNotInRegistry() {
         assertTrue(registry.checkSourceInvokeAllowed("UnknownType", "anySource"));

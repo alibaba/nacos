@@ -44,7 +44,8 @@ class NacosExceptionTest {
     
     @Test
     void testConstructorWithCause() {
-        NacosException exception = new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
+        NacosException exception =
+                new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("cause test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:cause test", exception.toString());

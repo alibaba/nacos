@@ -47,7 +47,8 @@ public class InstanceRemoteHandler implements InstanceHandler {
     }
     
     @Override
-    public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
+    public Page<? extends Instance> listInstances(String namespaceId,
+            String serviceNameWithoutGroup, String groupName,
             String clusterName, int page, int pageSize) throws NacosException {
         List<Instance> instances = clientHolder.getNamingMaintainerService()
                 .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName, false);
@@ -68,4 +69,3 @@ public class InstanceRemoteHandler implements InstanceHandler {
                         instanceForm.getServiceName(), instance);
     }
 }
-

@@ -36,6 +36,7 @@ public class AgentCardListenerInvoker
     }
     
     protected void logInvoke(NacosAgentCardEvent event) {
-        LOGGER.info("Invoke event agentName: {} to Listener: {}", event.getAgentName(), listener.toString());
+        LOGGER.info("Invoke event agentName: {} to Listener: {}", event.getAgentName(),
+                listener.toString());
     }
 }

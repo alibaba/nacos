@@ -33,7 +33,8 @@ public class HttpRequestContextConfig {
     @Bean
     public FilterRegistrationBean<HttpRequestContextFilter> requestContextFilterRegistration(
             HttpRequestContextFilter requestContextFilter) {
-        FilterRegistrationBean<HttpRequestContextFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<HttpRequestContextFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(requestContextFilter);
         registration.addUrlPatterns("/*");
         registration.setName("nacosRequestContextFilter");

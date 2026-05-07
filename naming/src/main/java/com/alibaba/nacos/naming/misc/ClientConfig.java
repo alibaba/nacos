@@ -52,8 +52,9 @@ public class ClientConfig extends AbstractDynamicConfig {
     
     @Override
     protected void getConfigFromEnv() {
-        clientExpiredTime = EnvUtil.getProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, Long.class,
-                ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
+        clientExpiredTime =
+                EnvUtil.getProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, Long.class,
+                        ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
     }
     
     @Override

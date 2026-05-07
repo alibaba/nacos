@@ -72,22 +72,27 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName,
+            String tenantDesc,
             String createResource, final long time) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(Arrays
-                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
+                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source",
+                        "gmt_create",
                         "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
+        final Object[] args =
+                new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
+            boolean result =
+                    databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Namespace creation failed");
+                throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                        "Namespace creation failed");
             }
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -100,7 +105,8 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         
         EmbeddedStorageContextHolder
-                .addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
+                .addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp,
+                        tenantId);
         try {
             databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
@@ -109,20 +115,25 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName,
+            String tenantDesc) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper
-                .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id"));
-        final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
+                .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
+                        Arrays.asList("kp", "tenant_id"));
+        final Object[] args =
+                new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
+            boolean result =
+                    databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Namespace update failed");
+                throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                        "Namespace update failed");
             }
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -134,7 +145,8 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
-                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Collections.singletonList("kp"));
+                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                        Collections.singletonList("kp"));
         return databaseOperate.queryMany(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         
     }
@@ -144,7 +156,8 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
-                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Arrays.asList("kp", "tenant_id"));
+                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                        Arrays.asList("kp", "tenant_id"));
         return databaseOperate.queryOne(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         
     }

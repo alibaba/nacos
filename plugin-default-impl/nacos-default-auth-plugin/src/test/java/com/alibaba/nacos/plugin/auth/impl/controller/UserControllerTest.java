@@ -76,9 +76,11 @@ class UserControllerTest {
         user.setToken("1234567890");
         
         MockEnvironment mockEnvironment = new MockEnvironment();
-        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
-                "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
-                        StandardCharsets.UTF_8)));
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY,
+                Base64.getEncoder().encodeToString(
+                        "SecretKey0123$567890$234567890123456789012345678901234567890123456789"
+                                .getBytes(
+                                        StandardCharsets.UTF_8)));
         mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         

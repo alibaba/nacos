@@ -210,7 +210,8 @@ class AgentSpecZipParserTest {
         return baos.toByteArray();
     }
     
-    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data) throws IOException {
+    private static void addZipEntry(ZipOutputStream zos, String name, byte[] data)
+            throws IOException {
         ZipEntry entry = new ZipEntry(name);
         zos.putNextEntry(entry);
         zos.write(data);

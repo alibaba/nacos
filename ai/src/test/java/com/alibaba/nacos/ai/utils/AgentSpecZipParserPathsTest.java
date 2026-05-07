@@ -41,27 +41,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 3.2.0
  */
 class AgentSpecZipParserPathsTest {
-
+    
     private static final String NAMESPACE_ID = "test-ns";
-
+    
     private static List<List<String>> validResourcePathSets() {
         return Arrays.asList(
                 Arrays.asList("config/readme.md"),
                 Arrays.asList("skills/my-skill/foo.md", "crons/job.md"),
                 Arrays.asList("config/a.md", "config/b.md"));
     }
-
+    
     private static List<List<String>> macOsMetadataPathSets() {
         return Arrays.asList(
                 Arrays.asList("__MACOSX/._x.json", ".DS_Store"),
                 Arrays.asList("config/.DS_Store", "skills/._note.md"),
                 Arrays.asList("._foo.txt", "__MACOSX/._bar.json", "crons/.DS_Store"));
     }
-
+    
     private static String[] workerNames() {
         return new String[] {"workerA", "myworker", "testname"};
     }
-
+    
     /**
      * macOS metadata filtering.
      *
@@ -74,18 +74,19 @@ class AgentSpecZipParserPathsTest {
                 for (String workerName : workerNames()) {
                     String manifestJson = "{\"version\":\"1.0\",\"worker\":{\"suggested_name\":\""
                             + workerName + "\"}}";
-
+                    
                     byte[] zipBytes = buildZip(manifestJson, resourcePaths, metadataPaths);
-                    AgentSpec result = AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
-
+                    AgentSpec result =
+                            AgentSpecZipParser.parseAgentSpecFromZip(zipBytes, NAMESPACE_ID);
+                    
                     assertNotNull(result);
                     Map<String, AgentSpecResource> resources = result.getResource();
                     assertNotNull(resources);
-
+                    
                     for (Map.Entry<String, AgentSpecResource> entry : resources.entrySet()) {
                         String key = entry.getKey();
                         AgentSpecResource res = entry.getValue();
-
+                        
                         assertFalse(key.contains("__MACOSX"),
                                 "Resource key should not contain __MACOSX: " + key);
                         assertFalse(key.contains(".DS_Store"),
@@ -95,7 +96,7 @@ class AgentSpecZipParserPathsTest {
                         assertFalse(res.getName().startsWith("._"),
                                 "Resource name should not start with ._: " + res.getName());
                     }
-
+                    
                     for (String path : resourcePaths) {
                         String fileName = path.contains("/")
                                 ? path.substring(path.lastIndexOf('/') + 1) : path;
@@ -107,7 +108,7 @@ class AgentSpecZipParserPathsTest {
             }
         }
     }
-
+    
     private static byte[] buildZip(String manifestJson, List<String> resourcePaths,
             List<String> metadataPaths) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -125,7 +126,7 @@ class AgentSpecZipParserPathsTest {
         }
         return baos.toByteArray();
     }
-
+    
     private static void addZipEntry(ZipOutputStream zos, String name,
             byte[] data) throws IOException {
         ZipEntry entry = new ZipEntry(name);

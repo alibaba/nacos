@@ -61,6 +61,7 @@ class OperatingSystemBeanManagerTest {
     @Test
     void testDeduceMethodWithException() {
         assertNull(
-                ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "deduceMethod", "nonExistMethod"));
+                ReflectionTestUtils.invokeMethod(OperatingSystemBeanManager.class, "deduceMethod",
+                        "nonExistMethod"));
     }
 }

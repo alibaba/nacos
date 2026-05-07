@@ -32,7 +32,7 @@ import java.util.List;
  * @author nacos
  */
 public class AiResourceMapperByMySql extends AbstractMapperByMysql implements AiResourceMapper {
-
+    
     @Override
     public MapperResult findAiResourceFetchRows(MapperContext context) {
         WhereBuilder where = new WhereBuilder(
@@ -40,9 +40,9 @@ public class AiResourceMapperByMySql extends AbstractMapperByMysql implements Ai
                         + "biz_tags,ext,c_from,version_info,meta_version,scope,owner,download_count "
                         + "FROM ai_resource");
         where.eq("namespace_id", context.getWhereParameter(FieldConstant.NAMESPACE_ID));
-
+        
         appendExtraQueryCondition(where, context);
-
+        
         MapperResult built = where.build();
         String sql = built.getSql() + resolveOrderByClause(context) + " LIMIT ?,?";
         List<Object> params = new ArrayList<>(built.getParamList());
@@ -50,10 +50,9 @@ public class AiResourceMapperByMySql extends AbstractMapperByMysql implements Ai
         params.add(context.getPageSize());
         return new MapperResult(sql, params);
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
 }
-

@@ -24,13 +24,13 @@ import java.util.List;
  * @author nacos
  */
 public class WellKnownSkillsIndex {
-
+    
     private List<WellKnownSkillEntry> skills;
-
+    
     public List<WellKnownSkillEntry> getSkills() {
         return skills;
     }
-
+    
     public void setSkills(List<WellKnownSkillEntry> skills) {
         this.skills = skills;
     }

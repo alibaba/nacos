@@ -75,13 +75,16 @@ public class ConsoleInstanceController {
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
-    public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm, PageForm pageForm)
+    public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm,
+            PageForm pageForm)
             throws NacosException {
         instanceForm.validate();
         pageForm.validate();
-        Page<? extends Instance> instancePage = instanceProxy.listInstances(instanceForm.getNamespaceId(),
-                instanceForm.getServiceName(), instanceForm.getGroupName(), instanceForm.getClusterName(),
-                pageForm.getPageNo(), pageForm.getPageSize());
+        Page<? extends Instance> instancePage =
+                instanceProxy.listInstances(instanceForm.getNamespaceId(),
+                        instanceForm.getServiceName(), instanceForm.getGroupName(),
+                        instanceForm.getClusterName(),
+                        pageForm.getPageNo(), pageForm.getPageSize());
         return Result.success(instancePage);
     }
     
@@ -131,18 +134,20 @@ public class ConsoleInstanceController {
     
     private void checkDeleteInstanceEphemeral(Boolean ephemeral) throws NacosApiException {
         if (Boolean.TRUE.equals(ephemeral)) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Console only supports deregistering persistent instances");
         }
     }
     
     private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
-        Instance instance = InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
-                .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
-                .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
-                .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
-                .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
-                .setEphemeral(instanceForm.getEphemeral()).build();
+        Instance instance =
+                InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
+                        .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
+                        .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
+                        .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
+                        .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
+                        .setEphemeral(instanceForm.getEphemeral()).build();
         if (instanceForm.getEphemeral() == null) {
             // register instance by console default is persistent instance.
             instance.setEphemeral(false);
@@ -151,7 +156,8 @@ public class ConsoleInstanceController {
     }
     
     private String buildCompositeServiceName(InstanceForm instanceForm) {
-        return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
+        return NamingUtils.getGroupedName(instanceForm.getServiceName(),
+                instanceForm.getGroupName());
     }
     
 }

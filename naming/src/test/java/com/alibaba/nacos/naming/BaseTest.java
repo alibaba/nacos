@@ -48,19 +48,20 @@ public abstract class BaseTest {
     
     protected static final String TEST_METADATA = "{\"label\":\"123\"}";
     
-    protected static final String TEST_INSTANCE_INFO_LIST = "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
-            + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
-            + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
+    protected static final String TEST_INSTANCE_INFO_LIST =
+            "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
+                    + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
+                    + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
     
     @Spy
     protected ConfigurableApplicationContext context;
     
     @Mock
     protected DistroMapper distroMapper;
-
+    
     @Spy
     protected SwitchDomain switchDomain;
-
+    
     @Spy
     protected MockEnvironment environment;
     
@@ -70,7 +71,8 @@ public abstract class BaseTest {
         ApplicationUtils.injectContext(context);
     }
     
-    protected MockHttpServletRequestBuilder convert(Object simpleOb, MockHttpServletRequestBuilder builder) throws IllegalAccessException {
+    protected MockHttpServletRequestBuilder convert(Object simpleOb,
+            MockHttpServletRequestBuilder builder) throws IllegalAccessException {
         Field[] declaredFields = simpleOb.getClass().getDeclaredFields();
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
@@ -78,11 +80,11 @@ public abstract class BaseTest {
         }
         return builder;
     }
-
+    
     protected void mockInjectSwitchDomain() {
         doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
     }
-
+    
     protected void mockInjectDistroMapper() {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
     }

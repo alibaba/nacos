@@ -47,7 +47,8 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
     
     @Override
     public boolean verify(String hostname, SSLSession session) {
-        if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname) || LOCALHOST_HOSTNAME[1].equals(hostname)) {
+        if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname)
+                || LOCALHOST_HOSTNAME[1].equals(hostname)) {
             return true;
         }
         if (isIp(hostname)) {

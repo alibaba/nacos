@@ -65,7 +65,8 @@ public class PermissionControllerV3 {
      * @return ok if succeed
      */
     @PostMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
+            action = ActionTypes.WRITE)
     public Result<String> createPermission(@RequestParam String role, @RequestParam String resource,
             @RequestParam String action) {
         nacosRoleService.addPermission(role, resource, action);
@@ -81,7 +82,8 @@ public class PermissionControllerV3 {
      * @return ok if succeed
      */
     @DeleteMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
+            action = ActionTypes.WRITE)
     public Result<String> deletePermission(@RequestParam String role, @RequestParam String resource,
             @RequestParam String action) {
         nacosRoleService.deletePermission(role, resource, action);
@@ -98,8 +100,10 @@ public class PermissionControllerV3 {
      * @return permission of a role
      */
     @GetMapping("/list")
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
-    public Result<Page<PermissionInfo>> getPermissionList(@RequestParam int pageNo, @RequestParam int pageSize,
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
+            action = ActionTypes.READ)
+    public Result<Page<PermissionInfo>> getPermissionList(@RequestParam int pageNo,
+            @RequestParam int pageSize,
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role,
             @RequestParam(name = "search", defaultValue = "accurate") String search) {
         Page<PermissionInfo> permissionPage;
@@ -120,8 +124,10 @@ public class PermissionControllerV3 {
      * @return true if duplicate, false otherwise
      */
     @GetMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
-    public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource,
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions",
+            action = ActionTypes.READ)
+    public Result<Boolean> isDuplicatePermission(@RequestParam String role,
+            @RequestParam String resource,
             @RequestParam String action) {
         return nacosRoleService.isDuplicatePermission(role, resource, action);
     }

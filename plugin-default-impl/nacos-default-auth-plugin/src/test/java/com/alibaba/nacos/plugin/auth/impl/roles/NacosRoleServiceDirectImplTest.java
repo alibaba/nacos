@@ -73,8 +73,9 @@ class NacosRoleServiceDirectImplTest {
     
     @BeforeEach
     void setup() throws Exception {
-        nacosRoleService = new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService,
-                permissionPersistService);
+        nacosRoleService =
+                new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService,
+                        permissionPersistService);
     }
     
     @Test
@@ -96,13 +97,15 @@ class NacosRoleServiceDirectImplTest {
         
         Permission permission2 = new Permission();
         permission2.setAction("rw");
-        Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw",
-                new Properties());
+        Resource resource =
+                new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw",
+                        new Properties());
         permission2.setResource(resource);
         boolean res2 = nacosRoleService.hasPermission(nacosUser, permission2);
         assertFalse(res2);
         resource.getProperties()
-                .put(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
+                .put(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT,
+                        AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
         boolean res3 = nacosRoleService.hasPermission(nacosUser, permission2);
         assertTrue(res3);
     }
@@ -115,7 +118,8 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void getRolesPage() {
-        Page<RoleInfo> roleInfoPage = nacosRoleService.getRoles("nacos", "ROLE_ADMIN", 1, Integer.MAX_VALUE);
+        Page<RoleInfo> roleInfoPage =
+                nacosRoleService.getRoles("nacos", "ROLE_ADMIN", 1, Integer.MAX_VALUE);
         assertEquals(0, roleInfoPage.getTotalCount());
     }
     
@@ -147,7 +151,8 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void deleteAdminRole() {
-        assertThrows(IllegalArgumentException.class, () -> nacosRoleService.deleteRole(AuthConstants.GLOBAL_ADMIN_ROLE),
+        assertThrows(IllegalArgumentException.class,
+                () -> nacosRoleService.deleteRole(AuthConstants.GLOBAL_ADMIN_ROLE),
                 "role 'ROLE_ADMIN' is not permitted to delete!");
         assertThrows(IllegalArgumentException.class,
                 () -> nacosRoleService.deleteRole(AuthConstants.GLOBAL_ADMIN_ROLE, "mockUser"),
@@ -172,8 +177,9 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void getPermissionsPage() {
-        Page<PermissionInfo> permissionsFromDatabase = nacosRoleService.getPermissions("role-admin", 1,
-                Integer.MAX_VALUE);
+        Page<PermissionInfo> permissionsFromDatabase =
+                nacosRoleService.getPermissions("role-admin", 1,
+                        Integer.MAX_VALUE);
         assertEquals(0, permissionsFromDatabase.getTotalCount());
     }
     
@@ -194,9 +200,11 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void joinResource() throws Exception {
-        Method method = AbstractCheckedRoleService.class.getDeclaredMethod("joinResource", Resource.class);
+        Method method =
+                AbstractCheckedRoleService.class.getDeclaredMethod("joinResource", Resource.class);
         method.setAccessible(true);
-        Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
+        Resource resource = new Resource("public", "group",
+                AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
         Object invoke = method.invoke(nacosRoleService, new Resource[] {resource});
         assertNotNull(invoke);
     }

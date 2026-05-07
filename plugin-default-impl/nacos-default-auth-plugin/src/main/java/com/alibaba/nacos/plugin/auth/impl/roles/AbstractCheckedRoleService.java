@@ -40,7 +40,8 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractCheckedRoleService extends AbstractCachedRoleService implements NacosRoleService {
+public abstract class AbstractCheckedRoleService extends AbstractCachedRoleService
+        implements NacosRoleService {
     
     private final AuthConfigs authConfigs;
     
@@ -68,7 +69,8 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
         }
         
         // Old global admin can pass resource 'console/':
-        if (permission.getResource().getName().startsWith(AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX)) {
+        if (permission.getResource().getName()
+                .startsWith(AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX)) {
             return false;
         }
         
@@ -84,8 +86,9 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
                     permissionResource = DEFAULT_NAMESPACE_ID + permissionResource;
                 }
                 String permissionAction = permissionInfo.getAction();
-                if (permissionAction.contains(permission.getAction()) && Pattern.matches(permissionResource,
-                        joinResource(permission.getResource()))) {
+                if (permissionAction.contains(permission.getAction())
+                        && Pattern.matches(permissionResource,
+                                joinResource(permission.getResource()))) {
                     return true;
                 }
             }
@@ -102,7 +105,8 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
         for (PermissionInfo permissionInfo : permissionInfos) {
             boolean resourceMatch = StringUtils.equals(resource, permissionInfo.getResource());
             boolean actionMatch =
-                    StringUtils.equals(action, permissionInfo.getAction()) || "rw".equals(permissionInfo.getAction());
+                    StringUtils.equals(action, permissionInfo.getAction())
+                            || "rw".equals(permissionInfo.getAction());
             if (resourceMatch && actionMatch) {
                 return Result.success(Boolean.TRUE);
             }
@@ -116,7 +120,8 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
         if (CollectionUtils.isEmpty(roles)) {
             return false;
         }
-        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
+        return roles.stream()
+                .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
     
     @Override
@@ -174,9 +179,11 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
         }
         String resourceName = resource.getName();
         if (StringUtils.isBlank(resourceName)) {
-            result.append(Constants.Resource.SPLITTER).append(resource.getType().toLowerCase()).append("/*");
+            result.append(Constants.Resource.SPLITTER).append(resource.getType().toLowerCase())
+                    .append("/*");
         } else {
-            result.append(Constants.Resource.SPLITTER).append(resource.getType().toLowerCase()).append('/')
+            result.append(Constants.Resource.SPLITTER).append(resource.getType().toLowerCase())
+                    .append('/')
                     .append(resourceName);
         }
         return result.toString();

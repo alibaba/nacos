@@ -65,7 +65,8 @@ class RaftOptionsBuilderTest {
         config.setVal(RaftSysConstants.RAFT_READ_INDEX_TYPE, "Invalid");
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> RaftOptionsBuilder.initRaftOptions(config));
-        assertEquals("Illegal Raft system parameters => ReadOnlyOption : [Invalid], should be 'ReadOnlySafe' or 'ReadOnlyLeaseBased'",
+        assertEquals(
+                "Illegal Raft system parameters => ReadOnlyOption : [Invalid], should be 'ReadOnlySafe' or 'ReadOnlyLeaseBased'",
                 ex.getMessage());
     }
     

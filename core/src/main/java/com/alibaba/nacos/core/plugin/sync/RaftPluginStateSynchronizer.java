@@ -47,21 +47,21 @@ import java.util.Map;
 @Component
 @Conditional(ConditionOnClusterMode.class)
 public class RaftPluginStateSynchronizer implements PluginStateSynchronizer {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(RaftPluginStateSynchronizer.class);
-
+    
     private static final String PLUGIN_STATE_GROUP = "plugin_state";
-
+    
     private final CPProtocol cpProtocol;
-
+    
     private final Serializer serializer;
-
+    
     public RaftPluginStateSynchronizer(ProtocolManager protocolManager) {
         this.cpProtocol = protocolManager.getCpProtocol();
         this.serializer = SerializeFactory.getDefault();
         LOGGER.info("[RaftPluginStateSynchronizer] Initialized with Raft protocol");
     }
-
+    
     @Override
     public void syncStateChange(String pluginId, boolean enabled) throws NacosApiException {
         PluginStateOperation operation = PluginStateOperation.builder()
@@ -71,9 +71,10 @@ public class RaftPluginStateSynchronizer implements PluginStateSynchronizer {
                 .build();
         submitToRaft(operation);
     }
-
+    
     @Override
-    public void syncConfigChange(String pluginId, Map<String, String> config) throws NacosApiException {
+    public void syncConfigChange(String pluginId, Map<String, String> config)
+            throws NacosApiException {
         PluginStateOperation operation = PluginStateOperation.builder()
                 .type(PluginStateOperation.OperationType.UPDATE_CONFIG)
                 .pluginId(pluginId)
@@ -81,17 +82,17 @@ public class RaftPluginStateSynchronizer implements PluginStateSynchronizer {
                 .build();
         submitToRaft(operation);
     }
-
+    
     private void submitToRaft(PluginStateOperation operation) throws NacosApiException {
         try {
             byte[] data = serializer.serialize(operation);
-
+            
             WriteRequest request = WriteRequest.newBuilder()
                     .setGroup(PLUGIN_STATE_GROUP)
                     .setData(ByteString.copyFrom(data))
                     .setOperation(DataOperation.CHANGE.name())
                     .build();
-
+            
             Response response = cpProtocol.write(request);
             if (!response.getSuccess()) {
                 throw new NacosApiException(NacosException.SERVER_ERROR, ErrorCode.SERVER_ERROR,

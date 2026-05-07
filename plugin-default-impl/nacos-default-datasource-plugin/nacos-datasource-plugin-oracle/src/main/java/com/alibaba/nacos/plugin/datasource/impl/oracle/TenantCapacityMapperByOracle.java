@@ -32,27 +32,31 @@ import java.util.List;
  *
  * @author liam.fu
  **/
-public class TenantCapacityMapperByOracle extends AbstractMapperByOracle implements TenantCapacityMapper {
-
+public class TenantCapacityMapperByOracle extends AbstractMapperByOracle
+        implements TenantCapacityMapper {
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.ORACLE;
     }
-
+    
     @Override
     public MapperResult select(MapperContext context) {
-        String sql = "SELECT id, quota, usage, max_size, max_aggr_count, max_aggr_size, tenant_id FROM tenant_capacity "
-                + "WHERE tenant_id = ?";
-        return new MapperResult(sql, Collections.singletonList(context.getWhereParameter(FieldConstant.TENANT_ID)));
+        String sql =
+                "SELECT id, quota, usage, max_size, max_aggr_count, max_aggr_size, tenant_id FROM tenant_capacity "
+                        + "WHERE tenant_id = ?";
+        return new MapperResult(sql,
+                Collections.singletonList(context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-
+    
     @Override
     public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? FETCH FIRST ? ROWS ONLY";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
-                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
+        return new MapperResult(sql,
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                        context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-
+    
     @Override
     public MapperResult incrementUsageWithDefaultQuotaLimit(MapperContext context) {
         return new MapperResult(
@@ -62,7 +66,7 @@ public class TenantCapacityMapperByOracle extends AbstractMapperByOracle impleme
                         context.getWhereParameter(FieldConstant.TENANT_ID),
                         context.getWhereParameter(FieldConstant.USAGE)));
     }
-
+    
     @Override
     public MapperResult incrementUsageWithQuotaLimit(MapperContext context) {
         return new MapperResult(
@@ -71,14 +75,15 @@ public class TenantCapacityMapperByOracle extends AbstractMapperByOracle impleme
                 CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-
+    
     @Override
     public MapperResult incrementUsage(MapperContext context) {
-        return new MapperResult("UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?",
+        return new MapperResult(
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?",
                 CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-
+    
     @Override
     public MapperResult decrementUsage(MapperContext context) {
         return new MapperResult(
@@ -86,7 +91,7 @@ public class TenantCapacityMapperByOracle extends AbstractMapperByOracle impleme
                 CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-
+    
     @Override
     public MapperResult correctUsage(MapperContext context) {
         return new MapperResult(
@@ -96,7 +101,7 @@ public class TenantCapacityMapperByOracle extends AbstractMapperByOracle impleme
                         context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-
+    
     @Override
     public MapperResult insertTenantCapacity(MapperContext context) {
         List<Object> paramList = new ArrayList<>();
@@ -108,7 +113,7 @@ public class TenantCapacityMapperByOracle extends AbstractMapperByOracle impleme
         paramList.add(context.getUpdateParameter(FieldConstant.GMT_CREATE));
         paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
         paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
-
+        
         return new MapperResult(
                 "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?",

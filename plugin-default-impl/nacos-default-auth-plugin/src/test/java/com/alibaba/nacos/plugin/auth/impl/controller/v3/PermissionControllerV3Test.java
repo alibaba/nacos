@@ -61,9 +61,11 @@ public class PermissionControllerV3Test {
     @Test
     void testGetPermissionListAccurateSearch() {
         Page<PermissionInfo> permissionInfoPage = new Page<>();
-        when(nacosRoleService.getPermissions(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
+        when(nacosRoleService.getPermissions(anyString(), anyInt(), anyInt()))
+                .thenReturn(permissionInfoPage);
         
-        Result<Page<PermissionInfo>> result = permissionController.getPermissionList(1, 10, "admin", "accurate");
+        Result<Page<PermissionInfo>> result =
+                permissionController.getPermissionList(1, 10, "admin", "accurate");
         
         assertEquals(permissionInfoPage, result.getData());
         verify(nacosRoleService, times(1)).getPermissions("admin", 1, 10);
@@ -72,9 +74,11 @@ public class PermissionControllerV3Test {
     @Test
     void testGetPermissionListBlurSearch() {
         Page<PermissionInfo> permissionInfoPage = new Page<>();
-        when(nacosRoleService.findPermissions(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
+        when(nacosRoleService.findPermissions(anyString(), anyInt(), anyInt()))
+                .thenReturn(permissionInfoPage);
         
-        Result<Page<PermissionInfo>> result = permissionController.getPermissionList(1, 10, "admin", "blur");
+        Result<Page<PermissionInfo>> result =
+                permissionController.getPermissionList(1, 10, "admin", "blur");
         
         assertEquals(permissionInfoPage, result.getData());
         verify(nacosRoleService, times(1)).findPermissions("admin", 1, 10);
@@ -82,8 +86,9 @@ public class PermissionControllerV3Test {
     
     @Test
     void testCreatePermission() {
-        Result<String> result = (Result<String>) permissionController.createPermission("admin", "testResource",
-                "write");
+        Result<String> result =
+                (Result<String>) permissionController.createPermission("admin", "testResource",
+                        "write");
         
         verify(nacosRoleService, times(1)).addPermission("admin", "testResource", "write");
         assertEquals("add permission ok!", result.getData());
@@ -91,8 +96,9 @@ public class PermissionControllerV3Test {
     
     @Test
     void testDeletePermission() {
-        Result<String> result = (Result<String>) permissionController.deletePermission("admin", "testResource",
-                "write");
+        Result<String> result =
+                (Result<String>) permissionController.deletePermission("admin", "testResource",
+                        "write");
         
         verify(nacosRoleService, times(1)).deletePermission("admin", "testResource", "write");
         assertEquals("delete permission ok!", result.getData());

@@ -58,16 +58,18 @@ public class McpToolOperationService {
      * @param toolSpecification mcp server included tools, see {@link McpTool}, optional
      * @throws NacosException any exception during handling
      */
-    public void refreshMcpTool(String namespaceId, McpServerBasicInfo serverBasicInfo, 
-                               McpToolSpecification toolSpecification)
+    public void refreshMcpTool(String namespaceId, McpServerBasicInfo serverBasicInfo,
+            McpToolSpecification toolSpecification)
             throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        ConfigFormV3 toolConfigForm = buildMcpToolConfigForm(namespaceId, serverBasicInfo, toolSpecification);
+        ConfigFormV3 toolConfigForm =
+                buildMcpToolConfigForm(namespaceId, serverBasicInfo, toolSpecification);
         configOperationService.publishConfig(toolConfigForm, configRequestInfo, null);
     }
     
     public McpToolSpecification getMcpTool(String namespaceId, String toolsDescriptionRef) {
-        ConfigQueryChainRequest request = buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
+        ConfigQueryChainRequest request =
+                buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
             return null;
@@ -75,20 +77,32 @@ public class McpToolOperationService {
         return transferToMcpServerTool(response);
     }
     
-    public void deleteMcpTool(String namespaceId, String mcpServerId, String version) throws NacosException {
-        configOperationService.deleteConfig(McpConfigUtils.formatServerToolSpecDataId(mcpServerId, version),
+    /**
+     * Delete mcp server tool specification config.
+     *
+     * @param namespaceId namespace id of mcp server
+     * @param mcpServerId mcp server id
+     * @param version     mcp server version
+     * @throws NacosException any exception during handling
+     */
+    public void deleteMcpTool(String namespaceId, String mcpServerId, String version)
+            throws NacosException {
+        configOperationService.deleteConfig(
+                McpConfigUtils.formatServerToolSpecDataId(mcpServerId, version),
                 Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
     }
     
-    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, McpServerBasicInfo mcpServerBasicInfo, 
-                                                McpToolSpecification toolSpecification) {
+    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId,
+            McpServerBasicInfo mcpServerBasicInfo,
+            McpToolSpecification toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setNamespaceId(namespaceId);
-
-        String toolSpecDataId = McpConfigUtils.formatServerToolSpecDataId(mcpServerBasicInfo.getId(), 
-                mcpServerBasicInfo.getVersionDetail().getVersion());
+        
+        String toolSpecDataId =
+                McpConfigUtils.formatServerToolSpecDataId(mcpServerBasicInfo.getId(),
+                        mcpServerBasicInfo.getVersionDetail().getVersion());
         configFormV3.setDataId(toolSpecDataId);
         
         configFormV3.setContent(JacksonUtils.toJson(toolSpecification));
@@ -99,7 +113,8 @@ public class McpToolOperationService {
         return configFormV3;
     }
     
-    private ConfigQueryChainRequest buildQueryMcpToolRequest(String namespaceId, String toolsDescriptionRef) {
+    private ConfigQueryChainRequest buildQueryMcpToolRequest(String namespaceId,
+            String toolsDescriptionRef) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId(toolsDescriptionRef);
         request.setGroup(Constants.MCP_SERVER_TOOL_GROUP);

@@ -33,7 +33,8 @@ import java.util.Collection;
  *
  * @author nkorange
  */
-public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCheckTask, NacosHealthCheckTask {
+public class ClientBeatCheckTaskV2 extends AbstractExecuteTask
+        implements BeatCheckTask, NacosHealthCheckTask {
     
     private final IpPortBasedClient client;
     
@@ -53,7 +54,8 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     
     @Override
     public String taskKey() {
-        return KeyBuilder.buildServiceMetaKey(client.getClientId(), String.valueOf(client.isEphemeral()));
+        return KeyBuilder.buildServiceMetaKey(client.getClientId(),
+                String.valueOf(client.isEphemeral()));
     }
     
     @Override

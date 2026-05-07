@@ -154,10 +154,13 @@ public class UpdateHealthForm {
             return false;
         }
         UpdateHealthForm that = (UpdateHealthForm) o;
-        return Objects.equals(healthy, that.healthy) && Objects.equals(groupName, that.groupName) && Objects
-                .equals(serviceName, that.serviceName) && Objects.equals(namespaceId, that.namespaceId) && Objects
-                .equals(clusterName, that.clusterName) && Objects.equals(ip, that.ip) && Objects
-                .equals(port, that.port);
+        return Objects.equals(healthy, that.healthy) && Objects.equals(groupName, that.groupName)
+                && Objects
+                        .equals(serviceName, that.serviceName)
+                && Objects.equals(namespaceId, that.namespaceId) && Objects
+                        .equals(clusterName, that.clusterName)
+                && Objects.equals(ip, that.ip) && Objects
+                        .equals(port, that.port);
     }
     
     @Override
@@ -167,8 +170,10 @@ public class UpdateHealthForm {
     
     @Override
     public String toString() {
-        return "UpdateHealthForm{" + "healthy=" + healthy + ", groupName='" + groupName + '\'' + ", serviceName='"
-                + serviceName + '\'' + ", namespaceId='" + namespaceId + '\'' + ", clusterName='" + clusterName + '\''
+        return "UpdateHealthForm{" + "healthy=" + healthy + ", groupName='" + groupName + '\''
+                + ", serviceName='"
+                + serviceName + '\'' + ", namespaceId='" + namespaceId + '\'' + ", clusterName='"
+                + clusterName + '\''
                 + ", ip='" + ip + '\'' + ", port=" + port + '}';
     }
 }

@@ -30,7 +30,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author Nacos
  */
 public class ConfigExample {
-
+    
     public static void main(String[] args) throws NacosException, InterruptedException {
         String serverAddr = "localhost";
         String dataId = "test";
@@ -41,31 +41,32 @@ public class ConfigExample {
         String content = configService.getConfig(dataId, group, 5000);
         System.out.println("[config content] " + content);
         configService.addListener(dataId, group, new Listener() {
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println("receive:" + configInfo);
             }
-
+            
             @Override
             public Executor getExecutor() {
                 return null;
             }
         });
-
+        
         boolean isPublishOk = configService.publishConfig(dataId, group, "content");
         System.out.println("[publish result] " + isPublishOk);
-
+        
         Thread.sleep(3000);
         content = configService.getConfig(dataId, group, 5000);
         System.out.println("[config content]: " + content);
-
+        
         boolean isRemoveOk = configService.removeConfig(dataId, group);
         System.out.println("[delete result]: " + isRemoveOk);
         Thread.sleep(3000);
-
+        
         content = configService.getConfig(dataId, group, 5000);
         System.out.println("[config content]: " + content);
         Thread.sleep(300000);
-
+        
     }
 }

@@ -68,7 +68,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
-    public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
+    public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo,
+            int pageSize) {
         
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
@@ -87,7 +88,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
             params.add(role);
         }
         
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                pageNo, pageSize,
                 ROLE_INFO_ROW_MAPPER);
         
     }
@@ -146,7 +148,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
+        String sql =
+                "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
     }
     
@@ -166,7 +169,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
-    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
+    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo,
+            int pageSize) {
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         
@@ -185,7 +189,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         String sqlFetchRows = "SELECT role, username FROM roles";
         
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                pageNo, pageSize,
                 ROLE_INFO_ROW_MAPPER);
     }
     

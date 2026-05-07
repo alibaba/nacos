@@ -43,7 +43,8 @@ class NacosAgentSpecEventPropertyTest {
      * <p><b>Validates: Requirements 3.2, 3.3, 3.4</b></p>
      */
     @Property
-    void constructorRoundTripPreservesValues(@ForAll("arbitraryAgentSpecNames") String agentSpecName) {
+    void constructorRoundTripPreservesValues(
+            @ForAll("arbitraryAgentSpecNames") String agentSpecName) {
         AgentSpec agentSpec = new AgentSpec();
         
         NacosAgentSpecEvent event = new NacosAgentSpecEvent(agentSpecName, agentSpec);

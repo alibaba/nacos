@@ -148,14 +148,16 @@ class HttpProtocolAuthServiceTest {
     @Test
     void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
+        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE)
+                .isSuccess());
     }
     
     @Test
     void testValidateIdentityWithPlugin() throws AccessException {
         when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
+        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE)
+                .isSuccess());
     }
     
     @Test
@@ -192,13 +194,15 @@ class HttpProtocolAuthServiceTest {
         Secured secured = getMethodSecure("testCheckServerIdentityWithoutIdentityConfig");
         ServerIdentityResult result = protocolAuthService.checkServerIdentity(request, secured);
         assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
-        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+        assertEquals(
+                "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
                         + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
                 result.getMessage());
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         result = protocolAuthService.checkServerIdentity(request, secured);
         assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
-        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+        assertEquals(
+                "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
                         + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
                 result.getMessage());
     }
