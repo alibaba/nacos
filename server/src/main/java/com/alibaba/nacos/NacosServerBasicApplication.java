@@ -19,6 +19,7 @@ package com.alibaba.nacos;
 import com.alibaba.nacos.server.NacosWebBeanTypeFilter;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
@@ -31,7 +32,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *
  * @author xiweng.yy
  */
-@SpringBootApplication(exclude = {LdapAutoConfiguration.class})
+@SpringBootApplication(exclude = {LdapAutoConfiguration.class, PrometheusMetricsExportAutoConfiguration.class})
 @ComponentScan(excludeFilters = {
         @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class, NacosWebBeanTypeFilter.class})})
 @EnableScheduling
