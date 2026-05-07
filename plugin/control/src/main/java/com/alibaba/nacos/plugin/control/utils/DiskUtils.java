@@ -51,8 +51,6 @@ public final class DiskUtils {
     
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
-    private static final CharsetDecoder DECODER = CHARSET.newDecoder();
-    
     /**
      * read this file content.
      *
@@ -60,13 +58,16 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(File file) {
+        // CharsetDecoder is documented as not safe for concurrent use, so allocate one per call
+        // instead of sharing a static instance across threads.
+        CharsetDecoder decoder = CHARSET.newDecoder();
         try (FileChannel fileChannel = new FileInputStream(file).getChannel()) {
             StringBuilder text = new StringBuilder();
             ByteBuffer buffer = ByteBuffer.allocate(4096);
             CharBuffer charBuffer = CharBuffer.allocate(4096);
             while (fileChannel.read(buffer) != -1) {
                 buffer.flip();
-                DECODER.decode(buffer, charBuffer, false);
+                decoder.decode(buffer, charBuffer, false);
                 charBuffer.flip();
                 while (charBuffer.hasRemaining()) {
                     text.append(charBuffer.get());
