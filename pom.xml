@@ -304,6 +304,27 @@
                 </dependencies>
             </plugin>
             <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.44.4</version>
+                <configuration>
+                    <java>
+                        <excludes>
+                            <exclude>**/api/grpc/auto/**</exclude>
+                            <exclude>**/consistency/entity/**</exclude>
+                            <exclude>**/istio/model/**</exclude>
+                            <exclude>**/common/packagescan/**</exclude>
+                            <exclude>**/nacos/test/**</exclude>
+                            <exclude>**/protobuf/**</exclude>
+                        </excludes>
+                        <eclipse>
+                            <file>${maven.multiModuleProjectDirectory}/style/nacos-eclipse-formatter.xml</file>
+                        </eclipse>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
                 <version>${apache-rat-plugin.version}</version>
