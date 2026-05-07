@@ -160,9 +160,6 @@
         <!-- Maven Central Portal -->
         <central.publishing.maven.version>0.7.0</central.publishing.maven.version>
 
-        <!-- override dependency version -->
-        <micrometer.version>1.12.8</micrometer.version>
-        
         <!-- native -->
         <native-maven-plugin.version>0.10.2</native-maven-plugin.version>
     </properties>
@@ -1137,29 +1134,6 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf-java.version}</version>
-            </dependency>
-            
-            <!-- Micrometer -->
-            
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-core</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-influx</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-elastic</artifactId>
-                <version>${micrometer.version}</version>
             </dependency>
             
             <dependency>
