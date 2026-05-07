@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpec;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
+import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -67,6 +68,16 @@ public class AgentSpecZipParser {
     private static final String METADATA_ENCODING = "encoding";
     
     private static final String METADATA_ENCODING_BASE64 = "base64";
+    
+    /**
+     * Maximum total decompressed size allowed (50MB). Prevents Zip Bomb attacks.
+     */
+    private static final long MAX_TOTAL_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
+    
+    /**
+     * Maximum number of entries allowed in a ZIP file. Prevents entry-count flooding attacks.
+     */
+    private static final int MAX_ZIP_ENTRIES = 500;
     
     /** File extensions treated as binary; content will be stored as Base64. */
     private static final Set<String> BINARY_EXTENSIONS = new HashSet<>();
@@ -147,9 +158,20 @@ public class AgentSpecZipParser {
     /**
      * Unzip to list of (name, raw bytes). Does not decode as text so binary files are preserved.
      * Uses Apache Commons Compress to support zip files with STORED entries that have data descriptor.
+     *
+     * <p>Security hardening (mirrors {@link SkillZipParser#unzipToEntries(byte[])}):
+     * <ul>
+     *   <li>Rejects entries with path traversal sequences (..) or absolute paths via
+     *       {@link SkillUtils#validatePathSafety(String)}</li>
+     *   <li>Enforces maximum total decompressed size ({@link #MAX_TOTAL_UNCOMPRESSED_BYTES})
+     *       to prevent Zip Bomb attacks</li>
+     *   <li>Enforces maximum number of entries ({@link #MAX_ZIP_ENTRIES})
+     *       to prevent entry-count flooding attacks</li>
+     * </ul>
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         List<ZipEntryData> result = new ArrayList<>();
+        long totalSize = 0;
         try (ZipArchiveInputStream zis = new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes),
                 StandardCharsets.UTF_8.name(), true, true)) {
             ZipArchiveEntry entry;
@@ -159,12 +181,24 @@ public class AgentSpecZipParser {
                     continue;
                 }
                 String name = entry.getName();
+                // Security: reject path traversal (..) and absolute paths.
+                SkillUtils.validatePathSafety(name);
                 if (name != null && (name.startsWith("__MACOSX/") || name.contains("/__MACOSX/"))) {
                     continue;
+                }
+                if (result.size() >= MAX_ZIP_ENTRIES) {
+                    throw new IOException(
+                            "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int n;
                 while ((n = zis.read(buffer)) != -1) {
+                    totalSize += n;
+                    if (totalSize > MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                        throw new IOException(
+                                "ZIP decompressed size exceeds limit ("
+                                        + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
+                    }
                     out.write(buffer, 0, n);
                 }
                 result.add(new ZipEntryData(name, out.toByteArray()));
