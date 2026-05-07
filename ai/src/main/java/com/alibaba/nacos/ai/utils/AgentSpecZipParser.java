@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecResource;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -168,6 +169,11 @@ public class AgentSpecZipParser {
      *   <li>Enforces maximum number of entries ({@link #MAX_ZIP_ENTRIES})
      *       to prevent entry-count flooding attacks</li>
      * </ul>
+     *
+     * <p>Security-limit violations are reported as {@link NacosRuntimeException} (not {@link IOException})
+     * because they represent invalid user input rather than an underlying I/O failure. The caller
+     * {@link #parseAgentSpecFromZip(byte[], String)} translates them into a {@link NacosApiException}
+     * for the HTTP layer.
      */
     private static List<ZipEntryData> unzipToEntries(byte[] zipBytes) throws IOException {
         List<ZipEntryData> result = new ArrayList<>();
@@ -187,7 +193,7 @@ public class AgentSpecZipParser {
                     continue;
                 }
                 if (result.size() >= MAX_ZIP_ENTRIES) {
-                    throw new IOException(
+                    throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                             "ZIP file contains too many entries (max " + MAX_ZIP_ENTRIES + ")");
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -195,7 +201,7 @@ public class AgentSpecZipParser {
                 while ((n = zis.read(buffer)) != -1) {
                     totalSize += n;
                     if (totalSize > MAX_TOTAL_UNCOMPRESSED_BYTES) {
-                        throw new IOException(
+                        throw new NacosRuntimeException(ErrorCode.PARAMETER_VALIDATE_ERROR.getCode(),
                                 "ZIP decompressed size exceeds limit ("
                                         + (MAX_TOTAL_UNCOMPRESSED_BYTES / 1024 / 1024) + "MB)");
                     }
