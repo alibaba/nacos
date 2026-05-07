@@ -98,28 +98,28 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     }
     
     private static class FilterChainNode implements IConfigFilterChain {
-
+		
         private final IConfigFilter filter;
-
+		
         private final IConfigFilterChain next;
-
+		
         public FilterChainNode(IConfigFilter filter, IConfigFilterChain next) {
             this.filter = filter;
             this.next = next;
         }
-
+		
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
             filter.doFilter(request, response, next);
         }
     }
-
+	
     private static class EmptyFilterChainNode implements IConfigFilterChain {
-
+		
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
-
+			
         }
     }
-
+	
 }
