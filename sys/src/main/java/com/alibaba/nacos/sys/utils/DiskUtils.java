@@ -74,8 +74,6 @@ public final class DiskUtils {
     
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
-    private static final CharsetDecoder DECODER = CHARSET.newDecoder();
-    
     /**
      * Touch file.
      *
@@ -194,6 +192,9 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(File file) {
+        // CharsetDecoder is documented as not safe for concurrent use, so allocate one per call
+        // instead of sharing a static instance across threads.
+        CharsetDecoder decoder = CHARSET.newDecoder();
         try (FileInputStream fis = new FileInputStream(file);
                 FileChannel fileChannel = fis.getChannel()) {
             StringBuilder text = new StringBuilder();
@@ -201,13 +202,25 @@ public final class DiskUtils {
             CharBuffer charBuffer = CharBuffer.allocate(4096);
             while (fileChannel.read(buffer) != -1) {
                 buffer.flip();
-                DECODER.decode(buffer, charBuffer, false);
+                decoder.decode(buffer, charBuffer, false);
                 charBuffer.flip();
                 while (charBuffer.hasRemaining()) {
                     text.append(charBuffer.get());
                 }
-                buffer.clear();
+                // compact() preserves any bytes the decoder did not consume - typically the leading
+                // bytes of a multi-byte UTF-8 character that straddles the 4096-byte chunk boundary.
+                // The previous clear() silently discarded those bytes, corrupting any non-ASCII
+                // content longer than one chunk.
+                buffer.compact();
                 charBuffer.clear();
+            }
+            // Flush the trailing partial input and any decoder state once the stream is exhausted.
+            buffer.flip();
+            decoder.decode(buffer, charBuffer, true);
+            decoder.flush(charBuffer);
+            charBuffer.flip();
+            while (charBuffer.hasRemaining()) {
+                text.append(charBuffer.get());
             }
             return text.toString();
         } catch (IOException e) {
