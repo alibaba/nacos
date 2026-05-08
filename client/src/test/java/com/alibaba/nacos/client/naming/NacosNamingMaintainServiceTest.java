@@ -73,13 +73,16 @@ class NacosNamingMaintainServiceTest {
         Field serverProxyField = NacosNamingMaintainService.class.getDeclaredField("serverProxy");
         serverProxyField.setAccessible(true);
         serverProxyField.set(nacosNamingMaintainService, serverProxy);
-        Field serverListManagerField = NacosNamingMaintainService.class.getDeclaredField("serverListManager");
+        Field serverListManagerField =
+                NacosNamingMaintainService.class.getDeclaredField("serverListManager");
         serverListManagerField.setAccessible(true);
         serverListManagerField.set(nacosNamingMaintainService, serverListManager);
-        Field securityProxyFiled = NacosNamingMaintainService.class.getDeclaredField("securityProxy");
+        Field securityProxyFiled =
+                NacosNamingMaintainService.class.getDeclaredField("securityProxy");
         securityProxyFiled.setAccessible(true);
         securityProxyFiled.set(nacosNamingMaintainService, securityProxy);
-        Field executorServiceField = NacosNamingMaintainService.class.getDeclaredField("executorService");
+        Field executorServiceField =
+                NacosNamingMaintainService.class.getDeclaredField("executorService");
         executorServiceField.setAccessible(true);
         executorServiceField.set(nacosNamingMaintainService, executorService);
     }
@@ -114,7 +117,8 @@ class NacosNamingMaintainServiceTest {
         //when
         nacosNamingMaintainService.updateInstance(serviceName, instance);
         //then
-        verify(serverProxy, times(1)).updateInstance(serviceName, Constants.DEFAULT_GROUP, instance);
+        verify(serverProxy, times(1)).updateInstance(serviceName, Constants.DEFAULT_GROUP,
+                instance);
     }
     
     @Test
@@ -147,10 +151,13 @@ class NacosNamingMaintainServiceTest {
         nacosNamingMaintainService.createService(serviceName);
         //then
         verify(serverProxy, times(1)).createService(argThat(new ArgumentMatcher<Service>() {
+            
             @Override
             public boolean matches(Service service) {
-                return service.getName().equals(serviceName) && service.getGroupName().equals(Constants.DEFAULT_GROUP)
-                        && Math.abs(service.getProtectThreshold() - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
+                return service.getName().equals(serviceName)
+                        && service.getGroupName().equals(Constants.DEFAULT_GROUP)
+                        && Math.abs(service.getProtectThreshold()
+                                - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
                         && service.getMetadata().size() == 0;
             }
         }), argThat(o -> o instanceof NoneSelector));
@@ -165,10 +172,13 @@ class NacosNamingMaintainServiceTest {
         nacosNamingMaintainService.createService(serviceName, groupName);
         //then
         verify(serverProxy, times(1)).createService(argThat(new ArgumentMatcher<Service>() {
+            
             @Override
             public boolean matches(Service service) {
-                return service.getName().equals(serviceName) && service.getGroupName().equals(groupName)
-                        && Math.abs(service.getProtectThreshold() - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
+                return service.getName().equals(serviceName)
+                        && service.getGroupName().equals(groupName)
+                        && Math.abs(service.getProtectThreshold()
+                                - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
                         && service.getMetadata().size() == 0;
             }
         }), argThat(o -> o instanceof NoneSelector));
@@ -184,9 +194,11 @@ class NacosNamingMaintainServiceTest {
         nacosNamingMaintainService.createService(serviceName, groupName, protectThreshold);
         //then
         verify(serverProxy, times(1)).createService(argThat(new ArgumentMatcher<Service>() {
+            
             @Override
             public boolean matches(Service service) {
-                return service.getName().equals(serviceName) && service.getGroupName().equals(groupName)
+                return service.getName().equals(serviceName)
+                        && service.getGroupName().equals(groupName)
                         && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
                         && service.getMetadata().size() == 0;
             }
@@ -201,12 +213,15 @@ class NacosNamingMaintainServiceTest {
         float protectThreshold = 0.1f;
         String expression = "k=v";
         //when
-        nacosNamingMaintainService.createService(serviceName, groupName, protectThreshold, expression);
+        nacosNamingMaintainService.createService(serviceName, groupName, protectThreshold,
+                expression);
         //then
         verify(serverProxy, times(1)).createService(argThat(new ArgumentMatcher<Service>() {
+            
             @Override
             public boolean matches(Service service) {
-                return service.getName().equals(serviceName) && service.getGroupName().equals(groupName)
+                return service.getName().equals(serviceName)
+                        && service.getGroupName().equals(groupName)
                         && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
                         && service.getMetadata().size() == 0;
             }
@@ -256,9 +271,11 @@ class NacosNamingMaintainServiceTest {
         nacosNamingMaintainService.updateService(serviceName, groupName, protectThreshold);
         //then
         verify(serverProxy, times(1)).updateService(argThat(new ArgumentMatcher<Service>() {
+            
             @Override
             public boolean matches(Service service) {
-                return service.getName().equals(serviceName) && service.getGroupName().equals(groupName)
+                return service.getName().equals(serviceName)
+                        && service.getGroupName().equals(groupName)
                         && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f;
             }
         }), argThat(o -> o instanceof NoneSelector));
@@ -277,9 +294,11 @@ class NacosNamingMaintainServiceTest {
         nacosNamingMaintainService.updateService(serviceName, groupName, protectThreshold, meta);
         //then
         verify(serverProxy, times(1)).updateService(argThat(new ArgumentMatcher<Service>() {
+            
             @Override
             public boolean matches(Service service) {
-                return service.getName().equals(serviceName) && service.getGroupName().equals(groupName)
+                return service.getName().equals(serviceName)
+                        && service.getGroupName().equals(groupName)
                         && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
                         && service.getMetadata().size() == 1;
             }

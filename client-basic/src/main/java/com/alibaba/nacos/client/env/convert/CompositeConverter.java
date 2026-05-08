@@ -44,7 +44,9 @@ public class CompositeConverter {
     public <T> T convert(String property, Class<T> targetClass) {
         final AbstractPropertyConverter<?> converter = converterRegistry.get(targetClass);
         if (converter == null) {
-            throw new MissingFormatArgumentException("converter not found, can't convert from String to " + targetClass.getCanonicalName());
+            throw new MissingFormatArgumentException(
+                    "converter not found, can't convert from String to "
+                            + targetClass.getCanonicalName());
         }
         return (T) converter.convert(property);
     }

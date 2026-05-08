@@ -105,8 +105,10 @@ class CompositeConverterTest {
     @Test
     void testConvertLong() {
         assertEquals(100L, (long) compositeConverter.convert("100", Long.class));
-        assertEquals(Long.MAX_VALUE, (long) compositeConverter.convert(String.valueOf(Long.MAX_VALUE), Long.class));
-        assertEquals(Long.MIN_VALUE, (long) compositeConverter.convert(String.valueOf(Long.MIN_VALUE), Long.class));
+        assertEquals(Long.MAX_VALUE,
+                (long) compositeConverter.convert(String.valueOf(Long.MAX_VALUE), Long.class));
+        assertEquals(Long.MIN_VALUE,
+                (long) compositeConverter.convert(String.valueOf(Long.MIN_VALUE), Long.class));
     }
     
     @Test

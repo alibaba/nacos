@@ -55,7 +55,8 @@ class NamingHttpClientManagerTest {
     }
     
     @Test
-    void testShutdown() throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
+    void testShutdown()
+            throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
         //given
         NamingHttpClientManager instance = NamingHttpClientManager.getInstance();
         
@@ -71,7 +72,8 @@ class NamingHttpClientManagerTest {
     
     @Test
     void testShutdownWithException() throws Exception {
-        String key = "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory";
+        String key =
+                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory";
         try {
             HttpClientBeanHolder.shutdownNacosSyncRest(key);
         } catch (Exception ignored) {

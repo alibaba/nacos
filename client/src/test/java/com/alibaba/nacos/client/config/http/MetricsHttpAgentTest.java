@@ -69,15 +69,18 @@ class MetricsHttpAgentTest {
         final MockHttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
         final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
         
-        final HttpRestResult<String> result1 = metricsHttpAgent.httpGet("/aa", new HashMap<String, String>(),
-                new HashMap<String, String>(), "UTF-8", 1L);
+        final HttpRestResult<String> result1 =
+                metricsHttpAgent.httpGet("/aa", new HashMap<String, String>(),
+                        new HashMap<String, String>(), "UTF-8", 1L);
         assertEquals("get /aa", result1.getMessage());
-        final HttpRestResult<String> result2 = metricsHttpAgent.httpPost("/aa", new HashMap<String, String>(),
-                new HashMap<String, String>(), "UTF-8", 1L);
+        final HttpRestResult<String> result2 =
+                metricsHttpAgent.httpPost("/aa", new HashMap<String, String>(),
+                        new HashMap<String, String>(), "UTF-8", 1L);
         assertEquals("post /aa", result2.getMessage());
         
-        final HttpRestResult<String> result3 = metricsHttpAgent.httpDelete("/aa", new HashMap<String, String>(),
-                new HashMap<String, String>(), "UTF-8", 1L);
+        final HttpRestResult<String> result3 =
+                metricsHttpAgent.httpDelete("/aa", new HashMap<String, String>(),
+                        new HashMap<String, String>(), "UTF-8", 1L);
         assertEquals("delete /aa", result3.getMessage());
     }
     
@@ -108,21 +111,25 @@ class MetricsHttpAgentTest {
         }
         
         @Override
-        public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
+        public HttpRestResult<String> httpGet(String path, Map<String, String> headers,
+                Map<String, String> paramValues,
                 String encoding, long readTimeoutMs) throws Exception {
             return new HttpRestResult<String>(Header.newInstance(), 200, "get", "get " + path);
         }
         
         @Override
         public HttpRestResult<String> httpPost(String path, Map<String, String> headers,
-                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+                Map<String, String> paramValues, String encoding, long readTimeoutMs)
+                throws Exception {
             return new HttpRestResult<String>(Header.newInstance(), 200, "post", "post " + path);
         }
         
         @Override
         public HttpRestResult<String> httpDelete(String path, Map<String, String> headers,
-                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
-            return new HttpRestResult<String>(Header.newInstance(), 200, "delete", "delete " + path);
+                Map<String, String> paramValues, String encoding, long readTimeoutMs)
+                throws Exception {
+            return new HttpRestResult<String>(Header.newInstance(), 200, "delete",
+                    "delete " + path);
         }
         
         @Override

@@ -49,6 +49,7 @@ class AiChangeNotifierAgentSpecDispatchPropertyTest {
         AiChangeNotifier notifier = new AiChangeNotifier();
         
         AbstractNacosAgentSpecListener listener = new AbstractNacosAgentSpecListener() {
+            
             @Override
             public void onEvent(NacosAgentSpecEvent event) {
                 // no-op for property test

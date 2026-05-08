@@ -44,23 +44,23 @@ import java.util.Properties;
  * @author wangzji
  */
 public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcClientAuthServiceImpl.class);
-
+    
     private final Object refreshLock = new Object();
-
+    
     private volatile OidcClientContext context;
-
+    
     private volatile OidcTokenHolder tokenHolder;
-
+    
     private volatile LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
-
+    
     /**
      * Whether OIDC has been determined to be unconfigured.
      * Once set to true, subsequent login() calls skip OIDC processing.
      */
     private volatile boolean oidcNotConfigured = false;
-
+    
     @Override
     public Boolean login(Properties properties) {
         try {
@@ -68,7 +68,7 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
             if (oidcNotConfigured) {
                 return true;
             }
-
+            
             // Step 1: Initialize context on first call (double-check locking)
             if (context == null) {
                 synchronized (refreshLock) {
@@ -77,35 +77,39 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
                         boolean configured = newContext.init(properties);
                         if (!configured) {
                             oidcNotConfigured = true;
-                            LOGGER.debug("[OIDC-CLIENT] OIDC not configured (missing client-id/client-secret), skipping");
+                            LOGGER.debug(
+                                    "[OIDC-CLIENT] OIDC not configured (missing client-id/client-secret), skipping");
                             return true;
                         }
                         this.tokenHolder = new OidcTokenHolder();
                         this.context = newContext;
-                        LOGGER.info("[OIDC-CLIENT] OIDC client configured, client-id: {}", context.getClientId());
+                        LOGGER.info("[OIDC-CLIENT] OIDC client configured, client-id: {}",
+                                context.getClientId());
                     }
                 }
             }
-
+            
             // Step 2: Perform OIDC Discovery if not yet done
             if (!context.isDiscovered()) {
                 boolean discoveryResult = context.discover();
                 if (!discoveryResult) {
-                    LOGGER.warn("[OIDC-CLIENT] OIDC Discovery failed, will retry on next login cycle");
+                    LOGGER.warn(
+                            "[OIDC-CLIENT] OIDC Discovery failed, will retry on next login cycle");
                     return false;
                 }
             }
-
+            
             // Step 3: Fetch or refresh token if needed (double-check locking)
             if (tokenHolder.isExpiredOrNeedRefresh()) {
                 synchronized (refreshLock) {
                     if (tokenHolder.isExpiredOrNeedRefresh()) {
                         boolean tokenResult = tokenHolder.fetchToken(context);
                         if (!tokenResult) {
-                            LOGGER.warn("[OIDC-CLIENT] Token fetch failed, will retry on next login cycle");
+                            LOGGER.warn(
+                                    "[OIDC-CLIENT] Token fetch failed, will retry on next login cycle");
                             return false;
                         }
-
+                        
                         // Step 4: Update LoginIdentityContext with new access token (dual header)
                         LoginIdentityContext newCtx = new LoginIdentityContext();
                         String token = tokenHolder.getAccessToken();
@@ -113,12 +117,13 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
                                 OidcProtocolConstants.BEARER_PREFIX + token);
                         newCtx.setParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM, token);
                         this.loginIdentityContext = newCtx;
-
-                        LOGGER.debug("[OIDC-CLIENT] LoginIdentityContext updated with new access token");
+                        
+                        LOGGER.debug(
+                                "[OIDC-CLIENT] LoginIdentityContext updated with new access token");
                     }
                 }
             }
-
+            
             return true;
         } catch (Throwable throwable) {
             LOGGER.warn("[OIDC-CLIENT] login failed, error: ", throwable);

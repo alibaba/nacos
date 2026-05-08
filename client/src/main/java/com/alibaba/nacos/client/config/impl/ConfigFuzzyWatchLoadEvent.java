@@ -58,7 +58,8 @@ public class ConfigFuzzyWatchLoadEvent extends Event {
      * @param groupKeyPattern The groupKey of the configuration.
      * @return A new FuzzyListenNotifyEvent instance.
      */
-    public static ConfigFuzzyWatchLoadEvent buildEvent(int code, String groupKeyPattern, String clientUuid) {
+    public static ConfigFuzzyWatchLoadEvent buildEvent(int code, String groupKeyPattern,
+            String clientUuid) {
         return new ConfigFuzzyWatchLoadEvent(code, groupKeyPattern, clientUuid);
     }
     

@@ -90,19 +90,23 @@ class ServerHttpAgentTest {
         injectRestTemplate();
         when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
         when(serverListManager.getIterator()).thenReturn(mockIterator);
-        when(serverListManager.getServerList()).thenReturn(Collections.singletonList(SERVER_ADDRESS_2));
+        when(serverListManager.getServerList())
+                .thenReturn(Collections.singletonList(SERVER_ADDRESS_2));
         when(mockIterator.next()).thenReturn(SERVER_ADDRESS_2);
         Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
         restMapField.setAccessible(true);
-        Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
+        Map<String, NacosRestTemplate> restMap =
+                (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
                 "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
+        restMap.put(
+                "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
                 nacosRestTemplate);
         httpRestResult = new HttpRestResult<String>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
-        Mockito.when(nacosRestTemplate.get(contains("aaa:8080"), any(), any(), any())).thenReturn(httpRestResult);
+        Mockito.when(nacosRestTemplate.get(contains("aaa:8080"), any(), any(), any()))
+                .thenReturn(httpRestResult);
     }
     
     private void injectRestTemplate() throws NoSuchFieldException, IllegalAccessException {
@@ -117,8 +121,10 @@ class ServerHttpAgentTest {
         if (null != cachedNacosRestTemplate) {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
-            Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
-            restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
+            Map<String, NacosRestTemplate> restMap =
+                    (Map<String, NacosRestTemplate>) restMapField.get(null);
+            restMap.put(
+                    "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
                     cachedNacosRestTemplate);
         }
     }
@@ -147,7 +153,8 @@ class ServerHttpAgentTest {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
         when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace1");
-        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30")).thenReturn("30");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30"))
+                .thenReturn("30");
         when(mockedProperties.derive()).thenReturn(mockedProperties);
         ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
         server.start();
@@ -186,59 +193,74 @@ class ServerHttpAgentTest {
     
     @Test
     void testHttpGetSuccess() throws Exception {
-        when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
-        HttpRestResult<String> actual = serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
-                "UTF-8", 1000);
+        HttpRestResult<String> actual =
+                serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
+                        "UTF-8", 1000);
         assertEquals(mockResult, actual);
     }
     
     @Test
     void testHttpGetFailed() throws Exception {
         assertThrows(ConnectException.class, () -> {
-            when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+            when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
                     any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
             when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_NOT_FOUND);
-            serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 1000);
+            serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 1000);
         });
     }
     
     @Test
     void testHttpWithRequestException() throws Exception {
         assertThrows(NacosException.class, () -> {
-            when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                    any(Header.class), any(Query.class), eq(String.class))).thenThrow(new ConnectException(),
-                    new SocketTimeoutException(), new NacosException());
-            serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 1000);
+            when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
+                    any(Header.class), any(Query.class), eq(String.class)))
+                    .thenThrow(new ConnectException(),
+                            new SocketTimeoutException(), new NacosException());
+            serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 1000);
         });
     }
     
     @Test
     void testRetryWithNewServer() throws Exception {
         when(mockIterator.hasNext()).thenReturn(true);
-        when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                any(Header.class), any(Query.class), eq(String.class))).thenThrow(new ConnectException());
-        when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"),
+                any(HttpClientConfig.class),
+                any(Header.class), any(Query.class), eq(String.class)))
+                .thenThrow(new ConnectException());
+        when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_2 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
-        HttpRestResult<String> actual = serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
-                "UTF-8", 1000);
+        HttpRestResult<String> actual =
+                serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
+                        "UTF-8", 1000);
         assertEquals(mockResult, actual);
     }
     
     @Test
     void testRetryTimeout() throws Exception {
         assertThrows(ConnectException.class, () -> {
-            when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                    any(Header.class), any(Query.class), eq(String.class))).thenThrow(new SocketTimeoutException());
-            serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 0);
+            when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
+                    any(Header.class), any(Query.class), eq(String.class)))
+                    .thenThrow(new SocketTimeoutException());
+            serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 0);
         });
     }
     
     @Test
     void testHttpPostSuccess() throws Exception {
-        when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), anyMap(), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
         HttpRestResult<String> actual = serverHttpAgent.httpPost("/test", Collections.emptyMap(),
@@ -249,29 +271,36 @@ class ServerHttpAgentTest {
     @Test
     void testHttpPostFailed() throws Exception {
         assertThrows(ConnectException.class, () -> {
-            when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+            when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
                     any(Header.class), anyMap(), eq(String.class))).thenReturn(mockResult);
             when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_NOT_FOUND);
-            serverHttpAgent.httpPost("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 1000);
+            serverHttpAgent.httpPost("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 1000);
         });
     }
     
     @Test
     void testHttpPostWithRequestException() throws Exception {
         assertThrows(NacosException.class, () -> {
-            when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                    any(Header.class), anyMap(), eq(String.class))).thenThrow(new ConnectException(),
-                    new SocketTimeoutException(), new NacosException());
-            serverHttpAgent.httpPost("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 1000);
+            when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
+                    any(Header.class), anyMap(), eq(String.class)))
+                    .thenThrow(new ConnectException(),
+                            new SocketTimeoutException(), new NacosException());
+            serverHttpAgent.httpPost("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 1000);
         });
     }
     
     @Test
     void testRetryPostWithNewServer() throws Exception {
         when(mockIterator.hasNext()).thenReturn(true);
-        when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), anyMap(), eq(String.class))).thenThrow(new ConnectException());
-        when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_2 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), anyMap(), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
         HttpRestResult<String> actual = serverHttpAgent.httpPost("/test", Collections.emptyMap(),
@@ -282,15 +311,19 @@ class ServerHttpAgentTest {
     @Test
     void testRetryPostTimeout() throws Exception {
         assertThrows(ConnectException.class, () -> {
-            when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                    any(Header.class), anyMap(), eq(String.class))).thenThrow(new SocketTimeoutException());
-            serverHttpAgent.httpPost("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 0);
+            when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
+                    any(Header.class), anyMap(), eq(String.class)))
+                    .thenThrow(new SocketTimeoutException());
+            serverHttpAgent.httpPost("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 0);
         });
     }
     
     @Test
     void testHttpDeleteSuccess() throws Exception {
-        when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
         HttpRestResult<String> actual = serverHttpAgent.httpDelete("/test", Collections.emptyMap(),
@@ -301,29 +334,37 @@ class ServerHttpAgentTest {
     @Test
     void testHttpDeleteFailed() throws Exception {
         assertThrows(ConnectException.class, () -> {
-            when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
+            when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
                     any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
             when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_NOT_FOUND);
-            serverHttpAgent.httpDelete("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 1000);
+            serverHttpAgent.httpDelete("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 1000);
         });
     }
     
     @Test
     void testHttpDeleteWithRequestException() throws Exception {
         assertThrows(NacosException.class, () -> {
-            when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                    any(Header.class), any(Query.class), eq(String.class))).thenThrow(new ConnectException(),
-                    new SocketTimeoutException(), new NacosException());
-            serverHttpAgent.httpDelete("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 1000);
+            when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
+                    any(Header.class), any(Query.class), eq(String.class)))
+                    .thenThrow(new ConnectException(),
+                            new SocketTimeoutException(), new NacosException());
+            serverHttpAgent.httpDelete("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 1000);
         });
     }
     
     @Test
     void testRetryDeleteWithNewServer() throws Exception {
         when(mockIterator.hasNext()).thenReturn(true);
-        when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                any(Header.class), any(Query.class), eq(String.class))).thenThrow(new ConnectException());
-        when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
+        when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"),
+                any(HttpClientConfig.class),
+                any(Header.class), any(Query.class), eq(String.class)))
+                .thenThrow(new ConnectException());
+        when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_2 + "/test"),
+                any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
         HttpRestResult<String> actual = serverHttpAgent.httpDelete("/test", Collections.emptyMap(),
@@ -334,9 +375,12 @@ class ServerHttpAgentTest {
     @Test
     void testRetryDeleteTimeout() throws Exception {
         assertThrows(ConnectException.class, () -> {
-            when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"), any(HttpClientConfig.class),
-                    any(Header.class), any(Query.class), eq(String.class))).thenThrow(new SocketTimeoutException());
-            serverHttpAgent.httpDelete("/test", Collections.emptyMap(), Collections.emptyMap(), "UTF-8", 0);
+            when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_1 + "/test"),
+                    any(HttpClientConfig.class),
+                    any(Header.class), any(Query.class), eq(String.class)))
+                    .thenThrow(new SocketTimeoutException());
+            serverHttpAgent.httpDelete("/test", Collections.emptyMap(), Collections.emptyMap(),
+                    "UTF-8", 0);
         });
     }
 }

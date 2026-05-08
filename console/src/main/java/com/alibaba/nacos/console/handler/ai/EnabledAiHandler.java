@@ -17,7 +17,9 @@
 package com.alibaba.nacos.console.handler.ai;
 
 import com.alibaba.nacos.ai.config.AiEnabledFilter;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -33,6 +35,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 @ConditionalOnProperty(value = AiEnabledFilter.AI_ENABLED_KEY, havingValue = "true", matchIfMissing = true)
 public @interface EnabledAiHandler {
 

@@ -136,12 +136,14 @@ class RedoScheduledTaskTest {
     void testRunRedoRegisterInstanceWithOtherException() throws NacosException {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false, true);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
-        doThrow(new RuntimeException("test")).when(clientProxy).doRegisterService(SERVICE, GROUP, INSTANCE);
+        doThrow(new RuntimeException("test")).when(clientProxy).doRegisterService(SERVICE, GROUP,
+                INSTANCE);
         redoTask.run();
         // Not any exception thrown
     }
     
-    private Set<InstanceRedoData> generateMockInstanceData(boolean registered, boolean unregistering,
+    private Set<InstanceRedoData> generateMockInstanceData(boolean registered,
+            boolean unregistering,
             boolean expectedRegistered) {
         InstanceRedoData redoData = InstanceRedoData.build(SERVICE, GROUP, INSTANCE);
         redoData.setRegistered(registered);
@@ -203,7 +205,8 @@ class RedoScheduledTaskTest {
         // Not any exception thrown
     }
     
-    private Set<SubscriberRedoData> generateMockSubscriberData(boolean registered, boolean unregistering,
+    private Set<SubscriberRedoData> generateMockSubscriberData(boolean registered,
+            boolean unregistering,
             boolean expectedRegistered) {
         SubscriberRedoData redoData = SubscriberRedoData.build(SERVICE, GROUP, CLUSTER);
         redoData.setRegistered(registered);

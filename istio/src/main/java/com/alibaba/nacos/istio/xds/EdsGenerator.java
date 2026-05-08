@@ -63,7 +63,8 @@ public final class EdsGenerator implements ApiGenerator<Any> {
     public List<Any> generate(PushRequest pushRequest) {
         List<Any> result = new ArrayList<>();
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
-        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+        Map<String, IstioService> istioServiceMap =
+                pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         if (pushRequest.getReason().size() != 0) {
             for (String reason : pushRequest.getReason()) {
                 IstioService istioService = istioServiceMap.get(reason);
@@ -77,7 +78,8 @@ public final class EdsGenerator implements ApiGenerator<Any> {
         } else {
             for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
                 String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                        entry.getKey() + '.' + istioConfig.getDomainSuffix(), entry.getValue().getPort());
+                        entry.getKey() + '.' + istioConfig.getDomainSuffix(),
+                        entry.getValue().getPort());
                 Any any = buildEndpoint(name, entry.getValue());
                 if (any != null) {
                     result.add(any);
@@ -96,16 +98,20 @@ public final class EdsGenerator implements ApiGenerator<Any> {
         List<Resource> result = new ArrayList<>();
         Set<String> reason = pushRequest.getReason();
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
-        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+        Map<String, IstioService> istioServiceMap =
+                pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         
         if (pushRequest.getSubscribe().size() != 0) {
             for (String subscribe : pushRequest.getSubscribe()) {
-                String serviceName = parseClusterNameToServiceName(subscribe, istioConfig.getDomainSuffix());
+                String serviceName =
+                        parseClusterNameToServiceName(subscribe, istioConfig.getDomainSuffix());
                 if (reason.contains(serviceName)) {
                     if (istioServiceMap.containsKey(serviceName)) {
                         Any any = buildEndpoint(subscribe, istioServiceMap.get(serviceName));
                         if (any != null) {
-                            result.add(Resource.newBuilder().setResource(any).setVersion(pushRequest.getResourceSnapshot().getVersion()).build());
+                            result.add(Resource.newBuilder().setResource(any)
+                                    .setVersion(pushRequest.getResourceSnapshot().getVersion())
+                                    .build());
                         } else {
                             pushRequest.addRemoved(subscribe);
                         }
@@ -117,10 +123,12 @@ public final class EdsGenerator implements ApiGenerator<Any> {
         } else {
             for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
                 String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                        entry.getKey() + '.' + istioConfig.getDomainSuffix(), entry.getValue().getPort());
+                        entry.getKey() + '.' + istioConfig.getDomainSuffix(),
+                        entry.getValue().getPort());
                 Any any = buildEndpoint(name, entry.getValue());
                 if (any != null) {
-                    result.add(Resource.newBuilder().setResource(any).setVersion(pushRequest.getResourceSnapshot().getVersion()).build());
+                    result.add(Resource.newBuilder().setResource(any)
+                            .setVersion(pushRequest.getResourceSnapshot().getVersion()).build());
                 } else {
                     pushRequest.addRemoved(name);
                 }
@@ -136,12 +144,13 @@ public final class EdsGenerator implements ApiGenerator<Any> {
         }
         
         List<IstioEndpoint> istioEndpoints = istioService.getHosts();
-        Map<String, LocalityLbEndpoints.Builder> llbEndpointsBuilder = new HashMap<>(istioEndpoints.size());
-    
+        Map<String, LocalityLbEndpoints.Builder> llbEndpointsBuilder =
+                new HashMap<>(istioEndpoints.size());
+        
         for (IstioEndpoint istioEndpoint : istioEndpoints) {
             String label = istioEndpoint.getStringLocality();
             LbEndpoint lbEndpoint = istioEndpoint.getLbEndpoint();
-        
+            
             if (!llbEndpointsBuilder.containsKey(label)) {
                 LocalityLbEndpoints.Builder llbEndpointBuilder = LocalityLbEndpoints.newBuilder()
                         .setLocality(istioEndpoint.getLocality()).addLbEndpoints(lbEndpoint);
@@ -150,14 +159,15 @@ public final class EdsGenerator implements ApiGenerator<Any> {
                 llbEndpointsBuilder.get(label).addLbEndpoints(lbEndpoint);
             }
         }
-    
+        
         List<LocalityLbEndpoints> listlle = new ArrayList<>();
         for (LocalityLbEndpoints.Builder builder : llbEndpointsBuilder.values()) {
             int weight = 0;
             for (LbEndpoint lbEndpoint : builder.getLbEndpointsList()) {
                 weight += lbEndpoint.getLoadBalancingWeight().getValue();
             }
-            LocalityLbEndpoints lle = builder.setLoadBalancingWeight(UInt32Value.newBuilder().setValue(weight)).build();
+            LocalityLbEndpoints lle = builder
+                    .setLoadBalancingWeight(UInt32Value.newBuilder().setValue(weight)).build();
             listlle.add(lle);
         }
         
@@ -165,7 +175,8 @@ public final class EdsGenerator implements ApiGenerator<Any> {
             return null;
         }
         
-        ClusterLoadAssignment cla = ClusterLoadAssignment.newBuilder().setClusterName(name).addAllEndpoints(listlle).build();
+        ClusterLoadAssignment cla = ClusterLoadAssignment.newBuilder().setClusterName(name)
+                .addAllEndpoints(listlle).build();
         return Any.newBuilder().setValue(cla.toByteString()).setTypeUrl(ENDPOINT_TYPE).build();
     }
 }

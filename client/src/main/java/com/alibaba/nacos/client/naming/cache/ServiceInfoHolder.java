@@ -59,7 +59,8 @@ public class ServiceInfoHolder implements Closeable {
     
     private boolean enableClientMetrics = true;
     
-    public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
+    public ServiceInfoHolder(String namespace, String notifierEventScope,
+            NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
         instancesDiffer = new InstancesDiffer();
         if (isLoadCacheAtStart(properties)) {
@@ -132,8 +133,10 @@ public class ServiceInfoHolder implements Closeable {
         ServiceInfo oldService = serviceInfoMap.get(serviceKey);
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
-            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, "
-                    + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
+            NAMING_LOGGER.warn(
+                    "process service info but found empty or error push, serviceKey: {}, "
+                            + "pushEmptyProtection: {}, hosts: {}",
+                    serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
         serviceInfoMap.put(serviceKey, serviceInfo);
@@ -151,12 +154,14 @@ public class ServiceInfoHolder implements Closeable {
         }
         
         if (diff.hasDifferent()) {
-            NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceKey,
+            NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(),
+                    serviceKey,
                     JacksonUtils.toJson(serviceInfo.getHosts()));
             
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
-                        new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
+                        new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(),
+                                serviceInfo.getGroupName(),
                                 serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             }
             DiskCache.write(serviceInfo, cacheDir);

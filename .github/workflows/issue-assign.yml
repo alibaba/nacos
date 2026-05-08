@@ -3,8 +3,6 @@ name: "Issue Assignment"
 on:
   issue_comment:
     types: [created]
-  schedule:
-    - cron: "0 0 * * *"
 
 permissions:
   issues: write
@@ -38,7 +36,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issue.number,
-                  body: `@${commenter} has been assigned to this issue. Please submit a PR within 14 days.\n\n@${commenter} 已被分配到此 Issue，请在 14 天内提交 PR。`
+                  body: `@${commenter} has been assigned to this issue / 已被分配到此 Issue.`
                 });
               } else if (assignees.includes(commenter)) {
                 // Already assigned to commenter — ignore silently
@@ -49,7 +47,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issue.number,
-                  body: `This issue is currently assigned to @${currentAssignee}. Please wait for it to become available or discuss in the comments.\n\n此 Issue 当前已分配给 @${currentAssignee}，请等待其释放或在评论中沟通。`
+                  body: `This issue is currently assigned to @${currentAssignee} / 此 Issue 当前已分配给 @${currentAssignee}. Please wait or discuss in the comments / 请等待其释放或在评论中沟通。`
                 });
               }
               return;
@@ -67,214 +65,13 @@ jobs:
                   assignees: [commenter]
                 });
 
-                // Remove stale-assignment label if present
-                const labels = issue.labels.map(l => l.name);
-                if (labels.includes('stale-assignment')) {
-                  await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    name: 'stale-assignment'
-                  });
-                }
-
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issue.number,
-                  body: `@${commenter} has been unassigned from this issue. It is now available for others.\n\n@${commenter} 已取消认领此 Issue，现在可供其他人认领。`
+                  body: `@${commenter} has been unassigned from this issue / 已取消认领此 Issue. It is now available for others / 现在可供其他人认领。`
                 });
               }
               // If commenter is not assignee — ignore
               return;
-            }
-
-  check-stale:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const MS_PER_DAY = 86400000;
-            const now = Date.now();
-
-            // Ensure stale-assignment label exists
-            try {
-              await github.rest.issues.getLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: 'stale-assignment'
-              });
-            } catch (e) {
-              if (e.status === 404) {
-                await github.rest.issues.createLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: 'stale-assignment',
-                  color: 'ededed',
-                  description: 'Assigned but no recent activity'
-                });
-              }
-            }
-
-            // Helper: check if assignee has activity (comment or linked PR) since a given date
-            async function hasActivitySince(issueNumber, assignee, sinceDate) {
-              // Check comments
-              const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                since: sinceDate.toISOString()
-              });
-              if (comments.some(c => c.user.login === assignee)) {
-                return true;
-              }
-
-              // Check timeline for linked PRs
-              const events = await github.paginate(github.rest.issues.listEventsForTimeline, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber
-              });
-              for (const event of events) {
-                if (event.event === 'cross-referenced' &&
-                    event.source && event.source.issue &&
-                    event.source.issue.pull_request &&
-                    event.source.issue.user.login === assignee &&
-                    new Date(event.created_at) >= sinceDate) {
-                  return true;
-                }
-              }
-              return false;
-            }
-
-            // Helper: find assignment date from timeline events
-            async function getAssignmentDate(issueNumber, assignee) {
-              const events = await github.paginate(github.rest.issues.listEventsForTimeline, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber
-              });
-              let assignDate = null;
-              for (const event of events) {
-                if (event.event === 'assigned' && event.assignee && event.assignee.login === assignee) {
-                  assignDate = new Date(event.created_at);
-                }
-              }
-              return assignDate;
-            }
-
-            // Phase 1: Warning (day 11) — scan issues with assignees but WITHOUT stale-assignment label
-            const assignedIssues = await github.paginate(github.rest.issues.listForRepo, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              assignee: '*'
-            });
-
-            for (const issue of assignedIssues) {
-              if (issue.pull_request) continue;
-              const labels = issue.labels.map(l => l.name);
-              if (labels.includes('stale-assignment')) continue;
-
-              for (const assignee of issue.assignees) {
-                const assignDate = await getAssignmentDate(issue.number, assignee.login);
-                if (!assignDate) continue;
-
-                const daysSinceAssign = Math.floor((now - assignDate.getTime()) / MS_PER_DAY);
-                if (daysSinceAssign < 11) continue;
-
-                const hasActivity = await hasActivitySince(issue.number, assignee.login, assignDate);
-                if (hasActivity) continue;
-
-                // Add stale-assignment label
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  labels: ['stale-assignment']
-                });
-
-                // Post warning comment
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  body: `@${assignee.login}, this issue has been assigned to you for ${daysSinceAssign} days with no update.\nIt will be unassigned in 3 days if there is no progress.\nPlease comment with a status update or submit a PR.\n\n@${assignee.login}，此 Issue 已分配给您 ${daysSinceAssign} 天但暂无进展更新。\n如果 3 天内没有进展，将自动取消分配。\n请回复进展状态或提交 PR。`
-                });
-
-                // Only process first assignee then break (label already added)
-                break;
-              }
-            }
-
-            // Phase 2: Unassign (day 14) — scan issues WITH stale-assignment label
-            const staleIssues = await github.paginate(github.rest.issues.listForRepo, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: 'stale-assignment'
-            });
-
-            for (const issue of staleIssues) {
-              if (issue.pull_request) continue;
-
-              // Find when stale-assignment label was added
-              const events = await github.paginate(github.rest.issues.listEventsForTimeline, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number
-              });
-              let labelAddedDate = null;
-              for (const event of events) {
-                if (event.event === 'labeled' && event.label && event.label.name === 'stale-assignment') {
-                  labelAddedDate = new Date(event.created_at);
-                }
-              }
-              if (!labelAddedDate) continue;
-
-              const daysSinceLabel = Math.floor((now - labelAddedDate.getTime()) / MS_PER_DAY);
-
-              for (const assignee of issue.assignees) {
-                const hasActivity = await hasActivitySince(issue.number, assignee.login, labelAddedDate);
-
-                if (hasActivity) {
-                  // Recovered — remove label
-                  await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    name: 'stale-assignment'
-                  });
-                  break;
-                }
-
-                if (daysSinceLabel >= 3) {
-                  // Unassign
-                  await github.rest.issues.removeAssignees({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    assignees: [assignee.login]
-                  });
-
-                  // Remove label
-                  await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    name: 'stale-assignment'
-                  });
-
-                  // Post unassign comment
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    body: `@${assignee.login} has been unassigned due to 14 days of inactivity.\nThis issue is now available for anyone to claim. Comment \`/assign\` to pick it up.\n\n由于 14 天未更新进展，@${assignee.login} 已被自动取消分配。\n此 Issue 现在可供任何人认领，评论 \`/assign\` 即可认领。`
-                  });
-                  break;
-                }
-              }
             }

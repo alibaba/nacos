@@ -41,9 +41,11 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         this.securityProxy = securityProxy;
     }
     
-    protected Map<String, String> getSecurityHeaders(String namespace, String group, String serviceName) {
-        RequestResource resource = RequestResource.namingBuilder().setNamespace(namespace).setGroup(group)
-                .setResource(serviceName).build();
+    protected Map<String, String> getSecurityHeaders(String namespace, String group,
+            String serviceName) {
+        RequestResource resource =
+                RequestResource.namingBuilder().setNamespace(namespace).setGroup(group)
+                        .setResource(serviceName).build();
         Map<String, String> result = this.securityProxy.getIdentityContext(resource);
         result.putAll(getAppHeaders());
         return result;

@@ -31,7 +31,8 @@ public class ClientFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
     
     ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder;
     
-    public ClientFuzzyWatchNotifyRequestHandler(ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder) {
+    public ClientFuzzyWatchNotifyRequestHandler(
+            ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder) {
         
         this.configFuzzyWatchGroupKeyHolder = configFuzzyWatchGroupKeyHolder;
     }

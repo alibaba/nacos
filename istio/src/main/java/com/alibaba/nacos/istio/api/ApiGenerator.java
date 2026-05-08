@@ -27,7 +27,7 @@ import java.util.List;
  * @author special.fy
  */
 public interface ApiGenerator<T> {
-
+    
     /**
      * Generate data based on resource snapshot.
      *

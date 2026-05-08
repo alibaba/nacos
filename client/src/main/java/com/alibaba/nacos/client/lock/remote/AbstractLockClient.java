@@ -30,6 +30,7 @@ import java.util.Map;
  * @date 2023/6/28 17:19
  */
 public abstract class AbstractLockClient implements LockClient {
+    
     private final SecurityProxy securityProxy;
     
     private static final String APP_FILED = "app";

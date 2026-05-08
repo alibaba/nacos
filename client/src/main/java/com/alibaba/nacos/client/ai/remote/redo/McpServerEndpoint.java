@@ -58,7 +58,8 @@ public class McpServerEndpoint {
             return false;
         }
         McpServerEndpoint that = (McpServerEndpoint) o;
-        return port == that.port && Objects.equals(address, that.address) && Objects.equals(version, that.version);
+        return port == that.port && Objects.equals(address, that.address)
+                && Objects.equals(version, that.version);
     }
     
     @Override

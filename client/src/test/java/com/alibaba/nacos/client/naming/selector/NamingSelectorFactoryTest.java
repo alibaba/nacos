@@ -47,21 +47,27 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        NamingSelector namingSelector1 = NamingSelectorFactory.newClusterSelector(Collections.singletonList("a"));
+        NamingSelector namingSelector1 =
+                NamingSelectorFactory.newClusterSelector(Collections.singletonList("a"));
         NamingResult result1 = namingSelector1.select(namingContext);
         assertEquals("a", result1.getResult().get(0).getClusterName());
         
-        NamingSelector namingSelector2 = NamingSelectorFactory.newClusterSelector(Collections.emptyList());
+        NamingSelector namingSelector2 =
+                NamingSelectorFactory.newClusterSelector(Collections.emptyList());
         NamingResult result2 = namingSelector2.select(namingContext);
         assertEquals(3, result2.getResult().size());
     }
     
     @Test
     public void testNewClusterSelector2() {
-        NamingSelector namingSelector1 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b", "c"));
-        NamingSelector namingSelector2 = NamingSelectorFactory.newClusterSelector(Arrays.asList("c", "b", "a"));
-        NamingSelector namingSelector3 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b", "c", "c"));
-        NamingSelector namingSelector4 = NamingSelectorFactory.newClusterSelector(Arrays.asList("d", "e"));
+        NamingSelector namingSelector1 =
+                NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b", "c"));
+        NamingSelector namingSelector2 =
+                NamingSelectorFactory.newClusterSelector(Arrays.asList("c", "b", "a"));
+        NamingSelector namingSelector3 =
+                NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b", "c", "c"));
+        NamingSelector namingSelector4 =
+                NamingSelectorFactory.newClusterSelector(Arrays.asList("d", "e"));
         
         assertEquals(namingSelector1, namingSelector2);
         assertEquals(namingSelector1, namingSelector3);
@@ -92,7 +98,7 @@ public class NamingSelectorFactoryTest {
     @Test
     public void testNewMetadataSelector() {
         Instance ins1 = new Instance();
-        ins1.setMetadata(new LinkedHashMap<>()); 
+        ins1.setMetadata(new LinkedHashMap<>());
         ins1.addMetadata("a", "1");
         ins1.addMetadata("b", "2");
         Instance ins2 = new Instance();
@@ -103,12 +109,14 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        NamingSelector metadataSelector = NamingSelectorFactory.newMetadataSelector(new LinkedHashMap() {
-            {
-                put("a", "1");
-                put("b", "2");
-            }
-        });
+        NamingSelector metadataSelector =
+                NamingSelectorFactory.newMetadataSelector(new LinkedHashMap() {
+                    
+                    {
+                        put("a", "1");
+                        put("b", "2");
+                    }
+                });
         List<Instance> result = metadataSelector.select(namingContext).getResult();
         
         assertEquals(1, result.size());
@@ -118,7 +126,7 @@ public class NamingSelectorFactoryTest {
     @Test
     public void testNewMetadataSelector2() {
         Instance ins1 = new Instance();
-        ins1.setMetadata(new LinkedHashMap<>()); 
+        ins1.setMetadata(new LinkedHashMap<>());
         ins1.addMetadata("a", "1");
         ins1.addMetadata("c", "3");
         Instance ins2 = new Instance();
@@ -129,12 +137,14 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        NamingSelector metadataSelector = NamingSelectorFactory.newMetadataSelector(new LinkedHashMap() {
-            {
-                put("a", "1");
-                put("b", "2");
-            }
-        }, true);
+        NamingSelector metadataSelector =
+                NamingSelectorFactory.newMetadataSelector(new LinkedHashMap() {
+                    
+                    {
+                        put("a", "1");
+                        put("b", "2");
+                    }
+                }, true);
         List<Instance> result = metadataSelector.select(namingContext).getResult();
         
         assertEquals(2, result.size());
@@ -152,7 +162,8 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        List<Instance> result = NamingSelectorFactory.HEALTHY_SELECTOR.select(namingContext).getResult();
+        List<Instance> result =
+                NamingSelectorFactory.HEALTHY_SELECTOR.select(namingContext).getResult();
         
         assertEquals(2, result.size());
         assertTrue(result.contains(ins1));
@@ -170,7 +181,8 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        List<Instance> result = NamingSelectorFactory.EMPTY_SELECTOR.select(namingContext).getResult();
+        List<Instance> result =
+                NamingSelectorFactory.EMPTY_SELECTOR.select(namingContext).getResult();
         
         assertEquals(3, result.size());
         assertTrue(result.contains(ins1));

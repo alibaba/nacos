@@ -82,7 +82,7 @@ class StringUtilsTest {
         collection.add("bar");
         assertEquals("foo,bar", join(collection, ","));
     }
-
+    
     @Test
     void testUuidPattern() {
         // match 8-4-4-4-12 uuid pattern

@@ -40,8 +40,9 @@ public class Constants {
     }
     
     public static class Security {
-    
-        public static final long SECURITY_INFO_REFRESH_INTERVAL_MILLS = TimeUnit.SECONDS.toMillis(5);
+        
+        public static final long SECURITY_INFO_REFRESH_INTERVAL_MILLS =
+                TimeUnit.SECONDS.toMillis(5);
         
     }
     

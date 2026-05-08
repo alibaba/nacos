@@ -20,13 +20,12 @@ import com.alibaba.nacos.ai.pipeline.model.PipelineExecution;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.console.handler.ai.EnabledAiHandler;
 import com.alibaba.nacos.console.handler.ai.PipelineHandler;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 /**
@@ -39,7 +38,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @EnabledRemoteHandler
-@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
+@EnabledAiHandler
 public class PipelineRemoteHandler implements PipelineHandler {
     
     private final NacosMaintainerClientHolder clientHolder;

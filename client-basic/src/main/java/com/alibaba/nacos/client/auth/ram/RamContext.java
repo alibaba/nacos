@@ -65,8 +65,14 @@ public class RamContext {
         this.regionId = regionId;
     }
     
+    /**
+     * Validate the RAM context.
+     *
+     * @return true if the context is valid
+     */
     public boolean validate() {
-        return StringUtils.isNotBlank(ramRoleName) || StringUtils.isNotBlank(accessKey) && StringUtils
-                .isNotBlank(secretKey);
+        return StringUtils.isNotBlank(ramRoleName)
+                || StringUtils.isNotBlank(accessKey) && StringUtils
+                        .isNotBlank(secretKey);
     }
 }

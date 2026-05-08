@@ -27,9 +27,9 @@ import java.util.List;
  * @author special.fy
  */
 public class EmptyMcpGenerator implements ApiGenerator<Resource> {
-
+    
     private volatile static EmptyMcpGenerator singleton = null;
-
+    
     public static EmptyMcpGenerator getInstance() {
         if (singleton == null) {
             synchronized (EmptyMcpGenerator.class) {
@@ -40,14 +40,15 @@ public class EmptyMcpGenerator implements ApiGenerator<Resource> {
         }
         return singleton;
     }
-
+    
     @Override
     public List<Resource> generate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
     
     @Override
-    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushRequest pushRequest) {
+    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(
+            PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

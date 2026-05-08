@@ -66,9 +66,11 @@ class NamingGrpcRedoServiceTest {
     void setUp() throws Exception {
         Properties prop = new Properties();
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
-        redoService = new NamingGrpcRedoService(clientProxy, namingFuzzyWatchServiceListHolder, nacosClientProperties);
-        ScheduledExecutorService redoExecutor = (ScheduledExecutorService) ReflectUtils.getFieldValue(redoService,
-                "redoExecutor");
+        redoService = new NamingGrpcRedoService(clientProxy, namingFuzzyWatchServiceListHolder,
+                nacosClientProperties);
+        ScheduledExecutorService redoExecutor =
+                (ScheduledExecutorService) ReflectUtils.getFieldValue(redoService,
+                        "redoExecutor");
         redoExecutor.shutdownNow();
     }
     
@@ -79,7 +81,8 @@ class NamingGrpcRedoServiceTest {
     
     @Test
     void testDefaultProperties() throws Exception {
-        Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        Field redoThreadCountField =
+                NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
         redoThreadCountField.setAccessible(true);
         
         Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
@@ -99,9 +102,11 @@ class NamingGrpcRedoServiceTest {
         prop.setProperty(PropertyKeyConst.REDO_DELAY_THREAD_COUNT, "2");
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         
-        NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy, namingFuzzyWatchServiceListHolder, nacosClientProperties);
+        NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy,
+                namingFuzzyWatchServiceListHolder, nacosClientProperties);
         
-        Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        Field redoThreadCountField =
+                NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
         redoThreadCountField.setAccessible(true);
         
         Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
@@ -161,8 +166,9 @@ class NamingGrpcRedoServiceTest {
         instanceList.add(instance);
         redoService.cacheInstanceForRedo(SERVICE, GROUP, instanceList);
         assertFalse(registeredInstances.isEmpty());
-        BatchInstanceRedoData actual = (BatchInstanceRedoData) registeredInstances.entrySet().iterator().next()
-                .getValue();
+        BatchInstanceRedoData actual =
+                (BatchInstanceRedoData) registeredInstances.entrySet().iterator().next()
+                        .getValue();
         assertEquals(SERVICE, actual.getServiceName());
         assertEquals(GROUP, actual.getGroupName());
         assertEquals(instanceList, actual.getInstances());
@@ -222,7 +228,8 @@ class NamingGrpcRedoServiceTest {
     
     @SuppressWarnings("all")
     private ConcurrentMap<String, InstanceRedoData> getInstanceRedoDataMap() {
-        return (ConcurrentMap<String, InstanceRedoData>) ReflectUtils.getFieldValue(redoService, "registeredInstances");
+        return (ConcurrentMap<String, InstanceRedoData>) ReflectUtils.getFieldValue(redoService,
+                "registeredInstances");
     }
     
     @Test
@@ -288,6 +295,7 @@ class NamingGrpcRedoServiceTest {
     
     @SuppressWarnings("all")
     private ConcurrentMap<String, SubscriberRedoData> getSubscriberRedoDataMap() {
-        return (ConcurrentMap<String, SubscriberRedoData>) ReflectUtils.getFieldValue(redoService, "subscribes");
+        return (ConcurrentMap<String, SubscriberRedoData>) ReflectUtils.getFieldValue(redoService,
+                "subscribes");
     }
 }

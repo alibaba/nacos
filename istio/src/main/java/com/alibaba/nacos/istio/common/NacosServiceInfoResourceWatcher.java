@@ -50,7 +50,7 @@ import static com.alibaba.nacos.istio.util.IstioExecutor.debouncePushChange;
  */
 @org.springframework.stereotype.Service
 public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
-
+    
     private final Map<String, IstioService> serviceInfoMap = new ConcurrentHashMap<>(16);
     
     private final Queue<PushRequest> pushRequestQueue = new ConcurrentLinkedQueue<>();
@@ -62,7 +62,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     
     @Autowired
     private ServiceStorage serviceStorage;
-
+    
     @Autowired
     private EventProcessor eventProcessor;
     
@@ -93,7 +93,8 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
         
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             // If service changed, push to all subscribers.
-            ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent = (ClientOperationEvent.ClientRegisterServiceEvent) event;
+            ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent =
+                    (ClientOperationEvent.ClientRegisterServiceEvent) event;
             Service service = clientRegisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             
@@ -108,12 +109,12 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             }
             pushRequestQueue.add(pushRequest);
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
-            ClientOperationEvent.ClientDeregisterServiceEvent clientDeregisterServiceEvent = (ClientOperationEvent
-                    .ClientDeregisterServiceEvent) event;
+            ClientOperationEvent.ClientDeregisterServiceEvent clientDeregisterServiceEvent =
+                    (ClientOperationEvent.ClientDeregisterServiceEvent) event;
             Service service = clientDeregisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             PushRequest pushRequest;
-    
+            
             boolean full = update(serviceName, service);
             if (serviceStorage.getPushData(service).ipCount() <= 0) {
                 pushRequest = new PushRequest(serviceName, true);
@@ -123,7 +124,8 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             }
             pushRequestQueue.add(pushRequest);
         } else if (event instanceof InfoChangeEvent.ServiceInfoChangeEvent) {
-            InfoChangeEvent.ServiceInfoChangeEvent serviceInfoChangeEvent = (InfoChangeEvent.ServiceInfoChangeEvent) event;
+            InfoChangeEvent.ServiceInfoChangeEvent serviceInfoChangeEvent =
+                    (InfoChangeEvent.ServiceInfoChangeEvent) event;
             Service service = serviceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             PushRequest pushRequest = new PushRequest(serviceName, true);
@@ -132,10 +134,11 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             pushRequestQueue.add(pushRequest);
             
         } else if (event instanceof InfoChangeEvent.InstanceInfoChangeEvent) {
-            InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent = (InfoChangeEvent.InstanceInfoChangeEvent) event;
+            InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent =
+                    (InfoChangeEvent.InstanceInfoChangeEvent) event;
             Service service = instanceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-    
+            
             boolean full = update(serviceName, service);
             PushRequest pushRequest = new PushRequest(serviceName, full);
             pushRequestQueue.add(pushRequest);
@@ -143,13 +146,13 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     }
     
     private void init() {
-        Set<String> namespaces =  ServiceManager.getInstance().getAllNamespaces();
+        Set<String> namespaces = ServiceManager.getInstance().getAllNamespaces();
         for (String namespace : namespaces) {
             Set<Service> services = ServiceManager.getInstance().getSingletons(namespace);
             if (services.isEmpty()) {
                 continue;
             }
-        
+            
             for (Service service : services) {
                 String serviceName = IstioCrdUtil.buildServiceName(service);
                 ServiceInfo serviceInfo = serviceStorage.getPushData(service);
@@ -179,13 +182,15 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     }
     
     private class ToNotify implements Runnable {
+        
         @Override
         public void run() {
             while (true) {
                 if (pushRequestQueue.size() > 0) {
                     PushRequest updatePush;
-                    Future<PushRequest> futureUpdate = debouncePushChange(new Debounce(pushRequestQueue, istioConfig));
-    
+                    Future<PushRequest> futureUpdate =
+                            debouncePushChange(new Debounce(pushRequestQueue, istioConfig));
+                    
                     try {
                         updatePush = futureUpdate.get();
                         if (updatePush != null) {

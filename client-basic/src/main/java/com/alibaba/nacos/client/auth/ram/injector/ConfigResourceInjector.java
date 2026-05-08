@@ -42,7 +42,8 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
     private static final String DEFAULT_RESOURCE = "";
     
     @Override
-    public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
+    public void doInject(RequestResource resource, RamContext context,
+            LoginIdentityContext result) {
         String accessKey = context.getAccessKey();
         String secretKey = context.getSecretKey();
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
@@ -50,7 +51,8 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
             StsCredential stsCredential = StsCredentialHolder.getInstance().getStsCredential();
             accessKey = stsCredential.getAccessKeyId();
             secretKey = stsCredential.getAccessKeySecret();
-            result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
+            result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER,
+                    stsCredential.getSecurityToken());
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
@@ -63,7 +65,8 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
             result.setParameter(RamConstants.SIGNATURE_VERSION, RamConstants.V4);
         }
         Map<String, String> signHeaders = SpasAdapter
-                .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()), signatureKey);
+                .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()),
+                        signatureKey);
         result.setParameters(signHeaders);
     }
     
