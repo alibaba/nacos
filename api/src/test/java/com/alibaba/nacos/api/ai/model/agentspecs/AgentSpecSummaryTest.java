@@ -165,7 +165,7 @@ class AgentSpecSummaryTest extends BasicRequestTest {
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"name\":\"testAgentSpec\",\"description\":\"Test\","
-                + "\"enable\":true,\"bizTags\":\"[\\\\\"tag1\\\\\"]\",\"from\":\"local\","
+                + "\"enable\":true,\"bizTags\":\"[\\\"tag1\\\"]\",\"from\":\"local\","
                 + "\"scope\":\"PUBLIC\",\"onlineCnt\":2,\"downloadCount\":100}";
 
         AgentSpecSummary summary = mapper.readValue(json, AgentSpecSummary.class);
