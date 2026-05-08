@@ -64,27 +64,27 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  * @author nacos
  */
 public class AiHttpClientProxy implements AiClientProxy {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AiHttpClientProxy.class);
-
+    
     private static final String PROMPT_CLIENT_PATH = "/v3/client/ai/prompt";
-
+    
     private static final String SKILL_DOWNLOAD_PATH = "/v3/client/ai/skills";
-
+    
     private static final int MAX_RETRY = 3;
-
+    
     private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
-
+    
     private final String namespaceId;
-
+    
     private final NacosRestTemplate nacosRestTemplate;
-
+    
     private final NamingServerListManager serverListManager;
-
+    
     private final SecurityProxy securityProxy;
-
+    
     private final ScheduledThreadPoolExecutor executorService;
-
+    
     AiHttpClientProxy() {
         this.namespaceId = null;
         this.nacosRestTemplate = null;
@@ -92,8 +92,9 @@ public class AiHttpClientProxy implements AiClientProxy {
         this.securityProxy = null;
         this.executorService = null;
     }
-
-    public AiHttpClientProxy(String namespaceId, NacosClientProperties properties) throws NacosException {
+    
+    public AiHttpClientProxy(String namespaceId, NacosClientProperties properties)
+            throws NacosException {
         this.namespaceId = namespaceId;
         this.nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
@@ -103,12 +104,14 @@ public class AiHttpClientProxy implements AiClientProxy {
                 new NameThreadFactory("com.alibaba.nacos.client.ai.http.security"));
         final Properties nacosClientPropertiesView = properties.asProperties();
         this.securityProxy.login(nacosClientPropertiesView);
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0,
+        this.executorService.scheduleWithFixedDelay(
+                () -> securityProxy.login(nacosClientPropertiesView), 0,
                 SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
-
+    
     @Override
-    public Prompt queryPrompt(String promptKey, String version, String label, String md5) throws NacosException {
+    public Prompt queryPrompt(String promptKey, String version, String label, String md5)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("promptKey", promptKey);
@@ -121,17 +124,18 @@ public class AiHttpClientProxy implements AiClientProxy {
         if (StringUtils.isNotBlank(md5)) {
             params.put("md5", md5);
         }
-
+        
         RequestResource resource = RequestResource.aiBuilder().setNamespace(namespaceId)
                 .setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP)
                 .setResource(null == promptKey ? StringUtils.EMPTY : promptKey).build();
-
+        
         String responseBody = reqApi(PROMPT_CLIENT_PATH, params, resource);
-        Result<Prompt> result = JacksonUtils.toObj(responseBody, new TypeReference<Result<Prompt>>() {
-        });
+        Result<Prompt> result =
+                JacksonUtils.toObj(responseBody, new TypeReference<Result<Prompt>>() {
+                });
         return result.getData();
     }
-
+    
     /**
      * Download skill as ZIP byte array via HTTP REST API.
      *
@@ -141,7 +145,8 @@ public class AiHttpClientProxy implements AiClientProxy {
      * @return ZIP file as byte array
      * @throws NacosException if request fails
      */
-    public byte[] downloadSkillZip(String skillName, String version, String label) throws NacosException {
+    public byte[] downloadSkillZip(String skillName, String version, String label)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("name", skillName);
@@ -151,11 +156,11 @@ public class AiHttpClientProxy implements AiClientProxy {
         if (StringUtils.isNotBlank(label)) {
             params.put("label", label);
         }
-
+        
         RequestResource resource = RequestResource.aiBuilder().setNamespace(namespaceId)
                 .setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP)
                 .setResource(null == skillName ? StringUtils.EMPTY : skillName).build();
-
+        
         byte[] zipBytes = reqApiBytes(SKILL_DOWNLOAD_PATH, params, resource);
         SkillUtils.validateZipBytes(zipBytes);
         try {
@@ -166,18 +171,19 @@ public class AiHttpClientProxy implements AiClientProxy {
         }
         return zipBytes;
     }
-
+    
     // ===== Generic HTTP infrastructure =====
-
-    private String reqApi(String api, Map<String, String> params, RequestResource resource) throws NacosException {
+    
+    private String reqApi(String api, Map<String, String> params, RequestResource resource)
+            throws NacosException {
         List<String> servers = serverListManager.getServerList();
         if (servers.isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
-
+        
         NacosException exception = new NacosException();
         int index = ThreadLocalRandom.current().nextInt(servers.size());
-
+        
         for (int i = 0; i < Math.max(servers.size(), MAX_RETRY); i++) {
             String server = servers.get(index % servers.size());
             try {
@@ -190,23 +196,25 @@ public class AiHttpClientProxy implements AiClientProxy {
             }
             index = (index + 1) % servers.size();
         }
-
-        LOGGER.error("Request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
+        
+        LOGGER.error("Request: {} failed, servers: {}, code: {}, msg: {}", api, servers,
+                exception.getErrCode(),
                 exception.getErrMsg());
         throw new NacosException(exception.getErrCode(),
                 "Failed to request API: " + api + " after all servers(" + servers + ") tried: "
                         + exception.getMessage());
     }
-
-    private byte[] reqApiBytes(String api, Map<String, String> params, RequestResource resource) throws NacosException {
+    
+    private byte[] reqApiBytes(String api, Map<String, String> params, RequestResource resource)
+            throws NacosException {
         List<String> servers = serverListManager.getServerList();
         if (servers.isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
-
+        
         NacosException exception = new NacosException();
         int index = ThreadLocalRandom.current().nextInt(servers.size());
-
+        
         for (int i = 0; i < Math.max(servers.size(), MAX_RETRY); i++) {
             String server = servers.get(index % servers.size());
             try {
@@ -219,26 +227,28 @@ public class AiHttpClientProxy implements AiClientProxy {
             }
             index = (index + 1) % servers.size();
         }
-
-        LOGGER.error("Request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
+        
+        LOGGER.error("Request: {} failed, servers: {}, code: {}, msg: {}", api, servers,
+                exception.getErrCode(),
                 exception.getErrMsg());
         throw new NacosException(exception.getErrCode(),
                 "Failed to request API: " + api + " after all servers(" + servers + ") tried: "
                         + exception.getMessage());
     }
-
-    private String callServer(String api, Map<String, String> params, String server, RequestResource resource)
+    
+    private String callServer(String api, Map<String, String> params, String server,
+            RequestResource resource)
             throws NacosException {
         Map<String, String> securityHeaders = securityProxy.getIdentityContext(resource);
         Header header = Header.newInstance();
         header.addAll(securityHeaders);
-
+        
         String url = buildUrl(server, api);
-
+        
         try {
             HttpRestResult<String> restResult = nacosRestTemplate.get(url, header,
                     Query.newInstance().initParams(params), String.class);
-
+            
             if (restResult.ok()) {
                 return restResult.getData();
             }
@@ -256,19 +266,20 @@ public class AiHttpClientProxy implements AiClientProxy {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
-
-    private byte[] callServerBytes(String api, Map<String, String> params, String server, RequestResource resource)
+    
+    private byte[] callServerBytes(String api, Map<String, String> params, String server,
+            RequestResource resource)
             throws NacosException {
         Map<String, String> securityHeaders = securityProxy.getIdentityContext(resource);
         Header header = Header.newInstance();
         header.addAll(securityHeaders);
-
+        
         String url = buildUrl(server, api);
-
+        
         try {
             HttpRestResult<byte[]> restResult = nacosRestTemplate.get(url, header,
                     Query.newInstance().initParams(params), byte[].class);
-
+            
             if (restResult.ok()) {
                 return restResult.getData();
             }
@@ -283,7 +294,7 @@ public class AiHttpClientProxy implements AiClientProxy {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
-
+    
     private String buildUrl(String serverAddr, String relativePath) {
         if (!serverAddr.startsWith(HTTP_PREFIX) && !serverAddr.startsWith(HTTPS_PREFIX)) {
             serverAddr = (ENABLE_HTTPS ? HTTPS_PREFIX : HTTP_PREFIX) + serverAddr;
@@ -291,7 +302,7 @@ public class AiHttpClientProxy implements AiClientProxy {
         String contextPath = serverListManager.getContextPath();
         return serverAddr + ContextPathUtil.normalizeContextPath(contextPath) + relativePath;
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         serverListManager.shutdown();

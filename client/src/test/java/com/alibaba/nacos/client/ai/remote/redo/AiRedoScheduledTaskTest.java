@@ -83,7 +83,8 @@ class AiRedoScheduledTaskTest {
         when(aiGrpcRedoService.findMcpServerEndpointRedoData()).thenReturn(set);
         when(aiGrpcRedoService.isConnected()).thenReturn(true);
         task.run();
-        verify(aiGrpcClient, never()).doRegisterMcpServerEndpoint("test", "127.0.0.1", 8080, "1.0.0");
+        verify(aiGrpcClient, never()).doRegisterMcpServerEndpoint("test", "127.0.0.1", 8080,
+                "1.0.0");
         verify(aiGrpcClient, never()).doDeregisterMcpServerEndpoint("test1", "127.0.0.1", 8080);
         verify(aiGrpcRedoService).removeMcpServerEndpointForRedo("test2");
     }
@@ -118,7 +119,8 @@ class AiRedoScheduledTaskTest {
         doThrow(new RuntimeException("test")).when(aiGrpcClient)
                 .doRegisterMcpServerEndpoint(fistMcpName, "127.0.0.1", 8080, "1.0.0");
         task.run();
-        verify(aiGrpcClient, times(1)).doRegisterMcpServerEndpoint(anyString(), anyString(), any(int.class),
+        verify(aiGrpcClient, times(1)).doRegisterMcpServerEndpoint(anyString(), anyString(),
+                any(int.class),
                 anyString());
     }
     
@@ -126,7 +128,8 @@ class AiRedoScheduledTaskTest {
     void testRunForAgentEndpointRedoWithSingleRegister() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, false));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, false));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -147,7 +150,8 @@ class AiRedoScheduledTaskTest {
     void testRunForAgentEndpointRedoWithBatchRegister() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, true));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, true));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -161,14 +165,16 @@ class AiRedoScheduledTaskTest {
         AgentEndpoint expectedEndpoint = new AgentEndpoint();
         expectedEndpoint.setAddress("127.0.0.1");
         expectedEndpoint.setPort(8080);
-        verify(aiGrpcClient).doRegisterAgentEndpoint("testAgent", Collections.singletonList(expectedEndpoint));
+        verify(aiGrpcClient).doRegisterAgentEndpoint("testAgent",
+                Collections.singletonList(expectedEndpoint));
     }
     
     @Test
     void testRunForAgentEndpointRedoWithUnregister() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.UNREGISTER, false));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.UNREGISTER, false));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -189,7 +195,8 @@ class AiRedoScheduledTaskTest {
     void testRunForAgentEndpointRedoWithBatchUnregister() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.UNREGISTER, true));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.UNREGISTER, true));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -210,7 +217,8 @@ class AiRedoScheduledTaskTest {
     void testRunForAgentEndpointRedoWithRemove() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REMOVE, false));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REMOVE, false));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -227,7 +235,8 @@ class AiRedoScheduledTaskTest {
     void testRunForAgentEndpointRedoWithClientDisabled() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, false));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, false));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -238,14 +247,16 @@ class AiRedoScheduledTaskTest {
         task.run();
         
         // Verify that no interactions happened with the client
-        verify(aiGrpcClient, never()).doRegisterAgentEndpoint(anyString(), any(AgentEndpoint.class));
+        verify(aiGrpcClient, never()).doRegisterAgentEndpoint(anyString(),
+                any(AgentEndpoint.class));
     }
     
     @Test
     void testRunForAgentEndpointRedoWithUnregisterClientDisabled() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.UNREGISTER, false));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.UNREGISTER, false));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -256,14 +267,16 @@ class AiRedoScheduledTaskTest {
         task.run();
         
         // Verify that no interactions happened with the client
-        verify(aiGrpcClient, never()).doRegisterAgentEndpoint(anyString(), any(AgentEndpoint.class));
+        verify(aiGrpcClient, never()).doRegisterAgentEndpoint(anyString(),
+                any(AgentEndpoint.class));
     }
     
     @Test
     void testRunForAgentEndpointRedoWithNacosException() throws NacosException {
         // Prepare test data
         Set<RedoData<AgentEndpointWrapper>> agentEndpointSet = new HashSet<>();
-        agentEndpointSet.add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, false));
+        agentEndpointSet
+                .add(buildAgentEndpointRedoData("testAgent", RedoData.RedoType.REGISTER, false));
         
         // Mock service methods
         when(aiGrpcRedoService.findAgentEndpointRedoData()).thenReturn(agentEndpointSet);
@@ -283,7 +296,8 @@ class AiRedoScheduledTaskTest {
         verify(aiGrpcClient).doRegisterAgentEndpoint("testAgent", expectedEndpoint);
     }
     
-    private McpServerEndpointRedoData buildMcpServerEndpointRedoData(String mcpName, RedoData.RedoType redoType) {
+    private McpServerEndpointRedoData buildMcpServerEndpointRedoData(String mcpName,
+            RedoData.RedoType redoType) {
         McpServerEndpoint mcpServerEndpoint = new McpServerEndpoint("127.0.0.1", 8080, "1.0.0");
         McpServerEndpointRedoData result = new McpServerEndpointRedoData(mcpName);
         result.set(mcpServerEndpoint);
@@ -302,15 +316,17 @@ class AiRedoScheduledTaskTest {
         return result;
     }
     
-    private AgentEndpointRedoData buildAgentEndpointRedoData(String agentName, RedoData.RedoType redoType,
+    private AgentEndpointRedoData buildAgentEndpointRedoData(String agentName,
+            RedoData.RedoType redoType,
             boolean isBatch) {
         // Prepare test data
         AgentEndpoint endpoint = new AgentEndpoint();
         endpoint.setAddress("127.0.0.1");
         endpoint.setPort(8080);
         
-        AgentEndpointWrapper wrapper = isBatch ? AgentEndpointWrapper.wrap(Collections.singletonList(endpoint))
-                : AgentEndpointWrapper.wrap(endpoint);
+        AgentEndpointWrapper wrapper =
+                isBatch ? AgentEndpointWrapper.wrap(Collections.singletonList(endpoint))
+                        : AgentEndpointWrapper.wrap(endpoint);
         
         AgentEndpointRedoData agentEndpointRedoData = new AgentEndpointRedoData(agentName, wrapper);
         

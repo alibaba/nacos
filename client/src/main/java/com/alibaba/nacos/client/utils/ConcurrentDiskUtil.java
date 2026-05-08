@@ -89,7 +89,8 @@ public class ConcurrentDiskUtil {
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(String path, String content, String charsetName) throws IOException {
+    public static Boolean writeFileContent(String path, String content, String charsetName)
+            throws IOException {
         File file = new File(path);
         return writeFileContent(file, content, charsetName);
     }
@@ -103,7 +104,8 @@ public class ConcurrentDiskUtil {
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(File file, String content, String charsetName) throws IOException {
+    public static Boolean writeFileContent(File file, String content, String charsetName)
+            throws IOException {
         
         if (!file.exists() && !file.createNewFile()) {
             return false;
@@ -131,7 +133,8 @@ public class ConcurrentDiskUtil {
      * @return String
      * @throws IOException IOException
      */
-    public static String byteBufferToString(ByteBuffer buffer, String charsetName) throws IOException {
+    public static String byteBufferToString(ByteBuffer buffer, String charsetName)
+            throws IOException {
         Charset charset = Charset.forName(charsetName);
         CharsetDecoder decoder = charset.newDecoder();
         CharBuffer charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
@@ -148,7 +151,8 @@ public class ConcurrentDiskUtil {
         }
     }
     
-    private static FileLock tryLock(File file, FileChannel channel, boolean shared) throws IOException {
+    private static FileLock tryLock(File file, FileChannel channel, boolean shared)
+            throws IOException {
         FileLock result = null;
         int i = 0;
         do {

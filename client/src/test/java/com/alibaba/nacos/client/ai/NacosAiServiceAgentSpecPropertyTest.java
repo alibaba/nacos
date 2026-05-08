@@ -43,20 +43,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class NacosAiServiceAgentSpecPropertyTest {
     
-    private static final AbstractNacosAgentSpecListener DUMMY_LISTENER = new AbstractNacosAgentSpecListener() {
-        @Override
-        public void onEvent(NacosAgentSpecEvent event) {
-            // no-op
-        }
-    };
+    private static final AbstractNacosAgentSpecListener DUMMY_LISTENER =
+            new AbstractNacosAgentSpecListener() {
+                
+                @Override
+                public void onEvent(NacosAgentSpecEvent event) {
+                    // no-op
+                }
+            };
     
     @Provide
     Arbitrary<String> blankStrings() {
         return Arbitraries.oneOf(
                 Arbitraries.just(null),
                 Arbitraries.just(""),
-                Arbitraries.strings().whitespace().ofMinLength(1).ofMaxLength(20)
-        );
+                Arbitraries.strings().whitespace().ofMinLength(1).ofMaxLength(20));
     }
     
     /**

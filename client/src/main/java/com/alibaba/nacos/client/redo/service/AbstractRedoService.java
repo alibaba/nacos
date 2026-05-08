@@ -64,7 +64,8 @@ public abstract class AbstractRedoService implements ConnectionEventListener, Cl
     }
     
     private void setProperties(NacosClientProperties properties) {
-        redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME, Constants.DEFAULT_REDO_DELAY_TIME);
+        redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME,
+                Constants.DEFAULT_REDO_DELAY_TIME);
         redoThreadCount = properties.getInteger(PropertyKeyConst.REDO_DELAY_THREAD_COUNT,
                 Constants.DEFAULT_REDO_THREAD_COUNT);
     }

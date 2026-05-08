@@ -75,7 +75,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     private void init(Properties properties) throws NacosException {
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(properties);
         ValidatorUtils.checkInitParam(nacosClientProperties);
         namespace = InitUtils.initNamespaceForNaming(nacosClientProperties);
         InitUtils.initSerialization();
@@ -85,7 +86,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         securityProxy = new SecurityProxy(serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
-        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, nacosClientProperties);
+        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager,
+                nacosClientProperties);
     }
     
     private void initSecurityProxy(Properties properties) {
@@ -93,7 +95,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
                 new NameThreadFactory("com.alibaba.nacos.client.naming.maintainService.security"));
         this.securityProxy.login(properties);
         this.executorService
-                .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
+                .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
+                        SECURITY_INFO_REFRESH_INTERVAL_MILLS,
                         TimeUnit.MILLISECONDS);
         
     }
@@ -104,7 +107,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     @Override
-    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void updateInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException {
         serverProxy.updateInstance(serviceName, groupName, instance);
     }
     
@@ -129,7 +133,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     @Override
-    public void createService(String serviceName, String groupName, float protectThreshold) throws NacosException {
+    public void createService(String serviceName, String groupName, float protectThreshold)
+            throws NacosException {
         Service service = new Service();
         service.setName(serviceName);
         service.setGroupName(groupName);
@@ -139,7 +144,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     @Override
-    public void createService(String serviceName, String groupName, float protectThreshold, String expression)
+    public void createService(String serviceName, String groupName, float protectThreshold,
+            String expression)
             throws NacosException {
         Service service = new Service();
         service.setName(serviceName);
@@ -168,7 +174,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     @Override
-    public void updateService(String serviceName, String groupName, float protectThreshold) throws NacosException {
+    public void updateService(String serviceName, String groupName, float protectThreshold)
+            throws NacosException {
         Service service = new Service();
         service.setName(serviceName);
         service.setGroupName(groupName);

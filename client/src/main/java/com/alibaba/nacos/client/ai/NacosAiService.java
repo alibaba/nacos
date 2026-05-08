@@ -104,7 +104,7 @@ public class NacosAiService implements AiService {
     private final NacosAgentSpecCacheHolder agentSpecCacheHolder;
     
     private final AiChangeNotifier aiChangeNotifier;
-
+    
     private final ConfigService skillConfigService;
     
     public NacosAiService(Properties properties) throws NacosException {
@@ -125,7 +125,8 @@ public class NacosAiService implements AiService {
         this.mcpServerCacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
         this.agentCardCacheHolder = new NacosAgentCardCacheHolder(grpcClient, clientProperties);
         this.promptCacheHolder = new NacosPromptCacheHolder(this.aiClientProxy, clientProperties);
-        this.agentSpecCacheHolder = new NacosAgentSpecCacheHolder(this.skillConfigService, this.namespaceId);
+        this.agentSpecCacheHolder =
+                new NacosAgentSpecCacheHolder(this.skillConfigService, this.namespaceId);
         this.aiChangeNotifier = new AiChangeNotifier();
         start();
     }
@@ -156,13 +157,16 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+            McpToolSpecification toolSpecification,
             McpEndpointSpec endpointSpecification) throws NacosException {
-        return releaseMcpServer(serverSpecification, toolSpecification, null, endpointSpecification);
+        return releaseMcpServer(serverSpecification, toolSpecification, null,
+                endpointSpecification);
     }
-
+    
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification,
+            McpToolSpecification toolSpecification,
             McpResourceSpecification resourceSpecification, McpEndpointSpec endpointSpecification)
             throws NacosException {
         if (null == serverSpecification) {
@@ -178,7 +182,8 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `serverSpecification.versionDetail.version` not present");
         }
-        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification, resourceSpecification,
+        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification,
+                resourceSpecification,
                 endpointSpecification);
     }
     
@@ -197,7 +202,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+    public void deregisterMcpServerEndpoint(String mcpName, String address, int port)
+            throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `mcpName` can't be empty or null");
@@ -230,7 +236,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
+    public void unsubscribeMcpServer(String mcpName, String version,
+            AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -247,7 +254,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public AgentCardDetailInfo getAgentCard(String agentName, String version, String registrationType)
+    public AgentCardDetailInfo getAgentCard(String agentName, String version,
+            String registrationType)
             throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -273,7 +281,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+    public void registerAgentEndpoint(String agentName, AgentEndpoint endpoint)
+            throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `agentName` can't be empty or null");
@@ -283,7 +292,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints) throws NacosException {
+    public void registerAgentEndpoint(String agentName, Collection<AgentEndpoint> endpoints)
+            throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `agentName` can't be empty or null");
@@ -293,7 +303,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint) throws NacosException {
+    public void deregisterAgentEndpoint(String agentName, AgentEndpoint endpoint)
+            throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `agentName` can't be empty or null");
@@ -323,7 +334,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeAgentCard(String agentName, String version, AbstractNacosAgentCardListener agentCardListener)
+    public void unsubscribeAgentCard(String agentName, String version,
+            AbstractNacosAgentCardListener agentCardListener)
             throws NacosException {
         if (StringUtils.isBlank(agentName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -339,7 +351,8 @@ public class NacosAiService implements AiService {
         }
     }
     
-    private void validateAgentEndpoint(Collection<AgentEndpoint> endpoints) throws NacosApiException {
+    private void validateAgentEndpoint(Collection<AgentEndpoint> endpoints)
+            throws NacosApiException {
         if (null == endpoints || endpoints.isEmpty()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `endpoints` can't be empty or null, if want to deregister endpoints, please use deregister API.");
@@ -350,8 +363,10 @@ public class NacosAiService implements AiService {
             versions.add(endpoint.getVersion());
         }
         if (versions.size() > 1) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Required parameter `endpoint.version` can't be different, current includes: %s.",
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    String.format(
+                            "Required parameter `endpoint.version` can't be different, current includes: %s.",
                             String.join(",", versions)));
         }
     }
@@ -371,7 +386,8 @@ public class NacosAiService implements AiService {
         instance.validate();
     }
     
-    private static void validateAgentCardField(String fieldName, String fieldValue) throws NacosApiException {
+    private static void validateAgentCardField(String fieldName, String fieldValue)
+            throws NacosApiException {
         if (StringUtils.isEmpty(fieldValue)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `agentCard." + fieldName + "` not present");
@@ -379,8 +395,10 @@ public class NacosAiService implements AiService {
     }
     
     private static void validateAgentCard(AgentCard agentCard) throws NacosApiException {
-        boolean hasLegacyRequiredFields = !StringUtils.isEmpty(agentCard.getProtocolVersion()) && !StringUtils.isEmpty(
-                agentCard.getPreferredTransport()) && !StringUtils.isEmpty(agentCard.getUrl());
+        boolean hasLegacyRequiredFields = !StringUtils.isEmpty(agentCard.getProtocolVersion())
+                && !StringUtils.isEmpty(
+                        agentCard.getPreferredTransport())
+                && !StringUtils.isEmpty(agentCard.getUrl());
         boolean hasV1RequiredFields = hasValidV1Interfaces(agentCard.getSupportedInterfaces());
         if (!hasLegacyRequiredFields && !hasV1RequiredFields) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -393,7 +411,8 @@ public class NacosAiService implements AiService {
             return false;
         }
         for (AgentInterface each : interfaces) {
-            if (null == each || StringUtils.isEmpty(each.getUrl()) || StringUtils.isEmpty(each.getProtocolBinding())
+            if (null == each || StringUtils.isEmpty(each.getUrl())
+                    || StringUtils.isEmpty(each.getProtocolBinding())
                     || StringUtils.isEmpty(each.getProtocolVersion())) {
                 return false;
             }
@@ -411,7 +430,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public byte[] downloadSkillZipByVersion(String skillName, String version) throws NacosException {
+    public byte[] downloadSkillZipByVersion(String skillName, String version)
+            throws NacosException {
         if (StringUtils.isBlank(skillName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `skillName` not present");
@@ -440,7 +460,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public AgentSpec subscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+    public AgentSpec subscribeAgentSpec(String agentSpecName,
+            AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -461,7 +482,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeAgentSpec(String agentSpecName, AbstractNacosAgentSpecListener agentSpecListener)
+    public void unsubscribeAgentSpec(String agentSpecName,
+            AbstractNacosAgentSpecListener agentSpecListener)
             throws NacosException {
         if (StringUtils.isBlank(agentSpecName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,

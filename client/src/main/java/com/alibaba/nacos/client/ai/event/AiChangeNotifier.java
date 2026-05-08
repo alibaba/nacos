@@ -68,7 +68,8 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     private void handleMcpServerChangedEvent(McpServerChangedEvent event) {
-        String mcpServerKey = CacheKeyUtils.buildMcpServerKey(event.getMcpName(), event.getVersion());
+        String mcpServerKey =
+                CacheKeyUtils.buildMcpServerKey(event.getMcpName(), event.getVersion());
         if (!isSubscribed(mcpServerKey, mcpServerListenerInvokers)) {
             return;
         }
@@ -79,7 +80,8 @@ public class AiChangeNotifier extends SmartSubscriber {
     }
     
     private void handleAgentCardChangedEvent(AgentCardChangedEvent event) {
-        String agentCardKey = CacheKeyUtils.buildAgentCardKey(event.getAgentName(), event.getVersion());
+        String agentCardKey =
+                CacheKeyUtils.buildAgentCardKey(event.getAgentName(), event.getVersion());
         if (!isSubscribed(agentCardKey, agentCardListenerInvokers)) {
             return;
         }
@@ -94,7 +96,8 @@ public class AiChangeNotifier extends SmartSubscriber {
         if (!isSubscribed(promptCacheKey, promptListenerInvokers)) {
             return;
         }
-        NacosPromptEvent notifiedEvent = new NacosPromptEvent(event.getPromptKey(), event.getPrompt());
+        NacosPromptEvent notifiedEvent =
+                new NacosPromptEvent(event.getPromptKey(), event.getPrompt());
         for (PromptListenerInvoker each : promptListenerInvokers.get(promptCacheKey)) {
             each.invoke(notifiedEvent);
         }
@@ -105,7 +108,8 @@ public class AiChangeNotifier extends SmartSubscriber {
         if (!isSubscribed(agentSpecKey, agentSpecListenerInvokers)) {
             return;
         }
-        NacosAgentSpecEvent notifiedEvent = new NacosAgentSpecEvent(event.getAgentSpecName(), event.getAgentSpec());
+        NacosAgentSpecEvent notifiedEvent =
+                new NacosAgentSpecEvent(event.getAgentSpecName(), event.getAgentSpec());
         for (AgentSpecListenerInvoker each : agentSpecListenerInvokers.get(agentSpecKey)) {
             each.invoke(notifiedEvent);
         }
@@ -128,7 +132,8 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param version           version of mcp server
      * @param listenerInvoker   listener invoker
      */
-    public void registerListener(String mcpName, String version, McpServerListenerInvoker listenerInvoker) {
+    public void registerListener(String mcpName, String version,
+            McpServerListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
@@ -149,7 +154,8 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param version           version of agent card
      * @param listenerInvoker   listener invoker
      */
-    public void registerListener(String agentName, String version, AgentCardListenerInvoker listenerInvoker) {
+    public void registerListener(String agentName, String version,
+            AgentCardListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
@@ -169,7 +175,8 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param promptKey       prompt key
      * @param listenerInvoker listener invoker
      */
-    public void registerListener(String promptKey, String version, String label, PromptListenerInvoker listenerInvoker) {
+    public void registerListener(String promptKey, String version, String label,
+            PromptListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
@@ -210,7 +217,8 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param version           version of mcp server
      * @param listenerInvoker   listener invoker
      */
-    public void deregisterListener(String mcpName, String version, McpServerListenerInvoker listenerInvoker) {
+    public void deregisterListener(String mcpName, String version,
+            McpServerListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
@@ -231,7 +239,8 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param version           version of agent card
      * @param listenerInvoker   listener invoker
      */
-    public void deregisterListener(String agentName, String version, AgentCardListenerInvoker listenerInvoker) {
+    public void deregisterListener(String agentName, String version,
+            AgentCardListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
@@ -251,7 +260,8 @@ public class AiChangeNotifier extends SmartSubscriber {
      * @param promptKey       prompt key
      * @param listenerInvoker listener invoker
      */
-    public void deregisterListener(String promptKey, String version, String label, PromptListenerInvoker listenerInvoker) {
+    public void deregisterListener(String promptKey, String version, String label,
+            PromptListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }

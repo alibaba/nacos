@@ -63,7 +63,8 @@ public class ParamUtil {
     private static int initConnectionTimeout() {
         String tmp = DEFAULT_NACOS_CONNECT_TIMEOUT;
         try {
-            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CONNECT_TIMEOUT_KEY, DEFAULT_NACOS_CONNECT_TIMEOUT);
+            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CONNECT_TIMEOUT_KEY,
+                    DEFAULT_NACOS_CONNECT_TIMEOUT);
             return Integer.parseInt(tmp);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid connect timeout:" + tmp;
@@ -75,7 +76,8 @@ public class ParamUtil {
     private static int initReadTimeout() {
         String tmp = DEFAULT_NACOS_READ_TIMEOUT;
         try {
-            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_READ_TIMEOUT_KEY, DEFAULT_NACOS_READ_TIMEOUT);
+            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_READ_TIMEOUT_KEY,
+                    DEFAULT_NACOS_READ_TIMEOUT);
             return Integer.parseInt(tmp);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid read timeout:" + tmp;
@@ -86,11 +88,13 @@ public class ParamUtil {
     
     private static double initPerTaskConfigSize() {
         try {
-            return Double.parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY,
-                    DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+            return Double.parseDouble(
+                    NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY,
+                            DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
         } catch (NumberFormatException e) {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", e);
-            throw new IllegalArgumentException("invalid PER_TASK_CONFIG_SIZE, expected value type double", e);
+            throw new IllegalArgumentException(
+                    "invalid PER_TASK_CONFIG_SIZE, expected value type double", e);
         }
     }
     

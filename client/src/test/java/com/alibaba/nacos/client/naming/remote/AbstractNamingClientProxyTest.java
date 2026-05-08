@@ -101,34 +101,40 @@ class AbstractNamingClientProxyTest {
         }
         
         @Override
-        public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
-        
-        }
-        
-        @Override
-        public void batchRegisterService(String serviceName, String groupName, List<Instance> instances)
+        public void registerService(String serviceName, String groupName, Instance instance)
                 throws NacosException {
             
         }
         
         @Override
-        public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
+        public void batchRegisterService(String serviceName, String groupName,
+                List<Instance> instances)
                 throws NacosException {
             
         }
         
         @Override
-        public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        
+        public void batchDeregisterService(String serviceName, String groupName,
+                List<Instance> instances)
+                throws NacosException {
+            
         }
         
         @Override
-        public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        
+        public void deregisterService(String serviceName, String groupName, Instance instance)
+                throws NacosException {
+            
         }
         
         @Override
-        public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters,
+        public void updateInstance(String serviceName, String groupName, Instance instance)
+                throws NacosException {
+            
+        }
+        
+        @Override
+        public ServiceInfo queryInstancesOfService(String serviceName, String groupName,
+                String clusters,
                 boolean healthyOnly) throws NacosException {
             return null;
         }
@@ -139,8 +145,9 @@ class AbstractNamingClientProxyTest {
         }
         
         @Override
-        public void createService(Service service, AbstractSelector selector) throws NacosException {
-        
+        public void createService(Service service, AbstractSelector selector)
+                throws NacosException {
+            
         }
         
         @Override
@@ -149,28 +156,33 @@ class AbstractNamingClientProxyTest {
         }
         
         @Override
-        public void updateService(Service service, AbstractSelector selector) throws NacosException {
-        
+        public void updateService(Service service, AbstractSelector selector)
+                throws NacosException {
+            
         }
         
         @Override
-        public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+        public ListView<String> getServiceList(int pageNo, int pageSize, String groupName,
+                AbstractSelector selector)
                 throws NacosException {
             return null;
         }
         
         @Override
-        public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        public ServiceInfo subscribe(String serviceName, String groupName, String clusters)
+                throws NacosException {
             return null;
         }
         
         @Override
-        public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        
+        public void unsubscribe(String serviceName, String groupName, String clusters)
+                throws NacosException {
+            
         }
         
         @Override
-        public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+        public boolean isSubscribed(String serviceName, String groupName, String clusters)
+                throws NacosException {
             return false;
         }
         
@@ -181,12 +193,12 @@ class AbstractNamingClientProxyTest {
         
         @Override
         public void shutdown() throws NacosException {
-        
+            
         }
         
         @Override
         public void onEvent(ServerListChangeEvent event) {
-        
+            
         }
         
         @Override
