@@ -106,8 +106,8 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setNamespaceId("public");
         agentSpec.setName("testAgent");
         agentSpec.setDescription("Test");
-        agentSpec.setBizTags("[\\"ai\\"]");
-        agentSpec.setContent("{\\"version\\":\\"1.0\\}");
+        agentSpec.setBizTags("[\"ai\"]");
+        agentSpec.setContent("{\"version\":\"1.0\"}");
         Map<String, AgentSpecResource> resourceMap = new HashMap<>();
         AgentSpecResource resource = new AgentSpecResource();
         resource.setName("skill.json");
@@ -130,8 +130,8 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setNamespaceId("public");
         agentSpec.setName("testAgent");
         agentSpec.setDescription("Test");
-        agentSpec.setBizTags("[\\"ai\\"]");
-        agentSpec.setContent("{\\"version\\":\\"1.0\\}");
+        agentSpec.setBizTags("[\"ai\"]");
+        agentSpec.setContent("{\"version\":\"1.0\"}");
 
         String json = mapper.writeValueAsString(agentSpec);
         assertNotNull(json);
