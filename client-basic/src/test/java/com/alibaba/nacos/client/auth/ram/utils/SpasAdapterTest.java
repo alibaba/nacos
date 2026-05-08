@@ -55,7 +55,8 @@ class SpasAdapterTest {
         
         final Map<String, String> map3 = SpasAdapter.getSignHeaders("", "bb", "123");
         assertEquals(2, map3.size());
-        assertEquals(SpasAdapter.signWithHmacSha1Encrypt(map3.get("Timestamp"), "123"), map3.get("Spas-Signature"));
+        assertEquals(SpasAdapter.signWithHmacSha1Encrypt(map3.get("Timestamp"), "123"),
+                map3.get("Spas-Signature"));
     }
     
     @Test

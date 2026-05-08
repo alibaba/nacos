@@ -75,7 +75,8 @@ class NamingResourceInjectorTest {
     
     @Test
     void testDoInjectWithGroup() throws Exception {
-        resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+        resource =
+                RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
         assertEquals(3, actual.getAllKey().size());
@@ -100,7 +101,8 @@ class NamingResourceInjectorTest {
     @Test
     void testDoInjectWithGroupForSts() throws Exception {
         prepareForSts();
-        resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+        resource =
+                RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
         assertEquals(4, actual.getAllKey().size());
@@ -135,7 +137,8 @@ class NamingResourceInjectorTest {
     
     @Test
     void testDoInjectForV4Sign() throws Exception {
-        resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+        resource =
+                RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         ramContext.setRegionId("cn-hangzhou");
         namingResourceInjector.doInject(resource, ramContext, actual);
