@@ -275,27 +275,26 @@ public class NamingFuzzyWatchServiceListHolderTest {
         
         AtomicInteger watcherPatternOverFlag = new AtomicInteger(0);
         AtomicInteger watcherServiceOverFlag = new AtomicInteger(0);
-        
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
-                new AbstractFuzzyWatchEventWatcher() {
-                    
-                    @Override
-                    public void onEvent(FuzzyWatchChangeEvent event) {
-                        
-                    }
-                    
-                    @Override
-                    public void onPatternOverLimit() {
-                        watcherPatternOverFlag.incrementAndGet();
-                    }
-                    
-                    @Override
-                    public void onServiceReachUpLimit() {
-                        watcherServiceOverFlag.incrementAndGet();
-                    }
-                    
-                };
-        
+
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
+
+            @Override
+            public void onEvent(FuzzyWatchChangeEvent event) {
+
+            }
+
+            @Override
+            public void onPatternOverLimit() {
+                watcherPatternOverFlag.incrementAndGet();
+            }
+
+            @Override
+            public void onServiceReachUpLimit() {
+                watcherServiceOverFlag.incrementAndGet();
+            }
+
+        };
+
         NamingFuzzyWatchContext namingFuzzyWatchContext =
                 namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
                         generatePattern, abstractFuzzyWatchEventWatcher);
@@ -355,22 +354,21 @@ public class NamingFuzzyWatchServiceListHolderTest {
                 FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
-        
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
-                new AbstractFuzzyWatchEventWatcher() {
-                    
-                    @Override
-                    public void onEvent(FuzzyWatchChangeEvent event) {
-                        int get = watcherFlag.incrementAndGet();
-                        if (get < 2) {
-                            System.out.println("times " + get + " fail");
-                            throw new RuntimeException("mock exception");
-                        } else {
-                            System.out.println("times " + get + " success");
-                        }
-                    }
-                };
-        
+
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
+
+            @Override
+            public void onEvent(FuzzyWatchChangeEvent event) {
+                int get = watcherFlag.incrementAndGet();
+                if (get < 2) {
+                    System.out.println("times " + get + " fail");
+                    throw new RuntimeException("mock exception");
+                } else {
+                    System.out.println("times " + get + " success");
+                }
+            }
+        };
+
         NamingFuzzyWatchContext namingFuzzyWatchContext =
                 namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(
                         generatePattern, abstractFuzzyWatchEventWatcher);

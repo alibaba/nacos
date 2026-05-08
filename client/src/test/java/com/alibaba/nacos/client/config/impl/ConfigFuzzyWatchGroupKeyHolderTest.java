@@ -294,15 +294,14 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     
     @Test
     void testExecuteFuzzyWatchRequestRemove() throws NacosException {
-        
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
-                new AbstractFuzzyWatchEventWatcher() {
-                    
-                    @Override
-                    public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                        
-                    }
-                };
+
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
+
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+
+            }
+        };
         configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("*", "*",
                 abstractFuzzyWatchEventWatcher);
         configFuzzyWatchGroupKeyHolder.removeFuzzyWatcher("*", "*", abstractFuzzyWatchEventWatcher);
@@ -324,25 +323,24 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         
         AtomicBoolean patternOvrFlag = new AtomicBoolean(false);
         AtomicBoolean configCountOverFlag = new AtomicBoolean(false);
-        
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
-                new AbstractFuzzyWatchEventWatcher() {
-                    
-                    @Override
-                    public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                        
-                    }
-                    
-                    @Override
-                    public void onPatternOverLimit() {
-                        patternOvrFlag.set(true);
-                    }
-                    
-                    @Override
-                    public void onConfigReachUpLimit() {
-                        configCountOverFlag.set(true);
-                    }
-                };
+
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
+
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+
+            }
+
+            @Override
+            public void onPatternOverLimit() {
+                patternOvrFlag.set(true);
+            }
+
+            @Override
+            public void onConfigReachUpLimit() {
+                configCountOverFlag.set(true);
+            }
+        };
         ConfigFuzzyWatchContext configFuzzyWatchContext =
                 configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("*", "*",
                         abstractFuzzyWatchEventWatcher);
@@ -389,23 +387,22 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         String groupKey = GroupKey.getKeyTenant("dataIdName124", "group", tenant);
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
-        
-        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher =
-                new AbstractFuzzyWatchEventWatcher() {
-                    
-                    @Override
-                    public void onEvent(ConfigFuzzyWatchChangeEvent event) {
-                        int get = watcherFlag.incrementAndGet();
-                        if (get < 2) {
-                            System.out.println("times " + get + " fail");
-                            throw new RuntimeException("mock exception");
-                        } else {
-                            System.out.println("times " + get + " success");
-                            
-                        }
-                    }
-                };
-        
+
+        AbstractFuzzyWatchEventWatcher abstractFuzzyWatchEventWatcher = new AbstractFuzzyWatchEventWatcher() {
+
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                int get = watcherFlag.incrementAndGet();
+                if (get < 2) {
+                    System.out.println("times " + get + " fail");
+                    throw new RuntimeException("mock exception");
+                } else {
+                    System.out.println("times " + get + " success");
+
+                }
+            }
+        };
+
         ConfigFuzzyWatchContext configFuzzyWatchContext =
                 configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(
                         "dataIdName*", "group", abstractFuzzyWatchEventWatcher);
