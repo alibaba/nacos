@@ -115,12 +115,15 @@ class HistoryRollback extends React.Component {
   getData(pageNo = 1) {
     const self = this;
     this.serverId = getParams('serverId') || '';
+    this.tenant = getParams('namespace') || 'public';
     if (!this.state.dataId) return false;
     request({
       beforeSend() {
         self.openLoading();
       },
-      url: `v3/console/cs/history/list?dataId=${this.state.dataId}&groupName=${this.state.group}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      url:
+        `v3/console/cs/history/list?dataId=${this.state.dataId}&groupName=${this.state.group}` +
+        `&namespaceId=${this.tenant}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(res) {
         if (res != null) {
           const { data } = res;
@@ -229,7 +232,7 @@ class HistoryRollback extends React.Component {
     let tenant = getParams('namespace') || 'public';
     let serverId = getParams('serverId') || 'center';
     this.getConfig(-1, tenant, serverId, record.dataId, record.groupName).then(lasted => {
-      this.getHistoryConfig(record.id, record.dataId, record.groupName).then(selected => {
+      this.getHistoryConfig(record.id, record.dataId, record.groupName, tenant).then(selected => {
         this.diffEditorDialog.current.getInstance().openDialog(selected.content, lasted.content);
       });
     });
@@ -250,7 +253,9 @@ class HistoryRollback extends React.Component {
       const self = this;
       this.namespaceId = tenant;
       this.serverId = tenant;
-      const url = `v3/console/cs/config?dataId=${dataId}&groupName=${group}`;
+      const url =
+        `v3/console/cs/config?dataId=${dataId}&groupName=${group}` +
+        `&namespaceId=${tenant}`;
       request({
         url,
         beforeSend() {
@@ -273,14 +278,17 @@ class HistoryRollback extends React.Component {
    * @param nid
    * @param dataId
    * @param group
+   * @param tenant
    * @returns {Promise<unknown>}
    */
-  getHistoryConfig(nid, dataId, group) {
+  getHistoryConfig(nid, dataId, group, tenant) {
     return new Promise((resolve, reject) => {
       const { locale = {} } = this.props;
       const self = this;
       request({
-        url: `v3/console/cs/history?dataId=${dataId}&groupName=${group}&nid=${nid}`,
+        url:
+          `v3/console/cs/history?dataId=${dataId}&groupName=${group}` +
+          `&namespaceId=${tenant}&nid=${nid}`,
         success(result) {
           if (result != null) {
             resolve(result.data);
