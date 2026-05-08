@@ -68,7 +68,8 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  */
 public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate =
+            NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
@@ -110,14 +111,16 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private boolean enableClientMetrics = true;
     
-    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, NamingServerListManager serverListManager,
+    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy,
+            NamingServerListManager serverListManager,
             NacosClientProperties properties) {
         super(securityProxy);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
-        this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
-                String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+        this.maxRetry = ConvertUtils
+                .toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
+                        String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
         this.enableClientMetrics = Boolean.parseBoolean(
                 properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
     }
@@ -133,8 +136,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}", namespaceId, serviceName,
+    public void registerService(String serviceName, String groupName, Instance instance)
+            throws NacosException {
+        NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
+                namespaceId, serviceName,
                 instance);
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         if (instance.isEphemeral()) {
@@ -157,20 +162,24 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void batchRegisterService(String serviceName, String groupName, List<Instance> instances) {
+    public void batchRegisterService(String serviceName, String groupName,
+            List<Instance> instances) {
         throw new UnsupportedOperationException(
                 "Do not support persistent instances to perform batch registration methods.");
     }
     
     @Override
-    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances) {
+    public void batchDeregisterService(String serviceName, String groupName,
+            List<Instance> instances) {
         throw new UnsupportedOperationException(
                 "Do not support persistent instances to perform batch de registration methods.");
     }
     
     @Override
-    public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+    public void deregisterService(String serviceName, String groupName, Instance instance)
+            throws NacosException {
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}",
+                namespaceId,
                 serviceName, instance);
         if (instance.isEphemeral()) {
             return;
@@ -187,8 +196,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName,
+    public void updateInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException {
+        NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId,
+                serviceName,
                 instance);
         
         final Map<String, String> params = new HashMap<>(32);
@@ -207,7 +218,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters,
+    public ServiceInfo queryInstancesOfService(String serviceName, String groupName,
+            String clusters,
             boolean healthyOnly) {
         throw new UnsupportedOperationException(
                 "Do not support query instance by http client,please use gRPC replaced.");
@@ -215,7 +227,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public Service queryService(String serviceName, String groupName) throws NacosException {
-        NAMING_LOGGER.info("[QUERY-SERVICE] {} query service : {}, {}", namespaceId, serviceName, groupName);
+        NAMING_LOGGER.info("[QUERY-SERVICE] {} query service : {}, {}", namespaceId, serviceName,
+                groupName);
         
         final Map<String, String> params = new HashMap<>(16);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -245,7 +258,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public boolean deleteService(String serviceName, String groupName) throws NacosException {
-        NAMING_LOGGER.info("[DELETE-SERVICE] {} deleting service : {} with groupName : {}", namespaceId, serviceName,
+        NAMING_LOGGER.info("[DELETE-SERVICE] {} deleting service : {} with groupName : {}",
+                namespaceId, serviceName,
                 groupName);
         
         final Map<String, String> params = new HashMap<>(16);
@@ -275,7 +289,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     @Override
     public boolean serverHealthy() {
         try {
-            String result = reqApi(UtilAndComs.webContext + "/v3/admin/core/state/liveness", new HashMap<>(8), HttpMethod.GET);
+            String result = reqApi(UtilAndComs.webContext + "/v3/admin/core/state/liveness",
+                    new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
             int statusCode = json.get("code").asInt();
             return 0 == statusCode;
@@ -285,7 +300,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName,
+            AbstractSelector selector)
             throws NacosException {
         
         Map<String, String> params = new HashMap<>(16);
@@ -312,31 +328,38 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         JsonNode json = JacksonUtils.toObj(result);
         ListView<String> listView = new ListView<>();
         listView.setCount(json.get("count").asInt());
-        listView.setData(JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {
-        }));
+        listView.setData(
+                JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {
+                }));
         
         return listView;
     }
     
     @Override
-    public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        throw new UnsupportedOperationException("Do not support subscribe service by UDP, please use gRPC replaced.");
+    public ServiceInfo subscribe(String serviceName, String groupName, String clusters)
+            throws NacosException {
+        throw new UnsupportedOperationException(
+                "Do not support subscribe service by UDP, please use gRPC replaced.");
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
+    public void unsubscribe(String serviceName, String groupName, String clusters)
+            throws NacosException {
     }
     
     @Override
-    public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+    public boolean isSubscribed(String serviceName, String groupName, String clusters)
+            throws NacosException {
         return true;
     }
     
-    public String reqApi(String api, Map<String, String> params, String method) throws NacosException {
+    public String reqApi(String api, Map<String, String> params, String method)
+            throws NacosException {
         return reqApi(api, params, Collections.EMPTY_MAP, method);
     }
     
-    public String reqApi(String api, Map<String, String> params, Map<String, String> body, String method)
+    public String reqApi(String api, Map<String, String> params, Map<String, String> body,
+            String method)
             throws NacosException {
         return reqApi(api, params, body, serverListManager.getServerList(), method);
     }
@@ -352,7 +375,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
      * @return result
      * @throws NacosException nacos exception
      */
-    public String reqApi(String api, Map<String, String> params, Map<String, String> body, List<String> servers,
+    public String reqApi(String api, Map<String, String> params, Map<String, String> body,
+            List<String> servers,
             String method) throws NacosException {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
@@ -391,11 +415,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             }
         }
         
-        NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
+        NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers,
+                exception.getErrCode(),
                 exception.getErrMsg());
         
         throw new NacosException(exception.getErrCode(),
-                "failed to req API:" + api + " after all servers(" + servers + ") tried: " + exception.getMessage());
+                "failed to req API:" + api + " after all servers(" + servers + ") tried: "
+                        + exception.getMessage());
         
     }
     
@@ -410,7 +436,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
      * @return result
      * @throws NacosException nacos exception
      */
-    public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer,
+    public String callServer(String api, Map<String, String> params, Map<String, String> body,
+            String curServer,
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
@@ -436,10 +463,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             
             if (enableClientMetrics) {
                 try {
-                    MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
+                    MetricsMonitor
+                            .getNamingRequestMonitor(method, url,
+                                    String.valueOf(restResult.getCode()))
                             .observe(end - start);
                 } catch (Throwable t) {
-                    NAMING_LOGGER.error("Failed to record metrics. Method: {}, URL: {}, HTTP Status Code: {}",
+                    NAMING_LOGGER.error(
+                            "Failed to record metrics. Method: {}, URL: {}, HTTP Status Code: {}",
                             method, url, restResult.getCode(), t);
                 }
             }
@@ -455,7 +485,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             if (HttpStatus.SC_FORBIDDEN == restResult.getCode()) {
                 reLogin();
             }
-
+            
             throw new NacosException(restResult.getCode(), restResult.getMessage());
         } catch (NacosException e) {
             NAMING_LOGGER.error("[NA] failed to request", e);
@@ -473,7 +503,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
         
-        String sp = NacosClientProperties.PROTOTYPE.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
+        String sp = NacosClientProperties.PROTOTYPE
+                .getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
         if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
@@ -487,4 +518,3 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }
-

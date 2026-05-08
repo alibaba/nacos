@@ -74,15 +74,18 @@ class ClientServiceInfoTest {
                         + "\"publisherInfo\":{\"clientId\":\"publisherId\",\"ip\":\"1.1.1.1\",\"port\":8080,\"clusterName\":\"publisherCluster\"},"
                         + "\"subscriberInfo\":{\"clientId\":\"subscriberId\",\"appName\":\"subscriberApp\",\"agent\":\"subscriberAgent\""
                         + ",\"address\":\"1.1.1.1:8080\"}}";
-        ClientServiceInfo clientServiceInfo1 = mapper.readValue(jsonString, ClientServiceInfo.class);
+        ClientServiceInfo clientServiceInfo1 =
+                mapper.readValue(jsonString, ClientServiceInfo.class);
         assertEquals(clientServiceInfo.getNamespaceId(), clientServiceInfo1.getNamespaceId());
         assertEquals(clientServiceInfo.getGroupName(), clientServiceInfo1.getGroupName());
         assertEquals(clientServiceInfo.getServiceName(), clientServiceInfo1.getServiceName());
         
         assertEquals(clientServiceInfo.getPublisherInfo().getClientId(),
                 clientServiceInfo1.getPublisherInfo().getClientId());
-        assertEquals(clientServiceInfo.getPublisherInfo().getIp(), clientServiceInfo1.getPublisherInfo().getIp());
-        assertEquals(clientServiceInfo.getPublisherInfo().getPort(), clientServiceInfo1.getPublisherInfo().getPort());
+        assertEquals(clientServiceInfo.getPublisherInfo().getIp(),
+                clientServiceInfo1.getPublisherInfo().getIp());
+        assertEquals(clientServiceInfo.getPublisherInfo().getPort(),
+                clientServiceInfo1.getPublisherInfo().getPort());
         assertEquals(clientServiceInfo.getPublisherInfo().getClusterName(),
                 clientServiceInfo1.getPublisherInfo().getClusterName());
         

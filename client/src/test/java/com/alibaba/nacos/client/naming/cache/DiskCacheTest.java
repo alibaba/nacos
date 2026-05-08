@@ -35,7 +35,9 @@ import static org.mockito.Mockito.mock;
 
 class DiskCacheTest {
     
-    private static final String CACHE_DIR = DiskCacheTest.class.getClassLoader().getResource("disk_cache_test").getPath() + "cache/";
+    private static final String CACHE_DIR =
+            DiskCacheTest.class.getClassLoader().getResource("disk_cache_test").getPath()
+                    + "cache/";
     
     private ServiceInfo serviceInfo;
     

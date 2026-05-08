@@ -50,8 +50,9 @@ class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigChangeBatchListenResponse configChangeBatchListenResponse = ConfigChangeBatchListenResponse.buildFailResponse(
-                "Fail");
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse =
+                ConfigChangeBatchListenResponse.buildFailResponse(
+                        "Fail");
         String json = mapper.writeValueAsString(configChangeBatchListenResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
@@ -62,9 +63,11 @@ class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"061e36b0-c7bd-4fd0-950c-73b13ca1cb2f\","
-                + "\"changedConfigs\":[{\"group\":\"group\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"success\":true}";
-        ConfigChangeBatchListenResponse actual = mapper.readValue(json, ConfigChangeBatchListenResponse.class);
+        String json =
+                "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"061e36b0-c7bd-4fd0-950c-73b13ca1cb2f\","
+                        + "\"changedConfigs\":[{\"group\":\"group\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"success\":true}";
+        ConfigChangeBatchListenResponse actual =
+                mapper.readValue(json, ConfigChangeBatchListenResponse.class);
         assertTrue(actual.isSuccess());
         assertEquals(ResponseCode.SUCCESS.getCode(), actual.getResultCode());
         assertEquals("061e36b0-c7bd-4fd0-950c-73b13ca1cb2f", actual.getRequestId());

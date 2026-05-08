@@ -25,38 +25,38 @@ package com.alibaba.nacos.client.auth.oidc;
  * @author wangzji
  */
 public final class OidcClientConstants {
-
+    
     private OidcClientConstants() {
     }
-
+    
     // ----- Properties configuration keys (client-specific) -----
-
+    
     /**
      * OIDC Issuer URI, used for OIDC Discovery.
      */
     public static final String PROP_ISSUER_URI = "nacos.client.auth.oidc.issuer-uri";
-
+    
     /**
      * OAuth2 Client ID for Client Credentials Grant.
      */
     public static final String PROP_CLIENT_ID = "nacos.client.auth.oidc.client-id";
-
+    
     /**
      * OAuth2 Client Secret for Client Credentials Grant.
      */
     public static final String PROP_CLIENT_SECRET = "nacos.client.auth.oidc.client-secret";
-
+    
     /**
      * OAuth2 scopes, defaults to "openid".
      */
     public static final String PROP_SCOPE = "nacos.client.auth.oidc.scope";
-
+    
     /**
      * Token endpoint override. If set, OIDC Discovery is skipped.
      */
     public static final String PROP_TOKEN_ENDPOINT = "nacos.client.auth.oidc.token-endpoint";
-
+    
     // ----- Default values -----
-
+    
     public static final String DEFAULT_SCOPE = "openid";
 }

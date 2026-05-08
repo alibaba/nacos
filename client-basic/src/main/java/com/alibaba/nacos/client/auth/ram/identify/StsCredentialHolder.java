@@ -57,7 +57,8 @@ public class StsCredentialHolder {
         if (cacheSecurityCredentials && stsCredential != null) {
             long currentTime = System.currentTimeMillis();
             long expirationTime = stsCredential.getExpiration().getTime();
-            int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
+            int timeToRefreshInMillisecond =
+                    StsConfig.getInstance().getTimeToRefreshInMillisecond();
             if (expirationTime - currentTime > timeToRefreshInMillisecond) {
                 return stsCredential;
             }
@@ -66,7 +67,8 @@ public class StsCredentialHolder {
         stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
         });
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
-                stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
+                stsCredential.getCode(), stsCredential.getAccessKeyId(),
+                stsCredential.getLastUpdated(),
                 stsCredential.getExpiration());
         return stsCredential;
     }
@@ -86,8 +88,9 @@ public class StsCredentialHolder {
                         "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
                         securityCredentialsUrl, result.getCode(), result.getMessage());
                 throw new NacosRuntimeException(NacosException.SERVER_ERROR,
-                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
-                                .getMessage());
+                        "can not get security credentials, responseCode: " + result.getCode()
+                                + ", response: " + result
+                                        .getMessage());
             }
             return result.getData();
         } catch (Exception e) {

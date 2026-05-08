@@ -33,8 +33,10 @@ class AiChangeNotifierPromptTest {
         AiChangeNotifier notifier = new AiChangeNotifier();
         AtomicBoolean v1Called = new AtomicBoolean(false);
         AtomicBoolean v2Called = new AtomicBoolean(false);
-        notifier.registerListener("p1", "1.0.0", null, new PromptListenerInvoker(newPromptListener(v1Called)));
-        notifier.registerListener("p1", "2.0.0", null, new PromptListenerInvoker(newPromptListener(v2Called)));
+        notifier.registerListener("p1", "1.0.0", null,
+                new PromptListenerInvoker(newPromptListener(v1Called)));
+        notifier.registerListener("p1", "2.0.0", null,
+                new PromptListenerInvoker(newPromptListener(v2Called)));
         
         Prompt prompt = new Prompt();
         prompt.setPromptKey("p1");
@@ -59,7 +61,8 @@ class AiChangeNotifierPromptTest {
     @Test
     void isPromptSubscribedShouldMatchTripleKey() {
         AiChangeNotifier notifier = new AiChangeNotifier();
-        PromptListenerInvoker invoker = new PromptListenerInvoker(newPromptListener(new AtomicBoolean(false)));
+        PromptListenerInvoker invoker =
+                new PromptListenerInvoker(newPromptListener(new AtomicBoolean(false)));
         notifier.registerListener("p1", null, "prod", invoker);
         
         assertTrue(notifier.isPromptSubscribed("p1", null, "prod"));
@@ -68,6 +71,7 @@ class AiChangeNotifierPromptTest {
     
     private AbstractNacosPromptListener newPromptListener(AtomicBoolean mark) {
         return new AbstractNacosPromptListener() {
+            
             @Override
             public void onEvent(NacosPromptEvent event) {
                 mark.set(true);

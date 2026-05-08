@@ -45,14 +45,14 @@ import java.util.Map;
  * @since 3.2.0
  */
 public interface PluginProvider<T> {
-
+    
     /**
      * Get the plugin type this provider manages.
      *
      * @return plugin type
      */
     PluginType getPluginType();
-
+    
     /**
      * Get all plugin instances managed by this provider.
      * Key is the plugin name, value is the plugin instance.
@@ -60,7 +60,7 @@ public interface PluginProvider<T> {
      * @return map of plugin name to plugin instance
      */
     Map<String, T> getAllPlugins();
-
+    
     /**
      * Get the order of this provider. Lower values have higher priority.
      * Used when multiple providers exist for same type.

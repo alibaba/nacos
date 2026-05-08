@@ -62,10 +62,11 @@ class AgentCardBasicInfoTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
-                + "\"version\":\"1.0.0\",\"iconUrl\":\"http://test.com/icon.png\","
-                + "\"capabilities\":{\"streaming\":true},"
-                + "\"skills\":[{\"id\":\"skill-1\",\"name\":\"test skill\"}]}";
+        String json =
+                "{\"protocolVersion\":\"1.0\",\"name\":\"test agent\",\"description\":\"test description\","
+                        + "\"version\":\"1.0.0\",\"iconUrl\":\"http://test.com/icon.png\","
+                        + "\"capabilities\":{\"streaming\":true},"
+                        + "\"skills\":[{\"id\":\"skill-1\",\"name\":\"test skill\"}]}";
         
         AgentCardBasicInfo agentCardBasicInfo = mapper.readValue(json, AgentCardBasicInfo.class);
         assertNotNull(agentCardBasicInfo);

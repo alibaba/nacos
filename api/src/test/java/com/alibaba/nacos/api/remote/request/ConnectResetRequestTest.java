@@ -42,8 +42,9 @@ class ConnectResetRequestTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\","
-                + "\"module\":\"internal\",\"connectionId\":\"11111_127.0.0.1_8888\"}";
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\","
+                        + "\"module\":\"internal\",\"connectionId\":\"11111_127.0.0.1_8888\"}";
         ConnectResetRequest result = mapper.readValue(json, ConnectResetRequest.class);
         assertNotNull(result);
         assertEquals("127.0.0.1", result.getServerIp());

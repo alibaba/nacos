@@ -54,7 +54,8 @@ public class HealthCheckerFactory {
      * @param extendHealthCheckerClass extend health checker
      * @param typeName                 typeName of health checker
      */
-    public static void registerSubType(Class<? extends AbstractHealthChecker> extendHealthCheckerClass,
+    public static void registerSubType(
+            Class<? extends AbstractHealthChecker> extendHealthCheckerClass,
             String typeName) {
         MAPPER.registerSubtypes(new NamedType(extendHealthCheckerClass, typeName));
     }

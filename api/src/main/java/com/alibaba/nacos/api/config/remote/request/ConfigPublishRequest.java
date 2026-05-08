@@ -34,7 +34,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     private Map<String, String> additionMap;
     
     public ConfigPublishRequest() {
-    
+        
     }
     
     public ConfigPublishRequest(String dataId, String group, String tenant, String content) {

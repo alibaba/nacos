@@ -39,14 +39,16 @@ public class NamingChangeEventTest {
     public void setUp() throws Exception {
         eventListener = new MockNamingEventListener();
         instancesDiff = new InstancesDiff();
-        instancesDiff.setAddedInstances(Arrays.asList(new Instance(), new Instance(), new Instance()));
+        instancesDiff
+                .setAddedInstances(Arrays.asList(new Instance(), new Instance(), new Instance()));
         instancesDiff.setRemovedInstances(Arrays.asList(new Instance(), new Instance()));
         instancesDiff.setModifiedInstances(Arrays.asList(new Instance()));
     }
     
     @Test
     public void testNamingChangeEventWithSimpleConstructor() {
-        NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
+        NamingChangeEvent event =
+                new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
         assertEquals("serviceName", event.getServiceName());
         assertNull(event.getGroupName());
         assertNull(event.getClusters());
@@ -72,8 +74,9 @@ public class NamingChangeEventTest {
     
     @Test
     public void testNamingChangeEventWithFullConstructor() {
-        NamingChangeEvent event = new NamingChangeEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST,
-                instancesDiff);
+        NamingChangeEvent event =
+                new NamingChangeEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST,
+                        instancesDiff);
         assertEquals("serviceName", event.getServiceName());
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());
@@ -99,7 +102,8 @@ public class NamingChangeEventTest {
     
     @Test
     public void testGetChanges() {
-        NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
+        NamingChangeEvent event =
+                new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
         assertTrue(event.isAdded());
         assertEquals(3, event.getAddedInstances().size());
         event.getAddedInstances().clear();

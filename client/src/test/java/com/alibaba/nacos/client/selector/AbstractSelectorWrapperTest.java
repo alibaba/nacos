@@ -61,20 +61,23 @@ class AbstractSelectorWrapperTest {
     @Test
     void notifyListenerWithSelectableFalse() {
         selectorWrapper = new MockSelectorWrapper(namingSelector, eventListener, false, true);
-        selectorWrapper.notifyListener(new InstancesChangeEvent("test", "test", "test", "test", null, null));
+        selectorWrapper.notifyListener(
+                new InstancesChangeEvent("test", "test", "test", "test", null, null));
         verify(eventListener, never()).onEvent(any());
     }
     
     @Test
     void notifyListenerWithCallableFalse() {
         selectorWrapper = new MockSelectorWrapper(namingSelector, eventListener, true, false);
-        selectorWrapper.notifyListener(new InstancesChangeEvent("test", "test", "test", "test", null, null));
+        selectorWrapper.notifyListener(
+                new InstancesChangeEvent("test", "test", "test", "test", null, null));
         verify(eventListener, never()).onEvent(any());
     }
     
     @Test
     void notifyListener() {
-        selectorWrapper.notifyListener(new InstancesChangeEvent("test", "test", "test", "test", null, null));
+        selectorWrapper.notifyListener(
+                new InstancesChangeEvent("test", "test", "test", "test", null, null));
         verify(eventListener).onEvent(any());
     }
     
@@ -116,7 +119,8 @@ class AbstractSelectorWrapperTest {
         assertEquals(selectorWrapper, selectorWrapper);
         assertNotEquals(null, selectorWrapper);
         assertNotEquals(new NamingSelectorWrapper(namingSelector, eventListener), selectorWrapper);
-        MockSelectorWrapper newSelectorWrapper = new MockSelectorWrapper(namingSelector, eventListener, true, true);
+        MockSelectorWrapper newSelectorWrapper =
+                new MockSelectorWrapper(namingSelector, eventListener, true, true);
         assertEquals(newSelectorWrapper, selectorWrapper);
     }
     
@@ -127,7 +131,8 @@ class AbstractSelectorWrapperTest {
         
         private final boolean callable;
         
-        private MockSelectorWrapper(NamingSelector selector, EventListener listener, boolean selectable,
+        private MockSelectorWrapper(NamingSelector selector, EventListener listener,
+                boolean selectable,
                 boolean callable) {
             super(selector, new NamingListenerInvoker(listener));
             this.selectable = selectable;
@@ -146,7 +151,8 @@ class AbstractSelectorWrapperTest {
         
         @Override
         protected NamingEvent buildListenerEvent(InstancesChangeEvent event) {
-            return new NamingEvent(event.getServiceName(), event.getGroupName(), event.getClusters(),
+            return new NamingEvent(event.getServiceName(), event.getGroupName(),
+                    event.getClusters(),
                     Collections.emptyList());
         }
     }

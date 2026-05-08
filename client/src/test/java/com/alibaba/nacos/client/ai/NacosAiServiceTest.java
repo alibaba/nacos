@@ -92,7 +92,8 @@ class NacosAiServiceTest {
     }
     
     @Test
-    void testConstructorWithNamespace() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void testConstructorWithNamespace()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         Field field = NacosAiService.class.getDeclaredField("namespaceId");
         field.setAccessible(true);
         assertEquals(Constants.DEFAULT_NAMESPACE_ID, field.get(nacosAiService));
@@ -113,12 +114,14 @@ class NacosAiServiceTest {
     @Test
     void getMcpServer() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
-        when(grpcClient.queryMcpServer("testMcpName", "1.0.0")).thenReturn(new McpServerDetailInfo());
+        when(grpcClient.queryMcpServer("testMcpName", "1.0.0"))
+                .thenReturn(new McpServerDetailInfo());
         assertNotNull(nacosAiService.getMcpServer("testMcpName", "1.0.0"));
     }
     
     @Test
-    void getMcpServerWithInvalidMcpName() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void getMcpServerWithInvalidMcpName()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         assertThrows(NacosApiException.class, () -> nacosAiService.getMcpServer("", "1.0.0"));
     }
     
@@ -138,15 +141,19 @@ class NacosAiServiceTest {
     void releaseMcpServerWithInvalidParameters() throws NacosException {
         assertThrows(NacosApiException.class, () -> nacosAiService.releaseMcpServer(null, null));
         McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
-        assertThrows(NacosApiException.class, () -> nacosAiService.releaseMcpServer(serverSpecification, null));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.releaseMcpServer(serverSpecification, null));
         serverSpecification.setName("testMcpName");
-        assertThrows(NacosApiException.class, () -> nacosAiService.releaseMcpServer(serverSpecification, null));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.releaseMcpServer(serverSpecification, null));
         serverSpecification.setVersionDetail(new ServerVersionDetail());
-        assertThrows(NacosApiException.class, () -> nacosAiService.releaseMcpServer(serverSpecification, null));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.releaseMcpServer(serverSpecification, null));
     }
     
     @Test
-    void registerMcpServerEndpoint() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void registerMcpServerEndpoint()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.registerMcpServerEndpoint("testMcpName", "1.1.1.1", 8848, "1.0.0");
         verify(grpcClient).registerMcpServerEndpoint("testMcpName", "1.1.1.1", 8848, "1.0.0");
@@ -154,15 +161,18 @@ class NacosAiServiceTest {
     
     @Test
     void registerMcpServerEndpointWithInvalidParameters() {
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerMcpServerEndpoint("", null, -1, "1.0.0"));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.registerMcpServerEndpoint("", null, -1, "1.0.0"));
         assertThrows(NacosApiException.class,
                 () -> nacosAiService.registerMcpServerEndpoint("testMcpName", null, -1, "1.0.0"));
         assertThrows(NacosApiException.class,
-                () -> nacosAiService.registerMcpServerEndpoint("testMcpName", "1.1.1.1", -1, "1.0.0"));
+                () -> nacosAiService.registerMcpServerEndpoint("testMcpName", "1.1.1.1", -1,
+                        "1.0.0"));
     }
     
     @Test
-    void deregisterMcpServerEndpoint() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void deregisterMcpServerEndpoint()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.deregisterMcpServerEndpoint("testMcpName", "1.1.1.1", 8848);
         verify(grpcClient).deregisterMcpServerEndpoint("testMcpName", "1.1.1.1", 8848);
@@ -170,7 +180,8 @@ class NacosAiServiceTest {
     
     @Test
     void deregisterMcpServerEndpointWithInvalidParameters() {
-        assertThrows(NacosApiException.class, () -> nacosAiService.deregisterMcpServerEndpoint("", null, -1));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.deregisterMcpServerEndpoint("", null, -1));
         assertThrows(NacosApiException.class,
                 () -> nacosAiService.deregisterMcpServerEndpoint("testMcpName", null, -1));
         assertThrows(NacosApiException.class,
@@ -180,45 +191,56 @@ class NacosAiServiceTest {
     @Test
     void subscribeMcpServer() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
-        AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
+        AbstractNacosMcpServerListener listener =
+                Mockito.mock(AbstractNacosMcpServerListener.class);
         McpServerDetailInfo expected = new McpServerDetailInfo();
         when(grpcClient.subscribeMcpServer("testMcpName", null)).thenReturn(expected);
         McpServerDetailInfo actual = nacosAiService.subscribeMcpServer("testMcpName", listener);
         assertEquals(expected, actual);
-        verify(aiChangeNotifier).registerListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier).registerListener(eq("testMcpName"), isNull(),
+                any(McpServerListenerInvoker.class));
         verify(listener).onEvent(any(NacosMcpServerEvent.class));
     }
     
     @Test
     void subscribeMcpServerWithInvalidParameters() {
         assertThrows(NacosApiException.class, () -> nacosAiService.subscribeMcpServer("", null));
-        assertThrows(NacosApiException.class, () -> nacosAiService.subscribeMcpServer("testMcpName", null));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.subscribeMcpServer("testMcpName", null));
     }
     
     @Test
-    void unsubscribeMcpServer() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void unsubscribeMcpServer()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
-        AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
+        AbstractNacosMcpServerListener listener =
+                Mockito.mock(AbstractNacosMcpServerListener.class);
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
-        verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(),
+                any(McpServerListenerInvoker.class));
         verify(grpcClient).unsubscribeMcpServer("testMcpName", null);
     }
     
     @Test
-    void unsubscribeMcpServerWithOtherListener() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void unsubscribeMcpServerWithOtherListener()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         when(aiChangeNotifier.isMcpServerSubscribed("testMcpName", null)).thenReturn(true);
-        AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
+        AbstractNacosMcpServerListener listener =
+                Mockito.mock(AbstractNacosMcpServerListener.class);
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
-        verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier).deregisterListener(eq("testMcpName"), isNull(),
+                any(McpServerListenerInvoker.class));
         verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
     }
     
     @Test
-    void unsubscribeMcpServerWithNullListener() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void unsubscribeMcpServerWithNullListener()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.unsubscribeMcpServer("testMcpName", null);
-        verify(aiChangeNotifier, never()).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(aiChangeNotifier, never()).deregisterListener(eq("testMcpName"), isNull(),
+                any(McpServerListenerInvoker.class));
         verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
     }
     
@@ -262,13 +284,16 @@ class NacosAiServiceTest {
         agentCard.setVersion("1.0.0");
         NacosApiException exception = assertThrows(NacosApiException.class,
                 () -> nacosAiService.releaseAgentCard(agentCard, "service", true));
-        assertEquals("Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
-                + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
-                + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.", exception.getMessage());
+        assertEquals(
+                "Required parameter `agentCard.supportedInterfaces` not present, and old protocol fields "
+                        + "(`agentCard.protocolVersion`, `agentCard.preferredTransport`, `agentCard.url`) are incomplete. "
+                        + "Please prefer `agentCard.supportedInterfaces` for A2A 1.0.0.",
+                exception.getMessage());
     }
     
     @Test
-    void registerAgentEndpointWithCollection() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    void registerAgentEndpointWithCollection()
+            throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         Collection<AgentEndpoint> endpoints = createTestEndpoints();
         nacosAiService.registerAgentEndpoint("testAgent", endpoints);
@@ -278,23 +303,27 @@ class NacosAiServiceTest {
     @Test
     void registerAgentEndpointWithCollectionInvalidAgentName() {
         Collection<AgentEndpoint> endpoints = createTestEndpoints();
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("", endpoints));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.registerAgentEndpoint("", endpoints));
     }
     
     @Test
     void registerAgentEndpointWithCollectionNullEndpoints() {
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", (Collection<AgentEndpoint>) null));
+        assertThrows(NacosApiException.class, () -> nacosAiService
+                .registerAgentEndpoint("testAgent", (Collection<AgentEndpoint>) null));
     }
     
     @Test
     void registerAgentEndpointWithCollectionEmptyEndpoints() {
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", new ArrayList<>()));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.registerAgentEndpoint("testAgent", new ArrayList<>()));
     }
     
     @Test
     void registerAgentEndpointWithCollectionNullEndpointInList() {
         Collection<AgentEndpoint> endpoints = Arrays.asList(new AgentEndpoint(), null);
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
     }
     
     @Test
@@ -304,7 +333,8 @@ class NacosAiServiceTest {
         endpoint.setPort(8080);
         // No version set
         Collection<AgentEndpoint> endpoints = Arrays.asList(endpoint);
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
     }
     
     @Test
@@ -320,7 +350,8 @@ class NacosAiServiceTest {
         endpoint2.setVersion("2.0.0");
         
         Collection<AgentEndpoint> endpoints = Arrays.asList(endpoint1, endpoint2);
-        assertThrows(NacosApiException.class, () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
+        assertThrows(NacosApiException.class,
+                () -> nacosAiService.registerAgentEndpoint("testAgent", endpoints));
     }
     
     private void injectMocks() throws NoSuchFieldException, IllegalAccessException {
@@ -336,11 +367,13 @@ class NacosAiServiceTest {
         field.set(nacosAiService, grpcClient);
         field = NacosAiService.class.getDeclaredField("mcpServerCacheHolder");
         field.setAccessible(true);
-        NacosMcpServerCacheHolder autoBuildCacheHolder = (NacosMcpServerCacheHolder) field.get(nacosAiService);
+        NacosMcpServerCacheHolder autoBuildCacheHolder =
+                (NacosMcpServerCacheHolder) field.get(nacosAiService);
         field.set(nacosAiService, mcpServerCacheHolder);
         field = NacosAiService.class.getDeclaredField("agentCardCacheHolder");
         field.setAccessible(true);
-        NacosAgentCardCacheHolder autoBuildAgentCacheHolder = (NacosAgentCardCacheHolder) field.get(nacosAiService);
+        NacosAgentCardCacheHolder autoBuildAgentCacheHolder =
+                (NacosAgentCardCacheHolder) field.get(nacosAiService);
         field.set(nacosAiService, agentCardCacheHolder);
         field = NacosAiService.class.getDeclaredField("aiChangeNotifier");
         field.setAccessible(true);

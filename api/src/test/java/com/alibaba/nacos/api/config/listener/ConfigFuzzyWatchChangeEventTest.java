@@ -27,7 +27,7 @@ class ConfigFuzzyWatchChangeEventTest {
     @Test
     void testBuildWithValidParameters() {
         ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(
-                "test-namespace", "test-group", "test-dataId", "ADD_CONFIG", 
+                "test-namespace", "test-group", "test-dataId", "ADD_CONFIG",
                 "FUZZY_WATCH_INIT_NOTIFY");
         
         assertNotNull(event);
@@ -54,7 +54,7 @@ class ConfigFuzzyWatchChangeEventTest {
     @Test
     void testToString() {
         ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(
-                "test-namespace", "test-group", "test-dataId", "ADD_CONFIG", 
+                "test-namespace", "test-group", "test-dataId", "ADD_CONFIG",
                 "FUZZY_WATCH_INIT_NOTIFY");
         
         String expected = "ConfigFuzzyWatchChangeEvent{group='test-group', dataId='test-dataId', "

@@ -82,7 +82,8 @@ class McpServerRemoteServiceConfigTest extends BasicRequestTest {
                 + "\"endpointType\":\"DIRECT\",\"endpointData\":\"127.0.0.1:8080\",\"path\":\"/front\","
                 + "\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer token\"}]}]}";
         
-        McpServerRemoteServiceConfig result = mapper.readValue(json, McpServerRemoteServiceConfig.class);
+        McpServerRemoteServiceConfig result =
+                mapper.readValue(json, McpServerRemoteServiceConfig.class);
         assertNotNull(result);
         assertEquals("/mcp/export", result.getExportPath());
         assertNotNull(result.getServiceRef());

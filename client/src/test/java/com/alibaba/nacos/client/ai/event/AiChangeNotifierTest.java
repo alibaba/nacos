@@ -59,12 +59,14 @@ class AiChangeNotifierTest {
     
     @Test
     void onEventWithoutListener() {
-        assertDoesNotThrow(() -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
+        assertDoesNotThrow(
+                () -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
     }
     
     @Test
     void onEvent() {
         AbstractNacosMcpServerListener listener = new AbstractNacosMcpServerListener() {
+            
             @Override
             public void onEvent(NacosMcpServerEvent event) {
                 invokedMark.set(true);
@@ -72,7 +74,8 @@ class AiChangeNotifierTest {
         };
         McpServerListenerInvoker invoker = new McpServerListenerInvoker(listener);
         changeNotifier.registerListener("test", null, invoker);
-        assertDoesNotThrow(() -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
+        assertDoesNotThrow(
+                () -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
         assertTrue(invokedMark.get());
         assertTrue(invoker.isInvoked());
     }
@@ -80,6 +83,7 @@ class AiChangeNotifierTest {
     @Test
     void onEventNotLatestVersion() {
         AbstractNacosMcpServerListener listener = new AbstractNacosMcpServerListener() {
+            
             @Override
             public void onEvent(NacosMcpServerEvent event) {
                 invokedMark.set(true);
@@ -88,7 +92,8 @@ class AiChangeNotifierTest {
         McpServerListenerInvoker invoker = new McpServerListenerInvoker(listener);
         changeNotifier.registerListener("test", "1.0.0", invoker);
         mcpServerDetailInfo.getVersionDetail().setIs_latest(false);
-        assertDoesNotThrow(() -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
+        assertDoesNotThrow(
+                () -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
         assertTrue(invokedMark.get());
         assertTrue(invoker.isInvoked());
     }
@@ -96,17 +101,20 @@ class AiChangeNotifierTest {
     @Test
     void deregisterListener() {
         AbstractNacosMcpServerListener listener = new AbstractNacosMcpServerListener() {
+            
             @Override
             public void onEvent(NacosMcpServerEvent event) {
                 invokedMark.set(true);
             }
         };
-        AbstractNacosMcpServerListener listener2 = Mockito.mock(AbstractNacosMcpServerListener.class);
+        AbstractNacosMcpServerListener listener2 =
+                Mockito.mock(AbstractNacosMcpServerListener.class);
         McpServerListenerInvoker invoker = new McpServerListenerInvoker(listener);
         McpServerListenerInvoker invoker2 = new McpServerListenerInvoker(listener2);
         changeNotifier.registerListener("test", null, invoker);
         changeNotifier.registerListener("test", null, invoker2);
-        assertDoesNotThrow(() -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
+        assertDoesNotThrow(
+                () -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
         assertTrue(invokedMark.get());
         assertTrue(invoker.isInvoked());
         assertTrue(invoker2.isInvoked());
@@ -115,13 +123,15 @@ class AiChangeNotifierTest {
         invokedMark.set(false);
         reset(listener2);
         changeNotifier.deregisterListener("test", null, invoker2);
-        assertDoesNotThrow(() -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
+        assertDoesNotThrow(
+                () -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
         assertTrue(invokedMark.get());
         verify(listener2, Mockito.never()).onEvent(any(NacosMcpServerEvent.class));
         
         invokedMark.set(false);
         changeNotifier.deregisterListener("test", null, invoker);
-        assertDoesNotThrow(() -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
+        assertDoesNotThrow(
+                () -> changeNotifier.onEvent(new McpServerChangedEvent(mcpServerDetailInfo)));
         assertFalse(invokedMark.get());
     }
     
@@ -140,6 +150,7 @@ class AiChangeNotifierTest {
     @Test
     void deregisterNonExistedListener() {
         AbstractNacosMcpServerListener listener = new AbstractNacosMcpServerListener() {
+            
             @Override
             public void onEvent(NacosMcpServerEvent event) {
                 invokedMark.set(true);

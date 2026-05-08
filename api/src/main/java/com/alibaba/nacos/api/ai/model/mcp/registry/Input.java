@@ -31,77 +31,77 @@ import java.util.List;
 public class Input {
     
     private String description;
-
+    
     private Boolean isRequired;
     
     private String format;
     
     private String value;
-
+    
     private Boolean isSecret;
     
     private String defaultValue;
-
+    
     private List<String> choices;
-
+    
     private String placeholder;
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public Boolean getIsRequired() {
         return isRequired;
     }
-
+    
     public void setIsRequired(Boolean isRequired) {
         this.isRequired = isRequired;
     }
-
+    
     public String getFormat() {
         return format;
     }
-
+    
     public void setFormat(String format) {
         this.format = format;
     }
-
+    
     public String getValue() {
         return value;
     }
-
+    
     public void setValue(String value) {
         this.value = value;
     }
-
+    
     public Boolean getIsSecret() {
         return isSecret;
     }
-
+    
     public void setIsSecret(Boolean isSecret) {
         this.isSecret = isSecret;
     }
-
+    
     public String getDefaultValue() {
         return defaultValue;
     }
-
+    
     public void setDefaultValue(String defaultValue) {
         this.defaultValue = defaultValue;
     }
-
+    
     public List<String> getChoices() {
         return choices;
     }
-
+    
     public void setChoices(List<String> choices) {
         this.choices = choices;
     }
-
+    
     /**
      * Get placeholder.
      *
@@ -110,7 +110,7 @@ public class Input {
     public String getPlaceholder() {
         return placeholder;
     }
-
+    
     /**
      * Set placeholder.
      *

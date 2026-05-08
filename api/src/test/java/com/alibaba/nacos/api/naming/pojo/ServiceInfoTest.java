@@ -71,8 +71,9 @@ class ServiceInfoTest {
     
     @Test
     void testDeserialize() throws IOException {
-        String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
-                + "\"lastRefTime\":0,\"checksum\":\"\",\"allIps\":false,\"valid\":true,\"groupName\":\"\"}";
+        String example =
+                "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
+                        + "\"lastRefTime\":0,\"checksum\":\"\",\"allIps\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);
         assertEquals("G@@testName", actual.getName());
         assertEquals(0, actual.ipCount());

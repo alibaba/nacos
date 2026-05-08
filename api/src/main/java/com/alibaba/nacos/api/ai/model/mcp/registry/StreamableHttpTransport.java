@@ -32,33 +32,33 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StreamableHttpTransport {
-
+    
     private String type = "streamable-http";
-
+    
     private String url;
-
+    
     private List<KeyValueInput> headers;
-
+    
     public String getType() {
         return type;
     }
-
+    
     public void setType(String type) {
         this.type = type;
     }
-
+    
     public String getUrl() {
         return url;
     }
-
+    
     public void setUrl(String url) {
         this.url = url;
     }
-
+    
     public List<KeyValueInput> getHeaders() {
         return headers;
     }
-
+    
     public void setHeaders(List<KeyValueInput> headers) {
         this.headers = headers;
     }

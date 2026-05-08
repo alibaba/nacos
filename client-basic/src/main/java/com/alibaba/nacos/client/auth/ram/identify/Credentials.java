@@ -66,7 +66,8 @@ public class Credentials implements SpasCredential {
     }
     
     public boolean valid() {
-        return accessKey != null && !accessKey.isEmpty() && secretKey != null && !secretKey.isEmpty();
+        return accessKey != null && !accessKey.isEmpty() && secretKey != null
+                && !secretKey.isEmpty();
     }
     
     /**
@@ -77,8 +78,8 @@ public class Credentials implements SpasCredential {
      */
     public boolean identical(Credentials other) {
         return this == other || (other != null && (accessKey == null && other.accessKey == null
-                || accessKey != null && accessKey.equals(other.accessKey)) && (
-                secretKey == null && other.secretKey == null || secretKey != null && secretKey
+                || accessKey != null && accessKey.equals(other.accessKey))
+                && (secretKey == null && other.secretKey == null || secretKey != null && secretKey
                         .equals(other.secretKey)));
     }
 }

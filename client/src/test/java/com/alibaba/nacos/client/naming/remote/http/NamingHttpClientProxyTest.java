@@ -83,7 +83,8 @@ class NamingHttpClientProxyTest {
     void setUp() {
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         props = new Properties();
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(props);
         clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, nacosClientProperties);
     }
     
@@ -111,9 +112,11 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("127.0.0.1:8848");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         
@@ -142,9 +145,11 @@ class NamingHttpClientProxyTest {
             NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
             HttpRestResult<Object> a = new HttpRestResult<Object>();
             a.setCode(503);
-            when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+            when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(a);
             
-            final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+            final Field nacosRestTemplateField =
+                    NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
             nacosRestTemplateField.setAccessible(true);
             nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
             String serviceName = "service1";
@@ -171,9 +176,11 @@ class NamingHttpClientProxyTest {
             HttpRestResult<Object> a = new HttpRestResult<Object>();
             a.setCode(503);
             // makes exchangeForm failed with a NullPointerException
-            when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(null);
+            when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(null);
             
-            final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+            final Field nacosRestTemplateField =
+                    NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
             nacosRestTemplateField.setAccessible(true);
             nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
             String serviceName = "service1";
@@ -214,9 +221,11 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("127.0.0.1:8848");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         
@@ -227,18 +236,21 @@ class NamingHttpClientProxyTest {
         //when
         clientProxy.deregisterService(serviceName, groupName, instance);
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(any(), any(), any(), any(), eq(HttpMethod.DELETE), any());
+        verify(nacosRestTemplate, times(1)).exchangeForm(any(), any(), any(), any(),
+                eq(HttpMethod.DELETE), any());
     }
     
     @Test
     void testDeregisterServiceForEphemeral() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         Instance instance = new Instance();
         clientProxy.deregisterService("serviceName", "groupName", instance);
-        verify(nacosRestTemplate, never()).exchangeForm(any(), any(), any(), any(), eq(HttpMethod.DELETE), any());
+        verify(nacosRestTemplate, never()).exchangeForm(any(), any(), any(), any(),
+                eq(HttpMethod.DELETE), any());
         
     }
     
@@ -249,9 +261,11 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("127.0.0.1:8848");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         
@@ -261,7 +275,8 @@ class NamingHttpClientProxyTest {
         //when
         clientProxy.updateInstance(serviceName, groupName, instance);
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(any(), any(), any(), any(), eq(HttpMethod.PUT), any());
+        verify(nacosRestTemplate, times(1)).exchangeForm(any(), any(), any(), any(),
+                eq(HttpMethod.PUT), any());
     }
     
     @Test
@@ -281,9 +296,11 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("{\"name\":\"service1\",\"groupName\":\"group1\"}");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         
@@ -293,7 +310,8 @@ class NamingHttpClientProxyTest {
         //when
         Service service = clientProxy.queryService(serviceName, groupName);
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService),
+                any(), any(), any(),
                 eq(HttpMethod.GET), any());
         assertEquals(serviceName, service.getName());
         assertEquals(groupName, service.getGroupName());
@@ -306,16 +324,19 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         
         //when
         clientProxy.createService(new Service(), new NoneSelector());
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService),
+                any(), any(), any(),
                 eq(HttpMethod.POST), any());
     }
     
@@ -326,9 +347,11 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("{\"name\":\"service1\",\"groupName\":\"group1\"}");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String serviceName = "service1";
@@ -337,7 +360,8 @@ class NamingHttpClientProxyTest {
         //when
         clientProxy.deleteService(serviceName, groupName);
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService),
+                any(), any(), any(),
                 eq(HttpMethod.DELETE), any());
     }
     
@@ -348,9 +372,11 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String serviceName = "service1";
@@ -359,7 +385,8 @@ class NamingHttpClientProxyTest {
         //when
         clientProxy.updateService(new Service(), new NoneSelector());
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith(UtilAndComs.nacosUrlService),
+                any(), any(), any(),
                 eq(HttpMethod.PUT), any());
         
     }
@@ -371,16 +398,19 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("{\"code\":0,\"message\":\"success\",\"data\":\"ok\"}");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         
         //when
         boolean serverHealthy = clientProxy.serverHealthy();
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/v3/admin/core/state/liveness"), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/v3/admin/core/state/liveness"),
+                any(), any(), any(),
                 eq(HttpMethod.GET), any());
         assertTrue(serverHealthy);
     }
@@ -390,7 +420,8 @@ class NamingHttpClientProxyTest {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenThrow(
                 new RuntimeException("test"));
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         assertFalse(clientProxy.serverHealthy());
@@ -403,17 +434,21 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("{\"count\":2,\"doms\":[\"aaa\",\"bbb\"]}");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String groupName = "group1";
         
         //when
-        ListView<String> serviceList = clientProxy.getServiceList(1, 10, groupName, new NoneSelector());
+        ListView<String> serviceList =
+                clientProxy.getServiceList(1, 10, groupName, new NoneSelector());
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/service/list"), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/service/list"), any(), any(),
+                any(),
                 eq(HttpMethod.GET), any());
         assertEquals(2, serviceList.getCount());
         assertEquals("aaa", serviceList.getData().get(0));
@@ -427,17 +462,21 @@ class NamingHttpClientProxyTest {
         HttpRestResult<Object> a = new HttpRestResult<Object>();
         a.setData("{\"count\":2,\"doms\":[\"aaa\",\"bbb\"]}");
         a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenReturn(a);
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String groupName = "group1";
         
         //when
-        ListView<String> serviceList = clientProxy.getServiceList(1, 10, groupName, new ExpressionSelector());
+        ListView<String> serviceList =
+                clientProxy.getServiceList(1, 10, groupName, new ExpressionSelector());
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/service/list"), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/service/list"), any(), any(),
+                any(),
                 eq(HttpMethod.GET), any());
         assertEquals(2, serviceList.getCount());
         assertEquals("aaa", serviceList.getData().get(0));
@@ -477,15 +516,17 @@ class NamingHttpClientProxyTest {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
-            //return url
-            HttpRestResult<Object> res = new HttpRestResult<Object>();
-            res.setData(invocationOnMock.getArgument(0));
-            res.setCode(200);
-            return res;
-        });
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    //return url
+                    HttpRestResult<Object> res = new HttpRestResult<Object>();
+                    res.setData(invocationOnMock.getArgument(0));
+                    res.setCode(200);
+                    return res;
+                });
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String api = "/api";
@@ -503,15 +544,17 @@ class NamingHttpClientProxyTest {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
-            //return url
-            HttpRestResult<Object> res = new HttpRestResult<Object>();
-            res.setData(invocationOnMock.getArgument(0));
-            res.setCode(200);
-            return res;
-        });
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    //return url
+                    HttpRestResult<Object> res = new HttpRestResult<Object>();
+                    res.setData(invocationOnMock.getArgument(0));
+                    res.setCode(200);
+                    return res;
+                });
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String api = "/api";
@@ -529,15 +572,17 @@ class NamingHttpClientProxyTest {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
-            //return url
-            HttpRestResult<Object> res = new HttpRestResult<Object>();
-            res.setData(invocationOnMock.getArgument(0));
-            res.setCode(200);
-            return res;
-        });
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    //return url
+                    HttpRestResult<Object> res = new HttpRestResult<Object>();
+                    res.setData(invocationOnMock.getArgument(0));
+                    res.setCode(200);
+                    return res;
+                });
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String api = "/api";
@@ -558,16 +603,18 @@ class NamingHttpClientProxyTest {
             //given
             NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
             
-            when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(
-                    invocationOnMock -> {
-                        //return url
-                        HttpRestResult<Object> res = new HttpRestResult<Object>();
-                        res.setMessage("fail");
-                        res.setCode(400);
-                        return res;
-                    });
-            
-            final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+            when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                    .thenAnswer(
+                            invocationOnMock -> {
+                                //return url
+                                HttpRestResult<Object> res = new HttpRestResult<Object>();
+                                res.setMessage("fail");
+                                res.setCode(400);
+                                return res;
+                            });
+                            
+            final Field nacosRestTemplateField =
+                    NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
             nacosRestTemplateField.setAccessible(true);
             nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
             String api = "/api";
@@ -587,15 +634,17 @@ class NamingHttpClientProxyTest {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
-            //return url
-            HttpRestResult<Object> res = new HttpRestResult<Object>();
-            res.setMessage("redirect");
-            res.setCode(304);
-            return res;
-        });
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    //return url
+                    HttpRestResult<Object> res = new HttpRestResult<Object>();
+                    res.setMessage("redirect");
+                    res.setCode(304);
+                    return res;
+                });
         
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String api = "/api";
@@ -612,8 +661,10 @@ class NamingHttpClientProxyTest {
     @Test
     void testGetNamespaceId() {
         String namespaceId = "aaa";
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, nacosClientProperties);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(props);
+        NamingHttpClientProxy clientProxy =
+                new NamingHttpClientProxy(namespaceId, proxy, mgr, nacosClientProperties);
         String actualNamespaceId = clientProxy.getNamespaceId();
         assertEquals(namespaceId, actualNamespaceId);
     }
@@ -631,7 +682,8 @@ class NamingHttpClientProxyTest {
     void testReqApiForEmptyServer() throws NacosException {
         assertThrows(NacosException.class, () -> {
             Map<String, String> params = new HashMap<>();
-            clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(), HttpMethod.GET);
+            clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(),
+                    HttpMethod.GET);
         });
     }
     
@@ -639,7 +691,8 @@ class NamingHttpClientProxyTest {
     void testRegApiForDomain() throws NacosException {
         assertThrows(NacosException.class, () -> {
             Map<String, String> params = new HashMap<>();
-            clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(), HttpMethod.GET);
+            clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(),
+                    HttpMethod.GET);
             
         });
         
@@ -649,16 +702,18 @@ class NamingHttpClientProxyTest {
     void testCallServerFail403() throws Exception {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
-
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
-            //return url
-            HttpRestResult<Object> res = new HttpRestResult<Object>();
-            res.setMessage("Invalid signature");
-            res.setCode(403);
-            return res;
-        });
-
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    //return url
+                    HttpRestResult<Object> res = new HttpRestResult<Object>();
+                    res.setMessage("Invalid signature");
+                    res.setCode(403);
+                    return res;
+                });
+        
+        final Field nacosRestTemplateField =
+                NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplateField.setAccessible(true);
         nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
         String api = "/api";
@@ -667,6 +722,7 @@ class NamingHttpClientProxyTest {
         String method = HttpMethod.GET;
         String curServer = "127.0.0.1";
         //then
-        assertThrows(NacosException.class, () -> clientProxy.callServer(api, params, body, curServer, method));
+        assertThrows(NacosException.class,
+                () -> clientProxy.callServer(api, params, body, curServer, method));
     }
 }

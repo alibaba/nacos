@@ -81,9 +81,10 @@ class ConfigHistoryInfoTest {
     
     @Test
     public void testBasicInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
-                + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\"}";
+        String json =
+                "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+                        + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
+                        + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\"}";
         json = String.format(json, createTime, modifyTime);
         assertBasicInfo(mapper.readValue(json, ConfigHistoryBasicInfo.class));
     }
@@ -97,11 +98,12 @@ class ConfigHistoryInfoTest {
     
     @Test
     public void testDetailInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
-                + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\","
-                + "\"content\":\"testContent\",\"encryptedDataKey\":\"testEncryptedDataKey\",\"grayName\":\"testGrayName\","
-                + "\"extInfo\":\"{\\\"type\\\":\\\"text\\\"}\"}";
+        String json =
+                "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+                        + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
+                        + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\","
+                        + "\"content\":\"testContent\",\"encryptedDataKey\":\"testEncryptedDataKey\",\"grayName\":\"testGrayName\","
+                        + "\"extInfo\":\"{\\\"type\\\":\\\"text\\\"}\"}";
         json = String.format(json, createTime, modifyTime);
         ConfigHistoryDetailInfo detailInfo = mapper.readValue(json, ConfigHistoryDetailInfo.class);
         assertBasicInfo(detailInfo);

@@ -90,7 +90,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         String tenant;
         
         public ConfigContext() {
-        
+            
         }
         
         /**
@@ -149,7 +149,8 @@ public class ConfigChangeBatchListenResponse extends Response {
         
         @Override
         public String toString() {
-            return "ConfigContext{" + "group='" + group + '\'' + ", dataId='" + dataId + '\'' + ", tenant='" + tenant
+            return "ConfigContext{" + "group='" + group + '\'' + ", dataId='" + dataId + '\''
+                    + ", tenant='" + tenant
                     + '\'' + '}';
         }
     }

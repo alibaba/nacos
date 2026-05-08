@@ -22,5 +22,5 @@ package com.alibaba.nacos.api.remote;
  * @author hujun
  */
 public interface Payload {
-
+    
 }

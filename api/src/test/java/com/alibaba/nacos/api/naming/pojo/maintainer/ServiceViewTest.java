@@ -72,7 +72,8 @@ class ServiceViewTest {
     
     @Test
     void testToString() {
-        String expected = "ServiceView{name='service', groupName='group', clusterCount=2, ipCount=10, healthyInstanceCount=8, triggerFlag='flag'}";
+        String expected =
+                "ServiceView{name='service', groupName='group', clusterCount=2, ipCount=10, healthyInstanceCount=8, triggerFlag='flag'}";
         assertEquals(expected, serviceView.toString());
     }
 }

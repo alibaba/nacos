@@ -64,10 +64,11 @@ class AgentCapabilitiesTest extends BasicRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"streaming\":true,\"pushNotifications\":false,\"stateTransitionHistory\":true,"
-                + "\"extendedAgentCard\":true,"
-                + "\"extensions\":[{\"uri\":\"test-uri\",\"description\":\"test description\",\"required\":true,"
-                + "\"params\":{\"param1\":\"value1\"}}]}";
+        String json =
+                "{\"streaming\":true,\"pushNotifications\":false,\"stateTransitionHistory\":true,"
+                        + "\"extendedAgentCard\":true,"
+                        + "\"extensions\":[{\"uri\":\"test-uri\",\"description\":\"test description\",\"required\":true,"
+                        + "\"params\":{\"param1\":\"value1\"}}]}";
         
         AgentCapabilities agentCapabilities = mapper.readValue(json, AgentCapabilities.class);
         assertNotNull(agentCapabilities);

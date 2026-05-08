@@ -74,7 +74,8 @@ class McpServerValidationItemTest extends BasicRequestTest {
         String json = mapper.writeValueAsString(item);
         assertTrue(json.contains("\"serverName\":\"invalid-server\""));
         assertTrue(json.contains("\"status\":\"invalid\""));
-        assertTrue(json.contains("\"errors\":[\"Missing protocol\",\"Invalid port\",\"Empty name\"]"));
+        assertTrue(
+                json.contains("\"errors\":[\"Missing protocol\",\"Invalid port\",\"Empty name\"]"));
         assertTrue(json.contains("\"exists\":false"));
         assertTrue(json.contains("\"selected\":false"));
     }
@@ -112,9 +113,10 @@ class McpServerValidationItemTest extends BasicRequestTest {
     
     @Test
     void testDeserializeValidItem() throws JsonProcessingException {
-        String json = "{\"serverName\":\"test-server\",\"serverId\":\"server-123\",\"status\":\"valid\","
-                + "\"exists\":false,\"selected\":true,\"server\":{\"name\":\"test-server\",\"id\":\"server-123\","
-                + "\"protocol\":\"stdio\",\"description\":\"Test server\"}}";
+        String json =
+                "{\"serverName\":\"test-server\",\"serverId\":\"server-123\",\"status\":\"valid\","
+                        + "\"exists\":false,\"selected\":true,\"server\":{\"name\":\"test-server\",\"id\":\"server-123\","
+                        + "\"protocol\":\"stdio\",\"description\":\"Test server\"}}";
         
         McpServerValidationItem result = mapper.readValue(json, McpServerValidationItem.class);
         assertNotNull(result);
@@ -154,8 +156,9 @@ class McpServerValidationItemTest extends BasicRequestTest {
     
     @Test
     void testDeserializeDuplicateItem() throws JsonProcessingException {
-        String json = "{\"serverName\":\"existing-server\",\"serverId\":\"existing-id\",\"status\":\"duplicate\","
-                + "\"exists\":true,\"selected\":false,\"errors\":[\"Server already exists\"]}";
+        String json =
+                "{\"serverName\":\"existing-server\",\"serverId\":\"existing-id\",\"status\":\"duplicate\","
+                        + "\"exists\":true,\"selected\":false,\"errors\":[\"Server already exists\"]}";
         
         McpServerValidationItem result = mapper.readValue(json, McpServerValidationItem.class);
         assertNotNull(result);
@@ -184,7 +187,8 @@ class McpServerValidationItemTest extends BasicRequestTest {
     
     @Test
     void testDeserializeMinimalItem() throws JsonProcessingException {
-        String json = "{\"serverName\":\"minimal-server\",\"status\":\"unknown\",\"exists\":false,\"selected\":true}";
+        String json =
+                "{\"serverName\":\"minimal-server\",\"status\":\"unknown\",\"exists\":false,\"selected\":true}";
         
         McpServerValidationItem result = mapper.readValue(json, McpServerValidationItem.class);
         assertNotNull(result);
@@ -199,7 +203,8 @@ class McpServerValidationItemTest extends BasicRequestTest {
     
     @Test
     void testDeserializeWithEmptyErrors() throws JsonProcessingException {
-        String json = "{\"serverName\":\"server-with-empty-errors\",\"status\":\"valid\",\"errors\":[]}";
+        String json =
+                "{\"serverName\":\"server-with-empty-errors\",\"status\":\"valid\",\"errors\":[]}";
         
         McpServerValidationItem result = mapper.readValue(json, McpServerValidationItem.class);
         assertNotNull(result);

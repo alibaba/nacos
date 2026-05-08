@@ -38,11 +38,12 @@ class InstanceRequestTest extends BasedNamingRequestTest {
     
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
-                + "\"type\":\"deregisterInstance\",\"instance\":{\"port\":0,\"weight\":1.0,\"healthy\":true,"
-                + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","
-                + "\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000},"
-                + "\"module\":\"naming\"}";
+        String json =
+                "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+                        + "\"type\":\"deregisterInstance\",\"instance\":{\"port\":0,\"weight\":1.0,\"healthy\":true,"
+                        + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","
+                        + "\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000},"
+                        + "\"module\":\"naming\"}";
         InstanceRequest actual = mapper.readValue(json, InstanceRequest.class);
         checkNamingRequestBasedInfo(actual);
         assertEquals(NamingRemoteConstants.DE_REGISTER_INSTANCE, actual.getType());

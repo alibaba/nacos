@@ -27,9 +27,9 @@ import java.util.Map;
  * @author Daydreamer
  **/
 public class ClusterClientAbilities extends AbstractAbilityRegistry {
-
+    
     private static final ClusterClientAbilities INSTANCE = new ClusterClientAbilities();
-
+    
     {
         /*
          * example:
@@ -45,7 +45,7 @@ public class ClusterClientAbilities extends AbstractAbilityRegistry {
          */
         // put ability here, which you want current client supports
     }
-
+    
     /**
      * get static ability current cluster client supports.
      *

@@ -26,24 +26,24 @@ import java.nio.charset.StandardCharsets;
  * so {@code skill_{name}__{version}} group layout stays unambiguous.</p>
  */
 public final class NacosAiConfigKeyCodec {
-
+    
     /**
      * Prefix for encoded segments; every character is valid for Nacos config parameters.
      */
     public static final String ENCODED_PREFIX = "enc.";
-
+    
     private static final String DOUBLE_UNDERSCORE = "__";
-
+    
     private NacosAiConfigKeyCodec() {
     }
-
+    
     /**
      * Return true if the character is allowed in Nacos dataId / group ({@code ParamUtils} rules).
      */
     public static boolean isValidNacosConfigChar(char ch) {
         return Character.isLetterOrDigit(ch) || ch == '_' || ch == '-' || ch == '.' || ch == ':';
     }
-
+    
     /**
      * Return true if the string is non-null and every character is allowed for Nacos config parameters.
      */
@@ -59,7 +59,7 @@ public final class NacosAiConfigKeyCodec {
         }
         return true;
     }
-
+    
     /**
      * Encode a logical segment for use in Nacos {@code dataId} or other keys.
      * If already valid for Nacos, returned unchanged (including null/empty).
@@ -73,7 +73,7 @@ public final class NacosAiConfigKeyCodec {
         }
         return raw;
     }
-
+    
     /**
      * Encode a skill / AgentSpec <em>manifest</em> group name segment (single segment after the type prefix).
      * Like {@link #encodeSegment(String)} but also hex-wraps when the name contains {@code __} so it can be
@@ -88,7 +88,7 @@ public final class NacosAiConfigKeyCodec {
         }
         return raw;
     }
-
+    
     /**
      * Encode a name or version segment that appears in a <em>versioned</em> Nacos group.
      * Always uses prefix {@link #ENCODED_PREFIX} plus hex so the literal {@code __} delimiter cannot appear inside a segment,
@@ -100,7 +100,7 @@ public final class NacosAiConfigKeyCodec {
         }
         return ENCODED_PREFIX + toHex(raw.getBytes(StandardCharsets.UTF_8));
     }
-
+    
     /**
      * Decode a segment produced by {@link #encodeSegment(String)}.
      * If not encoded with {@link #ENCODED_PREFIX}, returned unchanged.
@@ -118,7 +118,7 @@ public final class NacosAiConfigKeyCodec {
         }
         return new String(fromHex(hex), StandardCharsets.UTF_8);
     }
-
+    
     private static String toHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {
@@ -127,7 +127,7 @@ public final class NacosAiConfigKeyCodec {
         }
         return sb.toString();
     }
-
+    
     private static byte[] fromHex(String hex) {
         int len = hex.length();
         if ((len & 1) != 0) {

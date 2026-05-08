@@ -40,7 +40,7 @@ public class AgentSpec {
      * AgentSpec description.
      */
     private String description;
-
+    
     /**
      * AgentSpec biz tags, stored as JSON array string.
      */
@@ -79,15 +79,15 @@ public class AgentSpec {
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public String getBizTags() {
         return bizTags;
     }
-
+    
     public void setBizTags(String bizTags) {
         this.bizTags = bizTags;
     }
-
+    
     public String getContent() {
         return content;
     }

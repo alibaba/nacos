@@ -57,19 +57,19 @@ public class McpServerImportRequest implements Serializable {
      * Selected server IDs for import (for selective import).
      */
     private String[] selectedServers;
-
+    
     /**
      * Optional start cursor for URL-based pagination.
      * Only effective when importType = url.
      */
     private String cursor;
-
+    
     /**
     * Optional page size limit for URL import (items per page).
     * Only effective when importType = url. If null, server-side default applies.
      */
     private Integer limit;
-
+    
     /**
      * Optional fuzzy search keyword for registry listing.
      * Only effective when importType = url. When present, backend will append it
@@ -116,35 +116,35 @@ public class McpServerImportRequest implements Serializable {
     public void setSelectedServers(String[] selectedServers) {
         this.selectedServers = selectedServers;
     }
-
+    
     public String getCursor() {
         return cursor;
     }
-
+    
     public void setCursor(String cursor) {
         this.cursor = cursor;
     }
-
+    
     public Integer getLimit() {
         return limit;
     }
-
+    
     public void setLimit(Integer limit) {
         this.limit = limit;
     }
-
+    
     public String getSearch() {
         return search;
     }
-
+    
     public void setSearch(String search) {
         this.search = search;
     }
-
+    
     public boolean isSkipInvalid() {
         return skipInvalid;
     }
-
+    
     public void setSkipInvalid(boolean skipInvalid) {
         this.skipInvalid = skipInvalid;
     }

@@ -196,7 +196,8 @@ public class Instance implements NacosForm {
                     "Required parameter 'ip' type String is not present");
         }
         if (port < 0 || port > MAX_PORT) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+            throw new NacosApiException(NacosException.INVALID_PARAM,
+                    ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Required parameter 'port' type int is require 0 ~ 65535");
         }
     }
@@ -209,9 +210,12 @@ public class Instance implements NacosForm {
     
     @Override
     public String toString() {
-        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port + ", weight="
-                + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
-                + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\'' + ", metadata="
+        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port="
+                + port + ", weight="
+                + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral="
+                + ephemeral
+                + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\''
+                + ", metadata="
                 + metadata + '}';
     }
     

@@ -54,10 +54,12 @@ public class SecurityProxy implements Closeable {
      * @param serverListManager a server list manager that client request to.
      * @Param nacosRestTemplate http request template.
      */
-    public SecurityProxy(AbstractServerListManager serverListManager, NacosRestTemplate nacosRestTemplate) {
+    public SecurityProxy(AbstractServerListManager serverListManager,
+            NacosRestTemplate nacosRestTemplate) {
         clientAuthPluginManager = new ClientAuthPluginManager();
         clientAuthPluginManager.init(serverListManager.getServerList(), nacosRestTemplate);
         NotifyCenter.registerSubscriber(new Subscriber<ServerListChangeEvent>() {
+            
             @Override
             public void onEvent(ServerListChangeEvent event) {
                 clientAuthPluginManager.refreshServerList(serverListManager.getServerList());
@@ -79,7 +81,8 @@ public class SecurityProxy implements Closeable {
         if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
             return;
         }
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+        for (ClientAuthService clientAuthService : clientAuthPluginManager
+                .getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
     }
@@ -91,8 +94,10 @@ public class SecurityProxy implements Closeable {
      */
     public Map<String, String> getIdentityContext(RequestResource resource) {
         Map<String, String> header = new HashMap<>(1);
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
-            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(resource);
+        for (ClientAuthService clientAuthService : clientAuthPluginManager
+                .getAuthServiceSpiImplSet()) {
+            LoginIdentityContext loginIdentityContext =
+                    clientAuthService.getLoginIdentityContext(resource);
             for (String key : loginIdentityContext.getAllKey()) {
                 header.put(key, loginIdentityContext.getParameter(key));
             }
@@ -112,9 +117,11 @@ public class SecurityProxy implements Closeable {
         if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
             return;
         }
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+        for (ClientAuthService clientAuthService : clientAuthPluginManager
+                .getAuthServiceSpiImplSet()) {
             try {
-                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(new RequestResource());
+                LoginIdentityContext loginIdentityContext =
+                        clientAuthService.getLoginIdentityContext(new RequestResource());
                 if (loginIdentityContext != null) {
                     loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
                 }
