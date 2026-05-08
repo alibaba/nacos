@@ -51,7 +51,7 @@ class ContentUtilsTest {
             ContentUtils.verifyIncrementPubContent(content);
         });
         assertTrue(exception.getMessage()
-                .contains("publish/delete content can not contain return and linefeed"));
+            .contains("publish/delete content can not contain return and linefeed"));
     }
     
     @Test
@@ -70,7 +70,7 @@ class ContentUtilsTest {
             ContentUtils.verifyIncrementPubContent(content);
         });
         assertTrue(
-                exception.getMessage().contains("publish/delete content can not contain(char)2"));
+            exception.getMessage().contains("publish/delete content can not contain(char)2"));
     }
     
     @Test

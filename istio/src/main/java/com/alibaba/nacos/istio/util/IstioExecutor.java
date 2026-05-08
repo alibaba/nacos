@@ -31,16 +31,16 @@ import java.util.concurrent.Future;
 public class IstioExecutor {
     
     private static final ExecutorService EVENT_HANDLE_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.istio.event.handle"));
+        .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
+            new NameThreadFactory("com.alibaba.nacos.istio.event.handle"));
     
     private static final ExecutorService PUSH_CHANGE_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.istio.pushchange.debounce"));
+        .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
+            new NameThreadFactory("com.alibaba.nacos.istio.pushchange.debounce"));
     
     private static final ExecutorService CYCLE_DEBOUNCE_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.istio.cycle.debounce"));
+        .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
+            new NameThreadFactory("com.alibaba.nacos.istio.cycle.debounce"));
     
     public static <V> Future<V> asyncHandleEvent(Callable<V> task) {
         return EVENT_HANDLE_EXECUTOR.submit(task);

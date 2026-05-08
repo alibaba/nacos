@@ -93,9 +93,9 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                     }
                     
                     for (Map.Entry<String, ServiceInfo> entry : DiskCache
-                            .parseServiceInfoFromCache(file).entrySet()) {
+                        .parseServiceInfoFromCache(file).entrySet()) {
                         domMap.put(entry.getKey(),
-                                NamingFailoverData.newNamingFailoverData(entry.getValue()));
+                            NamingFailoverData.newNamingFailoverData(entry.getValue()));
                     }
                 }
             } catch (Exception e) {
@@ -123,7 +123,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
             if (lastModifiedMillis < modified) {
                 lastModifiedMillis = modified;
                 String failover = ConcurrentDiskUtil.getFileContent(switchFile.getPath(),
-                        Charset.defaultCharset().toString());
+                    Charset.defaultCharset().toString());
                 if (!StringUtils.isEmpty(failover)) {
                     String[] lines = failover.split(DiskCache.getLineSeparator());
                     
@@ -143,7 +143,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                 }
             }
             return switchParams.get(FAILOVER_MODE_PARAM).equals(Boolean.TRUE.toString())
-                    ? FAILOVER_SWITCH_TRUE : FAILOVER_SWITCH_FALSE;
+                ? FAILOVER_SWITCH_TRUE : FAILOVER_SWITCH_FALSE;
             
         } catch (Throwable e) {
             NAMING_LOGGER.error("[NA] failed to read failover switch.", e);

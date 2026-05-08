@@ -48,7 +48,7 @@ public class EmptyMcpGenerator implements ApiGenerator<Resource> {
     
     @Override
     public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(
-            PushRequest pushRequest) {
+        PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

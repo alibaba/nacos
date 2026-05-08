@@ -44,7 +44,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -66,7 +66,7 @@ class NacosClientAuthServiceImplTest {
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setCode(400);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -84,7 +84,7 @@ class NacosClientAuthServiceImplTest {
     void testTestLoginFailHttp() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenThrow(new Exception());
+            .thenThrow(new Exception());
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -107,7 +107,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -130,7 +130,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -155,7 +155,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"accessToken\":\"abc\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -170,8 +170,8 @@ class NacosClientAuthServiceImplTest {
         assertTrue(nacosClientAuthService.login(properties));
         //then
         assertEquals("abc",
-                nacosClientAuthService.getLoginIdentityContext(null)
-                        .getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+            nacosClientAuthService.getLoginIdentityContext(null)
+                .getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
     @Test
@@ -181,7 +181,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"accessToken\":\"\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -196,8 +196,8 @@ class NacosClientAuthServiceImplTest {
         assertTrue(nacosClientAuthService.login(properties));
         //then
         assertEquals("",
-                nacosClientAuthService.getLoginIdentityContext(null)
-                        .getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+            nacosClientAuthService.getLoginIdentityContext(null)
+                .getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
     @Test
@@ -207,7 +207,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -222,8 +222,8 @@ class NacosClientAuthServiceImplTest {
         assertTrue(nacosClientAuthService.login(properties));
         //then
         assertNull(
-                nacosClientAuthService.getLoginIdentityContext(null)
-                        .getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+            nacosClientAuthService.getLoginIdentityContext(null)
+                .getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
     @Test
@@ -233,7 +233,7 @@ class NacosClientAuthServiceImplTest {
         result.setData("{\"accessToken\":\"abc\",\"tokenTtl\":\"abc\"}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any()))
-                .thenReturn(result);
+            .thenReturn(result);
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -254,7 +254,7 @@ class NacosClientAuthServiceImplTest {
         nacosClientAuthService.login(new Properties());
         // reLogin
         nacosClientAuthService.getLoginIdentityContext(null)
-                .setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
+            .setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");

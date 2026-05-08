@@ -58,7 +58,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
      * exception is thrown.
      */
     public static String getEncryptDataKeyFailover(String envName, String dataId, String group,
-            String tenant) {
+        String tenant) {
         envName = simplyEnvNameIfOverLimit(envName);
         File file = getEncryptDataKeyFailoverFile(envName, dataId, group, tenant);
         if (!file.exists() || !file.isFile()) {
@@ -78,7 +78,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
      * thrown.
      */
     public static String getEncryptDataKeySnapshot(String envName, String dataId, String group,
-            String tenant) {
+        String tenant) {
         
         if (!SnapShotSwitch.getIsSnapShot()) {
             return null;
@@ -100,8 +100,8 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
      * Save the snapshot of encryptDataKey. If the content is NULL, delete the snapshot.
      */
     public static void saveEncryptDataKeySnapshot(String envName, String dataId, String group,
-            String tenant,
-            String encryptDataKey) {
+        String tenant,
+        String encryptDataKey) {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return;
         }
@@ -133,7 +133,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeyFailoverFile(String envName, String dataId, String group,
-            String tenant) {
+        String tenant) {
         envName = simplyEnvNameIfOverLimit(envName);
         
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
@@ -150,7 +150,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeySnapshotFile(String envName, String dataId, String group,
-            String tenant) {
+        String tenant) {
         envName = simplyEnvNameIfOverLimit(envName);
         
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);

@@ -62,8 +62,8 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 redoForInstance(each);
             } catch (NacosException e) {
                 LogUtils.NAMING_LOGGER.error("Redo instance operation {} for {}@@{} failed. ",
-                        each.getRedoType(),
-                        each.getGroupName(), each.getServiceName(), e);
+                    each.getRedoType(),
+                    each.getGroupName(), each.getServiceName(), e);
             }
         }
     }
@@ -73,7 +73,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         String serviceName = redoData.getServiceName();
         String groupName = redoData.getGroupName();
         LogUtils.NAMING_LOGGER.info("Redo instance operation {} for {}@@{}", redoType, groupName,
-                serviceName);
+            serviceName);
         switch (redoType) {
             case REGISTER:
                 if (isClientDisabled()) {
@@ -96,12 +96,12 @@ public class RedoScheduledTask extends AbstractExecuteTask {
     }
     
     private void processRegisterRedoType(InstanceRedoData redoData, String serviceName,
-            String groupName) throws NacosException {
+        String groupName) throws NacosException {
         if (redoData instanceof BatchInstanceRedoData) {
             // Execute Batch Register
             BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) redoData;
             clientProxy.doBatchRegisterService(serviceName, groupName,
-                    batchInstanceRedoData.getInstances());
+                batchInstanceRedoData.getInstances());
             return;
         }
         clientProxy.doRegisterService(serviceName, groupName, redoData.get());
@@ -113,8 +113,8 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 redoForSubscribe(each);
             } catch (NacosException e) {
                 LogUtils.NAMING_LOGGER.error("Redo subscriber operation {} for {}@@{}#{} failed. ",
-                        each.getRedoType(),
-                        each.getGroupName(), each.getServiceName(), each.get(), e);
+                    each.getRedoType(),
+                    each.getGroupName(), each.getServiceName(), each.get(), e);
             }
         }
     }
@@ -125,7 +125,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         String groupName = redoData.getGroupName();
         String cluster = redoData.get();
         LogUtils.NAMING_LOGGER.info("Redo subscriber operation {} for {}@@{}#{}", redoType,
-                groupName, serviceName, cluster);
+            groupName, serviceName, cluster);
         switch (redoData.getRedoType()) {
             case REGISTER:
                 if (isClientDisabled()) {
@@ -141,7 +141,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 break;
             case REMOVE:
                 redoService.removeSubscriberForRedo(redoData.getServiceName(),
-                        redoData.getGroupName(), redoData.get());
+                    redoData.getGroupName(), redoData.get());
                 break;
             default:
         }

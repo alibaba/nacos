@@ -36,7 +36,7 @@ class ConfigFilterChainManagerTest {
     @Test
     void testAddFilterOrder() throws NacosException {
         final ConfigFilterChainManager configFilterChainManager =
-                new ConfigFilterChainManager(new Properties());
+            new ConfigFilterChainManager(new Properties());
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
         MyIConfigFilter filter3 = new MyIConfigFilter("filter3", 3);
@@ -65,7 +65,7 @@ class ConfigFilterChainManagerTest {
     @Test
     void testAddFilterNotRepeat() throws NacosException {
         final ConfigFilterChainManager configFilterChainManager =
-                new ConfigFilterChainManager(new Properties());
+            new ConfigFilterChainManager(new Properties());
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
         MyIConfigFilter repeatFilter = new MyIConfigFilter("filter1", 1);
@@ -99,8 +99,8 @@ class ConfigFilterChainManagerTest {
         
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response,
-                IConfigFilterChain filterChain)
-                throws NacosException {
+            IConfigFilterChain filterChain)
+            throws NacosException {
             IConfigContext configContext = request.getConfigContext();
             // save filter info
             configContext.setParameter(name, order);

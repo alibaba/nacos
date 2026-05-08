@@ -62,18 +62,18 @@ public class NacosPromptCacheHolder implements Closeable {
         this.promptCache = new ConcurrentHashMap<>(4);
         this.updateTaskMap = new ConcurrentHashMap<>(4);
         this.updaterExecutor = new ScheduledThreadPoolExecutor(1,
-                new NameThreadFactory("com.alibaba.nacos.client.ai.prompt.updater"));
+            new NameThreadFactory("com.alibaba.nacos.client.ai.prompt.updater"));
         this.updateIntervalMillis = properties.getLong(AiConstants.AI_PROMPT_CACHE_UPDATE_INTERVAL,
-                AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
+            AiConstants.DEFAULT_AI_CACHE_UPDATE_INTERVAL);
     }
     
     private Prompt queryPrompt(String promptKey, String version, String label)
-            throws NacosException {
+        throws NacosException {
         return queryPrompt(promptKey, version, label, null);
     }
     
     private Prompt queryPrompt(String promptKey, String version, String label, String md5)
-            throws NacosException {
+        throws NacosException {
         return aiClientProxy.queryPrompt(promptKey, version, label, md5);
     }
     
@@ -85,10 +85,10 @@ public class NacosPromptCacheHolder implements Closeable {
      * @throws NacosException if error occurs
      */
     public Prompt subscribePrompt(String promptKey, String version, String label)
-            throws NacosException {
+        throws NacosException {
         if (StringUtils.isBlank(promptKey)) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                    "Required parameter `promptKey` not present");
+                "Required parameter `promptKey` not present");
         }
         String cacheKey = CacheKeyUtils.buildPromptKey(promptKey, version, label);
         
@@ -203,7 +203,7 @@ public class NacosPromptCacheHolder implements Closeable {
                     // No content change, keep local cache and skip callback.
                 } else {
                     LOGGER.warn("Prompt updater execute query failed: promptKey={}, err={}",
-                            promptKey, e.getErrMsg());
+                        promptKey, e.getErrMsg());
                 }
             } finally {
                 if (!cancel.get()) {

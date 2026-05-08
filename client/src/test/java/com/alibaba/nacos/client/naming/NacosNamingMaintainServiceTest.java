@@ -74,15 +74,15 @@ class NacosNamingMaintainServiceTest {
         serverProxyField.setAccessible(true);
         serverProxyField.set(nacosNamingMaintainService, serverProxy);
         Field serverListManagerField =
-                NacosNamingMaintainService.class.getDeclaredField("serverListManager");
+            NacosNamingMaintainService.class.getDeclaredField("serverListManager");
         serverListManagerField.setAccessible(true);
         serverListManagerField.set(nacosNamingMaintainService, serverListManager);
         Field securityProxyFiled =
-                NacosNamingMaintainService.class.getDeclaredField("securityProxy");
+            NacosNamingMaintainService.class.getDeclaredField("securityProxy");
         securityProxyFiled.setAccessible(true);
         securityProxyFiled.set(nacosNamingMaintainService, securityProxy);
         Field executorServiceField =
-                NacosNamingMaintainService.class.getDeclaredField("executorService");
+            NacosNamingMaintainService.class.getDeclaredField("executorService");
         executorServiceField.setAccessible(true);
         executorServiceField.set(nacosNamingMaintainService, executorService);
     }
@@ -118,7 +118,7 @@ class NacosNamingMaintainServiceTest {
         nacosNamingMaintainService.updateInstance(serviceName, instance);
         //then
         verify(serverProxy, times(1)).updateInstance(serviceName, Constants.DEFAULT_GROUP,
-                instance);
+            instance);
     }
     
     @Test
@@ -155,10 +155,10 @@ class NacosNamingMaintainServiceTest {
             @Override
             public boolean matches(Service service) {
                 return service.getName().equals(serviceName)
-                        && service.getGroupName().equals(Constants.DEFAULT_GROUP)
-                        && Math.abs(service.getProtectThreshold()
-                                - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
-                        && service.getMetadata().size() == 0;
+                    && service.getGroupName().equals(Constants.DEFAULT_GROUP)
+                    && Math.abs(service.getProtectThreshold()
+                        - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
+                    && service.getMetadata().size() == 0;
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
@@ -176,10 +176,10 @@ class NacosNamingMaintainServiceTest {
             @Override
             public boolean matches(Service service) {
                 return service.getName().equals(serviceName)
-                        && service.getGroupName().equals(groupName)
-                        && Math.abs(service.getProtectThreshold()
-                                - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
-                        && service.getMetadata().size() == 0;
+                    && service.getGroupName().equals(groupName)
+                    && Math.abs(service.getProtectThreshold()
+                        - Constants.DEFAULT_PROTECT_THRESHOLD) < 0.1f
+                    && service.getMetadata().size() == 0;
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
@@ -198,9 +198,9 @@ class NacosNamingMaintainServiceTest {
             @Override
             public boolean matches(Service service) {
                 return service.getName().equals(serviceName)
-                        && service.getGroupName().equals(groupName)
-                        && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
-                        && service.getMetadata().size() == 0;
+                    && service.getGroupName().equals(groupName)
+                    && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
+                    && service.getMetadata().size() == 0;
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
@@ -214,16 +214,16 @@ class NacosNamingMaintainServiceTest {
         String expression = "k=v";
         //when
         nacosNamingMaintainService.createService(serviceName, groupName, protectThreshold,
-                expression);
+            expression);
         //then
         verify(serverProxy, times(1)).createService(argThat(new ArgumentMatcher<Service>() {
             
             @Override
             public boolean matches(Service service) {
                 return service.getName().equals(serviceName)
-                        && service.getGroupName().equals(groupName)
-                        && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
-                        && service.getMetadata().size() == 0;
+                    && service.getGroupName().equals(groupName)
+                    && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
+                    && service.getMetadata().size() == 0;
             }
         }), argThat(o -> ((ExpressionSelector) o).getExpression().equals(expression)));
     }
@@ -275,8 +275,8 @@ class NacosNamingMaintainServiceTest {
             @Override
             public boolean matches(Service service) {
                 return service.getName().equals(serviceName)
-                        && service.getGroupName().equals(groupName)
-                        && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f;
+                    && service.getGroupName().equals(groupName)
+                    && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f;
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
@@ -298,9 +298,9 @@ class NacosNamingMaintainServiceTest {
             @Override
             public boolean matches(Service service) {
                 return service.getName().equals(serviceName)
-                        && service.getGroupName().equals(groupName)
-                        && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
-                        && service.getMetadata().size() == 1;
+                    && service.getGroupName().equals(groupName)
+                    && Math.abs(service.getProtectThreshold() - protectThreshold) < 0.1f
+                    && service.getMetadata().size() == 1;
             }
         }), argThat(o -> o instanceof NoneSelector));
     }

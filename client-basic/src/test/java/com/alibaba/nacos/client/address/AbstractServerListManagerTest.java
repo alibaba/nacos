@@ -63,7 +63,7 @@ class AbstractServerListManagerTest {
         assertFalse(properties.containsKey(Constants.CLIENT_MODULE_TYPE));
         assertTrue(serverListManager.getProperties().containsKey(PropertyKeyConst.NAMESPACE));
         assertEquals("testModule",
-                serverListManager.getProperties().getProperty(Constants.CLIENT_MODULE_TYPE));
+            serverListManager.getProperties().getProperty(Constants.CLIENT_MODULE_TYPE));
     }
     
     @Test
@@ -73,7 +73,7 @@ class AbstractServerListManagerTest {
         assertFalse(properties.containsKey(Constants.CLIENT_MODULE_TYPE));
         assertFalse(serverListManager.getProperties().containsKey(PropertyKeyConst.NAMESPACE));
         assertEquals("testModule",
-                serverListManager.getProperties().getProperty(Constants.CLIENT_MODULE_TYPE));
+            serverListManager.getProperties().getProperty(Constants.CLIENT_MODULE_TYPE));
     }
     
     @Test

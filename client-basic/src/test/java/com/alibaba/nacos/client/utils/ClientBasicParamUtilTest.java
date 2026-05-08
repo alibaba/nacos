@@ -109,7 +109,7 @@ class ClientBasicParamUtilTest {
         properties.setProperty(PropertyKeyConst.NAMESPACE, expect);
         
         final NacosClientProperties nacosClientProperties =
-                NacosClientProperties.PROTOTYPE.derive(properties);
+            NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.parseNamespace(nacosClientProperties);
         assertEquals(expect, actual);
     }
@@ -124,17 +124,17 @@ class ClientBasicParamUtilTest {
     @Test
     void testParsingEndpointRuleFromSystem() {
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
-                "alibaba_aliware_endpoint_url");
+            "alibaba_aliware_endpoint_url");
         assertEquals("alibaba_aliware_endpoint_url",
-                ClientBasicParamUtil.parsingEndpointRule(null));
+            ClientBasicParamUtil.parsingEndpointRule(null));
     }
     
     @Test
     void testParsingEndpointRuleFromSystemWithParam() {
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
-                "alibaba_aliware_endpoint_url");
+            "alibaba_aliware_endpoint_url");
         assertEquals("alibaba_aliware_endpoint_url",
-                ClientBasicParamUtil.parsingEndpointRule("${abc:xxx}"));
+            ClientBasicParamUtil.parsingEndpointRule("${abc:xxx}"));
     }
     
     @Test
@@ -145,7 +145,7 @@ class ClientBasicParamUtilTest {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.getInputParameters(clientProperties.asProperties());
         assertTrue(actual.startsWith(
-                "Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
+            "Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
         assertTrue(actual.contains("\ttestKey=testValue\n"));
         Properties envProperties = clientProperties.getProperties(SourceType.ENV);
         String envCaseKey = envProperties.stringPropertyNames().iterator().next();
@@ -162,8 +162,8 @@ class ClientBasicParamUtilTest {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ClientBasicParamUtil.getInputParameters(clientProperties.asProperties());
         assertEquals(
-                "Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
-                actual);
+            "Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
+            actual);
     }
     
     @Test
@@ -181,6 +181,6 @@ class ClientBasicParamUtilTest {
     @Test
     void testGetNameSuffixByServerIps() {
         assertEquals("1.1.1.1-2.2.2.2_8848",
-                ClientBasicParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
+            ClientBasicParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
     }
 }

@@ -47,7 +47,7 @@ class DiskFailoverDataSourceTest {
     @Test
     void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
         String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-                .getResource("failover_test/disabled").getPath();
+            .getResource("failover_test/disabled").getPath();
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
@@ -57,17 +57,17 @@ class DiskFailoverDataSourceTest {
     @Test
     void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
         String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-                .getResource("failover_test/enabled").getPath();
+            .getResource("failover_test/enabled").getPath();
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
         assertEquals(1, actual.size());
         assertTrue(actual.containsKey("legal@@with_name@@file"));
         assertEquals(FailoverData.DataType.naming,
-                actual.get("legal@@with_name@@file").getDataType());
+            actual.get("legal@@with_name@@file").getDataType());
         assertEquals("1.1.1.1",
-                ((ServiceInfo) actual.get("legal@@with_name@@file").getData()).getHosts().get(0)
-                        .getIp());
+            ((ServiceInfo) actual.get("legal@@with_name@@file").getData()).getHosts().get(0)
+                .getIp());
     }
     
     @Test
@@ -77,7 +77,7 @@ class DiskFailoverDataSourceTest {
     }
     
     private void injectFailOverDir(String failoverDir)
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         Field failoverDirField = DiskFailoverDataSource.class.getDeclaredField("failoverDir");
         failoverDirField.setAccessible(true);
         failoverDirField.set(dataSource, failoverDir);
@@ -86,7 +86,7 @@ class DiskFailoverDataSourceTest {
     @Test
     void testGetSwitchForFailoverEnabledKeep() throws NoSuchFieldException, IllegalAccessException {
         String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-                .getResource("failover_test/enabled").getPath();
+            .getResource("failover_test/enabled").getPath();
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         assertTrue(dataSource.getSwitch().getEnabled());
@@ -94,9 +94,9 @@ class DiskFailoverDataSourceTest {
     
     @Test
     void testGetSwitchForFailoverDisabledKeep()
-            throws NoSuchFieldException, IllegalAccessException {
+        throws NoSuchFieldException, IllegalAccessException {
         String dir = DiskFailoverDataSourceTest.class.getClassLoader()
-                .getResource("failover_test/disabled").getPath();
+            .getResource("failover_test/disabled").getPath();
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         assertFalse(dataSource.getSwitch().getEnabled());

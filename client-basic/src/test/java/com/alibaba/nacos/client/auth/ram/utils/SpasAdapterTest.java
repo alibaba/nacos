@@ -46,17 +46,17 @@ class SpasAdapterTest {
         final Map<String, String> map1 = SpasAdapter.getSignHeaders("aa", "bb", "123");
         assertEquals(2, map1.size());
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt("bb+aa+" + map1.get("Timestamp"), "123"),
-                map1.get("Spas-Signature"));
+            map1.get("Spas-Signature"));
         
         final Map<String, String> map2 = SpasAdapter.getSignHeaders("aa", "", "123");
         assertEquals(2, map2.size());
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt("aa" + "+" + map2.get("Timestamp"), "123"),
-                map2.get("Spas-Signature"));
+            map2.get("Spas-Signature"));
         
         final Map<String, String> map3 = SpasAdapter.getSignHeaders("", "bb", "123");
         assertEquals(2, map3.size());
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt(map3.get("Timestamp"), "123"),
-                map3.get("Spas-Signature"));
+            map3.get("Spas-Signature"));
     }
     
     @Test
@@ -70,7 +70,7 @@ class SpasAdapterTest {
         final Map<String, String> map1 = SpasAdapter.getSignHeaders(param1, "123");
         assertEquals(2, map1.size());
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt("bb+aa+" + map1.get("Timestamp"), "123"),
-                map1.get("Spas-Signature"));
+            map1.get("Spas-Signature"));
     }
     
     @Test
@@ -80,7 +80,7 @@ class SpasAdapterTest {
         final Map<String, String> map1 = SpasAdapter.getSignHeaders(param1, "123");
         assertEquals(2, map1.size());
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt("aa+" + map1.get("Timestamp"), "123"),
-                map1.get("Spas-Signature"));
+            map1.get("Spas-Signature"));
     }
     
     @Test

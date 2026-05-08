@@ -58,16 +58,16 @@ class AiChangeNotifierAgentSpecPropertyTest {
         
         // Before registration, should not be subscribed
         assertFalse(notifier.isAgentSpecSubscribed(agentSpecName),
-                "Should not be subscribed before registration");
+            "Should not be subscribed before registration");
         
         // After registration, should be subscribed
         notifier.registerListener(agentSpecName, invoker);
         assertTrue(notifier.isAgentSpecSubscribed(agentSpecName),
-                "Should be subscribed after registration");
+            "Should be subscribed after registration");
         
         // After deregistration, should not be subscribed
         notifier.deregisterListener(agentSpecName, invoker);
         assertFalse(notifier.isAgentSpecSubscribed(agentSpecName),
-                "Should not be subscribed after deregistration");
+            "Should not be subscribed after deregistration");
     }
 }

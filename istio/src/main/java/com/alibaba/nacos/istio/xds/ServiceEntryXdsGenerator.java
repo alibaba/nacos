@@ -62,13 +62,13 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         serviceEntries = new ArrayList<>(16);
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
         Map<String, IstioService> serviceInfoMap =
-                pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+            pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
             String serviceName = entry.getKey();
             
             ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName,
-                    serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
+                serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
             if (serviceEntryWrapper != null) {
                 serviceEntries.add(serviceEntryWrapper);
             }
@@ -78,7 +78,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
             ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
             
             Any any = Any.newBuilder().setValue(serviceEntry.toByteString())
-                    .setTypeUrl(SERVICE_ENTRY_PROTO).build();
+                .setTypeUrl(SERVICE_ENTRY_PROTO).build();
             
             resources.add(Resource.newBuilder().setBody(any).setMetadata(metadata).build());
         }
@@ -86,7 +86,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         List<Any> result = new ArrayList<>();
         for (Resource resource : resources) {
             result.add(Any.newBuilder().setValue(resource.toByteString())
-                    .setTypeUrl(MCP_RESOURCE_PROTO).build());
+                .setTypeUrl(MCP_RESOURCE_PROTO).build());
         }
         
         return result;
@@ -94,7 +94,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
     
     @Override
     public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(
-            PushRequest pushRequest) {
+        PushRequest pushRequest) {
         if (pushRequest.isFull()) {
             return null;
         }
@@ -104,16 +104,16 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         Set<String> reason = pushRequest.getReason();
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
         Map<String, IstioService> istioServiceMap =
-                pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+            pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         
         if (pushRequest.getSubscribe().size() != 0) {
             for (String subscribe : pushRequest.getSubscribe()) {
                 String serviceName = parseServiceEntryNameToServiceName(subscribe,
-                        istioConfig.getDomainSuffix());
+                    istioConfig.getDomainSuffix());
                 if (reason.contains(serviceName)) {
                     if (istioServiceMap.containsKey(serviceName)) {
                         ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName,
-                                subscribe, istioServiceMap.get(serviceName));
+                            subscribe, istioServiceMap.get(serviceName));
                         if (serviceEntryWrapper != null) {
                             serviceEntries.add(serviceEntryWrapper);
                         } else {
@@ -128,7 +128,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
             for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
                 String hostName = entry.getKey() + "." + istioConfig.getDomainSuffix();
                 ServiceEntryWrapper serviceEntryWrapper =
-                        buildServiceEntry(entry.getKey(), hostName, entry.getValue());
+                    buildServiceEntry(entry.getKey(), hostName, entry.getValue());
                 if (serviceEntryWrapper != null) {
                     serviceEntries.add(serviceEntryWrapper);
                 } else {
@@ -139,15 +139,15 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         
         for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
             ServiceEntryOuterClass.ServiceEntry serviceEntry =
-                    serviceEntryWrapper.getServiceEntry();
+                serviceEntryWrapper.getServiceEntry();
             
             Any any = Any.newBuilder().setValue(serviceEntry.toByteString())
-                    .setTypeUrl(SERVICE_ENTRY_PROTO).build();
+                .setTypeUrl(SERVICE_ENTRY_PROTO).build();
             
             result.add(io.envoyproxy.envoy.service.discovery.v3.Resource.newBuilder()
-                    .setResource(any).setVersion(
-                            pushRequest.getResourceSnapshot().getVersion())
-                    .build());
+                .setResource(any).setVersion(
+                    pushRequest.getResourceSnapshot().getVersion())
+                .build());
         }
         
         return result;

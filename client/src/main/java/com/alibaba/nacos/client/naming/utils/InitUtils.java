@@ -50,32 +50,32 @@ public class InitUtils {
         String tmpNamespace = null;
         
         String isUseCloudNamespaceParsing =
-                properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                        properties.getProperty(
-                                SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                                String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                properties.getProperty(
+                    SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
         
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             
             tmpNamespace = TenantUtil.getUserTenantForAns();
             LogUtils.NAMING_LOGGER.info("initializer namespace from ans.namespace attribute : {}",
-                    tmpNamespace);
+                tmpNamespace);
             
             tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
                 String namespace = properties
-                        .getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    .getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
                 LogUtils.NAMING_LOGGER.info(
-                        "initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :"
-                                + namespace);
+                    "initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :"
+                        + namespace);
                 return namespace;
             });
         }
         
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
             String namespace =
-                    properties.getPropertyFrom(SourceType.JVM, PropertyKeyConst.NAMESPACE);
+                properties.getPropertyFrom(SourceType.JVM, PropertyKeyConst.NAMESPACE);
             LogUtils.NAMING_LOGGER
-                    .info("initializer namespace from namespace attribute :" + namespace);
+                .info("initializer namespace from namespace attribute :" + namespace);
             return namespace;
         });
         
@@ -84,7 +84,7 @@ public class InitUtils {
         }
         
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace,
-                () -> UtilAndComs.DEFAULT_NAMESPACE_ID);
+            () -> UtilAndComs.DEFAULT_NAMESPACE_ID);
         return tmpNamespace;
     }
     

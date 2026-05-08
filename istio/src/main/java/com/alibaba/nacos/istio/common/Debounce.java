@@ -93,7 +93,7 @@ public class Debounce implements Callable<PushRequest> {
         long quietTime = System.currentTimeMillis() - lastConfigUpdateTime.getTime();
         
         if (eventDelay > istioConfig.getDebounceMax()
-                || quietTime > istioConfig.getDebounceAfter()) {
+            || quietTime > istioConfig.getDebounceAfter()) {
             if (pushRequest != null) {
                 free = false;
                 flag = true;

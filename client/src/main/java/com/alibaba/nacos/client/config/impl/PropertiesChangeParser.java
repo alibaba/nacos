@@ -39,7 +39,7 @@ public class PropertiesChangeParser extends AbstractConfigChangeParser {
     
     @Override
     public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type)
-            throws IOException {
+        throws IOException {
         Properties oldProps = new Properties();
         Properties newProps = new Properties();
         

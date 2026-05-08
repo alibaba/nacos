@@ -58,9 +58,9 @@ public class AiGrpcRedoService extends AbstractRedoService {
      * @param version the version
      */
     public void cachedMcpServerEndpointForRedo(String mcpName, String address, int port,
-            String version) {
+        String version) {
         RedoData<McpServerEndpoint> redoData =
-                buildMcpServerEndpointRedoData(mcpName, address, port, version);
+            buildMcpServerEndpointRedoData(mcpName, address, port, version);
         super.cachedRedoData(mcpName, redoData, McpServerEndpoint.class);
     }
     
@@ -94,8 +94,8 @@ public class AiGrpcRedoService extends AbstractRedoService {
     }
     
     private RedoData<McpServerEndpoint> buildMcpServerEndpointRedoData(String mcpName,
-            String address, int port,
-            String version) {
+        String address, int port,
+        String version) {
         McpServerEndpoint mcpServerEndpoint = new McpServerEndpoint(address, port, version);
         McpServerEndpointRedoData result = new McpServerEndpointRedoData(mcpName);
         result.set(mcpServerEndpoint);
@@ -133,7 +133,7 @@ public class AiGrpcRedoService extends AbstractRedoService {
     
     public AgentEndpointWrapper getAgentEndpoint(String agentName) {
         RedoData<AgentEndpointWrapper> redoData =
-                super.getRedoData(agentName, AgentEndpointWrapper.class);
+            super.getRedoData(agentName, AgentEndpointWrapper.class);
         return redoData == null ? null : redoData.get();
     }
 }

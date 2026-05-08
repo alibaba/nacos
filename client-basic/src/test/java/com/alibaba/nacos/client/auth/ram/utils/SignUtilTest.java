@@ -42,7 +42,7 @@ class SignUtilTest {
     void testSignWithException2() throws Exception {
         assertThrows(Exception.class, () -> {
             SignUtil.sign("aaa".getBytes(StandardCharsets.UTF_8),
-                    "b".getBytes(StandardCharsets.UTF_8), null);
+                "b".getBytes(StandardCharsets.UTF_8), null);
         });
     }
 }

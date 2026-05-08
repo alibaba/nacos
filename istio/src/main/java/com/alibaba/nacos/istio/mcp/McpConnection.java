@@ -44,11 +44,11 @@ public class McpConnection extends AbstractConnection<Mcp.Resources> {
         watchedStatus.setLatestNonce(response.getNonce());
         
         Loggers.MAIN.info(
-                "mcp: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
-                watchedStatus.getType(),
-                getConnectionId(),
-                response.getSystemVersionInfo(),
-                response.getNonce(),
-                response.getResourcesCount());
+            "mcp: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
+            watchedStatus.getType(),
+            getConnectionId(),
+            response.getSystemVersionInfo(),
+            response.getNonce(),
+            response.getResourcesCount());
     }
 }

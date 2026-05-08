@@ -38,6 +38,6 @@ public class ContextPathUtil {
             return StringUtils.EMPTY;
         }
         return contextPath.startsWith(ROOT_WEB_CONTEXT_PATH) ? contextPath
-                : ROOT_WEB_CONTEXT_PATH + contextPath;
+            : ROOT_WEB_CONTEXT_PATH + contextPath;
     }
 }

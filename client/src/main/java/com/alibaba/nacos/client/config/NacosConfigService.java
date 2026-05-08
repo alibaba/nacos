@@ -74,18 +74,18 @@ public class NacosConfigService implements ConfigService {
     public NacosConfigService(Properties properties) throws NacosException {
         PreInitUtils.asyncPreLoadCostComponent();
         final NacosClientProperties clientProperties =
-                NacosClientProperties.PROTOTYPE.derive(properties);
+            NacosClientProperties.PROTOTYPE.derive(properties);
         LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         ValidatorUtils.checkInitParam(clientProperties);
         
         initNamespace(clientProperties);
         this.configFilterChainManager =
-                new ConfigFilterChainManager(clientProperties.asProperties());
+            new ConfigFilterChainManager(clientProperties.asProperties());
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         serverListManager.start();
         
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager,
-                clientProperties);
+            clientProperties);
         
     }
     
@@ -101,15 +101,15 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public String getConfigAndSignListener(String dataId, String group, long timeoutMs,
-            Listener listener)
-            throws NacosException {
+        Listener listener)
+        throws NacosException {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
         ConfigResponse configResponse = worker.getAgent()
-                .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
+            .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
         worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey,
-                Collections.singletonList(listener));
+            Collections.singletonList(listener));
         
         // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
         ConfigResponse cr = new ConfigResponse();
@@ -128,55 +128,55 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+        throws NacosException {
         doAddFuzzyWatch(ALL_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
     public void fuzzyWatch(String dataIdPattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         doAddFuzzyWatch(dataIdPattern, groupNamePattern, watcher);
     }
     
     @Override
     public Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern,
-            FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         return doAddFuzzyWatch(ALL_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
     public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern,
-            String groupNamePattern,
-            FuzzyWatchEventWatcher watcher) throws NacosException {
+        String groupNamePattern,
+        FuzzyWatchEventWatcher watcher) throws NacosException {
         return doAddFuzzyWatch(dataIdPattern, groupNamePattern, watcher);
     }
     
     private Future<Set<String>> doAddFuzzyWatch(String dataIdPattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher) throws NacosException {
+        FuzzyWatchEventWatcher watcher) throws NacosException {
         ConfigFuzzyWatchContext configFuzzyWatchContext =
-                worker.addTenantFuzzyWatcher(dataIdPattern, groupNamePattern,
-                        watcher);
+            worker.addTenantFuzzyWatcher(dataIdPattern, groupNamePattern,
+                watcher);
         return configFuzzyWatchContext.createNewFuture();
     }
     
     @Override
     public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+        throws NacosException {
         cancelFuzzyWatch(ALL_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
     public void cancelFuzzyWatch(String dataIdPattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         doCancelFuzzyWatch(dataIdPattern, groupNamePattern, watcher);
     }
     
     private void doCancelFuzzyWatch(String dataIdPattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher)
-            throws NacosException {
+        FuzzyWatchEventWatcher watcher)
+        throws NacosException {
         if (null == watcher) {
             return;
         }
@@ -185,29 +185,29 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public boolean publishConfig(String dataId, String group, String content)
-            throws NacosException {
+        throws NacosException {
         return publishConfig(dataId, group, content, ConfigType.getDefaultType().getType());
     }
     
     @Override
     public boolean publishConfig(String dataId, String group, String content, String type)
-            throws NacosException {
+        throws NacosException {
         return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null);
     }
     
     @Override
     public boolean publishConfigCas(String dataId, String group, String content, String casMd5)
-            throws NacosException {
+        throws NacosException {
         return publishConfigInner(namespace, dataId, group, null, null, null, content,
-                ConfigType.getDefaultType().getType(), casMd5);
+            ConfigType.getDefaultType().getType(), casMd5);
     }
     
     @Override
     public boolean publishConfigCas(String dataId, String group, String content, String casMd5,
-            String type)
-            throws NacosException {
+        String type)
+        throws NacosException {
         return publishConfigInner(namespace, dataId, group, null, null, null, content, type,
-                casMd5);
+            casMd5);
     }
     
     @Override
@@ -221,7 +221,7 @@ public class NacosConfigService implements ConfigService {
     }
     
     private String getConfigInner(String tenant, String dataId, String group, long timeoutMs)
-            throws NacosException {
+        throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         ConfigResponse cr = new ConfigResponse();
@@ -236,15 +236,15 @@ public class NacosConfigService implements ConfigService {
         // This is designed for certain scenario like client emergency reboot,
         // changing config needed in the same time, while nacos server is down.
         String content =
-                LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
+            LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}",
-                    worker.getAgentName(),
-                    dataId, group, tenant);
+                worker.getAgentName(),
+                dataId, group, tenant);
             cr.setContent(content);
             String encryptedDataKey =
-                    LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
-                            dataId, group, tenant);
+                LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
+                    dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -253,7 +253,7 @@ public class NacosConfigService implements ConfigService {
         
         try {
             ConfigResponse response =
-                    worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
+                worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
             cr.setContent(response.getContent());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
             configFilterChainManager.doFilter(null, cr);
@@ -265,21 +265,21 @@ public class NacosConfigService implements ConfigService {
                 throw ioe;
             }
             LOGGER.warn(
-                    "[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
-                    worker.getAgentName(), dataId, group, tenant, ioe.toString());
+                "[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
+                worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
         
         content =
-                LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+            LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}",
-                    worker.getAgentName(),
-                    dataId, group, tenant);
+                worker.getAgentName(),
+                dataId, group, tenant);
         }
         cr.setContent(content);
         String encryptedDataKey =
-                LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(),
-                        dataId, group, tenant);
+            LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(),
+                dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
@@ -291,8 +291,8 @@ public class NacosConfigService implements ConfigService {
     }
     
     private ConfigResponse getConfigInnerWithResponse(String tenant, String dataId, String group,
-            long timeoutMs)
-            throws NacosException {
+        long timeoutMs)
+        throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         ConfigResponse cr = new ConfigResponse();
@@ -303,15 +303,15 @@ public class NacosConfigService implements ConfigService {
         
         // Try local failover first
         String content =
-                LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
+            LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}",
-                    worker.getAgentName(),
-                    dataId, group, tenant);
+                worker.getAgentName(),
+                dataId, group, tenant);
             cr.setContent(content);
             String encryptedDataKey =
-                    LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
-                            dataId, group, tenant);
+                LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
+                    dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             // Failover doesn't have MD5 from server
             configFilterChainManager.doFilter(null, cr);
@@ -320,7 +320,7 @@ public class NacosConfigService implements ConfigService {
         
         try {
             ConfigResponse response =
-                    worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
+                worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
             cr.setContent(response.getContent());
             cr.setMd5(response.getMd5());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
@@ -332,22 +332,22 @@ public class NacosConfigService implements ConfigService {
                 throw ioe;
             }
             LOGGER.warn(
-                    "[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
-                    worker.getAgentName(), dataId, group, tenant, ioe.toString());
+                "[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
+                worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
         
         // Fall back to snapshot
         content =
-                LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+            LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}",
-                    worker.getAgentName(),
-                    dataId, group, tenant);
+                worker.getAgentName(),
+                dataId, group, tenant);
         }
         cr.setContent(content);
         String encryptedDataKey =
-                LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(),
-                        dataId, group, tenant);
+            LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(),
+                dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         // Snapshot doesn't have MD5 from server
         configFilterChainManager.doFilter(null, cr);
@@ -356,7 +356,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public ConfigQueryResult getConfigWithResult(String dataId, String group, long timeoutMs)
-            throws NacosException {
+        throws NacosException {
         ConfigResponse response = getConfigInnerWithResponse(namespace, dataId, group, timeoutMs);
         ConfigQueryResult result = new ConfigQueryResult();
         result.setContent(response.getContent());
@@ -367,15 +367,15 @@ public class NacosConfigService implements ConfigService {
     }
     
     private boolean removeConfigInner(String tenant, String dataId, String group, String tag)
-            throws NacosException {
+        throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         return worker.removeConfig(dataId, group, tenant, tag);
     }
     
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag,
-            String appName,
-            String betaIps, String content, String type, String casMd5) throws NacosException {
+        String appName,
+        String betaIps, String content, String type, String casMd5) throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
         
@@ -390,8 +390,8 @@ public class NacosConfigService implements ConfigService {
         String encryptedDataKey = cr.getEncryptedDataKey();
         
         return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content,
-                encryptedDataKey, casMd5,
-                type);
+            encryptedDataKey, casMd5,
+            type);
     }
     
     @Override

@@ -72,7 +72,7 @@ class ServiceInfoHolderTest {
     void testGetServiceInfoMap() throws NoSuchFieldException, IllegalAccessException {
         assertEquals(0, holder.getServiceInfoMap().size());
         Field fieldNotifierEventScope =
-                ServiceInfoHolder.class.getDeclaredField("notifierEventScope");
+            ServiceInfoHolder.class.getDeclaredField("notifierEventScope");
         fieldNotifierEventScope.setAccessible(true);
         assertEquals("scope-001", fieldNotifierEventScope.get(holder));
     }
@@ -116,9 +116,9 @@ class ServiceInfoHolderTest {
         
         Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
-                Mockito.mockStatic(MetricsMonitor.class)) {
+            Mockito.mockStatic(MetricsMonitor.class)) {
             mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor)
-                    .thenReturn(mockGaugeChild);
+                .thenReturn(mockGaugeChild);
             
             holder.processServiceInfo(info);
             
@@ -138,7 +138,7 @@ class ServiceInfoHolderTest {
         info.setHosts(hosts);
         
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
-                Mockito.mockStatic(MetricsMonitor.class)) {
+            Mockito.mockStatic(MetricsMonitor.class)) {
             holder.processServiceInfo(info);
             
             mockedMetricsMonitor.verify(MetricsMonitor::getServiceInfoMapSizeMonitor, never());
@@ -159,9 +159,9 @@ class ServiceInfoHolderTest {
         
         Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
-                Mockito.mockStatic(MetricsMonitor.class)) {
+            Mockito.mockStatic(MetricsMonitor.class)) {
             mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor)
-                    .thenReturn(mockGaugeChild);
+                .thenReturn(mockGaugeChild);
             
             holder.processServiceInfo(info);
             
@@ -184,9 +184,9 @@ class ServiceInfoHolderTest {
         RuntimeException exception = new RuntimeException("Mocked exception");
         
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor =
-                Mockito.mockStatic(MetricsMonitor.class)) {
+            Mockito.mockStatic(MetricsMonitor.class)) {
             mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor)
-                    .thenReturn(mockGaugeChild);
+                .thenReturn(mockGaugeChild);
             doThrow(exception).when(mockGaugeChild).set(anyInt());
             
             ServiceInfo actual2 = holder.processServiceInfo(info);
@@ -199,7 +199,7 @@ class ServiceInfoHolderTest {
         Properties properties = new Properties();
         if (enableClientMetrics != null) {
             properties.put(PropertyKeyConst.ENABLE_CLIENT_METRICS,
-                    String.valueOf(enableClientMetrics));
+                String.valueOf(enableClientMetrics));
         }
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String namespace = "test-namespace";
@@ -322,13 +322,13 @@ class ServiceInfoHolderTest {
         holder.shutdown();
         holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
         assertEquals(System.getProperty("user.home") + "/nacos/non-exist/naming/aa",
-                holder.getCacheDir());
+            holder.getCacheDir());
         assertTrue(holder.getServiceInfoMap().isEmpty());
     }
     
     @Test
     void testIsFailoverSwitch()
-            throws IllegalAccessException, NoSuchFieldException, NacosException {
+        throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();
         when(mock.isFailoverSwitch()).thenReturn(true);
         assertTrue(holder.isFailoverSwitch());
@@ -336,7 +336,7 @@ class ServiceInfoHolderTest {
     
     @Test
     void testGetFailoverServiceInfo()
-            throws IllegalAccessException, NoSuchFieldException, NacosException {
+        throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();
         ServiceInfo serviceInfo = new ServiceInfo("a@@b@@c");
         when(mock.getService("a@@b")).thenReturn(serviceInfo);
@@ -344,7 +344,7 @@ class ServiceInfoHolderTest {
     }
     
     private FailoverReactor injectMockFailoverReactor()
-            throws NoSuchFieldException, IllegalAccessException, NacosException {
+        throws NoSuchFieldException, IllegalAccessException, NacosException {
         Field field = ServiceInfoHolder.class.getDeclaredField("failoverReactor");
         field.setAccessible(true);
         FailoverReactor old = (FailoverReactor) field.get(holder);

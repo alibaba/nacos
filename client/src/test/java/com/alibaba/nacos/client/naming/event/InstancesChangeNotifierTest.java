@@ -66,8 +66,8 @@ class InstancesChangeNotifierTest {
         EventListener listener = Mockito.mock(EventListener.class);
         NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         NamingSelectorWrapper wrapper =
-                new NamingSelectorWrapper(SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
-                        selector, listener);
+            new NamingSelectorWrapper(SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
+                selector, listener);
         instancesChangeNotifier.registerListener(GROUP_CASE, SERVICE_NAME_CASE, wrapper);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
         assertEquals(1, subscribeServices.size());
@@ -81,8 +81,8 @@ class InstancesChangeNotifierTest {
         InstancesDiff diff = new InstancesDiff();
         diff.setAddedInstances(hosts);
         InstancesChangeEvent event =
-                new InstancesChangeEvent(EVENT_SCOPE_CASE, SERVICE_NAME_CASE, GROUP_CASE,
-                        CLUSTER_STR_CASE, hosts, diff);
+            new InstancesChangeEvent(EVENT_SCOPE_CASE, SERVICE_NAME_CASE, GROUP_CASE,
+                CLUSTER_STR_CASE, hosts, diff);
         assertTrue(instancesChangeNotifier.scopeMatches(event));
     }
     
@@ -110,8 +110,8 @@ class InstancesChangeNotifierTest {
         assertFalse(instancesChangeNotifier.isSubscribed(GROUP_CASE, SERVICE_NAME_CASE));
         
         NamingSelectorWrapper wrapper =
-                new NamingSelectorWrapper(SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
-                        selector, listener);
+            new NamingSelectorWrapper(SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
+                selector, listener);
         instancesChangeNotifier.registerListener(GROUP_CASE, SERVICE_NAME_CASE, wrapper);
         assertTrue(instancesChangeNotifier.isSubscribed(GROUP_CASE, SERVICE_NAME_CASE));
     }
@@ -123,15 +123,15 @@ class InstancesChangeNotifierTest {
         EventListener listener = Mockito.mock(EventListener.class);
         
         NamingSelectorWrapper wrapper =
-                new NamingSelectorWrapper(SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
-                        selector, listener);
+            new NamingSelectorWrapper(SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
+                selector, listener);
         instancesChangeNotifier.registerListener(GROUP_CASE, SERVICE_NAME_CASE, wrapper);
         Instance instance = new Instance();
         InstancesDiff diff = new InstancesDiff(null, Collections.singletonList(instance), null);
         instance.setClusterName(CLUSTER_STR_CASE);
         InstancesChangeEvent event1 =
-                new InstancesChangeEvent(null, SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
-                        Collections.emptyList(), diff);
+            new InstancesChangeEvent(null, SERVICE_NAME_CASE, GROUP_CASE, CLUSTER_STR_CASE,
+                Collections.emptyList(), diff);
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(listener, times(1)).onEvent(any());
     }
@@ -144,10 +144,10 @@ class InstancesChangeNotifierTest {
         when(event1.getServiceName()).thenReturn(SERVICE_NAME_CASE);
         EventListener listener = Mockito.mock(EventListener.class);
         instancesChangeNotifier.registerListener(GROUP_CASE, SERVICE_NAME_CASE + "c",
-                new NamingSelectorWrapper(
-                        NamingSelectorFactory.newClusterSelector(
-                                Collections.singletonList(CLUSTER_STR_CASE)),
-                        listener));
+            new NamingSelectorWrapper(
+                NamingSelectorFactory.newClusterSelector(
+                    Collections.singletonList(CLUSTER_STR_CASE)),
+                listener));
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(listener, never()).onEvent(any());
     }
@@ -159,12 +159,12 @@ class InstancesChangeNotifierTest {
         when(listener.getExecutor()).thenReturn(executor);
         
         instancesChangeNotifier.registerListener(GROUP_CASE, SERVICE_NAME_CASE,
-                new NamingSelectorWrapper(new DefaultNamingSelector(instance -> true), listener));
+            new NamingSelectorWrapper(new DefaultNamingSelector(instance -> true), listener));
         InstancesDiff instancesDiff = new InstancesDiff();
         instancesDiff.setRemovedInstances(Collections.singletonList(new Instance()));
         InstancesChangeEvent event =
-                new InstancesChangeEvent(EVENT_SCOPE_CASE, SERVICE_NAME_CASE, GROUP_CASE,
-                        CLUSTER_STR_CASE, new ArrayList<>(), instancesDiff);
+            new InstancesChangeEvent(EVENT_SCOPE_CASE, SERVICE_NAME_CASE, GROUP_CASE,
+                CLUSTER_STR_CASE, new ArrayList<>(), instancesDiff);
         instancesChangeNotifier.onEvent(event);
         Mockito.verify(executor).execute(any());
     }

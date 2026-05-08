@@ -108,7 +108,7 @@ class AbilityTest {
                     
                     @Override
                     public Response request(Request request, long timeoutMills)
-                            throws NacosException {
+                        throws NacosException {
                         return null;
                     }
                     
@@ -119,7 +119,7 @@ class AbilityTest {
                     
                     @Override
                     public void asyncRequest(Request request, RequestCallBack requestCallBack)
-                            throws NacosException {
+                        throws NacosException {
                         
                     }
                     
@@ -157,9 +157,9 @@ class AbilityTest {
         rpcClient.start();
         // if connect successfully
         assertEquals(AbilityStatus.SUPPORTED,
-                rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+            rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
         assertEquals(AbilityStatus.NOT_SUPPORTED,
-                rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+            rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @AfterEach
@@ -167,9 +167,9 @@ class AbilityTest {
         //test support
         ServerRequestHandler serverRequestHandler = (request, connection) -> {
             assertEquals(AbilityStatus.SUPPORTED,
-                    connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+                connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
             assertEquals(AbilityStatus.NOT_SUPPORTED,
-                    connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+                connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
             return new Response() {
             };
         };
@@ -178,7 +178,7 @@ class AbilityTest {
         // test no ability table
         serverRequestHandler = (request, connection) -> {
             assertEquals(AbilityStatus.UNKNOWN,
-                    connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+                connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
             return new Response() {
             };
         };

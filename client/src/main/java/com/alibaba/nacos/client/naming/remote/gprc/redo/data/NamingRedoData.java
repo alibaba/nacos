@@ -55,7 +55,7 @@ public abstract class NamingRedoData<T> extends RedoData<T> {
         }
         NamingRedoData<?> redoData = (NamingRedoData<?>) o;
         return super.equals(o) && serviceName.equals(redoData.serviceName)
-                && groupName.equals(redoData.groupName);
+            && groupName.equals(redoData.groupName);
     }
     
     @Override

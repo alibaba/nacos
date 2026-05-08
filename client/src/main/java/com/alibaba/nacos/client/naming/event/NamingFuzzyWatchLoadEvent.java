@@ -58,7 +58,7 @@ public class NamingFuzzyWatchLoadEvent extends Event {
      * @return A new FuzzyListenNotifyEvent instance.
      */
     public static NamingFuzzyWatchLoadEvent buildEvent(int code, String groupKeyPattern,
-            String scope) {
+        String scope) {
         return new NamingFuzzyWatchLoadEvent(code, groupKeyPattern, scope);
     }
     

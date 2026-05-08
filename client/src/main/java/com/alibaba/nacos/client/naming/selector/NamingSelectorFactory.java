@@ -40,7 +40,7 @@ public final class NamingSelectorFactory {
     public static final NamingSelector EMPTY_SELECTOR = context -> context::getInstances;
     
     public static final NamingSelector HEALTHY_SELECTOR =
-            new DefaultNamingSelector(Instance::isHealthy);
+        new DefaultNamingSelector(Instance::isHealthy);
     
     /**
      * Cluster selector.

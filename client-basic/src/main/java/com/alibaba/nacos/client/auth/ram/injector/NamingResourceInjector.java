@@ -49,7 +49,7 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     
     @Override
     public void doInject(RequestResource resource, RamContext context,
-            LoginIdentityContext result) {
+        LoginIdentityContext result) {
         if (context.validate()) {
             try {
                 String accessKey = context.getAccessKey();
@@ -57,16 +57,16 @@ public class NamingResourceInjector extends AbstractResourceInjector {
                 // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
                 if (StsConfig.getInstance().isStsOn()) {
                     StsCredential stsCredential =
-                            StsCredentialHolder.getInstance().getStsCredential();
+                        StsCredentialHolder.getInstance().getStsCredential();
                     accessKey = stsCredential.getAccessKeyId();
                     secretKey = stsCredential.getAccessKeySecret();
                     result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER,
-                            stsCredential.getSecurityToken());
+                        stsCredential.getSecurityToken());
                 }
                 String signatureKey = secretKey;
                 if (StringUtils.isNotEmpty(context.getRegionId())) {
                     signatureKey = CalculateV4SigningKeyUtil
-                            .finalSigningKeyStringWithDefaultInfo(secretKey, context.getRegionId());
+                        .finalSigningKeyStringWithDefaultInfo(secretKey, context.getRegionId());
                     result.setParameter(RamConstants.SIGNATURE_VERSION, RamConstants.V4);
                 }
                 String signData = getSignData(getGroupedServiceName(resource));
@@ -82,7 +82,7 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     
     private String getGroupedServiceName(RequestResource resource) {
         if (resource.getResource().contains(Constants.SERVICE_INFO_SPLITER) || StringUtils
-                .isBlank(resource.getGroup())) {
+            .isBlank(resource.getGroup())) {
             return resource.getResource();
         }
         return NamingUtils.getGroupedNameOptional(resource.getResource(), resource.getGroup());
@@ -90,8 +90,8 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     
     private String getSignData(String serviceName) {
         return StringUtils.isNotEmpty(serviceName)
-                ? System.currentTimeMillis() + Constants.SERVICE_INFO_SPLITER
-                        + serviceName
-                : String.valueOf(System.currentTimeMillis());
+            ? System.currentTimeMillis() + Constants.SERVICE_INFO_SPLITER
+                + serviceName
+            : String.valueOf(System.currentTimeMillis());
     }
 }

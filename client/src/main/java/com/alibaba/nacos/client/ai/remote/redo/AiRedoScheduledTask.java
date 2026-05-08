@@ -58,8 +58,8 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
                 redoForAgentEndpoint(redoData);
             } catch (NacosException e) {
                 LOGGER.error("Redo agent endpoint operation {} for {}} failed. ",
-                        each.getRedoType(),
-                        redoData.getAgentName(), e);
+                    each.getRedoType(),
+                    redoData.getAgentName(), e);
             }
         }
     }
@@ -85,8 +85,8 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
                     return;
                 }
                 AgentEndpoint endpoint =
-                        wrapper.isBatch() ? wrapper.getBatchData().stream().findFirst().get()
-                                : wrapper.getData();
+                    wrapper.isBatch() ? wrapper.getBatchData().stream().findFirst().get()
+                        : wrapper.getData();
                 aiGrpcClient.doDeregisterAgentEndpoint(agentName, endpoint);
                 break;
             case REMOVE:
@@ -103,14 +103,14 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
                 redoForMcpServerEndpoint(redoData);
             } catch (NacosException e) {
                 LOGGER.error("Redo mcp server endpoint operation {} for {}} failed. ",
-                        each.getRedoType(),
-                        redoData.getMcpName(), e);
+                    each.getRedoType(),
+                    redoData.getMcpName(), e);
             }
         }
     }
     
     private void redoForMcpServerEndpoint(McpServerEndpointRedoData redoData)
-            throws NacosException {
+        throws NacosException {
         NamingRedoData.RedoType redoType = redoData.getRedoType();
         String mcpName = redoData.getMcpName();
         LOGGER.info("Redo mcp server endpoint operation {} for {}.", redoType, mcpName);
@@ -121,15 +121,15 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
                     return;
                 }
                 aiGrpcClient.doRegisterMcpServerEndpoint(mcpName, endpoint.getAddress(),
-                        endpoint.getPort(),
-                        endpoint.getVersion());
+                    endpoint.getPort(),
+                    endpoint.getVersion());
                 break;
             case UNREGISTER:
                 if (!aiGrpcClient.isEnable()) {
                     return;
                 }
                 aiGrpcClient.doDeregisterMcpServerEndpoint(mcpName, endpoint.getAddress(),
-                        endpoint.getPort());
+                    endpoint.getPort());
                 break;
             case REMOVE:
                 getRedoService().removeMcpServerEndpointForRedo(mcpName);

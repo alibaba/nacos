@@ -29,14 +29,14 @@ class ConfigChangeHandlerTest {
     @Test
     void testParseProperties() throws IOException {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app.name = nacos",
-                "properties");
+            "properties");
         assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
     
     @Test
     void testParseYaml() throws IOException {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("",
-                "app:\n  name: nacos", "yaml");
+            "app:\n  name: nacos", "yaml");
         assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
 }

@@ -70,8 +70,8 @@ public class ConcurrentDiskUtil {
      */
     public static String getFileContent(File file, String charsetName) throws IOException {
         try (RandomAccessFile fis = new RandomAccessFile(file, READ_ONLY);
-                FileChannel fcin = fis.getChannel();
-                FileLock rlock = tryLock(file, fcin, true)) {
+            FileChannel fcin = fis.getChannel();
+            FileLock rlock = tryLock(file, fcin, true)) {
             int fileSize = (int) fcin.size();
             ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
             fcin.read(byteBuffer);
@@ -90,7 +90,7 @@ public class ConcurrentDiskUtil {
      * @throws IOException IOException
      */
     public static Boolean writeFileContent(String path, String content, String charsetName)
-            throws IOException {
+        throws IOException {
         File file = new File(path);
         return writeFileContent(file, content, charsetName);
     }
@@ -105,14 +105,14 @@ public class ConcurrentDiskUtil {
      * @throws IOException IOException
      */
     public static Boolean writeFileContent(File file, String content, String charsetName)
-            throws IOException {
+        throws IOException {
         
         if (!file.exists() && !file.createNewFile()) {
             return false;
         }
         try (RandomAccessFile raf = new RandomAccessFile(file, READ_WRITE);
-                FileChannel channel = raf.getChannel();
-                FileLock lock = tryLock(file, channel, false)) {
+            FileChannel channel = raf.getChannel();
+            FileLock lock = tryLock(file, channel, false)) {
             byte[] contentBytes = content.getBytes(charsetName);
             ByteBuffer sendBuffer = ByteBuffer.wrap(contentBytes);
             while (sendBuffer.hasRemaining()) {
@@ -134,7 +134,7 @@ public class ConcurrentDiskUtil {
      * @throws IOException IOException
      */
     public static String byteBufferToString(ByteBuffer buffer, String charsetName)
-            throws IOException {
+        throws IOException {
         Charset charset = Charset.forName(charsetName);
         CharsetDecoder decoder = charset.newDecoder();
         CharBuffer charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
@@ -152,7 +152,7 @@ public class ConcurrentDiskUtil {
     }
     
     private static FileLock tryLock(File file, FileChannel channel, boolean shared)
-            throws IOException {
+        throws IOException {
         FileLock result = null;
         int i = 0;
         do {

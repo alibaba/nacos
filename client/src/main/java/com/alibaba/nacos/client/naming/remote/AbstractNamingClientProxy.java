@@ -31,7 +31,7 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public abstract class AbstractNamingClientProxy extends Subscriber<ServerListChangeEvent>
-        implements NamingClientProxy {
+    implements NamingClientProxy {
     
     private static final String APP_FILED = "app";
     
@@ -42,10 +42,10 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
     }
     
     protected Map<String, String> getSecurityHeaders(String namespace, String group,
-            String serviceName) {
+        String serviceName) {
         RequestResource resource =
-                RequestResource.namingBuilder().setNamespace(namespace).setGroup(group)
-                        .setResource(serviceName).build();
+            RequestResource.namingBuilder().setNamespace(namespace).setGroup(group)
+                .setResource(serviceName).build();
         Map<String, String> result = this.securityProxy.getIdentityContext(resource);
         result.putAll(getAppHeaders());
         return result;

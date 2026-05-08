@@ -47,7 +47,7 @@ import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_COLLECTION;
 public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
     private final Map<String, AbstractConnection<Mcp.Resources>> connections =
-            new ConcurrentHashMap<>(16);
+        new ConcurrentHashMap<>(16);
     
     @Autowired
     ApiGeneratorFactory apiGeneratorFactory;
@@ -61,7 +61,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
     @Override
     public StreamObserver<Mcp.RequestResources> establishResourceStream(
-            StreamObserver<Mcp.Resources> responseObserver) {
+        StreamObserver<Mcp.Resources> responseObserver) {
         
         // TODO add authN
         
@@ -88,7 +88,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             @Override
             public void onError(Throwable throwable) {
                 Loggers.MAIN.error("mcp: {} stream error.", newConnection.getConnectionId(),
-                        throwable);
+                    throwable);
                 clear();
             }
             
@@ -105,7 +105,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     }
     
     private void process(Mcp.RequestResources requestResources,
-            AbstractConnection<Mcp.Resources> connection) {
+        AbstractConnection<Mcp.Resources> connection) {
         if (!shouldPush(requestResources, connection)) {
             return;
         }
@@ -113,28 +113,28 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         PushRequest pushRequest = new PushRequest(resourceManager.getResourceSnapshot(), true);
         
         Mcp.Resources response =
-                buildMcpResourcesResponse(requestResources.getCollection(), pushRequest);
+            buildMcpResourcesResponse(requestResources.getCollection(), pushRequest);
         connection.push(response,
-                connection.getWatchedStatusByType(requestResources.getCollection()));
+            connection.getWatchedStatusByType(requestResources.getCollection()));
     }
     
     private boolean shouldPush(Mcp.RequestResources requestResources,
-            AbstractConnection<Mcp.Resources> connection) {
+        AbstractConnection<Mcp.Resources> connection) {
         String type = requestResources.getCollection();
         String connectionId = connection.getConnectionId();
         
         if (requestResources.getErrorDetail().getCode() != 0) {
             Loggers.MAIN.error("mcp: ACK error, connection-id: {}, code: {}, message: {}",
-                    connectionId,
-                    requestResources.getErrorDetail().getCode(),
-                    requestResources.getErrorDetail().getMessage());
+                connectionId,
+                requestResources.getErrorDetail().getCode(),
+                requestResources.getErrorDetail().getMessage());
             return false;
         }
         
         WatchedStatus watchedStatus;
         if (requestResources.getResponseNonce().isEmpty()) {
             Loggers.MAIN.info("mcp: init request, type {}, connection-id {}, is incremental {}",
-                    type, connectionId, requestResources.getIncremental());
+                type, connectionId, requestResources.getIncremental());
             
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(type);
@@ -146,7 +146,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         watchedStatus = connection.getWatchedStatusByType(type);
         if (watchedStatus == null) {
             Loggers.MAIN.info("mcp: reconnect, type {}, connection-id {}, is incremental {}",
-                    type, connectionId, requestResources.getIncremental());
+                type, connectionId, requestResources.getIncremental());
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(type);
             connection.addWatchedResource(type, watchedStatus);
@@ -155,14 +155,14 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         
         if (!watchedStatus.getLatestNonce().equals(requestResources.getResponseNonce())) {
             Loggers.MAIN.warn("mcp: request dis match, type {}, connection-id {}", type,
-                    connectionId);
+                connectionId);
             return false;
         }
         
         // This request is ack, we should record nonce.
         watchedStatus.setAckedNonce(requestResources.getResponseNonce());
         Loggers.MAIN.info("mcp: ack, type {}, connection-id {}, nonce {}", type, connectionId,
-                requestResources.getResponseNonce());
+            requestResources.getResponseNonce());
         return false;
     }
     
@@ -174,11 +174,11 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         Loggers.MAIN.info("mcp: event {} trigger push.", pushRequest.getReason());
         
         Mcp.Resources serviceEntryMcpResponse =
-                buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushRequest);
+            buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushRequest);
         
         for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
             WatchedStatus watchedStatus =
-                    connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
+                connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
             if (watchedStatus != null) {
                 connection.push(serviceEntryMcpResponse, watchedStatus);
             }
@@ -188,14 +188,14 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     private Mcp.Resources buildMcpResourcesResponse(String type, PushRequest pushRequest) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Resource> serviceEntryGenerator =
-                (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
+            (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
         List<Resource> rawResources = serviceEntryGenerator.generate(pushRequest);
         
         String nonce = NonceGenerator.generateNonce();
         return Mcp.Resources.newBuilder()
-                .setCollection(type)
-                .addAllResources(rawResources)
-                .setSystemVersionInfo(pushRequest.getResourceSnapshot().getVersion())
-                .setNonce(nonce).build();
+            .setCollection(type)
+            .addAllResources(rawResources)
+            .setSystemVersionInfo(pushRequest.getResourceSnapshot().getVersion())
+            .setNonce(nonce).build();
     }
 }

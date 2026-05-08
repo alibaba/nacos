@@ -62,13 +62,13 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
         
         IstioConfig istioConfig = resourceSnapshot.getIstioConfig();
         Map<String, IstioService> serviceInfoMap =
-                resourceSnapshot.getIstioResources().getIstioServiceMap();
+            resourceSnapshot.getIstioResources().getIstioServiceMap();
         
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
             String serviceName = entry.getKey();
             
             ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName,
-                    serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
+                serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
             if (serviceEntryWrapper != null) {
                 serviceEntries.add(serviceEntryWrapper);
             }
@@ -77,10 +77,10 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
         for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
             MetadataOuterClass.Metadata metadata = serviceEntryWrapper.getMetadata();
             ServiceEntryOuterClass.ServiceEntry serviceEntry =
-                    serviceEntryWrapper.getServiceEntry();
+                serviceEntryWrapper.getServiceEntry();
             
             Any any = Any.newBuilder().setValue(serviceEntry.toByteString())
-                    .setTypeUrl(SERVICE_ENTRY_PROTO).build();
+                .setTypeUrl(SERVICE_ENTRY_PROTO).build();
             
             result.add(Resource.newBuilder().setBody(any).setMetadata(metadata).build());
         }
@@ -90,7 +90,7 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     
     @Override
     public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(
-            PushRequest pushRequest) {
+        PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

@@ -38,7 +38,7 @@ public interface ServerListProvider extends Closeable {
      * @throws NacosException nacos exception
      */
     void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate)
-            throws NacosException;
+        throws NacosException;
     
     /**
      * Get server list.

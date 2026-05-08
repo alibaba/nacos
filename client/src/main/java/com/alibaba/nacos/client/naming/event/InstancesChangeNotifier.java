@@ -58,7 +58,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      * @param wrapper     selectorWrapper
      */
     public void registerListener(String groupName, String serviceName,
-            NamingSelectorWrapper wrapper) {
+        NamingSelectorWrapper wrapper) {
         if (wrapper == null) {
             return;
         }
@@ -74,7 +74,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      * @param wrapper     selectorWrapper
      */
     public void deregisterListener(String groupName, String serviceName,
-            NamingSelectorWrapper wrapper) {
+        NamingSelectorWrapper wrapper) {
         if (wrapper == null) {
             return;
         }
@@ -106,7 +106,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     public void onEvent(InstancesChangeEvent event) {
         String subId = NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName());
         Collection<NamingSelectorWrapper> selectorWrappers =
-                selectorManager.getSelectorWrappers(subId);
+            selectorManager.getSelectorWrappers(subId);
         for (NamingSelectorWrapper selectorWrapper : selectorWrappers) {
             selectorWrapper.notifyListener(event);
         }

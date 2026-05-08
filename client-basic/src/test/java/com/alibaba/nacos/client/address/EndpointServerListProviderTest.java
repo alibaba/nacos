@@ -65,7 +65,7 @@ class EndpointServerListProviderTest {
     @BeforeEach
     void setUp() {
         requestSuccess =
-                new HttpRestResult<>(Header.EMPTY, 200, "\n127.0.0.1\nlocalhost:9848", "success");
+            new HttpRestResult<>(Header.EMPTY, 200, "\n127.0.0.1\nlocalhost:9848", "success");
         serverListProvider = new EndpointServerListProvider();
         properties = NacosClientProperties.PROTOTYPE.derive();
     }
@@ -91,12 +91,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         assertTrue(serverListProvider.match(properties));
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "", ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "", ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -104,15 +104,15 @@ class EndpointServerListProviderTest {
     void testMatchAndInitForSystemEndpoint() throws Exception {
         assertFalse(serverListProvider.match(properties));
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
-                "endpointFromSystem");
+            "endpointFromSystem");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         assertTrue(serverListProvider.match(properties));
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromSystem", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(), "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(), "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -121,16 +121,16 @@ class EndpointServerListProviderTest {
         assertFalse(serverListProvider.match(properties));
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
-                "endpointFromSystem");
+            "endpointFromSystem");
         properties.setProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "false");
         assertTrue(serverListProvider.match(properties));
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "", ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "", ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -139,16 +139,16 @@ class EndpointServerListProviderTest {
         assertFalse(serverListProvider.match(properties));
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
-                "endpointFromSystem");
+            "endpointFromSystem");
         System.setProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "false");
         assertTrue(serverListProvider.match(properties));
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "", ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "", ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -157,15 +157,15 @@ class EndpointServerListProviderTest {
         assertFalse(serverListProvider.match(properties));
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL,
-                "endpointFromSystem");
+            "endpointFromSystem");
         assertTrue(serverListProvider.match(properties));
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromSystem", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(), "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(), "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -174,12 +174,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, "80");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 80, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(), "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(), "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -188,12 +188,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT, "443");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 443, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "", ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "", ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -202,12 +202,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "address");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, "address",
-                ClientBasicParamUtil.getDefaultNodesPath(), "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(), "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -215,14 +215,14 @@ class EndpointServerListProviderTest {
     void testInitWithSystemEndpointContextPath() throws Exception {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH,
-                "addresses");
+            "addresses");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, "addresses",
-                ClientBasicParamUtil.getDefaultNodesPath(), "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(), "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -231,12 +231,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "globalContextPath");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, "globalContextPath",
-                ClientBasicParamUtil.getDefaultNodesPath(), "",
-                "globalContextPath");
+            ClientBasicParamUtil.getDefaultNodesPath(), "",
+            "globalContextPath");
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -245,12 +245,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "endpointClusterName");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                "endpointClusterName", "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            "endpointClusterName", "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -261,12 +261,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "endpointClusterName");
         properties.setProperty(PropertyKeyConst.IS_ADAPT_CLUSTER_NAME_USAGE, "true");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                "endpointClusterName", "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            "endpointClusterName", "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -276,12 +276,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.CLUSTER_NAME, "clusterName");
         properties.setProperty(PropertyKeyConst.IS_ADAPT_CLUSTER_NAME_USAGE, "true");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                "clusterName", "",
-                ClientBasicParamUtil.getDefaultContextPath());
+            "clusterName", "",
+            ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -290,12 +290,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.CLUSTER_NAME, "clusterName");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "", ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "", ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -304,12 +304,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.NAMESPACE, "customNamespace");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "customNamespace", ClientBasicParamUtil.getDefaultContextPath());
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "customNamespace", ClientBasicParamUtil.getDefaultContextPath());
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -318,12 +318,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS, "nofix=1");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "", ClientBasicParamUtil.getDefaultContextPath(), "nofix=1");
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "", ClientBasicParamUtil.getDefaultContextPath(), "nofix=1");
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -333,12 +333,12 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.NAMESPACE, "customNamespace");
         properties.setProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS, "nofix=1");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess);
+            eq(String.class))).thenReturn(
+                requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertInit("endpointFromProperties", 8080, ClientBasicParamUtil.getDefaultContextPath(),
-                ClientBasicParamUtil.getDefaultNodesPath(),
-                "customNamespace", ClientBasicParamUtil.getDefaultContextPath(), "nofix=1");
+            ClientBasicParamUtil.getDefaultNodesPath(),
+            "customNamespace", ClientBasicParamUtil.getDefaultContextPath(), "nofix=1");
         assertEquals(2, serverListProvider.getServerList().size());
     }
     
@@ -347,10 +347,10 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(com.alibaba.nacos.api.common.Constants.CLIENT_MODULE_TYPE, "naming");
         when(nacosRestTemplate.get(anyString(),
-                argThat(header -> "naming"
-                        .equals(header.getValue(HttpHeaderConsts.REQUEST_MODULE))),
-                any(Query.class),
-                eq(String.class))).thenReturn(requestSuccess);
+            argThat(header -> "naming"
+                .equals(header.getValue(HttpHeaderConsts.REQUEST_MODULE))),
+            any(Query.class),
+            eq(String.class))).thenReturn(requestSuccess);
         serverListProvider.init(properties, nacosRestTemplate);
         assertFalse(serverListProvider.getServerList().isEmpty());
         assertEquals(2, serverListProvider.getServerList().size());
@@ -360,10 +360,10 @@ class EndpointServerListProviderTest {
     void testInitGetServerListWithException() throws Exception {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenThrow(
-                        new IOException("test"));
+            eq(String.class))).thenThrow(
+                new IOException("test"));
         assertThrows(NacosException.class,
-                () -> serverListProvider.init(properties, nacosRestTemplate));
+            () -> serverListProvider.init(properties, nacosRestTemplate));
     }
     
     @Test
@@ -371,10 +371,10 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         HttpRestResult failedResult = new HttpRestResult<>(Header.EMPTY, 500, null, "test");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        failedResult);
+            eq(String.class))).thenReturn(
+                failedResult);
         assertThrows(NacosException.class,
-                () -> serverListProvider.init(properties, nacosRestTemplate));
+            () -> serverListProvider.init(properties, nacosRestTemplate));
     }
     
     @Test
@@ -382,16 +382,16 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "1");
         HttpRestResult newResult =
-                new HttpRestResult<>(Header.EMPTY, 200, "\n1.1.1.1 \nlocalhost:9848", "success");
+            new HttpRestResult<>(Header.EMPTY, 200, "\n1.1.1.1 \nlocalhost:9848", "success");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess, newResult);
+            eq(String.class))).thenReturn(
+                requestSuccess, newResult);
         serverListProvider.init(properties, nacosRestTemplate);
         assertEquals(2, serverListProvider.getServerList().size());
         assertEquals("127.0.0.1:8848", serverListProvider.getServerList().get(0));
         assertEquals("localhost:9848", serverListProvider.getServerList().get(1));
         Field field =
-                EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
+            EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
         field.setAccessible(true);
         field.set(serverListProvider, 0L);
         // wait refresh
@@ -406,16 +406,16 @@ class EndpointServerListProviderTest {
         properties.setProperty(PropertyKeyConst.ENDPOINT, "endpointFromProperties");
         properties.setProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "1");
         HttpRestResult newResult =
-                new HttpRestResult<>(Header.EMPTY, 200, "\nlocalhost:9848\n127.0.0.1", "success");
+            new HttpRestResult<>(Header.EMPTY, 200, "\nlocalhost:9848\n127.0.0.1", "success");
         when(nacosRestTemplate.get(anyString(), any(Header.class), any(Query.class),
-                eq(String.class))).thenReturn(
-                        requestSuccess, newResult);
+            eq(String.class))).thenReturn(
+                requestSuccess, newResult);
         serverListProvider.init(properties, nacosRestTemplate);
         assertEquals(2, serverListProvider.getServerList().size());
         assertEquals("127.0.0.1:8848", serverListProvider.getServerList().get(0));
         assertEquals("localhost:9848", serverListProvider.getServerList().get(1));
         Field field =
-                EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
+            EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
         field.setAccessible(true);
         field.set(serverListProvider, 0L);
         // wait refresh
@@ -426,25 +426,25 @@ class EndpointServerListProviderTest {
     }
     
     private void assertInit(String expectedEndpoint, int expectEndpointPort,
-            String expectedEndpointContext,
-            String expectedServiceName, String expectedNamespace, String expectedContextPath) {
+        String expectedEndpointContext,
+        String expectedServiceName, String expectedNamespace, String expectedContextPath) {
         assertInit(expectedEndpoint, expectEndpointPort, expectedEndpointContext,
-                expectedServiceName,
-                expectedNamespace, expectedContextPath, null);
+            expectedServiceName,
+            expectedNamespace, expectedContextPath, null);
     }
     
     private void assertInit(String expectedEndpoint, int expectEndpointPort,
-            String expectedEndpointContext,
-            String expectedServiceName, String expectedNamespace, String expectedContextPath,
-            String expectedQuery) {
+        String expectedEndpointContext,
+        String expectedServiceName, String expectedNamespace, String expectedContextPath,
+        String expectedQuery) {
         String expectedAddressServerUrl = String.format("http://%s:%d%s/%s", expectedEndpoint,
-                expectEndpointPort,
-                ContextPathUtil.normalizeContextPath(expectedEndpointContext), expectedServiceName);
+            expectEndpointPort,
+            ContextPathUtil.normalizeContextPath(expectedEndpointContext), expectedServiceName);
         assertEquals(Constants.Address.ENDPOINT_SERVER_LIST_PROVIDER_ORDER,
-                serverListProvider.getOrder());
+            serverListProvider.getOrder());
         String expectedServerName =
-                String.format("%s-%s_%d_%s_%s", "custom", expectedEndpoint, expectEndpointPort,
-                        expectedEndpointContext, expectedServiceName);
+            String.format("%s-%s_%d_%s_%s", "custom", expectedEndpoint, expectEndpointPort,
+                expectedEndpointContext, expectedServiceName);
         if (StringUtils.isNotBlank(expectedNamespace)) {
             expectedServerName = String.format("%s_%s", expectedServerName, expectedNamespace);
             expectedAddressServerUrl += "?namespace=" + expectedNamespace;

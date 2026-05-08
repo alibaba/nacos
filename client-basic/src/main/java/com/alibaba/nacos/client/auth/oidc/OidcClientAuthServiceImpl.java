@@ -78,13 +78,13 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
                         if (!configured) {
                             oidcNotConfigured = true;
                             LOGGER.debug(
-                                    "[OIDC-CLIENT] OIDC not configured (missing client-id/client-secret), skipping");
+                                "[OIDC-CLIENT] OIDC not configured (missing client-id/client-secret), skipping");
                             return true;
                         }
                         this.tokenHolder = new OidcTokenHolder();
                         this.context = newContext;
                         LOGGER.info("[OIDC-CLIENT] OIDC client configured, client-id: {}",
-                                context.getClientId());
+                            context.getClientId());
                     }
                 }
             }
@@ -94,7 +94,7 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
                 boolean discoveryResult = context.discover();
                 if (!discoveryResult) {
                     LOGGER.warn(
-                            "[OIDC-CLIENT] OIDC Discovery failed, will retry on next login cycle");
+                        "[OIDC-CLIENT] OIDC Discovery failed, will retry on next login cycle");
                     return false;
                 }
             }
@@ -106,7 +106,7 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
                         boolean tokenResult = tokenHolder.fetchToken(context);
                         if (!tokenResult) {
                             LOGGER.warn(
-                                    "[OIDC-CLIENT] Token fetch failed, will retry on next login cycle");
+                                "[OIDC-CLIENT] Token fetch failed, will retry on next login cycle");
                             return false;
                         }
                         
@@ -114,12 +114,12 @@ public class OidcClientAuthServiceImpl extends AbstractClientAuthService {
                         LoginIdentityContext newCtx = new LoginIdentityContext();
                         String token = tokenHolder.getAccessToken();
                         newCtx.setParameter(OidcProtocolConstants.AUTHORIZATION_HEADER,
-                                OidcProtocolConstants.BEARER_PREFIX + token);
+                            OidcProtocolConstants.BEARER_PREFIX + token);
                         newCtx.setParameter(OidcProtocolConstants.ACCESS_TOKEN_PARAM, token);
                         this.loginIdentityContext = newCtx;
                         
                         LOGGER.debug(
-                                "[OIDC-CLIENT] LoginIdentityContext updated with new access token");
+                            "[OIDC-CLIENT] LoginIdentityContext updated with new access token");
                     }
                 }
             }

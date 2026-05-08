@@ -76,7 +76,7 @@ class NamingResourceInjectorTest {
     @Test
     void testDoInjectWithGroup() throws Exception {
         resource =
-                RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+            RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
         assertEquals(3, actual.getAllKey().size());
@@ -102,7 +102,7 @@ class NamingResourceInjectorTest {
     void testDoInjectWithGroupForSts() throws Exception {
         prepareForSts();
         resource =
-                RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+            RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
         assertEquals(4, actual.getAllKey().size());
@@ -138,7 +138,7 @@ class NamingResourceInjectorTest {
     @Test
     void testDoInjectForV4Sign() throws Exception {
         resource =
-                RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+            RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         ramContext.setRegionId("cn-hangzhou");
         namingResourceInjector.doInject(resource, ramContext, actual);
@@ -147,7 +147,7 @@ class NamingResourceInjectorTest {
         assertEquals(RamConstants.V4, actual.getParameter(RamConstants.SIGNATURE_VERSION));
         assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
         String signatureKey = CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo(
-                PropertyKeyConst.SECRET_KEY, "cn-hangzhou");
+            PropertyKeyConst.SECRET_KEY, "cn-hangzhou");
         String expectSign = SignUtil.sign(actual.getParameter("data"), signatureKey);
         assertEquals(expectSign, actual.getParameter("signature"));
     }

@@ -35,8 +35,8 @@ public class DemoFilter2 implements IConfigFilter {
     
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response,
-            IConfigFilterChain filterChain)
-            throws NacosException {
+        IConfigFilterChain filterChain)
+        throws NacosException {
         request.putParameter("filter2", DEFAULT_NAME);
         filterChain.doFilter(request, response);
     }

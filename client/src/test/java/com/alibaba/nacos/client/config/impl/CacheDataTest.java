@@ -265,18 +265,18 @@ class CacheDataTest {
         data.checkListenerMd5();
         assertTrue(data.checkListenersMd5Consistent());
         assertEquals(PropertyChangeType.DELETED,
-                changeItemReceived.get().getChangeItem("a").getType());
+            changeItemReceived.get().getChangeItem("a").getType());
         assertEquals(PropertyChangeType.MODIFIED,
-                changeItemReceived.get().getChangeItem("c").getType());
+            changeItemReceived.get().getChangeItem("c").getType());
         assertEquals(PropertyChangeType.ADDED,
-                changeItemReceived.get().getChangeItem("d").getType());
+            changeItemReceived.get().getChangeItem("d").getType());
     }
     
     @Test
     void testNotifyTaskExecutorExceptionResetsInNotifying() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         final CacheData data =
-                new CacheData(filter, "name1", "key_executor_fail", "group", "tenant");
+            new CacheData(filter, "name1", "key_executor_fail", "group", "tenant");
         
         Listener listener = new Listener() {
             
@@ -284,7 +284,7 @@ class CacheDataTest {
             public Executor getExecutor() {
                 return command -> {
                     throw new java.util.concurrent.RejectedExecutionException(
-                            "Mock ThreadPool Full");
+                        "Mock ThreadPool Full");
                 };
             }
             

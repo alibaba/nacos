@@ -60,16 +60,16 @@ public class LocalConfigInfoProcessor {
     
     static {
         LOCAL_SNAPSHOT_PATH = NacosClientProperties.PROTOTYPE.getProperty(
-                com.alibaba.nacos.client.constant.Constants.SysEnv.JM_SNAPSHOT_PATH,
-                NacosClientProperties.PROTOTYPE
-                        .getProperty(com.alibaba.nacos.client.constant.Constants.SysEnv.USER_HOME))
-                + File.separator
-                + "nacos" + File.separator + "config";
+            com.alibaba.nacos.client.constant.Constants.SysEnv.JM_SNAPSHOT_PATH,
+            NacosClientProperties.PROTOTYPE
+                .getProperty(com.alibaba.nacos.client.constant.Constants.SysEnv.USER_HOME))
+            + File.separator
+            + "nacos" + File.separator + "config";
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
     
     public static String getFailover(String serverName, String dataId, String group,
-            String tenant) {
+        String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
         if (!localPath.exists() || !localPath.isFile()) {
             return null;
@@ -127,7 +127,7 @@ public class LocalConfigInfoProcessor {
      * @param config  config
      */
     public static void saveSnapshot(String envName, String dataId, String group, String tenant,
-            String config) {
+        String config) {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return;
         }

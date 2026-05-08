@@ -72,7 +72,7 @@ public class RamContext {
      */
     public boolean validate() {
         return StringUtils.isNotBlank(ramRoleName)
-                || StringUtils.isNotBlank(accessKey) && StringUtils
-                        .isNotBlank(secretKey);
+            || StringUtils.isNotBlank(accessKey) && StringUtils
+                .isNotBlank(secretKey);
     }
 }

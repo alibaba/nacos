@@ -71,7 +71,7 @@ public class DiskCache {
             
             //Use the concurrent API to ensure the consistency.
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(),
-                    Charset.defaultCharset().toString());
+                Charset.defaultCharset().toString());
             
         } catch (Throwable e) {
             NAMING_LOGGER.error("[NA] failed to write cache for dom:" + dom.getName(), e);
@@ -117,18 +117,18 @@ public class DiskCache {
      * @throws UnsupportedEncodingException if the file is not encoded in UTF-8
      */
     public static Map<String, ServiceInfo> parseServiceInfoFromCache(File file)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException {
         Map<String, ServiceInfo> result = new HashMap<>(1);
         String fileName = URLDecoder.decode(file.getName(), "UTF-8");
         if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName
-                .endsWith(Constants.SERVICE_INFO_SPLITER + "special-url"))) {
+            .endsWith(Constants.SERVICE_INFO_SPLITER + "special-url"))) {
             ServiceInfo dom = new ServiceInfo(fileName);
             List<Instance> ips = new ArrayList<>();
             dom.setHosts(ips);
             ServiceInfo newFormat = null;
             try (BufferedReader reader = new BufferedReader(
-                    new StringReader(ConcurrentDiskUtil.getFileContent(file,
-                            Charset.defaultCharset().toString())))) {
+                new StringReader(ConcurrentDiskUtil.getFileContent(file,
+                    Charset.defaultCharset().toString())))) {
                 
                 String json;
                 while ((json = reader.readLine()) != null) {
@@ -150,7 +150,7 @@ public class DiskCache {
                 NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
             }
             if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils
-                    .isEmpty(newFormat.getHosts())) {
+                .isEmpty(newFormat.getHosts())) {
                 result.put(dom.getKey(), newFormat);
             } else if (!CollectionUtils.isEmpty(dom.getHosts())) {
                 result.put(dom.getKey(), dom);
@@ -173,7 +173,7 @@ public class DiskCache {
         boolean createResult = isDir ? file.mkdirs() : file.createNewFile();
         if (!createResult && !file.exists()) {
             throw new IllegalStateException(
-                    "failed to create cache : " + (isDir ? "dir" : file) + file.getPath());
+                "failed to create cache : " + (isDir ? "dir" : file) + file.getPath());
         }
     }
     

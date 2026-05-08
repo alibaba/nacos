@@ -49,14 +49,14 @@ public class NacosLockService implements LockService {
     
     public NacosLockService(Properties properties) throws NacosException {
         NacosClientProperties nacosClientProperties =
-                NacosClientProperties.PROTOTYPE.derive(properties);
+            NacosClientProperties.PROTOTYPE.derive(properties);
         AbstractServerListManager serverListManager = new NamingServerListManager(properties);
         serverListManager.start();
         this.securityProxy = new SecurityProxy(serverListManager,
-                NamingHttpClientManager.getInstance().getNacosRestTemplate());
+            NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(nacosClientProperties);
         this.lockGrpcClient =
-                new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
+            new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -69,8 +69,8 @@ public class NacosLockService implements LockService {
         final Properties nacosClientPropertiesView = properties.asProperties();
         this.securityProxy.login(nacosClientPropertiesView);
         this.executorService.scheduleWithFixedDelay(
-                () -> securityProxy.login(nacosClientPropertiesView), 0,
-                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
+            () -> securityProxy.login(nacosClientPropertiesView), 0,
+            SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
     @Override

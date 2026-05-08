@@ -27,14 +27,14 @@ class CalculateV4SigningKeyUtilTest {
     @Test
     void testFinalSigningKeyStringWithException() {
         assertThrows(RuntimeException.class,
-                () -> CalculateV4SigningKeyUtil.finalSigningKeyString("", "2021-01-01",
-                        "cn-hangzhou",
-                        RamConstants.SIGNATURE_V4_PRODUCE, "non-exist"));
+            () -> CalculateV4SigningKeyUtil.finalSigningKeyString("", "2021-01-01",
+                "cn-hangzhou",
+                RamConstants.SIGNATURE_V4_PRODUCE, "non-exist"));
     }
     
     @Test
     void testFinalSigningKeyStringWithDefaultInfo() {
         assertNotNull(
-                CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo("", "cn-hangzhou"));
+            CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo("", "cn-hangzhou"));
     }
 }

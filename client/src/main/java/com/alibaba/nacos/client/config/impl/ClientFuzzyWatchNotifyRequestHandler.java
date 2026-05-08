@@ -32,7 +32,7 @@ public class ClientFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
     ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder;
     
     public ClientFuzzyWatchNotifyRequestHandler(
-            ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder) {
+        ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder) {
         
         this.configFuzzyWatchGroupKeyHolder = configFuzzyWatchGroupKeyHolder;
     }
@@ -42,12 +42,12 @@ public class ClientFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
         //fuzzy watch diff reconciliation sync
         if (request instanceof ConfigFuzzyWatchSyncRequest) {
             return configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(
-                    (ConfigFuzzyWatchSyncRequest) request);
+                (ConfigFuzzyWatchSyncRequest) request);
         }
         //fuzzy watch changed notify for a single config. include config changed or config delete.
         if (request instanceof ConfigFuzzyWatchChangeNotifyRequest) {
             return configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(
-                    (ConfigFuzzyWatchChangeNotifyRequest) request);
+                (ConfigFuzzyWatchChangeNotifyRequest) request);
         }
         return null;
     }

@@ -58,6 +58,6 @@ public class ApiGeneratorFactory {
     public ApiGenerator<?> getApiGenerator(String typeUrl) {
         ApiGenerator<?> apiGenerator = apiGeneratorMap.get(typeUrl);
         return apiGenerator != null ? apiGenerator : (typeUrl.startsWith(MCP_PREFIX)
-                ? EmptyMcpGenerator.getInstance() : EmptyXdsGenerator.getInstance());
+            ? EmptyMcpGenerator.getInstance() : EmptyXdsGenerator.getInstance());
     }
 }
