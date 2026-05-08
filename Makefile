@@ -66,7 +66,7 @@ build-frontend: ## Build frontend (console-ui and console-ui-next)
 
 build-maven: ## Build Maven project (skip tests)
 	@echo "Building and Install..."
-	$(MVN) $(MAVEN_ARGS) clean install -DskipTests
+	$(MVN) $(MAVEN_ARGS) clean install -DskipTests $(if $(filter true,$(CHECKSTYLE_SKIP)),-Dcheckstyle.skip=true)
 
 build: build-frontend build-maven ## Build both frontend and Maven project
 
