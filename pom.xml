@@ -163,6 +163,10 @@
         <!-- override dependency version -->
         <micrometer.version>1.13.0</micrometer.version>
 
+        <!-- Override micrometer version for Spring Boot 3.5.x compatibility,
+             see https://github.com/alibaba/nacos/issues/15033 -->
+        <micrometer.version>1.15.10</micrometer.version>
+        
         <!-- native -->
         <native-maven-plugin.version>0.10.2</native-maven-plugin.version>
     </properties>
