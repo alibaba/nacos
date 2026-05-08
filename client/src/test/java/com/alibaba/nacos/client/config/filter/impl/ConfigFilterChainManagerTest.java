@@ -90,7 +90,7 @@ class ConfigFilterChainManagerTest {
             this.name = name;
             this.order = order;
         }
-		
+        
         @Override
         public void init(Properties properties) {
         }
