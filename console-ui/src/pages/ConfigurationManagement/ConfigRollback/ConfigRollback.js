@@ -76,9 +76,7 @@ class ConfigRollback extends React.Component {
     const self = this;
     this.namespaceId = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
-    const url =
-      `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}` +
-      `&namespaceId=${this.namespaceId}&nid=${this.nid}`;
+    const url = `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`;
     request({
       url,
       success(result) {
@@ -159,9 +157,7 @@ class ConfigRollback extends React.Component {
 
         let url = 'v3/console/cs/config';
         if (self.opType.trim() === 'I') {
-          url =
-            `v3/console/cs/config?dataId=${self.dataId}&groupName=${self.group}` +
-            `&namespaceId=${self.tenant}`;
+          url = `v3/console/cs/config?dataId=${self.dataId}&groupName=${self.group}`;
           postData = {};
         }
 

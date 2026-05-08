@@ -150,9 +150,7 @@ class ConfigDetail extends React.Component {
     this.namespaceId = getParams('namespace') || 'public';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppName;
-    const url =
-      `v3/console/cs/config?&dataId=${this.dataId}&groupName=${this.group}` +
-      `&namespaceId=${this.namespaceId}`;
+    const url = `v3/console/cs/config?&dataId=${this.dataId}&groupName=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -228,9 +226,7 @@ class ConfigDetail extends React.Component {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
-    let url =
-      `v3/console/cs/history/previous?id=${this.valueMap.normal.id}` +
-      `&dataId=${this.dataId}&groupName=${this.group}&namespaceId=${this.namespaceId}`;
+    let url = `v3/console/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&groupName=${this.group}`;
     request({
       url,
       beforeSend() {

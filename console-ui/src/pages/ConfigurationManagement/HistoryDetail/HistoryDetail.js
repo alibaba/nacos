@@ -62,11 +62,8 @@ class HistoryDetail extends React.Component {
   getDataDetail() {
     const { locale = {} } = this.props;
     const self = this;
-    this.tenant = getParams('namespace') || 'public';
     request({
-      url:
-        `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}` +
-        `&namespaceId=${this.tenant}&nid=${this.nid}`,
+      url: `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
           const data = result && result.data;

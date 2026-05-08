@@ -49,11 +49,21 @@ export const configApi = {
     client.get('v3/console/cs/history/list', { params }) as ApiResult<ConfigHistoryListResponse>,
 
   // History detail
-  historyDetail: (params: { nid: string; dataId: string; groupName: string }): ApiResult<ConfigHistory> =>
+  historyDetail: (params: {
+    nid: string;
+    dataId: string;
+    groupName: string;
+    namespaceId?: string;
+  }): ApiResult<ConfigHistory> =>
     client.get('v3/console/cs/history', { params }) as ApiResult<ConfigHistory>,
 
   // Previous version
-  historyPrevious: (params: { id: string; dataId: string; groupName: string }): ApiResult<ConfigHistory> =>
+  historyPrevious: (params: {
+    id: string;
+    dataId: string;
+    groupName: string;
+    namespaceId?: string;
+  }): ApiResult<ConfigHistory> =>
     client.get('v3/console/cs/history/previous', { params }) as ApiResult<ConfigHistory>,
 
   // Listeners by config
