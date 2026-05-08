@@ -106,8 +106,8 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setNamespaceId("public");
         agentSpec.setName("testAgent");
         agentSpec.setDescription("Test");
-        agentSpec.setBizTags("[\"ai\"]");
-        agentSpec.setContent("{\"version\":\"1.0\"}");
+        agentSpec.setBizTags("[\\"ai\\"]");
+        agentSpec.setContent("{\\"version\\":\\"1.0\\}");
         Map<String, AgentSpecResource> resourceMap = new HashMap<>();
         AgentSpecResource resource = new AgentSpecResource();
         resource.setName("skill.json");
@@ -117,8 +117,8 @@ class AgentSpecTest extends BasicRequestTest {
         assertEquals("public", agentSpec.getNamespaceId());
         assertEquals("testAgent", agentSpec.getName());
         assertEquals("Test", agentSpec.getDescription());
-        assertEquals("[\"ai\"]", agentSpec.getBizTags());
-        assertEquals("{\"version\":\"1.0\"}", agentSpec.getContent());
+        assertEquals("[\\\\\"ai\\\\\"]", agentSpec.getBizTags());
+        assertEquals("{\\\\\"version\\\\\":\\\\\"1.0\\\\\"}", agentSpec.getContent());
         assertNotNull(agentSpec.getResource());
         assertEquals(1, agentSpec.getResource().size());
     }
@@ -130,23 +130,23 @@ class AgentSpecTest extends BasicRequestTest {
         agentSpec.setNamespaceId("public");
         agentSpec.setName("testAgent");
         agentSpec.setDescription("Test");
-        agentSpec.setBizTags("[\"ai\"]");
-        agentSpec.setContent("{\"version\":\"1.0\"}");
+        agentSpec.setBizTags("[\\"ai\\"]");
+        agentSpec.setContent("{\\"version\\":\\"1.0\\}");
 
         String json = mapper.writeValueAsString(agentSpec);
         assertNotNull(json);
         assertTrue(json.contains("\"namespaceId\":\"public\""));
         assertTrue(json.contains("\"name\":\"testAgent\""));
         assertTrue(json.contains("\"description\":\"Test\""));
-        assertTrue(json.contains("\"bizTags\":\"[\"ai\"]\""));
-        assertTrue(json.contains("\"content\":\"{\"version\":\"1.0\"}\""));
+        assertTrue(json.contains("\"bizTags\":\"[\\\\\"ai\\\\\"]\""));
+        assertTrue(json.contains("\"content\":\"{\\\\\"version\\\\\":\\\\\"1.0\\\\\"}\""));
     }
 
     @Test
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"name\":\"testAgent\",\"description\":\"Test\","
-                + "\"bizTags\":\"[\"ai\"]\",\"content\":\"{\"version\":\"1.0\"}\","
+                + "\"bizTags\":\"[\\\\\"ai\\\\\"]\",\"content\":\"{\\\\\"version\\\\\":\\\\\"1.0\\\\\"}\","
                 + "\"resource\":{\"config.yaml\":{\"name\":\"config.yaml\",\"type\":\"config\"}}}";
 
         AgentSpec agentSpec = mapper.readValue(json, AgentSpec.class);
@@ -154,8 +154,8 @@ class AgentSpecTest extends BasicRequestTest {
         assertEquals("public", agentSpec.getNamespaceId());
         assertEquals("testAgent", agentSpec.getName());
         assertEquals("Test", agentSpec.getDescription());
-        assertEquals("[\"ai\"]", agentSpec.getBizTags());
-        assertEquals("{\"version\":\"1.0\"}", agentSpec.getContent());
+        assertEquals("[\\\\\"ai\\\\\"]", agentSpec.getBizTags());
+        assertEquals("{\\\\\"version\\\\\":\\\\\"1.0\\\\\"}", agentSpec.getContent());
         assertNotNull(agentSpec.getResource());
         assertTrue(agentSpec.getResource().containsKey("config.yaml"));
     }

@@ -172,7 +172,7 @@ class SkillSummaryTest extends BasicRequestTest {
     @DisplayName("test deserialize from json")
     void testDeserializeFromJson() throws JsonProcessingException {
         String json = "{\"namespaceId\":\"public\",\"name\":\"testSkill\",\"description\":\"Test\","
-                + "\"owner\":\"admin\",\"enable\":true,\"bizTags\":\"[\"tag1\"]\",\"from\":\"local\","
+                + "\"owner\":\"admin\",\"enable\":true,\"bizTags\":\"[\\\\\"tag1\\\\\"]\",\"from\":\"local\","
                 + "\"scope\":\"PUBLIC\",\"onlineCnt\":2,\"downloadCount\":100}";
 
         SkillSummary summary = mapper.readValue(json, SkillSummary.class);
